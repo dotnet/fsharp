@@ -999,7 +999,7 @@ module AttributeHelpers =
         | Some versionString ->
              try Some(IL.parseILVersion versionString)
              with e -> 
-                 warning(Error(FSComp.SR.fscBadAssemblyVersion(versionString),Range.rangeStartup));
+                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attrib, versionString),Range.rangeStartup));
                  None
         | _ -> None
 
