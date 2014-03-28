@@ -1,0 +1,12 @@
+// #Misc 
+#light
+
+#r "NestedClasses.dll"
+
+//753 atomType -> atomType DOT path typeArgs 
+let specificIdent (x : RootNamespace.ClassOfT<int>.NestedClassOfU<string>) = x
+
+let x = new RootNamespace.ClassOfT<int>.NestedClassOfU<string>()
+if specificIdent x <> x then exit 1
+
+exit 0

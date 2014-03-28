@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <ProjectGuid>{88e2d422-6852-46e3-a740-83e391dc7973}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
+    <OutputType>Library</OutputType>
+    <AssemblyName>FSharp.Core.Unittests</AssemblyName>
+    <TargetFrameworkVersion Condition=" '$(TargetFramework)' == 'net20' ">v3.5</TargetFrameworkVersion>
+    <Name>SystematicUnitTests</Name>
+    <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl5-compiler' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl5-compiler' AND '$(TargetFramework)' != 'sl3-wp'" />
+    <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp' OR '$(TargetFramework)' == 'sl5-compiler'" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl5-compiler' " />
+    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="LibraryTestFx.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array4Module.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ComparisonIdentityModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule2.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
+    <Compile Include="FSharp.Core\PrimTypes.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
+    <None Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsTestGenerator.fsx" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\PrintfTests.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Cancellation.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\LazyType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\MailboxProcessorType.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ObservableModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
+    <Compile Include="TypeForwarding.fs" />
+    <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
+  </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+</Project>

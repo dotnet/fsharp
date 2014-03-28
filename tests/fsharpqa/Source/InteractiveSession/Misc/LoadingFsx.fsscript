@@ -1,0 +1,15 @@
+// #NoMT #FSI 
+// It is ok to #load an .fsscript file
+//<Expects status="success"></Expects>
+
+let x1 = 1
+
+#if INTERACTIVE
+
+#load "LoadingFsx.fsscript"
+
+#endif
+
+let x2 = 2
+
+#q;;

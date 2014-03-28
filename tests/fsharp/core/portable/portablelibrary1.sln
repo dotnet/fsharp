@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "PortableTestingLibrary", "PortableLibrary1\PortableTestingLibrary.fsproj", "{9FE96E07-CC17-4701-BD3F-9C7F0F98B9B1}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "PortableAutomationHelperLibrary", "PortableAutomationHelperLibrary\PortableAutomationHelperLibrary.fsproj", "{3E51D6E3-F41C-4173-8811-70BE750F8104}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "portabletestentry", "ConsoleApplication1\portabletestentry.csproj", "{3A01C5C1-D725-40AC-B335-F4A54A93925C}"
+EndProject
+Global
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 4
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = PortableAutomationHelperLibrary\\PortableAutomationHelperLibrary.fsproj
+		SccProjectName1 = PortableAutomationHelperLibrary
+		SccLocalPath1 = PortableAutomationHelperLibrary		
+		SccProjectFilePathRelativizedFromConnection1 = ..\\PortableAutomationHelperLibrary\\
+		SccProjectUniqueName2 = PortableLibrary1\\PortableTestingLibrary.fsproj
+		SccProjectName2 = PortableLibrary1
+		SccLocalPath2 = PortableLibrary1		
+		SccProjectFilePathRelativizedFromConnection2 = ..\\PortableLibrary1\\
+		SccProjectUniqueName3 = ConsoleApplication1\\portabletestentry.csproj
+		SccProjectName3 = ConsoleApplication1
+		SccLocalPath3 = ConsoleApplication1
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9FE96E07-CC17-4701-BD3F-9C7F0F98B9B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FE96E07-CC17-4701-BD3F-9C7F0F98B9B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FE96E07-CC17-4701-BD3F-9C7F0F98B9B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FE96E07-CC17-4701-BD3F-9C7F0F98B9B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E51D6E3-F41C-4173-8811-70BE750F8104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E51D6E3-F41C-4173-8811-70BE750F8104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E51D6E3-F41C-4173-8811-70BE750F8104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E51D6E3-F41C-4173-8811-70BE750F8104}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A01C5C1-D725-40AC-B335-F4A54A93925C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A01C5C1-D725-40AC-B335-F4A54A93925C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A01C5C1-D725-40AC-B335-F4A54A93925C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A01C5C1-D725-40AC-B335-F4A54A93925C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

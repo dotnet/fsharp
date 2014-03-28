@@ -1,0 +1,318 @@
+"General"
+{
+"ProjectIdGuid" = "{C086298F-5158-43C9-88EB-FF85B09C762C}"
+}
+"Configurations"
+{
+    "Debug|Win32"
+    {
+    "ProjectType" = "DLL"
+    "OptLevel" = "Off"
+    "StrongNamingLevel" = "None"
+    "LanguageRestriction" = "None"
+    "OutputPath" = ""
+    "SearchPath" = " --compiling-mllib"
+    "StrongNameFile" = ""
+    "OutputBase" = ""
+    "CustomCommandLine" = ""
+    "CustomCompiler" = ""
+    "DebugCheck" = "TRUE"
+    "CustomCompilationCheck" = "FALSE"
+    "DebugStartMode" = "0"
+    "StartApp" = ""
+    "StartAppPath" = ""
+    "CustomStartupArguments" = ""
+    }
+    "Release|Win32"
+    {
+    "ProjectType" = "EXE"
+    "OptLevel" = "3"
+    "StrongNamingLevel" = "None"
+    "LanguageRestriction" = "Fast F#"
+    "OutputPath" = ""
+    "SearchPath" = ""
+    "StrongNameFile" = ""
+    "OutputBase" = ""
+    "CustomCommandLine" = ""
+    "CustomCompiler" = ""
+    "DebugCheck" = "FALSE"
+    "CustomCompilationCheck" = "FALSE"
+    "DebugStartMode" = "0"
+    "StartApp" = ""
+    "StartAppPath" = ""
+    "CustomStartupArguments" = ""
+    }
+}
+"Files"
+{
+    "pervasives.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "pervasives.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lazy.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lazy.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lazylist.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lazylist.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "list.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "list.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "array.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "array.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "vector.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "vector.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "hashtbl.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "hashtbl.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "map.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "map.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "set.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "set.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "big_int.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "big_int.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "num.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "num.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "byte.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "byte.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "string.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "string.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "int32.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "int32.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "int64.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "int64.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "uint32.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "uint32.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "uint64.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "uint64.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "float.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "float.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "float32.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "float32.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "bytearray.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "bytearray.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "buffer.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "buffer.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "printf.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "printf.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "arg.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "arg.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "char.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "char.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "filename.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "filename.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lexing.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lexing.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "obj.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "obj.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "parsing.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "parsing.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "printexc.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "printexc.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "sys.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "sys.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "ienumerable.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "ienumerable.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "ievent.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "ievent.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "nativeptr.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "nativeptr.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+}
+"ProjStartupServices"
+{
+}
+"Globals"
+{
+}

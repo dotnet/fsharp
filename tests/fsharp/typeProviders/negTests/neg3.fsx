@@ -1,0 +1,6 @@
+#r "provider_EVIL_PROVIDER_ReturnsAGeneratedTypeNotNestedInAnErasedType.dll"
+
+
+type GeneratedType = FSharp.EvilGeneratedProviderThatReturnsAGeneratedTypeNotNestedInAnErasedType.TheGeneratedType
+
+

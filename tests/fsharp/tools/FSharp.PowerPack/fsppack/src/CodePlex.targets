@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+
+  <PropertyGroup>
+    <LkgVersion>1.9.7.7</LkgVersion>
+    <FsLexUnicode>true</FsLexUnicode>
+    <OutputPath>$(FSharpPowerPackSourcesRoot)\$(Configuration)\bin</OutputPath>
+    <FsLexToolPath>$(FSharpPowerPackSourcesRoot)\..\lkg\FSharp.PowerPack-$(LkgVersion)\bin</FsLexToolPath>
+    <FsLexToolExe>fslex.exe</FsLexToolExe>
+    <FsYaccToolPath>$(FSharpPowerPackSourcesRoot)\..\lkg\FSharp.PowerPack-$(LkgVersion)\bin</FsYaccToolPath>
+    <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
+  </PropertyGroup>
+
+  <!-- Selecting the correct key pair -->
+
+  <PropertyGroup Condition=" '$(TargetFrameworkVersion)' != 'vSilverlight20'">
+    <OtherFlags>/keyfile:$(FSharpPowerPackSourcesRoot)\fs.snk $(OtherFlags)</OtherFlags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFrameworkVersion)' == 'vSilverlight20'">
+    <OtherFlags>/keyfile:$(FSharpPowerPackSourcesRoot)\fsSilverlight.snk $(OtherFlags)</OtherFlags>
+  </PropertyGroup>
+
+</Project>

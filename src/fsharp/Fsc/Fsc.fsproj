@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <!--
+        fsc.exe and fsi.exe only runs on x86 (emulates on ia64, x64) due to 
+        Win32 DLLs and memory mapping dependencies...
+        -->
+    <PlatformTarget>x86</PlatformTarget>
+    <ProjectGuid>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <NoWarn>$(NoWarn);62;44</NoWarn>
+    <AssemblyName>fsc</AssemblyName>
+    <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v2.0</TargetFrameworkVersion>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
+      <Link>assemblyinfo.fsc.exe.fs</Link>
+    </Compile>
+    <Compile Include="..\fscmain.fs">
+      <Link>fscmain.fs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Runtime.Remoting" />
+    <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
+      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
+      <Name>FSharp.Compiler</Name>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets"  />
+</Project>

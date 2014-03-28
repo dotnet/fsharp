@@ -1,0 +1,4 @@
+
+EVIL_PROVIDER_DoesNotHaveConstructor.fsx(2,1,2,55): parse error FS3032: The type provider 'Provider.EvilProviderDoesNotHaveConstructor' reported an error: The type provider does not have a valid constructor. A constructor taking either no arguments or one argument of type 'TypeProviderConfig' was expected.
+
+EVIL_PROVIDER_DoesNotHaveConstructor.fsx(2,1,2,55): parse error FS3005: Referenced assembly '<ASSEMBLY>' has assembly level attribute 'Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute' but no public type provider classes were found

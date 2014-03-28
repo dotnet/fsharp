@@ -1,0 +1,1319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>FsLex</name></assembly>
+<members>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.PowerPack.FsLex.AST">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FSharp.PowerPack.FsLex.Driver.UnicodeFileAsLexbuf(System.String,Microsoft.FSharp.Core.FSharpOption{System.Int32})">
+<summary>
+ Standard utility to create a Unicode LexBuffer
+
+ One small annoyance is that LexBuffers and not IDisposable. This means 
+ we can&apos;t just return the LexBuffer object, since the file it wraps wouldn&apos;t
+ get closed when we&apos;re finished with the LexBuffer. Hence we return the stream,
+ the reader and the LexBuffer. The caller should dispose the first two when done.
+</summary>
+</member>
+<member name="T:FSharp.PowerPack.FsLex.Driver">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.PowerPack.FsLex.Lexer">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FSharp.PowerPack.FsLex.Parser.prodIdxToNonTerminal(System.Int32)">
+<summary>
+ This function maps production indexes returned in syntax errors to strings representing the non terminal that would be produced by that production
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FSharp.PowerPack.FsLex.Parser">
+
+</member>
+<member name="P:Internal.Utilities.HashSet`1.Count">
+<summary>
+ The total number of elements in the set
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.Remove(`0)">
+<summary>
+ Remove the given element from the set
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.Iterate(Microsoft.FSharp.Core.FSharpFunc`2{`0,Microsoft.FSharp.Core.Unit})">
+<summary>
+ Apply the given function to each binding in the hash table 
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.Fold``1(Microsoft.FSharp.Core.FSharpFunc`2{`0,Microsoft.FSharp.Core.FSharpFunc`2{``0,``0}},``0)">
+<summary>
+ Apply the given function to the set threading the accumulating parameter
+ through the sequence of function applications
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.Copy">
+<summary>
+ Make a shallow copy of the set
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.Contains(`0)">
+<summary>
+ Test if the set contains the given element
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.Clear">
+<summary>
+ Clear all elements from the set
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.Add(`0)">
+<summary>
+ Add an element to the collection
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.HashSet`1.#ctor(System.Collections.Generic.IEnumerable{`0},System.Collections.Generic.IEqualityComparer{`0})">
+<summary>
+ Create a new mutable hash set with the given elements and using the given key hash/equality functions 
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.#ctor(System.Int32,System.Collections.Generic.IEqualityComparer{`0})">
+<summary>
+ Create a new empty mutable hash set with an internal bucket array of the given approximate size
+ and with the given key hash/equality functions 
+</summary>
+</member>
+<member name="M:Internal.Utilities.HashSet`1.#ctor(System.Collections.Generic.IEqualityComparer{`0})">
+<summary>
+ Create a new empty mutable hash set using the given key hash/equality functions 
+</summary>
+</member>
+<member name="T:Internal.Utilities.HashSet`1">
+<summary>
+ Mutable hash sets based by default on F# structural &quot;hash&quot; and (=) functions. Implemented via a hash table and/or Dictionary.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Internal.Utilities.Arg.spec">
+<summary>
+ The spec value describes the action of the argument,
+ and whether it expects a following parameter.
+</summary>
+</member>
+<member name="M:Internal.Utilities.Arg.usage(Microsoft.FSharp.Collections.FSharpList{System.Tuple`3{System.String,Internal.Utilities.Arg.spec,System.String}},System.String)">
+<summary>
+ &quot;usage specs use&quot; prints the help for each argument.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Arg.parse(Microsoft.FSharp.Collections.FSharpList{System.Tuple`3{System.String,Internal.Utilities.Arg.spec,System.String}},Microsoft.FSharp.Core.FSharpFunc`2{System.String,Microsoft.FSharp.Core.Unit},System.String)">
+<summary>
+ &quot;parse specs f use&quot; parses the arguments given by Sys.argv
+ according to the argument processing specifications &quot;specs&quot;.
+ Arguments begin with &quot;-&quot;. Non-arguments are passed to &quot;f&quot; in
+ order.  &quot;use&quot; is printed as part of the usage line if an error occurs.
+
+ Permitted arguments are specified using triples: (arg, action, help).
+ Actions are:
+   Unit(f): call f, no subseq. arg
+   Set(br): set ref to &apos;true&apos;, no subseq. arg.
+   Clear(br): set ref to &apos;false, no subseq. arg.
+   String(f): pass the subseq. arg to f
+   Int(f): pass the subseq. arg to f
+   Float(f): pass the subseq. arg to f
+   Rest(f): pass all subseq. args to f in order
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Internal.Utilities.Arg">
+<summary>
+ A simple command-line argument processor.
+</summary>
+</member>
+<member name="T:Internal.Utilities.Compatibility.OCaml.Lexing.lexbuf">
+<summary>
+ ASCII LexBuffers 
+
+ The type &quot;lexbuf&quot; is opaque, but has an internal position information field 
+ that can be updated by setting &quot;lexbuf.EndPos&quot;, for example if you wish 
+ to update the other fields in that position data before or during 
+ lexing.  You will need to do this if you wish to maintain accurate 
+ line-count information.  If you do this and wish to maintain strict 
+ cross-compiling compatibility with OCamlLex and other tools you may need code 
+ to conditionally use lexbuf_set_curr_p when compiling F# code.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme_end(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Return absolute positions into the entire stream of characters
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme_start(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Return absolute positions into the entire stream of characters
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexbuf_curr_p(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ same as lexeme_end_p 
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme_end_p(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Return the positions stored in the lexbuf for the matched string 
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme_start_p(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Return the positions stored in the lexbuf for the matched string 
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme_char(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte},System.Int32)">
+<summary>
+ Return a character from the matched string, innterpreting the bytes using an ASCII encoding
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme_bytes(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Return the bytes for the matched string 
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme_utf8(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Return the matched string interpreting the bytes using the given Unicode text encoding
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.lexeme(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Return the matched string 
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.from_function(Microsoft.FSharp.Core.FSharpFunc`2{System.Byte[],Microsoft.FSharp.Core.FSharpFunc`2{System.Int32,System.Int32}})">
+<summary>
+ Fuel a lexer from function that fills an array of bytes up to the given length, returning the
+ number of bytes filled.
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.from_bytearray(System.Byte[])">
+<summary>
+ Fuel a lexer from an array of bytes
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.from_string(System.String)">
+<summary>
+ Fuel a lexer from a string, converted to ascii using &lt;c&gt;System.Text.Encoding.ASCII.GetBytes&lt;/c&gt;
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.from_binary_reader(System.IO.BinaryReader)">
+<summary>
+ Fuel a lexer using the given BinaryReader.  
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.from_text_reader(System.Text.Encoding,System.IO.TextReader)">
+<summary>
+ Fuel a lexer using the given TextReader or StreamReader.
+ The characters read are decoded to bytes using the given encoding (e.g. System.Text.Encoding.ASCII)
+ and the bytes presented to the lexer.  The encoding used to decode the characters
+ is associated with the expectations of the lexer (e.g. a lexer may be constructed to accept only 
+ ASCII or pseudo-UTF8 bytes) and will typically be different to 
+ the encoding used to decode the file.
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.from_channel(System.IO.TextReader)">
+<summary>
+ Fuel a lexer using the given in_channel.  The bytes are read using Pervasives.input.
+ If the in_channel is a textual channel the bytes are 
+ presented to the lexer by decoding the characters using System.Text.Encoding.ASCII.
+</summary>
+</member>
+<member name="M:Internal.Utilities.Compatibility.OCaml.Lexing.flush_input(Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Remove all input, though don&apos;t discard the  except the current lexeme 
+</summary>
+</member>
+<member name="T:Internal.Utilities.Compatibility.OCaml.Lexing">
+<summary>
+ Lexing: ML-like lexing support
+
+ This file maintains rough compatibility for lexbuffers used by some ML
+ laxer generators.  The lexbuf carries an associated pair of positions.
+ Beware that only the &quot;cnum&quot; (absolute character number) field is automatically 
+ updated as each lexeme is matched.  Upon each successful match the prior end
+ position is transferred to be the start position and a new start position
+ is allocated with an updated pos_cnum field.
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.UnicodeTables.Interpret(System.Int32,Internal.Utilities.Text.Lexing.LexBuffer{System.Char})">
+<summary>
+ Interpret tables for a unicode lexer generated by fslex. 
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.UnicodeTables.AsyncInterpret(System.Int32,Internal.Utilities.Text.Lexing.LexBuffer{System.Char})">
+<summary>
+ Interpret tables for a unicode lexer generated by fslex, processing input asynchronously
+</summary>
+</member>
+<member name="T:Internal.Utilities.Text.Lexing.UnicodeTables">
+<summary>
+ The type of tables for an unicode lexer generated by fslex. 
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.AsciiTables.Interpret(System.Int32,Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Interpret tables for an ascii lexer generated by fslex. 
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.AsciiTables.AsyncInterpret(System.Int32,Internal.Utilities.Text.Lexing.LexBuffer{System.Byte})">
+<summary>
+ Interpret tables for an ascii lexer generated by fslex, processing input asynchronously
+</summary>
+</member>
+<member name="T:Internal.Utilities.Text.Lexing.AsciiTables">
+<summary>
+ The type of tables for an ascii lexer generated by fslex. 
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.StartPos(Internal.Utilities.Text.Lexing.Position)">
+<summary>
+ The start position for the lexeme
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.IsPastEndOfStream(System.Boolean)">
+<summary>
+ True if the refill of the buffer ever failed , or if explicitly set to true.
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.EndPos(Internal.Utilities.Text.Lexing.Position)">
+<summary>
+ The end position for the lexeme
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.StartPos">
+<summary>
+ The start position for the lexeme
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.LexemeLength">
+<summary>
+ The length of the matched string 
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.Lexeme">
+<summary>
+ The matched string 
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.IsPastEndOfStream">
+<summary>
+ True if the refill of the buffer ever failed , or if explicitly set to true.
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.EndPos">
+<summary>
+ The end position for the lexeme
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.LexBuffer`1.BufferLocalStore">
+<summary>
+ Dynamically typed, non-lexically scoped parameter table
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.LexemeString(Internal.Utilities.Text.Lexing.LexBuffer{System.Char})">
+<summary>
+ Fast helper to turn the matched characters into a string, avoiding an intermediate array
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.LexemeChar(System.Int32)">
+<summary>
+ Fetch a particular character in the matched string 
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.FromTextReader(System.IO.TextReader)">
+<summary>
+ Create a lex buffer suitable for use with a Unicode lexer that reads character inputs from the given text reader
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.FromString(System.String)">
+<summary>
+ Create a lex buffer suitable for Unicode lexing that reads characters from the given string
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.FromFunction(Microsoft.FSharp.Core.FSharpFunc`2{System.Tuple`3{`0[],System.Int32,System.Int32},System.Int32})">
+<summary>
+ Create a lex buffer that reads character or byte inputs by using the given function
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.FromChars(System.Char[])">
+<summary>
+ Create a lex buffer suitable for Unicode lexing that reads characters from the given array
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.FromBytes(System.Byte[])">
+<summary>
+ Create a lex buffer suitable for byte lexing that reads characters from the given array
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.FromBinaryReader(System.IO.BinaryReader)">
+<summary>
+ Create a lex buffer suitable for use with ASCII byte lexing that reads byte inputs from the given binary reader
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.FromAsyncFunction(Microsoft.FSharp.Core.FSharpFunc`2{System.Tuple`3{`0[],System.Int32,System.Int32},Microsoft.FSharp.Control.FSharpAsync{System.Int32}})">
+<summary>
+ Create a lex buffer that asynchronously reads character or byte inputs by using the given function
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.LexBuffer`1.DiscardInput">
+<summary>
+ Remove all input, though don&apos;t discard the current lexeme 
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="F:Internal.Utilities.Text.Lexing.Internal.Utilities.Text.Lexing.Position.pos_cnum">
+<summary>
+ The absolute offset of the column for the position
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Lexing.Internal.Utilities.Text.Lexing.Position.pos_bol">
+<summary>
+ The absolute offset of the beginning of the line
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Lexing.Internal.Utilities.Text.Lexing.Position.pos_orig_lnum">
+<summary>
+ The line number for the position in the original source file
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Lexing.Internal.Utilities.Text.Lexing.Position.pos_lnum">
+<summary>
+ The line number for the position
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Lexing.Internal.Utilities.Text.Lexing.Position.pos_fname">
+<summary>
+ The file name for the position
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.Position.StartOfLineAbsoluteOffset">
+<summary>
+ Return absolute offset of the start of the line marked by the position
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.Position.OriginalLine">
+<summary>
+ The line number for the position in the input stream, assuming fresh positions have been updated 
+ using AsNewLinePos()
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.Position.Line">
+<summary>
+ The line number in the input stream, assuming fresh positions have been updated 
+ using AsNewLinePos() and by modifying the EndPos property of the LexBuffer.
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.Position.FileName">
+<summary>
+ The file name associated with the input stream.
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.Position.Empty">
+<summary>
+ Get an arbitrary position, with the empty string as filename, and  
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.Position.Column">
+<summary>
+ Return the column number marked by the position, i.e. the difference between the AbsoluteOffset and the StartOfLineAbsoluteOffset
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="P:Internal.Utilities.Text.Lexing.Position.AbsoluteOffset">
+<summary>
+ The character number in the input stream
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.Position.ShiftColumnBy(System.Int32)">
+<summary>
+ Gives a position shifted by specified number of characters
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.Position.FirstLine(System.String)">
+<summary>
+ Get a position corresponding to the first line (line number 1) in a given file
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Lexing.Position.EndOfToken(System.Int32)">
+<summary>
+ Given a position at the start of a token of length n, return a position just beyond the end of the token
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:Internal.Utilities.Text.Lexing.Position">
+<summary>
+ Position information stored for lexing tokens
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.tagOfErrorTerminal">
+<summary>
+ The tag of the error terminal
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.numTerminals">
+<summary>
+ The total number of terminals 
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.parseError">
+<summary>
+ This function is used to hold the user specified &quot;parse_error&quot; or &quot;parse_error_rich&quot; functions
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.productionToNonTerminalTable">
+<summary>
+ This table is logically part of the Goto table
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.stateToProdIdxsTableRowOffsets">
+<summary>
+ The sparse table offsets for the productions active for each state
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.stateToProdIdxsTableElements">
+<summary>
+ The sparse table for the productions active for each state
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.sparseGotoTableRowOffsets">
+<summary>
+ The sparse goto table row offsets
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.gotos">
+<summary>
+ The sparse goto table
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.immediateActions">
+<summary>
+ The immediate action table
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.reductionSymbolCounts">
+<summary>
+ The number of symbols for each reduction
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.actionTableRowOffsets">
+<summary>
+ The sparse action table row offsets
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.actionTableElements">
+<summary>
+ The sparse action table elements
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.dataOfToken">
+<summary>
+ A function to compute the data carried by a token
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.tagOfToken">
+<summary>
+ A function to compute the tag of a token
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.endOfInputTag">
+<summary>
+ The token number indicating the end of input
+</summary>
+</member>
+<member name="F:Internal.Utilities.Text.Parsing.Internal.Utilities.Text.Parsing.Tables`1.reductions">
+<summary>
+ The reduction table
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.Tables`1.Interpret``1(Microsoft.FSharp.Core.FSharpFunc`2{Internal.Utilities.Text.Lexing.LexBuffer{``0},`0},Internal.Utilities.Text.Lexing.LexBuffer{``0},System.Int32)">
+<summary>
+ Interpret the parser table taking input from the given lexer, using the given lex buffer, and the given start state.
+ Returns an object indicating the final synthesized value for the parse.
+</summary>
+</member>
+<member name="T:Internal.Utilities.Text.Parsing.Tables`1">
+<summary>
+ Tables generated by fsyacc
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.ParseErrorContext`1.StateStack">
+<summary>
+ The stack of state indexes active at the parse error 
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.ParseErrorContext`1.ShiftTokens">
+<summary>
+ The token that would cause a shift at the parse error
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.ParseErrorContext`1.ReducibleProductions">
+<summary>
+ The stack of productions that would be reduced at the parse error 
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.ParseErrorContext`1.ReduceTokens">
+<summary>
+ The tokens that would cause a reduction at the parse error 
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.ParseErrorContext`1.ParseState">
+<summary>
+ The state active at the parse error 
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.ParseErrorContext`1.Message">
+<summary>
+ The message associated with the parse error
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.ParseErrorContext`1.CurrentToken">
+<summary>
+ The token that caused the parse error
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.IParseState.ResultRange">
+<summary>
+ Get the full range of positions matched by the production
+</summary>
+</member>
+<member name="P:Internal.Utilities.Text.Parsing.IParseState.ParserLocalStore">
+<summary>
+ Get the store of local values associated with this parser
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.IParseState.RaiseError``1">
+<summary>
+ Raise an error in this parse context
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.IParseState.InputStartPosition(System.Int32)">
+<summary>
+ Get the start position for the terminal or non-terminal at a given index matched by the production
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.IParseState.InputRange(System.Int32)">
+<summary>
+ Get the start and end position for the terminal or non-terminal at a given index matched by the production
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.IParseState.InputEndPosition(System.Int32)">
+<summary>
+ Get the end position for the terminal or non-terminal at a given index matched by the production
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.IParseState.GetInput(System.Int32)">
+<summary>
+ Get the value produced by the terminal or non-terminal at the given position
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.ParseHelpers.parse_error(System.String)">
+<summary>
+ The default implementation of the parse_error function
+</summary>
+</member>
+<member name="M:Internal.Utilities.Text.Parsing.ParseHelpers.parse_error_rich``1">
+<summary>
+ The default implementation of the parse_error_rich function
+</summary>
+</member>
+<member name="T:Internal.Utilities.Text.Parsing.ParseHelpers">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:Internal.Utilities.Text.Parsing.Flags">
+
+</member>
+</members>
+</doc>

@@ -1,0 +1,37 @@
+## If no tags specified, then the test is excluded on any configuration
+# 	test\foo\bar (...) -- failed
+# 
+## Adding one tag means: exclude this test on that particular configuration
+## The following test will be excluded then doing MT runs of type 4.0->2.0->4.0
+#MT402040	test\foo\bar (...) -- failed
+
+## Adding more than one means: exclude this test on the configuration that is
+## the intersection of the configurations specified
+## The following test will be excluded then doing MT runs of type 4.0->2.0->4.0
+## only if we are running on a 64bit machine
+#MT402040,OS64BIT	test\foo\bar (...) -- failed
+#OS32BIT		test\foo\bar (...) -- failed
+
+## A bang preceeding a tag means its negation
+## The following test will be excluded when running on a machine where NetFx3.5 is not installed
+#!NETFX35	test\foo\bar (...) -- failed
+
+# Tags currently supported:
+# DEV11		- F# DEV11 installed
+# VS2008	- F# VS2008 installed
+# NETFX20	- NetFx2.0 installed
+# NETFX30	- NetFx3.0 installed
+# NETFX35	- NetFx3.5 installed
+# NETFX40	- NetFx4.0 installed
+# OS32BIT	- OS is 32bit
+# OS64BIT	- OS is 64bit
+# CHK           - F# build CHK
+# RET           - F# build RET
+# POWERPACK	- F# Powerpack is installed
+# MT402040	- This is a MT run of type 4.0 -> 2.0 -> 4.0
+# MT402020	- This is a MT run of type 4.0 -> 2.0 -> 2.0
+# OFFICE        - Office 12 or 14 is installed (2007 or 2010)
+# OPTIMIZEPLUS  - For runs using the --optimize+ option in ISCFLAGS environment variable
+# STANDALONE    - For runs using the --standalone option in ISCFLAGS environment variable
+# INDIRECTARRAYCALLMETHODS    - For runs using the --indirectArrayCallMethods option in ISCFLAGS environment variable
+

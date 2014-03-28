@@ -1,0 +1,486 @@
+<html>
+
+<head>
+    <attribute>
+        <title>F# Compiler Source Drop, (3.1)</title>
+
+
+        <style type="text/css">
+            TT {
+                font-weight: bold;
+                color: blue;
+                font-size: 10pt;
+            }
+
+            PRE {
+                font-weight: bold;
+                color: blue;
+                font-size: 10pt;
+            }
+
+            .title_2ndLvl {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #FFFFFF;
+                padding-left: 5px;
+            }
+
+            .BODY {
+                font-family: verdana;
+            }
+
+            A {
+                color: #003399;
+            }
+
+            .VR {
+                background-color: #cccccc;
+                width: 1px;
+            }
+
+            .HR {
+                background-color: #cccccc;
+                height: 1px;
+            }
+
+            .link1 {
+                font-size: 70%;
+                font-family: verdana;
+            }
+
+            .link2 {
+                font-size: 70%;
+                font-family: Verdana;
+                font-style: italic;
+            }
+
+            .link3 {
+                font-style: italic;
+                font-family: Verdana;
+                color: #000000;
+                font-weight: bold;
+            }
+
+            .link4 {
+                font: italic 70% Verdana;
+                color: #000000;
+                text-decoration: none;
+            }
+
+            .link5 {
+                font: 70% Verdana;
+                color: #003399;
+                text-decoration: none;
+            }
+
+            .link6 {
+                font: 70% verdana;
+                color: #003399;
+            }
+
+            .text1 {
+                font: 70% Verdana;
+            }
+
+            .text2 {
+                padding-bottom: 10px;
+                font: 70% Verdana;
+            }
+
+            .text3 {
+                font-size: 120%;
+                font-family: Verdana;
+                color: #000000;
+            }
+
+            .text3_w_padding {
+                font: 120% Verdana;
+                color: #000000;
+                padding-left: 20px;
+            }
+
+            .text4 {
+                font-weight: bold;
+                font-size: 70%;
+                font-family: Verdana;
+                color: #000000;
+            }
+
+            .text5 {
+                padding-left: 5px;
+                font-weight: bold;
+                font-size: 70%;
+                font-family: Verdana;
+                color: #ffffff;
+            }
+
+            .text6 {
+                font: 70%;
+                font-family: verdana;
+            }
+
+            .newsTitle {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #CCCCCC;
+            }
+
+            .areaTitle {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #FFFFFF;
+            }
+
+            .newsContentTitle {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #FFFFFF;
+            }
+
+            .areaContentTitle {
+                font-family: verdana;
+                font-size: 140%;
+                color: #000000;
+            }
+
+            .areaContentTitle_w_pad {
+                font-family: verdana;
+                font-size: 140%;
+                color: #000000;
+                padding-left: 20px;
+                padding-top: 20px;
+            }
+
+            .newsArchiveTitle {
+                font-family: verdana;
+                font-size: 150%;
+                color: #000000;
+            }
+
+            .FeatureStoryTitle {
+                font-family: verdana;
+                font-size: 130%;
+                color: #000000;
+            }
+
+            .FeatureStoryByLine {
+                font-family: verdana;
+                font-size: 80%;
+                color: #000000;
+            }
+
+            .SideBarLink {
+                font-family: verdana;
+                font-size: 80%;
+                color: #000000;
+            }
+
+            .newsArchiveSubTitle {
+                font-family: verdana;
+                font-size: 118%;
+                color: #666666;
+            }
+
+            .newsArchiveYear {
+                font: bold 80% Verdana;
+                color: #000000;
+                border-bottom: #cccccc 1px solid;
+                border-top: #cccccc 1px solid;
+            }
+
+            .newsHeadlineTitle {
+                font-family: verdana;
+                font-size: 140%;
+                color: #000000;
+            }
+
+            .newsPublicationDate {
+                font-family: Verdana;
+                font-size: 60%;
+                color: #000000;
+                font-weight: bold;
+            }
+
+            .newsPublicationSource {
+                font-family: Verdana;
+                font-size: 60%;
+                color: #000000;
+                font-weight: bold;
+            }
+
+            H1 {
+                font-family: tahoma;
+                font-weight: bold;
+                font-size: 120%;
+                color: #000000;
+            }
+
+            H3 {
+                font-family: tahoma;
+                font-weight: bold;
+                font-size: 110%;
+                color: #000000;
+            }
+
+            P {
+                font-family: verdana;
+                font-size: 70%;
+                color: #000000;
+            }
+
+                P P {
+                    font-size: 100%;
+                }
+
+            HR {
+                color: #cccccc;
+                height: 1px;
+            }
+
+
+            .groupheading {
+                padding-left: 20px;
+                padding-top: 40px;
+                padding-bottom: 10px;
+                font-size: 1.4em;
+                color: #0065CF;
+                font-family: verdana;
+            }
+
+            .GroupTitle {
+                padding-left: 20px;
+                padding-top: 20px;
+                padding-bottom: 10px;
+                font-size: 1.4em;
+                color: #0065CF;
+            }
+
+            LI {
+                font-size: 70%;
+                font-family: Verdana;
+            }
+
+                LI LI {
+                    font-size: 100%;
+                }
+
+                LI A {
+                    font-size: 100%;
+                }
+
+            .linkbox {
+                margin-left: 20px;
+                margin-right: 30px;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                width: 175px;
+                float: right;
+                border-right: #0066CC 1px solid;
+                background: #f1f1f1;
+                border-left: #0066CC 1px solid;
+                border-bottom: #0066CC 1px solid;
+            }
+
+            .outlineDivTitle {
+                background-color: #0066CC;
+                color: #FFFFFF;
+                padding-left: 15px;
+                padding-bottom: 2px;
+                padding-top: 2px;
+                font: bold 70% Verdana;
+                color: #ffffff;
+            }
+
+            .outlineDiv {
+                padding-left: 20px;
+                background-image: URL(/images/blueTriangle.gif);
+                background-repeat: no-repeat;
+                background-position: 6 8;
+                font: 70% verdana;
+                color: #003399;
+                line-height: 200%;
+            }
+        </style>
+</head>
+
+<body>
+
+    <h1>F# Compiler + Library Open Contribution Repository</h1>
+
+    <p>This repo is a place where you can contribute to the F# compiler. </p>
+
+    <p>The compiler is normally compiled as a set of .NET 4.0 components.</p>
+
+    <p><b>Before we start, are sure you&#39;re in the right place?</b></p>
+    <ul>
+        <li>To learn what F# is and why it&#39;s interesting, go to <a href="http://fsharp.org">fsharp.org</a>   </li>
+        <li>To get a free F# environment, go to <a href="http://fsharp.org/use/windows">fsharp.org</a>&nbsp;&nbsp; </li>
+        <li>If you want to to use F# in Visual Studio 2010, 2012 or 2013, go to         <a href="http://fsharp.net">fsharp.net</a>.</li>
+    </ul>
+    <p>
+        To emphasize, this distribution should not be seen as a way to &quot;get&quot; an F#
+        compiler for immediate use. For that you&#39;re better going to <a href="http://fsharp.org">fsharp.org</a>.
+    </p>
+    <p>
+        <b>License:</b> Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A
+        copy of the license can be found in the <a href="license.html">License.html</a> file at the root of this distribution.
+        By using this source code in any fashion, you are agreeing to be bound
+        by the terms of the Apache License, Version 2.0. You must not remove this notice, or any other, from this software.
+    </p>
+
+    <p>
+        <b>Questions?</b> If you have questions about the source code, please ask in the issues and discussion forums.
+
+        <h3>Compilation Instructions</h3>
+
+    <p>When you build the compiler using the standard instructions below, you get <tt>fsc.exe</tt>, <tt>fsi.exe</tt>, <tt>FSharp.Core.dll</tt>, <tt>FSharp.Compiler.dll</tt> and some related DLLs.</p>
+
+    <p>
+        The compiler binaries produced are "private" and
+        strong-named signed with a test key (src\fsharp\test.snk). They use CLI assembly version nunmber 2.9.9.999. You can place these components in the GAC but they will not replace
+        the components used by normal Visual Studio or normal F# programs.
+    </p>
+
+
+    <h3>Notes on the build</h3>
+
+    <p>
+        The prerequisites and build command line for compiling the source (on Windows) are shown
+        later in this README. Here's the logic of the build:
+    </p>
+    <ul>
+        <li>We first need an existing F# compiler, using the one in the 'lkg' directory. Let's assume this compiler has an FSharp.Core.dll with version X.</li>
+        <li>
+            We use this compiler to compile the source in this distribution, to produce a "proto" compiler, in the Proto
+            directory. When run, this compiler still relies on the FSharp.Core.dll with version X.
+        </li>
+        <li>
+            We use the proto compiler to compile the source for FSharp.Core.dll in this distribution, producing
+            an FSharp.Core.dll with the version identified in src\source-build-version, usually 1.9.999.
+        </li>
+        <li>
+            We use the proto compiler to compile the source for FSharp.Compiler.dll, fsc.exe, fsi.exe and other
+            binaries found in this distribution. When run, these binaries will rely on the FSharp.Core.dll with version
+            1.9.999. This is good, since it means the 1.9.999 binaries now form a consistent, bootstrapped compiler. If
+            you like you should now be able to throw away the compiler with version X.
+        </li>
+    </ul>
+    <p>
+        Some additional tools are required to build the compiler, notably fslex.exe, fsyacc.exe,
+        FSharp.PowerPack.Build.Tasks.dll, FsSrGen.exe, FSharp.SRGen.Build.Tasks.dll and the other
+        tools found in the lkg directory. These are "Last Known Good" binaries created from a version of the F# Power Pack
+        on CodePlex. If you like you can throw away these binaries and use your own compiled versions of these.
+        tools.
+    </p>
+
+    <h3>1.  Building a Proto Compiler and the F# core library for .net 4.0 and .net 2.0</h3>
+
+    <p>This uses the lkg compiler to build</p>
+    <pre>
+    cd src 
+    gacutil /i ..\lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
+    msbuild fsharp-proto-build.proj
+    msbuild fsharp-library-build.proj /p:TargetFramework=net40
+    msbuild fsharp-library-build.proj /p:TargetFramework=net20
+    </pre>
+
+    <h3>2.  Building an F# (Debug) compiler for .NET 4.0 profile</h3>
+
+    <p>This uses the proto compiler to build the FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
+    <pre>
+    msbuild fsharp-compiler-build.proj /p:TargetFramework=net40
+    </pre><p>[Optional] ngen the Compiler and FSI for faster startup</pi><pre>
+    ngen install ..\Debug\net40\bin\fsc-proto.exe
+    ngen install ..\Debug\net40\bin\fsi.exe
+    </pre>
+
+    <h3>3.  Verify the F# compiler build with simple smoke test</h3>
+
+    <li>Simple FSI run and quit test.</li>
+    <pre>
+    ..\Debug\net40\bin\fsi.exe
+    1 + 1;;
+    #q;;
+</pre><li>Verify tool command lines</li><pre>
+    ..\Debug\net40\bin\fsi.exe /help
+    ..\Debug\net40\bin\fsc.exe /help
+    
+</pre>
+<li>Compile hello world.</li><pre>
+    echo printfn "hello world" > hello.fs
+    ..\Debug\net40\bin\fsc.exe hello.fs
+    copy ..\Debug\net40\bin\FSharp.Core.dll .
+    hello.exe
+    del /q hello.fs
+    del /q FSharp.Core.dll 
+</pre>
+
+    <h3>4. Compiler Tests </h3>
+
+    <li>Building F# Core Unit Tests for .NET 4.0 </li>
+    <p>This uses the proto compiler to build the unit tests that check some parts of FSharp.Core.dll and FSharp.Compiler.dll. You must have NUnit installed.</p>
+    <pre>
+    msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40    
+    nunit.exe ..\Debug\net40\bin\FSharp.Core.Unittests.dll</pre>
+
+    <li>Running Compiler tests on Windows </li>
+
+    <p>   There are language tests under tests. The test apparatus uses batch files, assuming perl is installed. You can run these on Windows using:</p>
+    <pre>
+    cd ..\tests
+    Runtests.cmd fsharp
+    Runtests.cmd fsharpqa    </pre>
+
+    <h3>5.  [Alternate Build Instructions] Build an optimised F# (Release) compiler for .NET 4.0 profile</h3>
+
+    <p>This uses the proto compiler to build the FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
+    <pre>
+    msbuild fsharp-compiler-build.proj /p:TargetFramework=net40 /p:Configuration=Release
+    </pre><p>[Optional] ngen the Compiler and FSI for faster startup</pi>
+    <pre>
+    ngen install ..\Release\net40\bin\fsc.exe
+    ngen install ..\Release\net40\bin\fsi.exe
+    </pre>
+
+    <h3>6.  Verify the optimised F# compiler build with simple smoke test</h3>
+
+    <li>Simple FSI run and quit test.</li>
+    <pre>    ..\Release\net40\bin\fsi.exe
+    1 + 1;;
+    #q;;
+    </pre><li>Verify tool command lines</li><pre>
+    ..\Release\net40\bin\fsi.exe /help
+    ..\Release\net40\bin\fsc.exe /help
+    
+</pre>
+<li>Compile hello world.</li>
+<pre>
+    echo printfn "hello world" > hello.fs
+    ..\Release\net40\bin\fsc.exe hello.fs
+    copy ..\Release\net40\bin\FSharp.Core.dll .
+    hello.exe
+    del /q hello.fs
+    del /q FSharp.Core.dll 
+</pre>
+
+    <h3>7.  [Optional] Open a solution with Visual Studio </h3>
+
+    <p>   You can use "fsharp.sln" to browse source code using Visual Studio. However, you need to complete step 1) and 2) in order to properly open this solution. In addition, FSharp.Core.Unittests project requires NUnit installed. </p>
+
+    <h3>8.  [Optional] Build a compiler component for hosting in the browser with Silverlight </h3>
+
+    <p>   This builds FSharp.Compiler.Silverlight.dll which is a Silverlight 5.0 component for hosting in the browser. You must have Silverlight5 installed.</p>
+    <li>This places the binaries in Debug\sl5-compiler:</il>
+    <pre>
+    msbuild fsharp-library-build.proj  /p:TargetFramework=sl5-compiler
+    msbuild fsharp-compiler-build.proj  /p:TargetFramework=sl5-compiler    </pre>
+
+    <li>This places the binaries in Release\sl5-compiler:</li>
+    <pre>
+    msbuild fsharp-library-build.proj  /p:TargetFramework=sl5-compiler /p:Configuration=Release
+    msbuild fsharp-compiler-build.proj  /p:TargetFramework=sl5-compiler /p:Configuration=Release      </pre>
+
+    <p> A custom FSharp.Core.dll is used for this configuration, be sure to reference it rather than any other FSharp.Core.dll for Silverlight. You may have to edit your project file by hand to ensure you get exactly the right reference to FSharp.Core.dll. </p>
+<br>
+
+</body>

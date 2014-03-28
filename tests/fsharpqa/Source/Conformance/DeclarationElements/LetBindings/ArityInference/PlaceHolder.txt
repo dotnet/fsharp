@@ -1,0 +1,1 @@
+Need to develop way to use reflection to scan F# codes to verify built structure.

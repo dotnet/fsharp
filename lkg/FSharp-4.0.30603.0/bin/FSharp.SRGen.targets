@@ -1,0 +1,59 @@
+<!--
+***********************************************************************************************
+FSharp.SRGen.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+		  created a backup copy.  Incorrect changes to this file will make it
+		  impossible to load or build your projects from the command-line or the IDE.
+
+Copyright (C) Microsoft Corporation. All rights reserved.
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask TaskName="FsSrGen" AssemblyFile="FSharp.SRGen.Build.Tasks.dll"/>
+  <PropertyGroup>
+    <PrepareForBuildDependsOn>CallFsSrGen;$(PrepareForBuildDependsOn)</PrepareForBuildDependsOn>
+  </PropertyGroup>
+
+  <!-- Build FsSrGen files. -->
+  <Target
+		Name="CallFsSrGen"
+		Inputs="@(FsSrGen)"
+		Outputs="@(FsSrGen->'$(FsSrGenOutputFolder)%(Filename).fs');@(FsSrGen->'$(FsSrGenOutputFolder)%(Filename).resx')"
+		Condition="'@(FsSrGen)'!=''">
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsSrGenOutputFolder)"/>
+    <!-- Call FsSrGen -->
+    <FsSrGen
+      InputFile="%(FsSrGen.FullPath)"
+      OutputFsFile="$(FsSrGenOutputFolder)%(FsSrGen.Filename).fs"
+      OutputResxFile="$(FsSrGenOutputFolder)%(FsSrGen.Filename).resx"
+      ToolPath="$(FsSrGenToolPath)"
+      >
+    </FsSrGen>
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(FsSrGenOutputFolder)%(FsSrGen.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+    <CreateItem Include="$(FsSrGenOutputFolder)%(FsSrGen.Filename).resx">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+    <!-- Make the outputs magically part of the project -->
+    <CreateItem Include="$(FsSrGenOutputFolder)%(FsSrGen.Filename).fs">
+      <Output TaskParameter="Include" ItemName="CompileBefore"/>
+    </CreateItem>
+    <CreateItem Include="$(FsSrGenOutputFolder)%(FsSrGen.Filename).resx"
+                AdditionalMetadata="ManifestResourceName=%(FsSrGen.Filename)">
+      <!-- Note AdditionalMetadata above; we need the name in the manifest to be Foo.resources and not e.g. obj.Debug.Foo.resources -->
+      <Output TaskParameter="Include" ItemName="EmbeddedResource"/>
+    </CreateItem>
+  </Target>
+
+  <ItemGroup>
+    <AvailableItemName Include="FsSrGen">
+      <Visible>false</Visible>
+    </AvailableItemName>
+  </ItemGroup>
+</Project>

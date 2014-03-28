@@ -1,0 +1,4 @@
+#r "provider_EVIL_PROVIDER_NamespaceName_Exception.dll"
+
+open FSharp.EvilProviderWhereNamespaceNameRaisesException
+

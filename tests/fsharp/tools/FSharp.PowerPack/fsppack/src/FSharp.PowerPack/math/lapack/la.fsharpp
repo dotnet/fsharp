@@ -1,0 +1,92 @@
+"General"
+{
+"ProjectIdGuid" = "{B21DA0EE-6F5A-47E5-BDD9-86CA13B1D3AF}"
+}
+"Configurations"
+{
+    "Debug|Win32"
+    {
+    "ProjectType" = "DLL"
+    "OptLevel" = "3"
+    "StrongNamingLevel" = "None"
+    "OutputPath" = ""
+    "SearchPath" = ""
+    "StrongNameFile" = ""
+    "OutputBase" = ""
+    "CustomCommandLine" = ""
+    "CustomCompiler" = ""
+    "DebugCheck" = "TRUE"
+    "CustomCompilationCheck" = "FALSE"
+    "DebugStartMode" = "0"
+    "StartApp" = ""
+    "StartAppPath" = ""
+    "CustomStartupArguments" = ""
+    }
+    "Release|Win32"
+    {
+    "ProjectType" = "EXE"
+    "OptLevel" = "3"
+    "StrongNamingLevel" = "None"
+    "OutputPath" = ""
+    "SearchPath" = ""
+    "StrongNameFile" = ""
+    "OutputBase" = ""
+    "CustomCommandLine" = ""
+    "CustomCompiler" = ""
+    "DebugCheck" = "FALSE"
+    "CustomCompilationCheck" = "FALSE"
+    "DebugStartMode" = "0"
+    "StartApp" = ""
+    "StartAppPath" = ""
+    "CustomStartupArguments" = ""
+    }
+}
+"Files"
+{
+    "service.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "service.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lapack_base.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lapack_service.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lapack_service_mkl.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "lapack_service_netlib.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "linear_algebra_service.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "linear_algebra_managed.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+    "linear_algebra.fsi"
+    {
+    "ProjRelPath" = "T"
+    }
+    "linear_algebra.fs"
+    {
+    "ProjRelPath" = "T"
+    }
+}
+"ProjStartupServices"
+{
+}
+"Globals"
+{
+}

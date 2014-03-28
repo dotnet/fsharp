@@ -1,0 +1,1 @@
+fsc /platform:x86 /noframework ..\..\..\..\projects\HelperLKGTools\FindUnusedResources\Program.fs /r:c:\windows\microsoft.net\framework\v2.0.50727\mscorlib.dll /r:c:\windows\microsoft.net\framework\v2.0.50727\system.dll /r:"c:\Program Files\Reference Assemblies\Microsoft\Framework\.NETFramework\v3.5\Profile\Client\System.Core.dll" /r:fsharp.core.dll /o:FindUnusedResources.exe

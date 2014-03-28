@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpPowerPackSourcesRoot>..\..\..</FSharpPowerPackSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpPowerPackSourcesRoot)\CodePlex.Settings.targets"/>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <SchemaVersion>2.0</SchemaVersion>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <DocumentationFile>Test.PowerPack.Math.Providers.xml</DocumentationFile>
+    <NoWarn>$(NoWarn);58;62</NoWarn>
+  </PropertyGroup>
+  <!-- These dummy entries are needed for F# Beta2 -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="service.fsi" />
+    <Compile Include="service.fs" />
+    <Compile Include="lapack_base.fs" />
+    <Compile Include="lapack_service_mkl.fsi" />
+    <Compile Include="lapack_service_mkl.fs" />
+    <Compile Include="lapack_service_netlib.fsi" />
+    <Compile Include="lapack_service_netlib.fs" />
+    <Compile Include="linear_algebra_service.fs" />
+    <Compile Include="linear_algebra_managed.fs" />
+    <Compile Include="linear_algebra.fsi" />
+    <Compile Include="linear_algebra.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <ProjectReference Include="..\..\Test.PowerPack.fsproj"  >
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>Test.PowerPack</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(FSharpPowerPackSourcesRoot)\CodePlex.targets"/>
+  <Import Project="$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets" Condition="!Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')" />
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" Condition="Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')"  />
+</Project>

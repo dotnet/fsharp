@@ -1,0 +1,13 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Target Name="Build">
+    <MSBuild Projects="@(ProjectFiles)" Targets="Build"/>
+  </Target>
+
+  <Target Name="Rebuild">
+    <MSBuild Projects="@(ProjectFiles)" Targets="Rebuild"/>
+  </Target>
+
+  <Target Name="Clean">
+    <MSBuild Projects="@(ProjectFiles)" Targets="Clean"/>
+  </Target>
+</Project>

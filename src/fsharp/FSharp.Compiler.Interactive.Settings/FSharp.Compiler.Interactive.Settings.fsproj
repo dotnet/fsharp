@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{649FA588-F02E-457C-9FCF-87E46407481E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
+    <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <ItemGroup>
+      <FsSrGen Include="..\FSInteractiveSettings.txt">
+        <Link>FSInteractiveSettings.txt</Link>
+      </FsSrGen>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs">
+      <Link>assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs</Link>
+    </Compile>
+    <Compile Include="..\fsiaux.fsi">
+      <Link>fsiaux.fsi</Link>
+    </Compile>
+    <Compile Include="..\fsiaux.fs">
+      <Link>fsiaux.fs</Link>
+    </Compile>
+    <Compile Include="..\fsiattrs.fs">
+      <Link>fsiattrs.fs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+				<Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+				<Name>FSharp.Core</Name>
+		</ProjectReference>
+	</ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  </Project>

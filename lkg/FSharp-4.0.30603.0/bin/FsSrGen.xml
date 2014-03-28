@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>FsSrGen</name></assembly>
+<members>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FSSRGen.Implementation.Err``1(System.String,System.Int32,System.String)">
+<summary>
+ Err(filename, line, msg)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:FSSRGen.Implementation">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:MainImpl.MainStuff">
+
+</member>
+</members>
+</doc>

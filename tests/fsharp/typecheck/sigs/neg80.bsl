@@ -1,0 +1,2 @@
+
+neg80.fsx(79,5,79,6): parse error FS0010: Unexpected symbol '|' in pattern matching

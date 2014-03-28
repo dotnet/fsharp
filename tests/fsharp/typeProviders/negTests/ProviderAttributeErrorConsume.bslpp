@@ -1,0 +1,4 @@
+
+providerAttributeErrorConsume.fsx(1,1,1,48): parse error FS3031: The type provider '<ASSEMBLY>' reported an error: Assembly attribute 'TypeProviderAssemblyAttribute' refers to a designer assembly 'Invalid.Assembly.Name' which cannot be loaded or doesn't exist. Could not load file or assembly '<URIPATH>Invalid.Assembly.Name.dll' or one of its dependencies. The system cannot find the file specified.
+
+providerAttributeErrorConsume.fsx(1,1,1,48): parse error FS3005: Referenced assembly '<ASSEMBLY>' has assembly level attribute 'Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute' but no public type provider classes were found

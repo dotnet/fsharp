@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpPowerPackSourcesRoot>..</FSharpPowerPackSourcesRoot>
+    <Name>Test.PowerPack.Linq</Name>
+  </PropertyGroup>
+  <Import Project="$(FSharpPowerPackSourcesRoot)\CodePlex.Settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4c2ed03b-5ace-427b-8285-ad333e60f35e}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Test.PowerPack.Linq</AssemblyName>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <DocumentationFile>Test.PowerPack.Linq.xml</DocumentationFile>
+    <NoWarn>$(NoWarn);9</NoWarn>
+  </PropertyGroup>
+  <!-- These dummy entries are needed for F# Beta2 -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  </PropertyGroup>
+  <!-- References -->
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+      <Name>System.Core</Name>
+      <Private>False</Private>
+      <AssemblyName>System.Core.dll</AssemblyName>
+    </Reference>
+    <Reference Include="FSharp.Core" />
+  </ItemGroup>
+  <!-- Files -->
+  <ItemGroup>
+    <Compile Include="..\assemblyinfo.Common.fs">
+      <Link>assemblyinfo.Common.fs</Link>
+    </Compile>
+    <Compile Include="assemblyinfo.FSharp.PowerPack.Linq.dll.fs">
+      <Link>assemblyinfo.FSharp.PowerPack.Linq.dll.fs</Link>
+    </Compile>
+    <Compile Include="FuncConvertExtensions.fsi" />
+    <Compile Include="FuncConvertExtensions.fs" />
+    <Compile Include="Linq.fsi" />
+    <Compile Include="Linq.fs" />
+    <Compile Include="LinqQueries.fsi" />
+    <Compile Include="LinqQueries.fs" />
+    <Compile Include="Assembly.fs" />
+  </ItemGroup>
+  <Import Project="$(FSharpPowerPackSourcesRoot)\CodePlex.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets')" />
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" Condition="(!Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets')) And (Exists('$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets'))" />
+  <Import Project="$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets" Condition="(!Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets')) And (!Exists('$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets')) And (Exists('$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets'))" />
+</Project>

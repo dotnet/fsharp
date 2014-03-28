@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>FSharp.Core</AssemblyName>
+    <DefineConstants>RUNTIME;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFramework)'=='sl5-compiler'">EXTRAS_FOR_SILVERLIGHT_COMPILER;$(DefineConstants)</DefineConstants>
+    <OtherFlags Condition=" '$(TargetFramework)'=='sl5-compiler'">$(OtherFlags) --nodebugdata</OtherFlags>
+    <NoWarn>44;45;55;62;75;1204</NoWarn>
+    <BaseAddress>0x05000000</BaseAddress>
+    <CompilingFsLib>true</CompilingFsLib>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --optimize --maxerrors:20 --extraoptimizationloops:1 </OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='net20'">$(OtherFlags) --compiling-fslib-20:"$(SystemRoot)\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll" </OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='net40'">$(OtherFlags) --compiling-fslib-40</OtherFlags>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin\fsc-proto.exe">
+      <Visible>false</Visible>
+    </CustomAdditionalCompileInputs>
+    <EmbeddedResource Include="FSCore.resx">
+      <Link>FSCore.resx</Link>
+    </EmbeddedResource>
+    <Compile Include="prim-types-prelude.fsi">
+      <Link>prim-types-prelude.fsi</Link>
+    </Compile>
+    <Compile Include="prim-types-prelude.fs">
+      <Link>prim-types-prelude.fs</Link>
+    </Compile>
+    <Compile Include="SR.fs">
+      <Link>SR.fs</Link>
+    </Compile>
+    <Compile Include="prim-types.fsi">
+      <Link>prim-types.fsi</Link>
+    </Compile>
+    <Compile Include="prim-types.fs">
+      <Link>prim-types.fs</Link>
+    </Compile>
+    <Compile Include="local.fsi">
+      <Link>local.fsi</Link>
+    </Compile>
+    <Compile Include="local.fs">
+      <Link>local.fs</Link>
+    </Compile>
+    <Compile Include="array2.fsi">
+      <Link>array2.fsi</Link>
+    </Compile>
+    <Compile Include="array2.fs">
+      <Link>array2.fs</Link>
+    </Compile>
+    <Compile Include="option.fsi">
+      <Link>option.fsi</Link>
+    </Compile>
+    <Compile Include="option.fs">
+      <Link>option.fs</Link>
+    </Compile>
+    <Compile Include="collections.fsi">
+      <Link>collections.fsi</Link>
+    </Compile>
+    <Compile Include="collections.fs">
+      <Link>collections.fs</Link>
+    </Compile>
+    <Compile Include="seq.fsi">
+      <Link>seq.fsi</Link>
+    </Compile>
+    <Compile Include="seq.fs">
+      <Link>seq.fs</Link>
+    </Compile>
+    <Compile Include="string.fsi">
+      <Link>string.fsi</Link>
+    </Compile>
+    <Compile Include="string.fs">
+      <Link>string.fs</Link>
+    </Compile>
+    <Compile Include="list.fsi">
+      <Link>list.fsi</Link>
+    </Compile>
+    <Compile Include="list.fs">
+      <Link>list.fs</Link>
+    </Compile>
+    <Compile Include="array.fsi">
+      <Link>array.fsi</Link>
+    </Compile>
+    <Compile Include="array.fs">
+      <Link>array.fs</Link>
+    </Compile>
+    <Compile Include="array3.fsi">
+      <Link>array3.fsi</Link>
+    </Compile>
+    <Compile Include="array3.fs">
+      <Link>array3.fs</Link>
+    </Compile>
+    <Compile Include="map.fsi">
+      <Link>map.fsi</Link>
+    </Compile>
+    <Compile Include="map.fs">
+      <Link>map.fs</Link>
+    </Compile>
+    <Compile Include="set.fsi">
+      <Link>set.fsi</Link>
+    </Compile>
+    <Compile Include="set.fs">
+      <Link>set.fs</Link>
+    </Compile>
+    <Compile Include="reflect.fsi">
+      <Link>reflect.fsi</Link>
+    </Compile>
+    <Compile Include="reflect.fs">
+      <Link>reflect.fs</Link>
+    </Compile>
+    <Compile Include="event.fsi">
+      <Link>event.fsi</Link>
+    </Compile>
+    <Compile Include="event.fs">
+      <Link>event.fs</Link>
+    </Compile>
+    <Compile Include="math/n.fsi">
+      <Link>n.fsi</Link>
+    </Compile>
+    <Compile Include="math/n.fs">
+      <Link>n.fs</Link>
+    </Compile>
+    <Compile Include="math/z.fsi">
+      <Link>z.fsi</Link>
+    </Compile>
+    <Compile Include="math/z.fs">
+      <Link>z.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\sformat.fsi">
+      <Link>sformat.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\utils\sformat.fs">
+      <Link>sformat.fs</Link>
+    </Compile>
+    <Compile Include="printf.fsi">
+      <Link>printf.fsi</Link>
+    </Compile>
+    <Compile Include="printf.fs">
+      <Link>printf.fs</Link>
+    </Compile>
+    <Compile Include="quotations.fsi">
+      <Link>quotations.fsi</Link>
+    </Compile>
+    <Compile Include="quotations.fs">
+      <Link>quotations.fs</Link>
+    </Compile>
+    <Compile Include="nativeptr.fsi">
+      <Link>nativeptr.fsi</Link>
+    </Compile>
+    <Compile Include="nativeptr.fs">
+      <Link>nativeptr.fs</Link>
+    </Compile>
+    <Compile Include="control.fsi">
+      <Link>control.fsi</Link>
+    </Compile>
+    <Compile Include="control.fs">
+      <Link>control.fs</Link>
+    </Compile>
+    <Compile Include="Linq.fsi">
+      <Visible>true</Visible>
+      <Link>Linq.fsi</Link>
+    </Compile>
+    <Compile Include="Linq.fs">
+      <Visible>true</Visible>
+      <Link>Linq.fs</Link>
+    </Compile>
+    <Compile Include="MutableTuple.fs">
+      <Visible>true</Visible>
+      <Link>MutableTuple.fs</Link>
+    </Compile>
+    <Compile Include="QueryExtensions.fs">
+      <Visible>true</Visible>
+      <Link>QueryExtensions.fs</Link>
+    </Compile>
+    <Compile Include="Query.fsi" >
+      <Visible>true</Visible>
+      <Link>Query.fsi</Link>
+    </Compile>
+    <Compile Include="Query.fs" >
+      <Visible>true</Visible>
+      <Link>Query.fs</Link>
+    </Compile>
+    <Compile Include="SI.fs" >
+      <Visible>true</Visible>
+      <Link>SI.fs</Link>
+    </Compile>
+    <Compile Include="fslib-extra-pervasives.fsi">
+      <Link>fslib-extra-pervasives.fsi</Link>
+    </Compile>
+    <Compile Include="fslib-extra-pervasives.fs">
+      <Link>fslib-extra-pervasives.fs</Link>
+    </Compile>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
+      <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
+    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' OR 
+                                               '$(TargetFramework)' == 'sl5-compiler' OR 
+                                               '$(TargetFramework)' == 'portable47' OR 
+                                               '$(TargetFramework)' == 'XNA\5.0' OR 
+                                               '$(TargetFramework)' == 'sl3-wp' "/>
+    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' "/> 
+    <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR 
+                                               '$(TargetFramework)' == 'sl5-compiler' OR 
+                                               '$(TargetFramework)' == 'portable47' OR 
+                                               '$(TargetFramework)' == 'XNA\5.0' OR 
+                                               '$(TargetFramework)' == 'sl3-wp' "/>
+  </ItemGroup>
+  <!-- References -->
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <!-- Hook compilation phase to do custom work -->
+  <PropertyGroup>
+    <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyToBuiltBin</PrepareForRunDependsOn>
+  </PropertyGroup>
+  <Target Name="CopyToBuiltBin">
+    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
+    </Copy>
+    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
+    </Copy>
+  </Target>
+</Project>

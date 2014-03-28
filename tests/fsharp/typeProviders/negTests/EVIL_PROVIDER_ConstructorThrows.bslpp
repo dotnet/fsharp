@@ -1,0 +1,4 @@
+
+EVIL_PROVIDER_ConstructorThrows.fsx(2,1,2,50): parse error FS3053: The type provider 'Provider.EvilProviderConstructorThrows' reported an error: The type provider constructor has thrown an exception: Kaboom
+
+EVIL_PROVIDER_ConstructorThrows.fsx(2,1,2,50): parse error FS3005: Referenced assembly '<ASSEMBLY>' has assembly level attribute 'Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute' but no public type provider classes were found

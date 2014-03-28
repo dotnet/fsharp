@@ -1,0 +1,131 @@
+## If no tags specified, then the test is excluded on any configuration
+# 	test\hoge\piyo (...) -- failed
+# 
+## Adding one tag means: exclude this test on that particular configuration
+## The following test will be excluded then doing MT runs of type 4.0->2.0->4.0
+#MT402040	test\hoge\piyo (...) -- failed
+
+## Adding more than one means: exclude this test on the configuration that is
+## the intersection of the configurations specified
+## The following test will be excluded when doing MT runs of type 4.0->2.0->4.0
+## only if we are running on a 64bit machine
+#MT402040,OS64BIT	test\hoge\piyo (...) -- failed
+#OS32BIT		test\hoge\piyo (...) -- failed
+
+## A bang preceeding a tag means its negation
+## The following test will be excluded when running on a machine where NetFx3.5 is not installed
+#!NETFX35	test\hoge\piyo (...) -- failed
+
+# Tags currently supported (see fsharpqa\testenv\bin\KnownFailRewriter.fsx for complete logic/tags):
+# NETFX20	- NetFx2.0 installed
+# NETFX30	- NetFx3.0 installed
+# NETFX35	- NetFx3.5 installed
+# NETFX40	- NetFx4.0 installed
+# FSHARPRUNTIME20 - F# Runtime 2.0 installed (Dev10)
+# OS32BIT	- OS is 32bit
+# OS64BIT	- OS is 64bit
+# CHK           - F# build CHK
+# RET           - F# build RET
+# POWERPACK	- F# Powerpack is installed
+# MT402040	- This is a MT run of type 4.0 -> 2.0 -> 4.0
+# MT402020	- This is a MT run of type 4.0 -> 2.0 -> 2.0
+
+# Redmond suite (RunAll.pl) known failures
+
+OS32BIT						Conformance\DeclarationElements\P-invokeDeclarations (CallingConventions01.fs - x64) -- This test is not meant to run on a 32bit OS
+MT402020					Conformance\Expressions\ApplicationExpressions\ObjectConstruction (E_ObjectConstruction01.fs) -- DevDiv:90622	
+MT402040					Conformance\Expressions\ApplicationExpressions\ObjectConstruction (E_ObjectConstruction01.fs) -- DevDiv:90622	
+!CURRENTUICULTURE1033		CompilerOptions\fsc\codepage (E_NegativeArgument01.fs) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\codepage (E_NegativeArgument01.fs-fsi) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\codepage (E_OutOfRangeArgument01.fs) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\codepage (E_OutOfRangeArgument01.fs) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\codepage (E_OutOfRangeArgument01.fs-fsi) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\codepage (E_OutOfRangeArgument01.fs-fsi) -- Testcase not fully loc
+!NETFX20					CompilerOptions\fsc\platform (anycpu32bitpreferred - downtarget) -- requires NetFx2.0
+!CURRENTUICULTURE1033		CompilerOptions\fsc\reference (MissingDLL.fs) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\reference (MissingDLL.fsx (-r )) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\reference (MissingDLL.fsx (-r:)) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\reference (MissingEXE.fs) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\reference (MissingEXE.fsx (-r )) -- Testcase not fully loc
+!CURRENTUICULTURE1033		CompilerOptions\fsc\reference (MissingEXE.fsx (-r:)) -- Testcase not fully loc
+MT402020					Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups (TypeInGlobalNamespace01.fs) -- Harness limitation (FSC_PIPE)
+MT402020					Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups (TypeInGlobalNamespace02.fs) -- failed
+MT402040					Conformance\DeclarationElements\Events\basic (SanityCheck02.fs - /MD) -- FSHARP1.0:5704 
+MT402020					Conformance\DeclarationElements\P-invokeDeclarations (CallingConventions01.fs - x64) -- Harness limitation that does not work on 64bit
+MT402040					Conformance\DeclarationElements\P-invokeDeclarations (CallingConventions01.fs - x64) -- Harness limitation that does not work on 64bit
+MT402040					Conformance\Expressions\DataExpressions\AddressOf (addressof003.fs) -- Harness limitation that does not work on 64bit
+MT402040					Conformance\Expressions\SyntacticSugar (Slices03.fs /MD) -- FSHARP1.0:5704 
+MT402040					Conformance\InferenceProcedures\FunctionApplicationResolution (InferGenericArgAsTuple02.fs - /MD) -- FSHARP1.0:5704 
+MT402020					Conformance\ObjectOrientedTypeDefinitions\AbstractMembers (DerivedClass.fs - from F#) -- Harness limitation (FSC_PIPE)
+MT402040					Conformance\ObjectOrientedTypeDefinitions\AbstractMembers (DerivedClass.fs - from F#) -- Harness limitation (FSC_PIPE)
+!NETFX30					Conformance\ObjectOrientedTypeDefinitions\ClassTypes\LetDoDeclarations (ImplicitLambda01.fs) -- failed
+CHK							Diagnostics\NONTERM (tuplewithlazy01.fs) -- DEVDIV:64339
+CHK							Diagnostics\NONTERM (tuplewithlazy01b.fs) -- DEVDIV:64339
+!CURRENTUICULTURE1033		InteractiveSession\Misc (E_InheritClassWithoutDefCtor.fs) -- Testcase not fully loc
+MT402020					Libraries\Core\PartialTrust (PartialTrust01.fs) -- Harness limitation (FSC_PIPE)
+!FSHARPRUNTIME20			MultiTargeting (E_BadPathToFSharpCore.fs) -- need NetFx2.0/Fsharp Runtime 2.0
+!FSHARPRUNTIME20			MultiTargeting (E_BadPathToFSharpCore.fsx) -- need NetFx2.0/Fsharp Runtime 2.0
+!FSHARPRUNTIME20			MultiTargeting (E_MissingReferenceToFSharpCore20.fs) -- need NetFx2.0/Fsharp Runtime 2.0
+MT402020					Optimizations\AssemblyBoundary (InlineWithPrivateValuesRef) -- Harness limitation (FSC_PIPE)
+MT402040					Optimizations\AssemblyBoundary (InlineWithPrivateValuesStruct) -- Harness limitation (FSC_PIPE)
+MT402020					Optimizations\AssemblyBoundary (InlineWithPrivateValuesStruct) --Harness limitation (FSC_PIPE)
+!CURRENTUICULTURE1033		Printing (LazyValues01NetFx4.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		Printing (LazyValues02NetFx4.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		Printing (LazyValues03NetFx4.fsx) -- Testcase not fully loc
+CHK							Stress (2766.fs) -- failed
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\EdmxFile (E_StaticParamBlank.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_AssemblyIsNotAWebService.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_BackslashBackslash.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_Dot.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_DotDot.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_EmptyString.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_FsharpFile.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\OdataService\Diagnostics (E_HttpSite.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\SqlEntityConnection\Diagnostics (E_LocWarningAndErrorsFromEdmGen.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\WsdlService\Diagnostics (E_DotDot.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\BuiltIn\WsdlService\Diagnostics (E_UriFormatNotSupported.fsx) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq01.fs) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\Misc (E_IQueryableWithLocalSeq02.fs) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\Misc (E_ManyErrors01.fsx) -- DevDiv:311454
+!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (NNN) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (NYN) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (YNN) -- Testcase not fully loc
+!CURRENTUICULTURE1033		TypeProviders\RuntimeDesignTimeAssembly\LoadingLogic (YYN) -- Testcase not fully loc
+
+# IDE unit test known failures
+
+!NETFX35		UnitTests.Tests.LanguageService.CompletionList.AutoCompletionMSBuild.FlagsAndSettings.Bug1969 -- failed
+!NETFX35		UnitTests.Tests.LanguageService.CompletionList.AutoCompletionProjectSystem.FlagsAndSettings.Bug1969 -- failed
+				UnitTests.Tests.LanguageService.General.MSBuild.PublicSurfaceArea.DotNetReflection -- gazillion dependencies on suitebin DLLs
+				UnitTests.Tests.LanguageService.General.ProjectSystem.PublicSurfaceArea.DotNetReflection -- gazillion dependencies on suitebin DLLs
+!NETFX35		UnitTests.Tests.ProjectSystem.Config.TargetPlatform -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.Automation.OutputGroup.OUTPUTLOC -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.BuildAndClean -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.DebuggingEXESucceeds -- failed
+				UnitTests.Tests.ProjectSystem.Miscellaneous.ErrorReporting.EmptyModuleReportedAtTheLastLine -- very noisy test
+!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.LoadProject.x86 -- failed
+				UnitTests.Tests.ProjectSystem.Miscellaneous.PreBuildEvent -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.Miscellaneous.TestBuildActions -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.MultiTargeting.Multitargeting.CheckIconForMatchedAssemblyReference20 -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.MultiTargeting.Multitargeting.CheckIconForMismatchedAssemblyReference -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.BrowseTab.DifferentVersion -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.BrowseTab.SameVersion -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.NetTab -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate1 -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.WithBadDuplicates -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.WithExactDuplicates -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.Works -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.LoadedFsProj.WorksWithFilenames -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.OutsideProjectDir -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.SameVersion -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.ReferenceResolution.Bug4423.NonFxAssembly.NetTab -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.References.Bug787899.AddDuplicateResolved -- failed
+!NETFX35		UnitTests.Tests.ProjectSystem.References.References.Bug787899.AddDuplicateUnresolved -- failed
+
+# compiler/runtime unit test known failures
+
+!NETFX35					FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections.SeqModule2.SystemLinqSelectWithException -- failed
+!NETFX35					FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections.SeqModule2.SystemLinqSelectWithSideEffects -- failed
+!CURRENTUICULTURE1033		FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control.AsyncModule.ContinuationsThreadingDetails.AsyncSansSyncContext -- failed
+!CURRENTUICULTURE1033		FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control.AsyncModule.ContinuationsThreadingDetails.AsyncWithSyncContext -- failed

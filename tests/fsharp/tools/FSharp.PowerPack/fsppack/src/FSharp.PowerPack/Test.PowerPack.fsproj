@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpPowerPackSourcesRoot>..</FSharpPowerPackSourcesRoot>
+    <Name>Test.PowerPack</Name>
+  </PropertyGroup>
+  <Import Project="$(FSharpPowerPackSourcesRoot)\CodePlex.Settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{649FA588-F02E-457C-9FCF-87E46407481F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Test.PowerPack</AssemblyName>
+    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TreatWarningsAsErrors>
+    </TreatWarningsAsErrors>
+    <DocumentationFile>Test.PowerPack.xml</DocumentationFile>
+    <NoWarn>$(NoWarn);9;44;60;35;42;62;86;47;40;51</NoWarn>
+  </PropertyGroup>
+  <!-- These dummy entries are needed for F# Beta2 -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\assemblyinfo.Common.fs">
+      <Link>assemblyinfo.Common.fs</Link>
+    </Compile>
+    <Compile Include="assemblyinfo.FSharp.PowerPack.dll.fs">
+      <Link>assemblyinfo.FSharp.PowerPack.dll.fs</Link>
+    </Compile>
+    <Compile Include="sformat.fsi" />
+    <Compile Include="sformat.fs" />
+    <Compile Include="math\q.fsi">
+      <Link>q.fsi</Link>
+    </Compile>
+    <Compile Include="math\q.fs">
+      <Link>q.fs</Link>
+    </Compile>
+    <Compile Include="Compat.String.fsi" />
+    <Compile Include="Compat.String.fs" />
+    <Compile Include="Compat.List.fsi" />
+    <Compile Include="Compat.List.fs" />
+    <Compile Include="Compat.Array.fsi" />
+    <Compile Include="Compat.Array.fs" />
+    <Compile Include="Compat.Array2D.fsi" />
+    <Compile Include="Compat.Array2D.fs" />
+    <Compile Include="Compat.Seq.fsi" />
+    <Compile Include="Compat.Seq.fs" />
+    <Compile Include="resizearray.fsi" />
+    <Compile Include="resizearray.fs" />
+    <Compile Include="HashMultiMap.fsi" />
+    <Compile Include="HashMultiMap.fs" />
+    <Compile Include="AsyncOperations.fsi" />
+    <Compile Include="AsyncOperations.fs" />
+    <Compile Include="AsyncWorker.fsi" />
+    <Compile Include="AsyncWorker.fs" />
+    <Compile Include="HashSet.fsi" />
+    <Compile Include="HashSet.fs" />
+    <Compile Include="TaggedCollections.fsi" />
+    <Compile Include="TaggedCollections.fs" />
+    <Compile Include="TaggedHash.fsi" />
+    <Compile Include="TaggedHash.fs" />
+    <Compile Include="Measure.fsi" />
+    <Compile Include="Measure.fs" />
+    <Compile Include="SI.fs" />
+    <Compile Include="PhysicalConstants.fs" />
+    <Compile Include="lazy.fsi" />
+    <Compile Include="lazy.fs" />
+    <Compile Include="permutation.fsi" />
+    <Compile Include="permutation.fs" />
+    <Compile Include="math\INumeric.fsi">
+      <Link>INumeric.fsi</Link>
+    </Compile>
+    <Compile Include="math\INumeric.fs">
+      <Link>INumeric.fs</Link>
+    </Compile>
+    <Compile Include="math\complex.fsi">
+      <Link>complex.fsi</Link>
+    </Compile>
+    <Compile Include="math\complex.fs">
+      <Link>complex.fs</Link>
+    </Compile>
+    <Compile Include="math\associations.fsi">
+      <Link>associations.fsi</Link>
+    </Compile>
+    <Compile Include="math\associations.fs">
+      <Link>associations.fs</Link>
+    </Compile>
+    <Compile Include="math\matrix.fsi">
+      <Link>matrix.fsi</Link>
+    </Compile>
+    <Compile Include="math\matrix.fs">
+      <Link>matrix.fs</Link>
+    </Compile>
+    <Compile Include="NativeArray.fsi" />
+    <Compile Include="NativeArray.fs" />
+    <Compile Include="math\NativeArrayExtensions.fsi" />
+    <Compile Include="math\NativeArrayExtensions.fs" />
+    <Compile Include="prim-lexing.fsi">
+      <Link>prim-lexing.fsi</Link>
+    </Compile>
+    <Compile Include="prim-lexing.fs">
+      <Link>prim-lexing.fs</Link>
+    </Compile>
+    <Compile Include="prim-parsing.fsi">
+      <Link>prim-parsing.fsi</Link>
+    </Compile>
+    <Compile Include="prim-parsing.fs">
+      <Link>prim-parsing.fs</Link>
+    </Compile>
+    <Compile Include="byte.fsi">
+      <Link>byte.fsi</Link>
+    </Compile>
+    <Compile Include="byte.fs">
+      <Link>byte.fs</Link>
+    </Compile>
+    <Compile Include="char.fsi">
+      <Link>char.fsi</Link>
+    </Compile>
+    <Compile Include="char.fs">
+      <Link>char.fs</Link>
+    </Compile>
+    <Compile Include="sbyte.fs">
+      <Link>sbyte.fs</Link>
+    </Compile>
+    <Compile Include="int16.fs">
+      <Link>int16.fs</Link>
+    </Compile>
+    <Compile Include="int32.fsi">
+      <Link>int32.fsi</Link>
+    </Compile>
+    <Compile Include="int32.fs">
+      <Link>int32.fs</Link>
+    </Compile>
+    <Compile Include="int64.fsi">
+      <Link>int64.fsi</Link>
+    </Compile>
+    <Compile Include="int64.fs">
+      <Link>int64.fs</Link>
+    </Compile>
+    <Compile Include="uint32.fsi">
+      <Link>uint32.fsi</Link>
+    </Compile>
+    <Compile Include="uint32.fs">
+      <Link>uint32.fs</Link>
+    </Compile>
+    <Compile Include="uint64.fsi">
+      <Link>uint64.fsi</Link>
+    </Compile>
+    <Compile Include="uint64.fs">
+      <Link>uint64.fs</Link>
+    </Compile>
+    <Compile Include="float.fsi">
+      <Link>float.fsi</Link>
+    </Compile>
+    <Compile Include="float.fs">
+      <Link>float.fs</Link>
+    </Compile>
+    <Compile Include="hashtbl.fsi">
+      <Link>hashtbl.fsi</Link>
+    </Compile>
+    <Compile Include="hashtbl.fs">
+      <Link>hashtbl.fs</Link>
+    </Compile>
+    <Compile Include="arg.fsi">
+      <Link>arg.fsi</Link>
+    </Compile>
+    <Compile Include="arg.fs">
+      <Link>arg.fs</Link>
+    </Compile>
+    <Compile Include="sys.fsi">
+      <Link>sys.fsi</Link>
+    </Compile>
+    <Compile Include="sys.fs">
+      <Link>sys.fs</Link>
+    </Compile>
+    <Compile Include="obj.fsi">
+      <Link>obj.fsi</Link>
+    </Compile>
+    <Compile Include="obj.fs">
+      <Link>obj.fs</Link>
+    </Compile>
+    <Compile Include="filename.fsi">
+      <Link>filename.fsi</Link>
+    </Compile>
+    <Compile Include="filename.fs">
+      <Link>filename.fs</Link>
+    </Compile>
+    <Compile Include="map.fsi">
+      <Link>map.fsi</Link>
+    </Compile>
+    <Compile Include="map.fs">
+      <Link>map.fs</Link>
+    </Compile>
+    <Compile Include="set.fsi">
+      <Link>set.fsi</Link>
+    </Compile>
+    <Compile Include="set.fs">
+      <Link>set.fs</Link>
+    </Compile>
+    <Compile Include="printexc.fsi">
+      <Link>printexc.fsi</Link>
+    </Compile>
+    <Compile Include="printexc.fs">
+      <Link>printexc.fs</Link>
+    </Compile>
+    <Compile Include="pervasives.fsi">
+      <Link>pervasives.fsi</Link>
+    </Compile>
+    <Compile Include="pervasives.fs">
+      <Link>pervasives.fs</Link>
+    </Compile>
+    <Compile Include="buffer.fsi">
+      <Link>buffer.fsi</Link>
+    </Compile>
+    <Compile Include="buffer.fs">
+      <Link>buffer.fs</Link>
+    </Compile>
+    <Compile Include="lexing.fsi">
+      <Link>lexing.fsi</Link>
+    </Compile>
+    <Compile Include="lexing.fs">
+      <Link>lexing.fs</Link>
+    </Compile>
+    <Compile Include="parsing.fsi">
+      <Link>parsing.fsi</Link>
+    </Compile>
+    <Compile Include="parsing.fs">
+      <Link>parsing.fs</Link>
+    </Compile>
+    <Compile Include="lazylist.fsi">
+      <Link>lazylist.fsi</Link>
+    </Compile>
+    <Compile Include="lazylist.fs">
+      <Link>lazylist.fs</Link>
+    </Compile>
+    <Compile Include="PowerPack.fs" />
+    <Compile Include="uint16.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Net" Condition="'$(targetCLIDir)' == 'Silverlight/2.0/' OR '$(targetCLIDir)' == 'Silverlight/3.5/' " />
+    <Reference Include="FSharp.Core" />
+  </ItemGroup>
+  <Import Project="$(FSharpPowerPackSourcesRoot)\CodePlex.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets')" />
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" Condition="(!Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets')) And (Exists('$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets'))" />
+  <Import Project="$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets" Condition="(!Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets')) And (!Exists('$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets')) And (Exists('$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets'))" />
+</Project>

@@ -1,0 +1,22 @@
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         ToolsVersion="4.0">
+
+  <PropertyGroup>
+    <Configuration>Proto</Configuration>
+  </PropertyGroup>
+
+  <!-- Define all ProjectFiles here -->
+  <ItemGroup>
+    <ProjectFiles Include="fsharp\FSharp.Build-proto\FSharp.Build-proto.fsproj"/>
+    <ProjectFiles Include="fsharp\FSharp.Compiler-proto\FSharp.Compiler-proto.fsproj"/>
+    <ProjectFiles Include="fsharp\Fsc-proto\Fsc-proto.fsproj"/>
+  </ItemGroup>
+
+
+  <!-- Insert any customizations for targets here -->
+
+  <Import Project="root.traversal.targets"/>
+
+</Project>
+

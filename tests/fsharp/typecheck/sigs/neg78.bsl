@@ -1,0 +1,2 @@
+
+neg78.fsx(3,15,3,17): parse error FS0010: Unexpected symbol '..' in binding. Expected incomplete structured construct at or before this point or other token.

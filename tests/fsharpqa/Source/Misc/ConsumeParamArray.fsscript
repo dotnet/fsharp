@@ -1,0 +1,35 @@
+// #Regression #Misc 
+#light
+
+// Test that F# can consume C# param arrays.  (Can't use variable number of arguments, rather
+// arguments will just be exposed as taking an array.)
+// FSB 1105, params attributes not supported
+// This is also regression test for FSHARP1.0:3817
+open System
+
+#r "ParamArray.dll"
+open CSharpAssembly
+
+// Apply the attribute
+[<AttributeWithParamArray([| (0 :> obj) |])>]
+type Foo() =
+    [<AttributeWithParamArray([| ("foo" :> obj); ("bar" :> obj) |])>]
+    override this.ToString() = "Stuff"
+
+[<assembly:AttributeWithParamArray ([| |])>]
+do
+    let testPassed =
+        let getTestAttribute (t : Type) =
+            let tyAttributes = t.GetCustomAttributes(false)
+            let attrib = tyAttributes |> Array.find (fun attrib -> match attrib with :? AttributeWithParamArray -> true | _ -> false)
+            (attrib :?> AttributeWithParamArray)
+        
+        let tyFoo = typeof<Foo>
+        let testAtt = getTestAttribute tyFoo
+        if testAtt.Parameters <> [| (0 :> obj) |] then 
+            false
+        else
+            true
+
+    if not testPassed then exit 1
+    exit 0
