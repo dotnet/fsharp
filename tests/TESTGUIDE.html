@@ -331,14 +331,14 @@
 
 <p>The script <tt>tests\RunTests.cmd</tt> has been provided to make execution of the above 3 suites very simple.  You can kick off a full test run of any of the above suites like this:
 <pre>
-RunTests.cmd fsharp
-RunTests.cmd fsharpqa
-RunTests.cmd coreunit
+    RunTests.cmd fsharp
+    RunTests.cmd fsharpqa
+    RunTests.cmd coreunit
 </pre>
 
 <p><tt>RunTests.cmd</tt> sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
 
-<p>If any test cases fail, the FSharp and FSharpQA suites will drop failure detail logs to <tt>tests\runpl.log</tt> or <tt>tests\fsharpqa\source\runpl.log</tt>, respectively.  If execution is halted by the user before completion, the failures file name is instead <tt>xrunpl.log</tt>.
+<p>All test execution logs and result files will be dropped into the <tt>tests</tt> folder, and have file names matching <tt>FSharp_*.*</tt>, <tt>FSharpQA_*.*</tt>, or <tt>CoreUnit_*.*</tt>.
 
 <p><tt>RunTests.cmd</tt> is mostly just a simple wrapper over <tt>tests\fsharpqa\testenv\bin\RunAll.pl</tt>, which has capabilities not discussed here. More advanced test execution scenarios can be achieved by invoking <tt>RunAll.pl</tt> directly.  Run <tt>perl tests\fsharpqa\testenv\bin\RunAll.pl -?</tt> to see a full list of flags and options.
 <h3>More Details</h3>
@@ -366,6 +366,6 @@ RunTests.cmd coreunit
 <h3>Other Tips</h3>
 <ul>
 <li>NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster</li>
-<li>Tests from the FSharp and FSharpQA suites can be run in parallel using the <tt>-procs:N</tt> argument to <tt>RunAll.pl</tt>, or by uncommenting the relevant line in <tt>RunTests.cmd</tt>.</li>
+<li>Tests from the FSharp and FSharpQA suites can be run in parallel using the <tt>-procs:N</tt> argument to <tt>RunAll.pl</tt>, or by uncommenting the relevant line in <tt>RunTests.cmd</tt> (look for PARALLEL_ARG).</li>
 </ul>
 </body>
