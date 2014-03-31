@@ -2,7 +2,7 @@
 
 <head>
     <attribute>
-        <title>F# Compiler Source Drop, (3.1)</title>
+        <title>Visual F# Tools</title>
 
 
         <style type="text/css">
@@ -311,7 +311,7 @@
 
     <p>The compiler is normally compiled as a set of .NET 4.0 components.</p>
 
-    <p><b>Before we start, are sure you&#39;re in the right place?</b></p>
+    <p><b>Before we start, are you sure you&#39;re in the right place?</b></p>
     <ul>
         <li>To learn what F# is and why it&#39;s interesting, go to <a href="http://fsharp.org">fsharp.org</a>   </li>
         <li>To get a free F# environment, go to <a href="http://fsharp.org/use/windows">fsharp.org</a>&nbsp;&nbsp; </li>
@@ -319,11 +319,11 @@
     </ul>
     <p>
         To emphasize, this distribution should not be seen as a way to &quot;get&quot; an F#
-        compiler for immediate use. For that you&#39;re better going to <a href="http://fsharp.org">fsharp.org</a>.
+        compiler for immediate use. For that you&#39;re better off going to <a href="http://fsharp.org">fsharp.org</a>.
     </p>
     <p>
         <b>License:</b> Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A
-        copy of the license can be found in the <a href="license.html">License.html</a> file at the root of this distribution.
+        copy of the license can be found in the <a href="license.txt">License.txt</a> file at the root of this distribution.
         By using this source code in any fashion, you are agreeing to be bound
         by the terms of the Apache License, Version 2.0. You must not remove this notice, or any other, from this software.
     </p>
@@ -338,7 +338,7 @@
     <p>
         The compiler binaries produced are "private" and
         strong-named signed with a test key (src\fsharp\test.snk). They use CLI assembly version nunmber 2.9.9.999. You can place these components in the GAC but they will not replace
-        the components used by normal Visual Studio or normal F# programs.
+        the components used by Visual Studio or other normal F# programs.
     </p>
 
 
@@ -369,13 +369,12 @@
         Some additional tools are required to build the compiler, notably fslex.exe, fsyacc.exe,
         FSharp.PowerPack.Build.Tasks.dll, FsSrGen.exe, FSharp.SRGen.Build.Tasks.dll and the other
         tools found in the lkg directory. These are "Last Known Good" binaries created from a version of the F# Power Pack
-        on CodePlex. If you like you can throw away these binaries and use your own compiled versions of these.
-        tools.
+        on CodePlex. If you like you can throw away these binaries and use your own compiled versions of these tools.
     </p>
 
     <h3>1.  Building a Proto Compiler and the F# core library for .net 4.0 and .net 2.0</h3>
 
-    <p>This uses the lkg compiler to build</p>
+    <p>This uses the lkg compiler to build.  Note that you need the .NET framework 3.5 installed on your machine in order to complete this step.</p>
     <pre>
     cd src 
     gacutil /i ..\lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
@@ -416,7 +415,8 @@
 </pre>
 
     <h3>4. Compiler Tests </h3>
-
+    <p>Below are the very basic commands you can use to execute the included tests. For more details on how to run, debug, and write tests, 
+       see <a href="tests\TESTGUIDE.html">tests\TESTGUIDE.html</a>.</p>
     <li>Building F# Core Unit Tests for .NET 4.0 </li>
     <p>This uses the proto compiler to build the unit tests that check some parts of FSharp.Core.dll and FSharp.Compiler.dll. You must have NUnit installed.</p>
     <pre>
@@ -425,11 +425,12 @@
 
     <li>Running Compiler tests on Windows </li>
 
-    <p>   There are language tests under tests. The test apparatus uses batch files, assuming perl is installed. You can run these on Windows using:</p>
+    <p>   There are language tests under the <tt>tests</tt> directory. The test apparatus uses batch files, assuming perl is installed. You can run these on Windows using:</p>
     <pre>
-    cd ..\tests
+    cd tests
     Runtests.cmd fsharp
-    Runtests.cmd fsharpqa    </pre>
+    Runtests.cmd fsharpqa
+    Runtests.cmd coreunit    </pre>
 
     <h3>5.  [Alternate Build Instructions] Build an optimised F# (Release) compiler for .NET 4.0 profile</h3>
 

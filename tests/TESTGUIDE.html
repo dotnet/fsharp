@@ -1,0 +1,371 @@
+<html>
+
+<head>
+    <attribute>
+        <title>Visual F# Tests</title>
+
+
+        <style type="text/css">
+            TT {
+                font-weight: bold;
+                color: blue;
+                font-size: 10pt;
+            }
+
+            PRE {
+                font-weight: bold;
+                color: blue;
+                font-size: 10pt;
+            }
+
+            .title_2ndLvl {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #FFFFFF;
+                padding-left: 5px;
+            }
+
+            .BODY {
+                font-family: verdana;
+            }
+
+            A {
+                color: #003399;
+            }
+
+            .VR {
+                background-color: #cccccc;
+                width: 1px;
+            }
+
+            .HR {
+                background-color: #cccccc;
+                height: 1px;
+            }
+
+            .link1 {
+                font-size: 70%;
+                font-family: verdana;
+            }
+
+            .link2 {
+                font-size: 70%;
+                font-family: Verdana;
+                font-style: italic;
+            }
+
+            .link3 {
+                font-style: italic;
+                font-family: Verdana;
+                color: #000000;
+                font-weight: bold;
+            }
+
+            .link4 {
+                font: italic 70% Verdana;
+                color: #000000;
+                text-decoration: none;
+            }
+
+            .link5 {
+                font: 70% Verdana;
+                color: #003399;
+                text-decoration: none;
+            }
+
+            .link6 {
+                font: 70% verdana;
+                color: #003399;
+            }
+
+            .text1 {
+                font: 70% Verdana;
+            }
+
+            .text2 {
+                padding-bottom: 10px;
+                font: 70% Verdana;
+            }
+
+            .text3 {
+                font-size: 120%;
+                font-family: Verdana;
+                color: #000000;
+            }
+
+            .text3_w_padding {
+                font: 120% Verdana;
+                color: #000000;
+                padding-left: 20px;
+            }
+
+            .text4 {
+                font-weight: bold;
+                font-size: 70%;
+                font-family: Verdana;
+                color: #000000;
+            }
+
+            .text5 {
+                padding-left: 5px;
+                font-weight: bold;
+                font-size: 70%;
+                font-family: Verdana;
+                color: #ffffff;
+            }
+
+            .text6 {
+                font: 70%;
+                font-family: verdana;
+            }
+
+            .newsTitle {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #CCCCCC;
+            }
+
+            .areaTitle {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #FFFFFF;
+            }
+
+            .newsContentTitle {
+                font-family: tahoma;
+                font-size: 120%;
+                color: #FFFFFF;
+            }
+
+            .areaContentTitle {
+                font-family: verdana;
+                font-size: 140%;
+                color: #000000;
+            }
+
+            .areaContentTitle_w_pad {
+                font-family: verdana;
+                font-size: 140%;
+                color: #000000;
+                padding-left: 20px;
+                padding-top: 20px;
+            }
+
+            .newsArchiveTitle {
+                font-family: verdana;
+                font-size: 150%;
+                color: #000000;
+            }
+
+            .FeatureStoryTitle {
+                font-family: verdana;
+                font-size: 130%;
+                color: #000000;
+            }
+
+            .FeatureStoryByLine {
+                font-family: verdana;
+                font-size: 80%;
+                color: #000000;
+            }
+
+            .SideBarLink {
+                font-family: verdana;
+                font-size: 80%;
+                color: #000000;
+            }
+
+            .newsArchiveSubTitle {
+                font-family: verdana;
+                font-size: 118%;
+                color: #666666;
+            }
+
+            .newsArchiveYear {
+                font: bold 80% Verdana;
+                color: #000000;
+                border-bottom: #cccccc 1px solid;
+                border-top: #cccccc 1px solid;
+            }
+
+            .newsHeadlineTitle {
+                font-family: verdana;
+                font-size: 140%;
+                color: #000000;
+            }
+
+            .newsPublicationDate {
+                font-family: Verdana;
+                font-size: 60%;
+                color: #000000;
+                font-weight: bold;
+            }
+
+            .newsPublicationSource {
+                font-family: Verdana;
+                font-size: 60%;
+                color: #000000;
+                font-weight: bold;
+            }
+
+            H1 {
+                font-family: tahoma;
+                font-weight: bold;
+                font-size: 120%;
+                color: #000000;
+            }
+
+            H3 {
+                font-family: tahoma;
+                font-weight: bold;
+                font-size: 110%;
+                color: #000000;
+            }
+
+            P {
+                font-family: verdana;
+                font-size: 70%;
+                color: #000000;
+            }
+
+                P P {
+                    font-size: 100%;
+                }
+
+            HR {
+                color: #cccccc;
+                height: 1px;
+            }
+
+
+            .groupheading {
+                padding-left: 20px;
+                padding-top: 40px;
+                padding-bottom: 10px;
+                font-size: 1.4em;
+                color: #0065CF;
+                font-family: verdana;
+            }
+
+            .GroupTitle {
+                padding-left: 20px;
+                padding-top: 20px;
+                padding-bottom: 10px;
+                font-size: 1.4em;
+                color: #0065CF;
+            }
+
+            LI {
+                font-size: 70%;
+                font-family: Verdana;
+            }
+
+                LI LI {
+                    font-size: 100%;
+                }
+
+                LI A {
+                    font-size: 100%;
+                }
+
+            .linkbox {
+                margin-left: 20px;
+                margin-right: 30px;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                width: 175px;
+                float: right;
+                border-right: #0066CC 1px solid;
+                background: #f1f1f1;
+                border-left: #0066CC 1px solid;
+                border-bottom: #0066CC 1px solid;
+            }
+
+            .outlineDivTitle {
+                background-color: #0066CC;
+                color: #FFFFFF;
+                padding-left: 15px;
+                padding-bottom: 2px;
+                padding-top: 2px;
+                font: bold 70% Verdana;
+                color: #ffffff;
+            }
+
+            .outlineDiv {
+                padding-left: 20px;
+                background-image: URL(/images/blueTriangle.gif);
+                background-repeat: no-repeat;
+                background-position: 6 8;
+                font: 70% verdana;
+                color: #003399;
+                line-height: 200%;
+            }
+        </style>
+</head>
+
+<body>
+
+<h1>Visual F# Tests</h1>
+<h3>Test Suites</h3>
+
+<p>The Visual F# tests are split into a few different suites.  Understanding the suites' structure, similarities, and differences is important when running, debugging, or authoring the tests.
+
+<p><b>FSharp Suite (aka "Cambridge Suite")</b>
+<p>The test cases for this suite reside under <tt>tests\fsharp</tt>.  This suite dates back to F#'s origins at Microsoft Research, Cambridge, and utilizes a simple batch script framework to execute.  In general, this suite has broad coverage of mainline compiler and runtime scenarios.
+
+<p><b>FSharpQA Suite (aka "Redmond Suite")</b>
+<p>The test cases for this suite reside under <tt>tests\fsharpqa\source</tt>.  This suite was first created as the initial F# integration in Visual Studio 2010 was developed.  Tests for this suite are driven by the "RunAll" framework, implemented in Perl.  This suite is rather large and has broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
+
+<p><b>Core Unit Test Suite</b>
+<p>The test cases for this suite reside next to the product code, at <tt>src\fsharp\FSharp.Core.Unittests</tt>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite focuses on validation of the core F# types and the public surface area of FSharp.Core.dll.
+
+<p><h3>Prerequisites</h3>
+<p>In order to run all of the tests, you will need to install
+<ul>
+<li><a href="http://www.perl.org/get.html">Perl</a> (ActiveState Perl 5.16.3 is known to work fine)</li>
+<li><a href="http://nunit.org/?p=download">NUnit</a> (2.6.3 is known to work fine)</li>
+</ul>
+<p>Perl and NUnit should be included in the %PATH% to make execution easiest.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
+
+<p><h3>Running Tests</h3>
+
+<p>The script <tt>tests\RunTests.cmd</tt> has been provided to make execution of the above 3 suites very simple.  You can kick off a full test run of any of the above suites like this:
+<pre>
+RunTests.cmd fsharp
+RunTests.cmd fsharpqa
+RunTests.cmd coreunit
+</pre>
+
+<p><tt>RunTests.cmd</tt> sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
+
+<p>If any test cases fail, the FSharp and FSharpQA suites will drop failure detail logs to <tt>tests\runpl.log</tt> or <tt>tests\fsharpqa\source\runpl.log</tt>, respectively.  If execution is halted by the user before completion, the failures file name is instead <tt>xrunpl.log</tt>.
+
+<p><tt>RunTests.cmd</tt> is mostly just a simple wrapper over <tt>tests\fsharpqa\testenv\bin\RunAll.pl</tt>, which has capabilities not discussed here. More advanced test execution scenarios can be achieved by invoking <tt>RunAll.pl</tt> directly.  Run <tt>perl tests\fsharpqa\testenv\bin\RunAll.pl -?</tt> to see a full list of flags and options.
+<h3>More Details</h3>
+
+<p><b>FSharp Suite</b>
+
+<p>These tests are fairly easy to execute directly, without help from <tt>RunTests.cmd</tt> or <tt>RunAll.pl</tt>.  Test area directories in this suite will have either a <tt>Build.bat</tt> script, a <tt>Run.bat</tt> script, or both.  To run the test area, you can simply call <tt>Build.bat</tt> (if it exists), then <tt>Run.bat</tt> (if it exists).  In this way it is simple to re-run a specific test area by itself.
+
+<p><tt>Build.bat</tt> and <tt>Run.bat</tt> scripts typically invoke <tt>tests\Config.bat</tt> to pick up a variety of environment variables and configuration options, then invoke <tt>tests\fsharp\single-test-build.bat</tt> and <tt>tests\fsharp\single-test-run.bat</tt>.  This will compile and execute the local <tt>test.fsx</tt> file using some combination of compiler or fsi flags.  If the compilation and execution encounter no errors, the test is considered to have passed.
+
+<p>When executing via <tt>RunTests.cmd</tt>, <tt>RunAll.pl</tt> is used to drive bulk execution of these tests.  The list of areas which will be executed in this case is at <tt>tests\test.lst</tt>.
+
+<p><b>FSharpQA Suite</b>
+
+<p>These tests require use of the <tt>RunAll.pl</tt> framework to execute.  Test area directories in this suite will contain a number of source code files and a single <tt>env.lst</tt> file.  The <tt>env.lst</tt> file defines a series of test cases, one per line.  Test cases will run an optional "pre command," compile some set of source files using some set of flags, optionally run the resulting binary, then optionally run a final "post command."  If all of these steps complete without issue, the test is considered to have passed.
+
+<p>The list of test areas that will be run in this suite is at <tt>tests\fsharpqa\source\test.lst</tt>.  If you want to re-run a single test area, the simplest way is to give that area a custom tag in test.lst (e.g. ReRun), then specify that tag in the <tt>-ttags</tt> argument to <tt>RunAll.pl</tt>.  <tt>RunTests.cmd</tt> will do this for you if you specify the tag as the second parameter, e.g. <tt>RunTests.cmd fsharpqa ReRun</tt>.
+
+<p><b>Core Unit Test Suite</b>
+
+<p>To build the unit test binary, call <tt>msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40</tt> from the <tt>src</tt> directory.  Tests are contained in the binary <tt>FSharp.Core.Unittests.dll</tt>.
+
+<p>You can execute and re-run these tests using any standard NUnit approach - via graphical <tt>nunit.exe</tt> or on the command line via <tt>nunit-console.exe</tt>.
+
+<h3>Other Tips</h3>
+<ul>
+<li>NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster</li>
+<li>Tests from the FSharp and FSharpQA suites can be run in parallel using the <tt>-procs:N</tt> argument to <tt>RunAll.pl</tt>, or by uncommenting the relevant line in <tt>RunTests.cmd</tt>.</li>
+</ul>
+</body>
