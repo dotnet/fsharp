@@ -414,7 +414,14 @@
     del /q FSharp.Core.dll 
 </pre>
 
-    <h3>4. Building F# Core Unit Tests for .NET 4.0</h3>
+    <h3>4.  Building FSharp.Data.TypeProviders for .NET 4.0</h3>
+
+    <p>This uses the proto compiler to build the type provider assembly FSharp.Data.TypeProviders.dll for .NET 4.0.</p>
+    <pre>
+    msbuild fsharp-typeproviders-build.proj /p:TargetFramework=net40
+    </pre>
+    
+    <h3>5. Building F# Core Unit Tests for .NET 4.0</h3>
     
     <p>This uses the proto compiler to build the unit tests that check some parts of FSharp.Core.dll and FSharp.Compiler.dll. You must have NUnit installed.</p>
     <pre>
@@ -431,7 +438,7 @@
     Runtests.cmd fsharpqa
     Runtests.cmd coreunit    </pre>
 
-    <h3>5.  [Alternate Build Instructions] Build an optimised F# (Release) compiler for .NET 4.0 profile</h3>
+    <h3>6.  [Alternate Build Instructions] Build an optimised F# (Release) compiler for .NET 4.0 profile</h3>
 
     <p>This uses the proto compiler to build the FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
     <pre>
@@ -442,7 +449,7 @@
     ngen install ..\Release\net40\bin\fsi.exe
     </pre>
 
-    <h3>6.  Verify the optimised F# compiler build with simple smoke test</h3>
+    <h3>7.  Verify the optimised F# compiler build with simple smoke test</h3>
 
     <li>Simple FSI run and quit test.</li>
     <pre>    ..\Release\net40\bin\fsi.exe
@@ -463,11 +470,11 @@
     del /q FSharp.Core.dll 
 </pre>
 
-    <h3>7.  [Optional] Open a solution with Visual Studio </h3>
+    <h3>8.  [Optional] Open a solution with Visual Studio </h3>
 
     <p>   You can use "fsharp.sln" to browse source code using Visual Studio. However, you need to complete step 1) and 2) in order to properly open this solution. In addition, FSharp.Core.Unittests project requires NUnit installed. </p>
 
-    <h3>8.  [Optional] Build a compiler component for hosting in the browser with Silverlight </h3>
+    <h3>9.  [Optional] Build a compiler component for hosting in the browser with Silverlight </h3>
 
     <p>   This builds FSharp.Compiler.Silverlight.dll which is a Silverlight 5.0 component for hosting in the browser. You must have Silverlight5 installed.</p>
     <li>This places the binaries in Debug\sl5-compiler:</il>
