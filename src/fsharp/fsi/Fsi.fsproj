@@ -23,42 +23,40 @@
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
-      <FsSrGen Include="FSIstrings.txt">
-        <Link>FSIstrings.txt</Link>
-      </FsSrGen>
+    <FsSrGen Include="FSIstrings.txt">
+      <Link>FSIstrings.txt</Link>
+    </FsSrGen>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>assemblyinfo.fsi.exe.fs</Link>
     </Compile>
-      <Compile Include="..\InternalCollections.fsi">
-        <Link>InternalCollections.fsi</Link>
-      </Compile>
-      <Compile Include="..\InternalCollections.fs">
-        <Link>InternalCollections.fs</Link>
-      </Compile>
-
+    <Compile Include="..\InternalCollections.fsi">
+      <Link>InternalCollections.fsi</Link>
+    </Compile>
+    <Compile Include="..\InternalCollections.fs">
+      <Link>InternalCollections.fs</Link>
+    </Compile>
     <Compile Include="console.fs">
       <Link>console.fs</Link>
     </Compile>
     <Compile Include="fsi.fs">
       <Link>fsi.fs</Link>
     </Compile>
-<!--
-    <Compile Include="fsimain.fs">
-      <Link>fsimain.fs</Link>
-    </Compile>
--->
+    <None Include="fsi.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fsi.exe.config</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-          <Reference Include="System.Drawing" />
-          <Reference Include="System.Windows.Forms" />
-          <Reference Include="PresentationCore" />
-          <Reference Include="PresentationFramework" />
-          <Reference Include="WindowsBase" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Name>FSharp.Compiler.Interactive.Settings</Name>
-      <Project>{649fa588-f02e-457c-9fcf-87e46407481e}</Project>
+      <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
@@ -71,9 +69,9 @@
       <Name>FSharp.Compiler</Name>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
-		  <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-		  <Name>FSharp.Core</Name>
-	  </ProjectReference>
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

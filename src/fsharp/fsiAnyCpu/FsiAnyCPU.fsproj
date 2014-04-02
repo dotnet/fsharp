@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -12,12 +12,13 @@
         Win32 DLLs and memory mapping dependencies...
         -->
     <PlatformTarget>anycpu</PlatformTarget>
-    <ProjectGuid>{d0e98c0d-490b-4c61-9329-0862f6e87645}</ProjectGuid>
+    <ProjectGuid>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62;44</NoWarn>
     <AssemblyName>fsiAnyCpu</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+    <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v3.5</TargetFrameworkVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
@@ -43,11 +44,6 @@
     <Compile Include="..\fsi\fsi.fs">
       <Link>fsi.fs</Link>
     </Compile>
-<!--
-    <Compile Include="..\fsi\fsimain.fs">
-      <Link>fsimain.fs</Link>
-    </Compile>
--->
     <None Include="..\fsi\fsiAnyCpu.exe.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fsiAnyCpu.exe.config</Link>
@@ -64,16 +60,18 @@
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Name>FSharp.Compiler.Interactive.Settings</Name>
       <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
+      <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
       <Name>FSharp.Compiler.Server.Shared</Name>
       <Project>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</Project>
+      <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
       <Name>FSharp.Compiler</Name>
     </ProjectReference>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
