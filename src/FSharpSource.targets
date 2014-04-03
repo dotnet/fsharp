@@ -15,18 +15,15 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
-  <!-- For .NET 2.0 and 4.0, we use the version in 'source-build-version', initially 2.9.999 -->
-  <!-- For Mono 2.0 and 4.0, we use the same versions as VS2012 (see strong naming below) -->
-  <!-- -->
-  <!-- However FSharp.Core must always use the same version and name as VS, with delay signing, see below  -->
+  <!-- However FSharp.Core must always use the same version and name as VS, except the revision# is 9055 with delay signing, see below  -->
   <PropertyGroup Condition="'$(AssemblyName)' != 'FSharp.Core' AND '$(AssemblyName)' != 'FSharp.LanguageService.Compiler' ">
-    <OtherFlags>$(OtherFlags) --version:4.3.1.0</OtherFlags>
+    <OtherFlags>$(OtherFlags) --version:4.3.1.9055</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core'">
-    <OtherFlags>$(OtherFlags) --version:4.3.1.0</OtherFlags>
-    <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.3.1.0</OtherFlags>
-    <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:2.3.5.0</OtherFlags>
+    <OtherFlags>$(OtherFlags) --version:4.3.1.9055</OtherFlags>
+    <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.3.1.9055</OtherFlags>
+    <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:2.3.5.9055</OtherFlags>
   </PropertyGroup>
 
   <!-- We sign with the Microsoft key and use delay-signing -->
