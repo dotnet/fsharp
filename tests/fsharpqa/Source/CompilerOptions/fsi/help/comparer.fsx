@@ -17,8 +17,8 @@ let f2 = File2List fn2
 
 let mutable i = 0
 let compare (f1:string list) (f2:string list) = List.forall2 (fun (a:string) (b:string) ->
-                                                                         let aa = System.Text.RegularExpressions.Regex.Replace(a, @"F# Interactive build (\d+\.\d+\.\d+\.\d+)", "F# Interactive build")
-                                                                         let bb = System.Text.RegularExpressions.Regex.Replace(b, @"F# Interactive build (\d+\.\d+\.\d+\.\d+)", "F# Interactive build")
+                                                                         let aa = System.Text.RegularExpressions.Regex.Replace(a, @"F# Interactive build .+", "F# Interactive build")
+                                                                         let bb = System.Text.RegularExpressions.Regex.Replace(b, @"F# Interactive build .+", "F# Interactive build")
 
                                                                          // unify fsi.exe and FsiAnyCPU.exe
                                                                          let aa = aa.Replace("FsiAnyCPU.exe", "fsi.exe")

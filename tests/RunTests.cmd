@@ -4,12 +4,12 @@ setlocal
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
 set _tmp=%2
-if not "%_tmp%" == "" set TTAGS_ARG=-ttags:%_tmp:"=%
+if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
 set NO_TTAGS_ARG=-nottags:ReqPP
 set _tmp=%3
-if not "%_tmp%" == "" set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
+if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
 
 rem Use commented line to enable parallel execution of tests
 rem set PARALLEL_ARG=-procs:3
@@ -22,6 +22,9 @@ rem Set this to 1 in order to use an external compiler host process
 rem    This only has an effect when running the FSHARPQA tests, but can
 rem    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
 rem set HOSTED_COMPILER=1
+
+rem path to fsc.exe which will be used by tests
+set FSCBINPATH=%~dp0..\Release\net40\bin
 
 if /I "%1" == "fsharp" (goto :FSHARP)
 if /I "%1" == "fsharpqa" (goto :FSHARPQA)
@@ -72,8 +75,19 @@ IF NOT DEFINED SNEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"           set SNE
 IF NOT DEFINED GACUTILEXE32 IF EXIST "%WINSDKNETFXTOOLS%gacutil.exe"     set GACUTILEXE32=%WINSDKNETFXTOOLS%gacutil.exe
 IF NOT DEFINED GACUTILEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\gacutil.exe" set GACUTILEXE64=%WINSDKNETFXTOOLS%x64\gacutil.exe
 
-for /f "tokens=1-2*" %%a in ('%REGEXE32BIT% QUERY "HKLM\SOFTWARE\Microsoft\FSharp\3.1\Runtime\v4.0" /ve') DO set FSCPATH=%%c
-set PATH=%PATH%;%FSCPATH%
+set FSC=%FSCBINPATH%\fsc.exe
+set PATH=%FSCBINPATH%;%PATH%
+
+REM == VS-installed paths to FSharp.Core.dll
+set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0
+set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
+
+REM == open source logic        
+if exist "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
+if exist "%FSCBinPath%\..\..\net20\bin\FSharp.Core.dll" set FSCOREDLL20PATH=%FSCBinPath%\..\..\net20\bin
+
+set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
+set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
 
 for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
 set PATH=%PATH%;%CORDIR%

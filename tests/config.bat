@@ -22,9 +22,6 @@ if not exist "%FSCBinPath%\fsc.exe" call :SetFSCBinPath45
  
 if not exist "%FSCBinPath%\fsc.exe" echo %FSCBinPath%\fsc.exe still not found. Assume that user has added it to path somewhere
 
-REM strip extra file separators and make short-name in case the the location is "Program Files" (how i hate spaces in file names!)
-if defined FSCBinPath for /f "delims=" %%l in ("%FSCBinPath%") do set FSCBinPath=%%~fsl
-
 REM add %FSCBinPath% to path only if not already there. Otherwise, the path keeps growing.
 echo %path%; | find /i "%FSCBinPath%;" > NUL
 if ERRORLEVEL 1    set PATH=%PATH%;%FSCBinPath%
@@ -161,9 +158,9 @@ IF NOT DEFINED FSI                                            SET FSI=%fsiroot%.
 IF DEFINED FSCBinPath IF EXIST "%FSCBinPath%\fsc.exe"   SET FSC=%FSCBinPath%\fsc.exe
 IF DEFINED FSCBinPath IF EXIST "%FSCBinPath%\%fsiroot%.exe"   SET FSI=%FSCBinPath%\%fsiroot%.exe
 
-REM == In Dev11 (layout setup), FSharp.Core.dll is not sitting next to fsc.exe
-REM == so we provide an alternative location to look for it. Automation will check
-REM == this value (which may or may not be defined) and decide to use it.
+REM == In Visual Studio deployments, FSharp.Core.dll is not sitting next to fsc.exe
+REM == In open source builds, it is.
+REM == Logic here should locate the right path in either case, for both .NET 4 and .NET 2 versions
 set FSCOREDLLPATH=
 set FSCOREDLL20PATH=
 call :GetFSCOREDLLPaths
@@ -172,7 +169,7 @@ IF EXIST "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
 set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
 
 set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
-IF EXIST "%FSCBinPath%\Runtime\2.0\FSharp.Core.dll" set FSCOREDLL20PATH=%FSCBinPath%\Runtime\2.0\FSharp.Core.dll
+IF EXIST "%FSCBinPath%..\..\net20\bin\FSharp.Core.dll" set FSCOREDLL20PATH=%FSCBinPath%..\..\net20\bin\FSharp.Core.dll
 
 REM == Set standard flags for invoking powershell scripts
 IF NOT DEFINED PSH_FLAGS SET PSH_FLAGS=-nologo -noprofile -executionpolicy bypass

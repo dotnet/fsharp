@@ -15,10 +15,11 @@ let fsc =
         let fsc45 = programFiles + @"\Microsoft SDKs\F#\3.1\Framework\v4.0\fsc.exe"
         let fsc40 = programFiles + @"\Microsoft F#\v4.0\fsc.exe"
         let fsc20 = programFiles + @"\FSharp-2.0.0.0\bin\fsc.exe"
-        try
-            [fsc45; fsc40; fsc20] |> List.find(fun x -> File.Exists(x))
-        with
-            _ -> "Can't find fsc"
+        
+        match ([fsc45; fsc40; fsc20] |> List.tryFind(fun x -> File.Exists(x))) with
+        | Some(path) -> path
+        | None -> "fsc.exe"  // just use what's on the PATH
+
 
 let start (p1 : string) = Process.Start(p1)
 

@@ -17,8 +17,8 @@ let f2 = File2List fn2
 
 let mutable i = 0
 let compare (f1:string list) (f2:string list) = List.forall2 (fun (a:string) (b:string) ->
-                                                                         let aa = System.Text.RegularExpressions.Regex.Replace(a, @"F# Compiler version (\d+\.\d+\.\d+\.\d+)", "F# 3.0 Compiler version")
-                                                                         let bb = System.Text.RegularExpressions.Regex.Replace(b, @"F# Compiler version (\d+\.\d+\.\d+\.\d+)", "F# 3.0 Compiler version")
+                                                                         let aa = System.Text.RegularExpressions.Regex.Replace(a, @"F# Compiler version .+", "F# 3.0 Compiler version")
+                                                                         let bb = System.Text.RegularExpressions.Regex.Replace(b, @"F# Compiler version .+", "F# 3.0 Compiler version")
 
                                                                          i <- i+1
                                                                          if (aa = bb) then

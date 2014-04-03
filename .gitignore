@@ -29,6 +29,7 @@ src/fsharp/FSharp.Compiler/*.sln
 src/fsharp/FSharp.Compiler/*.userprefs
 src/*.log
 Debug
+Release
 Proto
 .libs
 Makefile
