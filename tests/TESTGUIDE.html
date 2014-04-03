@@ -327,6 +327,15 @@
 </ul>
 <p>Perl and NUnit should be included in the %PATH% to make execution easiest.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
 
+<p>Before running tests, make sure you have successfully built all of the following:
+<ul>
+<li><tt>src\fsharp-compiler-build.proj /p:TargetFramework=net40</tt> to generate the compiler, libraries, and interative for .NET 4</li>
+<li><tt>src\fsharp-library-build.proj /p:TargetFramework=net20</tt> to generate the libraries for .NET 2</li>
+<li><tt>src\fsharp-tyeproviders-build.proj /p:TargetFramework=net40</tt> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
+</ul>
+
+<p>You should also run <tt>src\update.cmd &lt;debug|release&gt; -ngen</tt> before running tests.  This script will perform GAC and strong name validation updates required for the tests to work, as well as NGen-ing components so that tests run more quickly.
+
 <p><h3>Running Tests</h3>
 
 <p>The script <tt>tests\RunTests.cmd</tt> has been provided to make execution of the above 3 suites very simple.  You can kick off a full test run of any of the above suites like this:

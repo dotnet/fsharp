@@ -388,9 +388,8 @@
     <p>This uses the proto compiler to build the FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
     <pre>
     msbuild fsharp-compiler-build.proj /p:TargetFramework=net40
-    </pre><p>[Optional] ngen the Compiler and FSI for faster startup</pi><pre>
-    ngen install ..\Debug\net40\bin\fsc-proto.exe
-    ngen install ..\Debug\net40\bin\fsi.exe
+    </pre><p>[Optional] Use the provided script to update the GAC, add required strong name validation skips, and NGen. Requires admin privileges.<pre>
+    update.cmd debug -ngen
     </pre>
 
     <h3>3.  Verify the F# compiler build with simple smoke test</h3>
@@ -443,10 +442,8 @@
     <p>This uses the proto compiler to build the FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
     <pre>
     msbuild fsharp-compiler-build.proj /p:TargetFramework=net40 /p:Configuration=Release
-    </pre><p>[Optional] ngen the Compiler and FSI for faster startup</pi>
-    <pre>
-    ngen install ..\Release\net40\bin\fsc.exe
-    ngen install ..\Release\net40\bin\fsi.exe
+    </pre><p>[Optional] Use the provided script to update the GAC, add required strong name validation skips, and NGen. Requires admin privileges.<pre>
+    update.cmd release -ngen
     </pre>
 
     <h3>7.  Verify the optimised F# compiler build with simple smoke test</h3>
