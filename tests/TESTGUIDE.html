@@ -6,7 +6,7 @@
 
 
         <style type="text/css">
-            TT {
+            CODE {
                 font-weight: bold;
                 color: blue;
                 font-size: 10pt;
@@ -311,13 +311,13 @@
 <p>The Visual F# tests are split into a few different suites.  Understanding the suites' structure, similarities, and differences is important when running, debugging, or authoring the tests.
 
 <p><b>FSharp Suite (aka "Cambridge Suite")</b>
-<p>The test cases for this suite reside under <tt>tests\fsharp</tt>.  This suite dates back to F#'s origins at Microsoft Research, Cambridge, and utilizes a simple batch script framework to execute.  In general, this suite has broad coverage of mainline compiler and runtime scenarios.
+<p>The test cases for this suite reside under <code>tests\fsharp</code>.  This suite dates back to F#'s origins at Microsoft Research, Cambridge, and utilizes a simple batch script framework to execute.  In general, this suite has broad coverage of mainline compiler and runtime scenarios.
 
 <p><b>FSharpQA Suite (aka "Redmond Suite")</b>
-<p>The test cases for this suite reside under <tt>tests\fsharpqa\source</tt>.  This suite was first created as the initial F# integration in Visual Studio 2010 was developed.  Tests for this suite are driven by the "RunAll" framework, implemented in Perl.  This suite is rather large and has broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
+<p>The test cases for this suite reside under <code>tests\fsharpqa\source</code>.  This suite was first created as the initial F# integration in Visual Studio 2010 was developed.  Tests for this suite are driven by the "RunAll" framework, implemented in Perl.  This suite is rather large and has broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
 
 <p><b>Core Unit Test Suite</b>
-<p>The test cases for this suite reside next to the product code, at <tt>src\fsharp\FSharp.Core.Unittests</tt>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite focuses on validation of the core F# types and the public surface area of FSharp.Core.dll.
+<p>The test cases for this suite reside next to the product code, at <code>src\fsharp\FSharp.Core.Unittests</code>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite focuses on validation of the core F# types and the public surface area of FSharp.Core.dll.
 
 <p><h3>Prerequisites</h3>
 <p>In order to run all of the tests, you will need to install
@@ -329,25 +329,25 @@
 
 <p>Before running tests, make sure you have successfully built all of the following:
 <ul>
-<li><tt>src\fsharp-compiler-build.proj /p:TargetFramework=net40</tt> to generate the compiler, libraries, and interative for .NET 4</li>
-<li><tt>src\fsharp-library-build.proj /p:TargetFramework=net20</tt> to generate the libraries for .NET 2</li>
-<li><tt>src\fsharp-tyeproviders-build.proj /p:TargetFramework=net40</tt> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
+<li><code>src\fsharp-compiler-build.proj /p:TargetFramework=net40</code> to generate the compiler, libraries, and interative for .NET 4</li>
+<li><code>src\fsharp-library-build.proj /p:TargetFramework=net20</code> to generate the libraries for .NET 2</li>
+<li><code>src\fsharp-tyeproviders-build.proj /p:TargetFramework=net40</code> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
 </ul>
 
-<p>You should also run <tt>src\update.cmd &lt;debug|release&gt; -ngen</tt> before running tests.  This script will perform GAC and strong name validation updates required for the tests to work, as well as NGen-ing components so that tests run more quickly.
+<p>You should also run <code>src\update.cmd &lt;debug|release&gt; -ngen</code> before running tests.  This script will perform GAC and strong name validation updates required for the tests to work, as well as NGen-ing components so that tests run more quickly.
 
 <p><h3>Running Tests</h3>
 
-<p>The script <tt>tests\RunTests.cmd</tt> has been provided to make execution of the above 3 suites very simple.  You can kick off a full test run of any of the above suites like this:
+<p>The script <code>tests\RunTests.cmd</code> has been provided to make execution of the above 3 suites very simple.  You can kick off a full test run of any of the above suites like this:
 <pre>
     RunTests.cmd fsharp [tags to run] [tags not to run]
     RunTests.cmd fsharpqa [tags to run] [tags not to run]
     RunTests.cmd coreunit
 </pre>
 
-<p><tt>RunTests.cmd</tt> sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
+<p><code>RunTests.cmd</code> sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
 
-<p>All test execution logs and result files will be dropped into the <tt>tests</tt> folder, and have file names matching <tt>FSharp_*.*</tt>, <tt>FSharpQA_*.*</tt>, or <tt>CoreUnit_*.*</tt>.
+<p>All test execution logs and result files will be dropped into the <code>tests</code> folder, and have file names matching <code>FSharp_*.*</code>, <code>FSharpQA_*.*</code>, or <code>CoreUnit_*.*</code>.
 
 <p>For the FSharp and FSharpQA suites, the list of test areas and their associated "tags" is stored at
 <pre>
@@ -355,35 +355,35 @@
     tests\fsharpqa\source\test.lst   // FSharpQA suite
 </pre>
 
-<p>Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified to <tt>RunTests.cmd</tt>, all tests will be run.
+<p>Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified to <code>RunTests.cmd</code>, all tests will be run.
 
-<p>If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN"), then call <tt>RunTests.cmd &lt;fsharp|fsharpqa&gt; RERUN</tt>.
+<p>If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN"), then call <code>RunTests.cmd &lt;fsharp|fsharpqa&gt; RERUN</code>.
 
-<p>If you want to specify multiple tags to run or not run, pass them comma-delimited and enclosed in double quotes, e.g. <tt>RunTests.cmd fsharp "Core01,Core02"</tt>. From a Powershell environment, make sure the double quotes are passed literally, e.g. <tt>.\RunTests.cmd fsharp '"Core01,Core02"'</tt> or <tt>.\RunTests.cmd --% fsharp "Core01,Core02"</tt>.
+<p>If you want to specify multiple tags to run or not run, pass them comma-delimited and enclosed in double quotes, e.g. <code>RunTests.cmd fsharp "Core01,Core02"</code>. From a Powershell environment, make sure the double quotes are passed literally, e.g. <code>.\RunTests.cmd fsharp '"Core01,Core02"'</code> or <code>.\RunTests.cmd --% fsharp "Core01,Core02"</code>.
 
-<p><tt>RunTests.cmd</tt> is mostly just a simple wrapper over <tt>tests\fsharpqa\testenv\bin\RunAll.pl</tt>, which has capabilities not discussed here. More advanced test execution scenarios can be achieved by invoking <tt>RunAll.pl</tt> directly.  Run <tt>perl tests\fsharpqa\testenv\bin\RunAll.pl -?</tt> to see a full list of flags and options.
+<p><code>RunTests.cmd</code> is mostly just a simple wrapper over <code>tests\fsharpqa\testenv\bin\RunAll.pl</code>, which has capabilities not discussed here. More advanced test execution scenarios can be achieved by invoking <code>RunAll.pl</code> directly.  Run <code>perl tests\fsharpqa\testenv\bin\RunAll.pl -?</code> to see a full list of flags and options.
 
 <h3>More Details</h3>
 
 <p><b>FSharp Suite</b>
 
-<p>These tests are fairly easy to execute directly when needed, without help from <tt>RunTests.cmd</tt> or <tt>RunAll.pl</tt>.  Test area directories in this suite will have either a <tt>Build.bat</tt> script, a <tt>Run.bat</tt> script, or both.  To run the test area, you can simply call <tt>Build.bat</tt> (if it exists), then <tt>Run.bat</tt> (if it exists).  In this way it is simple to re-run a specific test area by itself.
+<p>These tests are fairly easy to execute directly when needed, without help from <code>RunTests.cmd</code> or <code>RunAll.pl</code>.  Test area directories in this suite will have either a <code>Build.bat</code> script, a <code>Run.bat</code> script, or both.  To run the test area, you can simply call <code>Build.bat</code> (if it exists), then <code>Run.bat</code> (if it exists).  In this way it is simple to re-run a specific test area by itself.
 
-<p><tt>Build.bat</tt> and <tt>Run.bat</tt> scripts typically invoke <tt>tests\Config.bat</tt> to pick up a variety of environment variables and configuration options, then invoke <tt>tests\fsharp\single-test-build.bat</tt> and <tt>tests\fsharp\single-test-run.bat</tt>.  This will compile and execute the local <tt>test.fsx</tt> file using some combination of compiler or fsi flags.  If the compilation and execution encounter no errors, the test is considered to have passed.
+<p><code>Build.bat</code> and <code>Run.bat</code> scripts typically invoke <code>tests\Config.bat</code> to pick up a variety of environment variables and configuration options, then invoke <code>tests\fsharp\single-test-build.bat</code> and <code>tests\fsharp\single-test-run.bat</code>.  This will compile and execute the local <code>test.fsx</code> file using some combination of compiler or fsi flags.  If the compilation and execution encounter no errors, the test is considered to have passed.
 
 <p><b>FSharpQA Suite</b>
 
-<p>These tests require use of the <tt>RunAll.pl</tt> framework to execute.  Test area directories in this suite will contain a number of source code files and a single <tt>env.lst</tt> file.  The <tt>env.lst</tt> file defines a series of test cases, one per line.  Test cases will run an optional "pre command," compile some set of source files using some set of flags, optionally run the resulting binary, then optionally run a final "post command."  If all of these steps complete without issue, the test is considered to have passed.
+<p>These tests require use of the <code>RunAll.pl</code> framework to execute.  Test area directories in this suite will contain a number of source code files and a single <code>env.lst</code> file.  The <code>env.lst</code> file defines a series of test cases, one per line.  Test cases will run an optional "pre command," compile some set of source files using some set of flags, optionally run the resulting binary, then optionally run a final "post command."  If all of these steps complete without issue, the test is considered to have passed.
 
 <p><b>Core Unit Test Suite</b>
 
-<p>To build the unit test binary, call <tt>msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40</tt> from the <tt>src</tt> directory.  Tests are contained in the binary <tt>FSharp.Core.Unittests.dll</tt>.
+<p>To build the unit test binary, call <code>msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40</code> from the <code>src</code> directory.  Tests are contained in the binary <code>FSharp.Core.Unittests.dll</code>.
 
-<p>You can execute and re-run these tests using any standard NUnit approach - via graphical <tt>nunit.exe</tt> or on the command line via <tt>nunit-console.exe</tt>.
+<p>You can execute and re-run these tests using any standard NUnit approach - via graphical <code>nunit.exe</code> or on the command line via <code>nunit-console.exe</code>.
 
 <h3>Other Tips</h3>
 <ul>
 <li>NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster</li>
-<li>Tests from the FSharp and FSharpQA suites can be run in parallel using the <tt>-procs:N</tt> argument to <tt>RunAll.pl</tt>, or by uncommenting the relevant line in <tt>RunTests.cmd</tt> (look for PARALLEL_ARG).</li>
+<li>Tests from the FSharp and FSharpQA suites can be run in parallel using the <code>-procs:N</code> argument to <code>RunAll.pl</code>, or by uncommenting the relevant line in <code>RunTests.cmd</code> (look for PARALLEL_ARG).</li>
 </ul>
 </body>
