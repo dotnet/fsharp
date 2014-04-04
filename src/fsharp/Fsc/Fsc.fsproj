@@ -28,6 +28,10 @@
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
+    <None Include="fsc.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fsc.exe.config</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
