@@ -68,7 +68,7 @@ let methodDefnTotalSize = 1  // Total cost of a method definition
 //------------------------------------------------------------------------- 
 
 type TypeValueInfo =
-  | UnknownTypeValue
+  | UnknownTypeValue 
 
 type ExprValueInfo =
   | UnknownValue
@@ -1307,6 +1307,7 @@ and OpHasEffect g op =
     | TOp.RefAddrGet -> false
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable
     | TOp.ValFieldGetAddr _rfref  -> true (* check *)
+    | TOp.LValueOp (LGetAddr,lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
     | TOp.Coerce
@@ -1794,6 +1795,20 @@ and OptimizeExprOp cenv env (op,tyargs,args,m) =
             HasEffect = true;  
             MightMakeCriticalTailcall=false;
             Info=UnknownValue }
+    (* Handle addresses *)
+    | TOp.LValueOp (LGetAddr,lv),_,_ ->
+        let e,_ = OptimizeExpr cenv env (exprForValRef m lv)
+        let op' =
+            match e with
+            // We are only able to get the address of local refs.
+            | Expr.Val (v,_,_) when v.IsLocalRef -> TOp.LValueOp (LGetAddr,v)
+            | _ -> op
+        Expr.Op (op',tyargs,args,m),
+        { TotalSize = 1;
+          FunctionSize = 1;
+          HasEffect = OpHasEffect cenv.g op';
+          MightMakeCriticalTailcall = false;
+          Info = UnknownValue }
     (* Handle these as special cases since mutables are allowed inside their bodies *)
     | TOp.While (spWhile,marker),_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_)]  -> OptimizeWhileLoop cenv env (spWhile,marker,e1,e2,m) 
     | TOp.For(spStart,dir),_,[Expr.Lambda(_,_,_,[_],e1,_,_);Expr.Lambda(_,_,_,[_],e2,_,_);Expr.Lambda(_,_,_,[v],e3,_,_)]  -> OptimizeFastIntegerForLoop cenv env (spStart,v,e1,dir,e2,e3,m) 

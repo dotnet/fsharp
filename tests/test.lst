@@ -155,6 +155,7 @@ Misc01		..\testsprivate\fsharp\Telemetry\FSharpCompiler
 Misc01		fsharp\optimize\analyses
 Misc01		fsharp\optimize\basics
 Misc01		fsharp\optimize\stats
+Misc01		fsharp\optimize\inline
 Misc01		fsharp\perf\graph
 Misc01		fsharp\perf\nbody
 Misc01		fsharp\regression\26
