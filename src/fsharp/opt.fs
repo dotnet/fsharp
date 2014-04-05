@@ -1800,8 +1800,8 @@ and OptimizeExprOp cenv env (op,tyargs,args,m) =
         let e,_ = OptimizeExpr cenv env (exprForValRef m lv)
         let op' =
             match e with
-            // We are only able to get the address of local refs.
-            | Expr.Val (v,_,_) when v.IsLocalRef -> TOp.LValueOp (LGetAddr,v)
+            // Do not optimize if it's a top level static binding.
+            | Expr.Val (v,_,_) when not v.IsCompiledAsTopLevel -> TOp.LValueOp (LGetAddr,v)
             | _ -> op
         Expr.Op (op',tyargs,args,m),
         { TotalSize = 1;
