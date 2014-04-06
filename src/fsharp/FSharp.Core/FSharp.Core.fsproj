@@ -32,167 +32,160 @@
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
     <Compile Include="prim-types-prelude.fsi">
-      <Link>prim-types-prelude.fsi</Link>
+      <Link>Primitives/prim-types-prelude.fsi</Link>
     </Compile>
     <Compile Include="prim-types-prelude.fs">
-      <Link>prim-types-prelude.fs</Link>
+      <Link>Primitives/prim-types-prelude.fs</Link>
     </Compile>
     <Compile Include="SR.fs">
-      <Link>SR.fs</Link>
+      <Link>Primitives/SR.fs</Link>
     </Compile>
     <Compile Include="prim-types.fsi">
-      <Link>prim-types.fsi</Link>
+      <Link>Primitives/prim-types.fsi</Link>
     </Compile>
     <Compile Include="prim-types.fs">
-      <Link>prim-types.fs</Link>
+      <Link>Primitives/prim-types.fs</Link>
     </Compile>
     <Compile Include="local.fsi">
-      <Link>local.fsi</Link>
+      <Link>Collections/local.fsi</Link>
     </Compile>
     <Compile Include="local.fs">
-      <Link>local.fs</Link>
+      <Link>Collections/local.fs</Link>
     </Compile>
     <Compile Include="array2.fsi">
-      <Link>array2.fsi</Link>
+      <Link>Collections/array2.fsi</Link>
     </Compile>
     <Compile Include="array2.fs">
-      <Link>array2.fs</Link>
+      <Link>Collections/array2.fs</Link>
     </Compile>
     <Compile Include="option.fsi">
-      <Link>option.fsi</Link>
+      <Link>Collections/option.fsi</Link>
     </Compile>
     <Compile Include="option.fs">
-      <Link>option.fs</Link>
+      <Link>Collections/option.fs</Link>
     </Compile>
     <Compile Include="collections.fsi">
-      <Link>collections.fsi</Link>
+      <Link>Collections/collections.fsi</Link>
     </Compile>
     <Compile Include="collections.fs">
-      <Link>collections.fs</Link>
+      <Link>Collections/collections.fs</Link>
     </Compile>
     <Compile Include="seq.fsi">
-      <Link>seq.fsi</Link>
+      <Link>Collections/seq.fsi</Link>
     </Compile>
     <Compile Include="seq.fs">
-      <Link>seq.fs</Link>
+      <Link>Collections/seq.fs</Link>
     </Compile>
     <Compile Include="string.fsi">
-      <Link>string.fsi</Link>
+      <Link>Collections/string.fsi</Link>
     </Compile>
     <Compile Include="string.fs">
-      <Link>string.fs</Link>
+      <Link>Collections/string.fs</Link>
     </Compile>
     <Compile Include="list.fsi">
-      <Link>list.fsi</Link>
+      <Link>Collections/list.fsi</Link>
     </Compile>
     <Compile Include="list.fs">
-      <Link>list.fs</Link>
+      <Link>Collections/list.fs</Link>
     </Compile>
     <Compile Include="array.fsi">
-      <Link>array.fsi</Link>
+      <Link>Collections/array.fsi</Link>
     </Compile>
     <Compile Include="array.fs">
-      <Link>array.fs</Link>
+      <Link>Collections/array.fs</Link>
     </Compile>
     <Compile Include="array3.fsi">
-      <Link>array3.fsi</Link>
+      <Link>Collections/array3.fsi</Link>
     </Compile>
     <Compile Include="array3.fs">
-      <Link>array3.fs</Link>
+      <Link>Collections/array3.fs</Link>
     </Compile>
     <Compile Include="map.fsi">
-      <Link>map.fsi</Link>
+      <Link>Collections/map.fsi</Link>
     </Compile>
     <Compile Include="map.fs">
-      <Link>map.fs</Link>
+      <Link>Collections/map.fs</Link>
     </Compile>
     <Compile Include="set.fsi">
-      <Link>set.fsi</Link>
+      <Link>Collections/set.fsi</Link>
     </Compile>
     <Compile Include="set.fs">
-      <Link>set.fs</Link>
+      <Link>Collections/set.fs</Link>
     </Compile>
     <Compile Include="reflect.fsi">
-      <Link>reflect.fsi</Link>
+      <Link>Reflection/reflect.fsi</Link>
     </Compile>
     <Compile Include="reflect.fs">
-      <Link>reflect.fs</Link>
+      <Link>Reflection/reflect.fs</Link>
     </Compile>
     <Compile Include="event.fsi">
-      <Link>event.fsi</Link>
+      <Link>Event/event.fsi</Link>
     </Compile>
     <Compile Include="event.fs">
-      <Link>event.fs</Link>
+      <Link>Event/event.fs</Link>
     </Compile>
-    <Compile Include="math/n.fsi">
-      <Link>n.fsi</Link>
+    <Compile Include="math\n.fsi">
+      <Link>Numerics/n.fsi</Link>
     </Compile>
-    <Compile Include="math/n.fs">
-      <Link>n.fs</Link>
+    <Compile Include="math\n.fs">
+      <Link>Numerics/n.fs</Link>
     </Compile>
-    <Compile Include="math/z.fsi">
-      <Link>z.fsi</Link>
+    <Compile Include="math\z.fsi">
+      <Link>Numerics/z.fsi</Link>
     </Compile>
-    <Compile Include="math/z.fs">
-      <Link>z.fs</Link>
+    <Compile Include="math\z.fs">
+      <Link>Numerics/z.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
-      <Link>sformat.fsi</Link>
+      <Link>Printf/sformat.fsi</Link>
     </Compile>
     <Compile Include="..\..\utils\sformat.fs">
-      <Link>sformat.fs</Link>
+      <Link>Printf/sformat.fs</Link>
     </Compile>
     <Compile Include="printf.fsi">
-      <Link>printf.fsi</Link>
+      <Link>Printf/printf.fsi</Link>
     </Compile>
     <Compile Include="printf.fs">
-      <Link>printf.fs</Link>
+      <Link>Printf/printf.fs</Link>
     </Compile>
     <Compile Include="quotations.fsi">
-      <Link>quotations.fsi</Link>
+      <Link>Quotations/quotations.fsi</Link>
     </Compile>
     <Compile Include="quotations.fs">
-      <Link>quotations.fs</Link>
+      <Link>Quotations/quotations.fs</Link>
     </Compile>
     <Compile Include="nativeptr.fsi">
-      <Link>nativeptr.fsi</Link>
+      <Link>NativeInterop/nativeptr.fsi</Link>
     </Compile>
     <Compile Include="nativeptr.fs">
-      <Link>nativeptr.fs</Link>
+      <Link>NativeInterop/nativeptr.fs</Link>
     </Compile>
     <Compile Include="control.fsi">
-      <Link>control.fsi</Link>
+      <Link>Async/control.fsi</Link>
     </Compile>
     <Compile Include="control.fs">
-      <Link>control.fs</Link>
+      <Link>Async/control.fs</Link>
     </Compile>
     <Compile Include="Linq.fsi">
-      <Visible>true</Visible>
-      <Link>Linq.fsi</Link>
+      <Link>Queries/Linq.fsi</Link>
     </Compile>
     <Compile Include="Linq.fs">
-      <Visible>true</Visible>
-      <Link>Linq.fs</Link>
+      <Link>Queries/Linq.fs</Link>
     </Compile>
     <Compile Include="MutableTuple.fs">
-      <Visible>true</Visible>
-      <Link>MutableTuple.fs</Link>
+      <Link>Queries/MutableTuple.fs</Link>
     </Compile>
     <Compile Include="QueryExtensions.fs">
-      <Visible>true</Visible>
-      <Link>QueryExtensions.fs</Link>
+      <Link>Queries/QueryExtensions.fs</Link>
     </Compile>
-    <Compile Include="Query.fsi" >
-      <Visible>true</Visible>
-      <Link>Query.fsi</Link>
+    <Compile Include="Query.fsi">
+      <Link>Queries/Query.fsi</Link>
     </Compile>
-    <Compile Include="Query.fs" >
-      <Visible>true</Visible>
-      <Link>Query.fs</Link>
+    <Compile Include="Query.fs">
+      <Link>Queries/Query.fs</Link>
     </Compile>
-    <Compile Include="SI.fs" >
-      <Visible>true</Visible>
-      <Link>SI.fs</Link>
+    <Compile Include="SI.fs">
+      <Link>Units/SI.fs</Link>
     </Compile>
     <Compile Include="fslib-extra-pervasives.fsi">
       <Link>fslib-extra-pervasives.fsi</Link>
