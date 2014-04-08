@@ -372,7 +372,7 @@
         on CodePlex. If you like you can throw away these binaries and use your own compiled versions of these tools.
     </p>
 
-    <h3>1.  Building a Proto Compiler and the F# core library for .net 4.0 and .net 2.0</h3>
+    <h3>1.  Building a Proto Compiler and the F# core library for .net 4.0, .net 2.0, and .net portable profile 47</h3>
 
     <p>This uses the lkg compiler to build.  Note that you need the .NET framework 3.5 installed on your machine in order to complete this step.</p>
     <pre>
@@ -381,6 +381,7 @@
     msbuild fsharp-proto-build.proj
     msbuild fsharp-library-build.proj /p:TargetFramework=net40
     msbuild fsharp-library-build.proj /p:TargetFramework=net20
+    msbuild fsharp-library-build.proj /p:TargetFramework=portable47
     </pre>
 
     <h3>2.  Building an F# (Debug) compiler for .NET 4.0 profile</h3>
@@ -433,9 +434,10 @@
     <p>There are language tests under the <code>tests</code> directory. The test apparatus uses batch files, assuming <a href="http://www.perl.org/get.html">Perl</a> (ActiveState Perl 5.16.3 is known to work fine) is installed. You can run these on Windows using:</p>
     <pre>
     cd ..\tests
-    Runtests.cmd fsharp
-    Runtests.cmd fsharpqa
-    Runtests.cmd coreunit    </pre>
+    BuildTestTools.cmd debug
+    Runtests.cmd debug fsharp
+    Runtests.cmd debug fsharpqa
+    Runtests.cmd debug coreunit    </pre>
 
     <h3>6.  [Alternate Build Instructions] Build an optimised F# (Release) compiler for .NET 4.0 profile</h3>
 

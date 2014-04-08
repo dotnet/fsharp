@@ -327,22 +327,29 @@
 </ul>
 <p>Perl and NUnit should be included in the %PATH% to make execution easiest.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
 
-<p>Before running tests, make sure you have successfully built all of the following:
+<p>Before running tests, make sure you have successfully built all required projects, both product and test:
 <ul>
-<li><code>src\fsharp-compiler-build.proj /p:TargetFramework=net40</code> to generate the compiler, libraries, and interative for .NET 4</li>
-<li><code>src\fsharp-library-build.proj /p:TargetFramework=net20</code> to generate the libraries for .NET 2</li>
-<li><code>src\fsharp-tyeproviders-build.proj /p:TargetFramework=net40</code> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
+<li>From the <code>src</code> directory</li>
+    <ul>
+        <li><code>msbuild fsharp-compiler-build.proj /p:TargetFramework=net40 /p:Configuration=&lt;debug|release&gt;</code> to generate the compiler, libraries, and interative for .NET 4</li>
+        <li><code>msbuild fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET 2</li>
+        <li><code>msbuild fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 47</li>
+        <li><code>msbuild fsharp-tyeproviders-build.proj /p:TargetFramework=net40 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
+        <li><code>update.cmd &lt;debug|release&gt; -ngen</code> to update the GAC, add strong name validation skips, and ngen latest-built binaries</li>
+    </ul>
+<li>From the <code>tests</code> directory</li>
+    <ul>
+        <li><code>BuildTestTools.cmd &lt;debug|release&gt;</code> to build and binplace tools used during testing</li>
+    </ul>
 </ul>
-
-<p>You should also run <code>src\update.cmd &lt;debug|release&gt; -ngen</code> before running tests.  This script will perform GAC and strong name validation updates required for the tests to work, as well as NGen-ing components so that tests run more quickly.
 
 <p><h3>Running Tests</h3>
 
 <p>The script <code>tests\RunTests.cmd</code> has been provided to make execution of the above 3 suites very simple.  You can kick off a full test run of any of the above suites like this:
 <pre>
-    RunTests.cmd fsharp [tags to run] [tags not to run]
-    RunTests.cmd fsharpqa [tags to run] [tags not to run]
-    RunTests.cmd coreunit
+    RunTests.cmd &lt;debug|release&gt; fsharp [tags to run] [tags not to run]
+    RunTests.cmd &lt;debug|release&gt; fsharpqa [tags to run] [tags not to run]
+    RunTests.cmd &lt;debug|release&gt; coreunit
 </pre>
 
 <p><code>RunTests.cmd</code> sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
@@ -357,9 +364,9 @@
 
 <p>Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified to <code>RunTests.cmd</code>, all tests will be run.
 
-<p>If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN"), then call <code>RunTests.cmd &lt;fsharp|fsharpqa&gt; RERUN</code>.
+<p>If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN"), then call <code>RunTests.cmd &lt;debug|release&gt; &lt;fsharp|fsharpqa&gt; RERUN</code>.
 
-<p>If you want to specify multiple tags to run or not run, pass them comma-delimited and enclosed in double quotes, e.g. <code>RunTests.cmd fsharp "Core01,Core02"</code>. From a Powershell environment, make sure the double quotes are passed literally, e.g. <code>.\RunTests.cmd fsharp '"Core01,Core02"'</code> or <code>.\RunTests.cmd --% fsharp "Core01,Core02"</code>.
+<p>If you want to specify multiple tags to run or not run, pass them comma-delimited and enclosed in double quotes, e.g. <code>RunTests.cmd debug fsharp "Core01,Core02"</code>. From a Powershell environment, make sure the double quotes are passed literally, e.g. <code>.\RunTests.cmd debug fsharp '"Core01,Core02"'</code> or <code>.\RunTests.cmd --% debug fsharp "Core01,Core02"</code>.
 
 <p><code>RunTests.cmd</code> is mostly just a simple wrapper over <code>tests\fsharpqa\testenv\bin\RunAll.pl</code>, which has capabilities not discussed here. More advanced test execution scenarios can be achieved by invoking <code>RunAll.pl</code> directly.  Run <code>perl tests\fsharpqa\testenv\bin\RunAll.pl -?</code> to see a full list of flags and options.
 
@@ -367,7 +374,7 @@
 
 <p><b>FSharp Suite</b>
 
-<p>These tests are fairly easy to execute directly when needed, without help from <code>RunTests.cmd</code> or <code>RunAll.pl</code>.  Test area directories in this suite will have either a <code>Build.bat</code> script, a <code>Run.bat</code> script, or both.  To run the test area, you can simply call <code>Build.bat</code> (if it exists), then <code>Run.bat</code> (if it exists).  In this way it is simple to re-run a specific test area by itself.
+<p>These tests are fairly easy to execute directly when needed, without help from <code>RunTests.cmd</code> or <code>RunAll.pl</code>.  Test area directories in this suite will have either a <code>Build.bat</code> script, a <code>Run.bat</code> script, or both.  To run the test area, you can simply call <code>Build.bat</code> (if it exists), then <code>Run.bat</code> (if it exists).  In this way it is simple to re-run a specific test area by itself.  <b><font color="red">NOTE:</font></b> If you are re-running tests manually like this, make sure you set environment variables similarly to how RunTests.cmd does (e.g. %FSCBINPATH%), to ensure tests are running against your open-built bits, and not against a Visual Studio deployment of F#.
 
 <p><code>Build.bat</code> and <code>Run.bat</code> scripts typically invoke <code>tests\Config.bat</code> to pick up a variety of environment variables and configuration options, then invoke <code>tests\fsharp\single-test-build.bat</code> and <code>tests\fsharp\single-test-run.bat</code>.  This will compile and execute the local <code>test.fsx</code> file using some combination of compiler or fsi flags.  If the compilation and execution encounter no errors, the test is considered to have passed.
 
@@ -383,7 +390,13 @@
 
 <h3>Other Tips</h3>
 <ul>
-<li>NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster</li>
-<li>Tests from the FSharp and FSharpQA suites can be run in parallel using the <code>-procs:N</code> argument to <code>RunAll.pl</code>, or by uncommenting the relevant line in <code>RunTests.cmd</code> (look for PARALLEL_ARG).</li>
+<li>Run as admin, or a handful of tests will fail</li>
+<li><b>Don't</b> run tests from a Visual Studio developer command prompt.  Running from a developer command prompt will put Visual Studio F# tools on the %PATH%, which is not desirable when testing open F# tools.</li>
+<li>Making the tests run faster</li>
+<ul>
+<li>NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster.  Make sure you run <code>src\update.cmd</code> with the <code>-ngen</code> flag before running tests.</li>
+<li>Tests can be run in parallel by uncommenting the relevant line in <code>RunTests.cmd</code> (look for PARALLEL_ARG).</li>
+<li>Tests from the FSharpQA suite can run using a persistent, hosted version of the compiler.  This speeds up test execution, as there is no need for the fsc.exe process to spin up repeatedly.  To enable this, uncomment the relevant line in <code>RunTests.cmd</code> (look for HOSTED_COMPILER).</li>
+</ul>
 </ul>
 </body>
