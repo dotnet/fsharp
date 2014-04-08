@@ -1,18 +1,25 @@
 @echo OFF
 setlocal
 
+set FLAVOR=%1
+if /I "%FLAVOR%" == "debug" (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "release" (goto :FLAVOR_OK)
+goto :USAGE
+
+:flavor_ok
+
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
-set _tmp=%2
+set _tmp=%3
 if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
 set NO_TTAGS_ARG=-nottags:ReqPP
-set _tmp=%3
+set _tmp=%4
 if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
 
 rem Use commented line to enable parallel execution of tests
-rem set PARALLEL_ARG=-procs:3
+rem set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
 set REDUCED_RUNTIME=1
@@ -24,15 +31,17 @@ rem    greatly speed up execution since fsc.exe does not need to be spawned thou
 rem set HOSTED_COMPILER=1
 
 rem path to fsc.exe which will be used by tests
-set FSCBINPATH=%~dp0..\Release\net40\bin
+set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 
-if /I "%1" == "fsharp" (goto :FSHARP)
-if /I "%1" == "fsharpqa" (goto :FSHARPQA)
-if /I "%1" == "coreunit" (goto :COREUNIT)
+if /I "%2" == "fsharp" (goto :FSHARP)
+if /I "%2" == "fsharpqa" (goto :FSHARPQA)
+if /I "%2" == "coreunit" (goto :COREUNIT)
+
+:USAGE
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<fsharp^|fsharpqa^|coreunit^>
+echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -42,6 +51,9 @@ exit /b 1
 set RESULTFILE=FSharp_Results.log
 set FAILFILE=FSharp_Failures.log
 set FAILENV=FSharp_Failures
+
+rem Hosted compiler not supported for FSHARP suite
+set HOSTED_COMPILER=
 
 where.exe perl > NUL 2> NUL 
 if errorlevel 1 (
@@ -123,7 +135,7 @@ if errorlevel 1 (
   echo Error: nunit-console.exe is not in the PATH
   exit /b 1
 )
-echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %~dp0..\Debug\net40\bin\FSharp.Core.Unittests.dll 
-     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %~dp0..\Debug\net40\bin\FSharp.Core.Unittests.dll 
+echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
+     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
 
 goto :EOF
