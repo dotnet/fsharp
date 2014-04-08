@@ -483,6 +483,9 @@
       <Link>SimpleServices.fs</Link>
     </Compile>
 -->
+    <Compile Include="InternalsVisibleTo.fs">
+      <Link>InternalsVisibleTo.fs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

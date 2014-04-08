@@ -1,20 +1,22 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>4239efea-e746-446a-bf7a-51fcbab13946</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>HostedCompilerServer</RootNamespace>
-    <AssemblyName>HostedCompilerServer</AssemblyName>
+    <ProjectGuid>4fae092e-5366-43f5-85fa-71eaf66fa4a8</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>FSharp.Compiler.Hosted</RootNamespace>
+    <AssemblyName>FSharp.Compiler.Hosted</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OpenBuild Condition=" '$(OpenBuild)' == '' ">True</OpenBuild>
     <OpenDrop>..\..\..\..\..\$(Configuration)\net40\bin</OpenDrop>
+    <OtherFlags Condition=" '$(OpenBuild)' != 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\bin\msft.pubkey"</OtherFlags>
+    <OtherFlags Condition=" '$(OpenBuild)' == 'True' ">$(OtherFlags) --delaysign+ --keyfile:"..\..\..\..\..\src\fsharp\msft.pubkey"</OtherFlags>
     <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
-    <Name>HostedCompilerServer</Name>
+    <Name>FSharp.Compiler.Hosted</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -25,7 +27,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Debug\HostedCompilerServer.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\FSharp.Compiler.Hosted.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -36,18 +38,20 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Release\HostedCompilerServer.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\FSharp.Compiler.Hosted.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Compiler.Hosted\FSharp.Compiler.Hosted.fsproj"/>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-   </ItemGroup>
-   <ItemGroup Condition=" '$(OpenBuild)' == 'True' ">
+  </ItemGroup>
+  <ItemGroup Condition=" '$(OpenBuild)' == 'True' ">
     <Reference Include="$(OpenDrop)\FSharp.Core.dll">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="$(OpenDrop)\FSharp.Compiler.dll">
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -55,10 +59,12 @@
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
+    <Reference Include="FSharp.Compiler.dll, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"> 
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.fs" />
-    <None Include="App.config" />
+    <Compile Include="Compiler.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
