@@ -18,11 +18,11 @@ if not exist "%ILDASM%" (
 
 "%ILDASM%" /nobar /out=test--optimize.il test--optimize.exe
 
-type test--optimize.il | find /C "IL_0005:  ldloca.s   V_0" > count--optimize
-type test.il | find /C "IL_0005:  ldloca.s   V_0" > count
+type test--optimize.il | find /C ".locals init" > count--optimize
+type test.il | find /C ".locals init" > count
 for /f %%c IN (count--optimize) do (if NOT "%%c"=="0" (
    echo Error: optimizations not removed.  Relevant lines from IL file follow:
-   type test--optimize.il | find "IL_0005:  ldloca.s   V_0"
+   type test--optimize.il | find ".locals init"
    goto SetError)
 )
 for /f %%c IN (count) do (

@@ -9,12 +9,16 @@ if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
   goto Skip
 )
 
-
-
-"%FSC%" %fsc_flags% -g --optimize- -o:test.exe test.fs
+"%FSC%" %fsc_flags% -g --optimize- --target:library -o:lib.dll lib.fs
 if ERRORLEVEL 1 goto Error
 
-"%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fs
+"%FSC%" %fsc_flags% --optimize --target:library -o:lib--optimize.dll -g lib.fs
+if ERRORLEVEL 1 goto Error
+
+"%FSC%" %fsc_flags% -g --optimize- -o:test.exe test.fs -r:lib.dll
+if ERRORLEVEL 1 goto Error
+
+"%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fs -r:lib--optimize.dll
 if ERRORLEVEL 1 goto Error
 
 :Ok
