@@ -1,0 +1,4 @@
+FSharp.Compiler.*
+FSharp.Core.*
+HostedCompilerServer.*
+ILComparer.*
