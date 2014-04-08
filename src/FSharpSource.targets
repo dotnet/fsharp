@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <!-- We sign with the Microsoft key and use delay-signing -->
-  <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' AND ('$(Configuration)'=='Debug' OR '$(Configuration)'=='Release') AND ('$(TargetFramework)' == 'net20' OR '$(TargetFramework)' == 'net40')">
+  <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' AND ('$(Configuration)'=='Debug' OR '$(Configuration)'=='Release') AND ('$(TargetFramework)' == 'net20' OR '$(TargetFramework)' == 'net40' OR '$(TargetFramework)' == 'portable47')">
     <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
     <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
     <StrongNames>true</StrongNames>
@@ -491,7 +491,7 @@
   <Choose>
     <When Condition="'$(TargetFramework)'=='portable47'">
       <PropertyGroup>
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\Portable\v4.0\Microsoft.Portable.Common.targets</FSharpTargetsPath>
+        <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(TargetFramework)'=='sl3' or '$(TargetFramework)'=='sl4' or '$(TargetFramework)'=='sl5' or '$(TargetFramework)'=='sl5-compiler'">

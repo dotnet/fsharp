@@ -39,6 +39,9 @@
     <CustomCopyLocal Include="..\FSharp.Build\Microsoft.FSharp.targets">
       <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
     </CustomCopyLocal>
+    <CustomCopyLocal Include="..\FSharp.Build\Microsoft.Portable.FSharp.targets">
+      <TargetFilename>Microsoft.Portable.FSharp-proto.targets</TargetFilename>
+    </CustomCopyLocal>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
