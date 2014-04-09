@@ -422,7 +422,7 @@
     
     <h3>5. Building F# Core Unit Tests for .NET 4.0</h3>
     
-    <p>This uses the proto compiler to build the unit tests that check some parts of FSharp.Core.dll and FSharp.Compiler.dll. You must have NUnit installed.</p>
+    <p>This uses the proto compiler to build the unit tests that check some parts of FSharp.Core.dll and FSharp.Compiler.dll. You must have <a href="http://nunit.org/?p=download">NUnit</a> (2.6.3 is known to work fine) installed.</p>
     <pre>
     msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40
     </pre>    
@@ -430,7 +430,7 @@
     <p>Below are the very basic commands you can use to execute the included unit tests and general compiler/runtime tests. 
     For more details on how to run, debug, and write tests, see <a href="tests\TESTGUIDE.html">tests\TESTGUIDE.html</a>.</p>
 
-    <p>There are language tests under the <code>tests</code> directory. The test apparatus uses batch files, assuming perl is installed. You can run these on Windows using:</p>
+    <p>There are language tests under the <code>tests</code> directory. The test apparatus uses batch files, assuming <a href="http://www.perl.org/get.html">Perl</a> (ActiveState Perl 5.16.3 is known to work fine) is installed. You can run these on Windows using:</p>
     <pre>
     cd ..\tests
     Runtests.cmd fsharp
