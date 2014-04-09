@@ -158,18 +158,8 @@ IF NOT DEFINED FSI                                            SET FSI=%fsiroot%.
 IF DEFINED FSCBinPath IF EXIST "%FSCBinPath%\fsc.exe"   SET FSC=%FSCBinPath%\fsc.exe
 IF DEFINED FSCBinPath IF EXIST "%FSCBinPath%\%fsiroot%.exe"   SET FSI=%FSCBinPath%\%fsiroot%.exe
 
-REM == In Visual Studio deployments, FSharp.Core.dll is not sitting next to fsc.exe
-REM == In open source builds, it is.
-REM == Logic here should locate the right path in either case, for both .NET 4 and .NET 2 versions
-set FSCOREDLLPATH=
-set FSCOREDLL20PATH=
-call :GetFSCOREDLLPaths
-
-IF EXIST "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
-set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
-
-set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
-IF EXIST "%FSCBinPath%..\..\net20\bin\FSharp.Core.dll" set FSCOREDLL20PATH=%FSCBinPath%..\..\net20\bin\FSharp.Core.dll
+REM == Located F# library DLLs in either open or Visual Studio contexts
+call :GetFSLibPaths
 
 REM == Set standard flags for invoking powershell scripts
 IF NOT DEFINED PSH_FLAGS SET PSH_FLAGS=-nologo -noprofile -executionpolicy bypass
@@ -217,6 +207,8 @@ echo fsc_flags           =%fsc_flags%
 echo FSCBinPath          =%FSCBinPath%
 echo FSCOREDLL20PATH     =%FSCOREDLL20PATH%
 echo FSCOREDLLPATH       =%FSCOREDLLPATH%
+echo FSCOREDLLPORTABLEPATH =%FSCOREDLLPATH%
+echo FSDATATPPATH        =%FSDATATPPATH%
 echo FSDIFF              =%FSDIFF%
 echo FSI                 =%FSI%
 echo fsi_flags           =%fsi_flags%
@@ -246,10 +238,9 @@ FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\3.1\Run
 goto :EOF
 
 REM ===
-REM === Find path to FSharp.Core.dll (in Dev11, this is under Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0 and v2.0)
-REM ===                               in Dev12, this is under Reference Assemblies\Microsoft\FSharp\{.NETFramework|.NETCore|.NETPortable}\...
+REM === Find paths to shipped F# libraries referenced by clients
 REM ===
-:GetFSCOREDLLPaths
+:GetFSLibPaths
 
 REM == Find out OS architecture, no matter what cmd prompt
 SET OSARCH=%PROCESSOR_ARCHITECTURE%
@@ -262,6 +253,19 @@ IF /I "%OSARCH%"=="x86"   set X86_PROGRAMFILES=%ProgramFiles%
 IF /I "%OSARCH%"=="IA64"  set X86_PROGRAMFILES=%ProgramFiles(x86)%
 IF /I "%OSARCH%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
-REM == Set path to v2.0 and v4.0 FSharp.Core.dll (4.0 is the default)
+REM == Default VS install locations
 set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0
 set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
+set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\2.3.5.1
+set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
+
+REM == Check if using open build instead
+IF EXIST "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
+IF EXIST "%FSCBinPath%\..\..\net20\bin\FSharp.Core.dll" set FSCOREDLL20PATH=%FSCBinPath%\..\..\net20\bin
+IF EXIST "%FSCBinPath%\..\..\portable47\bin\FSharp.Core.dll" set FSCOREDLLPORTABLEPATH=%FSCBinPath%\..\..\portable47\bin
+IF EXIST "%FSCBinPath%\FSharp.Data.TypeProviders.dll" set FSDATATPPATH=%FSCBinPath%
+
+set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
+set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
+set FSCOREDLLPORTABLEPATH=%FSCOREDLLPORTABLEPATH%\FSharp.Core.dll
+set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll

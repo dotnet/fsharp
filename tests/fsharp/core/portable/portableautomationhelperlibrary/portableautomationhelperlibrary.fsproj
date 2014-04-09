@@ -38,8 +38,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+    <FscToolPath>$(FSCBINPATH)</FscToolPath>
   </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.Portable.FSharp.Targets" />
+  <Import Project="$(FSCBINPATH)\Microsoft.Portable.FSharp.Targets" />
   <ItemGroup>
     <Compile Include="Hooks.fs" />
     <Compile Include="Extensions.fs" />
@@ -49,11 +50,7 @@
     <Compile Include="System.Diagnostics.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="FSharp.Core">
-      <Name>FSharp.Core</Name>
-      <AssemblyName>FSharp.Core.dll</AssemblyName>
-      <HintPath>$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETPortable\2.3.5.1\FSharp.Core.dll</HintPath>
-    </Reference>
+    <Reference Include="$(FSCOREDLLPORTABLEPATH)"/>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
