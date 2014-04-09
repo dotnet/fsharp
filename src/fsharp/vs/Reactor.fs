@@ -60,11 +60,7 @@ module internal Reactor =
      type Reactor() = 
         // We need to store the culture for the VS thread that is executing now,
         // so that when the reactor picks up a thread from the threadpool we can set the culture
-#if SILVERLIGHT
-        let culture = System.Threading.Thread.CurrentThread.CurrentCulture
-#else
         let culture = new System.Globalization.CultureInfo(System.Threading.Thread.CurrentThread.CurrentUICulture.LCID)
-#endif
 
         let mutable recentBuild : BuildStepper option = None
 

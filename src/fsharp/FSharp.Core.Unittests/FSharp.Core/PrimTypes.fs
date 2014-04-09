@@ -115,9 +115,7 @@ type LanguagePrimitivesModule() =
 
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
-#else
-#if SILVERLIGHT
-#else    
+#else  
     [<Test>]
     member this.GenericComparisonBiModal() =
 
@@ -152,7 +150,6 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(resultRef,-1)
         
         ()   
-#endif
 #endif
         
     [<Test>]
@@ -656,9 +653,7 @@ type UnitType() =
 
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
-#else
-#if SILVERLIGHT
-#else        
+#else     
 [<TestFixture>]
 type SourceConstructFlagsEnum() =
     [<Test>]
@@ -678,7 +673,6 @@ type CompilationRepresentationFlagsEnum() =
                         [|"None";"Static";"Instance";"ModuleSuffix";"UseNullAsTrueValue";"Event"|])
             
         ()
-#endif
 #endif
 
 [<TestFixture>]

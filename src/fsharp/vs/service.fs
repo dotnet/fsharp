@@ -46,11 +46,7 @@ open ItemDescriptionsImpl
 
 [<AutoOpen>]
 module EnvMisc =
-#if SILVERLIGHT
-    let GetEnvInteger e dflt = dflt
-#else
     let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
-#endif
     let buildCacheSize   = GetEnvInteger "mFSharp_BuildCacheSize" 3
     let recentForgroundTypeCheckLookupSize = GetEnvInteger "mFSharp_RecentForegroundTypeCheckCacheSize" 5
     let braceMatchCacheSize = GetEnvInteger "mFSharp_BraceMatchCacheSize" 5
@@ -1731,11 +1727,7 @@ module internal DebuggerEnvironment =
     /// Return the language ID, which is the expression evaluator id that the
     /// debugger will use.
     let GetLanguageID() =
-#if SILVERLIGHT
-        System.Guid(0xAB4F38C9, 0xB6E6s, 0x43bas, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
-#else
         System.Guid(0xAB4F38C9u, 0xB6E6us, 0x43baus, 0xBEuy, 0x3Buy, 0x58uy, 0x08uy, 0x0Buy, 0x2Cuy, 0xCCuy, 0xE3uy)
-#endif
         
     
 [<NoComparison>]

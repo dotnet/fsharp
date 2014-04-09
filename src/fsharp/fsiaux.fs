@@ -67,12 +67,8 @@ type InteractiveSession()  =
     let mutable evLoop = (new SimpleEventLoop() :> IEventLoop)
     let mutable showIDictionary = true
     let mutable showDeclarationValues = true
-    let mutable args =
-#if SILVERLIGHT
-        [|"fsi.exe"|]
-#else                   
-        System.Environment.GetCommandLineArgs()
-#endif            
+    let mutable args =                
+        System.Environment.GetCommandLineArgs()         
     let mutable fpfmt = "g10"
     let mutable fp = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider)
     let mutable printWidth = 78
@@ -109,22 +105,16 @@ type InteractiveSession()  =
 
     member self.AddPrintTransformer(printer : 'T -> obj) =
       addedPrinters <- Choice2Of2 (typeof<'T>, (fun (x:obj) -> printer (unbox x))) :: addedPrinters
-
-#if SILVERLIGHT
-#else      
+    
 [<assembly: CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1009:DeclareEventHandlersCorrectly", Scope="member", Target="Microsoft.FSharp.Compiler.Interactive.InteractiveSession.#ThreadException")>]
 do()
-#endif
   
   
 module Settings = 
     let fsi = new InteractiveSession()
-
-#if SILVERLIGHT
-#else      
+   
     [<assembly: AutoOpen("Microsoft.FSharp.Compiler.Interactive.Settings")>]
     do()
-#endif
 
 module RuntimeHelpers = 
     open System
@@ -134,6 +124,3 @@ module RuntimeHelpers =
     let SaveIt (x:'T) = (savedIt := (typeof<'T>, box x))
     let internal GetSavedIt () = snd !savedIt
     let internal GetSavedItType () = fst !savedIt
-#if SILVERLIGHT
-    let GetSimpleEventLoop() = new SimpleEventLoop() :> IEventLoop
-#endif

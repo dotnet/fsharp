@@ -905,9 +905,6 @@ type ILAttribElem =
 type ILAttributeNamedArg =  (string * ILType * bool * ILAttribElem)
 type ILAttribute = 
     { Method: ILMethodSpec;
-#if SILVERLIGHT
-      Arguments: ILAttribElem list * ILAttributeNamedArg list
-#endif
       Data: byte[] }
 
 [<NoEquality; NoComparison>]
@@ -4401,9 +4398,6 @@ let mkILCustomAttribMethRef (ilg: ILGlobals) (mspec:ILMethodSpec, fixedArgs: lis
              yield! encodeCustomAttrNamedArg ilg namedArg |]
 
     { Method = mspec;
-#if SILVERLIGHT
-      Arguments = fixedArgs, namedArgs
-#endif
       Data = args }
 
 let mkILCustomAttribute ilg (tref,argtys,argvs,propvs) = 
@@ -5058,11 +5052,7 @@ let parseILVersion (vstr : string) =
     let version = System.Version(vstr)
     let zero32 n = if n < 0 then 0us else uint16(n)
     // since the minor revision will be -1 if none is specified, we need to truncate to 0 to not break existing code
-#if SILVERLIGHT
-    let minorRevision = if version.Revision = -1 then 0us else uint16(version.Revision)
-#else
-    let minorRevision = if version.Revision = -1 then 0us else uint16(version.MinorRevision)
-#endif    
+    let minorRevision = if version.Revision = -1 then 0us else uint16(version.MinorRevision)   
     (zero32 version.Major, zero32 version.Minor, zero32 version.Build, minorRevision);;
 
 

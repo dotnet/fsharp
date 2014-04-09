@@ -559,11 +559,7 @@ module internal ExtensionTyping =
         member __.RawSystemType = x
         /// Type.GetEnumUnderlyingType either returns type or raises exception, null is not permitted
         member __.GetEnumUnderlyingType() = 
-#if SILVERLIGHT
-            x.UnderlyingSystemType
-#else
             x.GetEnumUnderlyingType() 
-#endif
             |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
         static member Create ctxt x = match x with null -> null | t -> ProvidedType (t,ctxt)
         static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t,ctxt)
@@ -673,11 +669,7 @@ module internal ExtensionTyping =
 
     and [<AllowNullLiteral; Sealed>] 
         ProvidedAssembly private (x: System.Reflection.Assembly, _ctxt) = 
-#if SILVERLIGHT
-        member __.GetName() = System.Reflection.AssemblyName(x.FullName)
-#else
         member __.GetName() = x.GetName()
-#endif
         member __.FullName = x.FullName
         member __.GetManifestModuleContents(provider: ITypeProvider) = provider.GetGeneratedAssemblyContents(x)
         static member Create ctxt x = match x with null -> null | t -> ProvidedAssembly (t,ctxt)
@@ -1243,11 +1235,7 @@ module internal ExtensionTyping =
                               sp.PUntaint((fun sp -> 
                                   let pt = sp.ParameterType 
                                   let ut = pt.RawSystemType
-#if SILVERLIGHT
-                                  let uet = if pt.IsEnum then ut.UnderlyingSystemType else ut
-#else
                                   let uet = if pt.IsEnum then ut.GetEnumUnderlyingType() else ut
-#endif
                                   uet.FullName),m)
 
                           match spReprTypeName with 

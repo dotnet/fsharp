@@ -28,8 +28,7 @@ module internal MSBuildResolver =
             
     type ResolutionEnvironment = CompileTimeLike | RuntimeLike | DesigntimeLike
     
-#if SILVERLIGHT
-#else
+
     open System
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
@@ -438,5 +437,3 @@ module internal MSBuildResolver =
             referenceCopyLocalPaths = set rootedResults.referenceCopyLocalPaths |> Set.union (set unrootedResults.referenceCopyLocalPaths) |> Set.toArray 
             suggestedBindingRedirects = set rootedResults.suggestedBindingRedirects |> Set.union (set unrootedResults.suggestedBindingRedirects) |> Set.toArray 
         }
-
-#endif

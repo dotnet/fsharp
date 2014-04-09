@@ -11,8 +11,6 @@ open NUnit.Framework
 #if FX_ATLEAST_PORTABLE
 // TODO named #define ?
 #else
-#if SILVERLIGHT
-#else
 [<TestFixture>]
 type TypeForwardingModule() =
     [<Test>]
@@ -33,5 +31,4 @@ type TypeForwardingModule() =
             Assert.AreEqual(tupleAssemblyName, mscorlib4AssemblyName)
         | _ -> failwith "Unknown scenario."
         () 
-#endif
 #endif

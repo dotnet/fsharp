@@ -91,12 +91,8 @@ type XmlDoc =
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
                 else if String.hasPrefix lineAT "<" then lines
-                else ["<summary>"] @
-#if SILVERLIGHT
-                     lines @
-#else        
+                else ["<summary>"] @     
                      (lines |> List.map (fun line -> System.Security.SecurityElement.Escape(line))) @
-#endif
                      ["</summary>"]               
 
         let lines = processLines (Array.toList lines)

@@ -15,8 +15,6 @@ val pdbInitialize : string -> string -> PdbWriter
 val absilWriteGetTimeStamp: unit -> int32
 
 
-#if SILVERLIGHT
-#else
 open System
 open System.Runtime.InteropServices
 open System.Diagnostics.SymbolStore
@@ -125,5 +123,4 @@ val signerGetPublicKeyForKeyContainer: string -> pubkey
 val signerCloseKeyContainer: keyContainerName -> unit 
 val signerSignatureSize: pubkey -> int 
 val signerSignFileWithKeyPair: string -> keyPair -> unit 
-val signerSignFileWithKeyContainer: string -> keyContainerName -> unit 
-#endif
+val signerSignFileWithKeyContainer: string -> keyContainerName -> unit

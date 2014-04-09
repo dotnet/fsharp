@@ -45,11 +45,7 @@ let AddNonUserCompilerGeneratedAttribs g (mdef:ILMethodDef) = addMethodGenerated
 
 let debugDisplayMethodName = "__DebugDisplay"
 
-#if SILVERLIGHT
-let useHiddenInitCode = false
-#else
 let useHiddenInitCode = true
-#endif
 
 //--------------------------------------------------------------------------
 // misc
@@ -2470,9 +2466,6 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                   elif useICallVirt then I_callvirt (isTailCall, mspec, None) 
                   else I_call (isTailCall, mspec, None)
 
-#if SILVERLIGHT
-          begin
-#else
           // An F# multi dimension array type "int32[,]" should normally map to the ILDASM type "int32[0...,0...]", just like C#.
           //
           // However, System.Reflection.Emit has a nasty bug that means it can't emit calls to C# generic methods involving multi-dimensional arrays
@@ -2672,7 +2665,6 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                   EmitGetLocal cgbuf ilActualRetTy savedVal;
                   GenSequel cenv eenv.cloc cgbuf sequel) // end LocalScope
           else   begin
-#endif // SILVERLIGHT          
               // ok, now we're ready to generate 
               if isSuperInit || isSelfInit then 
                   CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType ]) [ mkLdarg0 ] ;

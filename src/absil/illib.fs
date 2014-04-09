@@ -597,28 +597,7 @@ module Eventually =
 
     let force e = Option.get (forceWhile (fun () -> true) e)
         
-    /// Keep running the computation bit by bit until a time limit is reached.
-#if SILVERLIGHT
-    // There is no Stopwatch on Silverlight, so use DateTime.Now. I'm not sure of the pros and cons of this.
-    // An alternative is just to always force the computation all the way to the end.
-    //let repeatedlyProgressUntilDoneOrTimeShareOver _timeShareInMilliseconds runner e = 
-    //    Done (runner (fun () -> force e))
-    let repeatedlyProgressUntilDoneOrTimeShareOver (timeShareInMilliseconds:int64) runner e = 
-        let rec runTimeShare e = 
-          runner (fun () -> 
-            let sw = System.DateTime.Now
-            let rec loop e = 
-                match e with 
-                | Done _ -> e
-                | NotYetDone (work) -> 
-                    let ts = System.DateTime.Now - sw 
-                    if ts.TotalMilliseconds > float timeShareInMilliseconds then 
-                        NotYetDone(fun () -> runTimeShare e) 
-                    else 
-                        loop(work())
-            loop e)
-        runTimeShare e
-#else    
+    /// Keep running the computation bit by bit until a time limit is reached. 
     /// The runner gets called each time the computation is restarted
     let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
@@ -637,7 +616,6 @@ module Eventually =
                         loop(work())
             loop(e))
         runTimeShare e
-#endif
 
     let rec bind k e = 
         match e with 
@@ -968,25 +946,6 @@ module Shim =
         abstract AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly 
         abstract AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly 
 
-#if SILVERLIGHT
-        default this.AssemblyLoadFrom(fileName:string) = 
-              let load() = 
-                  let assemblyPart = System.Windows.AssemblyPart()
-                  let assemblyStream = this.FileStreamReadShim(fileName)
-                  assemblyPart.Load(assemblyStream)
-              if System.Windows.Deployment.Current.Dispatcher.CheckAccess() then 
-                  load() 
-              else
-                  let resultTask = System.Threading.Tasks.TaskCompletionSource<System.Reflection.Assembly>()
-                  System.Windows.Deployment.Current.Dispatcher.BeginInvoke(Action(fun () -> resultTask.SetResult (load()))) |> ignore
-                  resultTask.Task.Result
-
-        default this.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = 
-            try 
-               System.Reflection.Assembly.Load(assemblyName.FullName)
-            with e -> 
-                this.AssemblyLoadFrom(assemblyName.Name + ".dll")
-#else
         default this.AssemblyLoadFrom(fileName:string) = 
 #if FX_ATLEAST_40_COMPILER_LOCATION
             System.Reflection.Assembly.UnsafeLoadFrom fileName
@@ -994,47 +953,7 @@ module Shim =
             System.Reflection.Assembly.LoadFrom fileName
 #endif
         default this.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = System.Reflection.Assembly.Load assemblyName
-#endif
 
-
-#if SILVERLIGHT
-    open System.IO.IsolatedStorage
-    open System.Windows
-    open System
-
-    let mutable FileSystem = 
-        { new FileSystem() with 
-            member __.FileStreamReadShim (fileName:string) = 
-                match Application.GetResourceStream(System.Uri(fileName,System.UriKind.Relative)) with 
-                | null -> IsolatedStorageFile.GetUserStoreForApplication().OpenFile(fileName, System.IO.FileMode.Open) :> System.IO.Stream 
-                | resStream -> resStream.Stream
-
-            member __.FileStreamCreateShim (fileName:string) = 
-                System.IO.IsolatedStorage.IsolatedStorageFile.GetUserStoreForApplication().CreateFile(fileName) :> Stream
-
-            member __.GetFullPathShim (fileName:string) = fileName
-            member __.IsPathRootedShim (pathName:string) = true
-            member __.SafeGetFullPath (fileName:string) = fileName
-            member __.IsInvalidFilename(filename:string) = 
-                String.IsNullOrEmpty(filename) || filename.IndexOfAny(System.IO.Path.GetInvalidPathChars()) <> -1
-
-            member __.GetTempPathShim() = "." 
-
-            member __.GetLastWriteTimeShim (fileName:string) = 
-                match Application.GetResourceStream(System.Uri(fileName,System.UriKind.Relative)) with 
-                | null -> IsolatedStorageFile.GetUserStoreForApplication().GetLastAccessTime(fileName).LocalDateTime
-                | _resStream -> System.DateTime.Today.Date
-            member __.SafeExists (fileName:string) = 
-                match Application.GetResourceStream(System.Uri(fileName,System.UriKind.Relative)) with 
-                | null -> IsolatedStorageFile.GetUserStoreForApplication().FileExists fileName
-                | resStream -> resStream.Stream <> null
-            member __.FileDelete (fileName:string) = 
-                match Application.GetResourceStream(System.Uri(fileName,System.UriKind.Relative)) with 
-                | null -> IsolatedStorageFile.GetUserStoreForApplication().DeleteFile fileName
-                | _resStream -> ()
-            
-          }
-#else
 
     let mutable FileSystem = 
         { new FileSystem() with 
@@ -1055,15 +974,9 @@ module Shim =
 
             member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTime fileName
             member __.SafeExists (fileName:string) = System.IO.File.Exists fileName 
-            member __.FileDelete (fileName:string) = System.IO.File.Delete fileName }
-
-#endif        
+            member __.FileDelete (fileName:string) = System.IO.File.Delete fileName }       
 
     type System.Text.Encoding with 
-        static member GetEncodingShim(n:int) = 
-#if SILVERLIGHT
-                System.Text.Encoding.GetEncoding(n.ToString())
-#else                
-                System.Text.Encoding.GetEncoding(n)
-#endif                
+        static member GetEncodingShim(n:int) =             
+                System.Text.Encoding.GetEncoding(n)           
 

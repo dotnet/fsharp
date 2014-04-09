@@ -35,11 +35,7 @@ open Microsoft.FSharp.Compiler.Nameres
 open ItemDescriptionIcons 
 
 module EnvMisc2 =
-#if SILVERLIGHT
-    let GetEnvInteger e dflt = dflt
-#else
     let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
-#endif
     let maxMembers   = GetEnvInteger "mFSharp_MaxMembersInQuickInfo" 10
 
     /// dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.

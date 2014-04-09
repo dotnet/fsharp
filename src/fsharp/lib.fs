@@ -17,11 +17,7 @@ let progress = ref false
 let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
 
 let condition _s = 
-#if SILVERLIGHT
-    false
-#else    
     try (System.Environment.GetEnvironmentVariable(_s) <> null) with _ -> false
-#endif    
 
 let dispose (x:System.IDisposable) = match x with null -> () | x -> x.Dispose()
 

@@ -2001,12 +2001,9 @@ type TcConfigBuilder =
 
 
     static member CreateNew (defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported) =
-#if SILVERLIGHT
-#else    
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
-#endif
         { primaryAssembly = PrimaryAssembly.Mscorlib; // defaut value, can be overridden using the command line switch
           light = None;
           noFeedback=false;

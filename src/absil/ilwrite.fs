@@ -4,10 +4,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
-#if SILVERLIGHT
-#else
 open Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
-#endif
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types  
@@ -31,9 +28,6 @@ let showEntryLookups = false
 //---------------------------------------------------------------------
 
 let reportTime =
-#if SILVERLIGHT
-    (fun _ _ -> ())
-#else
     let tFirst = ref None     
     let tPrev = ref None     
     fun showTimes descr ->
@@ -43,7 +37,6 @@ let reportTime =
             let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
             dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr;
             tPrev := Some t
-#endif
 
 //---------------------------------------------------------------------
 // Byte, byte array fragments and other concrete representations
@@ -228,8 +221,6 @@ type PdbData =
 // imperative calls to the Symbol Writer API.
 //---------------------------------------------------------------------
 
-#if SILVERLIGHT
-#else
 let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info = 
     (try FileSystem.FileDelete fpdb with _ -> ());
     let pdbw = ref Unchecked.defaultof<PdbWriter>
@@ -342,8 +333,6 @@ let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
     pdbClose !pdbw;
     reportTime showTimes "PDB: Closed";
     res
-
-#endif
 
 //---------------------------------------------------------------------
 // Support functions for calling 'Mono.CompilerServices.SymbolWriter'
@@ -492,19 +481,6 @@ let DumpDebugInfo (outfile:string) (info:PdbData) =
 // Strong name signing
 //---------------------------------------------------------------------
 
-#if SILVERLIGHT
-type ILStrongNameSigner =  
-    | NeverImplemented
-    static member OpenPublicKeyFile (_s:string) = NeverImplemented
-    static member OpenPublicKey (_pubkey:byte[]) = NeverImplemented
-    static member OpenKeyPairFile (_s:string) = NeverImplemented
-    static member OpenKeyContainer (_s:string) = NeverImplemented
-    member s.Close() = ()      
-    member s.IsFullySigned = true
-    member s.PublicKey =  [| |]
-    member s.SignatureSize = 0x80 
-    member s.SignFile _file = ()
-#else
 type ILStrongNameSigner =  
     | PublicKeySigner of Support.pubkey
     | KeyPair of Support.keyPair
@@ -546,8 +522,6 @@ type ILStrongNameSigner =
         | PublicKeySigner _ -> ()
         | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
         | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
-
-#endif
 
 //---------------------------------------------------------------------
 // TYPES FOR TABLES
@@ -3439,10 +3413,6 @@ let count f arr =
 
 module FileSystemUtilites = 
     open System.Reflection
-#if SILVERLIGHT
-    let progress = false
-    let setExecutablePermission _filename = ()
-#else
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
     let setExecutablePermission filename =
 
@@ -3458,7 +3428,6 @@ module FileSystemUtilites =
         with e -> 
             if progress then eprintf "failure: %s...\n" (e.ToString());
             // Fail silently
-#endif
         
 let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress = 
 
@@ -4083,9 +4052,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let dataSectionAddr = next
           let dataSectionVirtToPhys v = v - dataSectionAddr + dataSectionPhysLoc
           
-#if SILVERLIGHT
-          let nativeResources = [| |]
-#else
           let resourceFormat = if modul.Is64Bit then Support.X64 else Support.X86
           
           let nativeResources = 
@@ -4100,7 +4066,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                     try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName(outfile))
                     with e -> failwith ("Linking a native resource failed: "+e.Message+"")
                   end
-#endif
                 
           let nativeResourcesSize = nativeResources.Length
 
@@ -4522,8 +4487,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
     if dumpDebugInfo then 
         DumpDebugInfo outfile pdbData
 
-#if SILVERLIGHT
-#else
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     begin match pdbfile with
     | None -> ()
@@ -4570,7 +4533,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             reraise()
             
     end;
-#endif
     reportTime showTimes "Finalize PDB";
 
     /// Sign the binary.  No further changes to binary allowed past this point! 

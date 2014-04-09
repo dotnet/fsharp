@@ -7,13 +7,6 @@ let DateTime1970Jan01 = new System.DateTime(1970,1,1,0,0,0,System.DateTimeKind.U
 let absilWriteGetTimeStamp () = (System.DateTime.UtcNow - DateTime1970Jan01).TotalSeconds |> int
 
 
-#if SILVERLIGHT
-type PdbReader = | NeverImplemented
-let pdbReadClose (_pdb:PdbReader) = ()
-type PdbWriter = | NeverImplemented
-let pdbInitialize (_:string) (_:string) = PdbWriter.NeverImplemented
-#else
-
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -1456,4 +1449,3 @@ let signerSignFileWithKeyContainer fileName kcName =
     let iclrSN = getICLRStrongName()
     iclrSN.StrongNameSignatureGeneration(fileName, kcName, Unchecked.defaultof<byte[]>, 0u, ppb, &pcb) |> ignore
     iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
-#endif

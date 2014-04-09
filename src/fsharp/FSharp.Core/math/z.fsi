@@ -75,10 +75,6 @@ namespace System.Numerics
         new : x:int -> BigInteger
         /// Construct a BigInteger value for the given 64-bit integer
         new : x:int64 -> BigInteger
-#if SILVERLIGHT
-        /// Provides custom formatting for BigInteger values
-        member StructuredDisplayString : string // This needs to be accessible in order for formatting code to invoke it via reflection in Silverlight. 
-#endif
 #endif
 
 
