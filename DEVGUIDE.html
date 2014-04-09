@@ -472,21 +472,6 @@
     <h3>8.  [Optional] Open a solution with Visual Studio </h3>
 
     <p>   You can use "fsharp.sln" to browse source code using Visual Studio. However, you need to complete step 1) and 2) in order to properly open this solution. In addition, FSharp.Core.Unittests project requires NUnit installed. </p>
-
-    <h3>9.  [Optional] Build a compiler component for hosting in the browser with Silverlight </h3>
-
-    <p>   This builds FSharp.Compiler.Silverlight.dll which is a Silverlight 5.0 component for hosting in the browser. You must have Silverlight5 installed.</p>
-    <li>This places the binaries in Debug\sl5-compiler:</il>
-    <pre>
-    msbuild fsharp-library-build.proj  /p:TargetFramework=sl5-compiler
-    msbuild fsharp-compiler-build.proj  /p:TargetFramework=sl5-compiler    </pre>
-
-    <li>This places the binaries in Release\sl5-compiler:</li>
-    <pre>
-    msbuild fsharp-library-build.proj  /p:TargetFramework=sl5-compiler /p:Configuration=Release
-    msbuild fsharp-compiler-build.proj  /p:TargetFramework=sl5-compiler /p:Configuration=Release      </pre>
-
-    <p> A custom FSharp.Core.dll is used for this configuration, be sure to reference it rather than any other FSharp.Core.dll for Silverlight. You may have to edit your project file by hand to ensure you get exactly the right reference to FSharp.Core.dll. </p>
 <br>
 
 </body>

@@ -12,8 +12,6 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
     <DefineConstants>RUNTIME;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition=" '$(TargetFramework)'=='sl5-compiler'">EXTRAS_FOR_SILVERLIGHT_COMPILER;$(DefineConstants)</DefineConstants>
-    <OtherFlags Condition=" '$(TargetFramework)'=='sl5-compiler'">$(OtherFlags) --nodebugdata</OtherFlags>
     <NoWarn>44;45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>
@@ -202,13 +200,11 @@
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' OR 
-                                               '$(TargetFramework)' == 'sl5-compiler' OR 
                                                '$(TargetFramework)' == 'portable47' OR 
                                                '$(TargetFramework)' == 'XNA\5.0' OR 
                                                '$(TargetFramework)' == 'sl3-wp' "/>
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' "/> 
     <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR 
-                                               '$(TargetFramework)' == 'sl5-compiler' OR 
                                                '$(TargetFramework)' == 'portable47' OR 
                                                '$(TargetFramework)' == 'XNA\5.0' OR 
                                                '$(TargetFramework)' == 'sl3-wp' "/>
