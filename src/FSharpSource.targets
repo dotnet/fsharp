@@ -151,11 +151,8 @@
     <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-
     <DefineConstants>$(DefineConstants);DONT_INCLUDE_DEPRECATED</DefineConstants>
-    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
-
+    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <TargetFrameworkProfile>Profile47</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
