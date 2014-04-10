@@ -90,7 +90,9 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
@@ -559,6 +561,10 @@
                           '$(TargetFramework)' == 'sl5-compiler' or 
                           '$(TargetFramework)' == 'sl3-wp' or 
                           '$(TargetFramework)' == 'portable47')"/>
+    <Error
+        Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll. All other components must be built with TargetFramework=net40"
+        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(TargetFramework)' != 'net40'"/>
+        
   </Target>
 
   <!-- This build step copies files to the output folder while replacing build variables in the text of

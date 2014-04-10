@@ -14,7 +14,6 @@
     <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <BuildWith>LKG</BuildWith>
     <ProjectGuid>{D8BC791F-C1A9-49DC-9432-0F3090537555}</ProjectGuid>
-    <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v3.5</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
 	  <FsSrGen Include="..\FSharp.Build\FSBuild.txt">
@@ -47,14 +46,12 @@
     <Reference Include="mscorlib" />
     <Reference Include="$(FSCoreLKGPath)" />
     <Reference Include="System" />
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)'=='net40'" />
-    <Reference Include="Microsoft.Build.Engine" />
-    <Reference Include="Microsoft.Build.Utilities.v3.5" Condition="'$(TargetFramework)' == 'net20'" />
-    <Reference Include="Microsoft.Build.Tasks.v3.5" Condition="'$(TargetFramework)' == 'net20'" />
-    <Reference Include="Microsoft.Build" Condition="'$(TargetFramework)'=='net40'" />
-    <Reference Include="Microsoft.Build.Framework" Condition="'$(TargetFramework)'=='net40'" />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" Condition="'$(TargetFramework)'=='net40'" />
-    <Reference Include="Microsoft.Build.Tasks.v4.0" Condition="'$(TargetFramework)'=='net40'" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.v12.0" />
+    <Reference Include="Microsoft.Build.Tasks.v12.0" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

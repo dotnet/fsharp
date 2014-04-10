@@ -11,7 +11,6 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Build</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v3.5</TargetFrameworkVersion>
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
@@ -44,19 +43,15 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-
-    <Reference Include="Microsoft.Build.Engine" />
-    <Reference Include="Microsoft.Build.Framework" />
-    <Reference Include="Microsoft.Build.Utilities.v3.5" Condition="'$(TargetFramework)'=='net20'" />
-    <Reference Include="Microsoft.Build.Tasks.v3.5" Condition="'$(TargetFramework)'=='net20'" />
-
-    <Reference Include="Microsoft.Build" Condition="'$(TargetFramework)'=='net40'"  />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" Condition="'$(TargetFramework)'=='net40'" />
-    <Reference Include="Microsoft.Build.Tasks.v4.0" Condition="'$(TargetFramework)'=='net40'" />
+    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.v12.0" />
+    <Reference Include="Microsoft.Build.Tasks.v12.0" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-		  <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-		  <Name>FSharp.Core</Name>
-	  </ProjectReference>
+        <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+        <Name>FSharp.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
