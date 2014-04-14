@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -75,6 +75,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
+    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" /> 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
