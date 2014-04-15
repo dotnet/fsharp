@@ -730,6 +730,7 @@ module StringSlicingTest =
     test "slice1914" (s1.[..4] = "abcde")
     test "slice1915" (s1.[..5] = "abcdef")
     test "slice1918" (try s1.[..6] |> ignore; false with _ -> true)
+    test "slice1919" (try s1.[.. -1] |> ignore; false with _ -> true)
     test "slice1817" (s1.[1..0] = "")
     test "slice1811" (s1.[1..1] = "b")
     test "slice1812" (s1.[1..2] = "bc")
@@ -737,31 +738,45 @@ module StringSlicingTest =
     test "slice1814" (s1.[1..4] = "bcde")
     test "slice1815" (s1.[1 ..5] = "bcdef")
     test "slice1818" (try s1.[1..6] |> ignore; false with _ -> true)
+    test "slice1940" (s1.[0..1] = "ab")
+    test "slice1941" (s1.[1..1] = "b")
+    test "slice1942" (s1.[2..1] = "")
+    test "slice1943" (s1.[3..1] = "")
+    test "slice1944" (s1.[4..1] = "")
+
 
 module ArraySlicingTestBytes = 
 
     let s1 = "abcdef"B
-    test "aslice1923" (s1.[0..] = s1)
-    test "aslice1924" (s1.[1..] = "bcdef"B)
-    test "aslice1925" (s1.[2..] = "cdef"B)
-    test "aslice1926" (s1.[5..] = "f"B)
-    test "aslice1927" (s1.[6..] = ""B)
-    test "aslice1928" (try s1.[7..] |> ignore; false with _ -> true)
-    test "aslice1929" (try s1.[-1 ..] |> ignore; false with _ -> true)
-    test "aslice1917" (s1.[..0] = "a"B)
-    test "aslice1911" (s1.[..1] = "ab"B)
-    test "aslice1912" (s1.[..2] = "abc"B)
-    test "aslice1913" (s1.[..3] = "abcd"B)
-    test "aslice1914" (s1.[..4] = "abcde"B)
-    test "aslice1915" (s1.[..5] = "abcdef"B)
-    test "aslice1918" (try s1.[..6] |> ignore; false with _ -> true)
-    test "aslice1817" (s1.[1..0] = ""B)
-    test "aslice1811" (s1.[1..1] = "b"B)
-    test "aslice1812" (s1.[1..2] = "bc"B)
-    test "aslice1813" (s1.[1..3] = "bcd"B)
-    test "aslice1814" (s1.[1..4] = "bcde"B)
-    test "aslice1815" (s1.[1 ..5] = "bcdef"B)
-    test "aslice1818" (try s1.[1..6] |> ignore; false with _ -> true)
+    test "bslice1923" (s1.[0..] = s1)
+    test "bslice1924" (s1.[1..] = "bcdef"B)
+    test "bslice1925" (s1.[2..] = "cdef"B)
+    test "bslice1926" (s1.[5..] = "f"B)
+    test "bslice1927" (s1.[6..] = ""B)
+    test "bslice1928" (try s1.[7..] |> ignore; false with _ -> true)
+    test "bslice1929" (try s1.[-1 ..] |> ignore; false with _ -> true)
+    test "bslice1917" (s1.[..0] = "a"B)
+    test "bslice1911" (s1.[..1] = "ab"B)
+    test "bslice1912" (s1.[..2] = "abc"B)
+    test "bslice1913" (s1.[..3] = "abcd"B)
+    test "bslice1914" (s1.[..4] = "abcde"B)
+    test "bslice1915" (s1.[..5] = "abcdef"B)
+    test "bslice1918" (try s1.[..6] |> ignore; false with _ -> true)
+    test "bslice1919" (try s1.[.. -1] |> ignore; false with _ -> true)
+    test "bslice1817" (s1.[1..0] = ""B)
+    test "bslice1811" (s1.[1..1] = "b"B)
+    test "bslice1812" (s1.[1..2] = "bc"B)
+    test "bslice1813" (s1.[1..3] = "bcd"B)
+    test "bslice1814" (s1.[1..4] = "bcde"B)
+    test "bslice1815" (s1.[1 ..5] = "bcdef"B)
+    test "bslice1818" (try s1.[1..6] |> ignore; false with _ -> true)
+    test "bslice1940" (s1.[0..1] = "ab"B)
+    test "bslice1941" (s1.[1..1] = "b"B)
+    test "bslice1942" (s1.[2..1] = ""B)
+    test "bslice1943" (s1.[3..1] = ""B)
+    test "bslice1944" (s1.[4..1] = ""B)
+
+
 
 module ArraySlicingTestInts = 
 
@@ -780,6 +795,7 @@ module ArraySlicingTestInts =
     test "aslice1914" (s1.[..4] = [| 1;2;3;4;5 |])
     test "aslice1915" (s1.[..5] = [| 1;2;3;4;5;6 |])
     test "aslice1918" (try s1.[..6] |> ignore; false with _ -> true)
+    test "aslice1919" (try s1.[.. -1] |> ignore; false with _ -> true)
     test "aslice1817" (s1.[1..0] = [|  |])
     test "aslice1811" (s1.[1..1] = [| 2 |])
     test "aslice1812" (s1.[1..2] = [| 2;3 |])
@@ -787,6 +803,11 @@ module ArraySlicingTestInts =
     test "aslice1814" (s1.[1..4] = [| 2;3;4;5|])
     test "aslice1815" (s1.[1 ..5] = [| 2;3;4;5;6|])
     test "aslice1818" (try s1.[1..6] |> ignore; false with _ -> true)
+    test "aslice1940" (s1.[0..1] = [| 1;2|])
+    test "aslice1941" (s1.[1..1] = [| 2 |])
+    test "aslice1942" (s1.[2..1] = [| |])
+    test "aslice1943" (s1.[3..1] = [| |])
+    test "aslice1944" (s1.[4..1] = [| |])
 
 
 module Array2DSlicingTests = 
@@ -825,6 +846,12 @@ module Array2DSlicingTests =
     test "a2slice1931" (m1.[1.., 3] = [| 40.0 |])
     test "a2slice1932" (m1.[1, *] = [| 10.0;20.0;30.0;40.0;50.0;60.0 |])
     test "a2slice1933" (m1.[0, ..3] = [| 1.0;2.0;3.0;4.0 |])
+    test "a2slice1940" (m1.[1, 3..1] = [| |])
+    test "a2slice1941" (m1.[3..1, 1] = [| |])
+    test "a2slice1942" (try m1.[1, 10..] |> ignore; false with _ -> true)
+    test "a2slice1943" (try m1.[10.., 1] |> ignore; false with _ -> true)
+    test "a2slice1944" (try m1.[1, .. -1] |> ignore; false with _ -> true)
+    test "a2slice1945" (try m1.[.. -1, 1] |> ignore; false with _ -> true)
 
     let arr2D1 = array2d [| [| 1.; 2.; 3.; 4. |];
                             [| 5.; 6.; 7.; 8. |];
@@ -895,6 +922,14 @@ module Array3DSlicingTests =
                                     [| [| 10.0;20.0;30.0;40.0;50.0;60.0 |];
                                        [| 100.0;200.0;300.0;400.0;500.0;600.0 |]  |] |] )
 
+    test "a3slice1933" (try m1.[*,*,7..] |> ignore; false with _ -> true)
+    test "a3slice1934" (try m1.[*,*,.. -1] |> ignore; false with _ -> true)
+
+    test "a3slice1935" (try m1.[*,3..,*] |> ignore; false with _ -> true)
+    test "a3slice1936" (try m1.[*,.. -1,*] |> ignore; false with _ -> true)
+
+    test "a3slice1937" (try m1.[3..,*,*] |> ignore; false with _ -> true)
+    test "a3slice1938" (try m1.[.. -1,*,*] |> ignore; false with _ -> true)
 
 module Array4DSlicingTests = 
 
@@ -989,6 +1024,18 @@ module Array4DSlicingTests =
                                          [| 1009.0;2009.0;3009.0;4009.0;5009.0 |]  |] 
                                |]
                               |])
+
+    test "a4slice1931" (try m1.[*,*,*,7..] |> ignore; false with _ -> true)
+    test "a4slice1932" (try m1.[*,*,*,.. -1] |> ignore; false with _ -> true)
+
+    test "a4slice1933" (try m1.[*,*,3..,*] |> ignore; false with _ -> true)
+    test "a4slice1934" (try m1.[*,*,.. -1,*] |> ignore; false with _ -> true)
+
+    test "a4slice1935" (try m1.[*,3..,*,*] |> ignore; false with _ -> true)
+    test "a4slice1936" (try m1.[*,.. -1,*,*] |> ignore; false with _ -> true)
+
+    test "a4slice1937" (try m1.[3..,*,*,*] |> ignore; false with _ -> true)
+    test "a4slice1938" (try m1.[.. -1,*,*,*] |> ignore; false with _ -> true)
 
 module ArrayStructMutation = 
     module Array1D = 
