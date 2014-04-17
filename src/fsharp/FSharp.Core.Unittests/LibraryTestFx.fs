@@ -50,6 +50,7 @@ let CheckThrowsArgumentNullException f = CheckThrowsExn<ArgumentNullException>  
 let CheckThrowsArgumentNullException2 s f  = CheckThrowsExn2<ArgumentNullException>  s  f
 let CheckThrowsKeyNotFoundException  f = CheckThrowsExn<KeyNotFoundException>     f
 let CheckThrowsDivideByZeroException f = CheckThrowsExn<DivideByZeroException>    f
+let CheckThrowsOverflowException     f = CheckThrowsExn<OverflowException>        f
 let CheckThrowsInvalidOperationExn   f = CheckThrowsExn<InvalidOperationException> f
 let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>           f
 

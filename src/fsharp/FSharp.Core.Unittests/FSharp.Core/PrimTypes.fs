@@ -122,16 +122,34 @@ type LanguagePrimitivesModule() =
     member this.GenericComparisonBiModal() =
 
         // value type
+        let resultValue = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default 100 1
+        Assert.AreEqual(resultValue,1)
+
         let resultValue = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default 1 1
         Assert.AreEqual(resultValue,0)
+
+        let resultValue = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default 1 200
+        Assert.AreEqual(resultValue,-1)
         
         // reference type
-        let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "ABC" "ABCDE"
-        Assert.AreEqual(resultRef,-68)
+        let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "ABCDE" "ABC"
+        Assert.AreEqual(resultRef,68)
+
+        let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "ABC" "ABC"
+        Assert.AreEqual(resultRef,0)
+        
+        let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "abc" "abcde"
+        Assert.AreEqual(resultRef,-100)
         
         // null reference
         let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "ABC" null
         Assert.AreEqual(resultRef,1)
+
+        let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default null null
+        Assert.AreEqual(resultRef,0)
+
+        let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default null "abc"
+        Assert.AreEqual(resultRef,-1)
         
         ()   
 #endif
@@ -143,14 +161,23 @@ type LanguagePrimitivesModule() =
         // value type
         let resultValue = LanguagePrimitives.GenericEquality 1 1
         Assert.IsTrue(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericEquality 1 2
+        Assert.IsFalse(resultValue)
         
         // reference type
+        let resultRef = LanguagePrimitives.GenericEquality "ABC" "ABC"
+        Assert.IsTrue(resultRef)
+
         let resultRef = LanguagePrimitives.GenericEquality "ABC" "ABCDE"
         Assert.IsFalse(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericEquality null null
         Assert.IsTrue(resultNul)
+
+        let resultNul = LanguagePrimitives.GenericEquality "ABC" null
+        Assert.IsFalse(resultNul)
         
         ()
         
@@ -160,14 +187,29 @@ type LanguagePrimitivesModule() =
         // value type
         let resultValue = LanguagePrimitives.GenericGreaterOrEqual 1 1
         Assert.IsTrue(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericGreaterOrEqual 2 1
+        Assert.IsTrue(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericGreaterOrEqual 1 2
+        Assert.IsFalse(resultValue)
         
         // reference type
-        let resultRef = LanguagePrimitives.GenericEquality "ABC" "ABCDE"
+        let resultRef = LanguagePrimitives.GenericGreaterOrEqual "abcde" "abc"
+        Assert.IsTrue(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericGreaterOrEqual "ABCDE" "ABCDE"
+        Assert.IsTrue(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericGreaterOrEqual "ABC" "ABCDE"
         Assert.IsFalse(resultRef)
         
         // null reference
-        let resultNul = LanguagePrimitives.GenericEquality null null
+        let resultNul = LanguagePrimitives.GenericGreaterOrEqual null null
         Assert.IsTrue(resultNul)
+
+        let resultNul = LanguagePrimitives.GenericGreaterOrEqual null "ABCDE"
+        Assert.IsFalse(resultNul)
         
         ()
         
@@ -178,14 +220,29 @@ type LanguagePrimitivesModule() =
         // value type
         let resultValue = LanguagePrimitives.GenericGreaterThan 1 1
         Assert.IsFalse(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericGreaterThan 2 1
+        Assert.IsTrue(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericGreaterThan "ABC" "ABCDE"
         Assert.IsFalse(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericGreaterThan "ABCDE" "ABCDE"
+        Assert.IsFalse(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericGreaterThan "abc" "a"
+        Assert.IsTrue(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericGreaterThan null null
         Assert.IsFalse(resultNul)
+
+        let resultNul = LanguagePrimitives.GenericGreaterThan null "ABC"
+        Assert.IsFalse(resultNul)
+
+        let resultNul = LanguagePrimitives.GenericGreaterThan "ABC" null
+        Assert.IsTrue(resultNul)
         
         ()
         
@@ -196,6 +253,11 @@ type LanguagePrimitivesModule() =
         // value type
         let resultValue = LanguagePrimitives.GenericHash 1 
         Assert.AreEqual(1, resultValue)
+
+         // using standard .NET GetHashCode as oracle
+        let resultValue = LanguagePrimitives.GenericHash 1000 
+        let x = 1000
+        Assert.AreEqual(x.GetHashCode(), resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericHash "ABC" 
@@ -214,14 +276,32 @@ type LanguagePrimitivesModule() =
         // value type
         let resultValue = LanguagePrimitives.GenericLessOrEqual 1 1
         Assert.IsTrue(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericLessOrEqual 1 2
+        Assert.IsTrue(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericLessOrEqual -1 0
+        Assert.IsTrue(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericLessOrEqual "ABC" "ABCDE"
         Assert.IsTrue(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericLessOrEqual "ABCDE" "ABCDE"
+        Assert.IsTrue(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericLessOrEqual "abcde" "abc"
+        Assert.IsFalse(resultRef)
         
         // null reference
         let resultNul = LanguagePrimitives.GenericLessOrEqual null null
         Assert.IsTrue(resultNul)
+
+        let resultNul = LanguagePrimitives.GenericLessOrEqual null "abc"
+        Assert.IsTrue(resultNul)
+
+        let resultNul = LanguagePrimitives.GenericLessOrEqual "abc" null
+        Assert.IsFalse(resultNul)
         
         ()
         
@@ -231,15 +311,33 @@ type LanguagePrimitivesModule() =
 
         // value type
         let resultValue = LanguagePrimitives.GenericLessThan 1 1
-        Assert.AreEqual(resultValue,false)
+        Assert.IsFalse(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericLessThan -2 -4
+        Assert.IsFalse(resultValue)
+
+        let resultValue = LanguagePrimitives.GenericLessThan 1 2
+        Assert.IsTrue(resultValue)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericLessThan "ABC" "ABCDE"
-        Assert.AreEqual(resultRef,true)
+        Assert.IsTrue(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericLessThan "ABC" "ABC"
+        Assert.IsFalse(resultRef)
+
+        let resultRef = LanguagePrimitives.GenericLessThan "abc" "a"
+        Assert.IsFalse(resultRef)
         
         // null reference
+        let resultNul = LanguagePrimitives.GenericLessThan null "abc"
+        Assert.IsTrue(resultNul)
+
+        let resultNul = LanguagePrimitives.GenericLessThan "aa" null
+        Assert.IsFalse(resultNul)
+
         let resultNul = LanguagePrimitives.GenericLessThan null null
-        Assert.AreEqual(resultNul,false)
+        Assert.IsFalse(resultNul)
         
         ()
 
@@ -249,14 +347,27 @@ type LanguagePrimitivesModule() =
         // value type
         let resultValue = LanguagePrimitives.GenericMaximum 8 9
         Assert.AreEqual(resultValue,9)
+
+        let resultValue = LanguagePrimitives.GenericMaximum -800 -900
+        Assert.AreEqual(resultValue,-800)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericMaximum "ABC" "ABCDE"
+        Assert.AreEqual(resultRef,"ABCDE") 
+        
+        let resultRef = LanguagePrimitives.GenericMaximum "ABCDE" "ABC" 
         Assert.AreEqual(resultRef,"ABCDE")
+        
         
         // null reference
         let resultNul = LanguagePrimitives.GenericMaximum null null
         Assert.AreEqual(resultNul,null)
+
+        let resultNul = LanguagePrimitives.GenericMaximum null "ABCDE"
+        Assert.AreEqual(resultNul,"ABCDE")
+
+        let resultNul = LanguagePrimitives.GenericMaximum "ABCDE" null
+        Assert.AreEqual(resultNul,"ABCDE")
         
         ()
         
@@ -266,19 +377,38 @@ type LanguagePrimitivesModule() =
         // value type
         let resultValue = LanguagePrimitives.GenericMinimum 8 9
         Assert.AreEqual(resultValue,8)
+
+        let resultValue = LanguagePrimitives.GenericMinimum -800 -900
+        Assert.AreEqual(resultValue,-900)
         
         // reference type
         let resultRef = LanguagePrimitives.GenericMinimum "ABC" "ABCDE"
         Assert.AreEqual(resultRef,"ABC")
+
+        let resultRef = LanguagePrimitives.GenericMinimum "abcde" "abc"
+        Assert.AreEqual(resultRef,"abc")
         
         // null reference
         let resultNul = LanguagePrimitives.GenericMinimum null null
+        Assert.AreEqual(resultNul,null)
+
+        let resultNul = LanguagePrimitives.GenericMinimum null "ABC"
+        Assert.AreEqual(resultNul,null)
+
+        let resultNul = LanguagePrimitives.GenericMinimum "ABC" null
         Assert.AreEqual(resultNul,null)
         
         ()
         
     [<Test>]
     member this.GenericOne() =
+        // int type
+        let resultValue = LanguagePrimitives.GenericOne<int> 
+        Assert.AreEqual(resultValue,1)
+
+        // float type
+        let resultValue = LanguagePrimitives.GenericOne<float> 
+        Assert.AreEqual(resultValue,1.)
 
         // bigint type
         let resultValue = LanguagePrimitives.GenericOne<bigint> 
@@ -288,6 +418,13 @@ type LanguagePrimitivesModule() =
         
     [<Test>]
     member this.GenericZero() =
+        // int type
+        let resultValue = LanguagePrimitives.GenericZero<int> 
+        Assert.AreEqual(resultValue,0)
+
+        // float type
+        let resultValue = LanguagePrimitives.GenericZero<float> 
+        Assert.AreEqual(resultValue,0.)
 
         // bigint type
         let resultValue = LanguagePrimitives.GenericZero<bigint> 
@@ -299,7 +436,19 @@ type LanguagePrimitivesModule() =
     member this.ParseInt32() =
         
         let resultValue = LanguagePrimitives.ParseInt32 "100" 
+        Assert.AreEqual(resultValue.GetType(),typeof<int>)
         Assert.AreEqual(resultValue,100)    
+
+        let resultValue = LanguagePrimitives.ParseInt32 "-123" 
+        Assert.AreEqual(resultValue,-123)    
+
+        let resultValue = LanguagePrimitives.ParseInt32 "0" 
+        Assert.AreEqual(resultValue,0)    
+
+        
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseInt32 "-100000000000000000" |> ignore)
+
+        CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseInt32 "" |> ignore)    
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseInt32 null  |> ignore)
         
@@ -309,7 +458,16 @@ type LanguagePrimitivesModule() =
     member this.ParseInt64() =
         
         let resultValue = LanguagePrimitives.ParseInt64 "100" 
-        Assert.AreEqual(resultValue,100L)    
+        Assert.AreEqual(resultValue.GetType(),typeof<int64>)    
+        Assert.AreEqual(resultValue,100L)   
+
+        let resultValue = LanguagePrimitives.ParseInt64 "-100000000000000000" 
+        Assert.AreEqual(resultValue,-100000000000000000L)   
+
+        let resultValue = LanguagePrimitives.ParseInt64 "0" 
+        Assert.AreEqual(resultValue,0)    
+
+        CheckThrowsFormatException(fun () -> LanguagePrimitives.ParseInt64 "" |> ignore)    
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseInt64 null  |> ignore)
         
@@ -319,8 +477,10 @@ type LanguagePrimitivesModule() =
     member this.ParseUInt32() =
         
         let resultValue = LanguagePrimitives.ParseUInt32 "100" 
+        Assert.AreEqual(resultValue.GetType(),typeof<uint32>)   
         Assert.AreEqual(resultValue,100ul)        
         
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt32 "-1" |> ignore)
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseUInt32 null  |> ignore)
         
@@ -330,7 +490,10 @@ type LanguagePrimitivesModule() =
     member this.ParseUInt64() =
         
         let resultValue = LanguagePrimitives.ParseUInt64 "100" 
+        Assert.AreEqual(resultValue.GetType(),typeof<uint64>) 
         Assert.AreEqual(resultValue,100UL)        
+
+        CheckThrowsOverflowException(fun () -> LanguagePrimitives.ParseUInt64 "-1" |> ignore)
         
         CheckThrowsArgumentNullException(fun () -> LanguagePrimitives.ParseUInt64 null  |> ignore)
         
@@ -464,21 +627,6 @@ type HashCompareModule() = // this module is internal/obsolete, but contains cod
         let mt = 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         let mt2 = 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
         Assert.AreEqual(mt,mt2)
-        
-[<TestFixture>]
-type IntrinsicFunctionsModule() =
-    [<Test>]
-    member this.Obsolete() =
-        // all method obsoleted and inlined        
-        ()     
-    
-
-[<TestFixture>]
-type IntrinsicOperatorsModule() =
-    [<Test>]
-    member this.Obsolete() =
-        // all method obsoleted and inlined        
-        ()  
     
 [<TestFixture>]
 type UnitType() =
