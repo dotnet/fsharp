@@ -212,6 +212,10 @@ type Item =
         | Item.CustomOperation (customOpName,_,_) -> customOpName
         | Item.CustomBuilder (nm,_) -> nm
         | _ ->  ""
+let valRefHash (vref: ValRef) = 
+    match vref.TryDeref with 
+    | None -> 0 
+    | Some v -> LanguagePrimitives.PhysicalHash v
 
 /// Information about an extension member held in the name resolution environment
 type ExtensionMember = 
@@ -231,6 +235,17 @@ type ExtensionMember =
        | ILExtMem (_,md1,_), ILExtMem (_,md2,_) -> MethInfo.MethInfosUseIdenticalDefinitions md1 md2
        | _ -> false
 
+   static member Hash e1 =
+       match e1 with
+       | FSExtMem(vref, _) -> valRefHash vref
+       | ILExtMem(_, m, _) -> 
+           match m with
+           | ILMeth(_, ilmeth, _) -> LanguagePrimitives.PhysicalHash ilmeth.RawMetadata
+           | FSMeth(_, _, vref, _) -> valRefHash vref
+           | _ -> 0
+   
+   static member Comparer g = HashIdentity.FromFunctions ExtensionMember.Hash (ExtensionMember.Equality g)
+   
    /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
    /// later through 'open' get priority in overload resolution.
    member x.Priority = 
@@ -1351,18 +1366,18 @@ let SelectPropInfosFromExtMembers (infoReader:InfoReader,ad,optFilter) declaring
     let g = infoReader.g
     let amap = infoReader.amap
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers, hence setify.
-    // REVIEW: this looks a little slow: ListSet.setify is quadratic. 
-    let extMemInfos = extMemInfos |> ListSet.setify (ExtensionMember.Equality g) 
+    let seen = HashSet(ExtensionMember.Comparer g)
     let propCollector = new PropertyCollector(g,amap,m,declaringTy,optFilter,ad)
-    extMemInfos |> List.iter (fun emem ->
-        match emem with 
-        | FSExtMem (vref,_pri) -> 
-            match vref.MemberInfo with 
-            | None -> ()
-            | Some membInfo -> propCollector.Collect(membInfo,vref)
-        | ILExtMem _ -> 
-            // No extension properties coming from .NET
-            ())
+    for emem in extMemInfos do
+        if seen.Add emem then
+            match emem with 
+            | FSExtMem (vref,_pri) -> 
+                match vref.MemberInfo with 
+                | None -> ()
+                | Some membInfo -> propCollector.Collect(membInfo,vref)
+            | ILExtMem _ -> 
+                // No extension properties coming from .NET
+                ()
     propCollector.Close()
 
 /// Query the available extension properties of a type (including extension properties for inherited types)
@@ -1398,32 +1413,35 @@ let IntrinsicMethInfosOfType (infoReader:InfoReader) (optFilter,ad,allowMultiInt
 let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m extMemInfos = 
     let g = infoReader.g
     // NOTE: multiple "open"'s push multiple duplicate values into eIndexedExtensionMembers 
-    // REVIEW: this looks a little slow: ListSet.setify is quadratic. 
-    let extMemInfos = extMemInfos |> ListSet.setify (ExtensionMember.Equality g) 
-    extMemInfos |> List.choose (fun emem -> 
-        match emem with 
-        | FSExtMem (vref,pri) -> 
-            match vref.MemberInfo with 
-            | None -> None
-            | Some membInfo -> TrySelectMemberVal g optFilter apparentTy (Some pri) membInfo vref
-        | ILExtMem (actualParent,minfo,pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
-            // Make a reference to the type containing the extension members
-            match minfo with 
-            | ILMeth(_,ilminfo,_) -> 
-                 Some(MethInfo.CreateILExtensionMeth (infoReader.amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata))
-            // F#-defined IL-style extension methods are not seen as extension methods in F# code
-            | FSMeth(g,_,vref,_) -> 
-                 Some(FSMeth(g, apparentTy, vref, Some pri))
+    let seen = HashSet(ExtensionMember.Comparer g)
+    [
+        for emem in extMemInfos do
+            if seen.Add emem then
+                match emem with 
+                | FSExtMem (vref,pri) -> 
+                    match vref.MemberInfo with 
+                    | None -> ()
+                    | Some membInfo -> 
+                        match TrySelectMemberVal g optFilter apparentTy (Some pri) membInfo vref with
+                        | Some m -> yield m
+                        | _ -> ()
+                | ILExtMem (actualParent,minfo,pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
+                    // Make a reference to the type containing the extension members
+                    match minfo with 
+                    | ILMeth(_,ilminfo,_) -> 
+                         yield (MethInfo.CreateILExtensionMeth (infoReader.amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata))
+                    // F#-defined IL-style extension methods are not seen as extension methods in F# code
+                    | FSMeth(g,_,vref,_) -> 
+                         yield (FSMeth(g, apparentTy, vref, Some pri))
 #if EXTENSIONTYPING
-            // // Provided extension methods are not yet supported
-            | ProvidedMeth(amap,providedMeth,_,m) -> 
-                 Some(ProvidedMeth(amap, providedMeth, Some pri,m))
+                    // // Provided extension methods are not yet supported
+                    | ProvidedMeth(amap,providedMeth,_,m) -> 
+                         yield (ProvidedMeth(amap, providedMeth, Some pri,m))
 #endif
-            | DefaultStructCtor _ -> 
-            //| _ -> 
-                 None
-        | _ -> 
-            None) 
+                    | DefaultStructCtor _ -> 
+                         ()
+                | _ -> ()
+    ]
 
 /// Query the available extension properties of a methods (including extension methods for inherited types)
 let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m typ =
