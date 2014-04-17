@@ -1177,7 +1177,7 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
     mdd.OpenScope(moduleName, 0, &IID_IMetaDataImport, &o) ;
     let importerPtr = Marshal.GetComInterfaceForObject(o, typeof<IMetadataImport>)
     try 
-        let symbolBinder = System.Diagnostics.SymbolStore.SymBinder()
+        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
         { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) }
     finally
         // Marshal.GetComInterfaceForObject adds an extra ref for importerPtr
