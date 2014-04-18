@@ -10,24 +10,22 @@ if errorlevel 1 goto :Error
 if EXIST provided.dll del provided.dll
 if errorlevel 1 goto :Error
 
-%FSC% --out:provided.dll -a ..\helloWorld\provided.fs
+"%FSC%" --out:provided.dll -a ..\helloWorld\provided.fs
 if errorlevel 1 goto :Error
 
 if EXIST providedJ.dll del providedJ.dll
 if errorlevel 1 goto :Error
 
-%FSC% --out:providedJ.dll -a ..\helloWorld\providedJ.fs
+"%FSC%" --out:providedJ.dll -a ..\helloWorld\providedJ.fs
 if errorlevel 1 goto :Error
 
 if EXIST providedK.dll del providedK.dll
 if errorlevel 1 goto :Error
 
-%FSC% --out:providedK.dll -a ..\helloWorld\providedK.fs
+"%FSC%" --out:providedK.dll -a ..\helloWorld\providedK.fs
 if errorlevel 1 goto :Error
 
-
-
-%FSC% --out:provider.dll -a ..\helloWorld\provider.fsx
+"%FSC%" --out:provider.dll -a ..\helloWorld\provider.fsx
 if errorlevel 1 goto :Error
 
 "%FSC%" %fsc_flags% --debug+ -r:provider.dll --optimize- -o:test2a.dll -a test2a.fs
@@ -57,7 +55,6 @@ if ERRORLEVEL 1 goto Error
 "%FSC%" %fsc_flags% --debug+ -r:provider.dll --optimize- -o:test3-with-sig-restricted.exe --define:SIGS_RESTRICTED test3.fsx
 if ERRORLEVEL 1 goto Error
 
-
 :Ok
 echo. > build.ok
 endlocal
@@ -66,5 +63,3 @@ exit /b 0
 :Error
 endlocal
 exit /b %ERRORLEVEL%
-
-

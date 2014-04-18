@@ -8,43 +8,43 @@ call %~d0%~p0..\..\..\config.bat
 if EXIST provided.dll del provided.dll
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:provided.dll -a ..\helloWorld\provided.fs
+"%FSC%" --out:provided.dll -a ..\helloWorld\provided.fs
 if errorlevel 1 goto :Error
 
 if EXIST providedJ.dll del providedJ.dll
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:providedJ.dll -a ..\helloWorld\providedJ.fs
+"%FSC%" --out:providedJ.dll -a ..\helloWorld\providedJ.fs
 if errorlevel 1 goto :Error
 
 if EXIST providedK.dll del providedK.dll
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:providedK.dll -a ..\helloWorld\providedK.fs
+"%FSC%" --out:providedK.dll -a ..\helloWorld\providedK.fs
 if errorlevel 1 goto :Error
 
 if EXIST provider.dll del provider.dll
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:provider.dll -a  provider.fsx
+"%FSC%" --out:provider.dll -a  provider.fsx
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:provider_providerAttributeErrorConsume.dll -a  providerAttributeError.fsx
+"%FSC%" --out:provider_providerAttributeErrorConsume.dll -a  providerAttributeError.fsx
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:provider_ProviderAttribute_EmptyConsume.dll -a  providerAttribute_Empty.fsx
+"%FSC%" --out:provider_ProviderAttribute_EmptyConsume.dll -a  providerAttribute_Empty.fsx
 if ERRORLEVEL 1 goto :Error
 
 if EXIST helloWorldProvider.dll del helloWorldProvider.dll
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:helloWorldProvider.dll -a  ..\helloWorld\provider.fsx
+"%FSC%" --out:helloWorldProvider.dll -a  ..\helloWorld\provider.fsx
 if ERRORLEVEL 1 goto :Error
 
 if EXIST MostBasicProvider.dll del MostBasicProvider.dll
 if ERRORLEVEL 1 goto :Error
 
-%FSC% --out:MostBasicProvider.dll -a  MostBasicProvider.fsx
+"%FSC%" --out:MostBasicProvider.dll -a  MostBasicProvider.fsx
 if ERRORLEVEL 1 goto :Error
 
 set FAILURES=
@@ -104,7 +104,7 @@ exit /b 0
 
 
 :RunTestWithDefine
-%FSC% --define:%1 --out:provider_%1.dll -a  provider.fsx
+"%FSC%" --define:%1 --out:provider_%1.dll -a  provider.fsx
 if ERRORLEVEL 1 goto :Error
 
 :RunTest
@@ -121,6 +121,6 @@ set FAILURES=%FAILURES% %1
 GOTO :EOF
 
 :Preprocess
-fsi --exec sed.fsx "<ASSEMBLY>" "%~d0%~p0provider_%1.dll" < %~1.%~2bslpp | fsi --exec sed.fsx "<URIPATH>" "file:///%CD%\\" > %~1.%~2bsl
+"%FSI%" --exec sed.fsx "<ASSEMBLY>" "%~d0%~p0provider_%1.dll" < %~1.%~2bslpp | fsi --exec sed.fsx "<URIPATH>" "file:///%CD%\\" > %~1.%~2bsl
 
 goto :EOF
