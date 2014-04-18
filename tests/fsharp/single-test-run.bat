@@ -14,15 +14,14 @@ if errorlevel 1 (
   goto :ERROR
 )
 
-REM NOTE: There is an expectation here that the full path to FSC, FSi and other tools be given.
-REM This is reasonable for testing, because you want to know exactly which binary you are running.
-REM Ideally we would use 'where' here, but WinXP does not support that.
-REM Trying do define my own WHERE
-
-call :WHERE %FSC%
-if errorlevel 1 goto :ERROR
-call :WHERE %FSI%
-if errorlevel 1 goto :ERROR
+if not exist "%FSC%" (
+  set ERRORMSG=%ERRORMSG% fsc.exe not found at the location "%FSC%"
+  goto :ERROR
+)
+if not exist "%FSI%" (
+  set ERRORMSG=%ERRORMSG% fsi.exe not found at the location "%FSI%"
+  goto :ERROR
+)
 
 set sources=
 if exist testlib.fsi (set sources=%sources% testlib.fsi)
@@ -315,10 +314,4 @@ if NOT EXIST dont.use.wrapper.namespace (
     )
   )
 )
-goto :EOF
-
-:WHERE
-for /f %%i in ("%~1") do set _WHERE=%%~$PATH:i
-if not defined _WHERE set ERRORMSG=%ERRORMSG% %~1 not found;
-set _WHERE > NUL 2>&1
 goto :EOF
