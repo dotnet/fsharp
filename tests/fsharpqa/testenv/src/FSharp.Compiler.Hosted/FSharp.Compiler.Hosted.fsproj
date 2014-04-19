@@ -59,7 +59,7 @@
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
-    <Reference Include="FSharp.Compiler.dll, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"> 
+    <Reference Include="..\..\bin\FSharp.Compiler.dll"> 
       <Private>True</Private>
     </Reference>
   </ItemGroup>
