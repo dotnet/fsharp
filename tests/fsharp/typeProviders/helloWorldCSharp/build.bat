@@ -18,7 +18,7 @@ if errorlevel 1 goto :Error
 if EXIST provider.dll del provider.dll
 if ERRORLEVEL 1 goto :Error
 
-"%CSC%" /out:provider.dll /target:library /r:"%FSCOREDLLPATH%" /r:magic.dll provider.cs
+%CSC% /out:provider.dll /target:library "/r:%FSCOREDLLPATH%" /r:magic.dll provider.cs
 if ERRORLEVEL 1 goto :Error
 
 "%GACUTIL%" /if magic.dll
