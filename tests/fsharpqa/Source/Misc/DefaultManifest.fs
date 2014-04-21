@@ -12,7 +12,7 @@ module NativeMethods =
     type EnumResourceNamesCallback = delegate of IntPtr * IntPtr * IntPtr * IntPtr -> bool
 
     [<DllImport("kernel32.dll")>]
-    extern IntPtr LoadLibrary(char[] lpFileName)
+    extern IntPtr LoadLibraryEx(string lpFileName, IntPtr hReservedNull, uint32 dwFlags)
 
     [<DllImport("kernel32.dll")>]
     extern bool EnumResourceNames(IntPtr hModule, int dwID, EnumResourceNamesCallback lpEnumFunc, IntPtr lParam)
@@ -31,6 +31,9 @@ module NativeMethods =
 
     // ID of the manifest win32 resource type
     let RT_MANIFEST = 24
+    
+    // dwFlags to indicate that we are only loading binaries to read data, not to execute
+    let LOAD_LIBRARY_AS_DATAFILE = 2u
 
 /// extracts the win32 manifest of the specified assembly
 let getManifest (path:string) =
@@ -51,8 +54,12 @@ let getManifest (path:string) =
             true
         )
 
-    let hLib = NativeMethods.LoadLibrary(path.ToCharArray())
-    NativeMethods.EnumResourceNames(hLib, NativeMethods.RT_MANIFEST, callback, IntPtr.Zero) |> ignore
+    let hLib = NativeMethods.LoadLibraryEx(path, IntPtr.Zero, NativeMethods.LOAD_LIBRARY_AS_DATAFILE)
+    if hLib = IntPtr.Zero then
+        printfn "Error loading library %s" path
+        exit 1
+    else
+        NativeMethods.EnumResourceNames(hLib, NativeMethods.RT_MANIFEST, callback, IntPtr.Zero) |> ignore
     !manifest
 
 let exePath = System.Reflection.Assembly.GetExecutingAssembly().Location
