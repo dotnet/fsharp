@@ -12,12 +12,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 let success a = Result a
 let raze (b:exn) = Exception b
 
-// bind
-let (||?>) res f = 
-  match res with 
-  | Result x -> f x 
-  | Exception err -> Exception err
-
 // map
 let (|?>) res f = 
   match res with 
