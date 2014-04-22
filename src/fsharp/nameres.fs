@@ -1025,7 +1025,7 @@ let MakeNestedType (ncenv:NameResolver) (tinst:TType list) m (tcrefNested:TyconR
 /// Get all the accessible nested types of an existing type.
 let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, checkForGenerated, m) typ =
     let g = ncenv.g
-    ncenv.InfoReader.ReadPrimaryTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
+    ncenv.InfoReader.GetPrimaryTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
         if isAppTy g typ then 
             let tcref,tinst = destAppTy g typ
             let tycon = tcref.Deref
@@ -1385,7 +1385,7 @@ let ExtensionPropInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
     let g = infoReader.g
     
     let extMemsFromHierarchy = 
-        infoReader.ReadEntireTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
+        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
              if (isAppTy g typ) then 
                 let tcref = tcrefOfAppTy g typ
                 let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
@@ -1447,7 +1447,7 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
 let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m typ =
     let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter typ  m nenv.eUnindexedExtensionMembers
     let extMemsFromHierarchy = 
-        infoReader.ReadEntireTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
+        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
             let g = infoReader.g
             if (isAppTy g typ) then 
                 let tcref = tcrefOfAppTy g typ
@@ -2421,7 +2421,7 @@ let PartialResolveLongIndentAsModuleOrNamespaceThen (nenv:NameResolutionEnv) pli
 
 /// returns fields for the given class or record
 let ResolveRecordOrClassFieldsOfType (ncenv: NameResolver) m ad typ statics = 
-    GetRecordOrClassFieldsOfType ncenv.InfoReader (None,ad) m typ
+    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
     |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
     |> List.map Item.RecdField
 
@@ -2430,7 +2430,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
     let amap = ncenv.amap
     
     let rfinfos = 
-        GetRecordOrClassFieldsOfType ncenv.InfoReader (None,ad) m typ
+        ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
         |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
 
     let ucinfos = 
@@ -2577,7 +2577,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
     | id :: rest ->
   
       let rfinfos = 
-        GetRecordOrClassFieldsOfType ncenv.InfoReader (None,ad) m typ
+        ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
         |> List.filter (fun fref -> IsRecdFieldAccessible ncenv.amap m ad fref.RecdFieldRef)
         |> List.filter (fun fref -> fref.RecdField.IsStatic = statics)
   
@@ -2894,7 +2894,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
                 if IsEntityAccessible ncenv.amap m ad (modref.MkNestedTyconRef tycon) then
                     let ttype = FreshenTycon ncenv m (modref.MkNestedTyconRef tycon)
                     yield! 
-                        GetRecordOrClassFieldsOfType ncenv.InfoReader (None, ad) m ttype
+                        ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype)
                         |> List.map Item.RecdField
          ]
 
@@ -2915,7 +2915,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
                 |> List.collect (fun tycon ->
                     let tcref = modref.MkNestedTyconRef tycon
                     let ttype = FreshenTycon ncenv m tcref
-                    GetRecordOrClassFieldsOfType ncenv.InfoReader (None, ad) m ttype                    
+                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype                    )
                     )
                 |> List.map Item.RecdField
             | _ -> []
@@ -2987,7 +2987,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
                 tycons
                 |> List.collect (fun tcref ->
                     let ttype = FreshenTycon ncenv m tcref
-                    GetRecordOrClassFieldsOfType ncenv.InfoReader (None, ad) m ttype                    
+                    ncenv.InfoReader.GetRecordOrClassFieldsOfType(None, ad, m, ttype)
                     )
                 |> List.map Item.RecdField
             | _-> []

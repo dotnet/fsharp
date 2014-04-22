@@ -32,7 +32,7 @@ open Microsoft.FSharp.Core.CompilerServices
 // From IL types to F# types
 //------------------------------------------------------------------------- 
 
-/// importInst gives the context for interpreting type variables 
+/// Import an IL type as an F# type. importInst gives the context for interpreting type variables.
 let ImportType scoref amap m importInst ilty = 
     ilty |> rescopeILType scoref |>  Import.ImportILType amap m importInst 
 
@@ -41,9 +41,12 @@ let ImportType scoref amap m importInst ilty =
 //  REVIEW: this code generalizes the iteration used below for member lookup.
 //------------------------------------------------------------------------- 
 
+/// Indicates if an F# type is the type associated with an F# exception declaration
 let isExnDeclTy g typ = 
     isAppTy g typ && (tcrefOfAppTy g typ).IsExceptionDecl
     
+/// Get the base type of a type, taking into account type instantiations. Return None if the
+/// type has no base type.
 let GetSuperTypeOfType g amap m typ = 
 #if EXTENSIONTYPING
     let typ = (if isAppTy g typ && (tcrefOfAppTy g typ).IsProvided then stripTyEqns g typ else stripTyEqnsAndMeasureEqns g typ)
@@ -80,10 +83,12 @@ let GetSuperTypeOfType g amap m typ =
         else 
             None
 
+/// Make a type for System.Collections.Generic.IList<ty>
 let mkSystemCollectionsGenericIListTy g ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
 
 
-/// Collect the set of interface types supported by an F# type
+/// Collect the set of immediate declared interface types for an F# type, but do not
+/// traverse the type hierarchy to collect further interfaces.
 let rec GetImmediateInterfacesOfType g amap m typ = 
     let itys = 
         if isAppTy g typ then
@@ -413,6 +418,7 @@ let private GetInstantiationForMemberVal g isCSharpExt (typ,vref,minst) =
     let memberParentTypars,memberMethodTypars,_retTy,parentTyArgs = AnalyzeTypeOfMemberVal isCSharpExt g (typ,vref)
     CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs minst
 
+/// Work out the instantiation relevant to interpret the backing metadata for a property.
 let private GetInstantiationForPropertyVal g (typ,vref) = 
     let memberParentTypars,memberMethodTypars,_retTy,parentTyArgs = AnalyzeTypeOfMemberVal false g (typ,vref)
     CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs (generalizeTypars memberMethodTypars)
@@ -1022,14 +1028,14 @@ type MethInfo =
         | ProvidedMeth _ -> false 
 #endif
 
-    /// Determine if this is an extension member. 
+    /// Indicates if this is an extension member. 
     member x.IsExtensionMember = x.IsCSharpStyleExtensionMember || x.IsFSharpStyleExtensionMember
 
-    /// Determine if this is an F# extension member. 
+    /// Indicates if this is an F# extension member. 
     member x.IsFSharpStyleExtensionMember = 
         match x with FSMeth (_,_,vref,_) -> vref.IsExtensionMember | _ -> false
 
-    /// Determine if this is an C#-style extension member. 
+    /// Indicates if this is an C#-style extension member. 
     member x.IsCSharpStyleExtensionMember = 
         x.ExtensionMemberPriorityOption.IsSome && 
         (match x with ILMeth _ -> true | FSMeth (_,_,vref,_) -> not vref.IsExtensionMember | _ -> false)
@@ -1444,10 +1450,6 @@ type ILFieldInfo =
     override x.ToString() =  x.FieldName
 
 
-//-------------------------------------------------------------------------
-// RecdFieldInfo
-
-
 /// Describes an F# use of a field in an F#-declared record, class or struct type 
 [<NoComparison; NoEquality>]
 type RecdFieldInfo = 
@@ -1485,10 +1487,6 @@ type RecdFieldInfo =
     override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
     
 
-//-------------------------------------------------------------------------
-// UnionCaseInfo
-
-
 /// Describes an F# use of a union case
 [<NoComparison; NoEquality>]
 type UnionCaseInfo = 
@@ -1513,10 +1511,6 @@ type UnionCaseInfo =
     member x.Name = x.UnionCase.DisplayName
     override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
 
-
-
-//-------------------------------------------------------------------------
-// ILPropInfo
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -1580,8 +1574,7 @@ type ILPropInfo =
 
     override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
-//-------------------------------------------------------------------------
-// PropInfo
+
 
 /// Describes an F# use of a property 
 [<NoComparison; NoEquality>]
@@ -1654,7 +1647,7 @@ type PropInfo =
             Import.ImportProvidedType amap m (pi.PApply((fun pi -> pi.DeclaringType),m)) 
 #endif
 
-    /// Determine if this is an extension member. 
+    /// Indicates if this is an extension member
     member x.IsExtensionMember = 
         match x.ArbitraryValRef with Some vref -> vref.IsExtensionMember | _ -> false
 
@@ -1931,7 +1924,8 @@ type ILEventInfo =
 /// Error text: "A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events."
 exception BadEventTransformation of range
 
-/// Properties compatible with type IDelegateEvent and atributed with CLIEvent are special: we generate metadata and add/remove methods 
+/// Properties compatible with type IDelegateEvent and atributed with CLIEvent are special: 
+/// we generate metadata and add/remove methods 
 /// to make them into a .NET event, and mangle the name of a property.  
 /// We don't handle static, indexer or abstract properties correctly. 
 /// Note the name mangling doesn't affect the name of the get/set methods for the property 
@@ -2170,8 +2164,10 @@ type AccessorDomain =
     /// AccessibleFrom(cpaths, tyconRefOpt)
     ///
     /// cpaths: indicates we have the keys to access any members private to the given paths 
-    // tyconRefOpt:  indicates we have the keys to access any protected members of the super types of 'TyconRef' 
+    /// tyconRefOpt:  indicates we have the keys to access any protected members of the super types of 'TyconRef' 
     | AccessibleFrom of CompilationPath list * TyconRef option        
+
+    /// An AccessorDomain which returns public items
     | AccessibleFromEverywhere
 
     /// An AccessorDomain which returns everything but .NET private/internal items.
@@ -2181,7 +2177,7 @@ type AccessorDomain =
     ///    - an adhoc use in service.fs to look up a delegate signature
     | AccessibleFromSomeFSharpCode 
 
-    /// Can access everything
+    /// An AccessorDomain which returns all items
     | AccessibleFromSomewhere 
 
     // Hashing and comparison is used for the memoization tables keyed by an accessor domain.
@@ -2202,6 +2198,7 @@ type AccessorDomain =
 
 module AccessibilityLogic = 
 
+    /// Indicates if an F# item is accessible 
     let IsAccessible ad taccess = 
         match ad with 
         | AccessibleFromEverywhere -> canAccessFromEverywhere taccess
@@ -2210,7 +2207,8 @@ module AccessibilityLogic =
         | AccessibleFrom (cpaths,_tcrefViewedFromOption) -> 
             List.exists (canAccessFrom taccess) cpaths
 
-    let private CheckILMemberAccess g amap m (tcrefOfViewedItem : TyconRef) ad access = 
+    /// Indicates if an IL member is accessible (ignoring its enclosing type)
+    let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad access = 
         match ad with 
         | AccessibleFromEverywhere -> 
               access = ILMemberAccess.Public
@@ -2232,14 +2230,14 @@ module AccessibilityLogic =
         | AccessibleFromSomewhere -> 
              true
     
-    /// Determine if tdef is accessible. If tdef.Access = ILTypeDefAccess.Nested then encTyconRefOpt s TyconRef of enclosing type
+    /// Indicates if tdef is accessible. If tdef.Access = ILTypeDefAccess.Nested then encTyconRefOpt s TyconRef of enclosing type
     /// and visibility of tdef is obtained using member access rules
-    let private isILTypeDefAccessible (amap : Import.ImportMap) m ad encTyconRefOpt (tdef: ILTypeDef) =
+    let private IsILTypeDefAccessible (amap : Import.ImportMap) m ad encTyconRefOpt (tdef: ILTypeDef) =
         match tdef.Access with
         | ILTypeDefAccess.Nested nestedAccess ->
             match encTyconRefOpt with
             | None -> assert false; true
-            | Some encTyconRef -> CheckILMemberAccess amap.g amap m encTyconRef ad nestedAccess
+            | Some encTyconRef -> IsILMemberAccessible amap.g amap m encTyconRef ad nestedAccess
         | _ ->
             match ad with 
             | AccessibleFromSomewhere -> true
@@ -2247,8 +2245,9 @@ module AccessibilityLogic =
             | AccessibleFromSomeFSharpCode 
             | AccessibleFrom _ -> tdef.Access = ILTypeDefAccess.Public
 
-    // is tcref visible through the AccessibleFrom(cpaths,_)? note: InternalsVisibleTo extends those cpaths.
-    let private isTyconAccessibleViaVisibleTo ad (tcrefOfViewedItem:TyconRef) =
+    /// Indicates if a TyconRef is visible through the AccessibleFrom(cpaths,_).
+    /// Note that InternalsVisibleTo extends those cpaths.
+    let private IsTyconAccessibleViaVisibleTo ad (tcrefOfViewedItem:TyconRef) =
         match ad with 
         | AccessibleFromEverywhere 
         | AccessibleFromSomewhere 
@@ -2256,9 +2255,9 @@ module AccessibilityLogic =
         | AccessibleFrom (cpaths,_tcrefViewedFromOption) ->
             canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath
     
-    /// Determine if given IL based TyconRef is accessible. If TyconRef is nested then we'll walk though the list of enclosing types
-    /// and test if all of them are accessible 
-    let private isILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) = 
+    /// Indicates if given IL based TyconRef is accessible. If TyconRef is nested then we'll 
+    /// walk though the list of enclosing types and test if all of them are accessible 
+    let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) = 
         let scoref, enc, tdef = tcrefOfViewedItem.ILTyconInfo
         let rec check parentTycon path =
             let ilTypeDefAccessible =
@@ -2266,11 +2265,11 @@ module AccessibilityLogic =
                 | None -> 
                     match path with
                     | [] -> assert false; true // in this case path should have at least one element
-                    | [x] -> isILTypeDefAccessible amap m ad None x // shortcut for non-nested types
+                    | [x] -> IsILTypeDefAccessible amap m ad None x // shortcut for non-nested types
                     | x::xs -> 
                         // check if enclosing type x is accessible.
                         // if yes - create parent tycon for type 'x' and continue with the rest of the path
-                        isILTypeDefAccessible amap m ad None x && 
+                        IsILTypeDefAccessible amap m ad None x && 
                         (
                             let parentILTyRef = mkRefForNestedILTypeDef scoref ([], x)
                             let parentTycon = Import.ImportILTypeRef amap m parentILTyRef
@@ -2282,35 +2281,40 @@ module AccessibilityLogic =
                     | x::xs -> 
                         // check if x is accessible from the parent tycon
                         // if yes - create parent tycon for type 'x' and continue with the rest of the path
-                        isILTypeDefAccessible amap m ad (Some parentTycon) x &&
+                        IsILTypeDefAccessible amap m ad (Some parentTycon) x &&
                         (
                             let parentILTyRef = mkRefForNestedILTypeDef scoref (parentPath, x)
                             let parentTycon = Import.ImportILTypeRef amap m parentILTyRef
                             check (Some (parentTycon, parentPath @ [x])) xs
                         )
-            ilTypeDefAccessible || isTyconAccessibleViaVisibleTo ad tcrefOfViewedItem
+            ilTypeDefAccessible || IsTyconAccessibleViaVisibleTo ad tcrefOfViewedItem
         
         check None (enc @ [tdef])
                        
-    let private isILMemberAccessible g amap m adType ad (ILTypeInfo(tcrefOfViewedItem, _, _, _)) access = 
-        isILTypeInfoAccessible amap m adType tcrefOfViewedItem && CheckILMemberAccess g amap m tcrefOfViewedItem ad access
+    /// Indicates if an IL member associated with the given ILType is accessible
+    let private IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo(tcrefOfViewedItem, _, _, _)) access = 
+        IsILTypeInfoAccessible amap m adType tcrefOfViewedItem && IsILMemberAccessible g amap m tcrefOfViewedItem ad access
 
+    /// Indicates if an entity is accessible
     let IsEntityAccessible amap m ad (tcref:TyconRef) = 
         if tcref.IsILTycon then 
-            isILTypeInfoAccessible amap m ad tcref
+            IsILTypeInfoAccessible amap m ad tcref
         else  
              tcref.Accessibility |> IsAccessible ad
 
+    /// Check that an entity is accessible
     let CheckTyconAccessible amap m ad tcref =
         let res = IsEntityAccessible amap m ad tcref
         if not res then  
             errorR(Error(FSComp.SR.typeIsNotAccessible tcref.DisplayName,m))
         res
 
+    /// Indicates if a type definition and its representation contents are accessible
     let IsTyconReprAccessible amap m ad tcref =
         IsEntityAccessible amap m ad tcref &&
         IsAccessible ad tcref.TypeReprAccessibility
             
+    /// Check that a type definition and its representation contents are accessible
     let CheckTyconReprAccessible amap m ad tcref =
         CheckTyconAccessible amap m ad tcref &&
         (let res = IsAccessible ad tcref.TypeReprAccessibility
@@ -2318,49 +2322,53 @@ module AccessibilityLogic =
             errorR (Error (FSComp.SR.unionCasesAreNotAccessible tcref.DisplayName,m))
          res)
             
+    /// Indicates if a type is accessible (both definition and instantiation)
     let rec IsTypeAccessible g amap m ad ty = 
         not (isAppTy g ty) ||
         let tcref,tinst = destAppTy g ty
         IsEntityAccessible amap m ad tcref && IsTypeInstAccessible g amap m ad tinst
-
-    and IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access = 
-        let g = amap.g
-        let isTyAccessible = IsTypeAccessible g amap m ad ty
-        if not isTyAccessible then false
-        else
-            not (isAppTy g ty) ||
-            let tcrefOfViewedItem,_ = destAppTy g ty
-            CheckILMemberAccess g amap m tcrefOfViewedItem ad access
 
     and IsTypeInstAccessible g amap m ad tinst = 
         match tinst with 
         | [] -> true 
         | _ -> List.forall (IsTypeAccessible g amap m ad) tinst
 
-    let getILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
+    /// Indicate if a provided member is accessible
+    let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access = 
+        let g = amap.g
+        let isTyAccessible = IsTypeAccessible g amap m ad ty
+        if not isTyAccessible then false
+        else
+            not (isAppTy g ty) ||
+            let tcrefOfViewedItem,_ = destAppTy g ty
+            IsILMemberAccessible g amap m tcrefOfViewedItem ad access
+
+    /// Compute the accessiblity of a provided member
+    let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
         if isPublic then ILMemberAccess.Public
         elif isFamily then ILMemberAccess.Family
         elif isFamilyOrAssembly then ILMemberAccess.FamilyOrAssembly
         elif isFamilyAndAssembly then ILMemberAccess.FamilyAndAssembly
         else ILMemberAccess.Private
 
+    /// IndiCompute the accessiblity of a provided member
     let IsILFieldInfoAccessible g amap m ad x = 
         match x with 
-        | ILFieldInfo (tinfo,fd) -> isILMemberAccessible g amap m ad ad tinfo fd.Access
+        | ILFieldInfo (tinfo,fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
 #if EXTENSIONTYPING
         | ProvidedField (amap, tpfi, m) as pfi -> 
-            let access = tpfi.PUntaint((fun fi -> getILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
+            let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
             IsProvidedMemberAccessible amap m ad pfi.EnclosingType access
 #endif
 
     let IsILEventInfoAccessible g amap m ad (ILEventInfo (tinfo,edef)) =
         let access = (resolveILMethodRef tinfo.RawMetadata edef.AddMethod).Access 
-        isILMemberAccessible g amap m ad ad tinfo access
+        IsILTypeAndMemberAccessible g amap m ad ad tinfo access
 
     let private IsILMethInfoAccessible g amap m adType ad ilminfo = 
         match ilminfo with 
-        | ILMethInfo (_,typ,None,mdef,_) -> isILMemberAccessible g amap m adType ad (ILTypeInfo.FromType g typ) mdef.Access 
-        | ILMethInfo (_,_,Some declaringTyconRef,mdef,_) -> CheckILMemberAccess g amap m declaringTyconRef ad mdef.Access
+        | ILMethInfo (_,typ,None,mdef,_) -> IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo.FromType g typ) mdef.Access 
+        | ILMethInfo (_,_,Some declaringTyconRef,mdef,_) -> IsILMemberAccessible g amap m declaringTyconRef ad mdef.Access
 
     let IsILPropInfoAccessible g amap m ad (ILPropInfo(tinfo,pdef)) =
         let tdef = tinfo.RawMetadata
@@ -2372,7 +2380,7 @@ module AccessibilityLogic =
                 | None -> ILMemberAccess.Public
                 | Some mref -> (resolveILMethodRef tdef mref).Access
 
-        isILMemberAccessible g amap m ad ad tinfo ilAccess
+        IsILTypeAndMemberAccessible g amap m ad ad tinfo ilAccess
 
     let IsValAccessible ad (vref:ValRef) = 
         vref.Accessibility |> IsAccessible ad
@@ -2429,7 +2437,7 @@ module AccessibilityLogic =
         | DefaultStructCtor(g,typ) -> IsTypeAccessible g amap m ad typ
 #if EXTENSIONTYPING
         | ProvidedMeth(amap,tpmb,_,m) as etmi -> 
-            let access = tpmb.PUntaint((fun mi -> getILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
+            let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
             IsProvidedMemberAccessible amap m ad etmi.EnclosingType access
 #endif
     let IsMethInfoAccessible amap m ad minfo = IsTypeAndMethInfoAccessible amap m ad ad minfo
@@ -2445,7 +2453,7 @@ module AccessibilityLogic =
                     let tryGetILAccessForProvidedMethodBase (mi : ProvidedMethodBase) = 
                         match mi with
                         | null -> None
-                        | mi -> Some(getILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
+                        | mi -> Some(ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly)
                     match tryGetILAccessForProvidedMethodBase(ppi.GetGetMethod()) with
                     | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())
                     | x -> x), m)
@@ -2472,6 +2480,9 @@ exception ObsoleteError of string * range
 /// formats.
 module AttributeChecking = 
 
+    /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
+    /// provided attributes.
+    //
     // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
     let TryBindTyconRefAttribute g m (AttribInfo (atref,_) as args) (tcref:TyconRef) f1 f2 f3 = 
         ignore m; ignore f3
@@ -2492,6 +2503,8 @@ module AttributeChecking =
             | Some attr -> f2 attr
             | _ -> None
 
+    /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
+    /// provided attributes.
     let BindMethInfoAttributes m minfo f1 f2 f3 = 
         ignore m; ignore f3
         match minfo with 
@@ -2502,6 +2515,8 @@ module AttributeChecking =
         | ProvidedMeth (_,mi,_,_) -> f3 (mi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)),m))
 #endif
 
+    /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
+    /// provided attributes.
     let TryBindMethInfoAttribute g m (AttribInfo(atref,_) as attribSpec) minfo f1 f2 f3 = 
         BindMethInfoAttributes m minfo 
             (fun ilAttribs -> TryDecodeILAttribute g atref (Some(atref.Scope)) ilAttribs |> Option.bind f1)
@@ -2515,6 +2530,8 @@ module AttributeChecking =
             (fun _provAttribs -> None)
 #endif
 
+    /// Try to find a specific attribute on a method, where the attribute accepts a string argument.
+    ///
     /// This is just used for the 'ConditionalAttribute' attribute
     let TryFindMethInfoStringAttribute g m attribSpec minfo  =
         TryBindMethInfoAttribute g m attribSpec minfo 
@@ -2522,6 +2539,7 @@ module AttributeChecking =
                      (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
                      (function [ Some ((:? string as msg) : obj) ] -> Some msg | _ -> None)
 
+    /// Check if a method has a specific attribute.
     let MethInfoHasAttribute g m attribSpec minfo  =
         TryBindMethInfoAttribute g m attribSpec minfo 
                      (fun _ -> Some ()) 
@@ -2529,6 +2547,8 @@ module AttributeChecking =
                      (fun _ -> Some ())
           |> Option.isSome
 
+    /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
+    ///
     /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
     let TryFindTyconRefStringAttribute g m attribSpec tcref  =
         TryBindTyconRefAttribute g m attribSpec tcref 
@@ -2536,6 +2556,7 @@ module AttributeChecking =
                  (function (Attrib(_,_,[ AttribStringArg(msg) ],_,_,_,_))  -> Some msg | _ -> None)
                  (function [ Some ((:? string as msg) : obj) ] -> Some msg | _ -> None)
 
+    /// Check if a type definition has a specific attribute
     let TyconRefHasAttribute g m attribSpec tcref  =
         TryBindTyconRefAttribute g m attribSpec tcref 
                      (fun _ -> Some ()) 
@@ -2544,7 +2565,7 @@ module AttributeChecking =
           |> Option.isSome
 
 
-    /// Check IL attributes for 'ObsoleteAttribute'
+    /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
     let private CheckILAttributes g cattrs m = 
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
         match TryDecodeILAttribute g tref (Some(tref.Scope)) cattrs with 
@@ -2562,7 +2583,8 @@ module AttributeChecking =
         | None -> 
             CompleteD
 
-    /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute'
+    /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
+    /// returning errors and warnings as data
     let CheckFSharpAttributes g attribs m = 
         if isNil attribs then CompleteD 
         else 
@@ -2610,6 +2632,7 @@ module AttributeChecking =
             )
 
 #if EXTENSIONTYPING
+    /// Check a list of provided attributes for 'ObsoleteAttribute', returning errors and warnings as data
     let private CheckProvidedAttributes g m (provAttribs: Tainted<IProvidedCustomAttributeProvider>)  = 
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
         match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), tref.FullName)),m) with
@@ -2627,13 +2650,13 @@ module AttributeChecking =
             CompleteD
 #endif
 
-    /// Check IL attributes for existence of 'ObsoleteAttribute', to suppress the item in intellisense
+    /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
     let CheckILAttributesForUnseen g cattrs _m = 
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
         isSome (TryDecodeILAttribute g tref (Some(tref.Scope)) cattrs)
 
-    /// Check F# attributes for existence of 'ObsoleteAttribute', to suppress the item in intellisense
-    /// Also check F# attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
+    /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
+    /// Also check the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
     /// items to be suppressed from intellisense.
     let CheckFSharpAttributesForUnseen g attribs _m = 
         nonNil attribs && 
@@ -2650,11 +2673,12 @@ module AttributeChecking =
         )
       
 #if EXTENSIONTYPING
-    /// Check provided attributes for existence of 'ObsoleteAttribute', to suppress the item in intellisense
+    /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
     let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m = 
         provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<System.ObsoleteAttribute>.FullName).IsSome),m)
 #endif
 
+    /// Check the attributes associated with a property, returning warnings and errors as data.
     let CheckPropInfoAttributes pinfo m = 
         match pinfo with
         | ILProp(g,ILPropInfo(_,pdef)) -> CheckILAttributes g pdef.CustomAttrs m
@@ -2668,6 +2692,7 @@ module AttributeChecking =
 #endif
 
       
+    /// Check the attributes associated with a IL field, returning warnings and errors as data.
     let CheckILFieldAttributes g (finfo:ILFieldInfo) m = 
         match finfo with 
         | ILFieldInfo(_,pd) -> 
@@ -2677,6 +2702,7 @@ module AttributeChecking =
             CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)),m)) |> CommitOperationResult
 #endif
 
+    /// Check the attributes associated with a method, returning warnings and errors as data.
     let CheckMethInfoAttributes g m tyargsOpt minfo = 
         let search = 
             BindMethInfoAttributes m minfo 
@@ -2698,6 +2724,8 @@ module AttributeChecking =
         | Some res -> res
         | None -> CompleteD // no attribute = no errors 
 
+    /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
+    /// Used to suppress the item in intellisense.
     let MethInfoIsUnseen g m typ minfo = 
         let isUnseenByObsoleteAttrib = 
             match BindMethInfoAttributes m minfo 
@@ -2738,6 +2766,8 @@ module AttributeChecking =
 #endif
         isUnseenByObsoleteAttrib || isUnseenByHidingAttribute
 
+    /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
+    /// Used to suppress the item in intellisense.
     let PropInfoIsUnseen m pinfo = 
         match pinfo with
         | ILProp (g,ILPropInfo(_,pdef)) -> CheckILAttributesForUnseen g pdef.CustomAttrs m
@@ -2749,23 +2779,28 @@ module AttributeChecking =
             CheckProvidedAttributesForUnseen (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)),m)) m
 #endif
      
+    /// Check the attributes on an entity, returning errors and warnings as data.
     let CheckEntityAttributes g (x:TyconRef) m = 
         if x.IsILTycon then 
             CheckILAttributes g x.ILTyconRawMetadata.CustomAttrs m
         else 
             CheckFSharpAttributes g x.Attribs m
 
+    /// Check the attributes on a union case, returning errors and warnings as data.
     let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
         CheckEntityAttributes g x.TyconRef m ++ (fun () ->
         CheckFSharpAttributes g x.Attribs m)
 
+    /// Check the attributes on a record field, returning errors and warnings as data.
     let CheckRecdFieldAttributes g (x:RecdFieldRef) m =
         CheckEntityAttributes g x.TyconRef m ++ (fun () ->
         CheckFSharpAttributes g x.PropertyAttribs m)
 
+    /// Check the attributes on an F# value, returning errors and warnings as data.
     let CheckValAttributes g (x:ValRef) m =
         CheckFSharpAttributes g x.Attribs m
 
+    /// Check the attributes on a record field, returning errors and warnings as data.
     let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
         CheckRecdFieldAttributes g x.RecdFieldRef m
 
@@ -3027,7 +3062,8 @@ type HierarchyItem =
 /// run or have one global one for each (g,amap) pair.
 type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
 
-    let getImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ =
+    /// Get the declared IL fields of a type, not including inherited fields
+    let GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ =
         let infos =
             match metadataOfTy g typ with 
 #if EXTENSIONTYPING
@@ -3051,7 +3087,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         let infos = infos |> List.filter (IsILFieldInfoAccessible g amap m  ad)
         infos           
 
-    let getImmediateIntrinsicEventsOfType (optFilter,ad) m typ =
+    /// Get the declared events of a type, not including inherited events 
+    let GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ =
         let infos =
             match metadataOfTy g typ with 
 #if EXTENSIONTYPING
@@ -3077,12 +3114,12 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                 []
         infos 
 
-
-    let mkRecdFieldInfo g typ tcref fspec = 
+    /// Make a reference to a record or class field
+    let MakeRecdFieldInfo g typ tcref fspec = 
         RecdFieldInfo(argsOfAppTy g typ,mkNestedRecdFieldRef tcref fspec)
 
     /// Get the F#-declared record fields or class 'val' fields of a type
-    let getImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,_ad) _m typ =
+    let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,_ad) _m typ =
         match tryDestAppTy g typ with 
         | None -> []
         | Some tcref -> 
@@ -3091,47 +3128,47 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
             match optFilter with
             | Some nm ->
                match tcref.GetFieldByName nm with
-               | Some rfield when not rfield.IsCompilerGenerated -> [mkRecdFieldInfo g typ tcref rfield]
+               | Some rfield when not rfield.IsCompilerGenerated -> [MakeRecdFieldInfo g typ tcref rfield]
                | _ -> []
             | None -> 
                 [ for fdef in tcref.AllFieldsArray do
                     if not fdef.IsCompilerGenerated then
-                        yield mkRecdFieldInfo g typ tcref fdef ]
+                        yield MakeRecdFieldInfo g typ tcref fdef ]
 
 
     /// The primitive reader for the method info sets up a hierarchy
-    let readRawIntrinsicMethodSetsUncached ((optFilter,ad,allowMultiIntfInst),m,typ) =
+    let GetIntrinsicMethodSetsUncached ((optFilter,ad,allowMultiIntfInst),m,typ) =
         FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ :: acc) g amap m allowMultiIntfInst typ []
 
     /// The primitive reader for the property info sets up a hierarchy
-    let readRawIntrinsicPropertySetsUncached ((optFilter,ad,allowMultiIntfInst),m,typ) =
+    let GetIntrinsicPropertySetsUncached ((optFilter,ad,allowMultiIntfInst),m,typ) =
         FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ :: acc) g amap m allowMultiIntfInst typ []
 
-    let readIlFieldInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> getImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
+    let GetIntrinsicILFieldInfosUncached ((optFilter,ad),m,typ) =
+        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
 
-    let readEventInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> getImmediateIntrinsicEventsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
+    let GetIntrinsicEventInfosUncached ((optFilter,ad),m,typ) =
+        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
 
-    let readRecdOrClassFieldInfoUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> getImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
+    let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter,ad),m,typ) =
+        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
     
-    let readEntireTypeHierachyUncached (allowMultiIntfInst,m,typ) =
+    let GetEntireTypeHierachyUncached (allowMultiIntfInst,m,typ) =
         FoldEntireHierarchyOfType (fun typ acc -> typ :: acc) g amap m allowMultiIntfInst typ  [] 
 
-    let readPrimaryTypeHierachyUncached (allowMultiIntfInst,m,typ) =
+    let GetPrimaryTypeHierachyUncached (allowMultiIntfInst,m,typ) =
         FoldPrimaryHierarchyOfType (fun typ acc -> typ :: acc) g amap m allowMultiIntfInst typ [] 
 
     /// The primitive reader for the named items up a hierarchy
-    let readRawIntrinsicNamedItemsUncached ((nm,ad),m,typ) =
+    let GetIntrinsicNamedItemsUncached ((nm,ad),m,typ) =
         if nm = ".ctor" then None else // '.ctor' lookups only ever happen via constructor syntax
         let optFilter = Some nm
         FoldPrimaryHierarchyOfType (fun typ acc -> 
              let minfos = GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ
              let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ 
-             let finfos = getImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ 
-             let einfos = getImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
-             let rfinfos = getImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ 
+             let finfos = GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ 
+             let einfos = GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
+             let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ 
              match acc with 
              | Some(MethodItem(inheritedMethSets)) when nonNil minfos -> Some(MethodItem (minfos::inheritedMethSets))
              | _ when nonNil minfos -> Some(MethodItem ([minfos]))
@@ -3149,7 +3186,10 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
           typ
           None
 
-    let makeInfoCache g f (flagsEq : System.Collections.Generic.IEqualityComparer<_>) = 
+    /// Make a cache for function 'f' keyed by type (plus some additional 'flags') that only 
+    /// caches computations for monomorphic types.
+
+    let MakeInfoCache f (flagsEq : System.Collections.Generic.IEqualityComparer<_>) = 
         new MemoizationTable<_,_>
              (compute=f,
               // Only cache closed, monomorphic types (closed = all members for the type
@@ -3192,38 +3232,41 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                member x.GetHashCode((nm: string,ad: AccessorDomain)) = hash nm + AccessorDomain.CustomGetHashCode ad
                member x.Equals((nm1,ad1), (nm2,ad2)) = (nm1 = nm2) && AccessorDomain.CustomEquals(g,ad1,ad2) }
                          
-    let methodInfoCache = makeInfoCache g readRawIntrinsicMethodSetsUncached hashFlags0
-    let propertyInfoCache = makeInfoCache g readRawIntrinsicPropertySetsUncached hashFlags0
-    let recdOrClassFieldInfoCache =  makeInfoCache g readRecdOrClassFieldInfoUncached hashFlags1
-    let ilFieldInfoCache = makeInfoCache g readIlFieldInfosUncached hashFlags1
-    let eventInfoCache = makeInfoCache g readEventInfosUncached hashFlags1
-    let namedItemsCache = makeInfoCache g readRawIntrinsicNamedItemsUncached hashFlags2
+    let methodInfoCache = MakeInfoCache GetIntrinsicMethodSetsUncached hashFlags0
+    let propertyInfoCache = MakeInfoCache GetIntrinsicPropertySetsUncached hashFlags0
+    let recdOrClassFieldInfoCache =  MakeInfoCache GetIntrinsicRecdOrClassFieldInfosUncached hashFlags1
+    let ilFieldInfoCache = MakeInfoCache GetIntrinsicILFieldInfosUncached hashFlags1
+    let eventInfoCache = MakeInfoCache GetIntrinsicEventInfosUncached hashFlags1
+    let namedItemsCache = MakeInfoCache GetIntrinsicNamedItemsUncached hashFlags2
 
-    let entireTypeHierarchyCache = makeInfoCache g readEntireTypeHierachyUncached HashIdentity.Structural
-    let primaryTypeHierarchyCache = makeInfoCache g readPrimaryTypeHierachyUncached HashIdentity.Structural
+    let entireTypeHierarchyCache = MakeInfoCache GetEntireTypeHierachyUncached HashIdentity.Structural
+    let primaryTypeHierarchyCache = MakeInfoCache GetPrimaryTypeHierachyUncached HashIdentity.Structural
                                             
     member x.g = g
     member x.amap = amap
     
-    /// Read the method infos for a type
-    ///
-    /// Cache the result for monomorphic types
+    /// Read the raw method sets of a type, including inherited ones. Cache the result for monomorphic types
     member x.GetRawIntrinsicMethodSetsOfType (optFilter,ad,allowMultiIntfInst,m,typ) =
         methodInfoCache.Apply(((optFilter,ad,allowMultiIntfInst),m,typ))
 
+    /// Read the raw property sets of a type, including inherited ones. Cache the result for monomorphic types
     member x.GetRawIntrinsicPropertySetsOfType (optFilter,ad,allowMultiIntfInst,m,typ) =
         propertyInfoCache.Apply(((optFilter,ad,allowMultiIntfInst),m,typ))
 
-    member x.GetRawIntrinsicRecordOrClassFieldsOfType (optFilter,ad,m,typ) =
+    /// Read the record or class fields of a type, including inherited ones. Cache the result for monomorphic types.
+    member x.GetRecordOrClassFieldsOfType (optFilter,ad,m,typ) =
         recdOrClassFieldInfoCache.Apply(((optFilter,ad),m,typ))
 
+    /// Read the IL fields of a type, including inherited ones. Cache the result for monomorphic types.
     member x.GetILFieldInfosOfType (optFilter,ad,m,typ) =
         ilFieldInfoCache.Apply(((optFilter,ad),m,typ))
 
+    /// Read the events of a type, including inherited ones. Cache the result for monomorphic types.
     member x.GetEventInfosOfType (optFilter,ad,m,typ) =
         eventInfoCache.Apply(((optFilter,ad),m,typ))
 
-    member x.TryFindRecdOrClassFieldInfoOfType (nm:string,m,typ) =
+    /// Try and find a record or class field for a type.
+    member x.TryFindRecdOrClassFieldInfoOfType (nm,m,typ) =
         match recdOrClassFieldInfoCache.Apply((Some nm,AccessibleFromSomewhere),m,typ) with
         | [] -> None
         | [single] -> Some single
@@ -3238,29 +3281,24 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                 | [single] -> Some single
                 | _ -> failwith "unexpected multiple fields with same name" // Because it should have been already reported as duplicate fields
 
+    /// Try and find an item with the given name in a type.
     member x.TryFindNamedItemOfType (nm,ad,m,typ) =
         namedItemsCache.Apply(((nm,ad),m,typ))
 
-    member x.ReadEntireTypeHierachy (allowMultiIntfInst,m,typ) =
+    /// Get the super-types of a type, including interface types.
+    member x.GetEntireTypeHierachy (allowMultiIntfInst,m,typ) =
         entireTypeHierarchyCache.Apply((allowMultiIntfInst,m,typ))
 
-    member x.ReadPrimaryTypeHierachy (allowMultiIntfInst,m,typ) =
+    /// Get the super-types of a type, excluding interface types.
+    member x.GetPrimaryTypeHierachy (allowMultiIntfInst,m,typ) =
         primaryTypeHierarchyCache.Apply((allowMultiIntfInst,m,typ))
 
 
 //-------------------------------------------------------------------------
 // Constructor infos
-//------------------------------------------------------------------------- 
 
-
-/// Get the constructors of an IL type
-let private ConstructorInfosOfILType g amap m typ = 
-    let tinfo = ILTypeInfo.FromType g typ 
-    tinfo.RawMetadata.Methods.FindByName ".ctor" 
-    |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
-    |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, typ, mdef)) 
     
-/// Get the constructors of any F# type
+/// Get the declared constructors of any F# type
 let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty = 
     let g = infoReader.g
     let amap = infoReader.amap 
@@ -3273,7 +3311,11 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
                  yield ProvidedMeth(amap,ci.Coerce(m),None,m) ]
 #endif
         | ILTypeMetadata _ -> 
-            ConstructorInfosOfILType g amap m ty
+            let tinfo = ILTypeInfo.FromType g ty
+            tinfo.RawMetadata.Methods.FindByName ".ctor" 
+            |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
+            |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, ty, mdef)) 
+
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             let tcref = tcrefOfAppTy g ty
             tcref.MembersOfFSharpTyconByName 
@@ -3285,8 +3327,11 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
             |> List.map (fun x -> FSMeth(g,ty,x,None)) 
     else []
     
+//-------------------------------------------------------------------------
+// Collecting methods and properties taking into account hiding rules in the hierarchy
 
   
+/// Indicates if we prefer overrides or abstract slots. 
 type FindMemberFlag = 
     /// Prefer items toward the top of the hierarchy, which we do if the items are virtual 
     /// but not when resolving base calls. 
@@ -3298,41 +3343,51 @@ type FindMemberFlag =
 /// are at the end of the list. Return a filtered list where prior/subsequent members matching by name and 
 /// that are in the same equivalence class have been removed. We keep a name-indexed table to 
 /// be more efficient when we check to see if we've already seen a particular named method. 
-type private IndexedList<'a>(itemLists: 'a list list, itemsByName: 'a NameMultiMap) = 
-    member x.Items = itemLists
-    member x.ItemsWithName(nm)  = NameMultiMap.find nm itemsByName
-    member x.AddItems(items,nmf) = IndexedList<'a>(items::itemLists,List.foldBack (fun x acc -> NameMultiMap.add (nmf x) x acc) items itemsByName )
+type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<'T>) = 
     
+    /// Get the item sets
+    member x.Items = itemLists
 
-let private excludeItems keepTest nmf itemsToAdd (ilist:IndexedList<_>) = 
-    // Have we already seen an item with the same name and that is in the same equivalence class?
-    // If so, ignore this one. Note we can check against the original incoming 'ilist' because we are assuming that
-    // none the elements of 'itemsToAdd' are equivalent. 
-    itemsToAdd |> List.filter (fun item -> List.forall (fun item2 -> keepTest item item2) (ilist.ItemsWithName(nmf item)))
+    /// Get the items with a particular name
+    member x.ItemsWithName(nm)  = NameMultiMap.find nm itemsByName
 
-/// Add all the items to the IndexedList if better items are not already present. This is used to hide methods
+    /// Add new items, extracting the names using the given function.
+    member x.AddItems(items,nmf) = IndexedList<'T>(items::itemLists,List.foldBack (fun x acc -> NameMultiMap.add (nmf x) x acc) items itemsByName )
+
+    /// Get an empty set of items
+    static member Empty = IndexedList<'T>([],NameMultiMap.empty)
+
+    /// Filter a set of new items to add according to the content of the list.  Only keep an item
+    /// if it passes 'keepTest' for all matching items already in the list.
+    member x.FilterNewItems keepTest nmf itemsToAdd =
+        // Have we already seen an item with the same name and that is in the same equivalence class?
+        // If so, ignore this one. Note we can check against the original incoming 'ilist' because we are assuming that
+        // none the elements of 'itemsToAdd' are equivalent. 
+        itemsToAdd |> List.filter (fun item -> List.forall (keepTest item) (x.ItemsWithName(nmf item)))
+
+/// Add all the items to the IndexedList, prefering the ones in the super-types. This is used to hide methods
 /// in super classes and/or hide overrides of methods in subclasses.
 ///
-/// Assume no items in 'items' are equivalent according to 'equiv'. This is valid because each step in a
+/// Assume no items in 'items' are equivalent according to 'equivTest'. This is valid because each step in a
 /// .NET class hierarchy introduces a consistent set of methods, none of which hide each other within the 
-/// given set. This is an important optimization because it means we don't have to List.filter for equivalence between the 
+/// given set. This is an important optimization because it means we don't have filter for equivalence between the 
 /// large overload sets introduced by methods like System.WriteLine.
+///
 /// Assume items can be given names by 'nmf', where two items with different names are
 /// not equivalent.
 
-let private emptyIndexedList() = IndexedList([],NameMultiMap.empty)
-
-let private filterItemsInSubTypesBasedOnItemsInSuperTypes nmf keepTest itemLists = 
+let private FilterItemsInSubTypesBasedOnItemsInSuperTypes nmf keepTest itemLists = 
     let rec loop itemLists = 
         match itemLists with
-        | [] -> emptyIndexedList()
+        | [] -> IndexedList.Empty
         | items :: itemsInSuperTypes -> 
             let ilist = loop itemsInSuperTypes
-            let itemsToAdd = excludeItems keepTest nmf items ilist
+            let itemsToAdd = ilist.FilterNewItems keepTest nmf items 
             ilist.AddItems(itemsToAdd,nmf)
     (loop itemLists).Items
 
-let private filterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists  = 
+/// Add all the items to the IndexedList, prefering the ones in the sub-types.
+let private FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists  = 
     let rec loop itemLists (indexedItemsInSubTypes:IndexedList<_>) = 
         match itemLists with
         | [] -> List.rev indexedItemsInSubTypes.Items
@@ -3341,12 +3396,13 @@ let private filterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists
             let ilist = indexedItemsInSubTypes.AddItems(itemsToAdd,nmf)
             loop itemsInSuperTypes ilist
 
-    loop itemLists (emptyIndexedList())
+    loop itemLists IndexedList.Empty
 
-let private excludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivTest itemLists = 
-    filterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> List.exists (fun item2 -> equivTest item1 item2))) itemLists 
+let private ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivTest itemLists = 
+    FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> List.exists (fun item2 -> equivTest item1 item2))) itemLists 
 
-let private filterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverride,isFinal,equivSigs,nmf:'a->string) items = 
+/// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
+let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverride,isFinal,equivSigs,nmf:'a->string) items = 
     let equivVirts x y = isVirt x && isVirt y && equivSigs x y
 
     match findFlag with 
@@ -3364,7 +3420,7 @@ let private filterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
             items |> List.filter (fun item -> (isDefiniteOverride item || not (List.exists (equivVirts item) definiteOverrides))))
        
         // only keep virtuals that are not signature-equivalent to virtuals in subtypes
-        |> excludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivVirts 
+        |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivVirts 
     | IgnoreOverrides ->  
         let equivNewSlots x y = isNewSlot x && isNewSlot y && equivSigs x y
         items
@@ -3378,7 +3434,7 @@ let private filterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
           //       (b) is a new slot or 
           //       (c) not equivalent
           // We keep virtual finals around for error detection later on
-          |> filterItemsInSubTypesBasedOnItemsInSuperTypes nmf (fun newItem priorItem  ->
+          |> FilterItemsInSubTypesBasedOnItemsInSuperTypes nmf (fun newItem priorItem  ->
                  (isVirt newItem && isFinal newItem) || not (isVirt newItem) || isNewSlot newItem || not (equivVirts newItem priorItem) )
 
           // Remove any abstract slots in supertypes that are (a) hidden by another newslot and (b) implemented
@@ -3402,21 +3458,24 @@ let private filterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
           //       inherit PC()
           //       override this.M(x:int) = ()
 
-          |> filterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 superTypeItems -> 
+          |> FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 superTypeItems -> 
                   not (isNewSlot item1 && 
                        superTypeItems |> List.exists (equivNewSlots item1) &&
                        superTypeItems |> List.exists (fun item2 -> isDefiniteOverride item1 && equivVirts item1 item2))) 
 
     
+/// Filter the overrides of methods, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverridesOfMethInfos findFlag g amap m minfos = 
-    filterOverrides findFlag ((fun (minfo:MethInfo) -> minfo.IsVirtual),(fun minfo -> minfo.IsNewSlot),(fun minfo -> minfo.IsDefiniteFSharpOverride),(fun minfo -> minfo.IsFinal),MethInfosEquivByNameAndSig EraseNone true g amap m,(fun minfo -> minfo.LogicalName)) minfos
+    FilterOverrides findFlag ((fun (minfo:MethInfo) -> minfo.IsVirtual),(fun minfo -> minfo.IsNewSlot),(fun minfo -> minfo.IsDefiniteFSharpOverride),(fun minfo -> minfo.IsFinal),MethInfosEquivByNameAndSig EraseNone true g amap m,(fun minfo -> minfo.LogicalName)) minfos
 
+/// Filter the overrides of properties, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverridesOfPropInfos findFlag g amap m props = 
-    filterOverrides findFlag ((fun (pinfo:PropInfo) -> pinfo.IsVirtualProperty),(fun pinfo -> pinfo.IsNewSlot),(fun pinfo -> pinfo.IsDefiniteFSharpOverride),(fun _ -> false),PropInfosEquivByNameAndSig EraseNone g amap m, (fun pinfo -> pinfo.PropertyName)) props
+    FilterOverrides findFlag ((fun (pinfo:PropInfo) -> pinfo.IsVirtualProperty),(fun pinfo -> pinfo.IsNewSlot),(fun pinfo -> pinfo.IsDefiniteFSharpOverride),(fun _ -> false),PropInfosEquivByNameAndSig EraseNone g amap m, (fun pinfo -> pinfo.PropertyName)) props
 
+/// Exclude methods from super types which have the same signature as a method in a more specific type.
 let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) = 
     minfos
-    |> excludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes 
+    |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes 
         (fun minfo -> minfo.LogicalName)
         (fun m1 m2 -> 
              // only hide those truly from super classes 
@@ -3425,25 +3484,27 @@ let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) =
         
     |> List.concat
 
+/// Exclude properties from super types which have the same name as a property in a more specific type.
 let ExcludeHiddenOfPropInfos g amap m pinfos = 
     pinfos 
-    |> excludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo:PropInfo) -> pinfo.PropertyName) (PropInfosEquivByNameAndPartialSig EraseNone g amap m) 
+    |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes (fun (pinfo:PropInfo) -> pinfo.PropertyName) (PropInfosEquivByNameAndPartialSig EraseNone g amap m) 
     |> List.concat
 
+/// Get the sets of intrinsic methods in the hierarchy (not including extension methods)
 let GetIntrinsicMethInfoSetsOfType (infoReader:InfoReader) (optFilter,ad,allowMultiIntfInst) findFlag m typ = 
     infoReader.GetRawIntrinsicMethodSetsOfType(optFilter,ad,allowMultiIntfInst,m,typ)
     |> FilterOverridesOfMethInfos findFlag infoReader.g infoReader.amap m
   
+/// Get the sets intrinsic properties in the hierarchy (not including extension properties)
 let GetIntrinsicPropInfoSetsOfType (infoReader:InfoReader) (optFilter,ad,allowMultiIntfInst) findFlag m typ = 
     infoReader.GetRawIntrinsicPropertySetsOfType(optFilter,ad,allowMultiIntfInst,m,typ) 
     |> FilterOverridesOfPropInfos findFlag infoReader.g infoReader.amap m
 
-let GetRecordOrClassFieldsOfType (infoReader:InfoReader) (optFilter,ad) m typ = 
-    infoReader.GetRawIntrinsicRecordOrClassFieldsOfType(optFilter,ad,m,typ) 
-
+/// Get the flattened list of intrinsic methods in the hierarchy
 let GetIntrinsicMethInfosOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ = 
     GetIntrinsicMethInfoSetsOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ |> List.concat
   
+/// Get the flattened list of intrinsic properties in the hierarchy
 let GetIntrinsicPropInfosOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ = 
     GetIntrinsicPropInfoSetsOfType infoReader (optFilter,ad,allowMultiIntfInst)  findFlag m typ  |> List.concat
 
