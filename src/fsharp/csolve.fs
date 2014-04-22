@@ -1915,11 +1915,7 @@ and ArgsMustSubsumeOrConvert
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
     SolveTypSubsumesTypWithReport csenv ndeep m trace calledArgTy callerArg.Type ++ (fun () -> 
 
-    if calledArg.IsParamArray &&
-        isAppTy g calledArgTy &&
-        (let _,tinstf = destAppTy g calledArgTy
-         tinstf.Length  = 1 &&
-         TypesFeasiblyEquiv ndeep g amap m (List.head tinstf) callerArg.Type)
+    if calledArg.IsParamArray && not (isArray1DTy g calledArgTy)
     then 
         ErrorD(Error(FSComp.SR.csMethodExpectsParams(),m))
     else
