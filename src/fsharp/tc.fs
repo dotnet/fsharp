@@ -3123,18 +3123,30 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
             else 
                 enumElemTy
 
-        let enumeratorVar,enumeratorExpr = 
-            if isStructTy cenv.g retTypeOfGetEnumerator then 
+        let isEnumeratorTypeStruct = isStructTy cenv.g retTypeOfGetEnumerator
+        let originalRetTypeOfGetEnumerator = retTypeOfGetEnumerator
+
+        let (enumeratorVar,enumeratorExpr), retTypeOfGetEnumerator = 
+            if isEnumeratorTypeStruct then 
                if localAlloc then 
-                  Tastops.mkMutableCompGenLocal m "enumerator" retTypeOfGetEnumerator
+                  Tastops.mkMutableCompGenLocal m "enumerator" retTypeOfGetEnumerator, retTypeOfGetEnumerator
                else
-                  let v,e = Tastops.mkMutableCompGenLocal m "enumerator" (mkRefCellTy cenv.g retTypeOfGetEnumerator)
-                  v,mkRefCellGet cenv.g m retTypeOfGetEnumerator e
+                  let refCellTyForRetTypeOfGetEnumerator = mkRefCellTy cenv.g retTypeOfGetEnumerator
+                  let v,e = Tastops.mkMutableCompGenLocal m "enumerator" refCellTyForRetTypeOfGetEnumerator
+                  (v, mkRefCellGet cenv.g m retTypeOfGetEnumerator e), refCellTyForRetTypeOfGetEnumerator
                   
             else
-               Tastops.mkCompGenLocal m "enumerator" retTypeOfGetEnumerator
+               Tastops.mkCompGenLocal m "enumerator" retTypeOfGetEnumerator, retTypeOfGetEnumerator
             
-        let getEnumExpr  ,getEnumTy  = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates   m false getEnumerator_minfo NormalValUse getEnumerator_minst [exprToSearchForGetEnumeratorAndItem] []
+        let getEnumExpr, getEnumTy  = 
+            let (getEnumExpr, getEnumTy) as res = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates   m false getEnumerator_minfo NormalValUse getEnumerator_minst [exprToSearchForGetEnumeratorAndItem] []
+            if not isEnumeratorTypeStruct || localAlloc then res                
+            else 
+                // wrap enumerators that are represented as mutable structs into ref cells 
+                let getEnumExpr = mkRefCell cenv.g m originalRetTypeOfGetEnumerator getEnumExpr 
+                let getEnumTy = mkRefCellTy cenv.g getEnumTy
+                getEnumExpr, getEnumTy
+
         let guardExpr  ,guardTy      = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m false moveNext_minfo      NormalValUse moveNext_minst [enumeratorExpr] []
         let currentExpr,currentTy    = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m true get_Current_minfo   NormalValUse get_Current_minst [enumeratorExpr] []
         let betterCurrentExpr  = mkCoerceExpr(currentExpr,enumElemTy,currentExpr.Range,currentTy)
