@@ -18,18 +18,29 @@ type Foo() =
 
 [<assembly:AttributeWithParamArray ([| |])>]
 do
-    let testPassed =
-        let getTestAttribute (t : Type) =
-            let tyAttributes = t.GetCustomAttributes(false)
-            let attrib = tyAttributes |> Array.find (fun attrib -> match attrib with :? AttributeWithParamArray -> true | _ -> false)
-            (attrib :?> AttributeWithParamArray)
-        
-        let tyFoo = typeof<Foo>
-        let testAtt = getTestAttribute tyFoo
-        if testAtt.Parameters <> [| (0 :> obj) |] then 
-            false
-        else
-            true
+    let getTestAttribute (t : Type) =
+        let tyAttributes = t.GetCustomAttributes(false)
+        let attrib = tyAttributes |> Array.find (fun attrib -> match attrib with :? AttributeWithParamArray -> true | _ -> false)
+        (attrib :?> AttributeWithParamArray)
+    
+    let tyFoo = typeof<Foo>
+    let testAtt = getTestAttribute tyFoo
+    if testAtt.Parameters <> [| (0 :> obj) |] then
+        printfn "Attribute parameters not as expected"
+        exit 1    
+    
+    let directCallWorks =
+        CSParamArray.Method(9, 8, 7) + CSParamArray.Method(1, 2) + CSParamArray.Method() = (9 + 8 + 7) + (1 + 2)
+    if not directCallWorks then
+        printfn "Calling C# param array method gave unexpected result"
+        exit 1
 
-    if not testPassed then exit 1
+    let callParamArray (x : int array) = CSParamArray.Method(x)
+    let asArrayCallWorks = (callParamArray [| 9; 8; 7 |]) = (9 + 8 + 7)
+    if not asArrayCallWorks then
+        printfn "Calling C# param array method, passing args as an array, gave unexpected result"
+        exit 1
+        
     exit 0
+    
+    
