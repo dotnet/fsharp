@@ -16,6 +16,8 @@ type Foo() =
     [<AttributeWithParamArray([| ("foo" :> obj); ("bar" :> obj) |])>]
     override this.ToString() = "Stuff"
 
+let callCSGenericMethod (a: 't[]) = CSParamArray.Method(a)
+
 [<assembly:AttributeWithParamArray ([| |])>]
 do
     let getTestAttribute (t : Type) =
@@ -40,7 +42,15 @@ do
     if not asArrayCallWorks then
         printfn "Calling C# param array method, passing args as an array, gave unexpected result"
         exit 1
-        
+
+    if callCSGenericMethod [|"1";"2";"3"|] <> 3 then
+        printfn "Calling C# generic param array method gave unexpected result"
+        exit 1
+
+    if CSParamArray.Method("1", "2", "3") <> CSParamArray.Method([|"1"; "2"; "3"|]) then
+        printfn "Calling C# generic param array in normal and expanded method gave unexpected result"
+        exit 1
+
     exit 0
     
     

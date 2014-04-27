@@ -24,5 +24,10 @@ namespace CSharpAssembly
 
             return total;
         }
+
+        public static int Method<T>(params T[] args)
+        {
+            return args.Length;
+        }
     }
 }
