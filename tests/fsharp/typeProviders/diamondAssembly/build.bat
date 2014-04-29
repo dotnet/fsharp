@@ -7,10 +7,10 @@ call %~d0%~p0\..\..\..\config.bat
 if EXIST provider.dll del provider.dll
 if errorlevel 1 goto :Error
 
-%FSC% --out:provided.dll -a ..\helloWorld\provided.fs
+"%FSC%" --out:provided.dll -a ..\helloWorld\provided.fs
 if errorlevel 1 goto :Error
 
-%FSC% --out:provider.dll -a ..\helloWorld\provider.fsx
+"%FSC%" --out:provider.dll -a ..\helloWorld\provider.fsx
 if errorlevel 1 goto :Error
 
 "%FSC%" %fsc_flags% --debug+ -r:provider.dll --optimize- -o:test1.dll -a test1.fsx
@@ -33,5 +33,3 @@ exit /b 0
 :Error
 endlocal
 exit /b %ERRORLEVEL%
-
-

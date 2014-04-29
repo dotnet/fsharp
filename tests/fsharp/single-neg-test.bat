@@ -7,8 +7,10 @@ if errorlevel 1 (
     set ERRORMSG=%ERRORMSG% config.bat failed;
     goto :ERROR
 )
-call :check "%FSC%"
-if not "%ERRORMSG%"=="" goto :ERROR
+if not exist "%FSC%" (
+  set ERRORMSG=Could not find FSC at path "%FSC%"
+  goto :ERROR
+)
 
 %FSDIFF% %~f0 %~f0
 @if ERRORLEVEL 1 (
@@ -99,10 +101,3 @@ set NonexistentErrorLevel 2> nul
 goto Error
 goto :EOF
 
-:Check
-for /f  %%i in ("%1") do (
-  dir %%i > NUL 2>&1 || (
-    set ERRORMSG=%ERRORMSG% %1 was not found; 
-  )
-)
-goto :EOF

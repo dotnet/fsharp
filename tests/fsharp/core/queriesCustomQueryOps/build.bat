@@ -7,29 +7,22 @@ if EXIST build.ok DEL /f /q build.ok
 
 call %~d0%~p0..\..\..\config.bat
 
-if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" ( 
-  ECHO Skipping test for FSI.EXE
-  goto Skip
-)
-
-
 rem fsc.exe building
 
+"%FSC%" %fsc_flags% -o:test.exe -g test.fsx
+@if ERRORLEVEL 1 goto Error
 
-    "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
-    @if ERRORLEVEL 1 goto Error
+"%PEVERIFY%" test.exe 
+@if ERRORLEVEL 1 goto Error
 
-    "%PEVERIFY%" test.exe 
-    @if ERRORLEVEL 1 goto Error
+"%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fsx
+@if ERRORLEVEL 1 goto Error
 
-    "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fsx
-    @if ERRORLEVEL 1 goto Error
+"%PEVERIFY%" test--optimize.exe 
+@if ERRORLEVEL 1 goto Error
 
-    "%PEVERIFY%" test--optimize.exe 
-    @if ERRORLEVEL 1 goto Error
-
-    call ..\..\single-neg-test.bat negativetest
-    @if ERRORLEVEL 1 goto Error
+call ..\..\single-neg-test.bat negativetest
+@if ERRORLEVEL 1 goto Error
 
 :Ok
 echo Built fsharp %~f0 ok.

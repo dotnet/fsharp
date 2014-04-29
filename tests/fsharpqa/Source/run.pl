@@ -155,6 +155,7 @@ if (exists($ENV{PRECMD})) {
   s/^\$FSC_PIPE/$FSC_PIPE/;
   s/^\$FSI_PIPE/$FSI_PIPE/;
   s/^\$FSI32_PIPE/$FSI32_PIPE/;
+  s/\$ISCFLAGS/$ISCFLAGS/;
   s/^\$CSC_PIPE/$CSC_PIPE/;
   RunExit(TEST_FAIL, "Fail to execute the PRECMD" . @CommandOutput . "\n")  if RunCommand("PRECMD",$_ ,1); 
 }
