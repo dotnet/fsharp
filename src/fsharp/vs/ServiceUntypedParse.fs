@@ -167,7 +167,6 @@ type internal UntypedParseInfo(parsed:UntypedParseResults) =
 
                   | SynExpr.ArbitraryAfterError _ 
                   | SynExpr.LongIdent _
-                  | SynExpr.Quote _
                   | SynExpr.LibraryOnlyILAssembly _
                   | SynExpr.LibraryOnlyStaticOptimization _
                   | SynExpr.Null _
@@ -176,6 +175,7 @@ type internal UntypedParseInfo(parsed:UntypedParseResults) =
                   | SynExpr.Const _ -> 
                      ()
 
+                  | SynExpr.Quote(_,_,e,_,_)
                   | SynExpr.TypeTest (e,_,_)
                   | SynExpr.Upcast (e,_,_)
                   | SynExpr.AddressOf (_,e,_,_)
