@@ -1185,17 +1185,24 @@ namespace Microsoft.FSharp.Collections
         let windowed windowSize (source: seq<_>) =    
             checkNonNull "source" source
             if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
-            seq { let arr = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked windowSize 
-                  let r = ref (windowSize-1)
-                  let i = ref 0 
-                  use e = source.GetEnumerator() 
-                  while e.MoveNext() do 
-                      arr.[!i] <- e.Current
-                      i := (!i + 1) % windowSize
-                      if !r = 0 then 
-                          yield Array.init windowSize (fun j -> arr.[(!i+j) % windowSize])
-                      else 
-                      r := (!r - 1) }
+            seq { 
+                let arr = Array.zeroCreateUnchecked windowSize
+                let r = ref (windowSize - 1)
+                let i = ref 0
+                use e = source.GetEnumerator()
+                while e.MoveNext() do
+                    arr.[!i] <- e.Current
+                    i := (!i + 1) % windowSize
+                    if !r = 0 then
+                        if windowSize < 32 then
+                            yield Array.init windowSize (fun j -> arr.[(!i+j) % windowSize])
+                        else
+                            let result = Array.zeroCreateUnchecked windowSize
+                            Array.Copy(arr, !i, result, 0, windowSize - !i)
+                            Array.Copy(arr, 0, result, windowSize - !i, !i)
+                            yield result
+                    else r := (!r - 1)
+            }
 
         [<CompiledName("Cache")>]
         let cache (source : seq<'T>) = 

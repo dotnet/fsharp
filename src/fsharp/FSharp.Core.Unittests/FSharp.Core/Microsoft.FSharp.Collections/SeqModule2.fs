@@ -7,6 +7,14 @@ open NUnit.Framework
 
 open FSharp.Core.Unittests.LibraryTestFx
 
+type SeqWindowedTestInput<'t> =
+    {
+        InputSeq : seq<'t>
+        WindowSize : int
+        ExpectedSeq : seq<'t[]>
+        Exception : Type option
+    }
+
 [<TestFixture>]
 type SeqModule2() =
 
@@ -1114,24 +1122,66 @@ type SeqModule2() =
         
     [<Test>]
     member this.Windowed() =
-        // integer Seq
-        let resultInt = Seq.windowed 5 (seq [1..10])
-        let expectedInt = 
-            seq { for i in 1..6 do
-                    yield [| i; i+1; i+2; i+3; i+4 |] }
-        VerifySeqsEqual expectedInt resultInt
-        
-        // string Seq
-        let resultStr =Seq.windowed 2 (seq ["str1";"str2";"str3";"str4"])
-        let expectedStr = seq [ [|"str1";"str2"|];[|"str2";"str3"|];[|"str3";"str4"|]]
-        VerifySeqsEqual expectedStr resultStr
-      
-        // empty Seq 
-        let resultEpt = Seq.windowed 2 Seq.empty
-        VerifySeqsEqual Seq.empty resultEpt
-          
-        // null Seq
-        CheckThrowsArgumentNullException(fun() -> Seq.windowed 2 null |> ignore)
+
+        let testWindowed config =
+            try
+                config.InputSeq
+                |> Seq.windowed config.WindowSize
+                |> VerifySeqsEqual config.ExpectedSeq 
+            with
+            | _ when Option.isNone config.Exception -> Assert.Fail()
+            | e when e.GetType() = (Option.get config.Exception) -> ()
+            | _ -> Assert.Fail()
+
+        {
+          InputSeq = seq [1..10]
+          WindowSize = 1
+          ExpectedSeq =  seq { for i in 1..10 do yield [| i |] }
+          Exception = None
+        } |> testWindowed
+        {
+          InputSeq = seq [1..10]
+          WindowSize = 5
+          ExpectedSeq =  seq { for i in 1..6 do yield [| i; i+1; i+2; i+3; i+4 |] }
+          Exception = None
+        } |> testWindowed
+        {
+          InputSeq = seq [1..10]
+          WindowSize = 10
+          ExpectedSeq =  seq { yield [| 1 .. 10 |] }
+          Exception = None
+        } |> testWindowed
+        {
+          InputSeq = seq [1..10]
+          WindowSize = 25
+          ExpectedSeq =  Seq.empty
+          Exception = None
+        } |> testWindowed
+        {
+          InputSeq = seq ["str1";"str2";"str3";"str4"]
+          WindowSize = 2
+          ExpectedSeq =  seq [ [|"str1";"str2"|];[|"str2";"str3"|];[|"str3";"str4"|]]
+          Exception = None
+        } |> testWindowed
+        {
+          InputSeq = Seq.empty
+          WindowSize = 2
+          ExpectedSeq = Seq.empty
+          Exception = None
+        } |> testWindowed
+        {
+          InputSeq = null
+          WindowSize = 2
+          ExpectedSeq = Seq.empty
+          Exception = Some typeof<ArgumentNullException>
+        } |> testWindowed
+        {
+          InputSeq = seq [1..10]
+          WindowSize = 0
+          ExpectedSeq =  Seq.empty
+          Exception = Some typeof<ArgumentException>
+        } |> testWindowed
+
         ()
         
     [<Test>]
