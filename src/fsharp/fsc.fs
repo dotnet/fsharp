@@ -608,7 +608,7 @@ module XmlDocWriter =
             for uc in tc.UnionCasesAsList do
                 if (hasDoc uc.XmlDoc) then uc.XmlDocSig <- XmlDocSigOfUnionCase ptext uc.Id.idText tc.CompiledName
             for rf in tc.AllFieldsAsList do
-                if (hasDoc rf.XmlDoc) then rf.XmlDocSig <- XmlDocSigOfField ptext rf.Id.idText (if tc.IsEnumTycon then tc.CompiledName else tc.CompiledRepresentationForNamedType.Name)
+                if (hasDoc rf.XmlDoc) then rf.XmlDocSig <- XmlDocSigOfField ptext rf.Id.idText tc.CompiledName
 
         let doModuleMemberSig path (m:ModuleOrNamespace) = m.XmlDocSig <- XmlDocSigOfSubModul path
         (* moduleSpec - recurses *)
