@@ -59,3 +59,4 @@ Usage: Fsi.exe <options> [script.fsx [<arguments>]]
 --readline[+|-]                Support TAB completion in console (on by
                                default)
 --quotations-debug[+|-]        Emit debug information in quotations
+--shadowcopyreferences[+|-]    Prevents references from being locked by the F# Interactive process

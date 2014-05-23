@@ -13,6 +13,7 @@ open Internal.Utilities
 module Tc = Microsoft.FSharp.Compiler.TypeChecker
 
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
 open System.Runtime.InteropServices
@@ -83,6 +84,7 @@ module Utilities =
 
     let ignoreAllErrors f = try f() with _ -> ()
 
+let referencedAssemblies = Dictionary<string, DateTime>()
 
 //----------------------------------------------------------------------------
 // Timing support
@@ -501,16 +503,13 @@ type FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput: FsiConso
             CompilerOption("full-help", tagNone, OptionHelp (fun blocks -> displayHelpFsi tcConfigB blocks), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
-        [CompilerOption("exec","", OptionUnit (fun () -> interact <- false), None,
-                                 Some (FSIstrings.SR.fsiExec()));
-         CompilerOption("gui", tagNone, OptionSwitch (fun flag -> gui <- (flag = On)),None,
-                                 Some (FSIstrings.SR.fsiGui()));
-         CompilerOption("quiet","", OptionUnit (fun () -> tcConfigB.noFeedback <- true), None,
-                                 Some (FSIstrings.SR.fsiQuiet()));     
+        [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()));
+         CompilerOption("gui",                  tagNone, OptionSwitch(fun flag -> gui <- (flag = On)),None,Some (FSIstrings.SR.fsiGui()));
+         CompilerOption("quiet",                "", OptionUnit (fun () -> tcConfigB.noFeedback <- true), None,Some (FSIstrings.SR.fsiQuiet()));     
          (* Renamed --readline and --no-readline to --tabcompletion:+|- *)
-         CompilerOption("readline",tagNone, OptionSwitch (function flag -> enableConsoleKeyProcessing <- (flag = On)),None,
-                                 Some (FSIstrings.SR.fsiReadline()));
-         CompilerOption("quotations-debug", tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = On), None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
+         CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = On)),           None, Some(FSIstrings.SR.fsiReadline()));
+         CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()));
+         CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = On),         None, Some(FSIstrings.SR.shadowCopyReferences()));
         ]);
       ]
 
@@ -1583,9 +1582,21 @@ type FsiInteractionProcessor(tcConfigB,
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference istate m path 
                 resolutions |> List.iter (fun ar -> 
-                    let format = if fsiOptions.IsInteractiveServer then FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath) else FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                    fsiConsoleOutput.uprintnfnn "%s" format
-                    )
+                    let format = 
+                        if tcConfig.shadowCopyReferences then
+                            let resolvedPath = ar.resolvedPath.ToUpperInvariant()
+                            let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
+                            match referencedAssemblies.TryGetValue(resolvedPath) with
+                            | false, _ -> 
+                                referencedAssemblies.Add(resolvedPath, fileTime)
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                            | true, time when time <> fileTime ->
+                                FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
+                            | _ ->
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                        else
+                            FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
+                    fsiConsoleOutput.uprintnfnn "%s" format)
                 istate,Completed
 
             | IHash (ParsedHashDirective("I",[path],m),_) -> 
@@ -2050,7 +2061,6 @@ let DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
 
     runLoop();
 
-
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
 type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter) = 
@@ -2076,7 +2086,8 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     do if runningOnMono then enableConsoleColoring <- false 
 
     do SetUninitializedErrorLoggerFallback AssertFalseErrorLogger
-  
+    
+
     //----------------------------------------------------------------------------
     // tcConfig - build the initial config
     //----------------------------------------------------------------------------
@@ -2102,7 +2113,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 
     let fsiStdinSyphon = new FsiStdinSyphon(errorWriter)
     let fsiConsoleOutput = FsiConsoleOutput(tcConfigB, outWriter, errorWriter)
-    
+
     let errorLogger = ErrorLoggerThatStopsOnFirstError(tcConfigB, fsiStdinSyphon, fsiConsoleOutput)
 
     do InstallErrorLoggingOnThisThread errorLogger // FSI error logging on main thread.
@@ -2334,30 +2345,34 @@ let MainMain argv =
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
 
-    // When VFSI is running, set the input/output encoding to UTF8.
-    // Otherwise, unicode gets lost during redirection.
-    // It is required only under Net4.5 or above (with unicode console feature).
-    if FSharpEnvironment.IsRunningOnNetFx45OrAbove && 
-        argv |> Array.exists (fun x -> x.Contains "fsi-server") then
-        Console.InputEncoding <- System.Text.Encoding.UTF8 
-        Console.OutputEncoding <- System.Text.Encoding.UTF8
+    let evaluateSession () = 
+        // When VFSI is running, set the input/output encoding to UTF8.
+        // Otherwise, unicode gets lost during redirection.
+        // It is required only under Net4.5 or above (with unicode console feature).
+        if FSharpEnvironment.IsRunningOnNetFx45OrAbove && 
+            argv |> Array.exists (fun x -> x.Contains "fsi-server") then
+            Console.InputEncoding <- System.Text.Encoding.UTF8 
+            Console.OutputEncoding <- System.Text.Encoding.UTF8
 
 #if DEBUG  
-    if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
-        Console.WriteLine("Press any key to continue...")
-        Console.ReadKey() |> ignore
-
-    try
-      let fsi = FsiEvaluationSession (argv, Console.In, Console.Out, Console.Error)
-      fsi.Run() 
-    with e -> printf "Exception by fsi.exe:\n%+A\n" e
+        if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
+            Console.WriteLine("Press any key to continue...")
+            Console.ReadKey() |> ignore
+    
+        try
+          let fsi = FsiEvaluationSession (argv, Console.In, Console.Out, Console.Error)
+          fsi.Run() 
+        with e -> printf "Exception by fsi.exe:\n%+A\n" e
 #else
-    let fsi = FsiEvaluationSession (argv, Console.In, Console.Out, Console.Error)
-    fsi.Run() 
+        let fsi = FsiEvaluationSession (argv, Console.In, Console.Out, Console.Error)
+        fsi.Run() 
 #endif
 
+    if argv |> Array.exists  (fun x -> x = "/shadowcopyreferences" || x = "--shadowcopyreferences" || x = "/shadowcopyreferences+" || x = "--shadowcopyreferences+") then
+        let setupInformation = AppDomain.CurrentDomain.SetupInformation
+        setupInformation.ShadowCopyFiles <- "true"
+        let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)
+        helper.DoCallBack(fun() -> evaluateSession() )
+    else
+        evaluateSession()
     0
-
-
-
-

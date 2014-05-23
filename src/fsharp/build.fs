@@ -1997,6 +1997,9 @@ type TcConfigBuilder =
 
       /// if true - every expression in quotations will be augmented with full debug info (filename, location in file)
       mutable emitDebugInfoInQuotations : bool
+
+      /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
+      mutable shadowCopyReferences : bool
       }
 
 
@@ -2138,6 +2141,7 @@ type TcConfigBuilder =
           sqmNumOfSourceFiles = 0
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
+          shadowCopyReferences = false
         }
 
     member tcConfigB.ResolveSourceFile(m,nm,pathLoadedFrom) = 
@@ -2265,7 +2269,7 @@ type TcConfigBuilder =
             ri,fileNameOfPath ri,ILResourceAccess.Public 
 
 
-let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, pdbPathOption, primaryAssemblyName, noDebugData) = 
+let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, pdbPathOption, primaryAssemblyName, noDebugData, shadowCopyReferences) = 
       let ilGlobals   = 
           // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
           // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
@@ -2283,7 +2287,17 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
       // Visual Studio uses OpenILModuleReaderAfterReadingAllBytes for all DLLs to avoid having to dispose of any readers explicitly
       if openBinariesInMemory // && not syslib 
       then ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
-      else ILBinaryReader.OpenILModuleReader filename opts
+      else
+        let location =
+          // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
+          // We swallow all exceptions so that we do not change the exception contract of this API
+          if shadowCopyReferences then 
+            try
+              System.Reflection.Assembly.ReflectionOnlyLoadFrom(filename).Location
+            with e -> filename
+          else
+            filename
+        ILBinaryReader.OpenILModuleReader location opts
 
 #if DEBUG
 [<System.Diagnostics.DebuggerDisplayAttribute("AssemblyResolution({resolvedPath})")>]
@@ -2391,7 +2405,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
             
-                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
+                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
                 try 
                    let ilModule = ilReader.ILModuleDef
                  
@@ -2451,7 +2465,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             try 
-                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
+                let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
                 try 
                    checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
                    let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
@@ -2586,6 +2600,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.sqmSessionGuid = data.sqmSessionGuid
     member x.sqmNumOfSourceFiles = data.sqmNumOfSourceFiles
     member x.sqmSessionStartedTime = data.sqmSessionStartedTime
+    member x.shadowCopyReferences = data.shadowCopyReferences
 
     static member Create(builder,validate) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
@@ -3667,7 +3682,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             else   
                 None
 
-        let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData)
+        let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData, tcConfig.shadowCopyReferences)
 
         tcImports.AttachDisposeAction(fun _ -> ILBinaryReader.CloseILModuleReader ilILBinaryReader);
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs

@@ -333,7 +333,9 @@ type TcConfigBuilder =
       mutable sqmSessionGuid : System.Guid option
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
-      mutable emitDebugInfoInQuotations : bool }
+      mutable emitDebugInfoInQuotations : bool
+      mutable shadowCopyReferences : bool }
+
 
     static member CreateNew : 
         defaultFSharpBinariesDir: string * 
@@ -491,7 +493,8 @@ type TcConfig =
     member sqmSessionGuid : System.Guid option
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
-
+    member shadowCopyReferences : bool
+ 
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
 
 
