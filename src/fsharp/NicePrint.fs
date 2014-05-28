@@ -658,11 +658,11 @@ module private PrintTypes =
         
         if denv.showAttributes then
             // Don't display DllImport attributes in generated signatures  
-            let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_DllImportAttribute >> not)
+            let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_DllImportAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_ContextStaticAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_ThreadStaticAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_EntryPointAttribute >> not)
-            let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_MarshalAsAttribute >> not)
+            let attrs = attrs |> List.filter (IsMatchingFSharpAttributeOpt denv.g denv.g.attrib_MarshalAsAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_ReflectedDefinitionAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_StructLayoutAttribute >> not)
             let attrs = attrs |> List.filter (IsMatchingFSharpAttribute denv.g denv.g.attrib_AutoSerializableAttribute >> not)

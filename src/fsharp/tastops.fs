@@ -2514,6 +2514,7 @@ let IsMatchingFSharpAttribute g (AttribInfo(_,tcref)) (Attrib(tcref2,_,_,_,_,_,_
 let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
 let findAttrib g tref attrs = List.find (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
+let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
 let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2,_,_,_,_,_,_)) = match attrOpt with Some ((AttribInfo(_,tcref))) -> tyconRefEq g tcref  tcref2 | _ -> false
@@ -7003,7 +7004,9 @@ let isSealedTy g ty =
    
 let isComInteropTy g ty =
     let tcr,_ = destAppTy g ty
-    TryFindFSharpBoolAttribute g g.attrib_ComImportAttribute tcr.Attribs = Some(true)
+    match g.attrib_ComImportAttribute with
+    | None -> false
+    | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = Some(true)
   
 let ValSpecIsCompiledAsInstance g (v:Val) =
     match v.MemberInfo with 

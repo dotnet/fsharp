@@ -724,9 +724,9 @@ type ILMethInfo =
     /// Indicates if the method is marked as a DllImport (a PInvoke). This is done by looking at the IL custom attributes on 
     /// the method.
     member x.IsDllImport g = 
-        let (AttribInfo(tref,_)) = g.attrib_DllImportAttribute
-        x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref (Some tref.Scope)  |> isSome
-
+        match g.attrib_DllImportAttribute with
+        | None -> false
+        | Some (AttribInfo(tref,_)) ->x.RawMetadata.CustomAttrs |> TryDecodeILAttribute g tref (Some tref.Scope)  |> isSome
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method. 
     /// An instance extension method returns one object argument.

@@ -1190,6 +1190,7 @@ val IsMatchingFSharpAttributeOpt   : TcGlobals -> Env.BuiltinAttribInfo option -
 val HasFSharpAttribute             : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> bool
 val HasFSharpAttributeOpt          : TcGlobals -> Env.BuiltinAttribInfo option -> Attribs -> bool
 val TryFindFSharpAttribute         : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> Attrib option
+val TryFindFSharpAttributeOpt      : TcGlobals -> Env.BuiltinAttribInfo option -> Attribs -> Attrib option
 val TryFindFSharpBoolAttribute     : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> bool option
 val TryFindFSharpStringAttribute   : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> string option
 val TryFindFSharpInt32Attribute    : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> int32 option

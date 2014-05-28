@@ -1749,9 +1749,14 @@ type AvailableImportedAssembly =
 // For .NETCore everything is not so obvious because fundamental types now reside in different assemblies and this makes initialization more tricky:
 // - read system runtime -> create ILGlobals that is partially initialized (*) -> use ILGlobals to read remaining assemblies -> finish the initialization of ILGlobals using data from the previous step
 // BeginLoadingSystemRuntime -> (*) EndLoadingSystemRuntime
+
+type CcuLoadFailureAction = 
+    | RaiseError
+    | ReturnNone
+
 type ISystemRuntimeCcuInitializer = 
     abstract BeginLoadingSystemRuntime : resolver : (AssemblyReference -> ImportedAssembly) * noDebug :bool -> ILGlobals * obj
-    abstract EndLoadingSystemRuntime : state : obj * resolver : (AssemblyReference -> ImportedAssembly) -> ImportedAssembly
+    abstract EndLoadingSystemRuntime : state : obj * resolver : (CcuLoadFailureAction -> AssemblyReference -> ImportedAssembly option) -> ImportedAssembly
 
 type NetCoreSystemRuntimeTraits(primaryAssembly) = 
     
@@ -1767,11 +1772,11 @@ type NetCoreSystemRuntimeTraits(primaryAssembly) =
     let mutable systemRuntimeInteropServices = None
 
     member this.FixupImportedAssemblies(systemReflectionRef, systemDiagnosticsDebugRef, systemLinqExpressionsRef, systemCollectionsRef, systemRuntimeInteropServicesRef) = 
-        systemReflection        <- Some systemReflectionRef
-        systemDiagnosticsDebug  <- Some systemDiagnosticsDebugRef
-        systemLinqExpressions   <- Some systemLinqExpressionsRef
-        systemCollections       <- Some systemCollectionsRef
-        systemRuntimeInteropServices <- Some systemRuntimeInteropServicesRef
+        systemReflection        <- systemReflectionRef
+        systemDiagnosticsDebug  <- systemDiagnosticsDebugRef
+        systemLinqExpressions   <- systemLinqExpressionsRef
+        systemCollections       <- systemCollectionsRef
+        systemRuntimeInteropServices <- systemRuntimeInteropServicesRef
 
     interface IPrimaryAssemblyTraits with
         member this.ScopeRef = primaryAssembly
@@ -1781,7 +1786,11 @@ type NetCoreSystemRuntimeTraits(primaryAssembly) =
         member this.SerializationInfoTypeScopeRef   = None
         member this.SecurityPermissionAttributeTypeScopeRef = None
         member this.SystemDiagnosticsDebugScopeRef  = lazy ((valueOf "System.Diagnostics.Debug" systemDiagnosticsDebug).FSharpViewOfMetadata.ILScopeRef)
-        member this.SystemRuntimeInteropServicesScopeRef    = lazy ((valueOf "System.Runtime.InteropServices" systemRuntimeInteropServices).FSharpViewOfMetadata.ILScopeRef)
+        member this.SystemRuntimeInteropServicesScopeRef    = 
+            lazy 
+                match systemRuntimeInteropServices with 
+                | Some assemblyRef ->  Some assemblyRef.FSharpViewOfMetadata.ILScopeRef
+                | None -> None
         member this.IDispatchConstantAttributeScopeRef      = None
         member this.IUnknownConstantAttributeScopeRef       = None
         member this.ContextStaticAttributeScopeRef  = None
@@ -1838,11 +1847,11 @@ type PrimaryAssembly =
                         // finish initialization of SystemRuntimeTraits
                         traits.FixupImportedAssemblies
                             (
-                                systemReflectionRef             = resolver systemReflectionRef,
-                                systemDiagnosticsDebugRef       = resolver systemDiagnosticsDebugRef,
-                                systemRuntimeInteropServicesRef = resolver systemRuntimeInteropServicesRef,
-                                systemLinqExpressionsRef        = resolver systemLinqExpressionsRef,
-                                systemCollectionsRef            = resolver systemCollectionsRef
+                                systemReflectionRef             = resolver CcuLoadFailureAction.RaiseError systemReflectionRef,
+                                systemDiagnosticsDebugRef       = resolver CcuLoadFailureAction.RaiseError systemDiagnosticsDebugRef,
+                                systemRuntimeInteropServicesRef = resolver CcuLoadFailureAction.ReturnNone systemRuntimeInteropServicesRef,
+                                systemLinqExpressionsRef        = resolver CcuLoadFailureAction.RaiseError systemLinqExpressionsRef,
+                                systemCollectionsRef            = resolver CcuLoadFailureAction.RaiseError systemCollectionsRef
                             )
                         primaryAssembly
             }
@@ -4233,7 +4242,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         // Note: TcImports are disposable - the caller owns this object and must dispose
         let frameworkTcImports = new TcImports(tcConfigP,tcResolutions,None,None) 
-        let resolveAssembly r = 
+        let resolveAssembly loadFailureAction r = 
             // use existing resolutions before trying to search in known folders
             let resolution =
                 match tcResolutions.TryFindByOriginalReference r with
@@ -4243,11 +4252,14 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     | Some r -> r
                     | None -> tcConfig.ResolveLibWithDirectories r
             match frameworkTcImports.RegisterAndImportReferencedAssemblies(None, [resolution]) with
-            | (_, [ResolvedImportedAssembly(ccu)]) -> ccu
-            | _        -> error(InternalError("BuildFoundationalTcImports: no ccu for " + r.Text, rangeStartup))
+            | (_, [ResolvedImportedAssembly(ccu)]) -> Some ccu
+            | _        -> 
+                match loadFailureAction with
+                | CcuLoadFailureAction.RaiseError -> error(InternalError("BuildFoundationalTcImports: no ccu for " + r.Text, rangeStartup))
+                | CcuLoadFailureAction.ReturnNone -> None
         
         let ccuInitializer = tcConfig.GetPrimaryAssemblyCcuInitializer()
-        let ilGlobals, state = ccuInitializer.BeginLoadingSystemRuntime(resolveAssembly, tcConfig.noDebugData)        
+        let ilGlobals, state = ccuInitializer.BeginLoadingSystemRuntime((resolveAssembly CcuLoadFailureAction.RaiseError) >> Option.get, tcConfig.noDebugData)        
         frameworkTcImports.SetILGlobals ilGlobals
         let sysCcu = ccuInitializer.EndLoadingSystemRuntime(state, resolveAssembly)
 

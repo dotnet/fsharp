@@ -1300,7 +1300,7 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
     let vis,_ = ComputeAccessAndCompPath env (Some declKind) id.idRange vis actualParent
 
     let inlineFlag = 
-        if HasFSharpAttribute cenv.g cenv.g.attrib_DllImportAttribute attrs then 
+        if HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute attrs then 
             if inlineFlag = ValInline.PseudoVal || inlineFlag = ValInline.Always then 
               errorR(Error(FSComp.SR.tcDllImportStubsCannotBeInlined(),m)) 
             ValInline.Never 
@@ -8931,16 +8931,22 @@ and TcMethodApplication
                           | Constant fieldInit -> 
                               emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,calledArgTy)  
                           | WrapperForIDispatch ->
-                              let tref = mkILNonGenericBoxedTy(mkILTyRef(cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value, "System.Runtime.InteropServices.DispatchWrapper"))
-                              let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
-                              let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,calledArgTy)],mMethExpr)
-                              emptyPreBinder,expr
+                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              | None -> error(Error((42, "Current .NET profile does not include System.Runtime.InteropServices"), mMethExpr))
+                              | Some assemblyRef ->
+                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.DispatchWrapper"))
+                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,calledArgTy)],mMethExpr)
+                                  emptyPreBinder,expr
                           | WrapperForIUnknown ->
-                              let tref = mkILNonGenericBoxedTy(mkILTyRef(cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value, "System.Runtime.InteropServices.UnknownWrapper"))
-                              let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
-                              let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,calledArgTy)],mMethExpr)
-                              emptyPreBinder,expr
-                          | PassByRef (ty, dfltVal2) -> 
+                              match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
+                              | None -> error(Error((42, "Current .NET profile does not include System.Runtime.InteropServices"), mMethExpr))
+                              | Some assemblyRef ->
+                                  let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.UnknownWrapper"))
+                                  let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
+                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,calledArgTy)],mMethExpr)
+                                  emptyPreBinder,expr
+                          | PassByRef (ty, dfltVal2) ->
                               let v,_ = mkCompGenLocal mMethExpr "defaultByrefArg" ty
                               let wrapper2,rhs = build dfltVal2 
                               (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr (mkLocalValRef v)
@@ -9351,7 +9357,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
             if (not isMutable || isThreadStatic) then 
                 errorR(Error(FSComp.SR.tcVolatileFieldsMustBeMutable(),mBinding))
 
-        if HasFSharpAttribute cenv.g cenv.g.attrib_DllImportAttribute valAttribs then 
+        if HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute valAttribs then 
             if not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false) then 
                 errorR(Error(FSComp.SR.tcDllImportNotAllowed(),mBinding))
             
@@ -12162,7 +12168,7 @@ module TyconBindingChecking = begin
                             // Check to see that local bindings and members don't have the same name and check some other adhoc conditions
                             for bind in binds do 
 
-                                if HasFSharpAttribute cenv.g cenv.g.attrib_DllImportAttribute bind.Var.Attribs && not isStatic then 
+                                if HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute bind.Var.Attribs && not isStatic then 
                                     errorR(Error(FSComp.SR.tcDllImportNotAllowed(),bind.Var.Range))
                                     
                                 let nm = bind.Var.DisplayName

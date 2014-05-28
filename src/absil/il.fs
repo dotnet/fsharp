@@ -2477,7 +2477,7 @@ type IPrimaryAssemblyTraits =
     abstract ContextStaticAttributeScopeRef : ILScopeRef option
     abstract NonSerializedAttributeScopeRef : ILScopeRef option
 
-    abstract SystemRuntimeInteropServicesScopeRef : Lazy<ILScopeRef>
+    abstract SystemRuntimeInteropServicesScopeRef : Lazy<ILScopeRef option>
     abstract SystemLinqExpressionsScopeRef        : Lazy<ILScopeRef>
     abstract SystemCollectionsScopeRef            : Lazy<ILScopeRef>
     abstract SystemReflectionScopeRef             : Lazy<ILScopeRef>
@@ -4422,7 +4422,7 @@ let mkMscorlibBasedTraits mscorlibRef =
             member this.SerializationInfoTypeScopeRef = ecmaMscorlibScopeRef
             member this.SecurityPermissionAttributeTypeScopeRef = ecmaMscorlibScopeRef
             member this.SystemDiagnosticsDebugScopeRef = lazyRef
-            member this.SystemRuntimeInteropServicesScopeRef = lazyRef
+            member this.SystemRuntimeInteropServicesScopeRef = lazy (Some mscorlibRef)
             member this.IDispatchConstantAttributeScopeRef = ecmaMscorlibScopeRef
             member this.IUnknownConstantAttributeScopeRef = ecmaMscorlibScopeRef
             member this.ContextStaticAttributeScopeRef = ecmaMscorlibScopeRef
