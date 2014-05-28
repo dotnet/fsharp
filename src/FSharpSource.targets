@@ -573,7 +573,7 @@
           Outputs="@(CustomCopyLocal->'$(OutDir)%(TargetFilename)')"
           Condition="'$(targetCLIDir)'!='Silverlight/4.0/'"
                 >
-    <Exec Command="$(FSharpSourcesRoot)\fsharp\FSharp.Build\subst.exe {LkgVersion} $(LkgVersion) {BuildSuffix} &quot;$(FsBuildSuffix)&quot; {FSharpTargetsDir} unused &quot;%(CustomCopyLocal.FullPath)&quot; &gt; $(OutDir)%(CustomCopyLocal.TargetFilename)  "/>
+    <Exec Command="$(FSharpSourcesRoot)\fsharp\FSharp.Build\subst.exe {LkgVersion} $(LkgVersion) {BuildSuffix} &quot;$(FsBuildSuffix)&quot; {FSharpTargetsDir} &quot;%24(MSBuildThisFileDirectory)&quot; &quot;%(CustomCopyLocal.FullPath)&quot; &gt; $(OutDir)%(CustomCopyLocal.TargetFilename)  "/>
     <!-- Make sure it will get cleaned  -->
     <CreateItem Include="$(OutDir)%(CustomCopyLocal.TargetFilename)">
       <Output TaskParameter="Include" ItemName="FileWrites"/>
