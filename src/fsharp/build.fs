@@ -2732,7 +2732,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             | None -> None
         else None
                 
-    member tcConfig.ResolveLibWithDirectories (AssemblyReference (m,nm)) = 
+    member tcConfig.ResolveLibWithDirectories ccuLoadFaulureAction (AssemblyReference (m,nm)) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
         // test for both libraries and executables
         let ext = System.IO.Path.GetExtension(nm)
@@ -2747,11 +2747,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 [nm+".dll";nm+".exe";nm+".netmodule"]
 
         match (List.tryPick (fun nm -> tcConfig.TryResolveLibWithDirectories(AssemblyReference(m,nm))) nms) with
-        | Some(res) -> res
-
+        | Some(res) -> Some res
         | None ->
-            let searchMessage = String.concat "\n " tcConfig.SearchPathsForLibraryFiles
-            raise (FileNameNotResolved(nm,searchMessage,m))        
+            match ccuLoadFaulureAction with
+            | CcuLoadFailureAction.RaiseError ->
+                let searchMessage = String.concat "\n " tcConfig.SearchPathsForLibraryFiles
+                raise (FileNameNotResolved(nm,searchMessage,m))
+            | CcuLoadFailureAction.ReturnNone -> None
 
     member tcConfig.ResolveSourceFile(m,nm,pathLoadedFrom) = 
         data.ResolveSourceFile(m,nm,pathLoadedFrom)
@@ -3268,7 +3270,7 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
     static member Resolve (tcConfig:TcConfig,assemblyList:AssemblyReference list, knownUnresolved:UnresolvedAssemblyReference list) : TcAssemblyResolutions =
         let resolved,unresolved = 
             if tcConfig.useMonoResolution then 
-                assemblyList |> List.map tcConfig.ResolveLibWithDirectories, []
+                assemblyList |> List.map ((tcConfig.ResolveLibWithDirectories CcuLoadFailureAction.RaiseError) >> Option.get), []
             else
                 TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig,assemblyList,rangeStartup,ReportErrors)
         TcAssemblyResolutions(resolved,unresolved @ knownUnresolved)                    
@@ -3699,7 +3701,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             | ILScopeRef.Module modref -> 
                 let key = modref.Name
                 if not (auxModTable.ContainsKey(key)) then
-                    let resolution = tcConfig.ResolveLibWithDirectories(AssemblyReference(m,key))
+                    let resolution = tcConfig.ResolveLibWithDirectories CcuLoadFailureAction.RaiseError (AssemblyReference(m,key)) |> Option.get
                     let ilModule,_ = tcImports.OpenILBinaryModule(resolution.resolvedPath,m)
                     auxModTable.[key] <- ilModule
                 auxModTable.[key] 
@@ -3826,7 +3828,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
             let systemRuntimeAssemblyVersion : System.Version = 
                 let primaryAssemblyRef = tcConfig.PrimaryAssemblyDllReference()
-                let resolution = tcConfig.ResolveLibWithDirectories(primaryAssemblyRef)
+                let resolution = tcConfig.ResolveLibWithDirectories CcuLoadFailureAction.RaiseError primaryAssemblyRef |> Option.get
                  // MSDN: this method causes the file to be opened and closed, but the assembly is not added to this domain
                 let name = System.Reflection.AssemblyName.GetAssemblyName(resolution.resolvedPath)
                 name.Version
@@ -4207,7 +4209,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             | None ->      
                                   
                 if tcConfigP.Get().useMonoResolution then
-                    ResultD [tcConfig.ResolveLibWithDirectories assemblyReference]
+                    ResultD [(tcConfig.ResolveLibWithDirectories CcuLoadFailureAction.RaiseError assemblyReference) |> Option.get]
                 else 
                     // This is a previously unencounterd assembly. Resolve it and add it to the list.
                     // But don't cache resolution failures because the assembly may appear on the disk later.
@@ -4246,17 +4248,20 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             // use existing resolutions before trying to search in known folders
             let resolution =
                 match tcResolutions.TryFindByOriginalReference r with
-                | Some r -> r
+                | Some r -> Some r
                 | None -> 
                     match tcAltResolutions.TryFindByOriginalReference r with
-                    | Some r -> r
-                    | None -> tcConfig.ResolveLibWithDirectories r
-            match frameworkTcImports.RegisterAndImportReferencedAssemblies(None, [resolution]) with
-            | (_, [ResolvedImportedAssembly(ccu)]) -> Some ccu
-            | _        -> 
-                match loadFailureAction with
-                | CcuLoadFailureAction.RaiseError -> error(InternalError("BuildFoundationalTcImports: no ccu for " + r.Text, rangeStartup))
-                | CcuLoadFailureAction.ReturnNone -> None
+                    | Some r -> Some r
+                    | None -> tcConfig.ResolveLibWithDirectories loadFailureAction r
+            match resolution with
+            | Some resolution ->
+                match frameworkTcImports.RegisterAndImportReferencedAssemblies(None, [resolution]) with
+                | (_, [ResolvedImportedAssembly(ccu)]) -> Some ccu
+                | _        -> 
+                    match loadFailureAction with
+                    | CcuLoadFailureAction.RaiseError -> error(InternalError("BuildFoundationalTcImports: no ccu for " + r.Text, rangeStartup))
+                    | CcuLoadFailureAction.ReturnNone -> None
+            | None -> None
         
         let ccuInitializer = tcConfig.GetPrimaryAssemblyCcuInitializer()
         let ilGlobals, state = ccuInitializer.BeginLoadingSystemRuntime((resolveAssembly CcuLoadFailureAction.RaiseError) >> Option.get, tcConfig.noDebugData)        
