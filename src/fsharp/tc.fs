@@ -8932,7 +8932,7 @@ and TcMethodApplication
                               emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,calledArgTy)  
                           | WrapperForIDispatch ->
                               match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
-                              | None -> error(Error((42, "Current .NET profile does not include System.Runtime.InteropServices"), mMethExpr))
+                              | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
                               | Some assemblyRef ->
                                   let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.DispatchWrapper"))
                                   let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
@@ -8940,7 +8940,7 @@ and TcMethodApplication
                                   emptyPreBinder,expr
                           | WrapperForIUnknown ->
                               match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
-                              | None -> error(Error((42, "Current .NET profile does not include System.Runtime.InteropServices"), mMethExpr))
+                              | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
                               | Some assemblyRef ->
                                   let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.UnknownWrapper"))
                                   let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
