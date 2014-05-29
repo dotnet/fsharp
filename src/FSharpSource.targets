@@ -623,7 +623,7 @@
   
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
-      Condition="'$(GenerateTargetFrameworkAttribute)' == 'true'">  
+      Condition="'$(GenerateTargetFrameworkAttribute)' == 'true' AND '$(TargetFramework)' == 'netcore78'">  
     <ItemGroup>
         <!-- Infrastructure puts AssemblyAttributes.fs at the beginning of the list and this will result and error when compiling FSharp.Core because all primitive types are not defined yet - fixup is required-->
         <CompileAfter Include="@(CompileBefore)"/>
