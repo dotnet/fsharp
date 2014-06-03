@@ -185,7 +185,7 @@ module Lists =
         |> List.map (fun x -> x*x) 
 
     /// Computes the sum of the squares of the numbers divisible by 3.
-    let sumOfSquaresUpTo n = 
+    let sumOfSquares = 
         numberList
         |> List.filter (fun x -> x % 3 = 0)
         |> List.sumBy (fun x -> x * x)
@@ -231,7 +231,7 @@ module DefiningGenericClasses =
 
     type StateTracker<'T>(initialElement: 'T) = // 'T is the type parameter for the class
 
-        /// Store the states in an array
+        /// Store the states in a list
         let mutable states = [ initialElement ]
 
         /// Add a new element to the list of states
