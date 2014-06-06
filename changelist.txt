@@ -1,0 +1,93 @@
+//===========================================================================================================
+// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, 
+//               Version 2.0.  See License.txt in the project root for license information.
+//===========================================================================================================
+//
+//  *   impacts shipped VS product
+//  -   impacts open source codebase
+//
+//===========================================================================================================
+
+Changelist for Visual F# Tools 3.1.2
+====================================
+
+* Support "Publish" to Azure This work is to support web "publish" story.
+- align RTMOOB with OSS release.
+- Rework codebase to enable open source
+* Required C# event members do not appear in intellisense when signature is (object, byref)
+* Invalid code is generated when using field initializers in struct constructor
+- Cleanup F# opensource
+- Moving SqmLogger.fs out of the Open tree
+* Add License.txt and remove README.md
+* Fix a couple of minor issues in the tutorial script. as suggested in bug 859079 (changeset 1269577)
+* Move the templates to the open area, create template deployment projects. Update internal build and deployment to deploy vsix' and remove existing templates on installation. (changeset 1267734)
+- prevent project rebuilds
+- Simplify DEVGUIDE.html
+* XmlDoc generation bugfix: remove duplicate namespaces
+- Fix baselines for helptext tests (changeset 1266324)
+* Enable shadowcopying when FSI references an assembly.
+- Added more inline opt tests
+* Changed address optimization to not optimize on top level static bindings.
+* Added optimizations for addresses with tests.
+* Perf improvement for Seq.windowed, adapted from suggestion originally by Jon Harrop
+* make it possible to set breakpoint inside quotation.
+* Remove sl5-compiler build option
+- Removing #IF SILVERLIGHT from the compiler
+* Adjusted check for ParamArray case
+* Type inference involving generic param arrays
+- Update param array test case to build C# component on-the-fly instead of using a checked-in binary. Also fill in the test case a bit more. (changeset 1239498)
+- remove dead code
+- Code sanitization: Add comments, regularize naming, simplify ImportILTypeDefList
+* fix for #7: NullRef in list comprehension, when for loop works
+* fix for 37: performance regression in 3.1
+- Update command line used to build test DLL for default manifest test, and adding support for $ISCFLAGS in PreCmd, required for internal test runs doing multitargeting. (changeset 1236364)
+- Fix for default manifest test. Turns out LoadLibrary chokes sometimes on x86 when loading Debug assemblies. Switch to LoadLibraryEx, loading binaries as pure data files. (changeset 1236335)
+- Removing some unneeded/incorrect quotes in TP tests (changeset 1235643)
+- Further tweaks to test scripts (changeset 1235417)
+- A few more tweaks so that tests work properly in internal test runs (changeset 1235396)
+- Fix accidental incorrect quoting in test script (changeset 1235391)
+- Fixing up a bunch of tests that don't properly handle fsc/fsi paths with spaces (changeset 1234984)
+- Fixing driver script for FSharp suite to properly handle paths with spaces (changeset 1234889)
+- Minor update to fix a warning.
+- : Fixing and adding more tests
+- More tests for discrimanted unions.
+- Starting to add tests for discrimanted unions.
+* Fix for fsbugs issue "can't run F# Console Application with 'update' in name".
+* [F#] Slicing and range expression inconsistent
+- Fixing typo in TESTGUIDE
+- Update open build to target .NET 4.5 and MSBuild 12. This aligns the open build with what ships in VS 2013 and F# 3.1.1 OOB.
+- Add strong name validation skip for test library FSharp.Compiler.Hosted (changeset 1227695)
+- Add folders to FSharp.Core.fsproj
+- remove non-existent file in solution
+- Use folders in FSharp.Compiler.fsproj
+- Fixing a couple of typos from the previous checkin (changeset 1226793)
+- Reconfiguring a bunch of tests that were hard-coded to use Visual Studio paths to find FSharp.Core and other F# bits.
+- Fixing defines for portable profile 47 FSharp.Core to align with what ships in Visual Studio F# (changeset 1226720)
+- Update docs to reflect recent changes (changeset 1225564)
+- Allow user to specify what build flavor they want to run tests against, debug or release. (changeset 1225561)
+- Add script to build test tools from source (changeset 1225556)
+- Add required plumbing so that one can build FSharp.Core for portable profile 47 in open repo (Requires rebuild of Proto so that portable targets file gets dropped) (changeset 1225504)
+- Move the hosted compiler infrastructure over to the open repo and refactor projects so that it builds from source rather than requiring a checked-in binary. (changeset 1225435)
+- Refactoring the ILComparer tool project so that it can build from source, instead of requiring a checked-in binary (changeset 1225430)
+- Adding links to Perl and NUnit in DEVGUIDE.html
+- Small fix in DEVGUIDE.html docu
+
+
+Changelist for Visual F# Tools 3.1.1   (Released - 01/24/2014)
+==============================================================
+
+* Errors when attempting to add reference to .NET core library
+* Releasing symdiareader RCWs explicitly  on the main thread instead
+* Improve fsharp compiler telemetry
+* Improper treatment of * in AssemblyVersion attribute
+* sprintf "%%" returns "%%" in Dev12, previously returned "%" in Dev10/Dev11
+* Crash in FSComp.SR.RunStartupValidation()
+* F#3.0 1D Slice Setter does not compile in VS12
+* Enable Visual FSharp tools to integrate in Visual Studio Windows Desktop Express.
+* Fixing up the F# open build projects so that they work properly on community machines with no prior F# bits installed.
+- Some small fixes to improve the core unit tests in open source environment
+- Fix FSharp.Data.TypeProviders project
+ 
+
+
+
