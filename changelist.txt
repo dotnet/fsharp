@@ -12,14 +12,14 @@ Changelist for Visual F# Tools 3.1.2
 ====================================
 
 * Support "Publish" to Azure This work is to support web "publish" story.
-- align RTMOOB with OSS release.
+- align F# 3.1.1 OOB codebase with OSS release.
 - Rework codebase to enable open source
 * Required C# event members do not appear in intellisense when signature is (object, byref)
 * Invalid code is generated when using field initializers in struct constructor
 - Cleanup F# opensource
 - Moving SqmLogger.fs out of the Open tree
 * Add License.txt and remove README.md
-* Fix a couple of minor issues in the tutorial script. as suggested in bug 859079 (changeset 1269577)
+* Fix a couple of minor issues in the tutorial script. (changeset 1269577)
 * Move the templates to the open area, create template deployment projects. Update internal build and deployment to deploy vsix' and remove existing templates on installation. (changeset 1267734)
 - prevent project rebuilds
 - Simplify DEVGUIDE.html
@@ -33,7 +33,6 @@ Changelist for Visual F# Tools 3.1.2
 * make it possible to set breakpoint inside quotation.
 * Remove sl5-compiler build option
 - Removing #IF SILVERLIGHT from the compiler
-* Adjusted check for ParamArray case
 * Type inference involving generic param arrays
 - Update param array test case to build C# component on-the-fly instead of using a checked-in binary. Also fill in the test case a bit more. (changeset 1239498)
 - remove dead code
@@ -50,8 +49,8 @@ Changelist for Visual F# Tools 3.1.2
 - Fixing driver script for FSharp suite to properly handle paths with spaces (changeset 1234889)
 - Minor update to fix a warning.
 - : Fixing and adding more tests
-- More tests for discrimanted unions.
-- Starting to add tests for discrimanted unions.
+- More tests for discriminated unions.
+- Starting to add tests for discriminated unions.
 * Fix for fsbugs issue "can't run F# Console Application with 'update' in name".
 * [F#] Slicing and range expression inconsistent
 - Fixing typo in TESTGUIDE
@@ -70,14 +69,14 @@ Changelist for Visual F# Tools 3.1.2
 - Move the hosted compiler infrastructure over to the open repo and refactor projects so that it builds from source rather than requiring a checked-in binary. (changeset 1225435)
 - Refactoring the ILComparer tool project so that it can build from source, instead of requiring a checked-in binary (changeset 1225430)
 - Adding links to Perl and NUnit in DEVGUIDE.html
-- Small fix in DEVGUIDE.html docu
+- Small fix in DEVGUIDE.html
 
 
 Changelist for Visual F# Tools 3.1.1   (Released - 01/24/2014)
 ==============================================================
 
 * Errors when attempting to add reference to .NET core library
-* Releasing symdiareader RCWs explicitly  on the main thread instead
+* Releasing symdiareader RCWs explicitly on the main thread instead
 * Improve fsharp compiler telemetry
 * Improper treatment of * in AssemblyVersion attribute
 * sprintf "%%" returns "%%" in Dev12, previously returned "%" in Dev10/Dev11
