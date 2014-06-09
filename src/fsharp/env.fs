@@ -294,19 +294,19 @@ type public TcGlobals =
       attrib_IDispatchConstantAttribute  : BuiltinAttribInfo option;
       attrib_IUnknownConstantAttribute   : BuiltinAttribInfo option;
       attrib_SystemObsolete              : BuiltinAttribInfo;
-      attrib_DllImportAttribute          : BuiltinAttribInfo;
+      attrib_DllImportAttribute          : BuiltinAttribInfo option;
       attrib_CompiledNameAttribute       : BuiltinAttribInfo;
       attrib_NonSerializedAttribute      : BuiltinAttribInfo option;
       attrib_AutoSerializableAttribute   : BuiltinAttribInfo;
       attrib_StructLayoutAttribute       : BuiltinAttribInfo;
       attrib_TypeForwardedToAttribute    : BuiltinAttribInfo;
       attrib_ComVisibleAttribute         : BuiltinAttribInfo;
-      attrib_ComImportAttribute          : BuiltinAttribInfo;
+      attrib_ComImportAttribute          : BuiltinAttribInfo option;
       attrib_FieldOffsetAttribute        : BuiltinAttribInfo;
-      attrib_MarshalAsAttribute          : BuiltinAttribInfo;
-      attrib_InAttribute                 : BuiltinAttribInfo;
+      attrib_MarshalAsAttribute          : BuiltinAttribInfo option;
+      attrib_InAttribute                 : BuiltinAttribInfo option;
       attrib_OutAttribute                : BuiltinAttribInfo;
-      attrib_OptionalAttribute           : BuiltinAttribInfo;
+      attrib_OptionalAttribute           : BuiltinAttribInfo option;
       attrib_ThreadStaticAttribute       : BuiltinAttribInfo option;
       attrib_SpecialNameAttribute        : BuiltinAttribInfo option;
       attrib_VolatileFieldAttribute      : BuiltinAttribInfo;
@@ -315,7 +315,7 @@ type public TcGlobals =
       attrib_DefaultMemberAttribute      : BuiltinAttribInfo;
       attrib_DebuggerDisplayAttribute    : BuiltinAttribInfo;
       attrib_DebuggerTypeProxyAttribute  : BuiltinAttribInfo;
-      attrib_PreserveSigAttribute        : BuiltinAttribInfo;
+      attrib_PreserveSigAttribute        : BuiltinAttribInfo option;
       attrib_MethodImplAttribute         : BuiltinAttribInfo;
       attrib_ExtensionAttribute          : BuiltinAttribInfo;
       tcref_System_Collections_Generic_IList               : TyconRef;
@@ -819,7 +819,10 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
 
    
   let mkSystemRuntimeAttrib (nm:string) : BuiltinAttribInfo = mkAttrib nm ilg.traits.ScopeRef    
-  let mkSystemRuntimeInteropServicesAttribute nm = mkAttrib nm (ilg.traits.SystemRuntimeInteropServicesScopeRef.Value)
+  let mkSystemRuntimeInteropServicesAttribute nm = 
+      match ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with 
+      | Some assemblyRef -> Some (mkAttrib nm assemblyRef)
+      | None -> None
   let mkSystemDiagnosticsDebugAttribute nm = mkAttrib nm (ilg.traits.SystemDiagnosticsDebugScopeRef.Value)
 
   let mk_doc filename = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=filename)

@@ -774,7 +774,7 @@ let StorageForValRef m (v: ValRef) eenv = StorageForVal m v.Deref eenv
 //-------------------------------------------------------------------------- 
 
 let IsValRefIsDllImport g (vref:ValRef) = 
-    vref.Attribs |> HasFSharpAttribute g g.attrib_DllImportAttribute 
+    vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute 
 
 let GetMethodSpecForMemberVal amap g memberInfo (vref:ValRef) = 
     let m = vref.Range
@@ -4855,9 +4855,9 @@ and GenMarshal cenv attribs =
         match cenv.opts.ilxBackend with
         | IlReflectBackend -> attribs
         | IlWriteBackend ->
-            attribs |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_MarshalAsAttribute >> not)
+            attribs |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_MarshalAsAttribute >> not)
 
-    match TryFindFSharpAttribute cenv.g cenv.g.attrib_MarshalAsAttribute attribs with
+    match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_MarshalAsAttribute attribs with
     | Some (Attrib(_,_,[ AttribInt32Arg unmanagedType ],namedArgs,_,_,m))  -> 
         let decoder = AttributeDecoder namedArgs
         let rec decodeUnmanagedType unmanagedType = 
@@ -4973,16 +4973,16 @@ and GenMarshal cenv attribs =
         None, attribs 
 
 and GenParamAttribs cenv attribs =
-    let inFlag = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute attribs
+    let inFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute attribs
     let outFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute attribs
-    let optionalFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OptionalAttribute attribs
+    let optionalFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute attribs
     // Return the filtered attributes. Do not generate In, Out or Optional attributes 
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs = 
         attribs 
-        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_InAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute >> not)
         |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_OutAttribute >> not)
-        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_OptionalAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute >> not)
 
     let Marshal,attribs =  GenMarshal cenv attribs
     inFlag,outFlag,optionalFlag,Marshal,attribs
@@ -5106,7 +5106,7 @@ and ComputeMethodImplAttribs cenv (_v:Val) attrs =
         | _ -> 0x0
 
     let hasPreserveSigAttr = 
-        match TryFindFSharpAttribute cenv.g cenv.g.attrib_PreserveSigAttribute attrs with
+        match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute attrs with
         | Some _ -> true
         | _ -> false
     
@@ -5117,7 +5117,7 @@ and ComputeMethodImplAttribs cenv (_v:Val) attrs =
     // (See ECMA 335, Partition II, section 23.1.11 - Flags for methods [MethodImplAttributes]) 
     let attrs = attrs 
                     |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_MethodImplAttribute >> not) 
-                        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_PreserveSigAttribute >> not)
+                        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute >> not)
     let hasPreserveSigImplFlag = ((implflags &&& 0x80) <> 0x0) || hasPreserveSigAttr
     let hasSynchronizedImplFlag = (implflags &&& 0x20) <> 0x0
     let hasNoInliningImplFlag = (implflags &&& 0x08) <> 0x0
@@ -5167,7 +5167,7 @@ and GenMethodForBinding
     // Now generate the code.
 
     let hasPreserveSigNamedArg,ilMethodBody,_hasDllImport = 
-        match TryFindFSharpAttribute cenv.g cenv.g.attrib_DllImportAttribute v.Attribs with
+        match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute v.Attribs with
         | Some (Attrib(_,_,[ AttribStringArg(dll) ],namedArgs,_,_,m))  -> 
             if nonNil tps then error(Error(FSComp.SR.ilSignatureForExternalFunctionContainsTypeParameters(),m)); 
             let hasPreserveSigNamedArg, mbody = GenPInvokeMethod (v.CompiledName,dll,namedArgs)
@@ -5194,7 +5194,7 @@ and GenMethodForBinding
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs = 
         v.Attribs 
-            |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_DllImportAttribute >> not)
+            |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute >> not)
             |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_CompiledNameAttribute >> not)
             
     let attrsAppliedToGetterOrSetter, attrs = 

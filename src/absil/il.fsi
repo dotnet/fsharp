@@ -1667,7 +1667,7 @@ type IPrimaryAssemblyTraits =
     abstract ContextStaticAttributeScopeRef : ILScopeRef option
     abstract NonSerializedAttributeScopeRef : ILScopeRef option
 
-    abstract SystemRuntimeInteropServicesScopeRef   : Lazy<ILScopeRef>
+    abstract SystemRuntimeInteropServicesScopeRef   : Lazy<ILScopeRef option>
     abstract SystemLinqExpressionsScopeRef          : Lazy<ILScopeRef>
     abstract SystemCollectionsScopeRef              : Lazy<ILScopeRef>
     abstract SystemReflectionScopeRef               : Lazy<ILScopeRef>
