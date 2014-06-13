@@ -574,6 +574,10 @@ rule token args skip = parse
  | ignored_op_char* ('!' | '~' )               op_char* { checkExprOp lexbuf; PREFIX_OP(lexeme lexbuf) }
  | ".[]"  | ".[]<-" | ".[,]<-" | ".[,,]<-" | ".[,,,]<-" | ".[,,,]" | ".[,,]" | ".[,]" | ".[..]" | ".[..,..]" | ".[..,..,..]" | ".[..,..,..,..]"
  | ".()"  | ".()<-"  { FUNKY_OPERATOR_NAME(lexeme lexbuf) }
+ | "#!" op_char* 
+   { // Treat shebangs like regular comments
+       let m = lexbuf.LexemeRange
+       if not skip then (LINE_COMMENT (LexCont.SingleLineComment(!args.ifdefStack,1,m))) else singleLineComment (None,1,m,args) skip lexbuf }
 
  | "#light" anywhite* 
  | ("#indent" | "#light") anywhite+ "\"on\""
