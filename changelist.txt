@@ -11,14 +11,9 @@
 Changelist for Visual F# Tools 3.1.2
 ====================================
 
-* Support "Publish" to Azure This work is to support web "publish" story.
-- align F# 3.1.1 OOB codebase with OSS release.
-- Rework codebase to enable open source
-* Required C# event members do not appear in intellisense when signature is (object, byref)
-* Invalid code is generated when using field initializers in struct constructor
-- Cleanup F# opensource
-- Moving SqmLogger.fs out of the Open tree
-* Add License.txt and remove README.md
+- Improved XmlDoc tests
+- Open source the netcore profile build 
+- Enable open source build to build profile 78 and profile 259 --- Enables support for Windows phone 8 and windows phone 8.1
 * Fix a couple of minor issues in the tutorial script. (changeset 1269577)
 * Move the templates to the open area, create template deployment projects. Update internal build and deployment to deploy vsix' and remove existing templates on installation. (changeset 1267734)
 - prevent project rebuilds
@@ -70,6 +65,15 @@ Changelist for Visual F# Tools 3.1.2
 - Refactoring the ILComparer tool project so that it can build from source, instead of requiring a checked-in binary (changeset 1225430)
 - Adding links to Perl and NUnit in DEVGUIDE.html
 - Small fix in DEVGUIDE.html
+* Support "Publish" to Azure This work is to support web "publish" story.
+- align F# 3.1.1 OOB codebase with OSS release.
+- Rework codebase to enable open source
+* Required C# event members do not appear in intellisense when signature is (object, byref)
+* Invalid code is generated when using field initializers in struct constructor
+- Cleanup F# opensource
+- Moving SqmLogger.fs out of the Open tree
+* Add License.txt and remove README.md
+
 
 
 Changelist for Visual F# Tools 3.1.1   (Released - 01/24/2014)
