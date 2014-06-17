@@ -602,15 +602,21 @@ module XmlDocWriter =
         let g = tcGlobals
         let doValSig ptext (v:Val)  = if (hasDoc v.XmlDoc) then v.XmlDocSig <- XmlDocSigOfVal g ptext v
         let doTyconSig ptext (tc:Tycon) = 
-            if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon ptext tc
+            if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doValSig ptext vref.Deref
             for uc in tc.UnionCasesAsList do
-                if (hasDoc uc.XmlDoc) then uc.XmlDocSig <- XmlDocSigOfUnionCase ptext uc.Id.idText tc.CompiledName
+                if (hasDoc uc.XmlDoc) then uc.XmlDocSig <- XmlDocSigOfUnionCase [ptext; tc.CompiledName; uc.Id.idText]
             for rf in tc.AllFieldsAsList do
-                if (hasDoc rf.XmlDoc) then rf.XmlDocSig <- XmlDocSigOfField ptext rf.Id.idText tc.CompiledName
+                if (hasDoc rf.XmlDoc) then
+                    rf.XmlDocSig <-
+                        if tc.IsRecordTycon && (not rf.IsStatic) then 
+                            // represents a record field, which is exposed as a property
+                            XmlDocSigOfProperty [ptext; tc.CompiledName; rf.Id.idText]
+                        else
+                            XmlDocSigOfField [ptext; tc.CompiledName; rf.Id.idText]
 
-        let doModuleMemberSig path (m:ModuleOrNamespace) = m.XmlDocSig <- XmlDocSigOfSubModul path
+        let doModuleMemberSig path (m:ModuleOrNamespace) = m.XmlDocSig <- XmlDocSigOfSubModul [path]
         (* moduleSpec - recurses *)
         let rec doModuleSig path (mspec:ModuleOrNamespace) = 
             let mtype = mspec.ModuleOrNamespaceType

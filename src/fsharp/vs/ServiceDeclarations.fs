@@ -286,7 +286,7 @@ module internal ItemDescriptionsImpl =
         | None -> XmlCommentNone
         | Some ccuFileName -> 
             if rfinfo.RecdField.XmlDocSig = "" then
-                rfinfo.RecdField.XmlDocSig <- XmlDocSigOfField "" rfinfo.Name tcref.CompiledRepresentationForNamedType.FullName
+                rfinfo.RecdField.XmlDocSig <- XmlDocSigOfProperty [tcref.CompiledRepresentationForNamedType.FullName; rfinfo.Name]
             XmlCommentSignature (ccuFileName, rfinfo.RecdField.XmlDocSig)            
 
     let GetXmlDocSigOfUnionCaseInfo (ucinfo:UnionCaseInfo) = 
@@ -295,7 +295,7 @@ module internal ItemDescriptionsImpl =
         | None -> XmlCommentNone
         | Some ccuFileName -> 
             if  ucinfo.UnionCase.XmlDocSig = "" then
-                  ucinfo.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase ""  ucinfo.Name tcref.CompiledRepresentationForNamedType.FullName
+                  ucinfo.UnionCase.XmlDocSig <- XmlDocSigOfUnionCase [tcref.CompiledRepresentationForNamedType.FullName; ucinfo.Name]
             XmlCommentSignature (ccuFileName,  ucinfo.UnionCase.XmlDocSig)
 
     let GetXmlDocSigOfMethInfo (infoReader:InfoReader)  m (minfo:MethInfo) = 

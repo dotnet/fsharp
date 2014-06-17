@@ -6778,23 +6778,20 @@ let XmlDocSigOfVal g path (v:Val) =
   let genArity = if arity=0 then "" else sprintf "``%d" arity
   prefix + prependPath path name + genArity + args
   
-let XmlDocSigOfUnionCase path case typeName =
-    // Would like to use "U:", but ParseMemberSignature only accepts C# signatures
-    let prefix = "T:"
-    let path = prependPath path typeName
-    prefix + prependPath path case
-    
-let XmlDocSigOfField path name compiledName =
-    let prefix = "F:"
-    let path = prependPath path compiledName
-    prefix + prependPath path name
+let BuildXmlDocSig prefix paths =  prefix + List.fold prependPath "" paths
 
-let XmlDocSigOfTycon path (tc:Tycon) =  "T:" + prependPath path tc.CompiledName
-let XmlDocSigOfSubModul path = "T:" + path 
+let XmlDocSigOfUnionCase = BuildXmlDocSig "T:" // Would like to use "U:", but ParseMemberSignature only accepts C# signatures
+
+let XmlDocSigOfField     = BuildXmlDocSig "F:"
+
+let XmlDocSigOfProperty  = BuildXmlDocSig "P:"
+
+let XmlDocSigOfTycon     = BuildXmlDocSig "T:"
+
+let XmlDocSigOfSubModul  = BuildXmlDocSig "T:"
 
 let XmlDocSigOfEntity (eref:EntityRef) =
-    XmlDocSigOfTycon (buildAccessPath eref.CompilationPathOpt) eref.Deref
-
+    XmlDocSigOfTycon [(buildAccessPath eref.CompilationPathOpt); eref.Deref.CompiledName]
 
 //--------------------------------------------------------------------------
 // Some unions have null as representations 
