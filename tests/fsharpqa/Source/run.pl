@@ -8,6 +8,7 @@ use constant COMPILER_NAME => 'fsc';
 use constant FSI_NAME      => 'fsiAnyCPU';
 use constant FSI32_NAME    => 'fsi';
 use constant CSC_NAME      => 'csc';
+use constant VBC_NAME      => 'vbc';
 
 # Constant values for test result
 use constant TEST_PASS     => 0;
@@ -142,6 +143,12 @@ unless( defined($CSC_PIPE) ){
   $ENV{CSC_PIPE}=CSC_NAME;
 }
 
+my $VBC_PIPE=$ENV{VBC_PIPE};
+unless( defined($VBC_PIPE) ){
+  $VBC_PIPE = VBC_NAME;
+  $ENV{VBC_PIPE}=VBC_NAME;
+}
+
 #
 # Run pre-command if any
 #
@@ -157,6 +164,7 @@ if (exists($ENV{PRECMD})) {
   s/^\$FSI32_PIPE/$FSI32_PIPE/;
   s/\$ISCFLAGS/$ISCFLAGS/;
   s/^\$CSC_PIPE/$CSC_PIPE/;
+  s/^\$VBC_PIPE/$VBC_PIPE/;
   RunExit(TEST_FAIL, "Fail to execute the PRECMD" . @CommandOutput . "\n")  if RunCommand("PRECMD",$_ ,1); 
 }
 
@@ -726,6 +734,7 @@ sub RunExit {
      s/^\$FSI_PIPE/$FSI_PIPE/;
      s/^\$FSI32_PIPE/$FSI32_PIPE/;
      s/^\$CSC_PIPE/$CSC_PIPE/;
+     s/^\$VBC_PIPE/$VBC_PIPE/;
 
      if (RunCommand("POSTCMD",$_,1)){
   $exitVal = TEST_FAIL;

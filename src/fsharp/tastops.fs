@@ -721,6 +721,11 @@ let (|StripNullableTy|) g ty =
     match ty with 
     | AppTy g (tcr,[tyarg]) when tyconRefEq g tcr g.system_Nullable_tcref -> tyarg
     | _ -> ty
+    
+let (|ByrefTy|_|) g ty = 
+    match ty with 
+    | AppTy g (tcr,[tyarg]) when tyconRefEq g tcr g.byref_tcr -> Some tyarg
+    | _ -> None
 
 let mkInstForAppTy g typ = 
     if isAppTy g typ then 

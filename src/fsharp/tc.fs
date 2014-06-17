@@ -8934,21 +8934,31 @@ and TcMethodApplication
                   | NotOptional -> 
                       error(InternalError("Unexpected NotOptional",mItem))
                   | CallerSide dfltVal ->
-                      let rec build = function 
+                      let rec build currCalledArgTy currDfltVal =
+                          match currDfltVal with
                           | MissingValue -> 
                               // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
-                              emptyPreBinder,mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value cenv.g.ilg); AI_nop ],[],[],[calledArgTy],mMethExpr)
+                              emptyPreBinder,mkAsmExpr ([ mkNormalLdsfld (fspec_Missing_Value cenv.g.ilg); AI_nop ],[],[],[currCalledArgTy],mMethExpr)
                           | DefaultValue -> 
-                              emptyPreBinder,mkDefault(mMethExpr,calledArgTy)
+                              emptyPreBinder,mkDefault(mMethExpr,currCalledArgTy)
                           | Constant fieldInit -> 
-                              emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,calledArgTy)  
+                                match currCalledArgTy with
+                                | NullableTy cenv.g inst when fieldInit <> ILFieldInit.Null ->
+                                    let nullableTy = mkILNonGenericBoxedTy(mkILTyRef(cenv.g.ilg.traits.ScopeRef, "System.Nullable`1"))
+                                    let ctor = mkILCtorMethSpecForTy(nullableTy, [ILType.TypeVar 0us]).MethodRef
+                                    let ctorArgs = [Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr, inst)]
+                                    emptyPreBinder,Expr.Op(TOp.ILCall(false, false, true, true, NormalValUse, false, false, ctor, [inst], [], [currCalledArgTy]), [], ctorArgs, mMethExpr)
+                                | ByrefTy cenv.g inst ->
+                                    build inst (PassByRef(inst, currDfltVal))
+                                | _ ->
+                                    emptyPreBinder,Expr.Const(TcFieldInit mMethExpr fieldInit,mMethExpr,currCalledArgTy)
                           | WrapperForIDispatch ->
                               match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
                               | None -> error(Error(FSComp.SR.fscSystemRuntimeInteropServicesIsRequired(), mMethExpr))
                               | Some assemblyRef ->
                                   let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.DispatchWrapper"))
                                   let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
-                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,calledArgTy)],mMethExpr)
+                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | WrapperForIUnknown ->
                               match cenv.g.ilg.traits.SystemRuntimeInteropServicesScopeRef.Value with
@@ -8956,14 +8966,13 @@ and TcMethodApplication
                               | Some assemblyRef ->
                                   let tref = mkILNonGenericBoxedTy(mkILTyRef(assemblyRef, "System.Runtime.InteropServices.UnknownWrapper"))
                                   let mref = mkILCtorMethSpecForTy(tref,[cenv.g.ilg.typ_Object]).MethodRef
-                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,calledArgTy)],mMethExpr)
+                                  let expr = Expr.Op(TOp.ILCall(false,false,false,false,CtorValUsedAsSuperInit,false,false,mref,[],[],[cenv.g.obj_ty]),[],[mkDefault(mMethExpr,currCalledArgTy)],mMethExpr)
                                   emptyPreBinder,expr
                           | PassByRef (ty, dfltVal2) ->
                               let v,_ = mkCompGenLocal mMethExpr "defaultByrefArg" ty
-                              let wrapper2,rhs = build dfltVal2 
+                              let wrapper2,rhs = build currCalledArgTy dfltVal2
                               (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr (mkLocalValRef v)
-                      build dfltVal
-
+                      build calledArgTy dfltVal
                   | CalleeSide -> 
                       let calledNonOptTy = 
                           if isOptionTy cenv.g calledArgTy then 

@@ -983,6 +983,7 @@ val StripSelfRefCell : TcGlobals * ValBaseOrThisInfo * TType -> TType
 val (|AppTy|_|)   : TcGlobals -> TType -> (TyconRef * TType list) option
 val (|NullableTy|_|)   : TcGlobals -> TType -> TType option
 val (|StripNullableTy|)   : TcGlobals -> TType -> TType 
+val (|ByrefTy|_|)   : TcGlobals -> TType -> TType option
 
 //-------------------------------------------------------------------------
 // Special semantic constraints
