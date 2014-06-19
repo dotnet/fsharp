@@ -4159,6 +4159,7 @@ operatorName:
 barName: 
   | IDENT 
       { if not (String.isUpper $1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseMustBeginWithUpperCase());  
+        if ($1.IndexOf('|') <> -1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseContainsPipe());  
         $1 }
 
 barNames: 
