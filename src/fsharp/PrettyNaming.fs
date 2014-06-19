@@ -393,11 +393,13 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
         (nm.IndexOf '|' = 0) &&
         nm.Length >= 3 &&
         (nm.LastIndexOf '|' = nm.Length - 1) &&
-        (let core = nm.Substring(1,nm.Length - 2) 
-         // no operator characters except '|'
-         core |> String.forall (fun c -> c = '|' || not (opCharDict.ContainsKey c)) &&
-         // at least one non-operator character
-         core |> String.exists (fun c -> not (opCharDict.ContainsKey c)))
+        (
+           let core = nm.Substring(1, nm.Length - 2) 
+           // no operator characters except '|' and ' '
+           core |> String.forall (fun c -> c = '|' || c = ' ' || not (opCharDict.ContainsKey c)) &&
+           // at least one non-operator or space character
+           core |> String.exists (fun c -> c = ' ' || not (opCharDict.ContainsKey c))
+        )
 
     //IsActivePatternName "|+|" = false
     //IsActivePatternName "|ABC|" = true

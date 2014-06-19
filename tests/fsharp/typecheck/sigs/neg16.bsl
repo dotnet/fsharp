@@ -61,22 +61,30 @@ neg16.fs(78,11,78,31): typecheck error FS0001: This expression was expected to h
 but here has type
     string    
 
-neg16.fs(86,15,86,16): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
+neg16.fs(85,8,85,18): typecheck error FS0039: The pattern discriminator 'FooA++' is not defined
 
-neg16.fs(89,11,89,14): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
+neg16.fs(87,50,87,54): typecheck error FS0039: The value or constructor 'OneA' is not defined
 
-neg16.fs(89,11,89,14): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+neg16.fs(87,60,87,69): typecheck error FS0039: The value or constructor 'TwoA+' is not defined
 
-neg16.fs(92,7,92,9): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
+neg16.fs(90,8,90,18): typecheck error FS0039: The pattern discriminator 'FooB++' is not defined
 
-neg16.fs(92,7,92,9): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+neg16.fs(97,15,97,16): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 
-neg16.fs(108,17,108,24): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
+neg16.fs(100,11,100,14): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 
-neg16.fs(96,16,96,19): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+neg16.fs(100,11,100,14): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
 
-neg16.fs(99,16,99,20): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+neg16.fs(103,7,103,9): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
 
-neg16.fs(102,9,102,11): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+neg16.fs(103,7,103,9): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
 
-neg16.fs(105,9,105,13): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+neg16.fs(119,17,119,24): typecheck error FS0823: The 'VolatileField' attribute may only be used on 'let' bindings in classes
+
+neg16.fs(107,16,107,19): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+
+neg16.fs(110,16,110,20): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+
+neg16.fs(113,9,113,11): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static
+
+neg16.fs(116,9,116,13): typecheck error FS0879: Volatile fields must be marked 'mutable' and cannot be thread-static

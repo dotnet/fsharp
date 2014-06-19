@@ -79,6 +79,17 @@ module ActivePatternSanityCHeckTests3 = begin
 
 end
 
+module ActivePatternIllegalPatterns = begin
+
+  let (|``FooA++``|) (x:int) = x
+  let (``FooA++``(x)) = 10
+
+  let (|OneA|``TwoA+``|) (x:int) = if x = 0 then OneA else ``TwoA+``
+
+  let (|``FooB++``|_|) (x:int) = if x = 0 then Some(x) else None
+  let (``FooB++``(x)) = 10
+
+end
 
 module VolatileFieldSanityChecks = begin
 
