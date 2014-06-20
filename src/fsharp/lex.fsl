@@ -145,6 +145,10 @@ let shouldStartLine args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0) then fail args lexbuf err tok
     else tok
     
+let shouldStartFile args lexbuf (m:range) err tok = 
+    if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
+    else tok
+    
 let extractIdentFromHashIf (lexed:string) =
     // Skip the '#if' token, then trim whitespace, then find the end of the identifier
     let lexed = lexed.Trim()      
@@ -575,9 +579,10 @@ rule token args skip = parse
  | ".[]"  | ".[]<-" | ".[,]<-" | ".[,,]<-" | ".[,,,]<-" | ".[,,,]" | ".[,,]" | ".[,]" | ".[..]" | ".[..,..]" | ".[..,..,..]" | ".[..,..,..,..]"
  | ".()"  | ".()<-"  { FUNKY_OPERATOR_NAME(lexeme lexbuf) }
  | "#!" op_char* 
-   { // Treat shebangs like regular comments
+   { // Treat shebangs like regular comments, but they are only allowed at the start of a file
        let m = lexbuf.LexemeRange
-       if not skip then (LINE_COMMENT (LexCont.SingleLineComment(!args.ifdefStack,1,m))) else singleLineComment (None,1,m,args) skip lexbuf }
+       let tok = shouldStartFile args lexbuf m (0,FSComp.SR.lexHashBangMustBeFirstInFile()) (LINE_COMMENT (LexCont.SingleLineComment(!args.ifdefStack,1,m)))
+       if not skip then tok else singleLineComment (None,1,m,args) skip lexbuf }
 
  | "#light" anywhite* 
  | ("#indent" | "#light") anywhite+ "\"on\""

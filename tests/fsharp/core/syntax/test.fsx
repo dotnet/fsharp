@@ -1,3 +1,6 @@
+#!/bin/usr/env fsharpi --exec
+//The shebang above should be treated like a line comment. #! is only allowed in the first byte of a file.
+
 // #Regression #Conformance #Operators #SyntacticSugar #Exceptions #ControlFlow #Arrays #Tuples #Lists #Classes #Constants #Records 
 #if Portable
 module Core_syntax
@@ -32,8 +35,6 @@ test "line number test" (__SOURCE_FILE__ = "file.fs")
 test "line number test" (__LINE__ = "29")
 test "line number test" (__SOURCE_FILE__ = "original-test-file.fs")
 
-// This shebang should be treated like a line comment
-#!/bin/usr/env fsharpi --exec
 
 #if NetCore
 #else
