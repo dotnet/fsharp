@@ -11,6 +11,10 @@
 Changelist for Visual F# Tools 3.1.2
 ====================================
 
+* Fix for #78 - allow space characters in active pattern case identifiers
+* Fix Related to #78 - Adjust parser to disallow vertical pipes in active pattern case identifiers. 
+* Fix for #69 - Invalid code generated when calling C# method with optional nullable args
+* Fix for #9 - XML doc comments on F# record type fields do not appear when accessing in C#
 - Improved XmlDoc tests
 - Open source the netcore profile build 
 - Enable open source build to build profile 78 and profile 259 --- Enables support for Windows phone 8 and windows phone 8.1
