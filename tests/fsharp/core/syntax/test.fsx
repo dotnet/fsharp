@@ -12,7 +12,7 @@ let report_failure () =
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
 
 // Test the __LINE__ directive
-test "line number test" (__LINE__ = "12")
+test "line number test" (__LINE__ = "15")
 #line 100
 test "line number test" (__LINE__ = "100")
 
