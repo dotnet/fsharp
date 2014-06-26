@@ -10,12 +10,12 @@ let compiled wait =
     if c.ExitCode = 0 then true else false;;
 
 //  Build the library
-let first = compiled 10000;;
+let first = compiled 30000;;
     
 //reference it will not lock the assembly because FSI was started with --shadowCopyReferences+
 #r "Library1.dll";;
 
-let next = compiled 10000;;
+let next = compiled 30000;;
   
 //compile will succeed because shadow copy is enabled
 if next = true then
