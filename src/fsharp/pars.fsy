@@ -276,7 +276,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <Ast.SynExpr> typedSeqExprBlock
 %type <Ast.SynExpr * bool> atomicExpr
 %type <Ast.SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
-%type <(Ast.SynEnumCase, Ast.SynUnionCase) Choice list> unionRepr
+%type <(Ast.SynEnumCase, Ast.SynUnionCase) Choice list> unionTypeRepr
 %type <Ast.SynMemberDefns> tyconDefnAugmentation
 %type <Ast.SynExceptionDefn> exconDefn
 %type <Ast.SynExceptionRepr> exconCore
@@ -475,42 +475,33 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 %%
 
-/* F# TopLevel */
-/* NOTE: interactions */
+/*--------------------------------------------------------------------------*/
+/* F# Interactive */
+
 /* A SEMICOLON_SEMICOLON (or EOF) will mark the end of all interaction blocks. */
 /* The end of interaction blocks must be determined without needing to lookahead one more token. */
 /* A lookahead token would be dropped between parser calls. See bug 1027. */
 
+/* An interaction in F# Interactive */
 interaction:
   | interactiveItemsTerminator
      { IDefns ($1,lhs parseState) }
+
   | SEMICOLON 
      { warning(Error(FSComp.SR.parsUnexpectedSemicolon(),rhs parseState 1));
        IDefns ([],lhs parseState) }
+
   | OBLOCKSEP
      { IDefns ([],lhs parseState) }
 
-hashDirective:
-  | HASH IDENT hashDirectiveArgs                            
-     { ParsedHashDirective ($2,$3,lhs parseState) }
 
-stringOrKeywordString:
-  | STRING { $1 }
-  | KEYWORD_STRING { $1 }
-
-hashDirectiveArg: 
-  | stringOrKeywordString { $1 }
-
-hashDirectiveArgs: 
-  |    
-     { [] } 
-  | hashDirectiveArgs hashDirectiveArg 
-     { $1 @ [$2] }
-
+/* The terminator of an interaction in F# Interactive */
 interactiveTerminator: 
   | SEMICOLON_SEMICOLON {}
   | EOF     {}
 
+
+/* An group of items considered to be one interaction, plus a terminator */
 /* Represents the sequence of items swallowed in one interaction by F# Interactive */
 /* It is important to make this as large as possible given the chunk of input */
 /* text. More or less identical to 'moduleDefns' but where SEMICOLON_SEMICOLON is */
@@ -520,34 +511,96 @@ interactiveTerminator:
 /* discrepencies between whole-file type checking in FSI and FSC. */
 
 interactiveItemsTerminator:
-  /* Always ends on interactiveTerminator */
-  | interactiveTerminator  { [] }
-  | interactiveModuleDefns interactiveTerminator { $1 }
-  | interactiveExpr        interactiveTerminator { $1 }
-  | interactiveHash        interactiveTerminator { $1 }
-  | interactiveModuleDefns interactiveSeparators interactiveItemsTerminator { $1 @ $3 }
-  | interactiveExpr        interactiveSeparators interactiveItemsTerminator { $1 @ $3 }
-  | interactiveHash        interactiveSeparators interactiveItemsTerminator { $1 @ $3 }
+  | interactiveTerminator  
+     { [] }
 
-interactiveModuleDefns:
-  /* One or more moduleDefn. REVIEW: "moduleDefns" logical name, but that is used already */
-  | moduleDefn                        { $1 }
-  | moduleDefn interactiveModuleDefns { $1 @ $2 }
+  | interactiveDefns interactiveTerminator 
+     { $1 }
 
+  | interactiveExpr  interactiveTerminator 
+     { $1 }
+
+  | interactiveHash  interactiveTerminator 
+     { $1 }
+
+  | interactiveDefns interactiveSeparators interactiveItemsTerminator 
+     { $1 @ $3 }
+
+  | interactiveExpr  interactiveSeparators interactiveItemsTerminator 
+     { $1 @ $3 }
+
+  | interactiveHash  interactiveSeparators interactiveItemsTerminator 
+     { $1 @ $3 }
+
+
+/* A group of definitions as part of in one interaction in F# Interactive */
+interactiveDefns:
+  | moduleDefn
+      { $1 }
+
+  | moduleDefn interactiveDefns
+      { $1 @ $2 }
+
+
+/* An expression as part of one interaction in F# Interactive */
 interactiveExpr:
   | opt_attributes opt_declVisibility declExpr
       { if isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3));
         let attrDecls = if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
         attrDecls @ [ mkSynDoDecl($3)] }
 
-interactiveHash:      
-  | hashDirective { [SynModuleDecl.HashDirective($1,rhs parseState 1)] }
-      
-/* F# Language Proper */
 
+/* A #directive interaction in F# Interactive */
+interactiveHash:      
+  | hashDirective 
+      { [SynModuleDecl.HashDirective($1,rhs parseState 1)] }
+
+
+/* One or more separators between interactions in F# Interactive */
+interactiveSeparators: 
+  | interactiveSeparator                     { } 
+  | interactiveSeparator interactiveSeparators { }
+
+
+/* One separator between interactions in F# Interactive */
+interactiveSeparator: 
+  | SEMICOLON { } 
+  | OBLOCKSEP { }  
+
+
+/*--------------------------------------------------------------------------*/
+/* #directives - used by both F# Interactive directives and #nowarn etc.    */
+
+
+/* A #directive in a module, namespace or an interaction */
+hashDirective:
+  | HASH IDENT hashDirectiveArgs                            
+     { ParsedHashDirective ($2,$3,lhs parseState) }
+
+
+/* The arguments to a #directive */
+hashDirectiveArgs: 
+  | /* EMPTY */
+     { [] } 
+
+  | hashDirectiveArgs hashDirectiveArg 
+     { $1 @ [$2] }
+
+
+/* One argument to a #directive */
+hashDirectiveArg: 
+  | stringOrKeywordString 
+      { $1 }
+      
+
+/*--------------------------------------------------------------------------*/
+/* F# Language Proper - signature files */
+
+/* The contents of a signature file */
 signatureFile: 
   | fileNamespaceSpecs EOF 
      { checkEndOfFileError $2; $1 }
+
   | fileNamespaceSpecs error EOF 
      { $1 }
 
@@ -558,28 +611,25 @@ signatureFile:
      { let emptySigFileFrag = ParsedSigFileFragment.AnonModule([],rhs parseState 1) in 
        ParsedSigFile([],[emptySigFileFrag]) }     
 
-implementationFile: 
-  | fileNamespaceImpls EOF 
-     { checkEndOfFileError $2; $1 }
-  | fileNamespaceImpls error EOF 
-     { $1 }
 
-  /* If this rule fires it is kind of catastrophic: error recovery yields no results! */
-  /* This will result in NO intellisense for the file! Ideally we wouldn't need this rule */
-  /* Note: the compiler assumes there is at least one "fragment", so an empty one is used (see 4488) */
-  | error EOF 
-     { let emptyImplFileFrag = ParsedImplFileFragment.AnonModule([],rhs parseState 1) in 
-       ParsedImplFile([],[emptyImplFileFrag]) }
 
+/* The start of a module declaration */
 moduleIntro: 
-  | module_keyword opt_access path { $3.Lid,grabXmlDoc(parseState,1),$2 }
+  | moduleKeyword opt_access path 
+      { $3.Lid,grabXmlDoc(parseState,1),$2 }
 
+
+/* The start of a namespace declaration */
 namespaceIntro: 
-  | NAMESPACE path { $2.Lid,grabXmlDoc(parseState,1)  }
+  | NAMESPACE path 
+      { $2.Lid,grabXmlDoc(parseState,1)  }
 
+
+/* The contents of a signature file */
 fileNamespaceSpecs: 
   | fileModuleSpec  
       { ParsedSigFile([],[ ($1 ([],PreXmlDoc.Empty)) ]) }
+
   | fileModuleSpec  fileNamespaceSpecList 
       { // If there are namespaces, the first fileModuleImpl may only contain # directives 
         let decls = 
@@ -596,42 +646,20 @@ fileNamespaceSpecs:
                      [])
         ParsedSigFile(decls, $2) } 
 
+
 fileNamespaceSpecList: 
-  | fileNamespaceSpec fileNamespaceSpecList { $1 :: $2 }
-  | fileNamespaceSpec { [$1] }
+  | fileNamespaceSpec fileNamespaceSpecList 
+     { $1 :: $2 }
+
+  | fileNamespaceSpec 
+     { [$1] }
 
 fileNamespaceSpec: 
   | namespaceIntro deprecated_opt_equals fileModuleSpec 
      { let path,xml = $1 in ($3 (path,xml)) }
 
-fileNamespaceImpls: 
-  | fileModuleImpl   
-      { ParsedImplFile([], [ ($1 ([],PreXmlDoc.Empty)) ]) }
-  | fileModuleImpl fileNamespaceImplList 
-      { // If there are namespaces, the first fileModuleImpl may only contain # directives 
-        let decls = 
-            match ($1 ([],PreXmlDoc.Empty)) with 
-            | ParsedImplFileFragment.AnonModule(decls,m) -> decls  
-            | ParsedImplFileFragment.NamespaceFragment(_,_, decls, _,_,_) -> decls 
-            | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(_,_,_,_,_,_,m)) ->
-                raiseParseErrorAt m (FSComp.SR.parsOnlyHashDirectivesAllowed())
-        let decls = 
-            decls |> List.collect (function 
-                | (SynModuleDecl.HashDirective (hd,_)) -> [hd]
-                | d ->  
-                     reportParseErrorAt d.Range (FSComp.SR.parsOnlyHashDirectivesAllowed());
-                     [])
-        ParsedImplFile(decls, $2) } 
 
-
-fileNamespaceImplList: 
-  | fileNamespaceImpl fileNamespaceImplList { $1 :: $2 }
-  | fileNamespaceImpl { [$1] }
-
-fileNamespaceImpl: 
-  | namespaceIntro deprecated_opt_equals fileModuleImpl 
-     { let path,xml = $1 in ($3 (path,xml)) }
-
+/* The single module declaration that can make up a signature file */
 fileModuleSpec: 
   | opt_attributes opt_declVisibility  moduleIntro moduleSpfnsPossiblyEmptyBlock 
     { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
@@ -642,6 +670,7 @@ fileModuleSpec:
         let path2,xml,vis = $3 
         let lid = path@path2 
         ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid,true, $4, xml,$1,vis,m)))  }
+
   | moduleSpfnsPossiblyEmptyBlock 
     { let m = (rhs parseState 1) 
       (fun (path,xml) -> 
@@ -649,258 +678,50 @@ fileModuleSpec:
         | [] -> ParsedSigFileFragment.AnonModule($1, m)  
         | _ -> ParsedSigFileFragment.NamespaceFragment(path,false, $1, xml,[],m))  } 
 
-fileModuleImpl: 
-  | opt_attributes opt_declVisibility moduleIntro moduleDefnsOrExprPossiblyEmptyOrBlock
-    { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-      let m2 = rhs parseState 3
-      let m = (m2, $4) ||> unionRangeWithListBy (fun modu -> modu.Range)
-      (fun (path,_) -> 
-        if nonNil path then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(),m2));
-        let path2,xml,vis = $3 
-        let lid = path@path2 
-        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid,true, $4, xml,$1,vis,m))) }
-  | moduleDefnsOrExprPossiblyEmptyOrBlock 
-    { let m = (rhs parseState 1) 
-      (fun (path,xml) -> 
-        match path with 
-        | [] -> ParsedImplFileFragment.AnonModule($1,m)  
-        | _ -> ParsedImplFileFragment.NamespaceFragment(path,false, $1, xml,[],m)) } 
 
 moduleSpfnsPossiblyEmptyBlock: 
   | moduleSpfnsPossiblyEmpty
       { $1 }
-  | OBLOCKBEGIN            moduleSpfnsPossiblyEmpty     oblockend  opt_OBLOCKSEP
+
+  | OBLOCKBEGIN moduleSpfnsPossiblyEmpty oblockend  opt_OBLOCKSEP
       { $2 }
+
   | OBLOCKBEGIN moduleSpfnsPossiblyEmpty recover 
        { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
          // reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnClosedBlockInHashLight());   
          $2 
        }
+
   | OBLOCKBEGIN error oblockend                
-       { 
-         [] 
-       }
+       { [] }
       
+
 moduleSpfnsPossiblyEmpty: 
   | moduleSpfns
       { $1 }
+
   | error
       { [] }
-  | 
+
+  | /* EMPTY */
       { [] }
       
+
 moduleSpfns: 
   | moduleSpfn  opt_topSeparators moduleSpfns 
-      { $1 :: $3 } 
+     { $1 :: $3 } 
+
   | error topSeparators moduleSpfns 
-      { (* silent recovery *) $3 }
+     { (* silent recovery *) $3 }
+
   | moduleSpfn  opt_topSeparators 
-      { [$1] } 
+     { [$1] } 
 
-
-moduleDefnsOrExprPossiblyEmptyOrBlock:
-  | OBLOCKBEGIN moduleDefnsOrExprPossiblyEmpty oblockend opt_OBLOCKSEP
-     { $2 }
-  | OBLOCKBEGIN moduleDefnsOrExprPossiblyEmpty recover 
-       { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
-         // reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnClosedBlockInHashLight());   
-         $2 
-       }
-  | OBLOCKBEGIN error oblockend                
-       { 
-         [] 
-       }
-  | moduleDefnsOrExprPossiblyEmpty
-     { $1 }
-
-moduleDefnsOrExprPossiblyEmpty:
-  | moduleDefnsOrExpr
-     { $1 }
-  | 
-     { [] }
-
-/* A naked expression is only allowed at the start of a module/file, or straight after a topSeparators */
-moduleDefnsOrExpr:
-  | opt_attributes opt_declVisibility declExpr topSeparators moduleDefnsOrExpr 
-      { if isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3));
-        let attrDecls = if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ mkSynDoDecl ($3) :: $5 }
-  | opt_attributes opt_declVisibility declExpr topSeparators
-      { if isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3));
-        let attrDecls = if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
-  | opt_attributes opt_declVisibility declExpr
-      { if isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3));
-        let attrDecls = if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
-  | moduleDefns 
-      { $1 } 
-  | opt_attributes error
-     { if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] }
-
-moduleDefns:
-  | moduleDefnOrDirective moduleDefns 
-      { $1 @ $2 } 
-  | moduleDefnOrDirective topSeparators moduleDefnsOrExpr 
-      {  $1 @ $3 } 
-  | moduleDefnOrDirective
-      { $1 }
-  | moduleDefnOrDirective topSeparators
-      { $1 }
-  | error topSeparators moduleDefnsOrExpr 
-      { $3 } 
-
-moduleDefnOrDirective:
-  | moduleDefn 
-      { $1  } 
-  | hashDirective 
-      { [ SynModuleDecl.HashDirective ($1,rhs2 parseState 1 1) ] } 
-  /* Recover whenever an error occurs in a moduleDefn */
-
-
-
-/* This is used by both "fsi" interactions and "source file" fragments defined by moduleDefns */
-moduleDefn:
-
-  | opt_attributes opt_declVisibility defnBindings                   %prec decl_let 
-      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        parseState.ResetSynArgNameGenerator();
-        let (BindingSetPreAttrs(_,_,_,_,mWhole)) = $3 
-        mkDefnBindings (mWhole,$3,$1,$2,mWhole)  }
-
-  | opt_attributes opt_declVisibility hardwhiteLetBindings          %prec decl_let 
-      { let hwlb,m = $3
-        if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        parseState.ResetSynArgNameGenerator();
-        mkDefnBindings (m,hwlb,$1,$2,m)  }
-
-  | opt_attributes opt_declVisibility doBinding %prec decl_let 
-      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        let mWhole = rhs parseState 3 
-        mkDefnBindings (mWhole,$3,$1,$2,mWhole) }
-  
-  | opt_attributes opt_declVisibility type_keyword tyconDefn tyconDefnList
-      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        let      (TypeDefn(ComponentInfo(cas   ,a,cs,b,c,d,d2,d3),e,f,g)) = $4
-        let tc = (TypeDefn(ComponentInfo($1@cas,a,cs,b,c,d,d2,d3),e,f,g))
-        let types = tc :: $5
-        [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
-
-  | opt_attributes opt_declVisibility exconDefn
-      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        let (ExceptionDefn(ExceptionDefnRepr(cas,a,b,c,d,d2),e,f)) = $3 
-        let f = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range)
-        let ec = (ExceptionDefn(ExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
-        [ SynModuleDecl.Exception(ec, f) ] }
-
-  | opt_attributes opt_declVisibility moduleIntro EQUALS  namedModuleDefnBlock
-
-      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-        let attribs,(path,xml,vis) = $1,$3 
-        match $5 with 
-        | Choice1Of2 eqn -> 
-            if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
-            if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName());
-            if List.length $1 <> 0   then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation());
-            if isSome vis            then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate());
-            [ SynModuleDecl.ModuleAbbrev(List.head path,eqn,(rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
-        | Choice2Of2 def -> 
-            if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName());
-            let info = ComponentInfo(attribs,[],[],path,xml,false,vis,rhs parseState 3)
-            [ SynModuleDecl.NestedModule(info,def,false,(rhs2 parseState 3 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
-
-  | attributes recover
-      { errorR(Error(FSComp.SR.parsAttributeOnIncompleteCode(),rhs parseState 1))
-        [] }
-
-  | openDecl 
-      { [SynModuleDecl.Open($1, $1.Range)] }
-
-/* this occurs on the right of a module abbreviation (#light encloses the r.h.s. with OBLOCKBEGIN/OBLOCKEND) */
-/* We don't use it in signature files */
-namedModuleAbbrevBlock:
-  | OBLOCKBEGIN path oblockend 
-       { $2.Lid }
-  | path 
-       { $1.Lid  }
-       
-namedModuleDefnBlock:
-  | OBLOCKBEGIN wrappedNamedModuleDefn oblockend 
-       { 
-         Choice2Of2 $2 
-       }
-  | OBLOCKBEGIN wrappedNamedModuleDefn recover
-       { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
-         Choice2Of2 $2 
-       }
-  | OBLOCKBEGIN moduleDefnsOrExpr oblockend 
-       { // BUG 2644 FSharp 1.0: 
-         // There is an ambiguity here 
-         // In particular, consider the following two:
-
-         // module M2 = 
-         //    System.DateTime.Now
-         // module M2 = 
-         //    Microsoft.FSharp.Core.List
-         // The second is a module abbreviation , the first a module containing a single expression.
-         // This is a bit unfortunate. For F# v1 the resolution is in favour of 
-         // the module abbreviation, i.e. anything of the form 
-         //    module M2 = ID.ID.ID.ID
-         // will be taken as a module abbreviation, regardles of the identifiers themselves.
-         // In a later version (Dev11) we could actually try resolving the names 
-         // to both expressions and module identifiers and base the resolution of that semantic lookup
-         //
-         // This is similar to the ambiguitty between 
-         //    type X = int
-         // and 
-         //    type X = OneValue
-         // However in that case we do use type name lookup to make the resolution.
-
-         match $2 with 
-         | [ SynModuleDecl.DoExpr (_,LongOrSingleIdent(false,LongIdentWithDots(path,_),None,_),_) ] -> 
-             Choice1Of2  path
-         | _ -> 
-             Choice2Of2 $2 
-       }
-  | OBLOCKBEGIN moduleDefnsOrExpr recover 
-       { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
-         // reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnClosedBlockInHashLight());   
-         Choice2Of2 $2 
-       }
-  | OBLOCKBEGIN error oblockend                
-       { 
-         Choice2Of2 [] 
-       }
-  | wrappedNamedModuleDefn 
-       {
-         Choice2Of2 $1 
-        }
-  | path 
-        {
-         Choice1Of2 $1.Lid
-        }
-
-wrappedNamedModuleDefn:
-  | structOrBegin moduleDefnsOrExprPossiblyEmpty END 
-       { $2 }
-  | structOrBegin moduleDefnsOrExprPossiblyEmpty recover 
-       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBeginOrStruct());  
-         $2 }
-  | structOrBegin error END                      
-       { [] }
-
-opt_signature :
-  | 
-       { None }
-
-tyconDefnAugmentation: 
-  | WITH classDefnBlock declEnd
-     { $2 }
-/* opt_sig: { None } | COLON sigOrBegin moduleSpfns END { $3 } */
 
 moduleSpfn: 
   | hashDirective 
       { SynModuleSigDecl.HashDirective ($1,rhs2 parseState 1 1)  } 
+
   | valSpfn 
       { $1 }
 
@@ -934,10 +755,11 @@ moduleSpfn:
         let ec = (ExceptionSig(ExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
         SynModuleSigDecl.Exception(ec, rhs parseState 3) }
 
-  | OPEN path { SynModuleSigDecl.Open ($2.Lid, unionRanges (rhs parseState 1) $2.Range) }
+  | OPEN path 
+      { SynModuleSigDecl.Open ($2.Lid, unionRanges (rhs parseState 1) $2.Range) }
 
 valSpfn: 
-  | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints opt_literalValue
+  | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
         let attr1,attr2,isInline,isMutable,vis2,id,doc,explicitValTyparDecls,(ty,arity),konst = ($1),($4),($5),($6),($7),($8),grabXmlDoc(parseState,3),($9),($11),($12) 
         if nonNil attr2 then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(),rhs parseState 4));
@@ -946,71 +768,49 @@ valSpfn:
         SynModuleSigDecl.Val(valSpfn,m)
       }
 
-opt_literalValue: 
-  | { None }
-  | EQUALS declExpr { Some($2) }
-  | EQUALS OBLOCKBEGIN declExpr oblockend { Some($3) }
+/* The optional literal value on a literal specification in a signature */
+optLiteralValueSpfn: 
+  | /* EMPTY */
+      { None }
+
+  | EQUALS declExpr 
+      { Some($2) }
+
+  | EQUALS OBLOCKBEGIN declExpr oblockend 
+      { Some($3) }
   
+
+/* A block of definitions in a module in a signature file */
 moduleSpecBlock: 
-  | OBLOCKBEGIN            moduleSpfns     oblockend { $2 }
-  | OBLOCKBEGIN sigOrBegin moduleSpfnsPossiblyEmpty END oblockend { $3 }
-  |             sigOrBegin moduleSpfnsPossiblyEmpty END { $2 }
 
-opt_attributes:
-  | attributes                                { $1 }
-  |            %prec prec_opt_attributes_none { [] }
+  /* #light-syntax, with no sig/end or begin/end */
+  | OBLOCKBEGIN moduleSpfns oblockend 
+      { $2 }
 
-attributes: 
-  | attributeList                     
-     { $1 }
-  | attributeList attributes
-     { $1 @ $2 }
+  /* #light-syntax, with sig/end or begin/end */
+  | OBLOCKBEGIN sigOrBegin moduleSpfnsPossiblyEmpty END oblockend 
+      { $3 }
 
-attributeList: 
-  | LBRACK_LESS  attributeListElements opt_seps GREATER_RBRACK opt_OBLOCKSEP {  $2 }
-  | LBRACK_LESS  error GREATER_RBRACK opt_OBLOCKSEP {  [] }
-  | LBRACK_LESS  attributeListElements opt_seps ends_coming_soon_or_recover 
-      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess());
-        $2 }
-  | LBRACK_LESS  ends_coming_soon_or_recover 
-      { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess());
-        [] }
+  /* non-#light-syntax, with sig/end or begin/end */
+  |             sigOrBegin moduleSpfnsPossiblyEmpty END 
+      { $2 }
 
-attributeListElements: 
-  | attribute                     
-     { [$1] }
-  | attributeListElements seps attribute 
-     { $1 @ [$3] }
 
-attribute:
-  | path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
-     { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e 
-       ({ TypeName=$1; ArgExpr=arg; Target=None; AppliesToGetterAndSetter=false; Range=$1.Range } : SynAttribute) }
-  | attributeTarget path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
-     { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e 
-       ({ TypeName=$2; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$2.Range } : SynAttribute) }
-  | attributeTarget OBLOCKBEGIN path oblockend opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
-     { let arg = match $6 with None -> mkSynUnit $3.Range | Some e -> e 
-       ({ TypeName=$3; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$3.Range } : SynAttribute) }
-
-attributeTarget: 
-  | module_keyword COLON { Some(ident("module",(rhs parseState 1))) } 
-  | type_keyword COLON { Some(ident("type",(rhs parseState 1))) } 
-  | ident COLON { Some($1) } 
-  /* return */
-  | YIELD COLON { if $1 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsSyntaxError());
-                  Some(ident("return",(rhs parseState 1))) } 
-
+/* A group of type definitions in a signature */
 tyconSpfns:      
-  | type_keyword tyconSpfnList 
+  | typeKeyword tyconSpfnList 
      { $2 }
+
 
 tyconSpfnList:  
   | tyconSpfn AND tyconSpfnList 
      { $1 :: $3 } 
+
   | tyconSpfn 
      { [$1] }
 
+
+/* A type definition in a signature */
 tyconSpfn: 
   | typeNameInfo  EQUALS tyconSpfnRhsBlock 
       { let lhsm = rhs parseState 1 
@@ -1018,6 +818,8 @@ tyconSpfn:
   | typeNameInfo  opt_classSpfn       
       { TypeDefnSig($1,SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None (lhs parseState),lhs parseState),$2,lhs parseState) }
 
+
+/* The right-hand-side of a type definition in a signature */
 tyconSpfnRhsBlock: 
   /* This rule allows members to be given for record and union types in the #light syntax */
   /* without the use of 'with' ... 'end'. For example: */
@@ -1031,16 +833,20 @@ tyconSpfnRhsBlock:
      { let m = lhs parseState 
        (fun lhsm nameInfo -> 
            $2 lhsm nameInfo (checkForMultipleAugmentations m ($4 @ $5) $7)) }
+
   | tyconSpfnRhs opt_classSpfn
      { let m = lhs parseState 
        (fun lhsm nameInfo -> 
            $1 lhsm nameInfo $2) }
 
+
+/* The right-hand-side of a type definition in a signature */
 tyconSpfnRhs: 
   | tyconDefnOrSpfnSimpleRepr 
      { let m = $1.Range 
        (fun lhsm nameInfo augmentation -> 
            TypeDefnSig(nameInfo,SynTypeDefnSigRepr.Simple ($1,m),augmentation,m)) }
+
   | tyconClassSpfn 
      { let m = lhs parseState 
        let needsCheck,(kind,decls) = $1
@@ -1048,6 +854,7 @@ tyconSpfnRhs:
            if needsCheck && isNil decls then 
               reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition());
            TypeDefnSig(nameInfo,SynTypeDefnSigRepr.ObjectModel (kind,decls,m),augmentation,m)) }
+
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty,arity = $3
@@ -1056,100 +863,71 @@ tyconSpfnRhs:
            if nonNil augmentation then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType());
            TypeDefnSig(nameInfo,SynTypeDefnSigRepr.ObjectModel (TyconDelegate (ty,arity),[invoke],m),[],m)) }
 
+
+/* The right-hand-side of an object type definition in a signature */
 tyconClassSpfn: 
   | classSpfnBlockKindUnspecified
      { let needsCheck,decls = $1 
        needsCheck,(TyconUnspecified, decls) }
+
   | classOrInterfaceOrStruct classSpfnBlock END
      { false,($1,$2) }
+
   | classOrInterfaceOrStruct classSpfnBlock recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedClassInterfaceOrStruct());
        false,($1,$2) }
+
   | classOrInterfaceOrStruct error END
      { // silent recovery 
        false,($1,[]) }
 
+
+/* The right-hand-side of an object type definition in a signature with no explicit kind */
 classSpfnBlockKindUnspecified:
   | OBLOCKBEGIN  classSpfnMembers oblockend 
      { true, $2 }
+
   | OBLOCKBEGIN  classSpfnMembers recover
      { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeSignature());
        false, $2 }
-/* NOTE: these rules enable a 'heavy' syntax to omit the kind of a type. */
+
+  /* NOTE: these rules enable the non-#light syntax to omit the kind of a type. */
   | BEGIN  classSpfnBlock END 
      { false, $2 }
+
   | BEGIN  classSpfnBlock recover
      { false, $2 }
 
 
+/* The right-hand-side of an object type definition in a signature */
 classSpfnBlock:
   | OBLOCKBEGIN  classSpfnMembers oblockend 
       { $2 }
+
   | OBLOCKBEGIN  classSpfnMembers recover 
       { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeSignature());
         $2 }
   | classSpfnMembers 
       { $1 }
 
-/*
-classSpfnBlockAtLeastOne:
-  | OBLOCKBEGIN  classSpfnMembersAtLeastOne oblockend 
-      { $2 }
-  | OBLOCKBEGIN  classSpfnMembersAtLeastOne recover 
-      { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeSignature());
-        $2 }
-  | classSpfnMembersAtLeastOne 
-      { $1 }
-*/
-
+/* The members of an object type definition in a signature, possibly empty */
 classSpfnMembers:  
   | classSpfnMembersAtLeastOne 
      { $1 } 
-  |  
+
+  |  /* EMPTY */
      { [] }
 
+
+/* The members of an object type definition in a signature */
 classSpfnMembersAtLeastOne:  
   | classMemberSpfn opt_seps classSpfnMembers 
      { $1 :: $3 } 
 
-memberFlags: 
-  | STATIC MEMBER   { (true,StaticMemberFlags) }  
-  | MEMBER          { (false,NonVirtualMemberFlags) }
-  | OVERRIDE        { (false,OverrideMemberFlags) }
-  | DEFAULT        { (false,OverrideMemberFlags) }
 
-memberSpecFlags: 
-  | memberFlags { $1 }  
-  | ABSTRACT        { (false,AbstractMemberFlags) }
-  | ABSTRACT MEMBER { (false,AbstractMemberFlags) }
-
-classMemberSpfnGetSet:
-  | /* EMPTY */ 
-    { None, MemberKind.Member }
-  | WITH classMemberSpfnGetSetElements 
-    { Some (rhs2 parseState 1 2), $2 }
-  | OWITH classMemberSpfnGetSetElements OEND
-    { Some (rhs2 parseState 1 2), $2 }
-  | OWITH classMemberSpfnGetSetElements error
-    {  reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedWith());
-       Some (rhs2 parseState 1 2), $2 }
-
-
-classMemberSpfnGetSetElements:
-  | nameop 
-    { (let (id:Ident) = $1 
-       if id.idText = "get" then MemberKind.PropertyGet 
-       else if id.idText = "set" then MemberKind.PropertySet 
-       else raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
-  | nameop COMMA nameop
-    { let (id:Ident) = $1 
-      if not ((id.idText = "get" && $3.idText = "set") ||
-              (id.idText = "set" && $3.idText = "get")) then 
-         raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired());
-      MemberKind.PropertyGetSet }
-
+/* A object member in a signature */
 classMemberSpfn:
-  | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet opt_literalValue
+  | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
        let isInline,doc,vis2,id,explicitValTyparDecls,(ty,arity),optLiteralValue = $4,grabXmlDoc(parseState,3),$5,$6,$7,$9,$11
        let getSetRangeOpt, getSet = $10 
@@ -1166,19 +944,24 @@ classMemberSpfn:
   | opt_attributes opt_declVisibility interfaceMember appType  
      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
        SynMemberSig.Interface ($4,unionRanges (rhs parseState 3) ($4).Range) }
+
   | opt_attributes opt_declVisibility INHERIT appType 
      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
        SynMemberSig.Inherit ($4,unionRanges (rhs parseState 3) ($4).Range) }
+
   | opt_attributes opt_declVisibility VAL fieldDecl 
      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
        let fld = $4 $1 false 
        SynMemberSig.ValField(fld,rhs2 parseState 3 4) }
+
   | opt_attributes opt_declVisibility STATIC VAL fieldDecl 
      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
        SynMemberSig.ValField($5 $1 true,rhs2 parseState 3 5) }
-  | opt_attributes  opt_declVisibility STATIC type_keyword tyconSpfn 
+
+  | opt_attributes  opt_declVisibility STATIC typeKeyword tyconSpfn 
      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
        SynMemberSig.NestedType($5,rhs2 parseState 3 5) }
+
   | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
      { let vis,doc,(ty,valSynInfo) = $2,grabXmlDoc(parseState,3),$5 
        let m = unionRanges (rhs parseState 3) ty.Range 
@@ -1186,27 +969,468 @@ classMemberSpfn:
        let valSpfn = ValSpfn ($1, mkSynId (rhs parseState 3) "new", noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m)
        SynMemberSig.Member(valSpfn, CtorMemberFlags,m) }
 
+
+/* The optional "with get,set" on a member in a signature */
+classMemberSpfnGetSet:
+  | /* EMPTY */ 
+    { None, MemberKind.Member }
+
+  | WITH classMemberSpfnGetSetElements 
+    { Some (rhs2 parseState 1 2), $2 }
+
+  | OWITH classMemberSpfnGetSetElements OEND
+    { Some (rhs2 parseState 1 2), $2 }
+
+  | OWITH classMemberSpfnGetSetElements error
+    {  reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedWith());
+       Some (rhs2 parseState 1 2), $2 }
+
+
+/* The "get,set" on a property member in a signature */
+classMemberSpfnGetSetElements:
+  | nameop 
+    { (let (id:Ident) = $1 
+       if id.idText = "get" then MemberKind.PropertyGet 
+       else if id.idText = "set" then MemberKind.PropertySet 
+       else raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
+
+  | nameop COMMA nameop
+    { let (id:Ident) = $1 
+      if not ((id.idText = "get" && $3.idText = "set") ||
+              (id.idText = "set" && $3.idText = "get")) then 
+         raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired());
+      MemberKind.PropertyGetSet }
+
+
+memberSpecFlags: 
+  | memberFlags { $1 }  
+  | ABSTRACT        { (false,AbstractMemberFlags) }
+  | ABSTRACT MEMBER { (false,AbstractMemberFlags) }
+
+
+/* Part of an exception definition in a signature file */
+exconSpfn: 
+  | exconCore opt_classSpfn 
+     { ExceptionSig($1,$2,lhs parseState) }
+  
+
+/* The optional augmentation on a type definition in a signature */
+opt_classSpfn: 
+  | WITH classSpfnBlock declEnd 
+     { $2 } 
+
+  | /* EMPTY */                   
+     { [] }
+
+
+/*--------------------------------------------------------------------------*/
+/* F# Language Proper - implementation files */
+
+/* The contents of an implementation file */
+implementationFile: 
+  | fileNamespaceImpls EOF 
+     { checkEndOfFileError $2; $1 }
+
+  | fileNamespaceImpls error EOF 
+     { $1 }
+
+  /* If this rule fires it is kind of catastrophic: error recovery yields no results! */
+  /* This will result in NO intellisense for the file! Ideally we wouldn't need this rule */
+  /* Note: the compiler assumes there is at least one "fragment", so an empty one is used (see 4488) */
+  | error EOF 
+     { let emptyImplFileFrag = ParsedImplFileFragment.AnonModule([],rhs parseState 1) in 
+       ParsedImplFile([],[emptyImplFileFrag]) }
+
+
+/* The sequence of namespace definitions or a single module definition that makes up an implementation file */
+fileNamespaceImpls: 
+  | fileModuleImpl   
+      { ParsedImplFile([], [ ($1 ([],PreXmlDoc.Empty)) ]) }
+
+  | fileModuleImpl fileNamespaceImplList 
+      { // If there are namespaces, the first fileModuleImpl may only contain # directives 
+        let decls = 
+            match ($1 ([],PreXmlDoc.Empty)) with 
+            | ParsedImplFileFragment.AnonModule(decls,m) -> decls  
+            | ParsedImplFileFragment.NamespaceFragment(_,_, decls, _,_,_) -> decls 
+            | ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(_,_,_,_,_,_,m)) ->
+                raiseParseErrorAt m (FSComp.SR.parsOnlyHashDirectivesAllowed())
+        let decls = 
+            decls |> List.collect (function 
+                | (SynModuleDecl.HashDirective (hd,_)) -> [hd]
+                | d ->  
+                     reportParseErrorAt d.Range (FSComp.SR.parsOnlyHashDirectivesAllowed());
+                     [])
+        ParsedImplFile(decls, $2) } 
+
+
+/* The sequence of namespace definitions that can make up an implementation file */
+fileNamespaceImplList: 
+  | fileNamespaceImpl fileNamespaceImplList 
+     { $1 :: $2 }
+
+  | fileNamespaceImpl 
+     { [$1] }
+
+
+/* A single namespace definition in an implementation file */
+fileNamespaceImpl: 
+  | namespaceIntro deprecated_opt_equals fileModuleImpl 
+     { let path,xml = $1 in ($3 (path,xml)) }
+
+
+/* A single module definition in an implementation file */
+fileModuleImpl: 
+  | opt_attributes opt_declVisibility moduleIntro moduleDefnsOrExprPossiblyEmptyOrBlock
+    { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+      let m2 = rhs parseState 3
+      let m = (m2, $4) ||> unionRangeWithListBy (fun modu -> modu.Range)
+      (fun (path,_) -> 
+        if nonNil path then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(),m2));
+        let path2,xml,vis = $3 
+        let lid = path@path2 
+        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid,true, $4, xml,$1,vis,m))) }
+
+  | moduleDefnsOrExprPossiblyEmptyOrBlock 
+    { let m = (rhs parseState 1) 
+      (fun (path,xml) -> 
+        match path with 
+        | [] -> ParsedImplFileFragment.AnonModule($1,m)  
+        | _ -> ParsedImplFileFragment.NamespaceFragment(path,false, $1, xml,[],m)) } 
+
+
+/* A collection/block of definitions or expressions making up a module or namespace, possibly empty */
+moduleDefnsOrExprPossiblyEmptyOrBlock:
+  | OBLOCKBEGIN moduleDefnsOrExprPossiblyEmpty oblockend opt_OBLOCKSEP
+     { $2 }
+
+  | OBLOCKBEGIN moduleDefnsOrExprPossiblyEmpty recover 
+     { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
+       // reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnClosedBlockInHashLight());   
+       $2 }
+
+  | OBLOCKBEGIN error oblockend                
+     { []  }
+
+  | moduleDefnsOrExprPossiblyEmpty
+     { $1 }
+
+
+/* A collection of definitions or expressions making up a module or namespace, possibly empty */
+moduleDefnsOrExprPossiblyEmpty:
+  | moduleDefnsOrExpr
+     { $1 }
+
+  | /* EMPTY */
+     { [] }
+
+
+/* A collection of definitions or expressions making up a module or namespace */
+/* A naked expression is only allowed at the start of a module/file, or straight after a topSeparators */
+moduleDefnsOrExpr:
+  | opt_attributes opt_declVisibility declExpr topSeparators moduleDefnsOrExpr 
+      { if isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3));
+        let attrDecls = if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+        attrDecls @ mkSynDoDecl ($3) :: $5 }
+
+  | opt_attributes opt_declVisibility declExpr topSeparators
+      { if isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3));
+        let attrDecls = if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+        attrDecls @ [ mkSynDoDecl($3) ] }
+
+  | opt_attributes opt_declVisibility declExpr
+      { if isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3));
+        let attrDecls = if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+        attrDecls @ [ mkSynDoDecl($3) ] }
+
+  | moduleDefns 
+      { $1 } 
+
+  | opt_attributes error
+     { if nonNil $1 then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] }
+
+
+/* A sequence of definitions in a namespace or module */
+moduleDefns:
+  | moduleDefnOrDirective moduleDefns 
+      { $1 @ $2 } 
+
+  | moduleDefnOrDirective topSeparators moduleDefnsOrExpr 
+      { $1 @ $3 } 
+
+  | moduleDefnOrDirective
+      { $1 }
+
+  | moduleDefnOrDirective topSeparators
+      { $1 }
+
+  | error topSeparators moduleDefnsOrExpr 
+      { $3 } 
+
+
+/* A single definition in a namespace, module or F# Interactive file*/
+moduleDefnOrDirective:
+  | moduleDefn 
+      { $1  } 
+
+  | hashDirective 
+      { [ SynModuleDecl.HashDirective ($1,rhs2 parseState 1 1) ] } 
+
+
+/* A single definition in a namespace, module or interaction. */
+/* This is used by both "fsi" interactions and "source file" fragments defined by moduleDefns */
+moduleDefn:
+
+  /* 'let' definitions in non-#light*/
+  | opt_attributes opt_declVisibility defnBindings                   %prec decl_let 
+      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+        parseState.ResetSynArgNameGenerator();
+        let (BindingSetPreAttrs(_,_,_,_,mWhole)) = $3 
+        mkDefnBindings (mWhole,$3,$1,$2,mWhole)  }
+
+  /* 'let' or 'do' definitions in #light */
+  | opt_attributes opt_declVisibility hardwhiteLetBindings          %prec decl_let 
+      { let hwlb,m = $3
+        if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+        parseState.ResetSynArgNameGenerator();
+        mkDefnBindings (m,hwlb,$1,$2,m)  }
+
+  /* 'do' definitions in non-#light*/
+  | opt_attributes opt_declVisibility doBinding %prec decl_let 
+      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+        let mWhole = rhs parseState 3 
+        mkDefnBindings (mWhole,$3,$1,$2,mWhole) }
+  
+  /* 'type' definitions */
+  | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
+      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+        let      (TypeDefn(ComponentInfo(cas   ,a,cs,b,c,d,d2,d3),e,f,g)) = $4
+        let tc = (TypeDefn(ComponentInfo($1@cas,a,cs,b,c,d,d2,d3),e,f,g))
+        let types = tc :: $5
+        [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
+
+  /* 'exception' definitions */
+  | opt_attributes opt_declVisibility exconDefn
+      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+        let (ExceptionDefn(ExceptionDefnRepr(cas,a,b,c,d,d2),e,f)) = $3 
+        let f = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range)
+        let ec = (ExceptionDefn(ExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
+        [ SynModuleDecl.Exception(ec, f) ] }
+
+  /* 'module' definitions */
+  | opt_attributes opt_declVisibility moduleIntro EQUALS  namedModuleDefnBlock
+      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+        let attribs,(path,xml,vis) = $1,$3 
+        match $5 with 
+        | Choice1Of2 eqn -> 
+            if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
+            if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName());
+            if List.length $1 <> 0   then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation());
+            if isSome vis            then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate());
+            [ SynModuleDecl.ModuleAbbrev(List.head path,eqn,(rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
+        | Choice2Of2 def -> 
+            if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName());
+            let info = ComponentInfo(attribs,[],[],path,xml,false,vis,rhs parseState 3)
+            [ SynModuleDecl.NestedModule(info,def,false,(rhs2 parseState 3 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
+
+  /* unattached custom attributes */
+  | attributes recover
+      { errorR(Error(FSComp.SR.parsAttributeOnIncompleteCode(),rhs parseState 1))
+        [] }
+
+  /* 'open' declarations */
+  | openDecl 
+      { [SynModuleDecl.Open($1, $1.Range)] }
+
+
+/* The right-hand-side of a module abbreviation definition */ 
+/* This occurs on the right of a module abbreviation (#light encloses the r.h.s. with OBLOCKBEGIN/OBLOCKEND) */
+/* We don't use it in signature files */
+namedModuleAbbrevBlock:
+  | OBLOCKBEGIN path oblockend 
+     { $2.Lid }
+
+  | path 
+     { $1.Lid  }
+       
+
+/* The right-hand-side of a module definition */ 
+namedModuleDefnBlock:
+  | OBLOCKBEGIN wrappedNamedModuleDefn oblockend 
+     { Choice2Of2 $2  }
+
+  | OBLOCKBEGIN wrappedNamedModuleDefn recover
+     { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
+       Choice2Of2 $2 }
+
+  | OBLOCKBEGIN moduleDefnsOrExpr oblockend 
+       { // There is an ambiguity here 
+         // In particular, consider the following two:
+         //
+         // module M2 = 
+         //    System.DateTime.Now
+         // module M2 = 
+         //    Microsoft.FSharp.Core.List
+         // The second is a module abbreviation , the first a module containing a single expression.
+         // The resolution is in favour of the module abbreviation, i.e. anything of the form 
+         //    module M2 = ID.ID.ID.ID
+         // will be taken as a module abbreviation, regardles of the identifiers themselves.
+         //
+         // This is similar to the ambiguitty between 
+         //    type X = int
+         // and 
+         //    type X = OneValue
+         // However in that case we do use type name lookup to make the resolution.
+
+         match $2 with 
+         | [ SynModuleDecl.DoExpr (_,LongOrSingleIdent(false,LongIdentWithDots(path,_),None,_),_) ] -> 
+             Choice1Of2  path
+         | _ -> 
+             Choice2Of2 $2 
+       }
+
+  | OBLOCKBEGIN moduleDefnsOrExpr recover 
+     { // The lex filter ensures we can only get a mismatch in OBLOCKBEGIN/OBLOCKEND tokens if there was some other kind of error, hence we don't need to report this error
+       // reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnClosedBlockInHashLight());   
+       Choice2Of2 $2 }
+
+  | OBLOCKBEGIN error oblockend                
+     { Choice2Of2 [] }
+
+  | wrappedNamedModuleDefn 
+     { Choice2Of2 $1 }
+
+  | path 
+     { Choice1Of2 $1.Lid }
+
+
+/* A module definition that inccludes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
+wrappedNamedModuleDefn:
+  | structOrBegin moduleDefnsOrExprPossiblyEmpty END 
+     { $2 }
+
+  | structOrBegin moduleDefnsOrExprPossiblyEmpty recover 
+     { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBeginOrStruct());  
+       $2 }
+
+  | structOrBegin error END                      
+     { [] }
+
+
+tyconDefnAugmentation: 
+  | WITH classDefnBlock declEnd
+     { $2 }
+
+
+/* An optional list of custom attributes */
+opt_attributes:
+  | attributes                                
+      { $1 }
+
+  |            %prec prec_opt_attributes_none 
+      { [] }
+
+/* A list of sets of custom attributes */
+attributes: 
+  | attributeList                     
+     { $1 }
+
+  | attributeList attributes
+     { $1 @ $2 }
+
+
+/* One set of custom attributes, including [< ... >] */
+attributeList: 
+  | LBRACK_LESS  attributeListElements opt_seps GREATER_RBRACK opt_OBLOCKSEP 
+      {  $2 }
+
+  | LBRACK_LESS  error GREATER_RBRACK opt_OBLOCKSEP 
+      {  [] }
+
+  | LBRACK_LESS  attributeListElements opt_seps ends_coming_soon_or_recover 
+      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess());
+        $2 }
+
+  | LBRACK_LESS  ends_coming_soon_or_recover 
+      { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess());
+        [] }
+
+
+/* One set of custom attributes, not including [< ... >] */
+attributeListElements: 
+  | attribute                     
+     { [$1] }
+
+  | attributeListElements seps attribute 
+     { $1 @ [$3] }
+
+
+/* One custom attribute */
+attribute:
+  /* A custom attribute */
+  | path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
+     { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e 
+       ({ TypeName=$1; ArgExpr=arg; Target=None; AppliesToGetterAndSetter=false; Range=$1.Range } : SynAttribute) }
+
+  /* A custom attribute with an attribute target */
+  | attributeTarget path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
+     { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e 
+       ({ TypeName=$2; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$2.Range } : SynAttribute) }
+
+  /* A custom attribute with an attribute target */
+  | attributeTarget OBLOCKBEGIN path oblockend opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
+     { let arg = match $6 with None -> mkSynUnit $3.Range | Some e -> e 
+       ({ TypeName=$3; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$3.Range } : SynAttribute) }
+
+
+/* The target of a custom attribute */
+attributeTarget: 
+  | moduleKeyword COLON 
+      { Some(ident("module",(rhs parseState 1))) } 
+
+  | typeKeyword COLON 
+      { Some(ident("type",(rhs parseState 1))) } 
+
+  | ident COLON { Some($1) } 
+
+  /* return */
+  | YIELD COLON 
+      { if $1 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsSyntaxError());
+        Some(ident("return",(rhs parseState 1))) } 
+
+/* Flags on a member */
+memberFlags: 
+  | STATIC MEMBER   { (true,StaticMemberFlags) }  
+  | MEMBER          { (false,NonVirtualMemberFlags) }
+  | OVERRIDE        { (false,OverrideMemberFlags) }
+  | DEFAULT        { (false,OverrideMemberFlags) }
+
+/* The name of a type in a signature or implementation, possibly with type parameters and constraints */
 typeNameInfo: 
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
      { let typars,lid,fixity,tpcs1,vis,xmlDoc = $2 
        let tpcs2 = $3 
        ComponentInfo($1,typars,(tpcs1 @ tpcs2),lid,xmlDoc,fixity,vis,rangeOfLid lid)  }
 
+/* Part of a set of type definitions */
 tyconDefnList:  
   | AND tyconDefn tyconDefnList 
      { $2 :: $3 } 
   |                             
      { [] }
 
+/* A type definition */
 tyconDefn: 
   | typeNameInfo 
      { TypeDefn($1,SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range),$1.Range),[],$1.Range) }
+
   | typeNameInfo EQUALS tyconDefnRhsBlock
      { let nameRange = rhs parseState 1
        let (tcDefRepr:SynTypeDefnRepr),members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
        let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)    
        TypeDefn($1, tcDefRepr, members, mWhole) }
+
   | typeNameInfo tyconDefnAugmentation
      { let m = (rhs parseState 1, $2) ||> unionRangeWithListBy (fun mem -> mem.Range)
        TypeDefn($1,SynTypeDefnRepr.ObjectModel(TyconAugmentation,[],m),$2,m) }
@@ -1224,6 +1448,8 @@ tyconDefn:
       
        TypeDefn($1,tcDefRepr,members, unionRanges (rhs parseState 1) tcDefRepr.Range)  }
 
+
+/* The right-hand-side of a type definition */
 tyconDefnRhsBlock: 
   /* This rule allows members to be given for record and union types in the #light syntax */
   /* without the use of 'with' ... 'end'. For example: */
@@ -1236,18 +1462,26 @@ tyconDefnRhsBlock:
   | OBLOCKBEGIN  tyconDefnRhs opt_OBLOCKSEP classDefnMembers opt_classDefn oblockend opt_classDefn  
      { let m = unionRanges (rhs parseState 1) (match $7 with [] -> (match $5 with [] -> (rhs parseState 4) | _ -> (rhs parseState 5)) | _ -> (rhs parseState 7))
        (fun nameRange -> $2 nameRange (checkForMultipleAugmentations m ($4 @ $5) $7)) }
+
   | OBLOCKBEGIN  tyconDefnRhs opt_OBLOCKSEP classDefnMembers opt_classDefn recover
      { if not $6 then reportParseErrorAt (rhs parseState 6) (FSComp.SR.parsUnexpectedEndOfFileTypeDefinition())
        let m = unionRanges (rhs parseState 1) (match $5 with [] -> (rhs parseState 4) | _ -> (rhs parseState 5))
        (fun nameRange -> $2 nameRange (checkForMultipleAugmentations m ($4 @ $5) [])) }
+
   | tyconDefnRhs opt_classDefn
      { let m = rhs parseState 1
        (fun nameRange -> $1 nameRange $2) }
 
+
+/* The right-hand-side of a type definition */
 tyconDefnRhs: 
+
+  /* A simple type definition */
   | tyconDefnOrSpfnSimpleRepr 
      { let m = $1.Range
        (fun nameRange augmentation -> SynTypeDefnRepr.Simple ($1,m),augmentation) }
+
+  /* An object type definition */
   | tyconClassDefn 
      { let needsCheck,(kind,decls),mopt = $1 
        let m = match mopt with 
@@ -1257,6 +1491,8 @@ tyconDefnRhs:
            if needsCheck && isNil decls then 
                reportParseErrorAt nameRange (FSComp.SR.parsEmptyTypeDefinition());
            SynTypeDefnRepr.ObjectModel (kind,decls,m),augmentation) }
+
+  /* A delegate type definition */
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty,arity = $3
@@ -1266,21 +1502,28 @@ tyconDefnRhs:
            if nonNil augmentation then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType());
            SynTypeDefnRepr.ObjectModel (TyconDelegate (ty,arity),[invoke],m),[]) }
 
+
+/* The right-hand-side of a object type definition */
 tyconClassDefn: 
   | classDefnBlockKindUnspecified
      { let needsCheck,decls,mopt = $1 
        needsCheck,(TyconUnspecified, decls),mopt }
+
   | classOrInterfaceOrStruct classDefnBlock END 
      { let m = (rhs parseState 1, $2) ||> unionRangeWithListBy (fun (d:SynMemberDefn) -> d.Range)
        false,($1,$2),Some(m) }
+
   | classOrInterfaceOrStruct classDefnBlock recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedClassInterfaceOrStruct())
        let m = (rhs parseState 1, $2) ||> unionRangeWithListBy (fun (d:SynMemberDefn) -> d.Range)
        false,($1,$2),Some(m) }
+
   | classOrInterfaceOrStruct error END
      { // silent recovery 
        false,($1,[]),Some(rhs parseState 1) }
 
+
+/* The right-hand-side of a object type definition where the class/interface/struct kind has not been specified */
 classDefnBlockKindUnspecified:
   | OBLOCKBEGIN  classDefnMembers recover
      { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeDefinition());
@@ -1289,6 +1532,7 @@ classDefnBlockKindUnspecified:
            | _::_ -> Some( (rhs parseState 1, $2) ||> unionRangeWithListBy (fun (d:SynMemberDefn) -> d.Range) )
            | _ -> None
        false,$2,mopt }
+
   | OBLOCKBEGIN  classDefnMembers oblockend 
      { let mopt =
            match $2 with
@@ -1296,48 +1540,52 @@ classDefnBlockKindUnspecified:
            | _ -> None
        true, $2, mopt }
 
+
+/* The contents of an object type definition or type augmentation */
 classDefnBlock:
   | OBLOCKBEGIN  classDefnMembers recover 
       { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeDefinition());
         $2 }
+
   | OBLOCKBEGIN  classDefnMembers oblockend 
       { $2 }
+
   | classDefnMembers 
       { $1 }
 
-/*
-classDefnBlockAtLeastOne:
-  | OBLOCKBEGIN  classDefnMembersAtLeastOne recover 
-      { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeDefinition());
-        $2 }
-  | OBLOCKBEGIN  classDefnMembersAtLeastOne oblockend 
-      { $2 }
-  | classDefnMembersAtLeastOne 
-      { $1 }
-*/
 
+/* The members of an object type definition or type augmentation, possibly empty */
 classDefnMembers:  
   | classDefnMembersAtLeastOne
      { $1 }
+
   /* REVIEW: Error recovery rules that are followed by potentially empty productions are suspicious! */
   | error classDefnMembers 
      { $2 }
-  | 
+
+  | /* EMPTY */
      { [] }
   
+
+/* The members of an object type definition or type augmentation */
 classDefnMembersAtLeastOne:  
   | classDefnMember opt_seps classDefnMembers 
      { $1 @  $3 }
 
+
+/* The "with get,set" part of a member definition */
 classDefnMemberGetSet: 
   | WITH classDefnMemberGetSetElements
      { $2  }
+
   | OWITH classDefnMemberGetSetElements OEND
      { $2  }
+
   | OWITH classDefnMemberGetSetElements error
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedWith());
        $2  }
 
+/* The "get,set" part of a member definition */
 classDefnMemberGetSetElements: 
   | classDefnMemberGetSetElement 
      { [$1]  }
@@ -1349,8 +1597,10 @@ classDefnMemberGetSetElement:
      { let mRhs = ($6 : SynExpr).Range 
        ($1,$2,$3,$4,$6,mRhs) }
 
+
+/* The core of a member definition */
 memberCore:  
- /* methods and simple getter properties */
+  /* Methods and simple getter properties */
   | opt_inline bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS typedSeqExprBlock  
      {  let mRhs = $5.Range 
         let mWhole = unionRanges (rhs2 parseState 3 4) mRhs 
@@ -1359,7 +1609,7 @@ memberCore:
         (fun vis memFlagsBuilder attrs -> 
              [ SynMemberDefn.Member (bindingBuilder (vis,$1,false,mBindLhs,NoSequencePointAtInvisibleBinding,optReturnType,$5,mRhs,[],attrs,Some(memFlagsBuilder MemberKind.Member)),unionRanges mWhole mBindLhs) ]) }
 
- /* properties with explicit get/set, also indexer properties */
+  /* Properties with explicit get/set, also indexer properties */
   | opt_inline bindingPattern  opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet  
      { let mWhole = (rhs parseState 2, $4) ||> unionRangeWithListBy (fun (_,_,_,_,_,m2) -> m2) 
        let propertyNameBindingBuilder,_ = $2 
@@ -1533,10 +1783,13 @@ memberCore:
                    Some <| SynMemberDefn.Member (Binding (vis, NormalBinding, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mBindLhs, spBind),mWhole)))
        }
 
+
 abstractMemberFlags: 
   | ABSTRACT {} 
   | ABSTRACT MEMBER {} 
 
+
+/* A member definition */
 classDefnMember:
   | opt_attributes opt_declVisibility classDefnBindings
      { if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
@@ -1602,10 +1855,12 @@ classDefnMember:
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false);
         [ SynMemberDefn.Member(Binding (None,NormalBinding,false,false,$1,grabXmlDoc(parseState,3),valSynData, declPat,None,expr,m,NoSequencePointAtInvisibleBinding),m) ] }
         
-  | opt_attributes opt_declVisibility STATIC type_keyword tyconDefn 
+  | opt_attributes opt_declVisibility STATIC typeKeyword tyconDefn 
      {  if isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2));
         [ SynMemberDefn.NestedType($5,None,rhs2 parseState 3 5) ] }
 
+
+/* A 'val' definition in an object type definition */
 valDefnDecl:
   | VAL opt_mutable opt_access ident COLON  typ 
      {  let mRhs = rhs2 parseState 4 6
@@ -1616,6 +1871,8 @@ valDefnDecl:
             let fld = Field(attribs,isStatic,Some $4,$6,$2,doc,$3,mRhs)
             [ SynMemberDefn.ValField(fld, mValDecl) ]) }
 
+
+/* An auto-property definition in an object type definition */
 autoPropsDefnDecl:
   | VAL opt_mutable opt_access ident opt_typ EQUALS typedSeqExprBlock classMemberSpfnGetSet
      {  let doc = grabXmlDoc(parseState,5)
@@ -1626,6 +1883,7 @@ autoPropsDefnDecl:
             [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, doc, $3, $7, mGetSetOpt, mValDecl) ]) }
 
 
+/* An optional type on an auto-property definition */
 opt_typ:
    | /* EMPTY */ { None } 
    | COLON typ { Some $2 }
@@ -1636,9 +1894,11 @@ atomicPatternLongIdent:
   | pathOp { (None,$1) }
   | access pathOp { (Some($1), $2) }
 
+
 opt_access:
-  |        { None }
+  | /* EMPTY */ { None }
   | access { Some($1) } 
+
 
 access:
   | PRIVATE  { SynAccess.Private }
@@ -1647,29 +1907,30 @@ access:
 
 /* only valid on 'NEW' */
 opt_declVisibility:
-  | access { Some($1) } 
-  |  { None }
+  | access      { Some($1) } 
+  | /* EMPTY */ { None }
   
+
 opt_interfaceImplDefn: 
   | WITH objectImplementationBlock declEnd { Some($2) } 
-  |                            { None }
+  | /* EMPTY */                            { None }
+
 
 opt_classDefn: 
   | WITH classDefnBlock declEnd { $2 } 
-  |                           { [] }
-
-opt_classSpfn: 
-  | WITH classSpfnBlock declEnd { $2 } 
-  |                    { [] }
+  | /* EMPTY */                 { [] }
 
 
+/* An 'inherits' definition in an object type definition */
 inheritsDefn: 
   | INHERIT appTypeNonAtomicDeprecated optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) (($2): SynType).Range 
        SynMemberDefn.Inherit($2,$3,mDecl) }
+
   | INHERIT appTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType optBaseSpec
      { let mDecl = unionRanges (rhs parseState 1) $4.Range 
        SynMemberDefn.ImplicitInherit($2,$4,$5,mDecl) }
+
   | INHERIT ends_coming_soon_or_recover
      { let mDecl = (rhs parseState 1)
        if not $2 then errorR(Error(FSComp.SR.parsTypeNameCannotBeEmpty(), mDecl))
@@ -1682,9 +1943,11 @@ optAsSpec:
 asSpec: 
   | AS ident { $2 } 
 
+
 optBaseSpec: 
   | baseSpec { Some($1) } 
   |        { None }
+
 
 baseSpec: 
   | AS ident 
@@ -1697,41 +1960,64 @@ baseSpec:
         ident("base",rhs parseState 2) } 
 
 
+/* The members in an object expression or interface implementation */
 objectImplementationBlock:
   | OBLOCKBEGIN objectImplementationMembers oblockend  
       { $2 }
+
   | OBLOCKBEGIN objectImplementationMembers recover 
       { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileObjectMembers());
         $2 }
+
   | objectImplementationMembers 
       { $1 }
 
-objectImplementationMembers:  
-  | objectImplementationMember opt_seps objectImplementationMembers { $1 @  $3 }
-  | objectImplementationMember opt_seps { $1 }
 
+/* The members in an object expression or interface implementation */
+objectImplementationMembers:  
+  | objectImplementationMember opt_seps objectImplementationMembers 
+      { $1 @  $3 }
+
+  | objectImplementationMember opt_seps 
+      { $1 }
+
+
+/* One member in an object expression or interface implementation */
 objectImplementationMember: 
   | opt_attributes memberOrOverride memberCore opt_ODECLEND
      { $3 None OverrideMemberFlags $1 }
+
   | opt_attributes memberOrOverride autoPropsDefnDecl opt_ODECLEND
      { $3 $1 false OverrideMemberFlags }
-  | opt_attributes memberOrOverride error { [] } 
-  | opt_attributes error memberCore opt_ODECLEND { [] }
+
+  | opt_attributes memberOrOverride error 
+      { [] } 
+
+  | opt_attributes error memberCore opt_ODECLEND 
+      { [] }
+
 
 memberOrOverride: 
   | MEMBER {   } 
   | OVERRIDE {   }
 
 
+/* The core of the right-hand-side of a simple type definition */
 tyconDefnOrSpfnSimpleRepr: 
-  | opt_attributes opt_declVisibility path LQUOTE STRING recover     /* type MyAlias = SomeTypeProvider<@"foo">    is a common error, special-case it */
+
+  /* type MyAlias = SomeTypeProvider<@"foo">    is a common error, special-case it */
+  | opt_attributes opt_declVisibility path LQUOTE STRING recover     
      { errorR(Error(FSComp.SR.parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString(), rhs parseState 4)) 
        SynTypeDefnSimpleRepr.TypeAbbrev (ParserDetail.ThereWereSignificantParseErrorsSoDoNotTypecheckThisNode, SynType.LongIdent($3), unionRanges (rhs parseState 1) $3.Range)  }
+
+  /* A type abbreviation */
   | opt_attributes opt_declVisibility typ
      { if nonNil $1 then errorR(Error(FSComp.SR.parsAttributesIllegalHere(),rhs parseState 1));
        if isSome $2 then errorR(Error(FSComp.SR.parsTypeAbbreviationsCannotHaveVisibilityDeclarations(),rhs parseState 2));
        SynTypeDefnSimpleRepr.TypeAbbrev (ParserDetail.Ok, $3, unionRanges (rhs parseState 1) $3.Range) }
-  | opt_attributes opt_declVisibility unionRepr
+
+  /* A union type definition */
+  | opt_attributes opt_declVisibility unionTypeRepr
      { if nonNil $1 then errorR(Error(FSComp.SR.parsAttributesIllegalHere(),rhs parseState 1));
        let rangesOf3 = $3 |> List.map (function |Choice1Of2(ec)->ec.Range | Choice2Of2(uc)->uc.Range)
        let mWhole = (rhs2 parseState 1 2, rangesOf3) ||> List.fold unionRanges 
@@ -1747,9 +2033,13 @@ tyconDefnOrSpfnSimpleRepr:
            SynTypeDefnSimpleRepr.Union ($2, 
                             $3 |> List.choose (function Choice2Of2 data -> Some(data) | Choice1Of2 _ -> failwith "huh?"),
                             mWhole) }
+
+  /* A record type definition */
   | opt_attributes opt_declVisibility braceFieldDeclList
      { if nonNil $1 then errorR(Error(FSComp.SR.parsAttributesIllegalHere(),rhs parseState 1));
        SynTypeDefnSimpleRepr.Record ($2,$3,lhs parseState) }
+
+  /* An inline-assembly type definition, for FSharp.Core library only */
   | opt_attributes opt_declVisibility LPAREN inlineAssemblyTyconRepr rparen
      { if nonNil $1 then errorR(Error(FSComp.SR.parsAttributesIllegalHere(),rhs parseState 1));
        libraryOnlyError (lhs parseState);
@@ -1757,17 +2047,20 @@ tyconDefnOrSpfnSimpleRepr:
        $4 }
 
 
+/* The core of a record type definition */
 braceFieldDeclList:
   | LBRACE  recdFieldDeclList rbrace
      { $2 }
+
   | LBRACE  recdFieldDeclList recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBrace()); 
        $2 }
+
   | LBRACE  error rbrace
      { [] }
 
 inlineAssemblyTyconRepr:
-  | HASH stringOrKeywordString opt_HASH 
+  | HASH stringOrKeywordString HASH 
      { libraryOnlyError (lhs parseState);
        let lhsm = lhs parseState 
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (ParseAssemblyCodeType $2 (rhs parseState 2),lhsm) }
@@ -1784,8 +2077,10 @@ interfaceMember:
 tyconNameAndTyparDecls:  
   | opt_access path 
       { [], $2.Lid,false,[],$1,grabXmlDoc(parseState,2) }
+
   | opt_access prefixTyparDecls  path
       { $2, $3.Lid,false,[],$1,grabXmlDoc(parseState,2) }
+
   | opt_access path postfixTyparDecls 
       { let tps,tpcs = $3 
         tps, $2.Lid,true,tpcs,$1,grabXmlDoc(parseState,2) }
@@ -1856,25 +2151,34 @@ typeConstraints:
 typeConstraint: 
   | DEFAULT typar COLON typ 
       { libraryOnlyError (lhs parseState); WhereTyparDefaultsToType($2,$4,lhs parseState) }
+
   | typar COLON_GREATER typ 
       { WhereTyparSubtypeOfType($1,$3,lhs parseState) }
+
   | typar COLON STRUCT 
       { WhereTyparIsValueType($1,lhs parseState) }
+
   | typar COLON IDENT STRUCT 
       { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3));  
         WhereTyparIsReferenceType($1,lhs parseState) }
+
   | typar COLON NULL 
       { WhereTyparSupportsNull($1,lhs parseState) }
+
   | typar COLON LPAREN classMemberSpfn rparen 
       { WhereTyparSupportsMember([ $1 ],$4,lhs parseState) }
+
   | LPAREN typarAlts rparen COLON LPAREN classMemberSpfn rparen 
       { WhereTyparSupportsMember(List.rev($2),$6,lhs parseState) }
+
   | typar COLON DELEGATE typeArgsNoHpaDeprecated
       { let _ltm,_gtm,args,_commas,mWhole = $4 in WhereTyparIsDelegate($1, args, unionRanges $1.Range mWhole) }
+
   | typar COLON IDENT typeArgsNoHpaDeprecated
       { match $3 with 
         | "enum" -> let _ltm,_gtm,args,_commas,mWhole = $4 in WhereTyparIsEnum($1, args, unionRanges $1.Range mWhole)
         | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
+
   | typar COLON IDENT 
       { match $3 with 
         | "comparison" -> WhereTyparIsComparable($1,lhs parseState)
@@ -1886,13 +2190,16 @@ typarAlts:
 	| typarAlts OR typar { $3::$1 }
 	| typar { [$1] }	
 
-unionRepr:
+/* The core of a union type definition */
+unionTypeRepr:
   /* Note the next three rules are required to disambiguate this from type x = y */
   /* Attributes can only appear on a single constructor if you've used a | */
   | barAndgrabXmlDoc attrUnionCaseDecls  
      { $2 $1 }
+
   | firstUnionCaseDeclOfMany barAndgrabXmlDoc attrUnionCaseDecls  
      { $1 :: $3 $2 }
+
   | firstUnionCaseDecl 
      { [$1] } 
 
@@ -1903,59 +2210,60 @@ attrUnionCaseDecls:
   | attrUnionCaseDecl barAndgrabXmlDoc attrUnionCaseDecls  { (fun xmlDoc -> $1 xmlDoc  :: $3 $2) } 
   | attrUnionCaseDecl { (fun xmlDoc -> [ $1 xmlDoc ]) }
 
+/* The core of a union case definition */
 attrUnionCaseDecl: 
   | opt_attributes opt_access unionCaseName opt_OBLOCKSEP
       { if isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(),rhs parseState 2));
         let mDecl = rhs parseState 3
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3,UnionCaseFields [],xmlDoc,None,mDecl))) 
       } 
+
   | opt_attributes opt_access unionCaseName OF unionCaseRepr  opt_OBLOCKSEP
       { if isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(),rhs parseState 2));
         let mDecl = rhs2 parseState 3 5
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3,UnionCaseFields $5,xmlDoc,None,mDecl))) 
       } 
+
   | opt_attributes opt_access unionCaseName COLON topType opt_OBLOCKSEP
       { if isSome $2 then errorR(Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations(),rhs parseState 2));
         libraryOnlyWarning(lhs parseState);
         let mDecl = rhs2 parseState 3 5
         (fun xmlDoc -> Choice2Of2 (UnionCase ( $1, $3,UnionCaseFullType $5,xmlDoc,None,mDecl))) 
       }
+
   | opt_attributes opt_access unionCaseName EQUALS constant opt_OBLOCKSEP
       { if isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(),rhs parseState 2));
         let mDecl = rhs2 parseState 3 5
         (fun xmlDoc -> Choice1Of2 (EnumCase ( $1, $3,$5,xmlDoc,mDecl))) 
       } 
 
-/* REVIEW: unify this with operatorName! */
+/* The name of a union case */
 unionCaseName: 
   | nameop  
       { $1 } 
+
   | LPAREN COLON_COLON rparen  
       {  ident(opNameCons,rhs parseState 2) }  
+
   | LPAREN LBRACK RBRACK  rparen  
       {  ident(opNameNil,rhs2 parseState 2 3) }  
 
 firstUnionCaseDeclOfMany: 
   | ident opt_OBLOCKSEP
-      { 
-        Choice2Of2 (UnionCase ( [], $1,UnionCaseFields [],PreXmlDoc.Empty,None,rhs parseState 1)) 
-      } 
+      { Choice2Of2 (UnionCase ( [], $1,UnionCaseFields [],PreXmlDoc.Empty,None,rhs parseState 1)) } 
+
   | ident EQUALS constant opt_OBLOCKSEP
-      { 
-        Choice1Of2 (EnumCase ([],$1,$3,PreXmlDoc.Empty,rhs2 parseState 1 3)) 
-      }
+      { Choice1Of2 (EnumCase ([],$1,$3,PreXmlDoc.Empty,rhs2 parseState 1 3)) }
+
   | firstUnionCaseDecl opt_OBLOCKSEP
       { $1 }
 
 firstUnionCaseDecl: 
   | ident OF unionCaseRepr  
-     { 
-       Choice2Of2 (UnionCase ( [],$1,UnionCaseFields $3,PreXmlDoc.Empty,None,rhs2 parseState 1 3)) 
-    } 
+     { Choice2Of2 (UnionCase ( [],$1,UnionCaseFields $3,PreXmlDoc.Empty,None,rhs2 parseState 1 3)) } 
+
   | ident EQUALS constant opt_OBLOCKSEP
-      { 
-        Choice1Of2 (EnumCase ([],$1,$3,PreXmlDoc.Empty,rhs2 parseState 1 3)) 
-      }
+      { Choice1Of2 (EnumCase ([],$1,$3,PreXmlDoc.Empty,rhs2 parseState 1 3))  }
 
 unionCaseReprElements:
   | unionCaseReprElement STAR unionCaseReprElements { $1::$3 }
@@ -1969,14 +2277,19 @@ unionCaseRepr:
   | braceFieldDeclList
      { errorR(Deprecated(FSComp.SR.parsConsiderUsingSeparateRecordType(),lhs parseState)); 
        $1 }
-  | unionCaseReprElements { $1 }
 
+  | unionCaseReprElements 
+     { $1 }
+
+/* A list of field declarations in a record type */
 recdFieldDeclList: 
   | recdFieldDecl seps recdFieldDeclList 
      { $1 :: $3 } 
+
   | recdFieldDecl opt_seps           
      { [$1] }
 
+/* A field declaration in a record type */
 recdFieldDecl: 
   | opt_attributes  fieldDecl
      { let fld = $2 $1 false 
@@ -1984,6 +2297,7 @@ recdFieldDecl:
        if isSome vis then errorR(Error(FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations(),rhs parseState 2));
        Field(a,b,c,d,e,f,None,g)  }
 
+/* Part of a field or val declaration in a record type or object type */
 fieldDecl: 
   | opt_mutable opt_access ident COLON  typ 
      { let mRhs = rhs2 parseState 3 5 
@@ -1991,24 +2305,25 @@ fieldDecl:
        (fun attrs stat -> Field(attrs, stat,Some $3,$5,$1,xmlDoc,$2,mRhs)) }
 
 
+/* An exception definition */
 exconDefn: 
   | exconCore opt_classDefn 
      { ExceptionDefn($1,$2, ($1.Range,$2) ||> unionRangeWithListBy (fun cd -> cd.Range) ) }
 
-exconSpfn: 
-  | exconCore opt_classSpfn 
-     { ExceptionSig($1,$2,lhs parseState) }
-  
+/* Part of an exception definition */
 exceptionAndGrabDoc:
   | EXCEPTION { grabXmlDoc(parseState,1) }
   
+/* Part of an exception definition */
 exconCore: 
   | exceptionAndGrabDoc opt_attributes opt_access exconIntro exconRepr 
      { ExceptionDefnRepr($2,$4,$5,$1,$3,(match $5 with None -> rhs2 parseState 1 4 | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4))) }
   
+/* Part of an exception definition */
 exconIntro: 
   | ident 
       { UnionCase ( [], $1,UnionCaseFields [],PreXmlDoc.Empty,None,lhs parseState) }
+
   | ident OF unionCaseRepr 
       { UnionCase ( [], $1,UnionCaseFields $3,PreXmlDoc.Empty,None,lhs parseState) }
 
@@ -2017,8 +2332,13 @@ exconRepr:
   | EQUALS path { Some ($2.Lid) }
 
 openDecl:  
-  |  OPEN path { $2 }
+  | OPEN path { $2 }
 
+
+/*-------------------------------------------------------------------------*/
+/* F# Definitions and Expressions  */
+
+/* A 'let ...' or 'do ...' statement in the non-#light syntax */
 defnBindings: 
   | LET opt_rec localBindings 
       { let mLetKwd = rhs parseState 1 
@@ -2041,10 +2361,13 @@ defnBindings:
                       reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings()); 
                 [],binds), 
             bindingSetRange) }
+
   | cPrototype
       { let bindRange = lhs parseState
         BindingSetPreAttrs(bindRange, false,false,$1,bindRange)  }
 
+
+/* A 'do ...' statement in the non-#light syntax */
 doBinding:
   | DO typedSeqExprBlock 
       { let mDoKwd = rhs parseState 1 
@@ -2054,6 +2377,7 @@ doBinding:
         BindingSetPreAttrs(mDoKwd,false,false,(fun attrs vis -> attrs,[mkSynDoBinding (vis,true,$2,mWhole)]), mWhole) }
 
 
+/* A 'let ....' binding in the #light syntax */
 hardwhiteLetBindings: 
   | OLET opt_rec localBindings hardwhiteDefnBindingsTerminator
       { let mLetKwd = rhs parseState 1 
@@ -2078,6 +2402,8 @@ hardwhiteLetBindings:
             [],binds),
           bindingSetRange), (unionRanges mLetKwd bindingSetRange) }
 
+
+/* A 'do ...' statement */
 hardwhiteDoBinding: 
   | ODO typedSeqExprBlock hardwhiteDefnBindingsTerminator          
       { let mLetKwd = rhs parseState 1 
@@ -2087,6 +2413,8 @@ hardwhiteDoBinding:
         // associated with the module, 'main' function or assembly depending on their target 
         BindingSetPreAttrs(mLetKwd,false,false,(fun attrs vis -> attrs,[mkSynDoBinding (vis,true,$2,bindingSetRange)]),bindingSetRange), $2 }
 
+
+/* The bindings in a class type definition */
 classDefnBindings: 
   | defnBindings { $1 }
   | doBinding { $1 }
@@ -2094,6 +2422,7 @@ classDefnBindings:
   | hardwhiteDoBinding  { fst $1 }
 
 
+/* The terminator for a 'let ....' binding in the #light syntax */
 hardwhiteDefnBindingsTerminator:
   |  ODECLEND
      { (fun _ m -> ()) }
@@ -2104,6 +2433,7 @@ hardwhiteDefnBindingsTerminator:
                                            | "use" -> FSComp.SR.parsUnmatchedUse() 
                                            | _ (*"let" *) -> FSComp.SR.parsUnmatchedLet()))  }
 
+/* An 'extern' DllImport function definition in C-style syntax */
 cPrototype: 
   | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN cArgs rparen 
       { let rty,vis,nm,args  = $2,$3,$4,$7 
@@ -2125,26 +2455,35 @@ cPrototype:
                               (vis, false, false, mBindLhs, NoSequencePointAtInvisibleBinding, Some rty ,rhsExpr, mRhs, [], attrs, None)
             [], [binding]) }
 
+/* A list of arguments in an 'extern' DllImport function definition */
 cArgs: 
   | cMoreArgs 
      { List.rev $1 }
+
   | cArg 
      { [$1] }
   |       
      { [] }
   
+
+/* Part of the list of arguments in an 'extern' DllImport function definition */
 cMoreArgs: 
   | cMoreArgs COMMA cArg 
      { $3 :: $1 }
+
   | cArg COMMA cArg 
      { [$3; $1] }
 
+
+/* A single argument in an 'extern' DllImport function definition */
 cArg: 
   | opt_attributes cType       
      { let m = lhs parseState in SynPat.Typed(SynPat.Wild m,$2,m) |> addAttribs $1 }
+
   | opt_attributes cType ident 
      { let m = lhs parseState in SynPat.Typed(SynPat.Named (SynPat.Wild m,$3,false,None,m),$2,m) |> addAttribs $1 }
 
+/* An type in an 'extern' DllImport function definition */
 cType: 
   | path      
      { let m = $1.Range
@@ -2166,9 +2505,12 @@ cType:
      { let m = lhs parseState 
        SynType.App(SynType.LongIdent(LongIdentWithDots([ident("nativeint",m)],[])),None,[],[],None,true,m) } 
 
+
+/* A return type in an 'extern' DllImport function definition */
 cRetType: 
   | opt_attributes cType 
      { SynReturnInfo(($2,SynArgInfo($1,false,None)),rhs parseState 2) }
+
   | opt_attributes VOID  
      { let m = rhs parseState 2 
        SynReturnInfo((SynType.App(SynType.LongIdent(LongIdentWithDots([ident("unit",m)],[])),None,[],[],None,false,m),SynArgInfo($1,false,None)),m) } 
@@ -2188,24 +2530,31 @@ localBindings:
         | None -> 
            moreLocalBindingsLastRange, (fun _attrs _vis _letm -> moreBindings) }
 
+
 moreLocalBindings: 
   | AND attr_localBinding moreLocalBindings 
       { let mLetKwd = rhs parseState 1
         (match $2 with 
          | Some (localBindingRange,attrLocalBindingBuilder) -> (attrLocalBindingBuilder [] None mLetKwd false,localBindingRange) :: $3 
          | None -> $3) }
+
   | %prec prec_no_more_attr_bindings 
       { [] }
 
+
+/* A single binding, possibly with custom attributes */
 attr_localBinding: 
   | opt_attributes localBinding 
       { let attrs2 = $1
         let localBindingRange,localBindingBuilder = $2
         let attrLocalBindingBuilder = (fun attrs vis mLetKwd _ -> localBindingBuilder (attrs@attrs2) vis mLetKwd)
         Some(localBindingRange,attrLocalBindingBuilder) }
+
   | error 
       { None }
 
+
+/* A single binding in an expression or definition */
 localBinding: 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  typedExprWithStaticOptimizationsBlock 
       { let (expr:SynExpr),opts = $6
@@ -2220,6 +2569,7 @@ localBinding:
             let spBind = if IsControlFlowExpression expr then NoSequencePointAtLetBinding else SequencePointAtBinding(mWhole)
             bindingBuilder (vis,$1,$2,mBindLhs,spBind,optReturnType,expr,mRhs,opts,attrs,None))
         localBindingRange,localBindingBuilder }
+
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  error
       { let mWhole = rhs2 parseState 3 5 
         let mRhs = rhs parseState 5
@@ -2232,6 +2582,7 @@ localBinding:
             let zeroWidthAtEnd = eqm.EndRange
             bindingBuilder (vis,$1,$2,mBindLhs,spBind,optReturnType,arbExpr("localBinding1",zeroWidthAtEnd),mRhs,[],attrs,None))  
         mWhole,localBindingBuilder }
+
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints recover
       { if not $5 then reportParseErrorAt (rhs parseState 5) (FSComp.SR.parsUnexpectedEndOfFileDefinition())
         let optReturnType = $4 
@@ -2244,14 +2595,17 @@ localBinding:
             bindingBuilder (vis,$1,$2,mBindLhs,spBind,optReturnType,arbExpr("localBinding2",mRhs),mRhs,[],attrs,None))  
         mWhole,localBindingBuilder }
 
-/* REVIEW: this should probably be an expression form rather than tied to this particular part of the grammar */
+
+/* A single expression with an optional type annotation, and an optional static optimization block */
 typedExprWithStaticOptimizationsBlock: 
   | OBLOCKBEGIN typedExprWithStaticOptimizations oblockend 
       { $2 }
+
   | OBLOCKBEGIN typedExprWithStaticOptimizations recover 
       { if not $3 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFile());
         let a,b = $2
         (exprFromParseError a, b) }
+
   | typedExprWithStaticOptimizations 
       { $1 }
 
@@ -2582,21 +2936,26 @@ recover:
 declExpr:
   | defnBindings IN typedSeqExpr  %prec expr_let 
      { mkLocalBindings (unionRanges (rhs2 parseState 1 2) $3.Range,$1,$3) }
+
   | defnBindings IN error        %prec expr_let
      { mkLocalBindings (rhs2 parseState 1 2,$1,arbExpr("declExpr1",(rhs parseState 3))) }
 /*
     FSComp.SR.parsNoMatchingInForLet() -- leave this in for now - it's an unused error string
 */
+
   | hardwhiteLetBindings typedSeqExprBlock  %prec expr_let 
      { let hwlb,m = $1
        mkLocalBindings (unionRanges m $2.Range,hwlb,$2) }
+
   | hardwhiteLetBindings error        %prec expr_let
      { let hwlb,m = $1
        reportParseErrorAt (match hwlb with (BindingSetPreAttrs(m,_,_,_,_))  -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
        mkLocalBindings (m,hwlb,arbExpr("declExpr2",(rhs parseState 2))) }
+
   | hardwhiteLetBindings OBLOCKSEP typedSeqExprBlock  %prec expr_let 
      { let hwlb,m = $1
        mkLocalBindings (unionRanges m $3.Range ,hwlb,$3) }
+
   | hardwhiteLetBindings OBLOCKSEP error        %prec expr_let
      { let hwlb,m = $1
        //reportParseErrorAt (match hwlb with (BindingSetPreAttrs(m,_,_,_,_))  -> m) (FSComp.SR.parsErrorInReturnForLetIncorrectIndentation())
@@ -2608,7 +2967,9 @@ declExpr:
   
   | anonMatchingExpr %prec expr_function
       { $1 }
-  | anonLambdaExpr  %prec expr_fun { $1 }
+
+  | anonLambdaExpr  %prec expr_fun 
+      { $1 }
 
   | MATCH typedSeqExpr     withClauses              %prec expr_match 
       { let mMatch = (rhs parseState 1)
@@ -2878,7 +3239,7 @@ declExpr:
   | ODO_BANG typedSeqExprBlock hardwhiteDefnBindingsTerminator %prec expr_let 
      { SynExpr.DoBang($2, unionRanges (rhs parseState 1) $2.Range) }
 
-  | FOR forLoopBinder opt_OBLOCKSEP monadicSingleLineQualifiersThenArrowThenExprR %prec expr_let 
+  | FOR forLoopBinder opt_OBLOCKSEP arrowThenExprR %prec expr_let 
      { let spBind = SequencePointAtForLoop(rhs2 parseState 1 2)
        let (a,b,_) = $2 in SynExpr.ForEach(spBind,SeqExprOnly true,true,a,b,$4,unionRanges (rhs parseState 1) $4.Range) }
 
@@ -3275,10 +3636,13 @@ atomicExprAfterType:
 beginEndExpr:
   | BEGIN typedSeqExpr END 
       { SynExpr.Paren($2, rhs parseState 1, Some(rhs parseState 3), rhs2 parseState 1 3) } 
+
   | BEGIN typedSeqExpr recover 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBegin()); exprFromParseError $2 } 
+
   | BEGIN error END 
       { (* silent recovery *) arbExpr("beginEndExpr",(lhs parseState))  } 
+
   | BEGIN END 
       { mkSynUnit (lhs parseState) } 
 
@@ -3286,12 +3650,15 @@ quoteExpr:
   | LQUOTE typedSeqExpr RQUOTE 
       { if $1 <> $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsMismatchedQuote(fst $1))
         (SynExpr.Quote(mkSynIdGet (lhs parseState) (CompileOpName (fst $1)), snd $1, $2, false, lhs parseState)) } 
+
   | LQUOTE typedSeqExpr recover 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatched(fst $1))  
         let mExpr = rhs2 parseState 1 2
         exprFromParseError (SynExpr.Quote(mkSynIdGet (lhs parseState) (CompileOpName (fst $1)),snd $1, $2, false, mExpr))  } 
+
   | LQUOTE error RQUOTE 
       { (* silent recovery *) SynExpr.Quote(mkSynIdGet (lhs parseState) (CompileOpName (fst $1)),snd $1, arbExpr("quoteExpr",(rhs parseState 2)), false, lhs parseState)  }  
+
   | LQUOTE recover 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatched(fst $1))
         exprFromParseError (SynExpr.Quote(mkSynIdGet (lhs parseState) (CompileOpName (fst $1)),snd $1, arbExpr("quoteExpr2",(rhs parseState 1).EndRange), false, rhs parseState 1))  }  
@@ -3299,11 +3666,14 @@ quoteExpr:
 arrayExpr:
   | LBRACK_BAR listExprElements BAR_RBRACK 
       {  $2 (lhs parseState) true } 
+
   | LBRACK_BAR listExprElements recover 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar()); 
         exprFromParseError ($2 (rhs2 parseState 1 2) true) }
+
   | LBRACK_BAR error BAR_RBRACK 
       {  (* silent recovery *) SynExpr.ArrayOrList(true,[ ], lhs parseState) }  
+
   | LBRACK_BAR recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar());  
         (* silent recovery *) 
@@ -3312,32 +3682,40 @@ arrayExpr:
 parenExpr:
   | LPAREN rparen 
       { SynExpr.Const(SynConst.Unit,(rhs2 parseState 1 2)) } 
+
   | LPAREN parenExprBody rparen
       { let m = rhs2 parseState 1 3
         SynExpr.Paren($2 m, rhs parseState 1, Some(rhs parseState 3), m) }
+
   | LPAREN parenExprBody ends_other_than_rparen_coming_soon_or_recover
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
         let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 3).Start
         SynExpr.Paren(exprFromParseError ($2 lhsm), rhs parseState 1, None, lhsm) }
+
   | LPAREN error rparen 
       { // silent recovery
         SynExpr.Paren(arbExpr("parenExpr1",(rhs parseState 1).EndRange),(rhs parseState 1),Some(rhs parseState 3),(rhs2 parseState 1 3)) } 
+
   | LPAREN TYPE_COMING_SOON
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
         let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 2).Start
         arbExpr("parenExpr2tcs", lhsm) }
+
   | LPAREN MODULE_COMING_SOON
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
         let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 2).Start
         arbExpr("parenExpr2mcs", lhsm) }
+
   | LPAREN RBRACE_COMING_SOON
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
         let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 2).Start
         arbExpr("parenExpr2rbcs", lhsm) }
+
   | LPAREN OBLOCKEND_COMING_SOON 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen())
         let lhsm = unionRangeWithPos (rhs parseState 1) (rhs parseState 2).Start
         arbExpr("parenExpr2obecs", lhsm) }
+
   | LPAREN recover %prec prec_atomexpr_lparen_error 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()); 
         arbExpr("parenExpr2",(lhs parseState))  }  
@@ -3360,30 +3738,36 @@ parenExprBody:
 staticallyKnownHeadTypars:
   | staticallyKnownHeadTypar 
       { [$1] }
+
   | LPAREN staticallyKnownHeadTyparAlts rparen 
       { List.rev $2 }
 
 staticallyKnownHeadTyparAlts:
-	| staticallyKnownHeadTyparAlts OR staticallyKnownHeadTypar
+  | staticallyKnownHeadTyparAlts OR staticallyKnownHeadTypar
       {$3 :: $1}
-    | staticallyKnownHeadTypar
+
+  | staticallyKnownHeadTypar
       { [$1] }
 
 braceExpr:
   | LBRACE braceExprBody rbrace 
      {  let m,r = $2 in r (rhs2 parseState 1 3) }
+
   | LBRACE braceExprBody recover 
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBrace()) ; 
        let m,r = $2 
        // Note, we can't use 'exprFromParseError' because the extra syntax node interferes with some syntax-directed transformations for computation expressions
        r (unionRanges (rhs parseState 1) m) }
+
   | LBRACE error rbrace 
      { // silent recovery 
        arbExpr("braceExpr",rhs2 parseState 1 3)  }  
+
   | LBRACE recover
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBrace()) ; 
        // Note, we can't use 'exprFromParseError' because the extra syntax node interferes with some syntax-directed transformations for computation expressions
        SynExpr.Record(None,None,[],rhs parseState 1) }
+
   | LBRACE rbrace 
      {  let m = rhs2 parseState 1 2 
         SynExpr.Record(None,None,[],m) }
@@ -3391,8 +3775,10 @@ braceExpr:
 braceExprBody:
   | recdExpr 
      {  (lhs parseState), (fun m -> let a,b,c = $1 in SynExpr.Record(a,b,c,m)) }
+
   | objExpr 
      { $1 }
+
   | monadicExprInitial 
      { let m,r = $1 in (m, r false) }
 
@@ -3405,6 +3791,7 @@ listExprElements:
 monadicExprInitial: 
   | seqExpr
      { $1.Range, (fun isArrayOrList lhsm -> SynExpr.CompExpr(isArrayOrList,ref(isArrayOrList),$1,lhsm)) }
+
   | rangeSequenceExpr 
      { $1 }
   
@@ -3432,10 +3819,7 @@ rangeSequenceExpr:
                                                 | _ -> failwith "impossible") }
 
 
-/* Allow a naked yield (no "yield" or "return" or "->") immediately after a "->" */
-/* Allow a naked yield (no "yield!" or "return!" or "->>") immediately after a "->>" */
-/* In both cases multiple 'for' and 'when' bindings can precede */
-monadicSingleLineQualifiersThenArrowThenExprR:
+arrowThenExprR:
   | RARROW typedSeqExprBlockR 
      { SynExpr.YieldOrReturn((true,false), $2, unionRanges (rhs parseState 1) $2.Range) }
 
@@ -3443,11 +3827,14 @@ monadicSingleLineQualifiersThenArrowThenExprR:
 forLoopBinder: 
   | parenPattern IN declExpr 
      { ($1, $3, true) }
+
   | parenPattern IN rangeSequenceExpr 
      { let m,r = $3 in ($1, r false m, true) }
+
   | parenPattern IN ends_coming_soon_or_recover
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedExpressionAfterToken())
        ($1, arbExpr("forLoopBinder",(rhs parseState 2)), false) }
+
   | parenPattern ends_coming_soon_or_recover
      { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInOrEqualExpected())
        ($1, arbExpr("forLoopBinder2",(rhs parseState 1).EndRange), false) }
@@ -3457,28 +3844,36 @@ forLoopRange:
       { idOfPat (rhs parseState 1) $1,$3,$4,$5 }
 
 inlineAssemblyExpr:
-  |  HASH stringOrKeywordString opt_inlineAssemblyTypeArg opt_curriedArgExprs  opt_inlineAssemblyReturnTypes opt_HASH 
+  |  HASH stringOrKeywordString opt_inlineAssemblyTypeArg opt_curriedArgExprs  opt_inlineAssemblyReturnTypes HASH 
       { libraryOnlyWarning (lhs parseState);
         let s,sm = $2,rhs parseState 2
         (fun m -> SynExpr.LibraryOnlyILAssembly (ParseAssemblyCodeInstructions s sm,$3,List.rev $4,$5,m)) }
   
 opt_curriedArgExprs: 
-  | opt_curriedArgExprs argExpr  %prec expr_args { $2 :: $1 } 
-  |  { [] }
+  | opt_curriedArgExprs argExpr  %prec expr_args 
+      { $2 :: $1 } 
+
+  |  
+      { [] }
 
 opt_atomicExprAfterType: 
-  |  { None }
-  |  atomicExprAfterType { Some($1) }
+  |  
+      { None }
+
+  |  atomicExprAfterType 
+      { Some($1) }
 
 opt_inlineAssemblyTypeArg:
   |  { [] }
-  | type_keyword LPAREN typ rparen  {  [$3] }
+  | typeKeyword LPAREN typ rparen  {  [$3] }
 
 opt_inlineAssemblyReturnTypes:
   |  
      { [] }
+
   | COLON typ 
      { [$2] }
+
   | COLON LPAREN rparen  
      {  [] }
 
@@ -3528,9 +3923,8 @@ recdExpr:
       let l = List.rev $4
       let l = rebindRanges (f, Some $3) l $5
       (None, None, l) }
-/*
-    handles case like {x with}
-*/
+
+/* handles case like {x with}  */
   | appExpr WITH recdBinding recdExprBindings opt_seps_recd
      {  let l = List.rev $4
         let l = rebindRanges $3 l $5
@@ -3540,8 +3934,7 @@ recdExpr:
      { (None,Some ($1, (rhs parseState 2, None)), []) }
 
   | appExpr OWITH recdBinding recdExprBindings opt_seps_recd OEND
-     { 
-        let l = List.rev $4
+     {  let l = List.rev $4
         let l = rebindRanges $3 l $5
         (None,Some ($1, (rhs parseState 2, None)), l) }
 
@@ -3573,26 +3966,22 @@ recdExprBindings:
 recdBinding:
     | pathOrUnderscore EQUALS declExprBlock
       { ($1, Some $3) }
+
     | pathOrUnderscore EQUALS
-      {
-        reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-        ($1, None)
-      }
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
+        ($1, None) }
+
     | pathOrUnderscore EQUALS ends_coming_soon_or_recover
-      {
-        reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-        ($1, None)
-      }
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
+        ($1, None) }
+
     | pathOrUnderscore
-      {
-        reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-        ($1, None)
-      }
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
+        ($1, None) }
+
     | pathOrUnderscore ends_coming_soon_or_recover
-      {
-        reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
-        ($1, None)
-      }
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsFieldBinding())
+        ($1, None) }
 
 /* There is a minor conflict between
        seq { new ty() }  // sequence expression with one very odd 'action' expression
@@ -3605,10 +3994,12 @@ objExpr:
      { let mNewExpr = rhs parseState 1
        let fullRange = match $4 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 4)
        fullRange, (fun m -> let (a,b) = $1 in SynExpr.ObjExpr(a,b,$2,$4, mNewExpr, m)) }
+
   | objExprBaseCall opt_OBLOCKSEP objExprInterfaces
      { let mNewExpr = rhs parseState 1 
        let fullRange = match $3 with [] -> (rhs parseState 1) | _ -> (rhs2 parseState 1 3)
        fullRange, (fun m -> let (a,b) = $1 in SynExpr.ObjExpr(a,b,[],$3, mNewExpr, m)) }
+
   | NEW appTypeNonAtomicDeprecated
      { let mNewExpr = rhs parseState 1 
        (rhs2 parseState 1 2), (fun m -> let (a,b) = $2,None in SynExpr.ObjExpr(a,b,[],[], mNewExpr, m)) }
@@ -3617,8 +4008,10 @@ objExpr:
 objExprBaseCall:
   | NEW appTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType baseSpec
      { ($2, Some($4,Some($5))) }
+
   | NEW appTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType 
      { ($2, Some($4,None)) }
+
   | NEW appTypeNonAtomicDeprecated
      { $2,None }
  
@@ -3633,10 +4026,12 @@ objExprBindings:
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
         localBindingsBuilder [] None mWithKwd }
+
   | OWITH localBindings OEND
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
         localBindingsBuilder [] None mWithKwd }
+
   | WITH objectImplementationBlock opt_declEnd
       { $2 |> 
         (List.choose (function 
@@ -3650,8 +4045,10 @@ objExprInterfaces:
 opt_objExprInterfaces:
   | %prec prec_interfaces_prefix 
      { [] }
+
   | objExprInterface opt_objExprInterfaces 
      { $1 :: $2 }
+
   | error opt_objExprInterfaces 
      { (* silent recovery *) $2 }
 
@@ -3666,34 +4063,41 @@ forLoopDirection:
 anonLambdaExpr: 
   | FUN atomicPatterns RARROW typedSeqExprBlock 
      { let mAll = unionRanges (rhs parseState 1) $4.Range
-       mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false mAll $2 $4 }
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 $4 }
+
   | FUN atomicPatterns RARROW error
      { let mAll = rhs2 parseState 1 3
-       mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false mAll $2 (arbExpr("anonLambdaExpr1",(rhs parseState 4))) }
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 (arbExpr("anonLambdaExpr1",(rhs parseState 4))) }
+
   | OFUN atomicPatterns RARROW typedSeqExprBlockR OEND
      { let mAll = unionRanges (rhs parseState 1) $4.Range
-       mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false mAll $2 $4 }
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 $4 }
+
   | OFUN atomicPatterns RARROW typedSeqExprBlockR recover
      { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody());
        let mAll = unionRanges (rhs parseState 1) $4.Range
-       exprFromParseError (mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false mAll $2 $4) }
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false mAll $2 $4) }
+
   | OFUN atomicPatterns RARROW ORIGHT_BLOCK_END OEND
      { reportParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsMissingFunctionBody())
-       mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false (rhs2 parseState 1 3) $2 (arbExpr("anonLambdaExpr2",(rhs parseState 4))) }
+       mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 (arbExpr("anonLambdaExpr2",(rhs parseState 4))) }
 
   | OFUN atomicPatterns RARROW recover
      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFunBody())
-       exprFromParseError (mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false (rhs2 parseState 1 3) $2 (arbExpr("anonLambdaExpr3",(rhs parseState 4)))) }
+       exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 3) $2 (arbExpr("anonLambdaExpr3",(rhs parseState 4)))) }
+
   | OFUN atomicPatterns error OEND
-     { exprFromParseError (mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false (rhs2 parseState 1 2) $2 (arbExpr("anonLambdaExpr4",(rhs parseState 3)))) }
+     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs2 parseState 1 2) $2 (arbExpr("anonLambdaExpr4",(rhs parseState 3)))) }
+
   | OFUN error OEND
-     { exprFromParseError (mkSynFunMatchLambdas (parseState.GetSynArgNameGenerator()) false (rhs parseState 1) [] (arbExpr("anonLambdaExpr5",(rhs parseState 2)))) }
+     { exprFromParseError (mkSynFunMatchLambdas parseState.SynArgNameGenerator false (rhs parseState 1) [] (arbExpr("anonLambdaExpr5",(rhs parseState 2)))) }
 
 anonMatchingExpr: 
   | FUNCTION withPatternClauses %prec expr_function
       { let clauses,mLast = $2
         let mAll = unionRanges (rhs parseState 1) mLast
         SynExpr.MatchLambda(false,(rhs parseState 1),clauses,NoSequencePointAtInvisibleBinding,mAll) }
+
   | OFUNCTION withPatternClauses OEND %prec expr_function
       { let clauses,mLast = $2
         let mAll = unionRanges (rhs parseState 1) mLast
@@ -3703,13 +4107,16 @@ anonMatchingExpr:
 /* TYPE ALGEBRA                                                             */
 
 typeWithTypeConstraints:
-  | typ %prec prec_wheretyp_prefix { $1 }
+  | typ %prec prec_wheretyp_prefix 
+     { $1 }
+
   | typ WHEN typeConstraints 
      { SynType.WithGlobalConstraints($1, List.rev $3,lhs parseState) }
 
 topTypeWithTypeConstraints: 
   | topType 
      { $1 }
+
   | topType WHEN typeConstraints 
      { let ty,arity = $1 
        // nb. it doesn't matter where the constraints go in the structure of the type. 
@@ -3718,6 +4125,7 @@ topTypeWithTypeConstraints:
 opt_topReturnTypeWithTypeConstraints: 
   |             
      { None } 
+
   | COLON topTypeWithTypeConstraints 
      { let ty,arity = $2 
        let arity = (match arity with SynValInfo([],rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
@@ -3728,110 +4136,142 @@ topType:
      { let dty,dmdata= $1 
        let rty,(SynValInfo(dmdatas,rmdata)) = $3 
        SynType.Fun(dty,rty,lhs parseState), (SynValInfo(dmdata::dmdatas, rmdata)) }
+
   | topTupleType 
      { let ty,rmdata = $1 in ty, (SynValInfo([],(match rmdata with [md] -> md | _ -> SynInfo.unnamedRetVal))) }
 
 topTupleType:
   | topAppType STAR topTupleTypeElements 
      { let ty,mdata = $1 in let tys,mdatas = List.unzip $3 in (SynType.Tuple(List.map (fun ty -> (false,ty)) (ty ::tys), lhs parseState)),(mdata :: mdatas) }
+
   | topAppType                 
      { let ty,mdata = $1 in ty,[mdata] }
 
 topTupleTypeElements:
-  | topAppType STAR topTupleTypeElements       { $1 :: $3 }
-  | topAppType %prec prec_toptuptyptail_prefix { [$1] }
+  | topAppType STAR topTupleTypeElements       
+     { $1 :: $3 }
 
-/* REVIEW: why can't we use opt_attributes here? */
+  | topAppType %prec prec_toptuptyptail_prefix 
+     { [$1] }
+
 topAppType:
   | attributes appType COLON appType 
      { match $2 with 
        | SynType.LongIdent(LongIdentWithDots([id],_)) -> $4,SynArgInfo($1,false,Some id)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
+
   | attributes QMARK ident COLON appType 
      { $5,SynArgInfo($1,true,Some $3) }
+
   | attributes appType 
      { ($2,SynArgInfo($1,false,None)) }
+
   | appType COLON appType 
      { match $1 with 
        | SynType.LongIdent(LongIdentWithDots([id],_)) -> $3,SynArgInfo([],false,Some id)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
+
   | QMARK ident COLON appType 
      { $4,SynArgInfo([],true,Some $2) }
+
   | appType 
      { $1,SynArgInfo([],false,None) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 typ:
-  | tupleType RARROW typ  { SynType.Fun($1,$3,lhs parseState) }
-  | tupleType %prec prec_typ_prefix { $1 }
+  | tupleType RARROW typ  
+     { SynType.Fun($1,$3,lhs parseState) }
+
+  | tupleType %prec prec_typ_prefix 
+     { $1 }
 
 
 tupleType:
-  | appType STAR tupleOrQuotTypeElements { SynType.Tuple((false,$1) :: $3,lhs parseState) }
+  | appType STAR tupleOrQuotTypeElements 
+    { SynType.Tuple((false,$1) :: $3,lhs parseState) }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       SynType.Tuple((true, SynType.StaticConstant (SynConst.Int32 1, lhs parseState)):: $2, lhs parseState) }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
-      { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-        SynType.Tuple((true,$1) :: $3, lhs parseState) }
-  | appType %prec prec_tuptyp_prefix { $1 }
+    { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
+      SynType.Tuple((true,$1) :: $3, lhs parseState) }
+
+  | appType %prec prec_tuptyp_prefix 
+    { $1 }
 
 tupleOrQuotTypeElements:
-  | appType STAR tupleOrQuotTypeElements              { (false,$1) :: $3 }
+  | appType STAR tupleOrQuotTypeElements              
+    { (false,$1) :: $3 }
+
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements 
-      { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-        (true,$1) :: $3 }
-  | appType %prec prec_tuptyptail_prefix { [(false,$1)] }
+    { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
+      (true,$1) :: $3 }
+
+  | appType %prec prec_tuptyptail_prefix 
+    { [(false,$1)] }
 
 tupleTypeElements:
-  | appType STAR tupleTypeElements              { $1 :: $3 }
-  | appType %prec prec_tuptyptail_prefix { [$1] }
+  | appType STAR tupleTypeElements              
+    { $1 :: $3 }
+
+  | appType %prec prec_tuptyptail_prefix 
+    { [$1] }
 
 appTypeCon:
   | path %prec prec_atomtyp_path 
-      { SynType.LongIdent($1) }
+    { SynType.LongIdent($1) }
 
   | typar 
-     { SynType.Var($1, lhs parseState) }
+    { SynType.Var($1, lhs parseState) }
 
 appTypeConPower:
   | appTypeCon INFIX_AT_HAT_OP INT32
-     { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
-       if $2 = "^-" then SynType.MeasurePower($1, -(fst $3), lhs parseState)
-       else SynType.MeasurePower($1, fst $3, lhs parseState)  }
+    { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
+      if $2 = "^-" then SynType.MeasurePower($1, -(fst $3), lhs parseState)
+      else SynType.MeasurePower($1, fst $3, lhs parseState)  }
+
   | appTypeCon 
     { $1 }
 
 appType:
   | appType arrayTypeSuffix 
       {  SynType.Array($2,$1,lhs parseState) }
+
   | appType HIGH_PRECEDENCE_BRACK_APP arrayTypeSuffix   /* only HPA for "name[]" allowed here */
       {  SynType.Array($3,$1,lhs parseState) }
+
   | appType appTypeConPower  
       { SynType.App($2, None, [$1], [], None, true, unionRanges (rhs parseState 1) $2.Range) }  /* note: use "rhs parseState 1" to deal with parens in "(int) list" */
+
   | LPAREN appTypePrefixArguments rparen  appTypeConPower
       { let args, commas = $2
         mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range); 
         SynType.App($4, None, args, commas, None, true, unionRanges (rhs parseState 1) $4.Range) }
+
   | powerType 
       { $1 }
+
   | typar      COLON_GREATER typ                     
       {  let tp,typ = $1,$3 
          let m = lhs parseState 
          SynType.WithGlobalConstraints(SynType.Var (tp, rhs parseState 1), [WhereTyparSubtypeOfType(tp,typ,m)],m)  }
+
   | UNDERSCORE COLON_GREATER typ %prec COLON_GREATER 
       {  SynType.HashConstraint($3, lhs parseState) }
 
 arrayTypeSuffix:
   | LBRACK RBRACK 
       { 1 }
+
   | LBRACK COMMA RBRACK 
       { 2 }
+
   | LBRACK COMMA COMMA RBRACK 
       { 3 }
+
   | LBRACK COMMA COMMA COMMA RBRACK 
       { 4 }
 
@@ -3843,20 +4283,24 @@ typeArgListElements:
   | typeArgListElements COMMA typeArgActual
       { let typeArgs, commas = $1
         $3 :: typeArgs, (rhs parseState 2)::commas } 
+
   | typeArgListElements COMMA dummyTypeArg %prec prec_args_error  /* NOTE: no "recover" */
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsMissingTypeArgs())
        let typeArgs, commas = $1
        $3 :: typeArgs, (rhs parseState 2)::commas } 
+
   |   
       { [], [] }
 
 powerType:
   | atomType
     { $1 }
+
   | atomType INFIX_AT_HAT_OP INT32
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
        if $2 = "^-" then SynType.MeasurePower($1, - (fst $3), lhs parseState)
        else SynType.MeasurePower($1, fst $3, lhs parseState) }
+
   | atomType INFIX_AT_HAT_OP MINUS INT32
      { if $2 <> "^" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
        SynType.MeasurePower($1, - (fst $4), lhs parseState) }
@@ -3866,24 +4310,30 @@ appTypeNonAtomicDeprecated:
   | appType arrayTypeSuffix 
       {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
          SynType.Array($2,$1,lhs parseState) }
+
   | appType HIGH_PRECEDENCE_BRACK_APP arrayTypeSuffix   /* only HPA for "name[]" allowed here */
       {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
          SynType.Array($3,$1,lhs parseState) }
+
   | appType appTypeConPower  
       { let mWhole = unionRanges (rhs parseState 1) $2.Range  // note: use "rhs parseState 1" to deal with parens in "(int) list"
         deprecatedWithError (FSComp.SR.parsNonAtomicType()) mWhole;
         SynType.App($2, None, [$1], [], None, true, mWhole) }
+
   | LPAREN appTypePrefixArguments rparen  appTypeConPower
       { let args, commas = $2
         mlCompatWarning (FSComp.SR.parsMultiArgumentGenericTypeFormDeprecated()) (unionRanges (rhs parseState 1) $4.Range); 
         SynType.App($4, None, args, commas, None, true, unionRanges (rhs parseState 1) $4.Range) }
+
   | powerTypeNonAtomicDeprecated 
       { $1 }
+
   | typar      COLON_GREATER typ                     
       {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
          let tp,typ = $1,$3 
          let m = lhs parseState 
          SynType.WithGlobalConstraints(SynType.Var (tp, rhs parseState 1), [WhereTyparSubtypeOfType(tp,typ,m)],m)  }
+
   | UNDERSCORE COLON_GREATER typ %prec COLON_GREATER 
       {  deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
          SynType.HashConstraint($3, lhs parseState) }
@@ -3892,11 +4342,13 @@ appTypeNonAtomicDeprecated:
 powerTypeNonAtomicDeprecated:
   | atomType
     { $1 }
+
   | atomType INFIX_AT_HAT_OP INT32
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
        deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
        if $2 = "^-" then SynType.MeasurePower($1, - (fst $3), lhs parseState)
        else SynType.MeasurePower($1, fst $3, lhs parseState) }
+
   | atomType INFIX_AT_HAT_OP MINUS INT32
      { if $2 <> "^" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
        deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
@@ -3908,37 +4360,50 @@ powerTypeNonAtomicDeprecated:
 atomType:
   | HASH atomType 
      { SynType.HashConstraint($2, lhs parseState) }
+
   | appTypeConPower %prec prec_atomtyp_path 
      { $1 }
+
   | UNDERSCORE 
      { SynType.Anon (lhs parseState) }
+
   | LPAREN typ rparen 
      {  $2 }
+
   | LPAREN typ recover      
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedParen()) 
        $2 }  
+
   | rawConstant 
      { SynType.StaticConstant($1, rhs parseState 1) }
+
   | NULL
      { let m = rhs parseState 1
        SynType.StaticConstant(SynConst.String (null, m), m) }
+
   | CONST atomicExpr
      {  let e,_ = $2
-        SynType.StaticConstantExpr(e, e.Range)
-     }
+        SynType.StaticConstantExpr(e, e.Range) }
+
   | FALSE  
       { SynType.StaticConstant(SynConst.Bool false,lhs parseState) } 
+
   | TRUE  
       { SynType.StaticConstant(SynConst.Bool true,lhs parseState) } 
+
   | LPAREN error rparen   
      { (* silent recovery *) SynType.Anon (lhs parseState) }  
+
   | appTypeCon typeArgsNoHpaDeprecated %prec prec_atomtyp_path 
      { let mLessThan,mGreaterThan,args,commas,mWhole = $2 in SynType.App($1, Some(mLessThan), args, commas, mGreaterThan, false, unionRanges $1.Range mWhole) } 
+
   | atomType DOT path %prec prec_atomtyp_get_path 
      { SynType.LongIdentApp($1, $3, None, [], [], None, unionRanges (rhs parseState 1) $3.Range) } 
+
   | atomType DOT path typeArgsNoHpaDeprecated %prec prec_atomtyp_get_path 
      { let mLessThan,mGreaterThan,args,commas,mWhole = $4 
        SynType.LongIdentApp($1, $3, Some(mLessThan), args, commas, mGreaterThan, unionRanges $1.Range mWhole) } 
+
   | appTypeCon DOT ends_coming_soon_or_recover
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedNameAfterToken())
        $1 } 
@@ -3950,6 +4415,7 @@ typeArgsNoHpaDeprecated:
        if parsedOk then // if someone has "foo<bar" without a closing greater-than, then the lexfilter does not introduce a HPA, even though it is adjacent
            warning(Error(FSComp.SR.parsNonAdjacentTyargs(),rhs parseState 1))
        mLessThan, mGreaterThan, args, commas, mAll } 
+
   | HIGH_PRECEDENCE_TYAPP typeArgsActual 
      { let mLessThan, mGreaterThan, _, args, commas, mAll = $2
        mLessThan, mGreaterThan, args, commas, mAll } 
@@ -3958,6 +4424,7 @@ typeArgsActual:
   | LESS typeArgActualOrDummyIfEmpty COMMA typeArgActualOrDummyIfEmpty typeArgListElements GREATER 
      { let typeArgs, commas = $5
        (rhs parseState 1), Some(rhs parseState 6), true, ($2 :: $4 :: List.rev typeArgs), (rhs parseState 3)::(List.rev commas), lhs parseState } 
+
   | LESS typeArgActualOrDummyIfEmpty COMMA typeArgActualOrDummyIfEmpty typeArgListElements recover
      { if not $6 then 
            reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileTypeArgs())
@@ -3976,6 +4443,7 @@ typeArgsActual:
 
   | LESS typeArgActual GREATER 
      { (rhs parseState 1), Some(rhs parseState 3), true, [$2], [], lhs parseState } 
+
   | LESS typeArgActual recover
      { if not $3 then 
            reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEndOfFileTypeArgs())
@@ -3985,6 +4453,7 @@ typeArgsActual:
 
   | LESS GREATER 
      { (rhs parseState 1), Some(rhs parseState 2), true, [], [], lhs parseState } 
+
   | LESS recover
      { if not $2 then  
            reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsExpectedTypeAfterToken())
@@ -3997,8 +4466,10 @@ typeArgsActual:
 typeArgActual:
   | typ
      { $1 }
+
   | typ EQUALS typ
      { SynType.StaticConstantNamed($1, $3, unionRanges $1.Range $3.Range) }
+
   | typ EQUALS /* NOTE: no "recover" */
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsMissingTypeArgs())
        let dummy = SynType.StaticConstant(SynConst.Int32(0), rhs parseState 2)
@@ -4008,14 +4479,14 @@ typeArgActual:
 typeArgActualOrDummyIfEmpty:
   | typeArgActual
      { $1 }
+
   | dummyTypeArg
      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsMissingTypeArgs())
        $1 }
 
 dummyTypeArg:
-  |
-     { 
-       let m = rhs parseState 1
+  |  /* EMPTY */
+     { let m = rhs parseState 1
        let dummyStatVal = SynType.StaticConstant(SynConst.Int32(0), m)
        let dummyName = SynType.LongIdent(LongIdentWithDots([ident("",m)],[]))
        let dummyTypeArg = SynType.StaticConstantNamed(dummyName, dummyStatVal, m)
@@ -4025,6 +4496,7 @@ dummyTypeArg:
 measureTypeArg:
   | LESS measureTypeExpr GREATER
      { $2 }
+
   | LESS UNDERSCORE GREATER
      { SynMeasure.Anon (lhs parseState) }
 
@@ -4058,18 +4530,22 @@ measureTypePower:
 measureTypeSeq:
   | measureTypePower
     { [$1] }
+
   | measureTypePower measureTypeSeq
     { $1 :: $2 }
 
 measureTypeExpr:
   | measureTypeSeq
     { SynMeasure.Seq($1, lhs parseState) }
+
   | measureTypeExpr STAR measureTypeExpr
     { SynMeasure.Product($1, $3, lhs parseState) }
+
   | measureTypeExpr INFIX_STAR_DIV_MOD_OP measureTypeExpr
     { if $2 <> "*" && $2 <> "/" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure());
       if $2 = "*" then SynMeasure.Product($1, $3, lhs parseState)
       else SynMeasure.Divide($1, $3, lhs parseState) }
+
   | INFIX_STAR_DIV_MOD_OP measureTypeExpr
      { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure());
        SynMeasure.Divide(SynMeasure.One, $2, lhs parseState) }
@@ -4078,6 +4554,7 @@ typar:
   | QUOTE ident 
      {  let id = mkSynId (lhs parseState) ($2).idText
         Typar(id ,NoStaticReq,false) }
+
   | staticallyKnownHeadTypar 
      { $1 }
 
@@ -4092,97 +4569,141 @@ ident:
   | IDENT 
      { ident($1,rhs parseState 1) } 
 
+
+/* A A.B.C path used to an identifier */
 path: 
   | GLOBAL
       { LongIdentWithDots([ident(MangledGlobalName,rhs parseState 1)],[]) }
+
   | ident  
      { LongIdentWithDots([$1],[]) }
+
   | path DOT ident  
      { let (LongIdentWithDots(lid,dotms)) = $1 in LongIdentWithDots(lid @ [$3], dotms @ [rhs parseState 2]) } 
+
   | path DOT ends_coming_soon_or_recover  
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedNameAfterToken())
        let (LongIdentWithDots(lid,dotms)) = $1 in LongIdentWithDots(lid, dotms @ [rhs parseState 2])  } 
 
+
+/* An operator name, with surrounnding parentheses */
 opName: 
   | LPAREN operatorName rparen  
      {  ident(CompileOpName $2,rhs parseState 2) }
+
   | LPAREN error rparen  
      {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName()); ident(CompileOpName "****",rhs parseState 2) }
+
   | LPAREN_STAR_RPAREN
      {  ident(CompileOpName "*",rhs parseState 1) }
 
-/* active pattern value names */
-  | LPAREN barNames BAR rparen 
-     { let text = ("|"^String.concat "|" (List.rev $2) ^ "|")
+  /* active pattern name */
+  | LPAREN activePatternCaseNames BAR rparen 
+     { let text = ("|" + String.concat "|" (List.rev $2) + "|")
        ident(text,rhs2 parseState 2 3) }
                          
-  | LPAREN barNames BAR UNDERSCORE BAR rparen 
-     { let text = ("|"^String.concat "|" (List.rev $2) ^ "|_|" )
+  /* partial active pattern name */
+  | LPAREN activePatternCaseNames BAR UNDERSCORE BAR rparen 
+     { let text = ("|" + String.concat "|" (List.rev $2) + "|_|" )
        ident(text,rhs2 parseState 2 5) }
 
+/* An operator name, without surrounding parentheses */
 operatorName: 
   | PREFIX_OP 
       { if not (IsValidPrefixOperatorDefinitionName $1) then 
             reportParseErrorAt (lhs parseState) (FSComp.SR.parsInvalidPrefixOperatorDefinition());
         $1 }
+
   | INFIX_STAR_STAR_OP  { $1 }
+
   | INFIX_COMPARE_OP { $1 }
+
   | INFIX_AT_HAT_OP  { $1 }
+
   | INFIX_BAR_OP  { $1 }
+
   | INFIX_AMP_OP { $1 }
+
   | PLUS_MINUS_OP  { $1 }
+
   | INFIX_STAR_DIV_MOD_OP { $1 }
+
   | DOLLAR { "$" }
+
   | ADJACENT_PREFIX_OP { $1 }
+
   | MINUS { "-" }
+
   | STAR { "*" }
+
   | EQUALS { "=" }
+
   | OR { "or" }
+
   | LESS { "<" }
+
   | GREATER { ">" }
+
   | QMARK { "?" }
+
   | AMP { "&" }
+
   | AMP_AMP { "&&" }
+
   | BAR_BAR { "||" }
+
   | COLON_EQUALS { ":=" }
+
   | FUNKY_OPERATOR_NAME 
       { if $1 <> ".[]"  && $1 <> ".()" && $1 <> ".()<-" then 
              deprecatedOperator (lhs parseState); 
         $1 }
+
   | PERCENT_OP { $1 }
+
   | DOT_DOT { ".." }
+
   | DOT_DOT DOT_DOT { ".. .." }
+
   | LQUOTE RQUOTE 
       { if $1 <> $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsMismatchedQuotationName(fst $1));  
         fst $1 } 
 
-barName: 
+/* One part of an active pattern name */
+activePatternCaseName: 
   | IDENT 
       { if not (String.isUpper $1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseMustBeginWithUpperCase());  
         if ($1.IndexOf('|') <> -1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsActivePatternCaseContainsPipe());  
         $1 }
 
-barNames: 
-  | BAR barName
+/* Multiple parts of an active pattern name */
+activePatternCaseNames: 
+  | BAR activePatternCaseName
       { [$2] }
-  | barNames BAR barName
+
+  | activePatternCaseNames BAR activePatternCaseName
       { $3 :: $1 }
 
+/* A single item that is an identifier or operator name */
 identOrOp: 
   | ident  
      { $1 } 
+
   | opName 
      { $1 }
 
-/* path ending in an op */
-/* note, only used in atomicPatternLongIdent */
+/* An A.B.C path ending in an identifier or operator name */
+/* Note, only used in atomicPatternLongIdent */
 pathOp: 
   | ident  
      { LongIdentWithDots([$1],[]) }
+
   | opName 
      { LongIdentWithDots([$1],[]) }
+
   | ident DOT pathOp 
      { let (LongIdentWithDots(lid,dotms)) = $3 in LongIdentWithDots($1 :: lid, rhs parseState 2 :: dotms) } 
+
   | ident DOT error  
      { (* silent recovery *) LongIdentWithDots([$1],[rhs parseState 2]) }  
 
@@ -4200,22 +4721,11 @@ topSeparators:
   | topSeparator                     { } 
   | topSeparator topSeparators { }
 
-interactiveSeparator: 
-  | SEMICOLON { } 
-  | OBLOCKSEP { }  
-
-interactiveSeparators: 
-  | interactiveSeparator                     { } 
-  | interactiveSeparator interactiveSeparators { }
-
-opt_interactiveSeparators: 
-  | interactiveSeparator opt_interactiveSeparators { }
-  |                        { } 
-
 opt_topSeparators: 
   | topSeparator opt_topSeparators { }
-  |                      { } 
+  | /* EMPTY */                    { } 
 
+/* Seprators in either #light or non-#light */
 seps: 
   | OBLOCKSEP { } 
   | SEMICOLON { }
@@ -4229,9 +4739,9 @@ declEnd:
   | OEND 
       {   }
   | END 
-      {} 
+      { } 
 
-/* An 'end' that's optional in both #light and #heavy */
+/* An 'end' that's optional in both #light and non-#light */
 opt_declEnd: 
   | ODECLEND 
       {} 
@@ -4239,41 +4749,42 @@ opt_declEnd:
       { } 
   | END 
       {} 
-  |     
+  | /* EMPTY */    
       {} 
 
 opt_ODECLEND: 
-  | ODECLEND { } 
-  |          { }
+  | ODECLEND    { } 
+  | /* EMPTY */ { }
 
 deprecated_opt_equals: 
-  | EQUALS    { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () } 
-  |           {  }
+  | EQUALS      { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () } 
+  | /* EMPTY */ {  }
 
 opt_OBLOCKSEP: 
-  | OBLOCKSEP { }
-  |          { } 
+  | OBLOCKSEP   { }
+  | /* EMPTY */ { } 
 
 opt_seps: 
-  | seps { }
-  |      { } 
+  | seps        { }
+  | /* EMPTY */ { } 
 
 opt_rec: 
-  | REC { true }
-  |     { false } 
+  | REC         { true }
+  | /* EMPTY */ { false } 
 
 opt_bar: 
-  | BAR { } 
-  |     { } 
+  | BAR         { } 
+  | /* EMPTY */ { } 
 
 opt_inline: 
-  | INLINE { true } 
-  |        { false }
+  | INLINE      { true } 
+  | /* EMPTY */ { false }
 
 opt_mutable: 
-  | MUTABLE { true } 
-  |         { false }
+  | MUTABLE     { true } 
+  | /* EMPTY */ { false }
 
+/* A 'do' token in either #light or non-#light */
 doToken: 
   | DO  { }
   | ODO { }
@@ -4294,25 +4805,29 @@ colonOrEquals:
   | COLON { mlCompatWarning (FSComp.SR.parsSyntaxModuleSigEndDeprecated()) (lhs parseState); }
   | EQUALS { } 
 
-opt_HASH: 
-  | HASH {} 
+/* A literal string or a string fromm a keyword like __SOURCE_FILE__ */
+stringOrKeywordString:
+  | STRING { $1 }
+  | KEYWORD_STRING { $1 }
 
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }
   | HIGH_PRECEDENCE_PAREN_APP { }
-  |    { }
+  | /* EMPTY */   { }
 
 opt_HIGH_PRECEDENCE_TYAPP:
   | HIGH_PRECEDENCE_TYAPP { }
-  |    { }
+  | /* EMPTY */   { }
 
-type_keyword:
-  | TYPE_COMING_SOON type_keyword { }
+/* A 'type' keyword */
+typeKeyword:
+  | TYPE_COMING_SOON typeKeyword { }
   | TYPE_IS_HERE { }
   | TYPE { }
 
-module_keyword:
-  | MODULE_COMING_SOON module_keyword { }
+/* A 'module' keyword */
+moduleKeyword:
+  | MODULE_COMING_SOON moduleKeyword { }
   | MODULE_IS_HERE { }
   | MODULE { }
 
