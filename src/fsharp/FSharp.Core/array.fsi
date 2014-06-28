@@ -62,6 +62,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The concatenation of the sequence of input arrays.</returns>
         [<CompiledName("Concat")>]
         val concat: arrays:seq<'T[]> -> 'T[]
+        
+        /// <summary>Tests if the array contains the specified element.</summary>
+        /// <param name="value">The value to locate in the input array.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>True if the input array contains the specified element; false otherwise.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        [<CompiledName("Contains")>]
+        val inline contains: value:'T -> array:'T[] -> bool when 'T : equality
 
         /// <summary>Builds a new array that contains the elements of the given array.</summary>
         /// <param name="array">The input array.</param>

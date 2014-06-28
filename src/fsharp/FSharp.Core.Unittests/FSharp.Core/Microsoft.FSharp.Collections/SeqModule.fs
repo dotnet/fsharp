@@ -797,3 +797,30 @@ type SeqModule() =
         let l = f 3 |> Seq.toList
         Assert.AreEqual([6;7;8], l)
 
+    [<Test>]
+    member this.Contains() =
+
+        // Integer Seq
+        let intSeq = seq { 0..9 }
+
+        let ifContainsInt = Seq.contains 5 intSeq
+
+        Assert.IsTrue(ifContainsInt)
+
+        // String Seq
+        let strSeq = seq ["key"; "blank key"]
+
+        let ifContainsStr = Seq.contains "key" strSeq
+
+        Assert.IsTrue(ifContainsStr)
+
+        // Empty Seq
+        let emptySeq = Seq.empty
+        let ifContainsEmpty = Seq.contains 5 emptySeq
+
+        Assert.IsFalse(ifContainsEmpty)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+
+        CheckThrowsArgumentNullException (fun () -> Seq.contains 5 nullSeq |> ignore)

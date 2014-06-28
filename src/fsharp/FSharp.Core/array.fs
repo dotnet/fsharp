@@ -218,6 +218,16 @@ namespace Microsoft.FSharp.Collections
             let rec loop i = i < len && (f array.[i] || loop (i+1))
             loop 0
 
+        [<CompiledName("Contains")>]
+        let inline contains e (array:'T[]) =
+            checkNonNull "array" array
+            let mutable state = false
+            let mutable i = 0
+            while (not state && i < array.Length) do
+                state <- e = array.[i]
+                i <- i + 1
+            state
+
         [<CompiledName("Exists2")>]
         let exists2 f (array1: _[]) (array2: _[]) = 
             checkNonNull "array1" array1

@@ -269,6 +269,14 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Exists")>]
         let exists f list1 = Microsoft.FSharp.Primitives.Basics.List.exists f list1
+        
+        [<CompiledName("Contains")>]
+        let inline contains e list1 =
+            let rec contains e xs1 =
+                match xs1 with
+                | [] -> false
+                | (h1::t1) -> e = h1 || contains e t1
+            contains e list1
 
         let rec exists2aux (f:OptimizedClosures.FSharpFunc<_,_,_>) list1 list2 = 
             match list1,list2 with 

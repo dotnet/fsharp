@@ -175,6 +175,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         val concat: sources:seq<'Collection> -> seq<'T> when 'Collection :> seq<'T>
 
+        /// <summary>Tests if the sequence contains the specified element.</summary>
+        /// <param name="value">The value to locate in the input sequence.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>True if the input sequence contains the specified element; false otherwise.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("Contains")>]
+        val inline contains: value:'T -> source:seq<'T> -> bool when 'T : equality
 
         /// <summary>Applies a key-generating function to each element of a sequence and return a sequence yielding unique
         /// keys and their number of occurrences in the original sequence.</summary>

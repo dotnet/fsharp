@@ -1124,3 +1124,24 @@ type ArrayModule() =
     member this.``Parallel.Partition`` () =
         this.PartitionTester Array.Parallel.partition Array.Parallel.partition    
 #endif    
+
+    [<Test>]
+    member this.Contains() =
+        // integer array
+        let intArr = [| 2;4;6;8 |]
+        let resultInt = Array.contains 6 intArr
+        Assert.IsTrue(resultInt)
+
+        // string array
+        let strArr = [|"Lists"; "are"; "commonly"|]
+        let resultStr = Array.contains "not" strArr
+        Assert.IsFalse(resultStr)
+
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEpt = Array.contains 4 emptyArr
+        Assert.IsFalse(resultEpt)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.contains "empty" nullArr |> ignore)

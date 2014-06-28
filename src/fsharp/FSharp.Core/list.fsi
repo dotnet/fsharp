@@ -66,6 +66,13 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The resulting concatenated list.</returns>
         [<CompiledName("Concat")>]
         val concat: lists:seq<'T list> -> 'T list
+        
+        /// <summary>Tests if the list contains the specified element.</summary>
+        /// <param name="value">The value to locate in the input list.</param>
+        /// <param name="source">The input list.</param>
+        /// <returns>True if the input list contains the specified element; false otherwise.</returns>
+        [<CompiledName("Contains")>]
+        val inline contains: value:'T -> source:'T list -> bool when 'T : equality
 
         /// <summary>Returns an empty list of the given type.</summary>
         [<GeneralizableValue>]

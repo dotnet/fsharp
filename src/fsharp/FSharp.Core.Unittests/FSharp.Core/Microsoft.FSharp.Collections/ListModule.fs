@@ -607,3 +607,20 @@ type ListModule() =
         Assert.AreEqual(0, !resultEpt)
         
         ()        
+
+    [<Test>]
+    member this.Contains() =
+        // integer List
+        let intList = [ 2;4;6;8 ]
+        let resultInt = List.contains 4 intList
+        Assert.IsTrue(resultInt)
+
+        // string List
+        let strList = ["."; ".."; "..."; "...."]
+        let resultStr = List.contains "....." strList
+        Assert.IsFalse(resultStr)
+
+        // empty List
+        let emptyList:int list = [ ]
+        let resultEpt = List.contains 4 emptyList
+        Assert.IsFalse(resultEpt)

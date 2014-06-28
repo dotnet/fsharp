@@ -881,6 +881,15 @@ namespace Microsoft.FSharp.Collections
                 state <- f e.Current
             state
             
+        [<CompiledName("Contains")>]
+        let inline contains element (source : seq<'T>) =
+            checkNonNull "source" source
+            use e = source.GetEnumerator()
+            let mutable state = false
+            while (not state && e.MoveNext()) do
+                state <- element = e.Current
+            state
+            
         [<CompiledName("ForAll")>]
         let forall f (source : seq<'T>) = 
             checkNonNull "source" source
