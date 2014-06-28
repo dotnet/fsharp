@@ -1,28 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Tail calls on, even in debug -->
+    <Tailcalls>true</Tailcalls>
+    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+    <!-- For .NET 2.0 use a 2.0 proto compiler, otherwise use a 4.0 proto compiler -->
+    <protoCLIDir Condition="'$(protoCLIDir)' == ''">net40</protoCLIDir>
+    <LkgVersion>4.0.30319.1</LkgVersion>
+    <FsLexUnicode>true</FsLexUnicode>
+    <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
+    <OtherFlags>$(OtherFlags) --times</OtherFlags>
+    <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Standard defaults for configuration and platform  -->
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-  </PropertyGroup>
-  <PropertyGroup>
-    <!-- Standard defaults for output path and warning level -->
-    <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
-    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
   <!-- Standard interpretations of Debug and Release configurations -->
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' ">DEBUG;TRACE</DefineConstants>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
+    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">DEBUG="true";TRACE="true";CODE_ANALYSIS="true";$(DefineConstants)</DefineConstants>
+    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' ">TRACE</DefineConstants>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
+    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">TRACE</DefineConstants>
+    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">TRACE="true"</DefineConstants>
+    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'VSDebug' ">
+    <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
+    <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
+    <DefineConstants Condition="'$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">DEBUG="true";TRACE="true";CODE_ANALYSIS="true";$(DefineConstants)</DefineConstants>
+    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'VSRelease' ">
+    <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
+    <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
+    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">TRACE="true";$(DefineConstants)</DefineConstants>
+    <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
+    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
+  </PropertyGroup>
+
+  <!-- Flags used to build the bootstrap compiler.		-->
+  <PropertyGroup Condition="'$(Configuration)'=='Proto'">
+    <Optimize>true</Optimize>
+    <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Standard defaults for output path and warning level -->
+    <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
+    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
   </PropertyGroup>
 </Project>

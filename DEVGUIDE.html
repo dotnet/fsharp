@@ -344,27 +344,25 @@
     <h3>2.  Building an F# (Debug) library, compiler, type providers and unit tests</h3>
 
     <p>This uses the proto compiler to build FSharp.Core.dll, FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
-<pre>
-    msbuild fsharp-library-build.proj /p:TargetFramework=net40
-    msbuild fsharp-compiler-build.proj /p:TargetFramework=net40
-    msbuild fsharp-typeproviders-build.proj /p:TargetFramework=net40
-    msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40
-    msbuild fsharp-library-build.proj /p:TargetFramework=net20
-    msbuild fsharp-library-build.proj /p:TargetFramework=portable47
-    msbuild fsharp-library-build.proj /p:TargetFramework=portable7
-</pre>
-
-
-    <h3>3. Running Tests</h3>
-
+    <pre>
+        msbuild fsharp-library-build.proj /p:TargetFramework=net40
+        msbuild fsharp-compiler-build.proj /p:TargetFramework=net40
+        msbuild fsharp-typeproviders-build.proj /p:TargetFramework=net40
+        msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40
+        msbuild fsharp-library-build.proj /p:TargetFramework=net20
+        msbuild fsharp-library-build.proj /p:TargetFramework=portable47
+        msbuild fsharp-library-build.proj /p:TargetFramework=portable7
+    </pre>
     <p>
-        First use the provided script to add the built FSharp.Core to the
-        GAC, add required strong name validation skips, and NGen the compiler.
-        Requires admin privileges.
+        Use this script to add the built FSharp.Core to the
+        GAC, <b>add required strong name validation skips</b>, and NGen the compiler and libraries.
+        This requires admin privileges.
     </p>
     <pre>
-    update.cmd debug -ngen
+        update.cmd debug -ngen
     </pre>
+
+    <h3>3. Running Tests</h3>
 
     <p>There are language tests under the <code>tests</code> directory. The test apparatus uses batch files, assuming <a href="http://www.perl.org/get.html">Perl</a> (ActiveState Perl 5.16.3 is known to work fine) is installed. You can run these on Windows using:</p>
 <pre>
@@ -404,6 +402,16 @@
     <pre>
     msbuild fsharp-compiler-build.proj /p:TargetFramework=net40 /p:Configuration=Release
     </pre>
+    <p>
+        Use this script to add the built FSharp.Core to the
+        GAC, <b>add required strong name validation skips</b>, and NGen the compiler and libraries.
+        This requires admin privileges.
+    </p>
+    <pre>
+        update.cmd debug -ngen
+    </pre>
+
+
 
     <h3>5. [Optional] Open a solution with Visual Studio </h3>
 
@@ -412,6 +420,30 @@
         However, you need to complete step 1) and 2) in order to properly
         open this solution. In addition, FSharp.Core.Unittests project requires NUnit installed.
     </p>
+    <h3>6. [Optional] Build Visual Studio components </h3>
+    <p>
+        To build the VS components:
+    </p>
+    <pre>
+        msbuild ..\vsintegration\src\deployment.sln /p:Configuration=Debug /t:Rebuild
+    </pre>
+
+    <h3>6. [Optional] Build and install Visual Studio components </h3>
+    <p>
+        To install the VS components:
+    </p>
+    <p>
+        Ensure that the VSIX package is uninstalled, in VS select Tools/Extensions and Updates, 
+       If the packages VisualStudio.FSharp.EnableOpenSource is installed, select Uninstall
+    </p>
+    <pre>
+        ..\Debug\net40\bin\EnableOpenSource.vsix
+    </pre>
+    <p>
+        Restart Visual Studio, now it should be running the open source FSharp.VS.FSI.
+    </p>
+    <pre>
+    </pre>
 
     <h3>Notes on the build</h3>
 

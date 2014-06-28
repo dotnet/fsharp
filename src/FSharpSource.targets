@@ -1,44 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <!-- Tail calls on, even in debug -->
-    <Tailcalls>true</Tailcalls>
-    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
-    <!-- For .NET 2.0 use a 2.0 proto compiler, otherwise use a 4.0 proto compiler -->
-    <protoCLIDir Condition="'$(protoCLIDir)' == ''">net40</protoCLIDir>
-    <LkgVersion>4.0.30319.1</LkgVersion>
-    <FsLexUnicode>true</FsLexUnicode>
-    <ProjectLanguage>FSharp</ProjectLanguage>
-    <OtherFlags>$(OtherFlags) --times</OtherFlags>
-    <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
-  <!-- However FSharp.Core must always use the same version and name as VS, except the revision# is 9055 with delay signing, see below  -->
-  <PropertyGroup Condition="'$(AssemblyName)' != 'FSharp.Core' AND '$(AssemblyName)' != 'FSharp.LanguageService.Compiler' ">
-    <OtherFlags>$(OtherFlags) --version:4.3.1.9055</OtherFlags>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core'">
-    <OtherFlags>$(OtherFlags) --version:4.3.1.9055</OtherFlags>
-    <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.3.1.9055</OtherFlags>
-    <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:2.3.5.9055</OtherFlags>
-    <OtherFlags Condition="'$(TargetFramework)' == 'portable7'">$(OtherFlags) --version:3.3.1.9055</OtherFlags>
-  </PropertyGroup>
-
-  <!-- We sign with the Microsoft key and use delay-signing -->
-  <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' AND ('$(Configuration)'=='Debug' OR '$(Configuration)'=='Release') AND ('$(TargetFramework)' == 'net20' OR '$(TargetFramework)' == 'net40' OR '$(TargetFramework)' == 'portable47' OR '$(TargetFramework)' == 'portable7')">
-    <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-    <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
-    <StrongNames>true</StrongNames>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(AssemblyName)' != 'FSharp.Core' AND ('$(Configuration)'=='Debug' OR '$(Configuration)'=='Release') AND ('$(AssemblyName)'!='FSharp.Core')">
-    <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
-    <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
-    <StrongNames>true</StrongNames>
-  </PropertyGroup>
+   <Choose>
+    <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
+      <Choose>
+        <When Condition="'$(ProjectLanguage)' == 'FSharp'">
+          <Choose>
+            <When Condition="'$(AssemblyName)' == 'FSharp.Core'">
+              <PropertyGroup>
+                <OtherFlags Condition="'$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'portable7'">$(OtherFlags) --version:4.3.1.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.3.1.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:2.3.5.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable7'">$(OtherFlags) --version:3.3.1.9055</OtherFlags>
+                <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
+                <StrongNames>true</StrongNames>
+              </PropertyGroup>
+            </When>
+            <When Condition="'$(AssemblyName)' == 'FSharp.LanguageService' or '$(AssemblyName)' == 'FSharp.LanguageService.Compiler' or '$(AssemblyName)' == 'FSharp.LanguageService.Base' or '$(AssemblyName)' == 'FSharp.Editor' or '$(AssemblyName)' == 'FSharp.VS.FSI' or '$(AssemblyName)' == 'FSharp.ProjectSystem.FSharp'">
+              <PropertyGroup>
+                <OtherFlags>$(OtherFlags) --version:12.0.0.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
+                <StrongNames>true</StrongNames>
+              </PropertyGroup>
+            </When>
+            <Otherwise>
+              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
+                <OtherFlags>$(OtherFlags) --version:4.3.1.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
+                <StrongNames>true</StrongNames>
+              </PropertyGroup>
+              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' != 'true'">
+                <OtherFlags>$(OtherFlags) --version:4.3.1.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
+                <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
+                <StrongNames>true</StrongNames>
+              </PropertyGroup>
+            </Otherwise>
+          </Choose>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+            <SignAssembly>true</SignAssembly>
+            <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
+            <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
+            <StrongNames>true</StrongNames>
+            <DelaySign>true</DelaySign>
+          </PropertyGroup>
+        </Otherwise>
+      </Choose>
+    </When>
+    <Otherwise>
+      <PropertyGroup Condition="'$(StrongNames)' != 'true'">
+        <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
+        <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
+        <OtherFlags>$(OtherFlags) --version:4.3.1.9055</OtherFlags>
+        <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
   <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
@@ -573,10 +592,12 @@
     <OtherFlags>$(OtherFlags) --simpleresolution -r:"C:\Program Files\Microsoft.NET\SDK\CompactFramework\v3.5\WindowsCE\mscorlib.dll"  -r:"C:\Program Files\Microsoft.NET\SDK\CompactFramework\v3.5\WindowsCE\System.dll"</OtherFlags>
   </PropertyGroup>
 
-
-
   <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). The output compiler has suffix "-proto" -->
-  <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' ">
+  <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' == 'true'">
+    <FsBuildSuffix>-proto</FsBuildSuffix>
+    <OutputPath>$(FSharpSourcesRoot)\..\vs\$(protoCLIDir)\bin</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' != 'true'">
     <FsBuildSuffix>-proto</FsBuildSuffix>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(protoCLIDir)\bin</OutputPath>
   </PropertyGroup>
@@ -637,7 +658,7 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
-  <Import Project="$(FSharpTargetsPath)"/>
+  <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 
   <!-- Reference an existing FSI.EXE for use from within MSBuild -->
   <PropertyGroup>
@@ -660,7 +681,7 @@
   <Target Name="ValidateConfiguration">
     <Error
             Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
-            Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='Proto'"/>
+            Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
     <Error
             Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, sl3-wp, sl5, sl5-compiler, portable47, portable7, netcore78, netcore259"
             Condition="! ('$(TargetFramework)' == 'net40' or 
