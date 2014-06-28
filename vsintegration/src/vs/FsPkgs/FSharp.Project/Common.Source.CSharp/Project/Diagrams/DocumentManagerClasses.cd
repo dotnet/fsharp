@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Font Name="Tahoma" Size="8.25" />
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.FileDocumentManager">
+    <Position X="7.5" Y="6" Width="2.5" />
+    <TypeIdentifier>
+      <FileName>FileDocumentManager.cs</FileName>
+      <HashCode>AACAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.DocumentManager">
+    <Position X="4.75" Y="2.25" Width="2.25" />
+    <TypeIdentifier>
+      <FileName>DocumentManager.cs</FileName>
+      <HashCode>AQCAQIQAAAAAIAEAAAAAAAAAIAAAAAAAAAAAACGAAAE=</HashCode>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="Node" />
+    </ShowAsAssociation>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectDesignerDocumentManager">
+    <Position X="2.5" Y="6" Width="2.25" />
+    <TypeIdentifier>
+      <FileName>ProjectDesignerDocumentManager.cs</FileName>
+      <HashCode>AACAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.HierarchyNode" Collapsed="true">
+    <Position X="8.75" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>HierarchyNode.cs</FileName>
+      <HashCode>NKl4a26oCodRuoDQodAKZKQQxKtwgtmAOJLYAHLHccE=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+</ClassDiagram>

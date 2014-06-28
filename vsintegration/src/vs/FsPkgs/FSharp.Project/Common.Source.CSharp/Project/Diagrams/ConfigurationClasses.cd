@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Font Name="Tahoma" Size="8.25" />
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ConfigProvider">
+    <Position X="6.25" Y="3.25" Width="2.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ConfigProvider.cs</FileName>
+      <HashCode>AAQAgEQBAAJIAhACAAgAABAEAQ4MAAAAACAEEAAAEQQ=</HashCode>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="ProjectMgr" />
+    </ShowAsAssociation>
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <AssociationLine Name="ProjectMgr" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectNode" FixedFromPoint="true">
+      <Path>
+        <Point X="8.75" Y="3.75" />
+        <Point X="10" Y="3.75" />
+      </Path>
+    </AssociationLine>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectNode" Collapsed="true">
+    <Position X="10" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ProjectNode.cs</FileName>
+      <HashCode>PcL08fbsGjX+k5CfjpK+d69X9h87o1+nbxPdSeHRekI=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Position="0.908" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.OutputGroup">
+    <Position X="1" Y="2.75" Width="2" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\OutputGroup.cs</FileName>
+      <HashCode>AAAAIgABgwRAAAAAAAAAiAAAAIgEQAAgAAAAEASAABA=</HashCode>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="keyOutput" />
+      <Property Name="ProjectCfg" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Field Name="outputs" />
+    </ShowAsCollectionAssociation>
+    <AssociationLine Name="outputs" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.Output" FixedFromPoint="true">
+      <Path>
+        <Point X="3" Y="5.633" />
+        <Point X="4" Y="5.633" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="keyOutput" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.Output" FixedFromPoint="true">
+      <Path>
+        <Point X="3" Y="5.212" />
+        <Point X="4" Y="5.212" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="ProjectCfg" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectConfig" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="3" Y="4.175" />
+        <Point X="5.438" Y="4.175" />
+        <Point X="5.438" Y="2.659" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="0.037" Y="0.102" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Output">
+    <Position X="4" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\Output.cs</FileName>
+      <HashCode>AAAAAQQAAAAAAAAAAAAAgAAACAgAQBAAAAAAAACAABA=</HashCode>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="output" />
+    </ShowAsAssociation>
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <AssociationLine Name="output" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectElement" FixedFromPoint="true">
+      <Path>
+        <Point X="5.5" Y="5.375" />
+        <Point X="6.5" Y="5.375" />
+      </Path>
+    </AssociationLine>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectConfig">
+    <Position X="4" Y="0.75" Width="2.25" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ProjectConfig.cs</FileName>
+      <HashCode>AAgCAEJABBAAkQCFCCCgAAEAAEgAYEECAAAAGQDJUEA=</HashCode>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Property Name="ProjectMgr" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Field Name="outputGroups" />
+    </ShowAsCollectionAssociation>
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <AssociationLine Name="outputGroups" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.OutputGroup" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="4.25" Y="2.659" />
+        <Point X="4.25" Y="3.351" />
+        <Point X="3" Y="3.351" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="ProjectMgr" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectNode" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="6.25" Y="2.438" />
+        <Point X="10.562" Y="2.438" />
+        <Point X="10.562" Y="3.25" />
+      </Path>
+    </AssociationLine>
+    <Lollipop Orientation="Right" Position="0.1" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectElement">
+    <Position X="6.5" Y="5" Width="2.25" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ProjectElement.cs</FileName>
+      <HashCode>AgAEAEAAAAAAAAQAhAQAAgAUABAAA4AAQAIAAAAAgiA=</HashCode>
+    </TypeIdentifier>
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.BuildableProjectConfig" Collapsed="true">
+    <Position X="1" Y="1.5" Width="1.75" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ProjectConfig.cs</FileName>
+      <HashCode>AABCAAAACgAACAAAAAAABAEIAAQAgAAAIABAEABQAAA=</HashCode>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="config" />
+    </ShowAsAssociation>
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Enum Name="Microsoft.VisualStudio.FSharp.ProjectSystem.OutputType">
+    <Position X="10" Y="5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\StructuresEnums.cs</FileName>
+      <HashCode>IAACAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Enum>
+</ClassDiagram>

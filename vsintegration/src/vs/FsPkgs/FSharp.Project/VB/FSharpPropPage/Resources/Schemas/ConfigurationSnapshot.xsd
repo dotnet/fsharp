@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="ConfigurationSnapshot" targetNamespace="urn:schemas-microsoft-com:xml-wcfconfigurationsnapshot" elementFormDefault="qualified" xmlns="urn:schemas-microsoft-com:xml-wcfconfigurationsnapshot" xmlns:mstns="urn:schemas-microsoft-com:xml-wcfconfigurationsnapshot" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="configurationSnapshot">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="1" maxOccurs="1" ref="behaviors" />
+        <xs:element minOccurs="1" maxOccurs="1" ref="bindings" />
+        <xs:element minOccurs="1" maxOccurs="1" ref="endpoints" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="binding">
+    <xs:complexType>
+      <xs:attribute name="bindingType" type="xs:string" use="required" />
+      <xs:attribute name="name" type="xs:string" use="required"/>
+      <xs:attribute name="digest" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="behavior">
+    <xs:complexType>
+      <xs:attribute name="name" type="xs:string" use="required" />
+      <xs:attribute name="digest" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="endpoint">
+    <xs:complexType>
+      <xs:attribute name="name" type="xs:string" use="required" />
+      <xs:attribute name="originalName" type="xs:string" use="optional"/>
+      <xs:attribute name="digest" type="xs:string" use="required" />
+      <xs:attribute name="normalizedDigest" type="xs:string" use="required" />
+      <xs:attribute name="contractName" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="behaviors">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="behavior" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="bindings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="binding" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="endpoints">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="endpoint" minOccurs="0" maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

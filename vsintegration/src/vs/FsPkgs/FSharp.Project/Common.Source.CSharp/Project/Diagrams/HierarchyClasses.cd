@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Font Name="Tahoma" Size="8.25" />
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.HierarchyNode" Collapsed="true">
+    <Position X="3.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\HierarchyNode.cs</FileName>
+      <HashCode>NKl4a26oCodRuoDQodAKZKQQxKtwgtmAOJLYAHLHccE=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Orientation="Right" Position="0.1" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.FolderNode" Collapsed="true">
+    <Position X="5.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\FolderNode.cs</FileName>
+      <HashCode>AAAAEAKAAAEAAAAAgIAAJAAAAAIAAAAACAAQAAAAAQA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.FileNode" Collapsed="true">
+    <Position X="0.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\FileNode.cs</FileName>
+      <HashCode>AAhACECAAAFAAAEAABACZAAAAAAAAAAQSAAQAABEAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectNode" Collapsed="true">
+    <Position X="3.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ProjectNode.cs</FileName>
+      <HashCode>PcL08fbsGjX+k5CfjpK+N69X9h87o1+nbxPdSaHRekI=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Orientation="Right" Position="0.1" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectContainerNode" Collapsed="true">
+    <Position X="2.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ProjectContainerNode.cs</FileName>
+      <HashCode>AABFABAAAAQAAAAAQAAAAAAEQIABAAAARASAAAAAAAE=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Orientation="Left" Position="0.1" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ComReferenceNode" Collapsed="true">
+    <Position X="7.75" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ComReferenceNode.cs</FileName>
+      <HashCode>AACACCIAAAIAACAAQAAEAAQAgACAAAABCAAQAQACAAA=</HashCode>
+    </TypeIdentifier>
+    <InheritanceLine Type="Microsoft.VisualStudio.FSharp.ProjectSystem.ReferenceNode" FixedToPoint="true">
+      <Path>
+        <Point X="10.75" Y="3.13" />
+        <Point X="10.75" Y="4.312" />
+        <Point X="9.25" Y="4.312" />
+      </Path>
+    </InheritanceLine>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ReferenceContainerNode" Collapsed="true">
+    <Position X="7.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ReferenceContainerNode.cs</FileName>
+      <HashCode>AABACACgAAEAAAAAgAACIAAAAAIQAAAACAAQAABAARA=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Position="1.065" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ReferenceNode" Collapsed="true">
+    <Position X="10" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ReferenceNode.cs</FileName>
+      <HashCode>AABAAGaAAAFAAAAAgAAiIAAAAAAQAAEAGAAQAABAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectReferenceNode" Collapsed="true">
+    <Position X="7.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\ProjectReferenceNode.cs</FileName>
+      <HashCode>CAACCFYCAgAAgAEAAIACBAQAAAAAAAAACAAAAACACAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.AssemblyReferenceNode" Collapsed="true">
+    <Position X="7.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>D:\Program Files\Visual Studio 2005 SDK\2005.12\VisualStudioIntegration\Common\Source\CSharp\Project\AssemblyReferenceNode.cs</FileName>
+      <HashCode>AAAACCIAAAAAAAAAAAIAAAACAABAAAAAGAAAEAAAABg=</HashCode>
+    </TypeIdentifier>
+    <InheritanceLine Type="Microsoft.VisualStudio.FSharp.ProjectSystem.ReferenceNode" FixedToPoint="true">
+      <Path>
+        <Point X="10.75" Y="3.13" />
+        <Point X="10.75" Y="5.812" />
+        <Point X="9.25" Y="5.812" />
+      </Path>
+    </InheritanceLine>
+  </Class>
+</ClassDiagram>

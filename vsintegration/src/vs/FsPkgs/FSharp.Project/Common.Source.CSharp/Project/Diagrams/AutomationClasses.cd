@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Font Name="Tahoma" Size="8.25" />
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAFileItem">
+    <Position X="4.75" Y="4.75" Width="2" />
+    <TypeIdentifier>
+      <FileName>Automation\OAFileItem.cs</FileName>
+      <HashCode>AAAAAIAAAAAAMAAAAAAAAAAAAAAAAAACgBABAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OANavigableProjectItems" Collapsed="true">
+    <Position X="3.75" Y="1.5" Width="2" />
+    <TypeIdentifier>
+      <FileName>Automation\OANavigableProjectItems.cs</FileName>
+      <HashCode>AEQAAAAAEABACBAAAAgASAQkCAgAIAAAAgAAAAAAACA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAProject" Collapsed="true">
+    <Position X="1.5" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>Automation\OAProject.cs</FileName>
+      <HashCode>AAQAAJQAAABEUIIhQAAcCAQAAAkAAAAAIBgFCABCAAQ=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAProjectItem&lt;T&gt;" Collapsed="true">
+    <Position X="6.25" Y="3" Width="1.75" />
+    <TypeIdentifier>
+      <FileName>Automation\OAProjectItem.cs</FileName>
+      <HashCode>AQQAQJAAAABEYAAgQACMDCQBCAkAAAACgBAFAAECAAA=</HashCode>
+    </TypeIdentifier>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAProjectItems" Collapsed="true">
+    <Position X="4" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>Automation\OAProjectItems.cs</FileName>
+      <HashCode>AEAAAAAAEAAAAAAAAAAgAAAggAAAAAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAProperties" Collapsed="true">
+    <Position X="8.75" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>Automation\OAProperties.cs</FileName>
+      <HashCode>AAYAAAACABAAABAAIAAAQCQEAAAAAAAAAAAAAAACAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAProperty" Collapsed="true">
+    <Position X="8.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>Automation\OAProperty.cs</FileName>
+      <HashCode>AQSAAAAAABAAQAJgAAAQQAQAgAAAAAAAAAAgAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OANestedProjectItem">
+    <Position X="1.75" Y="4.75" Width="2.5" />
+    <TypeIdentifier>
+      <FileName>Automation\OANestedProjectItem.cs</FileName>
+      <HashCode>AAAAABAAAAAAAAAAAAAAACAAAAAACAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OARreferenceItem">
+    <Position X="7.5" Y="4.75" Width="2" />
+    <TypeIdentifier>
+      <FileName>Automation\OARreferenceItem.cs</FileName>
+      <HashCode>AAAAAAAAAAAAYAAAAAAAAAQAAAEAAAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAReferenceFolderItem">
+    <Position X="10" Y="4.75" Width="2.5" />
+    <TypeIdentifier>
+      <FileName>Automation\OAReferenceFolderItem.cs</FileName>
+      <HashCode>AAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OASolutionFolder&lt;T&gt;" Collapsed="true">
+    <Position X="11" Y="3" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>Automation\OASolutionFolder.cs</FileName>
+      <HashCode>AUQAAAAAAAAAAAAAAAAAQAAgAAIAAAAAAAQAAAAEAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+</ClassDiagram>

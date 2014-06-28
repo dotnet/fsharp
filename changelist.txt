@@ -11,6 +11,8 @@
 Changelist for Visual F# Tools 3.1.2
 ====================================
 
+- Open source project system, language service, editor, vs_fsi
+* #! treated as a comment when it is at the start of an fsharp file
 * Fix for #78 - allow space characters in active pattern case identifiers
 * Fix Related to #78 - Adjust parser to disallow vertical pipes in active pattern case identifiers. 
 * Fix for #69 - Invalid code generated when calling C# method with optional nullable args

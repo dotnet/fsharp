@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Font Name="Tahoma" Size="8.25" />
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ReferenceNode">
+    <Position X="0.75" Y="1.5" Width="2.25" />
+    <TypeIdentifier>
+      <FileName>ReferenceNode.cs</FileName>
+      <HashCode>AABAAGaAAAFAAAAAgAAiIAAAAAAQAAEAGAAQAABAAAA=</HashCode>
+    </TypeIdentifier>
+    <NestedTypes>
+      <Delegate Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ReferenceNode.CannotAddReferenceErrorMessage" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>ReferenceNode.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Delegate>
+    </NestedTypes>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ProjectReferenceNode">
+    <Position X="5.75" Y="1.5" Width="2.5" />
+    <TypeIdentifier>
+      <FileName>ProjectReferenceNode.cs</FileName>
+      <HashCode>CAACCFYCAgAAgAEAAIACBAQAAAAAAAAACAAAAACACAA=</HashCode>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="buildDependency" />
+    </ShowAsAssociation>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <AssociationLine Name="buildDependency" Type="Microsoft.VisualStudio.FSharp.ProjectSystem.BuildDependency" FixedFromPoint="true">
+      <Path>
+        <Point X="8.25" Y="1.845" />
+        <Point X="10" Y="1.845" />
+      </Path>
+    </AssociationLine>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.BuildDependency">
+    <Position X="10" Y="1.5" Width="2.25" />
+    <TypeIdentifier>
+      <FileName>BuildDependency.cs</FileName>
+      <HashCode>AAAQAAYAAAQAgAAQAEAAAAAAAAAAAAAAEQAAAACAAAA=</HashCode>
+    </TypeIdentifier>
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.AssemblyReferenceNode" Collapsed="true">
+    <Position X="3.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>AssemblyReferenceNode.cs</FileName>
+      <HashCode>AAAACCIAAAAAAAAAAAIAAAACAABAAAAAGAAAEAAAABg=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.ComReferenceNode" Collapsed="true">
+    <Position X="3.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>ComReferenceNode.cs</FileName>
+      <HashCode>AACACCIAAAIAACAAQAAEAAQAgACAAAABCAAQAQACAAA=</HashCode>
+    </TypeIdentifier>
+    <InheritanceLine Type="Microsoft.VisualStudio.FSharp.ProjectSystem.ReferenceNode" FixedFromPoint="true">
+      <Path>
+        <Point X="3" Y="2.812" />
+        <Point X="3.75" Y="2.812" />
+      </Path>
+    </InheritanceLine>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.SolutionListenerForProjectReferenceUpdate">
+    <Position X="0.75" Y="6.75" Width="3" />
+    <TypeIdentifier>
+      <FileName>SolutionListenerForProjectReferenceUpdate.cs</FileName>
+      <HashCode>AAAAAAAAAAAAAAAAAQAAIAAAAgAAAAAIAAAAgABAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Microsoft.VisualStudio.FSharp.ProjectSystem.SolutionListener" Collapsed="true">
+    <Position X="4.75" Y="7" Width="1.5" />
+    <TypeIdentifier>
+      <FileName>SolutionListener.cs</FileName>
+      <HashCode>AAIACRBQoCAQCCAAEAIAJAAACgQBAAAYAQAiiAIAAAA=</HashCode>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+</ClassDiagram>
