@@ -22,8 +22,8 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">DEBUG="true";TRACE="true";CODE_ANALYSIS="true";$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
@@ -31,8 +31,8 @@
     <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">TRACE</DefineConstants>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">TRACE="true"</DefineConstants>
+    <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
@@ -41,16 +41,16 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
-    <DefineConstants Condition="'$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition="'$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">DEBUG="true";TRACE="true";CODE_ANALYSIS="true";$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'VSRelease' ">
     <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition=" '$(DefineConstants)' == '' and 'ProjectLanguage' == 'VisualBasic' ">TRACE="true";$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>

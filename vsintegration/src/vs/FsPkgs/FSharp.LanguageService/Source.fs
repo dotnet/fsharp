@@ -291,6 +291,9 @@ module internal Source =
 
     // Can't untangle from MLS Source. The purpose of this class is to 
     // satisfy the requirement of inheriting from Source. 
+#if DEBUG
+    [<System.Diagnostics.DebuggerDisplay("SourceOverIdealSource({OriginalFilename})")>]
+#endif
     type internal SourceOverIdealSource(service:LanguageService, textLines, colorizer, filechange:IVsFileChangeEx) = 
         inherit SourceImpl(service, textLines, colorizer)
         
@@ -299,7 +302,9 @@ module internal Source =
         let mutable filechange = filechange
         let mutable textLines = textLines
 
-
+#if DEBUG        
+        let originalFilename = VsTextLines.GetFilename textLines
+#endif
         let mutable fileName = VsTextLines.GetFilename textLines
 
 
@@ -563,6 +568,10 @@ module internal Source =
                 // the filename of the text buffer is changing, could be changing e.g. .fsx to .fs or vice versa
                 fileName <- newfileName
                 (source :> IdealSource).RecolorizeWholeFile()
+
+#if DEBUG        
+        override source.OriginalFilename = originalFilename
+#endif
 
         // Just forward to IdealSource  
         interface IdealSource with
