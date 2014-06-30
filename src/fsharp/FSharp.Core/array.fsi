@@ -150,6 +150,19 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Distinct")>]
         val distinct: array:'T[] -> 'T[] when 'T : equality
 
+        /// <summary>Returns an array that contains no duplicate entries according to the 
+        /// generic hash and equality comparisons on the keys returned by the given key-generating function.
+        /// If an element occurs multiple times in the array then the later occurrences are discarded.</summary>
+        ///
+        /// <param name="projection">A function transforming the array items into comparable keys.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        [<CompiledName("DistinctBy")>]
+        val distinctBy: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : equality
+
         /// <summary>Returns an empty array of the given type.</summary>
         [<GeneralizableValue>]
         [<CompiledName("Empty")>]

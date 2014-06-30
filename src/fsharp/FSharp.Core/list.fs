@@ -44,6 +44,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Distinct")>]
         let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinct HashIdentity.Structural<'T> list
 
+        [<CompiledName("DistinctBy")>]
+        let distinctBy keyf (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctBy HashIdentity.Structural<_> keyf list
+
         [<CompiledName("OfArray")>]
         let ofArray (array:'T array) = Microsoft.FSharp.Primitives.Basics.List.ofArray array
 

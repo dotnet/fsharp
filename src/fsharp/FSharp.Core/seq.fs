@@ -1313,12 +1313,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf source =
             checkNonNull "source" source
-            seq { // Wrap a StructBox(_) aroud all keys in case the key type is itself a type using null as a representation
-                  let dict = new Dictionary<StructBox<'Key>,obj>(StructBox<'Key>.Comparer)
+            seq { let hashSet = HashSet<_>(HashIdentity.Structural<_>)
                   for v in source do
-                    let key = StructBox (keyf v)
-                    if not (dict.ContainsKey(key)) then 
-                        dict.[key] <- null; 
+                    if hashSet.Add(keyf v) then
                         yield v }
 
         [<CompiledName("SortBy")>]

@@ -165,6 +165,28 @@ type ArrayModule() =
         Assert.AreEqual([|null, list|], Array.distinct [|null, list|])
         
     [<Test>]
+    member this.distinctBy() =
+        // distinctBy should work on empty array
+        Assert.AreEqual([||], Array.distinctBy (fun _ -> failwith "should not be executed") [||])
+
+        // distinctBy should not work on null
+        CheckThrowsArgumentNullException (fun () -> Array.distinctBy (fun _ -> failwith "should not be executed") null |> ignore)
+
+        // distinctBy should filter out simple duplicates
+        Assert.AreEqual([|1|], Array.distinctBy id [|1|])
+        Assert.AreEqual([|1|], Array.distinctBy id [|1; 1|])
+        Assert.AreEqual([|1; 2; 3|], Array.distinctBy id [|1; 2; 3; 1|])
+
+        // distinctBy should use the given projection to filter out simple duplicates
+        Assert.AreEqual([|1|], Array.distinctBy (fun x -> x / x) [|1; 2|])
+        Assert.AreEqual([|1; 2|], Array.distinctBy (fun x -> if x < 3 then x else 1) [|1; 2; 3; 4|])
+        Assert.AreEqual([|[1;2]; [1;3]|], Array.distinctBy (fun x -> List.sum x) [|[1;2]; [1;3]; [2;1]|])
+
+        Assert.AreEqual([|null|], Array.distinctBy id [|null|])
+        let list = new System.Collections.Generic.List<int>()
+        Assert.AreEqual([|null, list|], Array.distinctBy id [|null, list|])
+        
+    [<Test>]
     member this.Blit() = 
         // int array   
         let intSrc = [| 1..10 |]

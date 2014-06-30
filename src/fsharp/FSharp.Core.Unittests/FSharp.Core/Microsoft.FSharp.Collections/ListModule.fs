@@ -107,7 +107,7 @@ type ListModule() =
         Assert.AreEqual(22.476666666666666666666666667M, averageOfDecimal)
             
         ()
-
+        
     [<Test>]
     member this.distinct() = 
         // distinct should work on empty list
@@ -124,8 +124,26 @@ type ListModule() =
         Assert.AreEqual([null], List.distinct [null])
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([null, list], List.distinct [null, list])
+
+    [<Test>]
+    member this.distinctBy() =
+        // distinctBy should work on empty list
+        Assert.AreEqual([], List.distinctBy (fun _ -> failwith "should not be executed") [])
         
-      
+        // distinctBy should filter out simple duplicates
+        Assert.AreEqual([1], List.distinctBy id [1])
+        Assert.AreEqual([1], List.distinctBy id [1; 1])
+        Assert.AreEqual([1; 2; 3], List.distinctBy id [1; 2; 3; 1])
+
+        // distinctBy should use the given projection to filter out simple duplicates
+        Assert.AreEqual([1], List.distinctBy (fun x -> x / x) [1; 2])
+        Assert.AreEqual([1; 2], List.distinctBy (fun x -> if x < 3 then x else 1) [1; 2; 3; 4])
+        Assert.AreEqual([[1;2]; [1;3]], List.distinctBy (fun x -> List.sum x) [[1;2]; [1;3]; [2;1]])
+
+        Assert.AreEqual([null], List.distinctBy id [null])
+        let list = new System.Collections.Generic.List<int>()
+        Assert.AreEqual([null, list], List.distinctBy id [null, list])
+
     [<Test>]
     member this.Choose() = 
         // int List

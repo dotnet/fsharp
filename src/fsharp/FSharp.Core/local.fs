@@ -52,6 +52,27 @@ module internal List =
             distinctToFreshConsTail cons hashSet rest
             cons
 
+    let rec distinctByToFreshConsTail cons (hashSet:HashSet<_>) keyf list = 
+        match list with
+        | [] -> setFreshConsTail cons []
+        | (x::rest) ->
+            if hashSet.Add(keyf x) then
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                distinctByToFreshConsTail cons2 hashSet keyf rest
+            else
+                distinctByToFreshConsTail cons hashSet keyf rest
+
+    let distinctBy (comparer: System.Collections.Generic.IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
+        match list with
+        | [] -> []
+        | [h] -> [h]
+        | (x::rest) ->
+            let hashSet = System.Collections.Generic.HashSet<'Key>(comparer)
+            hashSet.Add(keyf x) |> ignore
+            let cons = freshConsNoTail x
+            distinctByToFreshConsTail cons hashSet keyf rest
+            cons
 
     let rec mapToFreshConsTail cons f x = 
         match x with

@@ -98,6 +98,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Distinct")>]
         val distinct: list:'T list -> 'T list when 'T : equality
 
+        /// <summary>Returns a list that contains no duplicate entries according to the 
+        /// generic hash and equality comparisons on the keys returned by the given key-generating function.
+        /// If an element occurs multiple times in the list then the later occurrences are discarded.</summary>
+        ///
+        /// <param name="projection">A function transforming the list items into comparable keys.</param>
+        /// <param name="list">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        [<CompiledName("DistinctBy")>]
+        val distinctBy: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
+
         /// <summary>Returns an empty list of the given type.</summary>
         [<GeneralizableValue>]
         [<CompiledName("Empty")>]

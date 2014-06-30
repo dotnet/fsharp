@@ -8,6 +8,7 @@ open Microsoft.FSharp.Collections
 
 module internal List =
     val distinct : System.Collections.Generic.IEqualityComparer<'T> -> 'T list -> 'T list
+    val distinctBy : System.Collections.Generic.IEqualityComparer<'Key> -> ('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
     val init : int -> (int -> 'T) -> 'T list
     val iter : ('T -> unit) -> 'T list -> unit
     val filter : predicate:('T -> bool) -> 'T list -> 'T list

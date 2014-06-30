@@ -181,6 +181,21 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len1 - 1 do 
                 f.Invoke(array1.[i], array2.[i])
 
+        [<CompiledName("DistinctBy")>]
+        let distinctBy keyf (array:'T[]) =
+            checkNonNull "array" array
+            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+            let mutable i = 0 
+            let hashSet = HashSet<_>(HashIdentity.Structural<_>)
+            for v in array do
+                if hashSet.Add(keyf v) then
+                    temp.[i] <- v
+                    i <- i + 1
+
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked i : 'T[]
+            Array.Copy(temp, 0, res, 0, i)
+            res
+
         [<CompiledName("Map2")>]
         let map2 f (array1: 'T[]) (array2: 'U[]) = 
             checkNonNull "array1" array1
