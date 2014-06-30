@@ -160,6 +160,9 @@ namespace Microsoft.FSharp.Collections
                 | (h::t) -> let s = f.Invoke(s,h) in loop s t (s :: acc)
             loop s list [s]
 
+        [<CompiledName("Singleton")>]
+        let inline singleton value = [value]
+
         [<CompiledName("Fold2")>]
         let fold2<'T1,'T2,'State> f (acc:'State) (list1:list<'T1>) (list2:list<'T2>) = 
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)

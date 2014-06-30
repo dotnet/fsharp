@@ -475,6 +475,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ScanBack")>]
         val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State list
 
+        /// <summary>Returns a list that contains one item only.</summary>
+        ///
+        /// <param name="value">The input item.</param>
+        ///
+        /// <returns>The result list of one item.</returns>
+        [<CompiledName("Singleton")>]
+        val inline singleton: value:'T -> 'T list
+
         /// <summary>Sorts the given list using the given comparison function.</summary>
         ///
         /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>

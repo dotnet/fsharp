@@ -1193,6 +1193,13 @@ type ArrayModule() =
     member this.Partition () =
         this.PartitionTester Array.partition Array.partition    
 
+    [<Test>]
+    member this.Singleton() =
+        Assert.AreEqual([|null|],Array.singleton null)
+        Assert.AreEqual([|"1"|],Array.singleton "1")
+        Assert.AreEqual([|[]|],Array.singleton [])
+        Assert.AreEqual([|[||]|],Array.singleton [||])
+
 #if FX_NO_TPL_PARALLEL
 #else
     [<Test>]

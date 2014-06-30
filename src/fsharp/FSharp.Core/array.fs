@@ -470,6 +470,9 @@ namespace Microsoft.FSharp.Collections
             let len = array.Length
             scanSubRight f array 0 (len - 1) acc
 
+        [<CompiledName("Singleton")>]
+        let inline singleton value = [|value|]
+
         [<CompiledName("Reduce")>]
         let reduce f (array : _[]) = 
             checkNonNull "array" array

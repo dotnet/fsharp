@@ -500,6 +500,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ScanBack")>]
         val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State[]
 
+        /// <summary>Returns an array that contains one item only.</summary>
+        ///
+        /// <param name="value">The input item.</param>
+        ///
+        /// <returns>The result array of one item.</returns>
+        [<CompiledName("Singleton")>]
+        val inline singleton: value:'T -> 'T[]
+
         /// <summary>Sets an element of an array.</summary>
         /// <param name="array">The input array.</param>
         /// <param name="index">The input index.</param>

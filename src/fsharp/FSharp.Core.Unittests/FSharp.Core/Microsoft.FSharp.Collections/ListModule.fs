@@ -688,3 +688,10 @@ type ListModule() =
         let emptyList:int list = [ ]
         let resultEpt = List.contains 4 emptyList
         Assert.IsFalse(resultEpt)
+        
+    [<Test>]
+    member this.Singleton() =
+        Assert.AreEqual([null],List.singleton null)
+        Assert.AreEqual(["1"],List.singleton "1")
+        Assert.AreEqual([[]],List.singleton [])
+        Assert.AreEqual([[||]],List.singleton [||])
