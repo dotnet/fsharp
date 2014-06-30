@@ -258,6 +258,31 @@ type ArrayModule() =
     member this.``Parallel.Collect`` () =
         this.CollectTester Array.Parallel.collect Array.Parallel.collect
 #endif
+
+    [<Test>]
+    member this.compareWith() =
+        // compareWith should work on empty arrays
+        Assert.AreEqual(0,Array.compareWith (fun _ -> failwith "should not be executed")  [||] [||])
+        Assert.AreEqual(-1,Array.compareWith (fun _ -> failwith "should not be executed") [||] [|1|])
+        Assert.AreEqual(1,Array.compareWith (fun _ -> failwith "should not be executed")  [|"1"|] [||])
+
+        // compareWith should not work on null arrays          
+        CheckThrowsArgumentNullException(fun () -> Array.compareWith (fun _ -> failwith "should not be executed") null [||] |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Array.compareWith (fun _ -> failwith "should not be executed") [||] null |> ignore)
+    
+        // compareWith should work on longer arrays
+        Assert.AreEqual(-1,Array.compareWith compare [|"1";"2"|] [|"1";"3"|])
+        Assert.AreEqual(1,Array.compareWith compare [|1;2;43|] [|1;2;1|])
+        Assert.AreEqual(1,Array.compareWith compare [|1;2;3;4|] [|1;2;3|])
+        Assert.AreEqual(0,Array.compareWith compare [|1;2;3;4|] [|1;2;3;4|])
+        Assert.AreEqual(-1,Array.compareWith compare [|1;2;3|] [|1;2;3;4|])
+        Assert.AreEqual(1,Array.compareWith compare [|1;2;3|] [|1;2;2;4|])
+        Assert.AreEqual(-1,Array.compareWith compare [|1;2;2|] [|1;2;3;4|])
+
+        // compareWith should use the comparer
+        Assert.AreEqual(0,Array.compareWith (fun x y -> 0) [|"1";"2"|] [|"1";"3"|])
+        Assert.AreEqual(1,Array.compareWith (fun x y -> 1) [|"1";"2"|] [|"1";"3"|])
+        Assert.AreEqual(-1,Array.compareWith (fun x y -> -1) [|"1";"2"|] [|"1";"3"|])
         
     [<Test>]
     member this.Concat() =

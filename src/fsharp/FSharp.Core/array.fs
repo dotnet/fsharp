@@ -645,6 +645,27 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             Seq.averageBy f array
 
+        [<CompiledName("CompareWith")>]
+        let inline compareWith (comparer:'T -> 'T -> int) (array1: 'T[]) (array2: 'T[]) = 
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+    
+            let length1 = array1.Length
+            let length2 = array2.Length
+            let minLength = Operators.min length1 length2
+
+            let rec loop index  =
+                if index = minLength  then
+                    if length1 = length2 then 0
+                    elif length1 < length2 then -1
+                    else 1
+                else  
+                    let result = comparer array1.[index] array2.[index]
+                    if result <> 0 then result else
+                    loop (index+1)
+
+            loop 0
+
         [<CompiledName("GetSubArray")>]
         let sub (array:'T[]) (startIndex:int) (count:int) =
             checkNonNull "array" array

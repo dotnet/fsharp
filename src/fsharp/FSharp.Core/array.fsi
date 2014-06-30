@@ -57,6 +57,23 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Collect")>]
         val collect : mapping:('T -> 'U[]) -> array:'T[] -> 'U[]
 
+        /// <summary>Compares two arrays using the given comparison function, element by element.
+        /// Returns the first non-zero result from the comparison function.  If the end of an array
+        /// is reached it returns a -1 if the first array is shorter and a 1 if the second array
+        /// is shorter.</summary>
+        ///
+        /// <param name="comparer">A function that takes an element from each array and returns an int.
+        /// If it evaluates to a non-zero value iteration is stopped and that value is returned.</param>
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        ///
+        /// <returns>The first non-zero value from the comparison function.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the input arrays
+        /// is null.</exception>
+        [<CompiledName("CompareWith")>]
+        val inline compareWith: comparer:('T -> 'T -> int) -> array1:'T[] -> array2:'T[] -> int
+
         /// <summary>Builds a new array that contains the elements of each of the given sequence of arrays.</summary>
         /// <param name="arrays">The input sequence of arrays.</param>
         /// <returns>The concatenation of the sequence of input arrays.</returns>

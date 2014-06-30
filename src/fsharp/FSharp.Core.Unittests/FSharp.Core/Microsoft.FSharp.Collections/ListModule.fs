@@ -138,6 +138,28 @@ type ListModule() =
 
         
         () 
+
+    [<Test>]
+    member this.compareWith() =
+        // compareWith should work on empty lists
+        Assert.AreEqual(0,List.compareWith (fun _ -> failwith "should not be executed")  [] [])
+        Assert.AreEqual(-1,List.compareWith (fun _ -> failwith "should not be executed") [] [1])
+        Assert.AreEqual(1,List.compareWith (fun _ -> failwith "should not be executed")  ["1"] [])
+    
+        // compareWith should work on longer lists
+        Assert.AreEqual(-1,List.compareWith compare ["1";"2"] ["1";"3"])
+        Assert.AreEqual(1,List.compareWith compare [1;2;43] [1;2;1])
+        Assert.AreEqual(1,List.compareWith compare [1;2;3;4] [1;2;3])
+        Assert.AreEqual(0,List.compareWith compare [1;2;3;4] [1;2;3;4])
+        Assert.AreEqual(-1,List.compareWith compare [1;2;3] [1;2;3;4])
+        Assert.AreEqual(1,List.compareWith compare [1;2;3] [1;2;2;4])
+        Assert.AreEqual(-1,List.compareWith compare [1;2;2] [1;2;3;4])
+
+        // compareWith should use the comparer
+        Assert.AreEqual(0,List.compareWith (fun x y -> 0) ["1";"2"] ["1";"3"])
+        Assert.AreEqual(1,List.compareWith (fun x y -> 1) ["1";"2"] ["1";"3"])
+        Assert.AreEqual(-1,List.compareWith (fun x y -> -1) ["1";"2"] ["1";"3"])
+
     [<Test>]
     member this.Concat() =
         // integer List

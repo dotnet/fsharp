@@ -1080,7 +1080,7 @@ namespace Microsoft.FSharp.Collections
             let rec go () = 
                 let e1ok = e1.MoveNext() 
                 let e2ok = e2.MoveNext() 
-                let c = (if e1ok = e2ok then 0 else if e1ok then 1 else -1) 
+                let c = if e1ok = e2ok then 0 else if e1ok then 1 else -1
                 if c <> 0 then c else
                 if not e1ok || not e2ok then 0 
                 else

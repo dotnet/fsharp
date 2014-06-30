@@ -401,6 +401,19 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Collect")>]
         let collect f list = Microsoft.FSharp.Primitives.Basics.List.collect f list
 
+        [<CompiledName("CompareWith")>]
+        let inline compareWith (comparer:'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =
+            let rec loop list1 list2 =
+                 match list1, list2 with
+                 | head1 :: tail1, head2 :: tail2 ->
+                       let c = comparer head1 head2
+                       if c = 0 then loop tail1 tail2 else c
+                 | [], [] -> 0
+                 | _, [] -> 1
+                 | [], _ -> -1
+
+            loop list1 list2
+
         [<CompiledName("Permute")>]
         let permute indexMap list = list |> toArray |> Array.permute indexMap |> ofArray
 
