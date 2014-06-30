@@ -107,6 +107,19 @@ namespace Microsoft.FSharp.Collections
                 result.[i] <- f array.[i]
             concatArrays result
 
+        [<CompiledName("Take")>]
+        let take count (array : 'T[]) =
+            checkNonNull "array" array
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count = 0 then empty else
+            if count > array.Length then
+                raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+
+            let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+            Array.Copy(array, 0, res, 0, count)
+            res
+
         [<CompiledName("Append")>]
         let append (array1:'T[]) (array2:'T[]) = 
             checkNonNull "array1" array1

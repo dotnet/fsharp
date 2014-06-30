@@ -571,6 +571,22 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Tail")>]
         val tail: list:'T list -> 'T list
 
+        /// <summary>Returns the first N elements of the list.</summary>
+        /// <remarks>Throws <c>InvalidOperationException</c>
+        /// if the count exceeds the number of elements in the list. <c>List.truncate</c>
+        /// returns as many items as the list contains instead of throwing an exception.</remarks>
+        ///
+        /// <param name="count">The number of items to take.</param>
+        /// <param name="list">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        ///
+        /// <exception cref="System.ArgumentException">Thrown when the input list is empty.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when count exceeds the number of elements
+        /// in the list.</exception>
+        [<CompiledName("Take")>]
+        val take: count:int -> list:'T list -> 'T list
+
         /// <summary>Builds an array from the given list.</summary>
         /// <param name="list">The input list.</param>
         /// <returns>The array containing the elements of the list.</returns>

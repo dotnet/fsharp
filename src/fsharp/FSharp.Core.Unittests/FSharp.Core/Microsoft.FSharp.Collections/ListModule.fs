@@ -145,6 +145,17 @@ type ListModule() =
         Assert.AreEqual([null, list], List.distinctBy id [null, list])
 
     [<Test>]
+    member this.Take() =
+        Assert.AreEqual([],List.take 0 [])
+        Assert.AreEqual([],List.take 0 ["str1";"str2";"str3";"str4"])
+        Assert.AreEqual([1;2;4],List.take 3 [1;2;4;5;7])
+        Assert.AreEqual(["str1";"str2"],List.take 2 ["str1";"str2";"str3";"str4"])
+
+        CheckThrowsInvalidOperationExn (fun () -> List.take 1 [] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.take -1 [0;1] |> ignore)
+        CheckThrowsInvalidOperationExn (fun () -> List.take 5 ["str1";"str2";"str3";"str4"] |> ignore)
+              
+    [<Test>]
     member this.Choose() = 
         // int List
         let intSrc:int list = [ 1..100 ]    

@@ -87,6 +87,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Choose")>]
         let choose f xs = chooseAllAcc f xs []
 
+        [<CompiledName("Take")>]
+        let take count (list : 'T list) = Microsoft.FSharp.Primitives.Basics.List.take count list
+
         [<CompiledName("IterateIndexed")>]
         let iteri f list = Microsoft.FSharp.Primitives.Basics.List.iteri f list
 

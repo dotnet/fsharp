@@ -266,7 +266,24 @@ module internal List =
             initToFreshConsTail res 1 count f
             res
 
-     
+    let rec takeFreshConsTail cons n l =
+        if n = 0 then setFreshConsTail cons [] else
+        match l with
+        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x::xs ->
+            let cons2 = freshConsNoTail x
+            setFreshConsTail cons cons2
+            takeFreshConsTail cons2 (n - 1) xs
+ 
+    let take n l =
+        if n < 0 then invalidArg "count" InputMustBeNonNegativeString
+        if n = 0 then [] else 
+        match l with
+        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x::xs ->
+            let cons = freshConsNoTail x
+            takeFreshConsTail cons (n - 1) xs
+            cons
       
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.

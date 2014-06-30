@@ -640,6 +640,23 @@ namespace Microsoft.FSharp.Collections
                                   when ^U : (static member ( + ) : ^U * ^U -> ^U) 
                                   and  ^U : (static member Zero : ^U)
 
+        /// <summary>Returns the first N elements of the array.</summary>
+        /// <remarks>Throws <c>InvalidOperationException</c>
+        /// if the count exceeds the number of elements in the array. <c>Array.truncate</c>
+        /// returns as many items as the array contains instead of throwing an exception.</remarks>
+        ///
+        /// <param name="count">The number of items to take.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when count exceeds the number of elements
+        /// in the list.</exception>
+        [<CompiledName("Take")>]
+        val take: count:int -> array:'T[] -> 'T[]
+
         /// <summary>Builds a list from the given array.</summary>
         /// <param name="array">The input array.</param>
         /// <returns>The list of array elements.</returns>

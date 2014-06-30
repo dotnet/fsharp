@@ -187,6 +187,19 @@ type ArrayModule() =
         Assert.AreEqual([|null, list|], Array.distinctBy id [|null, list|])
         
     [<Test>]
+    member this.Take() =
+        Assert.AreEqual([||],Array.take 0 [||])
+        Assert.AreEqual([||],Array.take 0 [|"str1";"str2";"str3";"str4"|])
+        Assert.AreEqual([|1;2;4|],Array.take 3 [|1;2;4;5;7|])
+        Assert.AreEqual([|"str1";"str2"|],Array.take 2 [|"str1";"str2";"str3";"str4"|])
+        Assert.AreEqual( [|"str1";"str2";"str3";"str4"|],Array.take 4 [|"str1";"str2";"str3";"str4"|])
+
+        CheckThrowsInvalidOperationExn (fun () -> Array.take 1 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.take -1 [|0;1|] |> ignore)
+        CheckThrowsInvalidOperationExn (fun () -> Array.take 5 [|"str1";"str2";"str3";"str4"|] |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.take 5 null |> ignore)
+        
+    [<Test>]
     member this.Blit() = 
         // int array   
         let intSrc = [| 1..10 |]
