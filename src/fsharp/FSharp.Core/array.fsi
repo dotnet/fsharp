@@ -126,6 +126,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         val empty<'T> : 'T[]
 
+        /// <summary>Returns the only element of the array.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The only element of the array.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        [<CompiledName("ExactlyOne")>]
+        val exactlyOne: array:'T[] -> 'T
+
         /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
         ///
         /// <remarks>The predicate is applied to the elements of the input array. If any application 

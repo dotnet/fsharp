@@ -404,3 +404,10 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Permute")>]
         let permute indexMap list = list |> toArray |> Array.permute indexMap |> ofArray
 
+        [<CompiledName("ExactlyOne")>]
+        let exactlyOne (source : list<_>) =
+            match source with
+            | [x] -> x
+            | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString            
+            | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
+                

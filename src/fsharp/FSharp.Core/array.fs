@@ -673,7 +673,14 @@ namespace Microsoft.FSharp.Collections
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
             for i = targetIndex to targetIndex + count - 1 do 
                 target.[i] <- x
-            
+
+
+        [<CompiledName("ExactlyOne")>]
+        let exactlyOne (array:'T[]) =
+            checkNonNull "array" array
+            if array.Length = 1 then array.[0]
+            elif array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
 
 #if FX_NO_TPL_PARALLEL
 #else

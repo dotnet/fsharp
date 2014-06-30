@@ -422,7 +422,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <param name="source">The input sequence.</param>
         ///
-        /// <returns>The last element of the sequence.</returns>
+        /// <returns>The only element of the sequence.</returns>
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the input does not have precisely one element.</exception>

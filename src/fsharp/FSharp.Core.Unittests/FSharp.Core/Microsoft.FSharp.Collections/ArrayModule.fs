@@ -759,6 +759,24 @@ type ArrayModule() =
         
         ()
 
+    [<Test>]
+    member this.``exactlyOne should return the element from singleton arrays``() =
+        Assert.AreEqual(1, Array.exactlyOne [|1|])
+        Assert.AreEqual("2", Array.exactlyOne [|"2"|])
+        ()
+
+    [<Test>]
+    member this.``exactlyOne should fail on empty array``() =
+        CheckThrowsArgumentException(fun () -> Array.exactlyOne [||] |> ignore)
+
+    [<Test>]
+    member this.``exactlyOne should fail on null array``() =
+        CheckThrowsArgumentNullException(fun () -> Array.exactlyOne null |> ignore)
+
+    [<Test>]
+    member this.``exactlyOne should fail on arrays with more than one element``() =
+        CheckThrowsArgumentException(fun () -> Array.exactlyOne [|"1"; "2"|] |> ignore)
+
     member private this.InitTester initInt initString = 
         // integer array
         let resultInt : int[] = initInt 3 (fun x -> x + 3) 

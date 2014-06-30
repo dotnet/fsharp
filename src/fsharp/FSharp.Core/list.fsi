@@ -79,6 +79,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         val empty<'T> : 'T list
 
+        /// <summary>Returns the only element of the list.</summary>
+        ///
+        /// <param name="list">The input list.</param>
+        ///
+        /// <returns>The only element of the list.</returns>
+        ///        
+        /// <exception cref="System.ArgumentException">Thrown when the input does not have precisely one element.</exception>
+        [<CompiledName("ExactlyOne")>]
+        val exactlyOne: list:'T list -> 'T
+
         /// <summary>Tests if any element of the list satisfies the given predicate.</summary>
         ///
         /// <remarks>The predicate is applied to the elements of the input list. If any application 
