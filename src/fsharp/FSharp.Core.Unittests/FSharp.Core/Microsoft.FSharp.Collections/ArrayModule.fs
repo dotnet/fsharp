@@ -569,6 +569,19 @@ type ArrayModule() =
         
         // make it not found
         CheckThrowsKeyNotFoundException (fun () -> Array.pick (fun n -> None) intArr |> ignore)
+
+    [<Test>]
+    member this.last() =
+        // last should fail on empty array
+        CheckThrowsArgumentException(fun () -> Array.last [||] |> ignore)
+
+        // last should fail on null
+        CheckThrowsArgumentNullException(fun () -> Array.last null |> ignore)
+
+        // last should return the last element from arrays
+        Assert.AreEqual(1, Array.last [|1|])
+        Assert.AreEqual("2", Array.last [|"1"; "3"; "2"|])
+        Assert.AreEqual(["4"], Array.last [|["1"; "3"]; []; ["4"]|])
         
     [<Test>]
     member this.ToSeq() =

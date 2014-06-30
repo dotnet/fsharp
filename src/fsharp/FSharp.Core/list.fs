@@ -18,6 +18,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Length")>]
         let length (list: 'T list) = list.Length
+        
+        [<CompiledName("Last")>]
+        let rec last (list : 'T list) =
+            match list with
+            | [x] -> x
+            | _ :: tail -> last tail
+            | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
         [<CompiledName("Reverse")>]
         let rev list = Microsoft.FSharp.Primitives.Basics.List.rev list

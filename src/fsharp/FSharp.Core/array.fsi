@@ -341,6 +341,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("IterateIndexed2")>]
         val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> array1:'T1[] -> array2:'T2[] -> unit
 
+        /// <summary>Returns the last element of the array.</summary>
+        /// <param name="array">The input array.</param>
+        /// <returns>The last element of the array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>        
+        /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
+        [<CompiledName("Last")>]
+        val inline last: array:'T[] -> 'T
+
         /// <summary>Returns the length of an array. You can also use property arr.Length.</summary>
         /// <param name="array">The input array.</param>
         /// <returns>The length of the array.</returns>

@@ -29,6 +29,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Length")>]
         let length (array: _[])    = array.Length
+        
+        [<CompiledName("Last")>]
+        let inline last (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
+            array.[array.Length-1]
 
         [<CompiledName("Initialize")>]
         let inline init count f      = Microsoft.FSharp.Primitives.Basics.Array.init count f

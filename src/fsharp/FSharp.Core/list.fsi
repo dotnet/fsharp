@@ -282,6 +282,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("IterateIndexed2")>]
         val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> list1:'T1 list -> list2:'T2 list -> unit
 
+        /// <summary>Returns the last element of the list.</summary>
+        /// <param name="list">The input list.</param>
+        /// <returns>The last element of the list.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
+        [<CompiledName("Last")>]
+        val last: list:'T list -> 'T
+
         /// <summary>Returns the length of the list.</summary>
         /// <param name="list">The input list.</param>
         /// <returns>The length of the list.</returns>

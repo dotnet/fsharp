@@ -524,6 +524,16 @@ type ListModule() =
         CheckThrowsArgumentException(fun () -> List.exactlyOne ["1"; "2"] |> ignore)
         
     [<Test>]
+    member this.last() =
+        // last should fail on empty list
+        CheckThrowsArgumentException(fun () -> List.last [] |> ignore)
+
+        // last should return the last element from lists
+        Assert.AreEqual(1, List.last [1])
+        Assert.AreEqual("2", List.last ["1"; "3"; "2"])
+        Assert.AreEqual(["4"], List.last [["1"; "3"]; []; ["4"]])
+
+    [<Test>]
     member this.Init() = 
         // integer List
         let resultInt = List.init 3 (fun x -> x + 3)         

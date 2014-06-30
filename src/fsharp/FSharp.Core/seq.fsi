@@ -408,11 +408,8 @@ namespace Microsoft.FSharp.Collections
         val head: source:seq<'T> -> 'T
 
         /// <summary>Returns the last element of the sequence.</summary>
-        ///
         /// <param name="source">The input sequence.</param>
-        ///
         /// <returns>The last element of the sequence.</returns>
-        ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
         [<CompiledName("Last")>]
