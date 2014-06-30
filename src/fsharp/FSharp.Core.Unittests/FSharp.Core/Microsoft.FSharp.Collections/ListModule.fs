@@ -180,7 +180,6 @@ type ListModule() =
         let emptyChosen = List.choose funcInt emptySrc        
         Assert.AreEqual(emptySrc, emptyChosen)
 
-        
         () 
 
     [<Test>]
@@ -203,6 +202,17 @@ type ListModule() =
         Assert.AreEqual(0,List.compareWith (fun x y -> 0) ["1";"2"] ["1";"3"])
         Assert.AreEqual(1,List.compareWith (fun x y -> 1) ["1";"2"] ["1";"3"])
         Assert.AreEqual(-1,List.compareWith (fun x y -> -1) ["1";"2"] ["1";"3"])
+        
+    [<Test>]
+    member this.takeWhile() =
+        Assert.AreEqual([],List.takeWhile (fun x -> failwith "should not be used") [])
+        Assert.AreEqual([1;2;4;5],List.takeWhile (fun x -> x < 6) [1;2;4;5;6;7])
+        Assert.AreEqual(["a"; "ab"; "abc"],List.takeWhile (fun (x:string) -> x.Length < 4) ["a"; "ab"; "abc"; "abcd"; "abcde"])        
+        Assert.AreEqual(["a"; "ab"; "abc"; "abcd"; "abcde"],List.takeWhile (fun _ -> true) ["a"; "ab"; "abc"; "abcd"; "abcde"])
+        Assert.AreEqual([],List.takeWhile (fun _ -> false) ["a"; "ab"; "abc"; "abcd"; "abcde"])
+        Assert.AreEqual([],List.takeWhile (fun _ -> false) ["a"])
+        Assert.AreEqual(["a"],List.takeWhile (fun _ -> true) ["a"])
+        Assert.AreEqual(["a"],List.takeWhile (fun x -> x <> "ab") ["a"; "ab"; "abc"; "abcd"; "abcde"])
 
     [<Test>]
     member this.Concat() =

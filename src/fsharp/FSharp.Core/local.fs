@@ -466,6 +466,27 @@ module internal List =
             res <- arr.[i] :: res
         res
 
+    let rec takeWhileFreshConsTail cons p l =
+        match l with
+        | [] -> setFreshConsTail cons []
+        | x::xs ->
+            if p x then
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                takeWhileFreshConsTail cons2 p xs
+            else
+                setFreshConsTail cons []
+
+    let takeWhile p (l: 'T list) =
+        match l with
+        | [] -> l
+        | x :: ([] as nil) -> if p x then l else nil
+        | x::xs ->
+            if not (p x) then [] else
+            let cons = freshConsNoTail x
+            takeWhileFreshConsTail cons p xs
+            cons
+
     // NOTE: This implementation is now only used for List.sortWith. We should change that to use the stable sort via arrays
     // below, and remove this implementation.
     module StableSortImplementation =

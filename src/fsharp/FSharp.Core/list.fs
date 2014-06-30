@@ -90,6 +90,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Take")>]
         let take count (list : 'T list) = Microsoft.FSharp.Primitives.Basics.List.take count list
 
+        [<CompiledName("TakeWhile")>]
+        let takeWhile p (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.takeWhile p list
+
         [<CompiledName("IterateIndexed")>]
         let iteri f list = Microsoft.FSharp.Primitives.Basics.List.iteri f list
 

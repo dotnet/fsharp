@@ -657,6 +657,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Take")>]
         val take: count:int -> array:'T[] -> 'T[]
 
+        /// <summary>Returns an array that contains all elements of the original array while the 
+        /// given predicate returns <c>true</c>, and then returns no further elements.</summary>
+        ///
+        /// <param name="predicate">A function that evaluates to false when no more items should be returned.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        [<CompiledName("TakeWhile")>]
+        val takeWhile: predicate:('T -> bool) -> array:'T[] -> 'T[]
+
         /// <summary>Builds a list from the given array.</summary>
         /// <param name="array">The input array.</param>
         /// <returns>The list of array elements.</returns>

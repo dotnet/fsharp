@@ -28,6 +28,7 @@ module internal List =
     val zip3 : 'T1 list -> 'T2 list -> 'T3 list -> ('T1 * 'T2 * 'T3) list
     val ofArray : 'T[] -> 'T list
     val take : int -> 'T list -> 'T list
+    val takeWhile : ('T -> bool) -> 'T list -> 'T list
     val toArray : 'T list -> 'T[]
     val sortWith : ('T -> 'T -> int) -> 'T list -> 'T list
 

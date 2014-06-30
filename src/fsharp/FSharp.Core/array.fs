@@ -120,6 +120,19 @@ namespace Microsoft.FSharp.Collections
             Array.Copy(array, 0, res, 0, count)
             res
 
+        [<CompiledName("TakeWhile")>]
+        let takeWhile predicate (array: 'T[]) = 
+            checkNonNull "array" array
+            if array.Length = 0 then empty else
+            let mutable count = 0
+            while count < array.Length && predicate array.[count] do
+                count <- count + 1
+
+            let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
+
+            Array.Copy(array, 0, res, 0, count)
+            res
+
         [<CompiledName("Append")>]
         let append (array1:'T[]) (array2:'T[]) = 
             checkNonNull "array1" array1

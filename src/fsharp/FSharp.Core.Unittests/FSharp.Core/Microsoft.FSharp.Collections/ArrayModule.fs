@@ -200,6 +200,19 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.take 5 null |> ignore)
         
     [<Test>]
+    member this.takeWhile() =
+        Assert.AreEqual([||],Array.takeWhile (fun x -> failwith "should not be used") [||])
+        Assert.AreEqual([|1;2;4;5|],Array.takeWhile (fun x -> x < 6) [|1;2;4;5;6;7|])
+        Assert.AreEqual([|"a"; "ab"; "abc"|],Array.takeWhile (fun (x:string) -> x.Length < 4) [|"a"; "ab"; "abc"; "abcd"; "abcde"|])
+        Assert.AreEqual([|"a"; "ab"; "abc"; "abcd"; "abcde"|],Array.takeWhile (fun _ -> true) [|"a"; "ab"; "abc"; "abcd"; "abcde"|])
+        Assert.AreEqual([||],Array.takeWhile (fun _ -> false) [|"a"; "ab"; "abc"; "abcd"; "abcde"|])
+        Assert.AreEqual([||],Array.takeWhile (fun _ -> false) [|"a"|])
+        Assert.AreEqual([|"a"|],Array.takeWhile (fun _ -> true) [|"a"|])
+        Assert.AreEqual([|"a"|],Array.takeWhile (fun x -> x <> "ab") [|"a"; "ab"; "abc"; "abcd"; "abcde"|])
+
+        CheckThrowsArgumentNullException (fun () -> Array.takeWhile (fun _ -> failwith "should not be used") null |> ignore) 
+        
+    [<Test>]
     member this.Blit() = 
         // int array   
         let intSrc = [| 1..10 |]
