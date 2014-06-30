@@ -389,6 +389,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfSeq")>]
         val ofSeq: source:seq<'T> -> 'T list
 
+        /// <summary>Returns a list of each element in the input list and its predecessor, with the
+        /// exception of the first element which is only returned as the predecessor of the second element.</summary>
+        ///
+        /// <param name="list">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        [<CompiledName("Pairwise")>]
+        val pairwise: list:'T list -> ('T * 'T) list
+
         /// <summary>Splits the collection into two collections, containing the 
         /// elements for which the given predicate returns <c>true</c> and <c>false</c>
         /// respectively. Element order is preserved in both of the created lists.</summary>

@@ -438,6 +438,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("OfSeq")>]
         val ofSeq: source:seq<'T> -> 'T[]
 
+        /// <summary>Returns an array of each element in the input array and its predecessor, with the
+        /// exception of the first element which is only returned as the predecessor of the second element.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("Pairwise")>]
+        val pairwise: array:'T[] -> ('T * 'T)[]
+
         /// <summary>Splits the collection into two collections, containing the 
         /// elements for which the given predicate returns "true" and "false"
         /// respectively.</summary>

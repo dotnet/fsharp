@@ -473,6 +473,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Singleton")>]
         let inline singleton value = [|value|]
 
+        [<CompiledName("Pairwise")>]
+        let pairwise (array: 'T[]) =
+            checkNonNull "array" array
+            if array.Length < 2 then [||] else
+            init (array.Length-1) (fun i -> array.[i],array.[i+1])
+
         [<CompiledName("Reduce")>]
         let reduce f (array : _[]) = 
             checkNonNull "array" array

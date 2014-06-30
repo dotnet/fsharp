@@ -1005,6 +1005,18 @@ type ArrayModule() =
         
         ()                
 
+    [<Test>]
+    member this.``pairwise should return pairs of the input array``() =
+        Assert.AreEqual([||],Array.pairwise [||])
+        Assert.AreEqual([||],Array.pairwise [|1|])
+        Assert.AreEqual([|1,2|],Array.pairwise [|1;2|])
+        Assert.AreEqual([|1,2; 2,3|],Array.pairwise [|1;2;3|])
+        Assert.AreEqual([|"H","E"; "E","L"; "L","L"; "L","O"|],Array.pairwise [|"H";"E";"L";"L";"O"|])
+
+    [<Test>]
+    member this.``pairwise should not work on null``() =
+        CheckThrowsArgumentNullException(fun () -> Array.pairwise null |> ignore)
+
     member private this.MapTester mapInt (mapString : (string -> int) -> array<string> -> array<int>) =
         // empty array 
         let f x = x + 1

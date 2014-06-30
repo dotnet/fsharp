@@ -145,6 +145,13 @@ namespace Microsoft.FSharp.Collections
                     | h::t -> loop (f.Invoke(s,h)) t
                 loop s list
 
+        [<CompiledName("Pairwise")>]
+        let pairwise (list: 'T list) =
+            let array = List.toArray list
+            if array.Length < 2 then [] else
+            List.init (array.Length-1) (fun i -> array.[i],array.[i+1])
+        
+
         [<CompiledName("Reduce")>]
         let reduce f list = 
             match list with 
