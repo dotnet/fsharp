@@ -229,6 +229,35 @@ type ListModule() =
         ()   
 
     [<Test>]
+    member this.Where() =
+        // integer List
+        let intArr = [ 1..20 ]
+        let funcInt x = if (x%5 = 0) then true else false
+        let resultInt = List.where funcInt intArr        
+        Assert.AreEqual([5;10;15;20], resultInt)
+        
+        // string List
+        let strArr = ["."; ".."; "..."; "...."] 
+        let funcStr (x:string) = if (x.Length >2) then true else false
+        let resultStr = List.where funcStr strArr        
+        Assert.AreEqual(["..."; "...."], resultStr)
+        
+        // empty List
+        let emptyArr:int list = [ ]
+        let resultEpt = List.where funcInt emptyArr        
+        Assert.AreEqual(emptyArr, resultEpt)
+            
+        ()   
+
+    [<Test>]
+    member this.``where should work like filter``() =
+        Assert.AreEqual([], List.where (fun x -> x % 2 = 0) [])
+        Assert.AreEqual([0;2;4;6;8], List.where (fun x -> x % 2 = 0) [0..9])
+        Assert.AreEqual(["a";"b";"c"], List.where (fun _ -> true) ["a";"b";"c"])
+
+        ()
+
+    [<Test>]
     member this.Find() =
         // integer List
         let intArr = [ 1..20 ]

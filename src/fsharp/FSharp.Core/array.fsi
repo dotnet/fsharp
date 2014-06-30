@@ -600,6 +600,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Unzip3")>]
         val unzip3: array:('T1 * 'T2 * 'T3)[] -> ('T1[] * 'T2[] * 'T3[])
 
+        /// <summary>Returns a new array containing only the elements of the array
+        /// for which the given predicate returns "true".</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>An array containing the elements for which the given predicate returns true.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>    
+        [<CompiledName("Where")>]
+        val where: predicate:('T -> bool) -> array:'T[] -> 'T[]
+
         /// <summary>Combines the two arrays into an array of pairs. The two arrays must have equal lengths, otherwise an <c>ArgumentException</c> is
         /// raised.</summary>
         /// <param name="array1">The first input array.</param>

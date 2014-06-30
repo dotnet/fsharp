@@ -553,6 +553,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>Three lists of split elements.</returns>
         [<CompiledName("Unzip3")>]
         val unzip3: list:('T1 * 'T2 * 'T3) list -> ('T1 list * 'T2 list * 'T3 list)
+        
+        /// <summary>Returns a new list containing only the elements of the list
+        /// for which the given predicate returns "true"</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>A list containing only the elements that satisfy the predicate.</returns>
+        [<CompiledName("Where")>]
+        val where: predicate:('T -> bool) -> list:'T list -> 'T list
 
         /// <summary>Combines the two lists into a list of pairs. The two lists must have equal lengths.</summary>
         /// <param name="list1">The first input list.</param>

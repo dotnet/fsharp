@@ -451,6 +451,38 @@ type ArrayModule() =
         
         ()   
 
+
+    [<Test>]
+    member this.Where() =
+        // integer array
+        let intArr = [| 1..20 |]
+        let funcInt x = if (x%5 = 0) then true else false
+        let resultInt = Array.where funcInt intArr
+        if resultInt <> [|5;10;15;20|] then Assert.Fail()
+        
+        // string array
+        let strArr = [|"Lists"; "are"; "a"; "commonly"; "data";"structor" |]
+        let funcStr (x:string) = if (x.Length > 4) then true else false
+        let resultStr = Array.where funcStr strArr
+        if resultStr <> [|"Lists";  "commonly"; "structor" |] then Assert.Fail()
+        
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEpt = Array.where funcInt emptyArr
+        if resultEpt <> [| |] then Assert.Fail()
+
+        // null array
+        let nullArr = null:string[] 
+        CheckThrowsArgumentNullException (fun () ->  Array.where funcStr nullArr |> ignore) 
+        
+        ()   
+
+    [<Test>]
+    member this.``where should work like filter``() =
+        Assert.AreEqual([||], Array.where (fun x -> x % 2 = 0) [||])
+        Assert.AreEqual([|0;2;4;6;8|], Array.where (fun x -> x % 2 = 0) [|0..9|])
+        Assert.AreEqual([|"a";"b";"c"|], Array.where (fun _ -> true) [|"a";"b";"c"|])
+
     [<Test>]
     member this.Find() =
         // integer array

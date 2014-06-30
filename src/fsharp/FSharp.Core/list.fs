@@ -319,6 +319,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Filter")>]
         let filter f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
+        [<CompiledName("Where")>]
+        let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
+
         [<CompiledName("Partition")>]
         let partition p x = Microsoft.FSharp.Primitives.Basics.List.partition p x
             

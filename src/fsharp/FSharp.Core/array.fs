@@ -296,6 +296,9 @@ namespace Microsoft.FSharp.Collections
                 if f x then res.Add(x)
             res.ToArray()
 
+        [<CompiledName("Where")>]
+        let where f (array: _[]) = filter f array
+
         [<CompiledName("Partition")>]
         let partition f (array: _[]) = 
             checkNonNull "array" array
