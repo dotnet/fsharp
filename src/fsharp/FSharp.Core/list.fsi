@@ -88,6 +88,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Contains")>]
         val inline contains: value:'T -> source:'T list -> bool when 'T : equality
 
+        /// <summary>Returns a list that contains no duplicate entries according to generic hash and
+        /// equality comparisons on the entries.
+        /// If an element occurs multiple times in the list then the later occurrences are discarded.</summary>
+        ///
+        /// <param name="list">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        [<CompiledName("Distinct")>]
+        val distinct: list:'T list -> 'T list when 'T : equality
+
         /// <summary>Returns an empty list of the given type.</summary>
         [<GeneralizableValue>]
         [<CompiledName("Empty")>]

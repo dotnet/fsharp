@@ -46,7 +46,7 @@ type ListModule() =
         ()
 
     [<Test>]
-    member this.Avarage() =     
+    member this.Average() =     
         // empty float32 List
         let emptyFloatList = List.empty<System.Single> 
         CheckThrowsArgumentException(fun () -> List.average emptyFloatList |> ignore)
@@ -76,7 +76,6 @@ type ListModule() =
         
 
         ()
-        
         
     [<Test>]
     member this.AverageBy() =  
@@ -109,7 +108,23 @@ type ListModule() =
             
         ()
 
+    [<Test>]
+    member this.distinct() = 
+        // distinct should work on empty list
+        Assert.AreEqual([], List.distinct [])
 
+        // distinct should filter out simple duplicates
+        Assert.AreEqual([1], List.distinct [1])
+        Assert.AreEqual([1], List.distinct [1; 1])
+        Assert.AreEqual([1; 2; 3], List.distinct [1; 2; 3; 1])
+        Assert.AreEqual([[1;2]; [1;3]], List.distinct [[1;2]; [1;3]; [1;2]; [1;3]])        
+        Assert.AreEqual([[1;1]; [1;2]; [1;3]; [1;4]], List.distinct [[1;1]; [1;2]; [1;3]; [1;4]])
+        Assert.AreEqual([[1;1]; [1;4]], List.distinct [[1;1]; [1;1]; [1;1]; [1;4]])
+
+        Assert.AreEqual([null], List.distinct [null])
+        let list = new System.Collections.Generic.List<int>()
+        Assert.AreEqual([null, list], List.distinct [null, list])
+        
       
     [<Test>]
     member this.Choose() = 

@@ -30,6 +30,28 @@ module internal List =
     let inline setFreshConsTail cons t = cons.(::).1 <- t
     let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
+    let rec distinctToFreshConsTail cons (hashSet:HashSet<_>) list = 
+        match list with
+        | [] -> setFreshConsTail cons []
+        | (x::rest) ->
+            if hashSet.Add(x) then
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                distinctToFreshConsTail cons2 hashSet rest
+            else
+                distinctToFreshConsTail cons hashSet rest
+
+    let distinct (comparer: System.Collections.Generic.IEqualityComparer<'T>) (list:'T list) =       
+        match list with
+        | [] -> []
+        | [h] -> [h]
+        | (x::rest) ->
+            let hashSet =  System.Collections.Generic.HashSet<'T>(comparer)
+            hashSet.Add(x) |> ignore
+            let cons = freshConsNoTail x
+            distinctToFreshConsTail cons hashSet rest
+            cons
+
 
     let rec mapToFreshConsTail cons f x = 
         match x with

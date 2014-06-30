@@ -146,6 +146,22 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len - 1 do 
                 f array.[i]
 
+        [<CompiledName("Distinct")>]
+        let distinct (array:'T[]) =
+            checkNonNull "array" array
+            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+            let mutable i = 0
+
+            let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
+            for v in array do 
+                if hashSet.Add(v) then
+                    temp.[i] <- v
+                    i <- i + 1
+
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked i : 'T[]
+            Array.Copy(temp, 0, res, 0, i)
+            res
+
         [<CompiledName("Map")>]
         let inline map (f: 'T -> 'U) (array:'T[]) =
             checkNonNull "array" array

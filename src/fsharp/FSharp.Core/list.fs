@@ -40,6 +40,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate")>]
         let iter f list = Microsoft.FSharp.Primitives.Basics.List.iter f list
+        
+        [<CompiledName("Distinct")>]
+        let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinct HashIdentity.Structural<'T> list
 
         [<CompiledName("OfArray")>]
         let ofArray (array:'T array) = Microsoft.FSharp.Primitives.Basics.List.ofArray array

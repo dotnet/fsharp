@@ -143,6 +143,26 @@ type ArrayModule() =
         CheckThrowsArgumentNullException (fun () -> Array.averageBy funcd nullArr |> ignore) 
         
         ()
+
+    [<Test>]
+    member this.distinct() =
+        // distinct should work on empty array
+        Assert.AreEqual([||], Array.distinct [||])
+
+        // distinct not should work on null
+        CheckThrowsArgumentNullException (fun () -> Array.distinct null |> ignore)
+
+        // distinct should filter out simple duplicates
+        Assert.AreEqual([|1|], Array.distinct [|1|])
+        Assert.AreEqual([|1|], Array.distinct [|1; 1|])
+        Assert.AreEqual([|1; 2; 3|], Array.distinct [|1; 2; 3; 1|])
+        Assert.AreEqual([|[1;2]; [1;3]|], Array.distinct [|[1;2]; [1;3]; [1;2]; [1;3]|])
+        Assert.AreEqual([|[1;1]; [1;2]; [1;3]; [1;4]|], Array.distinct [|[1;1]; [1;2]; [1;3]; [1;4]|])
+        Assert.AreEqual([|[1;1]; [1;4]|], Array.distinct [|[1;1]; [1;1]; [1;1]; [1;4]|])
+
+        Assert.AreEqual([|null|], Array.distinct [|null|])
+        let list = new System.Collections.Generic.List<int>()
+        Assert.AreEqual([|null, list|], Array.distinct [|null, list|])
         
     [<Test>]
     member this.Blit() = 
