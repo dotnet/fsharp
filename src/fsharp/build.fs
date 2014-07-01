@@ -1001,7 +1001,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
                         | Parser.NONTERM_implementationFile|Parser.NONTERM_fileNamespaceImpl|Parser.NONTERM_fileNamespaceImpls -> Some()
                         | _ -> None
                   let (|NONTERM_Category_Definition|_|) = function
-                        | Parser.NONTERM_fileModuleImpl|Parser.NONTERM_moduleDefn|Parser.NONTERM_interactiveModuleDefns
+                        | Parser.NONTERM_fileModuleImpl|Parser.NONTERM_moduleDefn|Parser.NONTERM_interactiveDefns
                         |Parser.NONTERM_moduleDefns|Parser.NONTERM_moduleDefnsOrExpr -> Some()
                         | _ -> None
                   
@@ -3767,19 +3767,25 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         tcGlobals <- Some g
 
 #if EXTENSIONTYPING
-    member private tcImports.InjectProvidedNamespaceOrTypeIntoEntity typeProviderEnvironment (tcConfig:TcConfig) m (entity:Entity) (injectedNamspace,remainingNamespace) provider (st:Tainted<ProvidedType> option) = 
+    member private tcImports.InjectProvidedNamespaceOrTypeIntoEntity 
+            (typeProviderEnvironment, 
+             tcConfig:TcConfig,
+             m,entity:Entity,
+             injectedNamspace,remainingNamespace,
+             provider, 
+             st:Tainted<ProvidedType> option) = 
         match remainingNamespace with
         | next::rest ->
             // Inject the namespace entity 
             match entity.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(next) with
             | Some childEntity ->
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity typeProviderEnvironment tcConfig m childEntity (next::injectedNamspace,rest) provider st
+                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, childEntity, next::injectedNamspace, rest, provider, st)
             | None -> 
                 // Build up the artificial namespace if there is not a real one.
                 let cpath = CompPath(ILScopeRef.Local, injectedNamspace |> List.rev |> List.map (fun n -> (n,ModuleOrNamespaceKind.Namespace)) )
                 let newNamespace = NewModuleOrNamespace (Some cpath) taccessPublic (ident(next,rangeStartup)) XmlDoc.Empty [] (notlazy (NewEmptyModuleOrNamespaceType Namespace)) 
                 entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation(newNamespace)
-                tcImports.InjectProvidedNamespaceOrTypeIntoEntity typeProviderEnvironment tcConfig m newNamespace (next::injectedNamspace,rest) provider st
+                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, newNamespace, next::injectedNamspace, rest, provider, st)
         | [] -> 
             match st with
             | Some st ->
@@ -3808,29 +3814,21 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
                 | _ -> failwith "Unexpected representation in namespace entity referred to by a type provider"
 
-    member tcImports.ImportTypeProviderExtensions (tpApprovalsRef : ApprovalIO.TypeProviderApprovalStatus list ref, 
-                                                   displayPSTypeProviderSecurityDialogBlockingUI, 
-                                                   tcConfig:TcConfig, 
-                                                   fileNameOfRuntimeAssembly, 
-                                                   ilScopeRefOfRuntimeAssembly,
-                                                   moduleAttributes:ILAttribute list, 
-                                                   mspec, 
-                                                   invalidateCcu:Event<_>, 
-                                                   m) = 
+    member tcImports.ImportTypeProviderExtensions 
+               (tpApprovals : ApprovalIO.TypeProviderApprovalStatus list, 
+                displayPSTypeProviderSecurityDialogBlockingUI, 
+                tcConfig:TcConfig, 
+                fileNameOfRuntimeAssembly, 
+                ilScopeRefOfRuntimeAssembly,
+                runtimeAssemblyAttributes:ILAttribute list, 
+                entityToInjectInto, invalidateCcu:Event<_>, m) = 
 
-        let typeProviderEnvironment : ExtensionTyping.ResolutionEnvironment = 
-             { resolutionFolder       = tcConfig.implicitIncludeDir
-               outputFile             = tcConfig.outputFile
-               showResolutionMessages = tcConfig.showExtensionTypeMessages 
-               referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
-               temporaryFolder        = Path.GetTempPath()
-             }
+        let startingErrorCount = CompileThreadStatic.ErrorLogger.ErrorCount
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that 
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
-        let startingErrorCount = CompileThreadStatic.ErrorLogger.ErrorCount
         let providerAssemblies = 
-            moduleAttributes 
+            runtimeAssemblyAttributes 
             |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaILGlobals))
             // If no design-time assembly is specified, use the runtime assembly
             |> List.map (function null -> Path.GetFileNameWithoutExtension fileNameOfRuntimeAssembly | s -> s)
@@ -3838,16 +3836,24 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         if providerAssemblies.Count > 0 then
 
-            let systemRuntimeAssemblyVersion : System.Version = 
+            // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
+            let systemRuntimeAssemblyVersion = 
                 let primaryAssemblyRef = tcConfig.PrimaryAssemblyDllReference()
                 let resolution = tcConfig.ResolveLibWithDirectories CcuLoadFailureAction.RaiseError primaryAssemblyRef |> Option.get
                  // MSDN: this method causes the file to be opened and closed, but the assembly is not added to this domain
                 let name = System.Reflection.AssemblyName.GetAssemblyName(resolution.resolvedPath)
                 name.Version
 
+            let typeProviderEnvironment = 
+                 { resolutionFolder       = tcConfig.implicitIncludeDir
+                   outputFile             = tcConfig.outputFile
+                   showResolutionMessages = tcConfig.showExtensionTypeMessages 
+                   referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
+                   temporaryFolder        = Path.GetTempPath() }
+
             let providers = 
                 [ for assemblyName in providerAssemblies do
-                      yield ExtensionTyping.GetTypeProvidersOfAssembly(displayPSTypeProviderSecurityDialogBlockingUI, tcConfig.validateTypeProviders, tpApprovalsRef, 
+                      yield ExtensionTyping.GetTypeProvidersOfAssembly(displayPSTypeProviderSecurityDialogBlockingUI, tcConfig.validateTypeProviders, tpApprovals, 
                                                                        fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, tcImports.SystemRuntimeContainsType, systemRuntimeAssemblyVersion, m) ]
             let wasApproved = providers |> List.forall (fun (ok,_) -> ok)
@@ -3881,8 +3887,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                         // Inject an entity for the namespace, or if one already exists, then record this as a provider
                         // for that namespace.
                         let rec loop (providedNamespace: Tainted<IProvidedNamespace>) =
-                            let path = ExtensionTyping.GetPartsOfDotNetNamespace(m,provider,providedNamespace.PUntaint((fun r -> r.NamespaceName), m))
-                            tcImports.InjectProvidedNamespaceOrTypeIntoEntity  typeProviderEnvironment tcConfig m mspec  ([],path) provider None
+                            let path = ExtensionTyping.GetProvidedNamespaceAsPath(m,provider,providedNamespace.PUntaint((fun r -> r.NamespaceName), m))
+                            tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [],path, provider, None)
 
                             // Inject entities for the types returned by provider.GetTypes(). 
                             //
@@ -3892,7 +3898,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                             let tys = providedNamespace.PApplyArray((fun provider -> provider.GetTypes()), "GetTypes", m)
                             let ptys = [| for ty in tys -> ty.PApply((fun ty -> ty |> ProvidedType.CreateNoContext), m) |]
                             for st in ptys do 
-                                tcImports.InjectProvidedNamespaceOrTypeIntoEntity typeProviderEnvironment tcConfig m mspec ([],path) provider (Some st)
+                                tcImports.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, Some st)
 
                             for providedNestedNamespace in providedNamespace.PApplyArray((fun provider -> provider.GetNestedNamespaces()), "GetNestedNamespaces", m) do 
                                 loop providedNestedNamespace
@@ -3923,7 +3929,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     // Compact Framework binaries must use this. However it is not
     // clear when else it is required, e.g. for Mono.
     
-    member tcImports.PrepareToImportReferencedIlDll tpApprovalsRef m filename displayPSTypeProviderSecurityDialogBlockingUI (dllinfo:ImportedBinary) =
+    member tcImports.PrepareToImportReferencedIlDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI (dllinfo:ImportedBinary) =
         CheckDisposed()
         let tcConfig = tcConfigP.Get()
         tcConfig.CheckFSharpBinary(filename,dllinfo.ILAssemblyRefs,m)
@@ -3955,12 +3961,12 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         tcImports.RegisterCcu(ccuinfo);
         let phase2 () = 
 #if EXTENSIONTYPING
-            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovalsRef, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+            ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
 #endif
             [ResolvedImportedAssembly(ccuinfo)]
         phase2
 
-    member tcImports.PrepareToImportReferencedFSharpDll tpApprovalsRef m filename displayPSTypeProviderSecurityDialogBlockingUI (dllinfo:ImportedBinary) =
+    member tcImports.PrepareToImportReferencedFSharpDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI (dllinfo:ImportedBinary) =
         CheckDisposed()
         let tcConfig = tcConfigP.Get()
         tcConfig.CheckFSharpBinary(filename,dllinfo.ILAssemblyRefs,m)
@@ -4080,7 +4086,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                        ILScopeRef = ilScopeRef }  
                 let phase2() = 
 #if EXTENSIONTYPING
-                     ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovalsRef, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+                     ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
 #else
                      ()
 #endif
@@ -4099,7 +4105,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         phase2
          
 
-    member tcImports.RegisterAndPrepareToImportReferencedDll tpApprovalsRef displayPSTypeProviderSecurityDialogBlockingUI (r:AssemblyResolution) : _*(unit -> AvailableImportedAssembly list)=
+    member tcImports.RegisterAndPrepareToImportReferencedDll tpApprovals displayPSTypeProviderSecurityDialogBlockingUI (r:AssemblyResolution) : _*(unit -> AvailableImportedAssembly list)=
         CheckDisposed()
         let m = r.originalReference.Range
         let filename = r.resolvedPath
@@ -4128,28 +4134,28 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 if (List.exists IsSignatureDataVersionAttr attrs) then 
                     if not (List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs) then 
                       errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile(filename),m))
-                      tcImports.PrepareToImportReferencedIlDll tpApprovalsRef m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
+                      tcImports.PrepareToImportReferencedIlDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
                     else 
                       try
-                        tcImports.PrepareToImportReferencedFSharpDll tpApprovalsRef m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
+                        tcImports.PrepareToImportReferencedFSharpDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
                       with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message),m))
                 else 
-                    tcImports.PrepareToImportReferencedIlDll tpApprovalsRef m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
+                    tcImports.PrepareToImportReferencedIlDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
             dllinfo,phase2
 
     member tcImports.RegisterAndImportReferencedAssemblies (displayPSTypeProviderSecurityDialogBlockingUI, nms:AssemblyResolution list) =
         CheckDisposed()
 
 #if EXTENSIONTYPING
-        let tpApprovalsRef = ref(ExtensionTyping.ApprovalIO.readApprovalsFile(None))
+        let tpApprovals = ExtensionTyping.ApprovalIO.ReadApprovalsFile(None)
 #else
-        let tpApprovalsRef = ref([])
+        let tpApprovals = []
 #endif
         let dllinfos,phase2s = 
            nms |> List.map 
                     (fun nm ->
                         try
-                            tcImports.RegisterAndPrepareToImportReferencedDll tpApprovalsRef displayPSTypeProviderSecurityDialogBlockingUI nm
+                            tcImports.RegisterAndPrepareToImportReferencedDll tpApprovals displayPSTypeProviderSecurityDialogBlockingUI nm
                         with e ->
                             error(Error(FSComp.SR.buildProblemReadingAssembly(nm.fusionName, e.Message),nm.originalReference.Range)))
                |> List.unzip

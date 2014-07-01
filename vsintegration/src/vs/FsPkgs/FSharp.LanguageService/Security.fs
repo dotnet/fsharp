@@ -168,7 +168,7 @@ type internal TypeProviderSecurityDialog =
                 Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(assem)
             else
                 Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(assem)
-        Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.replaceApprovalStatus None approval
+        Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus None approval
         // invalidate any language service caching
         TypeProviderSecurityGlobals.invalidationCallback()
                 

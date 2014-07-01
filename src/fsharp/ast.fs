@@ -2097,14 +2097,17 @@ let rhs2 (parseState: IParseState) i j =
 let rhs parseState i = rhs2 parseState i i 
 
 type IParseState with 
-    member x.GetSynArgNameGenerator() = 
+
+    /// Get the generator used for compiler-generated argument names.
+    member x.SynArgNameGenerator = 
         let key = "SynArgNameGenerator"
         let bls = x.LexBuffer.BufferLocalStore
         if not (bls.ContainsKey key) then  
             bls.[key] <- box (SynArgNameGenerator())
         bls.[key] :?> SynArgNameGenerator
 
-    member x.ResetSynArgNameGenerator() = x.GetSynArgNameGenerator().Reset()
+    /// Reset the generator used for compiler-generated argument names.
+    member x.ResetSynArgNameGenerator() = x.SynArgNameGenerator.Reset()
 
 
 /// XmlDoc F# lexer/parser state, held in the BufferLocalStore for the lexer.

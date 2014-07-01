@@ -162,7 +162,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 )
 
             pageActivatedEvent.Add(fun () ->
-                let approvals = Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.readApprovalsFile None
+                let approvals = Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReadApprovalsFile None
                 let initialApprovals = [|
                     for app in approvals do
                         match app with
@@ -183,7 +183,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         let finalVals = backingStore |> Seq.map (fun x -> x.FileName, x.IsTrusted) |> Seq.toList
                         if finalVals <> initVals then
                             // they changed something, rewrite the file
-                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.doWithApprovalsFile None (fun file ->
+                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.DoWithApprovalsFile None (fun file ->
                                 file.SetLength(0L) // delete the file
                                 backingStore |> Seq.iter (fun a -> 
                                     let app = 
@@ -191,7 +191,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                             Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.Trusted(a.FileName)
                                         else
                                             Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.NotTrusted(a.FileName)
-                                    Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.replaceApprovalStatus (Some file) app)
+                                    Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus (Some file) app)
                             )
                             // invalidate any language service caching
                             TypeProviderSecurityGlobals.invalidationCallback()
