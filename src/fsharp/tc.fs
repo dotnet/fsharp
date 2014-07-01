@@ -13488,8 +13488,24 @@ module EstablishTypeDefinitionCores = begin
             // Build up a mapping from System.Type --> TyconRef/ILTypeRef, to allow reverse-mapping
             // of types
 
+            // NOTE: for the purposes of remapping the closure of generated types, the FullName is sufficient.
+            // We do _not_ rely on object identity or any other notion of equivalence provided by System.Type
+            // itself. The mscorlib implementations of System.Type equality relations a very suspect, for
+            // example RuntimeType overrides the equality relation to be reference equality for the Equals(object)
+            // override, but the other subtypes of System.Type do not, making the relation non-reflecive.
+            //
+            // Further, avoiding reliance on canonicalization (UnderlyingSystemType) or System.Type object identity means that 
+            // providers can implement wrap-and-filter "views" over existing System.Type clusters without needing
+            // to preserve object identity when presenting the types to the F# compiler.
+
             let previousContext = (theRootType.PApply ((fun x -> x.Context), m)).PUntaint ((fun x -> x), m)
-            let lookupILTypeRef, lookupTyconRef = previousContext.GetDictionaries()
+            let lookupILTypeRef, lookupTyconRef =
+                match previousContext with
+                | NoEntries -> 
+                    Dictionary<System.Type,ILTypeRef>(providedSystemTypeComparer), Dictionary<System.Type,obj>(providedSystemTypeComparer)
+                | Entries (lookupILTR, lookupILTCR) ->
+                    // REVIEW: do we really need a lazy dict for this? How much time are we saving during remap?
+                    lookupILTR, Lazy.force(lookupILTCR)
                     
             let ctxt = ProvidedTypeContext.Create(lookupILTypeRef, lookupTyconRef)
 

@@ -21,7 +21,6 @@ module internal ExtensionTyping =
         val mutable theMostRecentFileNameWeChecked : string option
 
     module internal ApprovalIO =
-
         val partiallyCanonicalizeFileName : string -> string
 
         /// location of approvals data file, e.g. C:\Users\username\AppData\Local\Microsoft\VisualStudio\12.0\type-providers.txt
@@ -34,11 +33,14 @@ module internal ExtensionTyping =
             /// Trusted(absoluteFileName)
             | Trusted of string
 
-        /// Read all TP approval data.  does not throw, will swallow exceptions and return empty list if there's trouble.
-        val ReadApprovalsFile : FileStream option -> TypeProviderApprovalStatus list
+        /// do a transaction of operations over approvals file under exclusive lock.  may throw if trouble with file IO.
+        val doWithApprovalsFile : FileStream option -> (FileStream -> 'a) -> 'a
 
-        /// Replace one piece of TP approval info (or append it, if this is a new filename).  may throw if trouble with file IO.
-        val ReplaceApprovalStatus : FileStream option -> TypeProviderApprovalStatus -> unit
+        /// read all TP approval data.  does not throw, will swallow exceptions and return empty list if there's trouble.
+        val readApprovalsFile : FileStream option -> TypeProviderApprovalStatus list
+
+        /// replace one piece of TP approval info (or append it, if this is a new filename).  may throw if trouble with file IO.
+        val replaceApprovalStatus : FileStream option -> TypeProviderApprovalStatus -> unit
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
@@ -49,7 +51,7 @@ module internal ExtensionTyping =
     /// Raised when an type provider has thrown an exception.    
     exception ProvidedTypeResolutionNoRange of exn
 
-    /// Carries information about the type provider resolution environment.
+    /// Carries information about the current extension type resolution environment.
     type ResolutionEnvironment =
       {
         /// The folder from which an extension provider is resolving from. This is typically the project folder.
@@ -66,12 +68,12 @@ module internal ExtensionTyping =
         temporaryFolder             : string
       }
 
-    /// Find and instantiate the set of ITypeProvider components for the given assembly reference
+    /// Return the set of extension type resolvers for the given assembly.
     val GetTypeProvidersOfAssembly : 
           displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option 
           * validateTypeProviders: bool 
 #if TYPE_PROVIDER_SECURITY
-          * ApprovalIO.TypeProviderApprovalStatus list 
+          * ApprovalIO.TypeProviderApprovalStatus list ref 
 #endif
           * runtimeAssemblyFilename: string 
           * ilScopeRefOfRuntimeAssembly:ILScopeRef
@@ -86,6 +88,8 @@ module internal ExtensionTyping =
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
     val DisplayNameOfTypeProvider : Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> * range -> string
 
+    val providedSystemTypeComparer : IEqualityComparer<System.Type>
+
      /// The context used to interpret information in the closure of System.Type, System.MethodInfo and other 
      /// info objects coming from the type provider.
      ///
@@ -97,19 +101,13 @@ module internal ExtensionTyping =
      ///
      /// The 'obj' values are all TyconRef, but obj is used due to a forward reference being required. Not particularly
      /// pleasant, but better than intertwining the whole "ProvidedType" with the TAST structure.
-    [<Sealed>]
-    type ProvidedTypeContext =
-
+    type ProvidedTypeContext = 
+        | NoEntries
+        | Entries of Dictionary<System.Type,ILTypeRef> * Lazy<Dictionary<System.Type,obj>>
         member TryGetILTypeRef : System.Type -> ILTypeRef option
-
         member TryGetTyconRef : System.Type -> obj option
-
         static member Empty : ProvidedTypeContext 
-
         static member Create : Dictionary<System.Type,ILTypeRef> * Dictionary<System.Type,obj (* TyconRef *) > -> ProvidedTypeContext 
-
-        member GetDictionaries : unit -> Dictionary<System.Type,ILTypeRef> * Dictionary<System.Type,obj (* TyconRef *) > 
-
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
            
@@ -281,71 +279,33 @@ module internal ExtensionTyping =
         override Equals : obj -> bool
         override GetHashCode : unit -> int
 
-    /// Detect a provided new-array expression 
+    //and [<NoEquality;NoComparison>] ProvidedBlockExpression   = { Expressions: ProvidedExpr[]  }
     val (|ProvidedNewArrayExpr|_|)   : ProvidedExpr -> (ProvidedType * ProvidedExpr[]) option
-
 #if PROVIDED_ADDRESS_OF
     val (|ProvidedAddressOfExpr|_|)  : ProvidedExpr -> ProvidedExpr option
 #endif
-
-    /// Detect a provided new-object expression 
     val (|ProvidedNewObjectExpr|_|)     : ProvidedExpr -> (ProvidedConstructorInfo * ProvidedExpr[]) option
 
-    /// Detect a provided while-loop expression 
     val (|ProvidedWhileLoopExpr|_|) : ProvidedExpr -> (ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided new-delegate expression 
     val (|ProvidedNewDelegateExpr|_|) : ProvidedExpr -> (ProvidedType * ProvidedVar[] * ProvidedExpr) option
-
-    /// Detect a provided expression which is a for-loop over integers
     val (|ProvidedForIntegerRangeLoopExpr|_|) : ProvidedExpr -> (ProvidedVar * ProvidedExpr * ProvidedExpr * ProvidedExpr) option
 
-    /// Detect a provided sequential expression 
     val (|ProvidedSequentialExpr|_|)    : ProvidedExpr -> (ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided try/with expression 
     val (|ProvidedTryWithExpr|_|)       : ProvidedExpr -> (ProvidedExpr * ProvidedVar * ProvidedExpr * ProvidedVar * ProvidedExpr) option
-
-    /// Detect a provided try/finally expression 
     val (|ProvidedTryFinallyExpr|_|)    : ProvidedExpr -> (ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided lambda expression 
     val (|ProvidedLambdaExpr|_|)     : ProvidedExpr -> (ProvidedVar * ProvidedExpr) option
-
-    /// Detect a provided call expression 
     val (|ProvidedCallExpr|_|) : ProvidedExpr -> (ProvidedExpr option * ProvidedMethodInfo * ProvidedExpr[]) option
-
-    /// Detect a provided constant expression 
     val (|ProvidedConstantExpr|_|)   : ProvidedExpr -> (obj * ProvidedType) option
-
-    /// Detect a provided default-value expression 
     val (|ProvidedDefaultExpr|_|)    : ProvidedExpr -> ProvidedType option
-
-    /// Detect a provided new-tuple expression 
     val (|ProvidedNewTupleExpr|_|)   : ProvidedExpr -> ProvidedExpr[] option
-
-    /// Detect a provided tuple-get expression 
     val (|ProvidedTupleGetExpr|_|)   : ProvidedExpr -> (ProvidedExpr * int) option
-
-    /// Detect a provided type-as expression 
     val (|ProvidedTypeAsExpr|_|)      : ProvidedExpr -> (ProvidedExpr * ProvidedType) option
-
-    /// Detect a provided type-test expression 
     val (|ProvidedTypeTestExpr|_|)      : ProvidedExpr -> (ProvidedExpr * ProvidedType) option
-
-    /// Detect a provided 'let' expression 
     val (|ProvidedLetExpr|_|)      : ProvidedExpr -> (ProvidedVar * ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided 'set variable' expression 
     val (|ProvidedVarSetExpr|_|)      : ProvidedExpr -> (ProvidedVar * ProvidedExpr) option
-
-    /// Detect a provided 'IfThenElse' expression 
     val (|ProvidedIfThenElseExpr|_|) : ProvidedExpr -> (ProvidedExpr * ProvidedExpr * ProvidedExpr) option
-
-    /// Detect a provided 'Var' expression 
     val (|ProvidedVarExpr|_|)  : ProvidedExpr -> ProvidedVar option
 
-    /// Get the provided expression for a particular use of a method.
     val GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr
 
     /// Validate that the given provided type meets some of the rules for F# provided types
@@ -362,29 +322,26 @@ module internal ExtensionTyping =
     /// Try to resolve a type in the given extension type resolver
     val TryLinkProvidedType : ResolutionEnvironment * Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
-    /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
-    val GetProvidedNamespaceAsPath : range * Tainted<ITypeProvider> * string -> string list
+    /// Decompose a .NET namespace into a list of parts.
+    val GetPartsOfDotNetNamespace : range * Tainted<ITypeProvider> * string -> string list
 
     /// Decompose the enclosing name of a type (including any class nestings) into a list of parts.
     /// e.g. System.Object -> ["System"; "Object"]
     val GetFSharpPathToProvidedType : Tainted<ProvidedType> * range:range-> string list
     
-    /// Get the ILTypeRef for the provided type (including for nested types). Take into account
-    /// any type relocations or static linking for generated types.
+    /// Get the parts of the name that encloses the .NET type including nested types, using the scheme needed for ILTypeRef 
+    /// e.g. System.Object -> ["System.Object"]
+    /// e.g. Something.ClassType.NestedType -> ["Something.ClassType"; "NestedType"]
     val GetILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> Microsoft.FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
-    /// Get the ILTypeRef for the provided type (including for nested types). Do not take into account
-    /// any type relocations or static linking for generated types.
+    /// Get location of a type before it is relocated by static linking
     val GetOriginalILTypeRefOfProvidedType : Tainted<ProvidedType> * range:range -> Microsoft.FSharp.Compiler.AbstractIL.IL.ILTypeRef
 
 
-    /// Represents the remapping information for a generated provided type and its nested types.
-    ///
-    /// There is one overall tree for each root 'type X = ... type generation expr...' specification.
+    /// One node in a tree. There is one overall tree for each [<Generate>] definition.
     type ProviderGeneratedType = ProviderGeneratedType of (*ilOrigTyRef*)ILTypeRef * (*ilRenamedTyRef*)ILTypeRef * ProviderGeneratedType list
 
-    /// The table of information recording remappings from type names in the provided assembly to type
-    /// names in the statically linked, embedded assembly, plus what types are nested in side what types.
+    /// The mapping information for one [<Generate>] definition, used to guide static linking.
     type ProvidedAssemblyStaticLinkingMap = 
         {  /// The table of remappings from type names in the provided assembly to type
            /// names in the statically linked, embedded assembly.
@@ -393,6 +350,4 @@ module internal ExtensionTyping =
         /// Create a new static linking map, ready to populate with data.
         static member CreateNew : unit -> ProvidedAssemblyStaticLinkingMap
 
-    /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
-    /// We check by seeing if the type is absent from the remapping context.
     val IsGeneratedTypeDirectReference         : Tainted<ProvidedType> * range -> bool
