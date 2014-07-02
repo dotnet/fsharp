@@ -94,8 +94,10 @@
 
   <!-- v2.0-specific flags -->
   <PropertyGroup Condition="'$(TargetFramework)'=='net20'">
-    <!-- If 3.5 is not configured explicitly, use 2.0 -->
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)'==''">v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_2_0</DefineConstants>
+    <DefineConstants>$(DefineConstants);RUNTIME</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
@@ -127,6 +129,7 @@
   <PropertyGroup Condition="'$(TargetFramework)'=='portable47'">
 
     <DefineConstants>$(DefineConstants);FSHARP_CORE_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
