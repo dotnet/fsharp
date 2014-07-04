@@ -528,14 +528,13 @@ let rec sizeMeasure g ms =
 let mkNativePtrType g ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy g ty = TType_app (g.byref_tcr, [ty])
 
-let mkArrayTy g n ty m = 
-    if n = 1 then TType_app (g.il_arr1_tcr, [ty]) 
-    elif n = 2 then TType_app (g.il_arr2_tcr, [ty]) 
-    elif n = 3 then TType_app (g.il_arr3_tcr, [ty]) 
-    elif n = 4 then TType_app (g.il_arr4_tcr, [ty]) 
-    else 
-       errorR(Error(FSComp.SR.tastopsMaxArrayFour(),m));
-       TType_app (g.il_arr4_tcr, [ty]) 
+let mkArrayTy g rank ty m =
+    if rank < 1 || rank > 32 then
+        // TODO : Provide a better message for zero/negative inputs here.
+        errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo(),m));
+        TType_app (g.il_arr_tcr_map.[3], [ty])
+    else
+        TType_app (g.il_arr_tcr_map.[rank - 1], [ty])
 
 
 //--------------------------------------------------------------------------
@@ -1398,18 +1397,16 @@ let IsCompiledAsStaticPropertyWithField g (v:Val) =
 // Multi-dimensional array types...
 //-------------------------------------------------------------------------
 
-let isArrayTyconRef g tcr = 
-    tyconRefEq g tcr g.il_arr1_tcr || 
-    tyconRefEq g tcr g.il_arr2_tcr || 
-    tyconRefEq g tcr g.il_arr3_tcr || 
-    tyconRefEq g tcr g.il_arr4_tcr 
+let isArrayTyconRef g tcr =
+    g.il_arr_tcr_map
+    |> Array.exists (tyconRefEq g tcr)
 
-let rankOfArrayTyconRef g tcr = 
-    if tyconRefEq g tcr g.il_arr1_tcr then 1
-    elif tyconRefEq g tcr g.il_arr2_tcr then 2
-    elif tyconRefEq g tcr g.il_arr3_tcr then 3
-    elif tyconRefEq g tcr g.il_arr4_tcr then 4
-    else failwith "rankOfArrayTyconRef: unsupported array rank"
+let rankOfArrayTyconRef g tcr =
+    match g.il_arr_tcr_map |> Array.tryFindIndex (tyconRefEq g tcr) with
+    | Some idx ->
+        idx + 1
+    | None ->
+        failwith "rankOfArrayTyconRef: unsupported array rank"
 
 //-------------------------------------------------------------------------
 // Misc functions on F# types
@@ -1434,7 +1431,7 @@ let isByrefLikeTyconRef g tcref =
     isTypeConstructorEqualToOptional g g.system_RuntimeArgumentHandle_tcref tcref
 
 let isArrayTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isArrayTyconRef g tcref                | _ -> false) 
-let isArray1DTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g tcref g.il_arr1_tcr         | _ -> false) 
+let isArray1DTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g tcref g.il_arr_tcr_map.[0]         | _ -> false)
 let isUnitTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.unit_tcr_canon tcref      | _ -> false) 
 let isObjTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Void_tcref tcref   | _ -> false) 
@@ -5357,22 +5354,16 @@ let rec mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut
         (fun x -> x), mkStaticRecdFieldGetAddr(rfref,tinst,m)
 
     // LVALUE:  "e.[n]" where e is an array of structs 
-    | Expr.App(Expr.Val(vf,_,_),_,[elemTy],[aexpr;nexpr],_) 
-         when (valRefEq g vf g.array_get_vref) -> 
-        
-        let shape = ILArrayShape.SingleDimensional
-        let readonly = if isTyparTy g elemTy &&  useReadonlyForGenericArrayAddress then ReadonlyAddress else NormalAddress
-        let isNativePtr = 
-            match addrExprVal with
-            | Some(vf) -> valRefEq g vf g.addrof2_vref
-            | _ -> false
-        (fun x -> x), Expr.Op (TOp.ILAsm ([IL.I_ldelema(readonly,isNativePtr,shape,mkILTyvarTy 0us)],[mkByrefTy g elemTy]), [elemTy],[aexpr;nexpr],m)
+    // LVALUE:  "e.[n1,n2]", "e.[n1,n2,n3]", "e.[n1,n2,n3,n4]", etc. where e is an array of structs 
+    | Expr.App(Expr.Val(vf,_,_),_,[elemTy],(aexpr::args),_)
+        when (g.array_get_vref_map |> Array.exists (valRefEq g vf)) ->
 
-    // LVALUE:  "e.[n1,n2]", "e.[n1,n2,n3]", "e.[n1,n2,n3,n4]" where e is an array of structs 
-    | Expr.App(Expr.Val(vf,_,_),_,[elemTy],(aexpr::args),_) 
-         when (valRefEq g vf g.array2D_get_vref || valRefEq g vf g.array3D_get_vref || valRefEq g vf g.array4D_get_vref) -> 
-        
-        let shape = ILArrayShape.FromRank args.Length
+        // Handle single-dimensional (rank 1) arrays separately.
+        let shape =
+            if valRefEq g vf g.array_get_vref_map.[0] then
+                ILArrayShape.SingleDimensional
+            else
+                ILArrayShape.FromRank args.Length
         let readonly = if isTyparTy g elemTy &&  useReadonlyForGenericArrayAddress then ReadonlyAddress else NormalAddress
         let isNativePtr = 
             match addrExprVal with
@@ -5858,10 +5849,12 @@ let mkCallGenericHashWithComparerOuter       g m ty comp e1       = mkApps g (ty
 let mkCallSubtractionOperator g m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
 let mkCallArrayLength g m ty el                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [el], m)
-let mkCallArrayGet   g m ty e1 e2                  = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; e2 ],  m)
-let mkCallArray2DGet g m ty e1 idx1 idx2           = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ],  m)
-let mkCallArray3DGet g m ty e1 idx1 idx2 idx3      = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ],  m)
-let mkCallArray4DGet g m ty e1 idx1 idx2 idx3 idx4 = mkApps g (typedExprForIntrinsic g m g.array4D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4 ],  m)
+
+let mkCallArrayGet g m rank ty e1 indices =
+    assert (rank = List.length indices)
+    assert (rank >= 1 && rank <= 32)
+    mkApps g (typedExprForIntrinsic g m g.array_get_info_map.[rank - 1], [[ty]], e1 :: indices, m)
+
 let mkCallNewDecimal g m (e1,e2,e3,e4,e5)          = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ],  m)
 
 let mkCallNewFormat g m aty bty cty dty ety e1    = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ],  m)
@@ -6680,6 +6673,20 @@ let typarEnc _g (gtpsType,gtpsMethod) typar =
         | None     -> warning(InternalError("Typar not found during XmlDoc generation",typar.Range))
                       "``0" // REVIEW: this should be ERROR not WARNING?
 
+/// IL array type encodings. The array index is (rank - 1).
+let private arrayTypeEncodings =
+    Array.init 32 (fun idx ->
+        let rank = idx + 1
+        if rank = 1 then
+            // The easy case
+            "[]"
+        else
+            // REVIEW
+            // In fact IL supports 3 kinds of multidimensional arrays, and each kind of array has its own xmldoc spec.
+            // We don't support all these, and instead always pull xmldocs for 0-based-arbitrary-length ("0:") multidimensional arrays.
+            // This is probably the 99% case anyway.
+            "[" + System.String.Join (",", Array.create rank "0:") + "]")
+
 let rec typeEnc g (gtpsType,gtpsMethod) ty = 
     if verbose then  dprintf "--> typeEnc";
     match (stripTyEqns g ty) with 
@@ -6687,18 +6694,12 @@ let rec typeEnc g (gtpsType,gtpsMethod) ty =
         "Microsoft.FSharp.Core.FSharpTypeFunc"
     | _ when isArrayTy g ty   -> 
         let tcref,tinst = destAppTy g ty
-        let arraySuffix = 
-            match rankOfArrayTyconRef g tcref with
-            // The easy case
-            | 1 -> "[]"
-            // REVIEW
-            // In fact IL supports 3 kinds of multidimensional arrays, and each kind of array has its own xmldoc spec.
-            // We don't support all these, and instead always pull xmldocs for 0-based-arbitrary-length ("0:") multidimensional arrays.
-            // This is probably the 99% case anyway.
-            | 2 -> "[0:,0:]"
-            | 3 -> "[0:,0:,0:]"
-            | 4 -> "[0:,0:,0:,0:]"
-            | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
+        let arraySuffix =
+            let arrayRank = rankOfArrayTyconRef g tcref
+            if arrayRank >= 1 && arrayRank <= 32 then
+                arrayTypeEncodings.[arrayRank - 1]
+            else
+                failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
         typeEnc g (gtpsType,gtpsMethod) (List.head tinst) ^ arraySuffix
     | TType_ucase (UCRef(tcref,_),tinst)   
     | TType_app (tcref,tinst)   -> 

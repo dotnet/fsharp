@@ -125,7 +125,7 @@ let (|SimpleArrayLoopUpperBound|_|) expr =
 let (|SimpleArrayLoopBody|_|) g expr = 
     match expr with
     | Expr.Lambda(_, a, b, ([_] as args), Expr.Let(TBind(forVarLoop, Expr.Op(TOp.ILAsm([I_ldelem_any(ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx], m1), seqPoint), body, m2, freeVars), m, ty) -> 
-        let body = Expr.Let(TBind(forVarLoop, mkCallArrayGet g m1 elemTy arr idx, seqPoint), body, m2, freeVars)
+        let body = Expr.Let(TBind(forVarLoop, mkCallArrayGet g m1 1 elemTy arr [idx], seqPoint), body, m2, freeVars)
         let expr = Expr.Lambda(newUnique(), a, b, args, body, m, ty)
         Some (arr, elemTy, expr)
     | _ -> None
@@ -628,13 +628,10 @@ and ConvLValueExprCore cenv env expr =
         | TOp.ValFieldGetAddr(rfref),_,_ -> ConvRFieldGet cenv env m rfref tyargs args
         | TOp.ILAsm([ I_ldflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm([ I_ldsflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
-        | TOp.ILAsm(([ I_ldelema(_ro,_isNativePtr,shape,_tyarg) ] ),_), (arr::idxs), [elemty]  -> 
-            match shape.Rank, idxs with 
-            | 1, [idx1] -> ConvExpr cenv env (mkCallArrayGet cenv.g m elemty arr idx1)
-            | 2, [idx1; idx2] -> ConvExpr cenv env (mkCallArray2DGet cenv.g m elemty arr idx1 idx2)
-            | 3, [idx1; idx2; idx3] -> ConvExpr cenv env (mkCallArray3DGet cenv.g m elemty arr idx1 idx2 idx3)
-            | 4, [idx1; idx2; idx3; idx4] -> ConvExpr cenv env (mkCallArray4DGet cenv.g m elemty arr idx1 idx2 idx3 idx4)
-            | _ -> ConvExpr cenv env expr
+        | TOp.ILAsm(([ I_ldelema(_ro,_isNativePtr,shape,_tyarg) ] ),_), (arr::idxs), [elemty]
+            when shape.Rank = List.length idxs ->
+            assert (shape.Rank >= 1 && shape.Rank <= 32)
+            ConvExpr cenv env (mkCallArrayGet cenv.g m shape.Rank elemty arr idxs)
         | _ -> ConvExpr cenv env expr
     | _ -> ConvExpr cenv env expr
     

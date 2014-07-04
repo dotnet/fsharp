@@ -1126,10 +1126,7 @@ val mkCallTypeDefOf   : TcGlobals -> range -> TType -> Expr
 val mkCallCreateInstance     : TcGlobals -> range -> TType -> Expr
 val mkCallCreateEvent        : TcGlobals -> range -> TType -> TType -> Expr -> Expr -> Expr -> Expr
 val mkCallArrayLength        : TcGlobals -> range -> TType -> Expr -> Expr
-val mkCallArrayGet           : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
-val mkCallArray2DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr 
-val mkCallArray3DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
-val mkCallArray4DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArrayGet           : TcGlobals -> range -> int -> TType -> Expr -> Expr list -> Expr
 val mkCallRaise              : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallGenericComparisonWithComparerOuter : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
