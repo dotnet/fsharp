@@ -21,6 +21,11 @@ type Class1() =
     member this.Z =
         let foo = ClassWithArrayCtor ([| 1;3;5;7 |])
         ()
+        
+    member this.W (foo : int[,,,,,,,,,,]) =
+        printfn "Hello World!"
+        ()
+        
 (* avoid ;; -- to avoid fsi error recovery *)
           
 let _ =
