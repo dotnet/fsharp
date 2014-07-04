@@ -175,3 +175,4 @@ Misc02		fsharp\tools\eval
 Misc02		..\testsprivate\fsharp\tools\queries
 Misc02		fsharp\typecheck\misc
 Misc02		fsharp\typecheck\sigs
+Misc02		fsharp\typecheck\full-rank-arrays
