@@ -378,13 +378,19 @@ sub RunCompilerCommand {
         if($ENV{HOSTED_COMPILER_PORT} ne ""){
            $port = $ENV{HOSTED_COMPILER_PORT};
         }
-        my $remote = IO::Socket::INET->new(
-                            Proto    => "tcp",
-                            PeerAddr => "localhost",
-                            PeerPort => $port,
-                        )
-                        or RunExit(TEST_FAIL, "Unable to connect to hosted compiler \n");
-
+        
+        my $attempts = 0;
+        my $remote = undef;
+        until($remote || ($attempts == 10)) {
+            $remote = IO::Socket::INET->new(
+                                Proto    => "tcp",
+                                PeerAddr => "localhost",
+                                PeerPort => $port,
+                            ) or sleep(1);
+            $attempts++;                            
+        }
+        RunExit(TEST_FAIL, "Unable to connect to hosted compiler \n") unless $remote;
+        
         my $currDir = getcwd();
 
         # send current directory and full command line to the compiler host process
