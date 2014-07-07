@@ -22,14 +22,13 @@ namespace Microsoft.FSharp.Core
         /// <param name="strings">The sequence of strings to be concatenated.</param>
         /// <returns>A new string consisting of the concatenated strings separated by
         /// the separation string.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when strings is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when <c>strings</c> is null.</exception>
         [<CompiledName("Concat")>]
         val concat: sep:string -> strings: seq<string> -> string
 
         /// <summary>Applies the function <c>action</c> to each character in the string.</summary>
         /// <param name="action">The function to be applied to each character of the string.</param>
         /// <param name="str">The input string.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("Iterate")>]
         val iter: action:(char -> unit) -> str:string -> unit
 
@@ -37,7 +36,6 @@ namespace Microsoft.FSharp.Core
         /// character itself.</summary>
         /// <param name="action">The function to apply to each character and index of the string.</param>
         /// <param name="str">The input string.</param>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("IterateIndexed")>]
         val iteri: action:(int -> char -> unit) -> str:string -> unit
 
@@ -46,7 +44,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="mapping">The function to apply to the characters of the string.</param>
         /// <param name="str">The input string.</param>
         /// <returns>The resulting string.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("Map")>]
         val map: mapping:(char -> char) -> str:string -> string
 
@@ -55,7 +52,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="mapping">The function to apply to each character and index of the string.</param>
         /// <param name="str">The input string.</param>
         /// <returns>The resulting string.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("MapIndexed")>]
         val mapi: mapping:(int -> char -> char) -> str:string -> string
 
@@ -65,7 +61,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="mapping">The function to produce a string from each character of the input string.</param>
         /// <param name="str">The input string.</param>
         /// <returns>The concatenated string.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("Collect")>]
         val collect: mapping:(char -> string) -> str:string -> string
 
@@ -84,7 +79,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="predicate">The function to test each character of the string.</param>
         /// <param name="str">The input string.</param>
         /// <returns>True if all characters return true for the predicate and false otherwise.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("ForAll")>]
         val forall: predicate:(char -> bool) -> str:string -> bool
 
@@ -92,7 +86,6 @@ namespace Microsoft.FSharp.Core
         /// <param name="predicate">The function to test each character of the string.</param>
         /// <param name="str">The input string.</param>
         /// <returns>True if any character returns true for the predicate and false otherwise.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("Exists")>]
         val exists: predicate:(char -> bool) -> str:string -> bool
 
@@ -100,14 +93,13 @@ namespace Microsoft.FSharp.Core
         /// <param name="count">The number of copies of the input string will be copied.</param>
         /// <param name="str">The input string.</param>
         /// <returns>The concatenated string.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is negative.</exception>
         [<CompiledName("Replicate")>]
         val replicate: count:int -> str: string -> string
 
         /// <summary>Returns the length of the string.</summary>
         /// <param name="str">The input string.</param>
         /// <returns>The number of characters in the string.</returns>
-        /// <exception cref="System.ArgumentNullException">Thrown when the input string is null.</exception>
         [<CompiledName("Length")>]
         val length: str:string -> int
 
