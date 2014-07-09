@@ -18,6 +18,7 @@
       <FsSrGen Include="..\FSInteractiveSettings.txt">
         <Link>FSInteractiveSettings.txt</Link>
       </FsSrGen>
+    <Compile Include="InternalsVisibleTo.fs"/>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs</Link>
     </Compile>

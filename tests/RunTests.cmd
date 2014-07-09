@@ -36,12 +36,13 @@ set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
 if /I "%2" == "coreunit" (goto :COREUNIT)
+if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 :USAGE
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|ideunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -146,5 +147,26 @@ if errorlevel 1 (
 )
 echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
      nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
+
+goto :EOF
+
+:IDEUNIT
+
+set XMLFILE=IDEUnit_Xml.xml
+set OUTPUTFILE=IDEUnit_Output.log
+set ERRORFILE=IDEUnit_Error.log
+set FILEDIR=%~dp0
+
+where.exe nunit-console-x86.exe > NUL 2> NUL 
+if errorlevel 1 (
+  echo Error: nunit-console-x86.exe is not in the PATH
+  exit /b 1
+)
+
+for /f "tokens=*" %%a in  ('where.exe nunit-console-x86.exe')  do  (set nunitlocation=%%~dpa)
+xcopy /y "%nunitlocation%\lib\*.dll" "%FSCBINPATH%"
+
+echo nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\Unittests.dll 
+     nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF

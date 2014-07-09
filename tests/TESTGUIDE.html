@@ -319,6 +319,10 @@
 <p><b>Core Unit Test Suite</b>
 <p>The test cases for this suite reside next to the product code, at <code>src\fsharp\FSharp.Core.Unittests</code>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite focuses on validation of the core F# types and the public surface area of FSharp.Core.dll.
 
+<p><b>IDE Unit Test Suite</b>
+<p>The test cases for this suite reside next to the product code, at <code>vsintegration\src\unittests</code>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
+
+
 <p><h3>Prerequisites</h3>
 <p>In order to run all of the tests, you will need to install
 <ul>
@@ -329,32 +333,31 @@
 
 <p>Before running tests, make sure you have successfully built all required projects, both product and test:
 <ul>
-<li>From the <code>src</code> directory</li>
-    <ul>
-        <li><code>msbuild fsharp-compiler-build.proj /p:TargetFramework=net40 /p:Configuration=&lt;debug|release&gt;</code> to generate the compiler, libraries, and interative for .NET 4</li>
-        <li><code>msbuild fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET 2</li>
-        <li><code>msbuild fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 47</li>
-        <li><code>msbuild fsharp-typeproviders-build.proj /p:TargetFramework=net40 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
-        <li><code>update.cmd &lt;debug|release&gt; -ngen</code> to update the GAC, add strong name validation skips, and ngen latest-built binaries</li>
-    </ul>
-<li>From the <code>tests</code> directory</li>
-    <ul>
-        <li><code>BuildTestTools.cmd &lt;debug|release&gt;</code> to build and binplace tools used during testing</li>
-    </ul>
+        <li><code>msbuild src\fsharp-compiler-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate the compiler, libraries, and interative for .NET 4</li>
+        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET 2</li>
+        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 47</li>
+        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 7</li>
+        <li><code>msbuild src\fsharp-typeproviders-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
+        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests</li>
+        <li><code>msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate all Visual Studio integration components</li>
+        <li><code>msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate IDE unit tests</li>
+        <li><code>src\update.cmd &lt;debug|release&gt; -ngen</code> to update the GAC, add strong name validation skips, and ngen latest-built binaries</li>
+        <li><code>tests\BuildTestTools.cmd &lt;debug|release&gt;</code> to build and binplace tools used during testing</li>
 </ul>
 
 <p><h3>Running Tests</h3>
 
-<p>The script <code>tests\RunTests.cmd</code> has been provided to make execution of the above 3 suites very simple.  You can kick off a full test run of any of the above suites like this:
+<p>The script <code>tests\RunTests.cmd</code> has been provided to make execution of the above suites very simple.  You can kick off a full test run of any of the above suites like this:
 <pre>
     RunTests.cmd &lt;debug|release&gt; fsharp [tags to run] [tags not to run]
     RunTests.cmd &lt;debug|release&gt; fsharpqa [tags to run] [tags not to run]
     RunTests.cmd &lt;debug|release&gt; coreunit
+    RunTests.cmd &lt;debug|release&gt; ideunit
 </pre>
 
 <p><code>RunTests.cmd</code> sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
 
-<p>All test execution logs and result files will be dropped into the <code>tests</code> folder, and have file names matching <code>FSharp_*.*</code>, <code>FSharpQA_*.*</code>, or <code>CoreUnit_*.*</code>.
+<p>All test execution logs and result files will be dropped into the <code>tests</code> folder, and have file names matching <code>FSharp_*.*</code>, <code>FSharpQA_*.*</code>, <code>CoreUnit_*.*</code>, <code>IDEUnit_*.*</code>.
 
 <p>For the FSharp and FSharpQA suites, the list of test areas and their associated "tags" is stored at
 <pre>
@@ -387,6 +390,13 @@
 <p>To build the unit test binary, call <code>msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40</code> from the <code>src</code> directory.  Tests are contained in the binary <code>FSharp.Core.Unittests.dll</code>.
 
 <p>You can execute and re-run these tests using any standard NUnit approach - via graphical <code>nunit.exe</code> or on the command line via <code>nunit-console.exe</code>.
+
+<p><b>IDE Unit Test Suite</b>
+
+<p>To build the unit test binary, call <code>msbuild fsharp-vsintegration-unittests-build.proj /p:TargetFramework=net40</code> from the <code>src</code> directory.  Tests are contained in the binary <code>Unittests.dll</code>. The IDE unit tests rely on the "Salsa" library, which is a set of Visual Studio mocks.  The code for Salsa resides at <code>vsintegration\src\Salsa</code>.  Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, either <code>nunit-console-x86.exe</code> or <code>nunit-x86.exe</code>.
+
+<p>You can execute and re-run these tests using any standard NUnit approach - via graphical <code>nunit-x86.exe</code> or on the command line via <code>nunit-console-x86.exe</code>.
+
 
 <h3>Other Tips</h3>
 <ul>

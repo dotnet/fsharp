@@ -425,7 +425,8 @@
         To build the VS components:
     </p>
     <pre>
-        msbuild ..\vsintegration\src\deployment.sln /p:Configuration=Debug /t:Rebuild
+        cd ..\vsintegration
+        msbuild fsharp-vsintegration-build.proj
     </pre>
 
     <h3>6. [Optional] Build and install Visual Studio components </h3>
