@@ -5713,10 +5713,10 @@ and TcNewExpr cenv env tpenv objTy mObjTyOpt superInit arg mWholeExprOrObjTy =
         if not (isAppTy cenv.g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"),mWholeExprOrObjTy))
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mWholeExprOrObjTy ad objTy)
         
-        TcCtorCall false cenv env tpenv objTy objTy mObjTyOpt item superInit arg mWholeExprOrObjTy [] None
+        TcCtorCall false cenv env tpenv objTy objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
 
 /// Check an 'inheritedTys declaration in an implicit or explicit class 
-and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit arg mWholeCall delayed afterTcOverloadResolutionOpt =
+and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit args mWholeCall delayed afterTcOverloadResolutionOpt =
     let ad = env.eAccessRights
     let isSuperInit = (if superInit then CtorValUsedAsSuperInit else NormalValUse)
     let mItem = match mObjTyOpt with Some m -> m | None -> mWholeCall
@@ -5724,8 +5724,8 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
     if isInterfaceTy cenv.g objTy then 
         error(Error((if superInit then FSComp.SR.tcInheritCannotBeUsedOnInterfaceType() else FSComp.SR.tcNewCannotBeUsedOnInterfaceType()),mWholeCall))
 
-    match item with 
-    | Item.CtorGroup(methodName,minfos) ->
+    match item, args with 
+    | Item.CtorGroup(methodName,minfos), _ ->
         let meths = List.map (fun minfo -> minfo,None) minfos
         if isNaked && TypeFeasiblySubsumesType 0 cenv.g cenv.amap mWholeCall cenv.g.system_IDisposable_typ NoCoerce objTy then
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(),mWholeCall))
@@ -5741,9 +5741,9 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
             |   Some mObjTy,None -> AfterTcOverloadResolution.ForNewConstructors cenv.tcSink env mObjTy methodName minfos 
             |   None, _ -> AfterTcOverloadResolution.DoNothing
 
-        TcMethodApplicationThen cenv env overallTy tpenv None [] mWholeCall mItem methodName ad PossiblyMutates false meths afterTcOverloadResolution isSuperInit [arg] ExprAtomicFlag.NonAtomic delayed 
+        TcMethodApplicationThen cenv env overallTy tpenv None [] mWholeCall mItem methodName ad PossiblyMutates false meths afterTcOverloadResolution isSuperInit args ExprAtomicFlag.NonAtomic delayed 
 
-    | Item.DelegateCtor typ ->
+    | Item.DelegateCtor typ, [arg] ->
         // Re-record the name resolution since we now know it's a constructor call
         match mObjTyOpt with 
         | Some mObjTy -> CallNameResolutionSink cenv.tcSink (mObjTy,env.NameEnv,item,item,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
@@ -7783,13 +7783,13 @@ and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId,_)) delay
         // resolve type name lookup of 'MyOverloadedType' 
         // Also determine if type names should resolve to Item.Types or Item.CtorGroup 
         match delayed with 
-        | DelayedTypeApp (tyargs, _, _) :: DelayedApp _ :: _ -> 
-            TypeNameResolutionInfo(ResolveTypeNamesToCtors, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
+        | DelayedTypeApp (tyargs, _, _) :: DelayedDotLookup _ :: _ -> 
+            // cases like 'MyType<int>.Sth' 
+            TypeNameResolutionInfo(ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
 
         | DelayedTypeApp (tyargs, _, _) :: _ -> 
-            // cases like 'MyType<int>.Sth' but also only 'MyType<int>.' 
-            // (without LValue_get), which is needed for VS (when typing)
-            TypeNameResolutionInfo(ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
+            // Note, this also covers the case 'MyType<int>.' (without LValue_get), which is needed for VS (when typing)
+            TypeNameResolutionInfo(ResolveTypeNamesToCtors, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
 
         | _ -> 
             TypeNameResolutionInfo.Default
@@ -7995,7 +7995,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         | _ -> 
             TcMethodApplicationThen cenv env overallTy tpenv None [] mItem mItem methodName ad NeverMutates false meths afterTcOverloadResolution NormalValUse [] ExprAtomicFlag.Atomic delayed 
 
-    | Item.CtorGroup(_,minfos) ->
+    | Item.CtorGroup(nm,minfos) ->
         let objTy = 
             match minfos with 
             | (minfo :: _) -> minfo.EnclosingType
@@ -8005,21 +8005,29 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         | ((DelayedApp (_, arg, mExprAndArg))::otherDelayed) ->
 
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv,objTy, env.DisplayEnv, env.eAccessRights)
-            TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false arg mExprAndArg otherDelayed (Some afterTcOverloadResolution)
+            TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterTcOverloadResolution)
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::(DelayedApp (_, arg, mExprAndArg))::otherDelayed) ->
 
             let objTy,tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.DisplayEnv, env.eAccessRights)
             minfos |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.EnclosingType objTy)
-            TcCtorCall true cenv env tpenv overallTy objTy (Some mExprAndTypeArgs) item false arg mExprAndArg otherDelayed (Some afterTcOverloadResolution)
+            TcCtorCall true cenv env tpenv overallTy objTy (Some mExprAndTypeArgs) item false [arg] mExprAndArg otherDelayed (Some afterTcOverloadResolution)
 
-        | _ -> 
-            if minfos.Length = 1 then 
-               let text = List.map (NicePrint.stringOfMethInfo cenv.amap mItem env.DisplayEnv) minfos
-               error(Error(FSComp.SR.tcInvalidUseOfTypeNameOrConstructorWithOverloads(String.concat "\n\r" text),mItem))
-            else 
-               error(Error(FSComp.SR.tcInvalidUseOfTypeNameOrConstructor(),mItem))
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::otherDelayed) ->
+
+            let objTy,tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tyargs
+
+            // A case where we have an incomplete name e.g. 'Foo<int>.' - we still want to report it to VS!
+            let resolvedItem = Item.Types(nm, [objTy])
+            CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs,env.NameEnv,resolvedItem,resolvedItem,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
+
+            minfos |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.EnclosingType objTy)
+            TcCtorCall true cenv env tpenv overallTy objTy (Some mExprAndTypeArgs) item false [] mExprAndTypeArgs otherDelayed (Some afterTcOverloadResolution)
+
+        | _ ->
+
+            TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [] mItem delayed (Some afterTcOverloadResolution)
 
     | Item.FakeInterfaceCtor _ ->
         error(Error(FSComp.SR.tcInvalidUseOfInterfaceType(),mItem))
