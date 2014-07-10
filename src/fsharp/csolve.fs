@@ -1737,12 +1737,8 @@ and SolveTypChoice (csenv:ConstraintSolverEnv) ndeep m2 trace ty tys =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     if isTyparTy g ty then AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.SimpleChoice(tys,m)) else 
-    match stripTyEqns g ty with
-    | TType_app (tc2,[ms]) when tc2.IsMeasureableReprTycon ->
-        SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ms (TType_measure MeasureOne) 
-    | _ ->
-        if List.exists (typeEquiv g ty) tys then CompleteD
-        else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))),m,m2))
+    if List.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
+    else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))),m,m2))
 
 
 and SolveTypIsReferenceType (csenv:ConstraintSolverEnv) ndeep m2 trace ty =

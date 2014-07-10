@@ -25,3 +25,24 @@ let (|``Charlie Delta``|Echo|``Fox Trot``|) (x:int) =
 match 0,1,2 with
 | ``Charlie Delta``,Echo,``Fox Trot`` -> ()
 | _ -> exit 1
+
+
+module UnitOfMeasurePrintfPositiveTests = 
+
+    open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
+    open Microsoft.FSharp.Data.UnitSystems.SI.UnitSymbols
+
+    let _ = sprintf "%f" 1.0<meter>
+    let _ = sprintf "%f" 1.0<metre>
+    let _ = sprintf "%f" 1.0<m>
+    let _ = sprintf "%f" 1.0<m/s>
+
+    let _ = sprintf "%d" 1<meter>
+    let _ = sprintf "%d" 1<metre>
+    let _ = sprintf "%d" 1<m>
+    let _ = sprintf "%d" 1<m/s>
+
+    let _ = sprintf "%g" 1.0M<meter>
+    let _ = sprintf "%g" 1.0M<metre>
+    let _ = sprintf "%g" 1.0M<m>
+    let _ = sprintf "%g" 1.0M<m/s>
