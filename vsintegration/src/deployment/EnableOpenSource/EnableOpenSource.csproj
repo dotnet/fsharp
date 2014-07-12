@@ -45,17 +45,19 @@
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == ''">..\..\..</FSharpSourcesRoot>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'VSDebug' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' or '$(Configuration)' == 'VSDebug' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix FSharp /log</StartArguments>
     <VSSDKTargetPlatformRegRootSuffix>FSharp</VSSDKTargetPlatformRegRootSuffix>
+    <CreateVsixContainer>true</CreateVsixContainer>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'VSRelease' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSRelease' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix FSharp /log</StartArguments>
     <VSSDKTargetPlatformRegRootSuffix>FSharp</VSSDKTargetPlatformRegRootSuffix>
+    <CreateVsixContainer>true</CreateVsixContainer>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
