@@ -250,7 +250,14 @@
 
     <!-- CRTL-Break when in FSI ToolWindow is Interrupt -->
     <KeyBinding Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control"  />    
-    <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control"  />    
+    <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control"  />
+  
+    <!-- CRTL-R when in FSI ToolWindow is Reset -->
+    <KeyBinding Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control"  />    
+    <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid="guidVSStd11" id="cmdidInteractiveSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control"  />
+  
+     <!-- CRTL-Backspace when in FSI ToolWindow is Clear All -->
+    <KeyBinding guid="guidVSStd97" id="cmdidClearPane" editor="guidFsiToolWindow" key1="VK_BACK" mod1="Control"  />
   </KeyBindings>
 
   <Symbols>
