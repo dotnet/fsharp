@@ -10,7 +10,6 @@
     <RootNamespace>NetCoreAutomationHelperLibrary</RootNamespace>
     <AssemblyName>NetCoreAutomationHelperLibrary</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
     <TargetProfile>netcore</TargetProfile>
     <Name>NetCoreAutomationHelperLibrary</Name>
     <SccProjectName>SAK</SccProjectName>
@@ -18,24 +17,40 @@
     <SccAuxPath>SAK</SccAuxPath>
     <SccLocalPath>SAK</SccLocalPath>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(TestProfile)'=='' or '$(TestProfile)'=='Profile7'">
+    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
+    <TargetFSharpCoreVersion>3.3.1.0</TargetFSharpCoreVersion>
+    <ProfileCorePath>$(FSCOREDLLNETCOREPATH)</ProfileCorePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TestProfile)'=='Profile78'">
+    <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
+    <TargetFSharpCoreVersion>3.4.78.310</TargetFSharpCoreVersion>
+    <ProfileCorePath>$(FSCOREDLLNETCORE78PATH)</ProfileCorePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TestProfile)'=='Profile259'">
+    <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
+    <TargetFSharpCoreVersion>3.4.259.310</TargetFSharpCoreVersion>
+    <ProfileCorePath>$(FSCOREDLLNETCORE259PATH)</ProfileCorePath>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE;NetCore</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\PortableAutomationHelperLibrary.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\PortableAutomationHelperLibrary.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutputPath>bin\$(Configuration)\$(TestProfile)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\$(TestProfile)\</IntermediateOutputPath>
+    <DocumentationFile>bin\$(Configuration)\$(TestProfile)\PortableAutomationHelperLibrary.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -54,7 +69,7 @@
     <Reference Include="FSharp.Core">
       <Name>FSharp.Core</Name>
       <AssemblyName>FSharp.Core.dll</AssemblyName>
-      <HintPath>$(FSCOREDLLNETCOREPATH)</HintPath>
+      <HintPath>$(ProfileCorePath)</HintPath>
     </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

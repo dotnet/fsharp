@@ -34,11 +34,11 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <ProjectGuid>{5B739CF3-1116-4EB4-B598-6C16BEA81CE5}</ProjectGuid>
+    <ProjectGuid>{D9D95330-3626-4199-B7AF-17B8E4AF6D87}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NetCoreProjectTemplates</RootNamespace>
-    <AssemblyName>NetCoreProjectTemplates</AssemblyName>
+    <RootNamespace>NetCore259ProjectTemplates</RootNamespace>
+    <AssemblyName>NetCore259ProjectTemplates</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <GeneratePkgDefFile>false</GeneratePkgDefFile>
@@ -69,16 +69,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <VSTemplate Include="ProjectTemplates\NetCorePortableLibrary\fsNETCore7PortableLibrary.vstemplate">
+    <VSTemplate Include="ProjectTemplates\NETCorePortableLibrary\fsNETCore259PortableLibrary.vstemplate">
       <OutputSubPath>Windows</OutputSubPath>
       <SortOrder>100</SortOrder>
       <SubType>Designer</SubType>
     </VSTemplate>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ProjectTemplates\NetCorePortableLibrary\PortableLibrary.fsproj" />
-    <None Include="ProjectTemplates\NetCorePortableLibrary\PortableLibrary1.fs" />
-    <None Include="ProjectTemplates\NetCorePortableLibrary\Script.fsx" />
+    <None Include="ProjectTemplates\NETCorePortableLibrary\PortableLibrary.fsproj" />
+    <None Include="ProjectTemplates\NETCorePortableLibrary\PortableLibrary1.fs" />
+    <None Include="ProjectTemplates\NETCorePortableLibrary\Script.fsx" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">

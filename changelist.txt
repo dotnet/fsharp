@@ -11,6 +11,9 @@
 Changelist for Visual F# Tools 3.1.2
 ====================================
 
+* Update internal packager, and build files to support the new profiles
+* Fix some bugs in the open source Profile 7, 78 and 259, improve build support for it.
+- Open source the Visual Studio Fsharp UI tests and test harnesses
 - Open source project system, language service, editor, vs_fsi
 * #! treated as a comment when it is at the start of an fsharp file
 * Fix for #78 - allow space characters in active pattern case identifiers

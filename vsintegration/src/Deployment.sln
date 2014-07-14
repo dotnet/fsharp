@@ -47,6 +47,10 @@ Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "FSharp.PropertiesPages", "v
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectSystem", "vs\FsPkgs\FSharp.Project\FS\ProjectSystem.fsproj", "{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCore259ProjectTemplates", "Templates\NetCore259ProjectTemplates\NetCore259ProjectTemplates.csproj", "{D9D95330-3626-4199-B7AF-17B8E4AF6D87}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetCore78ProjectTemplates", "Templates\NetCore78ProjectTemplates\NetCore78ProjectTemplates.csproj", "{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -276,6 +280,26 @@ Global
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.VSDebug|Any CPU.Build.0 = VSDebug|Any CPU
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.VSRelease|Any CPU.ActiveCfg = VSRelease|Any CPU
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.VSRelease|Any CPU.Build.0 = VSRelease|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.VSDebug|Any CPU.ActiveCfg = VSDebug|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.VSDebug|Any CPU.Build.0 = VSDebug|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.VSRelease|Any CPU.ActiveCfg = VSRelease|Any CPU
+		{D9D95330-3626-4199-B7AF-17B8E4AF6D87}.VSRelease|Any CPU.Build.0 = VSRelease|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.VSDebug|Any CPU.ActiveCfg = VSDebug|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.VSDebug|Any CPU.Build.0 = VSDebug|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.VSRelease|Any CPU.ActiveCfg = VSRelease|Any CPU
+		{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}.VSRelease|Any CPU.Build.0 = VSRelease|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

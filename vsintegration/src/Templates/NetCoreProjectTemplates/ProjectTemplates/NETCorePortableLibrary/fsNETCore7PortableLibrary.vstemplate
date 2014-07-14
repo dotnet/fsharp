@@ -4,7 +4,7 @@
     <Name Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5047" />
     <Description Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5048" />
     <Icon Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="4002" />
-    <TemplateID>Microsoft.FSharp.NETCorePortableLibrary</TemplateID>
+    <TemplateID>Microsoft.FSharp.NETCore7PortableLibrary</TemplateID>
     <ProjectType>FSharp</ProjectType>
     <RequiredFrameworkVersion>4.5</RequiredFrameworkVersion>
     <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>

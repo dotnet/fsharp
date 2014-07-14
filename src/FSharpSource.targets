@@ -7,11 +7,16 @@
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
             <When Condition="'$(AssemblyName)' == 'FSharp.Core'">
+              <PropertyGroup Condition="'$(TargetFramework)' == 'Portable7' or '$(TargetFramework)' == 'Portable78' or '$(TargetFramework)' == 'Portable259'">
+                <IsPortableProfile>true</IsPortableProfile>
+              </PropertyGroup>
               <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' != 'net20' AND '$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'portable7'">$(OtherFlags) --version:4.3.1.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">$(OtherFlags) --version:4.3.1.9055</OtherFlags>
                 <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.3.1.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:2.3.5.9055</OtherFlags>
                 <OtherFlags Condition="'$(TargetFramework)' == 'portable7'">$(OtherFlags) --version:3.3.1.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:2.3.5.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable78'">$(OtherFlags) --version:3.4.78.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable259'">$(OtherFlags) --version:3.4.259.9055</OtherFlags>
                 <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -140,7 +145,6 @@
     <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
@@ -184,8 +188,9 @@
   
    <!-- Target Portable Profile 7 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable7'">
-    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE7</DefineConstants>
+    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
@@ -193,14 +198,11 @@
     <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_MODULES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ICLONEABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_KEY_SORT</DefineConstants>
@@ -221,13 +223,16 @@
   </PropertyGroup>
 
   <!-- Target Portable -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='netcore78'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='portable78'">
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE78</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
@@ -237,29 +242,31 @@
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREADPOOL</DefineConstants>
+    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <OtherFlags>$(OtherFlags) --targetprofile:netcore</OtherFlags>    
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='netcore259'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='portable259'">
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE259</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_SIMPLE_SECURITY_PERMISSIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
@@ -269,20 +276,19 @@
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREADPOOL</DefineConstants>
+    <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);QUERIES_IN_FSLIB</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <OtherFlags>$(OtherFlags) --targetprofile:netcore</OtherFlags>    
   </PropertyGroup>
 
   <!-- Target Silverlight 3.0 -->
@@ -620,7 +626,7 @@
         <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
-    <When Condition="'$(TargetFramework)'=='netcore78' or '$(TargetFramework)'=='netcore259'">
+    <When Condition="'$(TargetFramework)'=='portable78' or '$(TargetFramework)'=='portable259'">
       <PropertyGroup>
         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
@@ -686,15 +692,15 @@
             Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
             Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
     <Error
-            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, sl3-wp, sl5, sl5-compiler, portable47, portable7, netcore78, netcore259"
+            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
             Condition="! ('$(TargetFramework)' == 'net40' or 
                           '$(TargetFramework)' == 'net20' or 
                           '$(TargetFramework)' == 'sl5' or 
                           '$(TargetFramework)' == 'sl3-wp' or 
                           '$(TargetFramework)' == 'portable47' or
                           '$(TargetFramework)' == 'portable7' or
-                          '$(TargetFramework)' == 'netcore78' or 
-                          '$(TargetFramework)' == 'netcore259')"/>
+                          '$(TargetFramework)' == 'portable78' or 
+                          '$(TargetFramework)' == 'portable259')"/>
     <Error
         Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll. All other components must be built with TargetFramework=net40"
         Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(TargetFramework)' != 'net40'"/>
