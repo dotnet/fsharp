@@ -27,7 +27,7 @@ src/fsharp/FSharp.Compiler/*.resx
 src/fsharp/FSharp.Compiler/*.resources
 src/fsharp/FSharp.Compiler/*.sln
 src/fsharp/FSharp.Compiler/*.userprefs
-src/*.log
+*.log
 Debug
 Release
 Proto
