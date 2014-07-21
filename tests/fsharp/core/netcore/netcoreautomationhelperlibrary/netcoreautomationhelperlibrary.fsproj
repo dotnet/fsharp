@@ -17,19 +17,19 @@
     <SccAuxPath>SAK</SccAuxPath>
     <SccLocalPath>SAK</SccLocalPath>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(TestProfile)'=='' or '$(TestProfile)'=='Profile7'">
+  <PropertyGroup Condition="'$(TestProfile)'=='Profile7'">
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
     <TargetFSharpCoreVersion>3.3.1.0</TargetFSharpCoreVersion>
     <ProfileCorePath>$(FSCOREDLLNETCOREPATH)</ProfileCorePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TestProfile)'=='Profile78'">
     <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
-    <TargetFSharpCoreVersion>3.4.78.310</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>3.78.3.1</TargetFSharpCoreVersion>
     <ProfileCorePath>$(FSCOREDLLNETCORE78PATH)</ProfileCorePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TestProfile)'=='Profile259'">
     <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
-    <TargetFSharpCoreVersion>3.4.259.310</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>3.259.3.1</TargetFSharpCoreVersion>
     <ProfileCorePath>$(FSCOREDLLNETCORE259PATH)</ProfileCorePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

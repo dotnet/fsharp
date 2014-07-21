@@ -9,9 +9,9 @@ IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
     exit /b 0
 )
 
-set CONTROL_FAILURES_LOG=%~dp0\control_failures.log
+set CONTROL_FAILURES_LOG=%~dp0..\ConsoleApplication1\bin\Debug\Profile259\control_failures.log
 
-..\ConsoleApplication1\bin\Debug\profile359\PortableTestEntry.exe
+..\ConsoleApplication1\bin\Debug\Profile259\PortableTestEntry.exe
 endlocal
 exit /b %ERRORLEVEL%
 
