@@ -1630,6 +1630,7 @@ let MakeCalledArgs amap m (minfo:MethInfo) minst =
 /// and returns a CalledMeth object for further analysis.
 type CalledMeth<'T>
       (infoReader:InfoReader,
+       nameEnv: Microsoft.FSharp.Compiler.Nameres.NameResolutionEnv option,
        isCheckingAttributeCall, 
        freshenMethInfo,// a function to help generate fresh type variables the property setters methods in generic classes 
        m, 
@@ -1726,15 +1727,25 @@ type CalledMeth<'T>
                         let pminst = freshenMethInfo m pminfo
                         Choice1Of2(AssignedItemSetter(id,AssignedPropSetter(pinfo,pminfo, pminst), e))
                     | _ ->
-                        match infoReader.GetILFieldInfosOfType(Some(nm),ad,m,returnedObjTy) with
-                        | finfo :: _ -> 
-                            Choice1Of2(AssignedItemSetter(id,AssignedILFieldSetter(finfo), e))
-                        | _ ->              
-                          match infoReader.TryFindRecdOrClassFieldInfoOfType(nm,m,returnedObjTy) with
-                          | Some rfinfo -> 
-                              Choice1Of2(AssignedItemSetter(id,AssignedRecdFieldSetter(rfinfo), e))
-                          | None -> 
-                              Choice2Of2(arg))
+                        let epinfos = match nameEnv with  
+                                     | Some(ne) ->  Microsoft.FSharp.Compiler.Nameres.ExtensionPropInfosOfTypeInScope infoReader ne (Some(nm), ad) m returnedObjTy
+                                     | _ -> []
+                        match epinfos with // need to hide ?
+                        | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
+                            let pminfo = pinfo.SetterMethod
+                            let pminst = freshenMethInfo m pminfo
+                            Choice1Of2(AssignedItemSetter(id,AssignedPropSetter(pinfo,pminfo, pminst), e))
+                        |  _ ->
+    
+                            match infoReader.GetILFieldInfosOfType(Some(nm),ad,m,returnedObjTy) with
+                            | finfo :: _ -> 
+                                Choice1Of2(AssignedItemSetter(id,AssignedILFieldSetter(finfo), e))
+                            | _ ->              
+                              match infoReader.TryFindRecdOrClassFieldInfoOfType(nm,m,returnedObjTy) with
+                              | Some rfinfo -> 
+                                  Choice1Of2(AssignedItemSetter(id,AssignedRecdFieldSetter(rfinfo), e))
+                              | None -> 
+                                  Choice2Of2(arg))
 
             let names = namedCallerArgs |> List.map (fun (CallerNamedArg(nm,_)) -> nm.idText) 
 

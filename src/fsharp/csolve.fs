@@ -1204,7 +1204,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                       let callerArgs = argtys |> List.map (fun argty -> CallerArg(argty,m,false,dummyExpr))
                       let minst = FreshenMethInfo m minfo
                       let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                      CalledMeth<Expr>(csenv.InfoReader,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false))
+                      CalledMeth<Expr>(csenv.InfoReader,None,false,FreshenMethInfo,m,AccessibleFromEverywhere,minfo,minst,minst,None,objtys,[(callerArgs,[])],false,false))
 
               let methOverloadResult,errors = 
                   CollectThenUndo (fun trace -> ResolveOverloading csenv (WithTrace(trace)) nm ndeep true (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))  

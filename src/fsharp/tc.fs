@@ -8741,7 +8741,7 @@ and TcMethodApplication
                 | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers(tyargs)
                 | None -> minst
             let allArgs = List.zip unnamedCurriedCallerArgs namedCurriedCallerArgs
-            CalledMeth<SynExpr>(cenv.infoReader,checkingAttributeCall, FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,allArgs,usesParamArrayConversion,true)
+            CalledMeth<SynExpr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall, FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,allArgs,usesParamArrayConversion,true)
 
         let preArgumentTypeCheckingCalledMethGroup = 
             [ for (minfo,pinfoOpt) in candidateMethsAndProps do
@@ -8834,7 +8834,7 @@ and TcMethodApplication
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers(tyargs)
                     | None -> minst
                 let callerArgs = List.zip unnamedCurriedCallerArgs namedCurriedCallerArgs
-                CalledMeth<Expr>(cenv.infoReader,checkingAttributeCall,FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true))
+                CalledMeth<Expr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall,FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true))
           
         let callerArgCounts = (unnamedCurriedCallerArgs.Length, namedCurriedCallerArgs.Length)
         let csenv = MakeConstraintSolverEnv cenv.css mMethExpr denv
