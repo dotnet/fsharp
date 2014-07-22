@@ -7,7 +7,8 @@ set SCRIPT_ROOT=%_SCRIPT_DRIVE%%_SCRIPT_PATH%
 set REG_SOFTWARE=HKLM\SOFTWARE
 IF /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" (set REG_SOFTWARE=%REG_SOFTWARE%\Wow6432Node)
 
-if not defined FSHARP_HOME set FSHARP_HOME=%SCRIPT_ROOT%..\..
+if not defined FSHARP_HOME set FSHARP_HOME=%SCRIPT_ROOT%..
+if not defined FSCBinPath set FSCBinPath=%FSHARP_HOME%\Debug\net40\bin
 
 for /f %%i in ("%FSHARP_HOME%") do set FSHARP_HOME=%%~fi
 

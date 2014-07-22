@@ -7,11 +7,7 @@
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
-    <!--
-        fsc.exe and fsi.exe only runs on x86 (emulates on ia64, x64) due to 
-        Win32 DLLs and memory mapping dependencies...
-     -->
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>anycpu32bitpreferred</PlatformTarget>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc-proto</AssemblyName>

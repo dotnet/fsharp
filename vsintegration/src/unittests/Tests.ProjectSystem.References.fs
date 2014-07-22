@@ -25,13 +25,20 @@ type References() =
     static let Net35RefAssemPathOnThisMachine() =
         let key = @"SOFTWARE\Microsoft\.NETFramework\AssemblyFolders\Microsoft .NET Framework 3.5 Reference Assemblies"
         let hklm = Registry.LocalMachine
-        let rkey = hklm.OpenSubKey(key)
-        rkey.GetValue("") :?> string
+        use rkey = hklm.OpenSubKey(key)
+        match rkey with
+        | null -> ""
+        | rkey -> rkey.GetValue("") :?> string
     static let Net20AssemExPathOnThisMachine() =
         let key = @"SOFTWARE\Microsoft\.NETFramework\v2.0.50727\AssemblyFoldersEx\Public Assemblies (Common Files)"
         let hklm = Registry.LocalMachine
-        let rkey = hklm.OpenSubKey(key)
-        rkey.GetValue("") :?> string
+        use rkey = hklm.OpenSubKey(key)
+        match rkey with
+        | null -> ""
+        | rkey -> rkey.GetValue("") :?> string
+    static let IsNet20AssemExPathOnThisMachine() =
+        if Net20AssemExPathOnThisMachine() <> "" then false else true
+        
 
     /////////////////////////////////
     // project helpers
@@ -172,20 +179,23 @@ type References() =
 
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WorksWithFilenames``() =
-        let edte = Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll")
-        let ssmw = Path.Combine(Net35RefAssemPathOnThisMachine(), "System.ServiceModel.Web.dll")
-        this.MakeProjectAndDo(["doesNotMatter.fs"], [edte; ssmw], "", "v3.5", (fun project ->
-            let expectedRefInfo = [ edte, true 
-                                    ssmw, true ]
-            let refContainer = GetReferenceContainerNode(project)
-            let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
-                ]
-            AssertEqual expectedRefInfo actualRefInfo
-            ))
+        if IsNet20AssemExPathOnThisMachine() then
+          let edte = Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll")
+          let ssmw = Path.Combine(Net35RefAssemPathOnThisMachine(), "System.ServiceModel.Web.dll")
+          this.MakeProjectAndDo(["doesNotMatter.fs"], [edte; ssmw], "", "v3.5", (fun project ->
+              let expectedRefInfo = [ edte, true 
+                                      ssmw, true ]
+              let refContainer = GetReferenceContainerNode(project)
+              let actualRefInfo = [
+                  let r = ref(refContainer.FirstChild :?> ReferenceNode)
+                  while !r <> null do
+                      yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
+                      r := (!r).NextSibling :?> ReferenceNode
+                  ]
+              AssertEqual expectedRefInfo actualRefInfo
+              ))
+        else
+          ()
 
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WeirdCases``() =
@@ -327,107 +337,114 @@ type References() =
         
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.NonFxAssembly.NetTab``() =
-        this.ReferenceResolutionHelper(AddReferenceDialogTab.DotNetTab, 
-                                       Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll"),
-                               (* TODO, no NoPIA support yet, so *)
-                                       @"<Reference Include=""EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"" />")
-                               (* instead of below
-                                       // TODO the intent here is to match whatever C# does; below is a snapshot from July 7, 2009
-                                       @"<Reference Include=""EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">"
-                                     + @"\s*<EmbedInteropTypes>True</EmbedInteropTypes>"
-                                     + @"\s*</Reference>")
-                               *)
-
+        if IsNet20AssemExPathOnThisMachine() then
+          this.ReferenceResolutionHelper(AddReferenceDialogTab.DotNetTab, Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll"),
+                                 (* TODO, no NoPIA support yet, so *)
+                                         @"<Reference Include=""EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"" />")
+                                 (* instead of below
+                                         // TODO the intent here is to match whatever C# does; below is a snapshot from July 7, 2009
+                                         @"<Reference Include=""EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">"
+                                       + @"\s*<EmbedInteropTypes>True</EmbedInteropTypes>"
+                                       + @"\s*</Reference>")
+                                 *)
+        else
+          ()
     [<Test>]
     member public this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.SameVersion``() =
-        let envDte80RefAssemPath = Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll")
-        let dirName = Path.GetTempPath()
-        let copy = Path.Combine(dirName, "EnvDTE80.dll")
-        try
-            File.Copy(envDte80RefAssemPath, copy, true)
-            this.ReferenceResolutionHelper(AddReferenceDialogTab.BrowseTab, 
-                                           copy,
-                                   (*
-                                   For other cases, we mimic C#, but C# has a bug in this case.  Correct result is
-                                   *)
-                                           @"<Reference Include=""EnvDTE80"">"
-                                         // TODO no NoPIA support yet: + @"\s*<EmbedInteropTypes>True</EmbedInteropTypes>"
-                                         + @"\s*<HintPath>\.\.\\EnvDTE80.dll</HintPath>"
-                                         + @"\s*</Reference>")
-                                   (* whereas C# has this: 
-                                           // TODO the intent here is to match whatever C# does; below is a snapshot from July 7, 2009
-                                           @"<Reference Include=""EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">"
-                                         + @"\s*<SpecificVersion>False</SpecificVersion>"
-                                         + @"\s*<EmbedInteropTypes>True</EmbedInteropTypes>"
-                                         + (sprintf @"\s*<HintPath>%s</HintPath>" (Regex.Escape copy))
-                                         + @"\s*</Reference>")
-                                   *)
-        finally
-            File.Delete(copy)
+        if IsNet20AssemExPathOnThisMachine() then
+          let envDte80RefAssemPath = Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll")
+          let dirName = Path.GetTempPath()
+          let copy = Path.Combine(dirName, "EnvDTE80.dll")
+          try
+              File.Copy(envDte80RefAssemPath, copy, true)
+              this.ReferenceResolutionHelper(AddReferenceDialogTab.BrowseTab, 
+                                             copy,
+                                     (*
+                                     For other cases, we mimic C#, but C# has a bug in this case.  Correct result is
+                                     *)
+                                             @"<Reference Include=""EnvDTE80"">"
+                                           // TODO no NoPIA support yet: + @"\s*<EmbedInteropTypes>True</EmbedInteropTypes>"
+                                           + @"\s*<HintPath>\.\.\\EnvDTE80.dll</HintPath>"
+                                           + @"\s*</Reference>")
+                                     (* whereas C# has this: 
+                                             // TODO the intent here is to match whatever C# does; below is a snapshot from July 7, 2009
+                                             @"<Reference Include=""EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">"
+                                           + @"\s*<SpecificVersion>False</SpecificVersion>"
+                                           + @"\s*<EmbedInteropTypes>True</EmbedInteropTypes>"
+                                           + (sprintf @"\s*<HintPath>%s</HintPath>" (Regex.Escape copy))
+                                           + @"\s*</Reference>")
+                                     *)
+          finally
+              File.Delete(copy)
+        else
+          ()
 
     [<Test>]
     member public this.``ReferenceResolution.Bug650591.AutomationReference.Add.FullPath``() = 
-        let invoker = 
-            {
-                new Microsoft.Internal.VisualStudio.Shell.Interop.IVsInvokerPrivate with
-                    member this.Invoke(invokable) = invokable.Invoke()
-            }
-        let log = 
-            {
-                new Microsoft.VisualStudio.Shell.Interop.IVsActivityLog with
-                    member this.LogEntry(_, _, _) = VSConstants.S_OK
-                    member this.LogEntryGuid(_, _, _, _) = VSConstants.S_OK
-                    member this.LogEntryGuidHr(_, _, _, _, _) = VSConstants.S_OK
-                    member this.LogEntryGuidHrPath(_, _, _, _, _, _) = VSConstants.S_OK
-                    member this.LogEntryGuidPath(_, _, _, _, _) = VSConstants.S_OK
-                    member this.LogEntryHr(_, _, _, _) = VSConstants.S_OK
-                    member this.LogEntryHrPath(_, _, _, _, _) = VSConstants.S_OK
-                    member this.LogEntryPath(_, _, _, _) = VSConstants.S_OK
-            }
-        let mocks = 
-            [
-                typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUIThreadInvokerPrivate>.GUID, box invoker
-                typeof<Microsoft.VisualStudio.Shell.Interop.SVsActivityLog>.GUID, box log
-            ] |> dict
-        let mockProvider = 
-            {
-                new Microsoft.VisualStudio.OLE.Interop.IServiceProvider with
-                    member this.QueryService(guidService, riid, punk) =
-                        match mocks.TryGetValue guidService with
-                        | true, v -> 
-                            punk <- System.Runtime.InteropServices.Marshal.GetIUnknownForObject(v)
-                            VSConstants.S_OK
-                        | _ ->
-                            punk <- IntPtr.Zero
-                            VSConstants.E_NOINTERFACE
-            }
-
-        let _ = Microsoft.VisualStudio.Shell.ServiceProvider.CreateFromSetSite(mockProvider)
-        let envDte80RefAssemPath = Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll")
-        let dirName = Path.GetTempPath()
-        let copy = Path.Combine(dirName, "EnvDTE80.dll")
-        try
-            File.Copy(envDte80RefAssemPath, copy, true)
-            this.MakeProjectAndDo
-                (
-                    ["DoesNotMatter.fs"], 
-                    [], 
-                    "",
-                    fun proj -> 
-                        let refContainer = GetReferenceContainerNode(proj)
-                        let automationRefs = refContainer.Object :?> Automation.OAReferences
-                        automationRefs.Add(copy) |> ignore
-                        SaveProject(proj)
-                        let fsprojFileText = File.ReadAllText(proj.FileName)
-                        printfn "%s" fsprojFileText
-                        let expectedFsProj = 
-                            @"<Reference Include=""EnvDTE80"">"
-                            + @"\s*<HintPath>\.\.\\EnvDTE80.dll</HintPath>"
-                            + @"\s*</Reference>"
-                        TheTests.HelpfulAssertMatches '<' expectedFsProj fsprojFileText
-                )
-        finally
-            File.Delete(copy)
+        if IsNet20AssemExPathOnThisMachine() then
+          let invoker = 
+              {
+                  new Microsoft.Internal.VisualStudio.Shell.Interop.IVsInvokerPrivate with
+                      member this.Invoke(invokable) = invokable.Invoke()
+              }
+          let log = 
+              {
+                  new Microsoft.VisualStudio.Shell.Interop.IVsActivityLog with
+                      member this.LogEntry(_, _, _) = VSConstants.S_OK
+                      member this.LogEntryGuid(_, _, _, _) = VSConstants.S_OK
+                      member this.LogEntryGuidHr(_, _, _, _, _) = VSConstants.S_OK
+                      member this.LogEntryGuidHrPath(_, _, _, _, _, _) = VSConstants.S_OK
+                      member this.LogEntryGuidPath(_, _, _, _, _) = VSConstants.S_OK
+                      member this.LogEntryHr(_, _, _, _) = VSConstants.S_OK
+                      member this.LogEntryHrPath(_, _, _, _, _) = VSConstants.S_OK
+                      member this.LogEntryPath(_, _, _, _) = VSConstants.S_OK
+              }
+          let mocks = 
+              [
+                  typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUIThreadInvokerPrivate>.GUID, box invoker
+                  typeof<Microsoft.VisualStudio.Shell.Interop.SVsActivityLog>.GUID, box log
+              ] |> dict
+          let mockProvider = 
+              {
+                  new Microsoft.VisualStudio.OLE.Interop.IServiceProvider with
+                      member this.QueryService(guidService, riid, punk) =
+                          match mocks.TryGetValue guidService with
+                          | true, v -> 
+                              punk <- System.Runtime.InteropServices.Marshal.GetIUnknownForObject(v)
+                              VSConstants.S_OK
+                          | _ ->
+                              punk <- IntPtr.Zero
+                              VSConstants.E_NOINTERFACE
+              }
+  
+          let _ = Microsoft.VisualStudio.Shell.ServiceProvider.CreateFromSetSite(mockProvider)
+          let envDte80RefAssemPath = Path.Combine(Net20AssemExPathOnThisMachine(), "EnvDTE80.dll")
+          let dirName = Path.GetTempPath()
+          let copy = Path.Combine(dirName, "EnvDTE80.dll")
+          try
+              File.Copy(envDte80RefAssemPath, copy, true)
+              this.MakeProjectAndDo
+                  (
+                      ["DoesNotMatter.fs"], 
+                      [], 
+                      "",
+                      fun proj -> 
+                          let refContainer = GetReferenceContainerNode(proj)
+                          let automationRefs = refContainer.Object :?> Automation.OAReferences
+                          automationRefs.Add(copy) |> ignore
+                          SaveProject(proj)
+                          let fsprojFileText = File.ReadAllText(proj.FileName)
+                          printfn "%s" fsprojFileText
+                          let expectedFsProj = 
+                              @"<Reference Include=""EnvDTE80"">"
+                              + @"\s*<HintPath>\.\.\\EnvDTE80.dll</HintPath>"
+                              + @"\s*</Reference>"
+                          TheTests.HelpfulAssertMatches '<' expectedFsProj fsprojFileText
+                  )
+          finally
+              File.Delete(copy)
+        else
+          ()
 
     /// Create a dummy project named 'Test', build it, and then call k with the full path to the resulting exe
     member public this.CreateDummyTestProjectBuildItAndDo(k : string -> unit) =
