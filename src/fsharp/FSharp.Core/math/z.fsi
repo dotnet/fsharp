@@ -36,7 +36,7 @@ namespace System.Numerics
         /// Return the sign of a big integer: 0, +1 or -1
         member Sign    : int
         /// Compute the ratio and remainder of two big integers
-        static member DivRem : x:BigInteger * y:BigInteger * rem:BigInteger byref -> BigInteger
+        static member DivRem : x:BigInteger * y:BigInteger * [<System.Runtime.InteropServices.Out>]rem:BigInteger byref -> BigInteger
 
         /// This operator is for consistency when this type be used from other CLI languages
         static member op_LessThan           : x:BigInteger * y:BigInteger -> bool
