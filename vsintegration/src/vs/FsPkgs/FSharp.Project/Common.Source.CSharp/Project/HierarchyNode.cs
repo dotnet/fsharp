@@ -86,7 +86,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public static readonly Guid SolutionExplorer = new Guid(EnvDTE.Constants.vsWindowKindSolutionExplorer);
         public const int NoImage = -1;
 #if DEBUG
-        /*internal, but public for FSharp.Project.dll*/ public static int LastTracedProperty = 0;
+        /*Available only in debug build for FSharp.Project.dll*/ 
+        public static int LastTracedProperty = 0;
 #endif
         #endregion
 
@@ -831,6 +832,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Indicates what runtime the project targets
                 result = (UInt32)__VSPROJTARGETRUNTIME.VSPROJ_TARGETRUNTIME_MANAGED;
+            }
+
+            if (propId == (int)__VSHPROPID5.VSHPROPID_TargetPlatformIdentifier)
+            {
+                // Indicates the target platform (e.g., Windows, Portable, or WindowsPhone)
+                result = this.ProjectMgr.GetProjectProperty("TargetPlatformIdentifier");
             }
 #endif
 
