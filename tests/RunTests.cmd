@@ -35,14 +35,33 @@ set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
-if /I "%2" == "coreunit" (goto :COREUNIT)
+if /I "%2" == "coreunit" (
+   set coreunitsuffix=net40
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable47" (
+   set coreunitsuffix=portable47
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable7" (
+   set coreunitsuffix=portable7
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable78" (
+   set coreunitsuffix=portable78
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable259" (
+   set coreunitsuffix=portable259
+   goto :COREUNIT
+)
 if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 :USAGE
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|ideunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -141,9 +160,9 @@ goto :EOF
 
 :COREUNIT
 
-set XMLFILE=CoreUnit_Xml.xml
-set OUTPUTFILE=CoreUnit_Output.log
-set ERRORFILE=CoreUnit_Error.log
+set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
+set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
+set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 set FILEDIR=%~dp0
 
 where.exe nunit-console.exe > NUL 2> NUL 
@@ -151,8 +170,8 @@ if errorlevel 1 (
   echo Error: nunit-console.exe is not in the PATH
   exit /b 1
 )
-echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
-     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
+echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
 goto :EOF
 

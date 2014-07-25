@@ -48,6 +48,7 @@ let CheckThrowsNotSupportedException f = CheckThrowsExn<NotSupportedException>  
 let CheckThrowsArgumentException     f = CheckThrowsExn<ArgumentException>        f
 let CheckThrowsArgumentNullException f = CheckThrowsExn<ArgumentNullException>    f
 let CheckThrowsArgumentNullException2 s f  = CheckThrowsExn2<ArgumentNullException>  s  f
+let CheckThrowsArgumentOutOfRangeException f = CheckThrowsExn<ArgumentOutOfRangeException>    f
 let CheckThrowsKeyNotFoundException  f = CheckThrowsExn<KeyNotFoundException>     f
 let CheckThrowsDivideByZeroException f = CheckThrowsExn<DivideByZeroException>    f
 let CheckThrowsOverflowException     f = CheckThrowsExn<OverflowException>        f

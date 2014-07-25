@@ -25,6 +25,30 @@ Make sure each method works on:
 * Fuction
 *)
 
+#if FX_RESHAPED_REFLECTION
+module PrimReflectionAdapters =
+    open System.Linq
+    
+    type System.Type with
+        member this.Assembly = this.GetTypeInfo().Assembly
+        member this.IsGenericType = this.GetTypeInfo().IsGenericType
+        member this.IsValueType = this.GetTypeInfo().IsValueType
+        member this.IsAssignableFrom(otherTy : Type) = this.GetTypeInfo().IsAssignableFrom(otherTy.GetTypeInfo())
+        member this.GetProperty(name) = this.GetRuntimeProperty(name)
+        member this.GetProperties() = this.GetRuntimeProperties() |> Array.ofSeq
+        member this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
+        member this.GetCustomAttributes(attrTy : Type, inherits : bool) : obj[] = 
+            unbox (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, false).ToArray()))
+            
+    type System.Reflection.MemberInfo with
+        member this.ReflectedType = this.DeclaringType
+        
+    type System.Reflection.Assembly with
+        member this.GetTypes() = this.DefinedTypes |> Seq.map (fun ti -> ti.AsType()) |> Array.ofSeq
+
+open PrimReflectionAdapters
+#endif
+
 module IsModule = 
     type IsModuleType () = 
         member this.M = 1
@@ -769,7 +793,7 @@ type FSharpTypeTests() =
         CheckThrowsArgumentNullException(fun () -> FSharpType.IsModule(null) |> ignore )
               
         ()
-        
+
     [<Test>]
     member this.IsRecord() =    
         
@@ -792,9 +816,11 @@ type FSharpTypeTests() =
         // negative
         Assert.IsFalse(FSharpType.IsRecord(typeof<unit>))
         
-        
+#if FX_RESHAPED_REFLECTION
+        Assert.IsFalse( FSharpType.IsRecord(typeof<unit>, true) )
+#else 
         Assert.IsFalse( FSharpType.IsRecord(typeof<unit>, System.Reflection.BindingFlags.NonPublic) )
-        
+#endif
         ()
 
         

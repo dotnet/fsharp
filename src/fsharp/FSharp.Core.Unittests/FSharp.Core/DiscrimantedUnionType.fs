@@ -45,7 +45,7 @@ type UseUnionsAsFlags() =
     [<Test>]
     member this.CanParseViaBCL() = 
         let values = System.Enum.GetValues(typeof<FlagsUnion>)
-        let fourFromString = System.Enum.Parse(typeof<FlagsUnion>, "Four") :?> FlagsUnion // downcast needed
+        let fourFromString = System.Enum.Parse(typeof<FlagsUnion>, "Four", false) :?> FlagsUnion // downcast needed
         Assert.AreEqual(fourFromString, FlagsUnion.Four)
     
     [<Test>]

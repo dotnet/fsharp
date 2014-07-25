@@ -93,7 +93,7 @@ type LanguagePrimitivesModule() =
 #if FX_NO_TO_LOWER_INVARIANT
         Assert.AreEqual(s.ToLower(), (string guid).ToLower())
 #else        
-        Assert.AreEqual(s.ToLower(Globalization.CultureInfo.InvariantCulture), (string guid).ToLower(Globalization.CultureInfo.InvariantCulture))
+        Assert.AreEqual(s.ToLowerInvariant(), (string guid).ToLowerInvariant())
 #endif
     [<Test>]
     member this.GenericComparison() =

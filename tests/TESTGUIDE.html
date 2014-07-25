@@ -337,8 +337,14 @@
         <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET 2</li>
         <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 47</li>
         <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 7</li>
+        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 78</li>
+        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 259</li>
         <li><code>msbuild src\fsharp-typeproviders-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
         <li><code>msbuild src\fsharp-library-unittests-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests</li>
+        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 47</li>
+        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 7</li>
+        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 78</li>
+        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 259</li>
         <li><code>msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate all Visual Studio integration components</li>
         <li><code>msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate IDE unit tests</li>
         <li><code>src\update.cmd &lt;debug|release&gt; -ngen</code> to update the GAC, add strong name validation skips, and ngen latest-built binaries</li>
@@ -352,6 +358,10 @@
     RunTests.cmd &lt;debug|release&gt; fsharp [tags to run] [tags not to run]
     RunTests.cmd &lt;debug|release&gt; fsharpqa [tags to run] [tags not to run]
     RunTests.cmd &lt;debug|release&gt; coreunit
+    RunTests.cmd &lt;debug|release&gt; coreunitportable47
+    RunTests.cmd &lt;debug|release&gt; coreunitportable7
+    RunTests.cmd &lt;debug|release&gt; coreunitportable78
+    RunTests.cmd &lt;debug|release&gt; coreunitportable259
     RunTests.cmd &lt;debug|release&gt; ideunit
 </pre>
 

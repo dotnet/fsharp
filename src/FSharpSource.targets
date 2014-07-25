@@ -702,8 +702,8 @@
                           '$(TargetFramework)' == 'portable78' or 
                           '$(TargetFramework)' == 'portable259')"/>
     <Error
-        Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll. All other components must be built with TargetFramework=net40"
-        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(TargetFramework)' != 'net40'"/>
+        Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
+        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40'"/>
         
   </Target>
 
