@@ -50,9 +50,9 @@ type SmartIndent (textView : ITextView, textManager : IVsTextManager) =
         member this.GetDesiredIndentation(line : ITextSnapshotLine) =
 
             let lp = [| LANGPREFERENCES(guidLang = Guid(FSharpCommonConstants.languageServiceGuidString)) |]
-            ErrorHandler.ThrowOnFailure(textManager.GetUserPreferences(null, null, lp, null)) |> ignore
+            let indentStyle = if ErrorHandler.Succeeded(textManager.GetUserPreferences(null, null, lp, null)) then lp.[0].IndentStyle else vsIndentStyle.vsIndentStyleDefault
 
-            if (lp.[0].IndentStyle = vsIndentStyle.vsIndentStyleNone || _textView = null || _textView.IsClosed) then
+            if (indentStyle = vsIndentStyle.vsIndentStyleNone || _textView = null || _textView.IsClosed) then
                 Nullable<int>()
             else
 
