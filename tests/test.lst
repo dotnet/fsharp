@@ -52,9 +52,9 @@ Core04		fsharp\core\members\ops
 Core05		..\testsprivate\fsharp\core\mscorlib
 Core05		fsharp\core\namespaces
 Core05		fsharp\core\nested
-Core05		fsharp\core\netcore7
-Core05		fsharp\core\netcore78
-Core05		fsharp\core\netcore259
+Core05		fsharp\core\netcore\netcore7
+Core05		fsharp\core\netcore\netcore78
+Core05		fsharp\core\netcore\netcore259
 Core05		fsharp\core\parsing
 Core05		fsharp\core\patterns
 Core05		fsharp\core\pinvoke
