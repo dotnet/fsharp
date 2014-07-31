@@ -440,7 +440,6 @@ let rangeOfLongIdent(lid:LongIdent) =
 %left COMMA
 %nonassoc slice_expr  /* matrix.[e COMMA e] has higher precedence than "e COMMA e" */
 %nonassoc DOT_DOT /* for matrix.[1..2,3..4] the ".." has higher precedence than expression "2 COMMA 3" */
-%nonassoc slice_comma  /* for matrix.[1..2,3..4] the "," has higher precedence than ".." */
 %nonassoc paren_pat_colon
 %nonassoc paren_pat_attribs
 %left OR BAR_BAR JOIN_IN
@@ -2907,7 +2906,7 @@ typedSeqExpr:
   | seqExpr { $1 }
 
 seqExpr:
-  | declExpr seps seqExpr                 
+  | declExpr seps seqExpr
       { SynExpr.Sequential(SequencePointsAtSeq,true,$1,$3,unionRanges $1.Range $3.Range) } 
   | declExpr seps                         
       { $1 }  
@@ -3573,21 +3572,19 @@ atomicExprQualification:
             mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState); 
             mkSynDotParenGet lhsm dotm e $2) }
 
-  |   LBRACK  typedSeqExpr RBRACK  
+  |   LBRACK  typedSeqExpr RBRACK
       { (fun e lhsm dotm -> mkSynDotBrackGet lhsm dotm e $2) }
-
+ 
   |   LBRACK  typedSeqExpr recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()); 
         (fun e lhsm dotm -> exprFromParseError (mkSynDotBrackGet lhsm dotm e $2)) }
 
-  |   LBRACK optRange RBRACK   
-      { (fun e lhsm dotm -> mkSynDotBrackSliceGet lhsm dotm e $2) }
-  |   LBRACK optRange COMMA optRange RBRACK  %prec slice_comma
-      { (fun e lhsm dotm -> mkSynDotBrackSlice2Get lhsm dotm e $2 $4) }
-  |   LBRACK optRange COMMA optRange COMMA optRange RBRACK  %prec slice_comma
-      { (fun e lhsm dotm -> mkSynDotBrackSlice3Get lhsm dotm e $2 $4 $6) }
-  |   LBRACK optRange COMMA optRange COMMA optRange COMMA optRange RBRACK  %prec slice_comma
-      { (fun e lhsm dotm -> mkSynDotBrackSlice4Get lhsm dotm e $2 $4 $6 $8) }
+  |   LBRACK  optRangeSeqExpr RBRACK
+      { (fun e lhsm dotm -> mkSynDotBrackSeqSliceGet lhsm dotm e $2) }
+ 
+  |   LBRACK  optRangeSeqExpr recover
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()); 
+        (fun e lhsm dotm -> exprFromParseError (mkSynDotBrackSeqSliceGet lhsm dotm e $2)) }
 
   |   LBRACK  error RBRACK  
       { let mArg = rhs2 parseState 1 3
@@ -3598,6 +3595,9 @@ atomicExprQualification:
         let mArg = (rhs parseState 1).EndRange 
         (fun e lhsm dotm -> exprFromParseError (mkSynDotBrackGet lhsm dotm e (arbExpr("indexerExpr2",mArg)))) }
 
+optRangeSeqExpr: 
+  | optRange COMMA optRangeSeqExpr { $1::$3 } 
+  | optRange                       { [$1] }
 
 optRange:
   | declExpr DOT_DOT declExpr 
@@ -3610,7 +3610,6 @@ optRange:
       { SynIndexerArg.Two(mkSynOptionalExpr (rhs parseState 1) None, mkSynOptionalExpr (rhs parseState 1) None) }
   | declExpr %prec slice_expr
       { SynIndexerArg.One($1) }
-  
 
 /* the start et of atomicExprAfterType must not overlap with the valid postfix tokens of the type syntax, e.g. new List<T>(...) */
 atomicExprAfterType:
