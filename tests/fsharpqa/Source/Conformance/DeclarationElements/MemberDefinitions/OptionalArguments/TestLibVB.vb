@@ -1,3 +1,4 @@
+Imports System
 Namespace Test
     Public Class VBTestClass
         Public Function OptionalRefParam(Optional ByRef param2 As String = "superduper") As String
