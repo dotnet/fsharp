@@ -7,7 +7,7 @@
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
             <When Condition="'$(AssemblyName)' == 'FSharp.Core'">
-              <PropertyGroup Condition="'$(TargetFramework)' == 'Portable7' or '$(TargetFramework)' == 'Portable78' or '$(TargetFramework)' == 'Portable259'">
+              <PropertyGroup Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">
                 <IsPortableProfile>true</IsPortableProfile>
               </PropertyGroup>
               <PropertyGroup>
@@ -222,7 +222,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>    
   </PropertyGroup>
 
-  <!-- Target Portable -->
+  <!-- Target Portable Profile 78 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable78'">
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE78</DefineConstants>
@@ -257,6 +257,7 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
+  <!-- Target Portable Profile 259 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable259'">
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE259</DefineConstants>
@@ -621,16 +622,11 @@
   </PropertyGroup>
 
   <Choose>
-    <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7'">
+    <When Condition="'$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259'">
       <PropertyGroup>
         <FSharpTargetsPath>..\Proto\$(protoCLIDir)\bin\Microsoft.Portable.FSharp-proto.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
-    <When Condition="'$(TargetFramework)'=='portable78' or '$(TargetFramework)'=='portable259'">
-      <PropertyGroup>
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.Portable.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>   
     <When Condition="'$(TargetFramework)'=='sl3' or '$(TargetFramework)'=='sl4' or '$(TargetFramework)'=='sl5' or '$(TargetFramework)'=='sl5-compiler'">
       <PropertyGroup>
         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\Silverlight\$(SilverlightVersion)\FSharpSource.Silverlight.Common.targets</FSharpTargetsPath>
