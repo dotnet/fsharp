@@ -528,11 +528,65 @@ type Miscellaneous() =
             use project = project
             let values = project.BuildActionConverter.GetStandardValues()
             let list = values |> Seq.cast |> Seq.map (fun (ba : BuildAction)-> ba.Name) |> Seq.toList
-            let expected = ["Compile"; "Content"; "EmbeddedResource"; "None"; "MyBuildAction"; "MyBuildAction3"]
+            // expected list of build actions is union of standard actions, custom actions, and "extended" standard actions (populated from, e.g., WPF or Fakes)
+            // this is not exhaustive (exhaustive list is not static), but covers the main equivalence classes
+            let expected = ["Compile"; "Content"; "EmbeddedResource"; "None"; "MyBuildAction"; "MyBuildAction3"; "Resource"; "SplashScreen"; "Fakes"]
             if expected |> List.forall (fun i -> List.exists ((=)i) list) |> not then                
                 let s0 = sprintf "%A" expected
                 let s1 = sprintf "%A" list
                 Assert.Fail(s0 + "<>" + s1)
+            ()
+        )
+
+    [<Test>]
+    member public this.TestBuildActionConversions () =
+
+        let replace (pattern:string) (replacement:string) (input:string) = Regex.Replace(input, pattern, replacement)
+
+        let getBuildableNodeProps project caption = 
+            let node = TheTests.FindNodeWithCaption (project, caption)
+            let props = node.CreatePropertiesObject()
+            props :?> BuildableNodeProperties
+
+        let checkNotStandardBuildAction buildAction = 
+            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionNone = buildAction, "Unexpected None match")
+            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionCompile = buildAction, "Unexpected Compile match")
+            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionContent = buildAction, "Unexpected Content match")
+            Assert.IsFalse(VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource = buildAction, "Unexpected EmbeddedResource match")
+
+        DoWithTempFile "Test.fsproj" (fun file ->
+            let text =
+                TheTests.FsprojTextWithProjectReferences(["Compile.fs"; "None.fs"; "Resource.fs"; "SplashSceen.fs"; "Dude.fs"],[],[],"")
+                |> replace "Compile\s+Include='([a-zA-Z]+)\.fs'" "$1 Include='$1.fs'"            
+            File.AppendAllText(file, text)
+            let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
+            let project = TheTests.CreateProject(file, "false", cnn, sp)
+            use project = project
+
+            // test proper behavior from project file
+            let node = getBuildableNodeProps project "Compile.fs"
+            Assert.IsTrue(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionCompile, "Compile build action failed")
+            Assert.IsTrue(node.ItemType = "Compile", "Compile item type failed")
+
+            let node = getBuildableNodeProps project "None.fs"
+            Assert.IsTrue(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionNone, "None build action failed")
+            Assert.IsTrue(node.ItemType = "None", "None item type failed")
+
+            let node = getBuildableNodeProps project "Resource.fs"
+            checkNotStandardBuildAction node.BuildAction
+            Assert.IsTrue(node.ItemType = "Resource", "Resource item type failed")
+
+            let node = getBuildableNodeProps project "Dude.fs"
+            checkNotStandardBuildAction node.BuildAction
+            Assert.IsTrue(node.ItemType = "Dude", "Dude item type failed")
+
+            // test handling of bogus values
+            node.BuildAction <- enum 100
+            Assert.IsTrue(node.BuildAction = VSLangProj.prjBuildAction.prjBuildActionNone, "Bogus build action not mapped to None")
+
+            node.ItemType <- "Wibble"
+            Assert.IsTrue(node.ItemType = "None", "Bogus item type not mapped to None")
+
             ()
         )
 

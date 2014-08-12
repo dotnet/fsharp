@@ -644,7 +644,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     //Now iterate through the project items and copy them to the new location
                     //All projects under the solution retain its folder hierarchy
-                    var types = new[] { "Compile", "None", "Content", "EmbeddedResource", "BaseApplicationManifest", "ApplicationDefinition", "Page" };
+                    var types = new[] { "Compile", "None", "Content", "EmbeddedResource", "Resource", "BaseApplicationManifest", "ApplicationDefinition", "Page" };
 
                     var metadataLookup =
                             convertedProject
