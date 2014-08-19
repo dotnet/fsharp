@@ -2,104 +2,64 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, 
 //               Version 2.0.  See License.txt in the project root for license information.
 //===========================================================================================================
-//
-//  *   impacts shipped VS product
-//  -   impacts open source codebase
-//
-//===========================================================================================================
 
-Changelist for Visual F# Tools 3.1.2
-====================================
+Visual F# 3.1.2
+===============
 
-* Update internal packager, and build files to support the new profiles
-* Fix some bugs in the open source Profile 7, 78 and 259, improve build support for it.
-- Open source the Visual Studio Fsharp UI tests and test harnesses
-- Open source project system, language service, editor, vs_fsi
-* #! treated as a comment when it is at the start of an fsharp file
-* Fix for #78 - allow space characters in active pattern case identifiers
-* Fix Related to #78 - Adjust parser to disallow vertical pipes in active pattern case identifiers. 
-* Fix for #69 - Invalid code generated when calling C# method with optional nullable args
-* Fix for #9 - XML doc comments on F# record type fields do not appear when accessing in C#
-- Improved XmlDoc tests
-- Open source the netcore profile build 
-- Enable open source build to build profile 78 and profile 259 --- Enables support for Windows phone 8 and windows phone 8.1
-* Fix a couple of minor issues in the tutorial script. (changeset 1269577)
-* Move the templates to the open area, create template deployment projects. Update internal build and deployment to deploy vsix' and remove existing templates on installation. (changeset 1267734)
-- prevent project rebuilds
-- Simplify DEVGUIDE.html
-* XmlDoc generation bugfix: remove duplicate namespaces
-- Fix baselines for helptext tests (changeset 1266324)
-* Enable shadowcopying when FSI references an assembly.
-- Added more inline opt tests
-* Changed address optimization to not optimize on top level static bindings.
-* Added optimizations for addresses with tests.
-* Perf improvement for Seq.windowed, adapted from suggestion originally by Jon Harrop
-* make it possible to set breakpoint inside quotation.
-* Remove sl5-compiler build option
-- Removing #IF SILVERLIGHT from the compiler
-* Type inference involving generic param arrays
-- Update param array test case to build C# component on-the-fly instead of using a checked-in binary. Also fill in the test case a bit more. (changeset 1239498)
-- remove dead code
-- Code sanitization: Add comments, regularize naming, simplify ImportILTypeDefList
-* fix for #7: NullRef in list comprehension, when for loop works
-* fix for 37: performance regression in 3.1
-- Update command line used to build test DLL for default manifest test, and adding support for $ISCFLAGS in PreCmd, required for internal test runs doing multitargeting. (changeset 1236364)
-- Fix for default manifest test. Turns out LoadLibrary chokes sometimes on x86 when loading Debug assemblies. Switch to LoadLibraryEx, loading binaries as pure data files. (changeset 1236335)
-- Removing some unneeded/incorrect quotes in TP tests (changeset 1235643)
-- Further tweaks to test scripts (changeset 1235417)
-- A few more tweaks so that tests work properly in internal test runs (changeset 1235396)
-- Fix accidental incorrect quoting in test script (changeset 1235391)
-- Fixing up a bunch of tests that don't properly handle fsc/fsi paths with spaces (changeset 1234984)
-- Fixing driver script for FSharp suite to properly handle paths with spaces (changeset 1234889)
-- Minor update to fix a warning.
-- : Fixing and adding more tests
-- More tests for discriminated unions.
-- Starting to add tests for discriminated unions.
-* Fix for fsbugs issue "can't run F# Console Application with 'update' in name".
-* [F#] Slicing and range expression inconsistent
-- Fixing typo in TESTGUIDE
-- Update open build to target .NET 4.5 and MSBuild 12. This aligns the open build with what ships in VS 2013 and F# 3.1.1 OOB.
-- Add strong name validation skip for test library FSharp.Compiler.Hosted (changeset 1227695)
-- Add folders to FSharp.Core.fsproj
-- remove non-existent file in solution
-- Use folders in FSharp.Compiler.fsproj
-- Fixing a couple of typos from the previous checkin (changeset 1226793)
-- Reconfiguring a bunch of tests that were hard-coded to use Visual Studio paths to find FSharp.Core and other F# bits.
-- Fixing defines for portable profile 47 FSharp.Core to align with what ships in Visual Studio F# (changeset 1226720)
-- Update docs to reflect recent changes (changeset 1225564)
-- Allow user to specify what build flavor they want to run tests against, debug or release. (changeset 1225561)
-- Add script to build test tools from source (changeset 1225556)
-- Add required plumbing so that one can build FSharp.Core for portable profile 47 in open repo (Requires rebuild of Proto so that portable targets file gets dropped) (changeset 1225504)
-- Move the hosted compiler infrastructure over to the open repo and refactor projects so that it builds from source rather than requiring a checked-in binary. (changeset 1225435)
-- Refactoring the ILComparer tool project so that it can build from source, instead of requiring a checked-in binary (changeset 1225430)
-- Adding links to Perl and NUnit in DEVGUIDE.html
-- Small fix in DEVGUIDE.html
-* Support "Publish" to Azure This work is to support web "publish" story.
-- align F# 3.1.1 OOB codebase with OSS release.
-- Rework codebase to enable open source
-* Required C# event members do not appear in intellisense when signature is (object, byref)
-* Invalid code is generated when using field initializers in struct constructor
-- Cleanup F# opensource
-- Moving SqmLogger.fs out of the Open tree
-* Add License.txt and remove README.md
+Language, compiler, runtime, interactive
+----------------------------------------
+- Allow arbitrary-dimensional slicing
+- Bugfix (#72): Indexer properties with more than 4 arguments cannot be accessed
+- Bugfix (#113): Async.Sleep in .NETCore profiles does not invoke error continuation
+- Ship versions FSharp.Core.dll built on portable profiles 78 and 259
+- Bugfix (#91): String module documentation is false
+- Support "shebang" (#!) in F# source files
+- Bugfix (#78): Allow space characters in active pattern case identifiers
+- Vertical pipes disallowed in active pattern case identifiers
+- Bugfix: Invalid code generated when calling VB methods with optional byref args
+- Bugfix (#69): Invalid code generated when calling C# method with optional nullable args
+- Bugfix (#9): XML doc comments on F# record type fields do not appear when accessing in C#
+- Bugfix (#59): Compiler always requires System.Runtime.InteropServices, this is not present in all portable profiles
+- Bugfix (#17): Incorrect generation of XML from doc comments for Record fields
+- Enable non-locking shadow copy of reference assemblies in fsi/fsianycpu
+- Inline codegen optimization using structs
+- Perf improvement for Seq.windowed
+- Bugfix (#7): NullRef in list comprehension, when for loop works
+- Bugfix (#1): Type inference involving generic param arrays
+- Bugfix (#37): Perf regression in 3.1.0 related to resolving extension methods
+- Bugfix: Can't run F# console application with 'update' in name
+- Bugfix: Slicing and range expression inconsistent
+- exe.config files for fsc, fsi, fsianycpu now use simple version range instead of long set of explicit version redirects
+- Bugfix: Invalid code is generated when using field initializers in struct constructor
+
+Visual Studio
+-------------
+- Bugfix (#126): F# package installer does not honor custom install paths for express SKUs
+- Bugfix (#75): Microsoft.FSharp.targets shim not deployed with F# SDK
+- Bugfix: Fix crash in smart indent provider
+- Bugfix (#55): Cannot add reference to F# PCL project
+- Project templates for F# portable libraries targeting profiles 78 and 259
+- Bugfix: Typos in tutorial project script
+- Enable non-locking shadow copy of reference assemblies in fsi/fsianycpu (VS options added)
+- Allow breakpoints to be set inside of quotations
+- Support "Publish" action in project system for web, Azure
+- Bugfix: Required C# event members do not appear in intellisense when signature is (object, byref)
 
 
+Visual F# 3.1.1  (Released - 01/24/2014)
+========================================
 
-Changelist for Visual F# Tools 3.1.1   (Released - 01/24/2014)
-==============================================================
+Language, compiler, runtime, interactive
+----------------------------------------
+- Improve F# compiler telemetry
+- Bugfix: Improper treatment of * in AssemblyVersion attribute
+- Bugfix: sprintf "%%" returns "%%" in F# 3.1.0, previously returned "%" in F# 3.0 and earlier
+- Bugfix: F# 3.0 1D slice setter does not compile in F# 3.1.0
 
-* Errors when attempting to add reference to .NET core library
-* Releasing symdiareader RCWs explicitly on the main thread instead
-* Improve fsharp compiler telemetry
-* Improper treatment of * in AssemblyVersion attribute
-* sprintf "%%" returns "%%" in Dev12, previously returned "%" in Dev10/Dev11
-* Crash in FSComp.SR.RunStartupValidation()
-* F#3.0 1D Slice Setter does not compile in VS12
-* Enable Visual FSharp tools to integrate in Visual Studio Windows Desktop Express.
-* Fixing up the F# open build projects so that they work properly on community machines with no prior F# bits installed.
-- Some small fixes to improve the core unit tests in open source environment
-- Fix FSharp.Data.TypeProviders project
- 
-
-
-
+Visual Studio
+-------------
+- Bugfix: Errors when attempting to add reference to .NET core library
+- Bugfix: Crash in FSComp.SR.RunStartupValidation()
+- Enable installation of Visual F# on VS Desktop Express
+- Added support for showing xml doc comments for named arguments
+- Visual F# package deployable on non-VS machines. Deploys compiler and runtime toolchain plus msbuild targets
