@@ -15,6 +15,7 @@
   </TemplateData>
   <TemplateContent>
     <Project File="SilverlightLibrary.fsproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true">AssemblyInfo.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true">Library1.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true">Script.fsx</ProjectItem>
     </Project>

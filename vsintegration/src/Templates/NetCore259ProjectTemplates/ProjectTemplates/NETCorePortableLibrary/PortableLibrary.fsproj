@@ -41,6 +41,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="PortableLibrary1.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>

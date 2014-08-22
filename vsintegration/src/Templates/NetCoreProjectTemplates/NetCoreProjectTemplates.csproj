@@ -77,6 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ProjectTemplates\NetCorePortableLibrary\PortableLibrary.fsproj" />
+    <None Include="ProjectTemplates\NetCorePortableLibrary\AssemblyInfo.fs" />
     <None Include="ProjectTemplates\NetCorePortableLibrary\PortableLibrary1.fs" />
     <None Include="ProjectTemplates\NetCorePortableLibrary\Script.fsx" />
   </ItemGroup>

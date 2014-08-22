@@ -71,6 +71,7 @@
   <ItemGroup>
     <None Include="ProjectTemplates\ConsoleApplication\App.config" />
     <None Include="ProjectTemplates\ConsoleApplication\ConsoleApplication.fsproj" />
+    <None Include="ProjectTemplates\ConsoleApplication\AssemblyInfo.fs" />
     <None Include="ProjectTemplates\ConsoleApplication\Program.fs" />
   </ItemGroup>
   <ItemGroup>
