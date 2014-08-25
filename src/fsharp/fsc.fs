@@ -2124,6 +2124,7 @@ let typecheckAndCompile(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProv
     |> main4
 
 let mainCompile (argv,bannerAlreadyPrinted,exiter:Exiter) = 
+    System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     typecheckAndCompile(argv, bannerAlreadyPrinted, exiter, DefaultLoggerProvider())
 
 type CompilationOutput = 
