@@ -171,8 +171,7 @@ let determineFsiPath () =
     else
         raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
 
-let readLinesAsync(reader: System.IO.StreamReader): IEvent<string> =
-    let newLine = Event<_>()
+let readLinesAsync (reader: System.IO.StreamReader) trigger =
     let buffer = System.Text.StringBuilder(1024)
     let byteBuffer = Array.zeroCreate 128
     let encoding = System.Text.Encoding.UTF8
@@ -188,7 +187,7 @@ let readLinesAsync(reader: System.IO.StreamReader): IEvent<string> =
         let c = buffer.[pos]
         if c = '\r' || c = '\n' then
             let line = buffer.ToString(0, pos)
-            newLine.Trigger line
+            trigger line
 
             let deletePos = 
                 if c = '\r' && (pos + 1) < buffer.Length && buffer.[pos + 1] = '\n' then pos + 2 else pos + 1
@@ -211,7 +210,6 @@ let readLinesAsync(reader: System.IO.StreamReader): IEvent<string> =
                 return! read newPos
         }
     Async.StartImmediate (read 0)
-    newLine.Publish
 
 let fsiStartInfo channelName =
     let procInfo = new ProcessStartInfo()
@@ -251,12 +249,20 @@ let fsiProcess (procInfo:ProcessStartInfo) =
     let errW,errE = let e = new Event<_>() in e.Trigger, e.Publish
     let exitE = (cmdProcess.Exited |> Observable.map (fun x -> x)) // this gives the event the F# "standard" event type IEvent<'a> rather than IEvent<_,_>
 
-    let _ = cmdProcess.Start()
-    // wire up output (to both stdout and stderr)
-    readLinesAsync cmdProcess.StandardOutput |> catchAll |> Observable.add(fun data -> 
+    let stdOutNewLine = Event<_>()
+    let stdErrNewLine = Event<_>()
+
+    // add subscribers prior to hooking to events to avoid data loss if event is emitted before the subscription
+    stdOutNewLine.Publish |> catchAll |> Observable.add(fun data -> 
         //System.Windows.Forms.MessageBox.Show (sprintf "OutputDataRecieved '%s'\n" data.Data) |> ignore
-        outW(data));
-    readLinesAsync cmdProcess.StandardError  |> catchAll |> Observable.add (fun data -> errW(data));
+        outW(data)
+        );
+    stdErrNewLine.Publish |> catchAll |> Observable.add (fun data -> errW(data))
+
+    let _ = cmdProcess.Start()
+    // hook up stdout\stderr data events
+    readLinesAsync cmdProcess.StandardOutput stdOutNewLine.Trigger
+    readLinesAsync cmdProcess.StandardError  stdErrNewLine.Trigger
 
     // wire up input 
     // Fix 982: Force input to be written in UTF8 regardless of the apparent encoding.
