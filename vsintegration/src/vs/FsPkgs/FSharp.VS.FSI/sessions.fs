@@ -180,21 +180,25 @@ let readLinesAsync (reader: System.IO.StreamReader) trigger =
     let charBuffer = 
         let maxCharsInBuffer = encoding.GetMaxCharCount byteBuffer.Length
         Array.zeroCreate maxCharsInBuffer
-    
+
     let rec findLinesInBuffer pos =
         if pos >= buffer.Length then max (buffer.Length - 1) 0 // exit and point to the last char
         else
         let c = buffer.[pos]
-        if c = '\r' || c = '\n' then
+        let deletePos = match c with
+                        | '\r' when (pos + 1) < buffer.Length && buffer.[pos + 1] = '\n' -> Some(pos + 2)
+                        | '\r' when (pos + 1) = buffer.Length -> None
+                        | '\r' -> Some(pos + 1)
+                        | '\n' -> Some(pos + 1)
+                        | _  ->  None
+
+        match deletePos with
+        | Some deletePos ->
             let line = buffer.ToString(0, pos)
             trigger line
-
-            let deletePos = 
-                if c = '\r' && (pos + 1) < buffer.Length && buffer.[pos + 1] = '\n' then pos + 2 else pos + 1
             buffer.Remove(0, deletePos) |> ignore
             findLinesInBuffer 0
-        else
-            findLinesInBuffer (pos + 1)
+        | None ->  findLinesInBuffer (pos + 1)
 
     let rec read pos = 
         async {
