@@ -994,12 +994,12 @@ module AttributeHelpers =
         | _ -> None
 
     // Try to find an AssemblyVersion attribute 
-    let TryFindVersionAttribute tcGlobals attrib attribs =
+    let TryFindVersionAttribute tcGlobals attrib attribName attribs =
         match TryFindStringAttribute tcGlobals attrib attribs with
         | Some versionString ->
              try Some(IL.parseILVersion versionString)
              with e -> 
-                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attrib, versionString),Range.rangeStartup));
+                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attribName, versionString),Range.rangeStartup));
                  None
         | _ -> None
 
@@ -1183,12 +1183,12 @@ module MainModuleBuilder =
                     | _ -> []
 
                 let fileVersion = 
-                    match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyFileVersionAttribute" topAttrs.assemblyAttrs with
+                    match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyFileVersionAttribute" "AssemblyFileVersionAttribute" topAttrs.assemblyAttrs with
                     | Some v -> v
                     | None -> assemblyVersion
 
                 let productVersion = 
-                    match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyInformationalVersionAttribute" topAttrs.assemblyAttrs with
+                    match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyInformationalVersionAttribute" "AssemblyInformationalVersionAttribute" topAttrs.assemblyAttrs with
                     | Some v -> v
                     | None -> assemblyVersion
 
@@ -1937,7 +1937,7 @@ let main1(tcGlobals,tcImports : TcImports,frameworkTcImports,generatedCcu,typedA
 
     // Try to find an AssemblyVersion attribute 
     let assemVerFromAttrib = 
-        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" topAttrs.assemblyAttrs with
+        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" "AssemblyVersionAttribute" topAttrs.assemblyAttrs with
         | Some v -> 
            match tcConfig.version with 
            | VersionNone -> Some v
