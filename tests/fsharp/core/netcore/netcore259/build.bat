@@ -6,5 +6,5 @@ IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
     exit /b 0
 )
 
-"%MSBUILDTOOLSPATH%\msbuild.exe" ..\netcore.sln /p:Configuration=Debug /p:TestProfile=Profile259
+"%MSBUILDTOOLSPATH%\msbuild.exe" ..\netcore.sln /p:Configuration=Debug /p:TestProfile=Profile259 /t:Rebuild
 exit /b %ERRORLEVEL%
