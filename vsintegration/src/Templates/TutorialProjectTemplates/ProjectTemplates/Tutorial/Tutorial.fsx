@@ -6,7 +6,7 @@
 // *******************************************************************************************************
 //
 // For more about F#, see:
-//     http://fsharp.net
+//     http://fsharp.org
 //
 // For additional templates to use with F#, see the 'Online Templates' in Visual Studio, 
 //     'New Project' --> 'Online Templates'
