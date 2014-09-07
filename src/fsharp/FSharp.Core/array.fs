@@ -799,6 +799,20 @@ namespace Microsoft.FSharp.Collections
             let result = copy array
             sortInPlace result;
             result
+
+        [<CompiledName("SortByDescending")>]
+        let inline sortByDescending f array =
+            checkNonNull "array" array
+            let result = copy array
+            sortInPlaceWith (fun a b -> compare (f b) (f a)) result
+            result
+
+        [<CompiledName("SortDescending")>]
+        let inline sortDescending array = 
+            checkNonNull "array" array
+            let result = copy array
+            sortInPlaceWith (fun a b -> compare b a) result;
+            result
             
         [<CompiledName("ToSeq")>]
         let toSeq array = 

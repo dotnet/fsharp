@@ -689,7 +689,12 @@ module internal List =
             stableSortInner cmp a.Length ar
         
     let sortWith cmp a = StableSortImplementation.stableSort cmp a
+
+    let sortDescending source = sortWith  (fun a b -> compare b a) source
+
+    let sortByDescending keyf source = sortWith  (fun a b -> compare (keyf b) (keyf a)) source
     
+            
 module internal Array = 
 
     open System

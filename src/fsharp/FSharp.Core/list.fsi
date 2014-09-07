@@ -657,6 +657,23 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SplitAt")>]
         val splitAt: index:int -> list:'T list -> ('T list * 'T list)
 
+        /// <summary>Sorts the given list in descending order using keys given by the given projection. Keys are compared using Operators.compare.</summary>
+        ///
+        /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
+        /// <param name="projection">The function to transform the list elements into the type to be compared.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The sorted list.</returns>
+        [<CompiledName("SortByDescending")>]
+        val sortByDescending: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
+
+        /// <summary>Sorts the given list in descending order using Operators.compare.</summary>
+        ///
+        /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
+        /// <param name="list">The input list.</param>
+        /// <returns>The sorted list.</returns>
+        [<CompiledName("SortDescending")>]
+        val sortDescending: list:'T list -> 'T list when 'T : comparison
+
         /// <summary>Returns the sum of the elements in the list.</summary>
         /// <param name="list">The input list.</param>
         /// <returns>The resulting sum.</returns>

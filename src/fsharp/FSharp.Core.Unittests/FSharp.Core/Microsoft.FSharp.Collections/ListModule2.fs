@@ -572,6 +572,11 @@ type ListModule02() =
         let emptyArr : int list = [ ]
         let resultEpt = List.sort emptyArr        
         Assert.AreEqual(List.empty<int>, resultEpt)
+
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sort tupArr         
+        Assert.AreEqual([(1,"a");(1,"b");(1,"d");(1,"x");(2,"a");(2,"b");(2,"x")], resultTup)
         
         ()    
 
@@ -591,9 +596,62 @@ type ListModule02() =
         let emptyArr:int list = [ ]
         let resultEpt = List.sortBy int emptyArr        
         Assert.AreEqual(List.empty<int>, resultEpt)
-        
-        ()  
 
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sortBy snd tupArr         
+        Assert.AreEqual([(2,"a");(1,"a");(1,"b");(2,"b");(1,"d");(2,"x");(1,"x")], resultTup)
+        
+        ()
+        
+    [<Test>]
+    member this.SortDescending() =
+        // integer List  
+        let intArr = [3;5;7;2;4;8]
+        let resultInt = List.sortDescending intArr          
+        Assert.AreEqual(resultInt , [8;7;5;4;3;2])
+        
+        // string List
+        let strArr = ["Z";"a";"d";"Y";"c";"b";"X"]   
+        let resultStr = List.sortDescending strArr         
+        Assert.AreEqual(["d"; "c"; "b"; "a"; "Z"; "Y"; "X"], resultStr)
+        
+        // empty List
+        let emptyArr : int list = [ ]
+        let resultEpt = List.sortDescending emptyArr        
+        Assert.AreEqual(List.empty<int>, resultEpt)
+
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sortDescending tupArr         
+        Assert.AreEqual([(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")], resultTup)
+        
+        () 
+        
+    [<Test>]
+    member this.SortByDescending() =
+        // integer List  
+        let intArr = [3;5;7;2;4;8]
+        let resultInt = List.sortByDescending int intArr          
+        Assert.AreEqual([8;7;5;4;3;2], resultInt)
+        
+        // string List
+        let strArr = [".."; "..."; "."; "...."]    
+        let resultStr = List.sortByDescending (fun (x:string) -> x.Length)  strArr 
+        Assert.AreEqual(["...."; "..."; ".."; "."], resultStr)
+        
+        // empty List
+        let emptyArr:int list = [ ]
+        let resultEpt = List.sortByDescending int emptyArr        
+        Assert.AreEqual(List.empty<int>, resultEpt)
+        
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sortByDescending snd tupArr         
+        Assert.AreEqual( [(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")] , resultTup)
+
+        ()  
+  
     [<Test>]
     member this.Sum() =
         // empty integer List 

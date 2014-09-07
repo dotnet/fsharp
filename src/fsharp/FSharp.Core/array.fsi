@@ -793,6 +793,26 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SplitAt")>]
         val splitAt: index:int -> array:'T[] -> ('T[] * 'T[])
 
+        /// <summary>Sorts the elements of an array, in descending order, returning a new array. Elements are compared using Operators.compare. </summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// <param name="array">The input array.</param>
+        /// <returns>The sorted array.</returns>
+        [<CompiledName("SortDescending")>]
+        val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison 
+
+        /// <summary>Sorts the elements of an array, in descending order, using the given projection for the keys and returning a new array. 
+        /// Elements are compared using Operators.compare.</summary>
+        ///
+        /// <remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved. 
+        /// For a stable sort, consider using Seq.sort.</remarks>
+        /// <param name="projection">The function to transform array elements into the type that is compared.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>The sorted array.</returns>
+        [<CompiledName("SortByDescending")>]
+        val inline sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison 
+
         /// <summary>Returns the sum of the elements in the array.</summary>
         /// <param name="array">The input array.</param>
         /// <returns>The resulting sum.</returns>

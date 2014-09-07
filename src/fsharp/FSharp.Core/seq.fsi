@@ -998,6 +998,42 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortBy")>]
         val sortBy : projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : comparison 
 
+        /// <summary>Yields a sequence ordered descending by keys.</summary>
+        /// 
+        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as 
+        /// that sequence is iterated. As a result this function should not be used with 
+        /// large or infinite sequences. The function makes no assumption on the ordering of the original 
+        /// sequence.
+        ///
+        /// This is a stable sort, that is the original order of equal elements is preserved.</remarks>
+        ///
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("SortDescending")>]
+        val sortDescending : source:seq<'T> -> seq<'T> when 'T : comparison
+
+        /// <summary>Applies a key-generating function to each element of a sequence and yield a sequence ordered
+        /// descending by keys.  The keys are compared using generic comparison as implemented by <c>Operators.compare</c>.</summary> 
+        /// 
+        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as 
+        /// that sequence is iterated. As a result this function should not be used with 
+        /// large or infinite sequences. The function makes no assumption on the ordering of the original 
+        /// sequence.
+        ///
+        /// This is a stable sort, that is the original order of equal elements is preserved.</remarks>
+        ///
+        /// <param name="projection">A function to transform items of the input sequence into comparable keys.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("SortByDescending")>]
+        val sortByDescending : projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : comparison 
+
         /// <summary>Returns the sum of the elements in the sequence.</summary>
         ///
         /// <remarks>The elements are summed using the <c>+</c> operator and <c>Zero</c> property associated with the generated type.</remarks>

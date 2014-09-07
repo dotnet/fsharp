@@ -502,6 +502,12 @@ namespace Microsoft.FSharp.Collections
                 Microsoft.FSharp.Primitives.Basics.Array.stableSortInPlace array
                 List.ofArray array
 
+        [<CompiledName("SortByDescending")>]
+        let sortByDescending f xs = Microsoft.FSharp.Primitives.Basics.List.sortByDescending f xs
+
+        [<CompiledName("SortDescending")>]
+        let sortDescending xs = Microsoft.FSharp.Primitives.Basics.List.sortDescending xs
+
         [<CompiledName("OfSeq")>]
         let ofSeq source = Seq.toList source
 

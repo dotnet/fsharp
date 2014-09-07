@@ -1250,6 +1250,64 @@ type SeqModule2() =
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.sortBy funcInt null  |> ignore)
         ()
+
+    [<Test>]
+    member this.SortDescending() =
+
+        // integer Seq
+        let resultInt = Seq.sortDescending (seq [1;3;2;4;6;5;7])
+        let expectedInt = {7..-1..1}
+        VerifySeqsEqual expectedInt resultInt
+        
+        // string Seq
+       
+        let resultStr =Seq.sortDescending (seq ["str1";"str3";"str2";"str4"])
+        let expectedStr = seq ["str4";"str3";"str2";"str1"]
+        VerifySeqsEqual expectedStr resultStr
+        
+        // empty Seq 
+        let resultEpt = Seq.sortDescending Seq.empty 
+        VerifySeqsEqual resultEpt Seq.empty
+
+        // tuple Seq
+        let tupSeq = (seq[(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
+        let resultTup = Seq.sortDescending tupSeq
+        let expectedTup = (seq[(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")])   
+        VerifySeqsEqual  expectedTup resultTup
+         
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.sort null  |> ignore)
+        ()
+        
+    [<Test>]
+    member this.SortByDescending() =
+
+        // integer Seq
+        let funcInt x = Math.Abs(x-5)
+        let resultInt = Seq.sortByDescending funcInt (seq [1;2;4;5;7])
+        let expectedInt = seq [1;2;7;4;5]
+        VerifySeqsEqual expectedInt resultInt
+        
+        // string Seq
+        let funcStr (x:string) = x.IndexOf("key")
+        let resultStr =Seq.sortByDescending funcStr (seq ["st(key)r";"str(key)";"s(key)tr";"(key)str"])
+        
+        let expectedStr = seq ["str(key)";"st(key)r";"s(key)tr";"(key)str"]
+        VerifySeqsEqual expectedStr resultStr
+        
+        // empty Seq 
+        let resultEpt = Seq.sortByDescending funcInt Seq.empty 
+        VerifySeqsEqual resultEpt Seq.empty
+
+        // tuple Seq
+        let tupSeq = (seq[(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")])
+        let resultTup = Seq.sortByDescending snd tupSeq         
+        let expectedTup = (seq[(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")])
+        VerifySeqsEqual  expectedTup resultTup
+         
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.sortByDescending funcInt null  |> ignore)
+        ()
         
     [<Test>]
     member this.Sum() =
