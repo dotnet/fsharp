@@ -25,6 +25,7 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
+open Microsoft.FSharp.Compiler.Nameres
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -1727,10 +1728,11 @@ type CalledMeth<'T>
                         let pminst = freshenMethInfo m pminfo
                         Choice1Of2(AssignedItemSetter(id,AssignedPropSetter(pinfo,pminfo, pminst), e))
                     | _ ->
-                        let epinfos = match nameEnv with  
-                                     | Some(ne) ->  Microsoft.FSharp.Compiler.Nameres.ExtensionPropInfosOfTypeInScope infoReader ne (Some(nm), ad) m returnedObjTy
-                                     | _ -> []
-                        match epinfos with // need to hide ?
+                        let epinfos = 
+                            match nameEnv with  
+                            | Some(ne) ->  ExtensionPropInfosOfTypeInScope infoReader ne (Some(nm), ad) m returnedObjTy
+                            | _ -> []
+                        match epinfos with 
                         | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
                             let pminfo = pinfo.SetterMethod
                             let pminst = freshenMethInfo m pminfo
