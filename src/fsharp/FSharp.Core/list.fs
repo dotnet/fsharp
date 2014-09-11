@@ -482,7 +482,13 @@ namespace Microsoft.FSharp.Collections
             | _ -> xs
 
         [<CompiledName("SortWith")>]
-        let sortWith cmp xs = Microsoft.FSharp.Primitives.Basics.List.sortWith cmp xs
+        let sortWith cmp xs =
+            match xs with
+            | [] | [_] -> xs
+            | _ ->
+                let array = List.toArray xs
+                Microsoft.FSharp.Primitives.Basics.Array.stableSortInPlaceWith cmp array
+                List.ofArray array
 
         [<CompiledName("SortBy")>]
         let sortBy f xs =
@@ -503,10 +509,14 @@ namespace Microsoft.FSharp.Collections
                 List.ofArray array
 
         [<CompiledName("SortByDescending")>]
-        let sortByDescending f xs = Microsoft.FSharp.Primitives.Basics.List.sortByDescending f xs
+        let inline sortByDescending f xs =
+            let inline compareDescending a b = compare (f b) (f a)
+            sortWith compareDescending xs
 
         [<CompiledName("SortDescending")>]
-        let sortDescending xs = Microsoft.FSharp.Primitives.Basics.List.sortDescending xs
+        let inline sortDescending xs =
+            let inline compareDescending a b = compare b a
+            sortWith compareDescending xs
 
         [<CompiledName("OfSeq")>]
         let ofSeq source = Seq.toList source

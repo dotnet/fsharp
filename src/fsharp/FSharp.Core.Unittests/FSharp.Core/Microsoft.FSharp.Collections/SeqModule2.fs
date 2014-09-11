@@ -1255,14 +1255,18 @@ type SeqModule2() =
     member this.SortDescending() =
 
         // integer Seq
-        let resultInt = Seq.sortDescending (seq [1;3;2;4;6;5;7])
-        let expectedInt = {7..-1..1}
+        let resultInt = Seq.sortDescending (seq [1;3;2;Int32.MaxValue;4;6;Int32.MinValue;5;7;0])
+        let expectedInt = seq{
+            yield Int32.MaxValue;
+            yield! seq{ 7..-1..0 }
+            yield Int32.MinValue
+        }
         VerifySeqsEqual expectedInt resultInt
         
         // string Seq
        
-        let resultStr =Seq.sortDescending (seq ["str1";"str3";"str2";"str4"])
-        let expectedStr = seq ["str4";"str3";"str2";"str1"]
+        let resultStr = Seq.sortDescending (seq ["str1";null;"str3";"";"Str1";"str2";"str4"])
+        let expectedStr = seq ["str4";"str3";"str2";"str1";"Str1";"";null]
         VerifySeqsEqual expectedStr resultStr
         
         // empty Seq 
@@ -1275,6 +1279,13 @@ type SeqModule2() =
         let expectedTup = (seq[(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")])   
         VerifySeqsEqual  expectedTup resultTup
          
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatSeq = seq [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = Seq.sortDescending floatSeq
+        let expectedFloat = seq [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        VerifySeqsEqual expectedFloat resultFloat
+
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.sort null  |> ignore)
         ()
@@ -1305,10 +1316,39 @@ type SeqModule2() =
         let expectedTup = (seq[(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")])
         VerifySeqsEqual  expectedTup resultTup
          
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatSeq = seq [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = Seq.sortByDescending id floatSeq
+        let expectedFloat = seq [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        VerifySeqsEqual expectedFloat resultFloat
+
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.sortByDescending funcInt null  |> ignore)
         ()
         
+    member this.SortWith() =
+
+        // integer Seq
+        let intComparer a b = compare (a%3) (b%3)
+        let resultInt = Seq.sortWith intComparer (seq {0..10})
+        let expectedInt = seq [0;3;6;9;1;4;7;10;2;5;8]
+        VerifySeqsEqual expectedInt resultInt
+
+        // string Seq
+        let resultStr = Seq.sortWith compare (seq ["str1";"str3";"str2";"str4"])
+        let expectedStr = seq ["str1";"str2";"str3";"str4"]
+        VerifySeqsEqual expectedStr resultStr
+
+        // empty Seq
+        let resultEpt = Seq.sortWith intComparer Seq.empty
+        VerifySeqsEqual resultEpt Seq.empty
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.sortWith intComparer null  |> ignore)
+
+        ()
+
     [<Test>]
     member this.Sum() =
     

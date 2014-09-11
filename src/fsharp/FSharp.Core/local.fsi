@@ -35,11 +35,8 @@ module internal List =
     val takeWhile : ('T -> bool) -> 'T list -> 'T list
     val toArray : 'T list -> 'T[]
     val inline ofSeq : seq<'T> -> 'T List
-    val sortWith : ('T -> 'T -> int) -> 'T list -> 'T list
     val splitAt : int -> 'T list -> ('T list * 'T list)
     val truncate : int -> 'T list -> 'T list
-    val sortDescending: 'T list -> 'T list when 'T : comparison
-    val sortByDescending : projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
 
 module internal Array =
     // The input parameter should be checked by callers if necessary
@@ -70,5 +67,7 @@ module internal Array =
     val unstableSortInPlace: array:'T[] -> unit when 'T : comparison 
 
     val stableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
+
+    val stableSortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
 
     val stableSortInPlace: array:'T[] -> unit when 'T : comparison 

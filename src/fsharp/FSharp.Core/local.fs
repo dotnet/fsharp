@@ -630,71 +630,6 @@ module internal List =
             takeWhileFreshConsTail cons p xs
             cons
 
-    // NOTE: This implementation is now only used for List.sortWith. We should change that to use the stable sort via arrays
-    // below, and remove this implementation.
-    module StableSortImplementation =
-        // Internal copy of stable sort
-        let rec revAppend xs1 xs2 = 
-            match xs1 with 
-            | [] -> xs2
-            | h::t -> revAppend t (h::xs2)
-        let half x = x >>> 1 
-
-        let rec merge cmp a b acc = 
-            match a,b with 
-            | [], a | a,[] -> revAppend acc a
-            | x::a', y::b' -> if cmp x y > 0 then merge cmp a  b' (y::acc) else merge cmp a' b  (x::acc)
-
-        let sort2 cmp x y = 
-            if cmp x y > 0 then [y;x] else [x;y]
-
-        let sort3 cmp x y z = 
-            let cxy = cmp x y
-            let cyz = cmp y z
-            if cxy > 0 && cyz < 0 then 
-                if cmp x z > 0 then [y;z;x] else [y;x;z]
-            elif cxy < 0 && cyz > 0 then 
-                if cmp x z > 0 then [z;x;y] else [x;z;y]
-            elif cxy > 0 then 
-                if cyz > 0 then  [z;y;x]
-                else [y;z;x]
-            else 
-                if cyz > 0 then [z;x;y]
-                else [x;y;z] 
-
-        let trivial a = match a with [] | [_] -> true | _ -> false
-            
-        (* tail recursive using a ref *)
-
-        let rec stableSortInner cmp la ar =
-          if la < 4 then (* sort two || three new entries *)
-            match !ar with 
-             | x::y::b -> 
-                  if la = 2 then ( ar := b; sort2 cmp x y )
-                  else begin
-                    match b with 
-                    | z::c -> ( ar := c; sort3 cmp x y z )
-                    | _ -> failwith "never" 
-                  end
-             | _ -> failwith "never"
-          else (* divide *)
-            let lb = half la
-            let sb = stableSortInner cmp lb ar
-            let sc = stableSortInner cmp (la - lb) ar
-            merge cmp sb sc []
-
-        let stableSort cmp (a: 'T list) = 
-            if trivial a then a else
-            let ar = ref a
-            stableSortInner cmp a.Length ar
-        
-    let sortWith cmp a = StableSortImplementation.stableSort cmp a
-
-    let sortDescending source = sortWith  (fun a b -> compare b a) source
-
-    let sortByDescending keyf source = sortWith  (fun a b -> compare (keyf b) (keyf a)) source
-    
-            
 module internal Array = 
 
     open System
@@ -740,7 +675,7 @@ module internal Array =
             qs(start, last)
             
     type System.Array with
-        static member Sort<'Key,'Value when 'Key : comparison>(keys : 'Key[], values : 'Value[], comparer : IComparer<'Key>) =
+        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], comparer : IComparer<'Key>) =
             let valuesExist = 
                 match values with
                 | null -> false
@@ -748,9 +683,7 @@ module internal Array =
             match keys,values with
             | null,_ -> raise (ArgumentNullException())
             | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
-            | _,_ ->
-            let comparer = match comparer with null -> LanguagePrimitives.FastGenericComparer<'Key> | _ -> comparer
-            qsort(keys, values, 0, keys.Length-1, comparer)
+            | _,_ -> qsort(keys, values, 0, keys.Length-1, comparer)
 
         static member Sort<'Key,'Value  when 'Key : comparison>(keys : 'Key[], values : 'Value[]) =
             let valuesExist = 
@@ -760,17 +693,21 @@ module internal Array =
             match keys,values with
             | null,_ -> raise (ArgumentNullException())
             | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
-            | _,_ ->   
-            qsort(keys,values,0,keys.Length-1,LanguagePrimitives.FastGenericComparer<'Key>)
+            | _,_ -> qsort(keys,values,0,keys.Length-1,LanguagePrimitives.FastGenericComparer<'Key>)
 
-        static member Sort<'Key,'Value when 'Key : comparison>(keys : 'Key[], values : 'Value[], start : int, length : int, comparer : IComparer<'Key>) =
+        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], start : int, length : int, comparer : IComparer<'Key>) =
             match keys with
             | null -> raise (ArgumentNullException())
-            | _ ->        
-            let comparer = match comparer with null -> LanguagePrimitives.FastGenericComparer<'Key> | _ -> comparer
-            qsort(keys,values,start,start+length-1,comparer)
+            | _ -> qsort(keys,values,start,start+length-1,comparer)
 #else
 #endif
+
+    let inline fastComparerForArraySort<'t when 't : comparison> () =
+#if FX_NO_ARRAY_KEY_SORT
+        LanguagePrimitives.FastGenericComparer<'t>
+#else
+        LanguagePrimitives.FastGenericComparerCanBeNull<'t>
+#endif        
 
     // The input parameter should be checked by callers if necessary
     let inline zeroCreateUnchecked (count:int) = 
@@ -868,31 +805,27 @@ module internal Array =
             let keys = zeroCreateUnchecked array.Length
             for i = 0 to array.Length - 1 do 
                 keys.[i] <- f array.[i]
-            System.Array.Sort<_,_>(keys, array, LanguagePrimitives.FastGenericComparerCanBeNull<_>)
-
+            System.Array.Sort<_,_>(keys, array, fastComparerForArraySort())
 
     let unstableSortInPlace (array : array<'T>) = 
         let len = array.Length 
         if len < 2 then () 
-        else System.Array.Sort<_>(array, LanguagePrimitives.FastGenericComparerCanBeNull<_>)
+        else System.Array.Sort<_>(array, fastComparerForArraySort())
 
-    let stableSortWithKeys (array:array<'T>) (keys:array<'Key>)  =
+    let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
         // 'places' is an array or integers storing the permutation performed by the sort
         let places = zeroCreateUnchecked array.Length 
         for i = 0 to array.Length - 1 do 
             places.[i] <- i 
-
-        let cFast = LanguagePrimitives.FastGenericComparerCanBeNull<'Key>
-        System.Array.Sort<_,_>(keys, places, cFast) 
+        System.Array.Sort<_,_>(keys, places, cFast)
         // 'array2' is a copy of the original values
         let array2 = (array.Clone() :?> array<'T>)
-
-        // 'c' is a comparer for the keys
-        let c = LanguagePrimitives.FastGenericComparer<'Key>
 
         // Walk through any chunks where the keys are equal
         let mutable i = 0
         let len = array.Length
+        let intCompare = fastComparerForArraySort<int>()
+            
         while i <  len do 
             let mutable j = i
             let ki = keys.[i]
@@ -901,9 +834,14 @@ module internal Array =
             // Copy the values into the result array and re-sort the chunk if needed by the original place indexes
             for n = i to j - 1 do
                array.[n] <- array2.[places.[n]]
-            if j - i >= 2 then 
-                System.Array.Sort<_,_>(places, array, i, j-i, null) 
+            if j - i >= 2 then
+                System.Array.Sort<_,_>(places, array, i, j-i, intCompare)
             i <- j
+
+    let stableSortWithKeys (array:array<'T>) (keys:array<'Key>) =
+        let cFast = fastComparerForArraySort()
+        let c = LanguagePrimitives.FastGenericComparer<'Key>
+        stableSortWithKeysAndComparer cFast c array keys
 
     let stableSortInPlaceBy (f: 'T -> 'U) (array : array<'T>) =
         let len = array.Length 
@@ -924,11 +862,19 @@ module internal Array =
             | null -> 
                 // An optimization for the cases where the keys and values coincide and do not have identity, e.g. are integers
                 // In this case an unstable sort is just as good as a stable sort (and faster)
-                System.Array.Sort<_,_>(array, null) 
+                System.Array.Sort<_,_>(array, null)
             | _ -> 
                 // 'keys' is an array storing the projected keys
                 let keys = (array.Clone() :?> array<'T>)
                 stableSortWithKeys array keys
+
+    let stableSortInPlaceWith (comparer:'T -> 'T -> int) (array : array<'T>) =
+        let len = array.Length
+        if len > 1 then
+            let keys = (array.Clone() :?> array<'T>)
+            let comparer = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(comparer)
+            let c = { new IComparer<'T> with member __.Compare(x,y) = comparer.Invoke(x,y) }
+            stableSortWithKeysAndComparer c c array keys
 
     let inline subUnchecked startIndex count (array : 'T[]) =
         let res = zeroCreateUnchecked count : 'T[]

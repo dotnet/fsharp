@@ -480,6 +480,7 @@ Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] SortByDescending[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] SortBy[T,TKey](Microsoft.FSharp.Core.FSharpFunc`2[T,TKey], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] SortDescending[T](System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] SortWith[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32]], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Sort[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Tail[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] TakeWhile[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])

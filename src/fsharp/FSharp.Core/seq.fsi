@@ -979,6 +979,19 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Sort")>]
         val sort : source:seq<'T> -> seq<'T> when 'T : comparison
 
+        /// <summary>Yields a sequence ordered using the given comparison function.</summary>
+        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as
+        /// that sequence is iterated. As a result this function should not be used with
+        /// large or infinite sequences. The function makes no assumption on the ordering of the original
+        /// sequence.
+        ///
+        /// This is a stable sort, that is the original order of equal elements is preserved.</remarks>
+        /// <param name="comparer">The function to compare the collection elements.</param>
+        /// <param name="list">The input sequence.</param>
+        /// <returns>The result sequence.</returns>
+        [<CompiledName("SortWith")>]
+        val sortWith : comparer:('T -> 'T -> int) -> source:seq<'T> -> seq<'T>
+
         /// <summary>Applies a key-generating function to each element of a sequence and yield a sequence ordered
         /// by keys.  The keys are compared using generic comparison as implemented by <c>Operators.compare</c>.</summary> 
         /// 
@@ -1013,7 +1026,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("SortDescending")>]
-        val sortDescending : source:seq<'T> -> seq<'T> when 'T : comparison
+        val inline sortDescending : source:seq<'T> -> seq<'T> when 'T : comparison
 
         /// <summary>Applies a key-generating function to each element of a sequence and yield a sequence ordered
         /// descending by keys.  The keys are compared using generic comparison as implemented by <c>Operators.compare</c>.</summary> 
@@ -1032,7 +1045,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("SortByDescending")>]
-        val sortByDescending : projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : comparison 
+        val inline sortByDescending : projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : comparison
 
         /// <summary>Returns the sum of the elements in the sequence.</summary>
         ///

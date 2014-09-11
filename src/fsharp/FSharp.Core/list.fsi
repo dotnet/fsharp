@@ -664,7 +664,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         /// <returns>The sorted list.</returns>
         [<CompiledName("SortByDescending")>]
-        val sortByDescending: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
+        val inline sortByDescending: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : comparison
 
         /// <summary>Sorts the given list in descending order using Operators.compare.</summary>
         ///
@@ -672,7 +672,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         /// <returns>The sorted list.</returns>
         [<CompiledName("SortDescending")>]
-        val sortDescending: list:'T list -> 'T list when 'T : comparison
+        val inline sortDescending: list:'T list -> 'T list when 'T : comparison
 
         /// <summary>Returns the sum of the elements in the list.</summary>
         /// <param name="list">The input list.</param>

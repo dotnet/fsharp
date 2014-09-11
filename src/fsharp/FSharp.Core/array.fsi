@@ -800,7 +800,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// <returns>The sorted array.</returns>
         [<CompiledName("SortDescending")>]
-        val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison 
+        val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison
 
         /// <summary>Sorts the elements of an array, in descending order, using the given projection for the keys and returning a new array. 
         /// Elements are compared using Operators.compare.</summary>
@@ -811,7 +811,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// <returns>The sorted array.</returns>
         [<CompiledName("SortByDescending")>]
-        val inline sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison 
+        val inline sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison
 
         /// <summary>Returns the sum of the elements in the array.</summary>
         /// <param name="array">The input array.</param>

@@ -606,10 +606,11 @@ type ListModule02() =
         
     [<Test>]
     member this.SortDescending() =
-        // integer List  
-        let intArr = [3;5;7;2;4;8]
+        // integer List
+        let minInt,maxInt = System.Int32.MinValue,System.Int32.MaxValue
+        let intArr = [3;5;7;2;4;8;0;-1;1;minInt;maxInt]
         let resultInt = List.sortDescending intArr          
-        Assert.AreEqual(resultInt , [8;7;5;4;3;2])
+        Assert.AreEqual(resultInt , [maxInt;8;7;5;4;3;2;1;0;-1;minInt])
         
         // string List
         let strArr = ["Z";"a";"d";"Y";"c";"b";"X"]   
@@ -626,6 +627,13 @@ type ListModule02() =
         let resultTup = List.sortDescending tupArr         
         Assert.AreEqual([(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")], resultTup)
         
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = List.sortDescending floatArr
+        let expectedFloat = [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        Assert.AreEqual(expectedFloat, resultFloat)
+
         () 
         
     [<Test>]
@@ -650,8 +658,33 @@ type ListModule02() =
         let resultTup = List.sortByDescending snd tupArr         
         Assert.AreEqual( [(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")] , resultTup)
 
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = List.sortByDescending id floatArr
+        let expectedFloat = [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        Assert.AreEqual(expectedFloat, resultFloat)
+
         ()  
   
+    [<Test>]
+    member this.SortWith() =
+
+        // integer list
+        let intComparer a b = compare (a%3) (b%3)
+        let resultInt = List.sortWith intComparer [0..10]
+        Assert.AreEqual([0;3;6;9;1;4;7;10;2;5;8], resultInt)
+
+        // string list
+        let resultStr = List.sortWith compare ["str1";"str3";"str2";"str4"]
+        Assert.AreEqual(["str1";"str2";"str3";"str4"], resultStr)
+
+        // empty list
+        let resultEpt = List.sortWith intComparer []
+        Assert.AreEqual([], resultEpt)
+
+        ()
+
     [<Test>]
     member this.Sum() =
         // empty integer List 

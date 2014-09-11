@@ -1499,23 +1499,25 @@ namespace Microsoft.FSharp.Collections
                 Array.stableSortInPlace array
                 array :> seq<_>)
 
-        [<CompiledName("SortByDescending")>]
-        let sortByDescending keyf source =
-            checkNonNull "source" source
-            mkDelayedSeq (fun () -> 
-                 source
-                 |> toList
-                 |> List.sortByDescending keyf
-                 :> seq<_>)
-
-        [<CompiledName("SortDescending")>]
-        let sortDescending source =
+        [<CompiledName("SortWith")>]
+        let sortWith f source =
             checkNonNull "source" source
             mkDelayedSeq (fun () ->
-                source
-                |> toList
-                |> List.sortDescending
-                :> seq<_>)
+                let array = source |> toArray
+                Array.stableSortInPlaceWith f array
+                array :> seq<_>)
+
+        [<CompiledName("SortByDescending")>]
+        let inline sortByDescending keyf source =
+            checkNonNull "source" source
+            let inline compareDescending a b = compare (keyf b) (keyf a)
+            sortWith compareDescending source
+
+        [<CompiledName("SortDescending")>]
+        let inline sortDescending source =
+            checkNonNull "source" source
+            let inline compareDescending a b = compare b a
+            sortWith compareDescending source
 
         [<CompiledName("CountBy")>]
         let countBy keyf source =

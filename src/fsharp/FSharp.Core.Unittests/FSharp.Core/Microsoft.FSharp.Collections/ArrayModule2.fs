@@ -700,9 +700,10 @@ type ArrayModule2() =
         Assert.AreEqual([|DateTime(2015,1,1);DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2014,1,1);DateTime(2013,12,31)|], resultDate)
 
         // float array
-        let floatArr = [|0.5; 2.0; nan; 1.5; 1.0|]
-        let resultFloat = Array.sortDescending floatArr         
-        Assert.AreEqual([|2.0; 1.5; 1.0; 0.5; nan; |], resultFloat)
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
+        let resultFloat = Array.sortDescending floatArr
+        Assert.AreEqual([| maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; |], resultFloat)
 
         () 
         
@@ -726,16 +727,22 @@ type ArrayModule2() =
         if resultEmpty <> [||] then Assert.Fail()    
         
         // tuple array
-        let tupArr = [|(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")|]   
+        let tupArr = [|(2,"a");(1,"d");(1,"b");(2,"x")|]
         let sndTup = Array.sortByDescending snd tupArr         
-        Assert.AreEqual( [|(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")|] , tupArr)
-        Assert.AreEqual( [|(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")|] , sndTup)
+        Assert.AreEqual( [|(2,"a");(1,"d");(1,"b");(2,"x")|] , tupArr)
+        Assert.AreEqual( [|(2,"x");(1,"d");(1,"b");(2,"a")|] , sndTup)
         
         // date array
-        let dateArr = [|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,12,31);DateTime(2014,3,1)|]   
+        let dateArr = [|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|]
         let resultDate = Array.sortByDescending (fun (d:DateTime) -> d.Month) dateArr         
-        Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,12,31);DateTime(2014,3,1)|], dateArr)
-        Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,12,31);DateTime(2014,3,1);DateTime(2014,2,1);DateTime(2015,1,1)|], resultDate)
+        Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|], dateArr)
+        Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,3,1);DateTime(2014,2,1);DateTime(2015,1,1)|], resultDate)
+
+        // float array
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
+        let resultFloat = Array.sortByDescending id floatArr
+        Assert.AreEqual([| maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; |], resultFloat)
 
         ()  
          
