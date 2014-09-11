@@ -640,3 +640,8 @@ module internal Array =
                 // 'keys' is an array storing the projected keys
                 let keys = (array.Clone() :?> array<'T>)
                 stableSortWithKeys array keys
+
+    let inline subUnchecked startIndex count (array : 'T[]) =
+        let res = zeroCreateUnchecked count : 'T[]
+        Array.Copy(array, startIndex, res, 0, count)
+        res

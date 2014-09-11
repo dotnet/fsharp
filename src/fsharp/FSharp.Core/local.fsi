@@ -36,6 +36,8 @@ module internal Array =
 
     val permute : indexMap:(int -> int) -> 'T[] -> 'T[]
 
+    val inline subUnchecked : int -> int -> 'T[] -> 'T[]
+
     val unstableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
 
     val unstableSortInPlace: array:'T[] -> unit when 'T : comparison 
