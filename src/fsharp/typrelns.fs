@@ -1281,7 +1281,7 @@ module DispatchSlotChecking =
         // This contains the list of required members and the list of available members
         [ for (_,reqdTy,reqdTyRange,impliedTys) in reqdTyInfos do
 
-            // Build a table of the implied interface types, for quicker lookup
+            // Build a set of the implied interface types, for quicker lookup, by nominal type
             let isImpliedInterfaceTable = 
                 impliedTys 
                 |> List.filter (isInterfaceTy g) 
@@ -1718,7 +1718,7 @@ type CalledMeth<'T>
                 let returnedObjTy = if minfo.IsConstructor then minfo.EnclosingType else methodRetTy
                 unassignedNamedItem |> List.splitChoose (fun (CallerNamedArg(id,e) as arg) -> 
                     let nm = id.idText
-                    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some(nm),ad,AllowMultiIntfInstantiations.No) IgnoreOverrides id.idRange returnedObjTy
+                    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some(nm),ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides id.idRange returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
                     match pinfos with 
                     | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 

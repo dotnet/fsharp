@@ -1029,7 +1029,7 @@ let MakeNestedType (ncenv:NameResolver) (tinst:TType list) m (tcrefNested:TyconR
 /// Get all the accessible nested types of an existing type.
 let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, checkForGenerated, m) typ =
     let g = ncenv.g
-    ncenv.InfoReader.GetPrimaryTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
+    ncenv.InfoReader.GetPrimaryTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
         if isAppTy g typ then 
             let tcref,tinst = destAppTy g typ
             let tycon = tcref.Deref
@@ -1371,7 +1371,7 @@ let ResolveObjectConstructor (ncenv:NameResolver) edenv m ad typ =
 let IntrinsicPropInfosOfTypeInScope (infoReader:InfoReader) (optFilter, ad) findFlag m typ =
     let g = infoReader.g
     let amap = infoReader.amap
-    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.No) findFlag m typ
+    let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (optFilter, ad, AllowMultiIntfInstantiations.Yes) findFlag m typ
     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g amap m 
     pinfos
 
@@ -1399,7 +1399,7 @@ let ExtensionPropInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
     let g = infoReader.g
     
     let extMemsFromHierarchy = 
-        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
+        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
              if (isAppTy g typ) then 
                 let tcref = tcrefOfAppTy g typ
                 let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
@@ -1461,7 +1461,7 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
 let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m typ =
     let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter typ  m nenv.eUnindexedExtensionMembers
     let extMemsFromHierarchy = 
-        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.No,m,typ) |> List.collect (fun typ -> 
+        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
             let g = infoReader.g
             if (isAppTy g typ) then 
                 let tcref = tcrefOfAppTy g typ
@@ -1472,7 +1472,7 @@ let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
 
 /// Get all the available methods of a type (both intrinsic and extension)
 let AllMethInfosOfTypeInScope infoReader nenv (optFilter,ad) findFlag m typ =
-    IntrinsicMethInfosOfType infoReader (optFilter,ad,AllowMultiIntfInstantiations.No) findFlag m typ 
+    IntrinsicMethInfosOfType infoReader (optFilter,ad,AllowMultiIntfInstantiations.Yes) findFlag m typ 
     @ ExtensionMethInfosOfTypeInScope infoReader nenv optFilter m typ          
 
 

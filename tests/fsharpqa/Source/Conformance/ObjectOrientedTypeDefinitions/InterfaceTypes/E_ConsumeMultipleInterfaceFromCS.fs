@@ -1,5 +1,4 @@
 // #Conformance #ObjectOrientedTypes #InterfacesAndImplementations #ReqNOMT 
-// <Expects id="FS0443" status="error" span="(19,6-23,8)">This type implements or inherits the same interface at different generic instantiations 'I_002\<string\>' and 'I_002\<char\>'\. This is not permitted in this version of F#\.</Expects>
 #light	
 
 let mutable res = true

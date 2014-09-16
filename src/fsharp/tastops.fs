@@ -1239,6 +1239,7 @@ type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
     member m.Find v = if contents.ContainsKey v then contents.[v] else []
     member m.Add (v, x) = TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
     static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
+    static member OfList vs = (vs, TyconRefMultiMap<'T>.Empty) ||> List.foldBack (fun (x,y) acc -> acc.Add (x, y)) 
 
 
 //--------------------------------------------------------------------------

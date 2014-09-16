@@ -278,6 +278,7 @@ type TyconRefMultiMap<'T> =
     member Find : TyconRef -> 'T list
     member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
     static member Empty : TyconRefMultiMap<'T>
+    static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
 
 //-------------------------------------------------------------------------
