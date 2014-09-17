@@ -196,6 +196,7 @@ Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\StaticLetDo
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ValueRestriction
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\DelegateTypes
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\EnumTypes
+InterfaceTypes			Conformance\ObjectOrientedTypeDefinitions\InterfaceTypes
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\InterfaceTypes
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\StructTypes
 Conformance07			Conformance\ObjectOrientedTypeDefinitions\TypeExtensions\basic
