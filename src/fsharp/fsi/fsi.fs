@@ -2341,6 +2341,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]    
+[<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
