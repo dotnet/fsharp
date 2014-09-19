@@ -643,5 +643,9 @@ module internal Array =
 
     let inline subUnchecked startIndex count (array : 'T[]) =
         let res = zeroCreateUnchecked count : 'T[]
-        Array.Copy(array, startIndex, res, 0, count)
+        if count < 64 then
+            for i = 0 to count - 1 do
+                res.[i] <- array.[startIndex+i]
+        else
+            Array.Copy(array, startIndex, res, 0, count)
         res
