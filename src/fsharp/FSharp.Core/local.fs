@@ -189,18 +189,44 @@ module internal List =
             concatToFreshConsTail res t1 tt2;
             res
 
-    let seqToList (e : IEnumerable<'T>) = 
-        match e with 
+    let toArray (l:'T list) =
+        let len = l.Length
+        let res = arrayZeroCreate len
+        let rec loop i l =
+            match l with
+            | [] -> ()
+            | h::t ->
+                res.[i] <- h
+                loop (i+1) t
+        loop 0 l
+        res
+
+    let ofArray (arr:'T[]) =
+        let len = arr.Length
+        let mutable res = ([]: 'T list)
+        for i = len - 1 downto 0 do
+            res <- arr.[i] :: res
+        res
+
+    let inline ofSeq (e : IEnumerable<'T>) =
+        match e with
         | :? list<'T> as l -> l
-        | _ -> 
+        | :? ('T[]) as arr -> ofArray arr
+        | _ ->
             use ie = e.GetEnumerator()
-            let mutable res = [] 
-            while ie.MoveNext() do
-                res <- ie.Current :: res
-            rev res
+            if not (ie.MoveNext()) then []
+            else
+                let res = freshConsNoTail ie.Current
+                let mutable cons = res
+                while ie.MoveNext() do
+                    let cons2 = freshConsNoTail ie.Current
+                    setFreshConsTail cons cons2
+                    cons <- cons2
+                setFreshConsTail cons []
+                res
 
     let concat (l : seq<_>) = 
-        match seqToList l with 
+        match ofSeq l with
         | [] -> []
         | [h] -> h
         | [h1;h2] -> h1 @ h2
@@ -386,25 +412,6 @@ module internal List =
             res
         | _ -> 
             invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
-
-    let toArray (l:'T list) =
-        let len = l.Length 
-        let res = arrayZeroCreate len 
-        let rec loop i l = 
-            match l with 
-            | [] -> ()
-            | h::t -> 
-                res.[i] <- h
-                loop (i+1) t
-        loop 0 l
-        res
-
-    let ofArray (arr:'T[]) =
-        let len = arr.Length
-        let mutable res = ([]: 'T list) 
-        for i = len - 1 downto 0 do 
-            res <- arr.[i] :: res
-        res
 
     // NOTE: This implementation is now only used for List.sortWith. We should change that to use the stable sort via arrays
     // below, and remove this implementation.
