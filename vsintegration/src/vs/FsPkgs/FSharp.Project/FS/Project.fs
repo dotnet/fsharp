@@ -766,27 +766,34 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 and set(v) = 
                     if not this.CanUseTargetFSharpCoreReference then () else
                     let currentVersion = System.Version(this.TargetFSharpCoreVersion)
-                    let version = System.Version(v)
-                    if not (currentVersion.Equals version) then
-                        let currentVersionEquals major minor build rev = 
-                            currentVersion.Major = major && 
-                            currentVersion.Minor = minor && 
-                            currentVersion.Build = build && 
-                            currentVersion.Revision = rev
+                    let newVersion = System.Version(v)
+                    if not (currentVersion.Equals newVersion) then
+                        let hasSwitchedToLatestOnlyVersionFromLegacy = 
+                            let legacyVersions =
+                                ["2.3.0.0"             // .NET 2 desktop
+                                 "4.3.0.0"; "4.3.1.0"  // .NET 4 desktop
+                                 "2.3.5.0"; "2.3.5.1"  // portable 47
+                                 "3.3.1.0"             // portable 7
+                                 "3.78.3.1"            // portable 78
+                                 "3.259.3.1"]          // portable 259
+                                |> List.map (fun s -> System.Version(s))
+                            let latestOnlyVersions = 
+                                ["4.4.0.0"             // .NET 4 desktop
+                                 "3.47.4.0"            // portable 47
+                                 "3.7.4.0"             // portable 7
+                                 "3.78.4.0"            // portable 78
+                                 "3.259.4.0"]          // portable 259
+                                |> List.map (fun s -> System.Version(s))
+                            
+                            (legacyVersions |> List.exists ((=) currentVersion)) && (latestOnlyVersions |> List.exists ((=) newVersion))                                
 
-                        let hasSwitchedToNonDev11CompatibleVersion = 
-                            // non-desktop case, silverlight or old style portable - dev11 version 2.3.5.0
-                            ((this.IsCurrentProjectSilverlight() || this.IsCurrentProjectDotNetPortable()) && currentVersionEquals 2 3 5 0) ||
-                            // desktop case: dev11 versions are 4.3.0.0 or 2.3.0.0
-                            (currentVersionEquals 2 3 0 0) || (currentVersionEquals 4 3 0 0)
-
-                        if hasSwitchedToNonDev11CompatibleVersion then
-                            // we are switching from Dev11 compatible version to some another one that can no longer be opened in Dev11
+                        if hasSwitchedToLatestOnlyVersionFromLegacy then
+                            // we are switching from a legacy version to one that is present only in the latest release
                             let result = 
                                 VsShellUtilities.ShowMessageBox
                                     (
                                         serviceProvider = this.Site,
-                                        message = FSharpSR.GetString(FSharpSR.FSharpCoreVersionIsNotCompatibleWithDev11),
+                                        message = FSharpSR.GetString(FSharpSR.FSharpCoreVersionIsNotLegacyCompatible),
                                         title = null,
                                         icon = OLEMSGICON.OLEMSGICON_QUERY, 
                                         msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO, 

@@ -4829,12 +4829,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Retrieve the xml fragments from MSBuild
                 xmlFragments = new XmlDocument();
+                xmlFragments.XmlResolver = null;
                 var ext = GetProjectExtensions();
                 string fragments = ext != null ? ext[ProjectFileConstants.VisualStudio] : null; 
                 if (!String.IsNullOrEmpty(fragments))
                 {
                     fragments = String.Format(CultureInfo.InvariantCulture, "<root>{0}</root>", fragments);
-                    xmlFragments.LoadXml(fragments);
+                    using(StringReader stream = new StringReader(fragments))
+                    using (XmlReader reader = XmlReader.Create(stream, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
+                    {
+                        xmlFragments.Load(reader);
+                    }
                 }
             }
 

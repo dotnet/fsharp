@@ -536,7 +536,7 @@
   <data name="AddReferenceAssemblyPageDialogNoItemsText" xml:space="preserve">
     <value>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</value>
   </data>
-  <data name="FSharpCoreVersionIsNotCompatibleWithDev11" xml:space="preserve">
+  <data name="FSharpCoreVersionIsNotLegacyCompatible" xml:space="preserve">
     <value>Referencing this version of FSharp.Core will cause your project to be incompatible with older versions of Visual Studio.  Do you want to continue?</value>
   </data>
 </root>

@@ -1455,7 +1455,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
 
 #if FX_ATLEAST_45
-        private static string RegistryRoot = @"SOFTWARE\Microsoft\VisualStudio\12.0\";
+        private static string RegistryRoot = @"SOFTWARE\Microsoft\VisualStudio\14.0\";
         private static bool? isMultiThreadedBuildEnabled = null;
         internal static bool IsMultiThreadedBuildEnabled() 
         {

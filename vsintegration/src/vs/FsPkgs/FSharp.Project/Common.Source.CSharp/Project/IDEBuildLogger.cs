@@ -29,7 +29,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		#region fields
 		// TODO: Remove these constants when we have a version that suppoerts getting the verbosity using automation.
 #if FX_ATLEAST_45
-		private string buildVerbosityRegistryRoot = @"Software\Microsoft\VisualStudio\12.0";
+		private string buildVerbosityRegistryRoot = @"Software\Microsoft\VisualStudio\14.0";
 #else
 		private string buildVerbosityRegistryRoot = @"Software\Microsoft\VisualStudio\10.0";
 #endif
