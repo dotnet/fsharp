@@ -11,12 +11,12 @@
                 <IsPortableProfile>true</IsPortableProfile>
               </PropertyGroup>
               <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">$(OtherFlags) --version:4.3.1.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.3.1.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable7'">$(OtherFlags) --version:3.3.1.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:2.3.5.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable78'">$(OtherFlags) --version:3.78.3.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable259'">$(OtherFlags) --version:3.259.3.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">$(OtherFlags) --version:4.4.0.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.4.0.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable7'">$(OtherFlags) --version:3.7.4.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:3.47.4.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable78'">$(OtherFlags) --version:3.78.4.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable259'">$(OtherFlags) --version:3.259.4.9055</OtherFlags>
                 <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -31,12 +31,12 @@
             </When>
             <Otherwise>
               <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
-                <OtherFlags>$(OtherFlags) --version:4.3.1.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
               <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' != 'true'">
-                <OtherFlags>$(OtherFlags) --version:4.3.1.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
+                <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
@@ -58,7 +58,7 @@
       <PropertyGroup Condition="'$(StrongNames)' != 'true'">
         <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
         <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
-        <OtherFlags>$(OtherFlags) --version:4.3.1.9055</OtherFlags>
+        <OtherFlags>$(OtherFlags) --version:4.4.0.9055</OtherFlags>
         <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
       </PropertyGroup>
     </Otherwise>
