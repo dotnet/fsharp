@@ -115,13 +115,14 @@ namespace Microsoft.FSharp.Collections
               }
           
       let mapi f (e : IEnumerator<_>) : IEnumerator<_> =
+          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
           let i = ref (-1) 
           upcast
               {  new MapEnumerator<_>() with
                      member this.DoMoveNext curr =
                         i := !i + 1
                         if e.MoveNext() then
-                           curr <- f !i e.Current
+                           curr <- f.Invoke(!i, e.Current)
                            true
                         else
                            false
@@ -129,13 +130,14 @@ namespace Microsoft.FSharp.Collections
               }
               
       let map2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_>=
+          let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
           upcast 
               {  new MapEnumerator<_>() with
                      member this.DoMoveNext curr = 
                         let n1 = e1.MoveNext()
                         let n2 = e2.MoveNext()
                         if n1 && n2 then
-                           curr <- f e1.Current e2.Current
+                           curr <- f.Invoke(e1.Current, e2.Current)
                            true
                         else 
                            false
@@ -867,9 +869,10 @@ namespace Microsoft.FSharp.Collections
         let iteri f (source : seq<'T>) = 
             checkNonNull "source" source
             use e = source.GetEnumerator()
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable i = 0 
             while e.MoveNext() do
-                f i e.Current;
+                f.Invoke(i, e.Current);
                 i <- i + 1;
 
         [<CompiledName("Exists")>]
@@ -897,8 +900,9 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             while (e1.MoveNext() && e2.MoveNext()) do
-                f e1.Current e2.Current;
+                f.Invoke(e1.Current, e2.Current);
 
 
         // Build an IEnumerble by wrapping/transforming iterators as they get generated.
@@ -1033,9 +1037,10 @@ namespace Microsoft.FSharp.Collections
         let fold<'T,'State> f (x:'State) (source : seq<'T>)  = 
             checkNonNull "source" source
             use e = source.GetEnumerator() 
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable state = x 
             while e.MoveNext() do
-                state <- f state  e.Current;
+                state <- f.Invoke(state, e.Current)
             state
 
         [<CompiledName("Reduce")>]
@@ -1043,9 +1048,10 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then invalidArg "source" InputSequenceEmptyString;
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable state = e.Current 
             while e.MoveNext() do
-                state <- f state  e.Current;
+                state <- f.Invoke(state, e.Current)
             state
 
         let fromGenerator f = mkSeq(fun () -> Generator.EnumerateFromGenerator (f()))
@@ -1068,6 +1074,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let rec go () = 
                 let e1ok = e1.MoveNext() 
                 let e2ok = e2.MoveNext() 
@@ -1075,7 +1082,7 @@ namespace Microsoft.FSharp.Collections
                 if c <> 0 then c else
                 if not e1ok || not e2ok then 0 
                 else
-                    let c = f e1.Current e2.Current 
+                    let c = f.Invoke(e1.Current, e2.Current)
                     if c <> 0 then c else
                     go () 
             go()
@@ -1147,11 +1154,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Scan")>]
         let scan<'T,'State> f (z:'State) (source : seq<'T>) = 
             checkNonNull "source" source
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             seq { let zref = ref z
                   yield !zref
                   use ie = source.GetEnumerator() 
                   while ie.MoveNext() do
-                      zref := f !zref ie.Current 
+                      zref := f.Invoke(!zref, ie.Current)
                       yield !zref }
 
         [<CompiledName("FindIndex")>]
@@ -1522,9 +1530,10 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
             let mutable ok = true
             while (ok && e1.MoveNext() && e2.MoveNext()) do
-                ok <- p e1.Current e2.Current;
+                ok <- p.Invoke(e1.Current, e2.Current)
             ok
 
         
@@ -1534,9 +1543,10 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source2" source2
             use e1 = source1.GetEnumerator()
             use e2 = source2.GetEnumerator()
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(p)
             let mutable ok = false
             while (not ok && e1.MoveNext() && e2.MoveNext()) do
-                ok <- p e1.Current e2.Current;
+                ok <- p.Invoke(e1.Current, e2.Current)
             ok
 
         [<CompiledName("Head")>]
