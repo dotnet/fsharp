@@ -2340,7 +2340,8 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
-[<STAThread()>]    
+[<STAThread()>]
+[<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
@@ -2368,11 +2369,12 @@ let MainMain argv =
         fsi.Run() 
 #endif
 
-    if argv |> Array.exists  (fun x -> x = "/shadowcopyreferences" || x = "--shadowcopyreferences" || x = "/shadowcopyreferences+" || x = "--shadowcopyreferences+") then
+    let isShadowCopy x = (x = "/shadowcopyreferences" || x = "--shadowcopyreferences" || x = "/shadowcopyreferences+" || x = "--shadowcopyreferences+")
+    if AppDomain.CurrentDomain.IsDefaultAppDomain() && argv |> Array.exists isShadowCopy then
         let setupInformation = AppDomain.CurrentDomain.SetupInformation
         setupInformation.ShadowCopyFiles <- "true"
         let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)
-        helper.DoCallBack(fun() -> evaluateSession() )
+        helper.ExecuteAssemblyByName(Assembly.GetExecutingAssembly().GetName()) |> ignore
     else
         evaluateSession()
     0

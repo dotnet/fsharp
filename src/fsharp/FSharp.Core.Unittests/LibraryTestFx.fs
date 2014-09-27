@@ -48,6 +48,7 @@ let CheckThrowsNotSupportedException f = CheckThrowsExn<NotSupportedException>  
 let CheckThrowsArgumentException     f = CheckThrowsExn<ArgumentException>        f
 let CheckThrowsArgumentNullException f = CheckThrowsExn<ArgumentNullException>    f
 let CheckThrowsArgumentNullException2 s f  = CheckThrowsExn2<ArgumentNullException>  s  f
+let CheckThrowsArgumentOutOfRangeException f = CheckThrowsExn<ArgumentOutOfRangeException>    f
 let CheckThrowsKeyNotFoundException  f = CheckThrowsExn<KeyNotFoundException>     f
 let CheckThrowsDivideByZeroException f = CheckThrowsExn<DivideByZeroException>    f
 let CheckThrowsOverflowException     f = CheckThrowsExn<OverflowException>        f
@@ -56,13 +57,11 @@ let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>        
 
 // Verifies two sequences are equal (same length, equiv elements)
 let VerifySeqsEqual seq1 seq2 =
-    if Seq.length seq1 <> Seq.length seq2 then Assert.Fail()
-    
-    let zippedElements = Seq.zip seq1 seq2
-    if zippedElements |> Seq.forall (fun (a, b) -> a = b) 
-    then ()
-    else Assert.Fail()
-    
+    Assert.AreEqual(Seq.length seq1, Seq.length seq2, "Sequences are different lengths.")
+
+    Seq.zip seq1 seq2
+    |> Seq.iteri (fun i (a, b) -> if a <> b then Assert.Fail("Sequences are different in position {0}\n  Expected: {1}\n  But was: {2}", i, a, b))
+
 let sleep(n : int32) =        
 #if FX_NO_THREAD
     async { do! Async.Sleep(n) } |> Async.RunSynchronously

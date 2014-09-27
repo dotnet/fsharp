@@ -2,16 +2,16 @@
 
 setlocal
 
-call %~d0%~p0..\..\..\config.bat
+call %~d0%~p0..\..\..\..\config.bat
 
 IF /I "%INSTALL_SKU%" NEQ "ULTIMATE" (
     echo Test not supported except on Ultimate
     exit /b 0
 )
 
-set CONTROL_FAILURES_LOG=%~dp0\control_failures.log
+set CONTROL_FAILURES_LOG=%~dp0..\ConsoleApplication1\bin\Debug\profile7\control_failures.log
 
-.\ConsoleApplication1\bin\Debug\PortableTestEntry.exe
+..\ConsoleApplication1\bin\Debug\profile7\PortableTestEntry.exe
 endlocal
 exit /b %ERRORLEVEL%
 

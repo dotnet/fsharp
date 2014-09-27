@@ -17,6 +17,7 @@
       <FsSrGen Include="FSBuild.txt">
         <Link>FSBuild.txt</Link>
       </FsSrGen>
+    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs">
       <Link>assemblyinfo.FSharp.Build.dll.fs</Link>
     </Compile>

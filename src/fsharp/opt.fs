@@ -36,29 +36,24 @@ open Microsoft.FSharp.Compiler.Infos
 
 open System.Collections.Generic
 
-
-
+#if BUILDING_PROTO
 let verboseOptimizationInfo = 
-#if BUILDING_PROTO
     try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo"))  with _ -> false
-#else
-    false
-#endif
 let verboseOptimizations = 
-#if BUILDING_PROTO
     try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizations")) with _ -> false
 #else
-    false
+let [<Literal>] verboseOptimizationInfo = false
+let [<Literal>] verboseOptimizations = false
 #endif
 
 let i_ldlen = [ I_ldlen; (AI_conv DT_I4)  ] 
 
-let callSize = 1  // size of a function call 
-let forAndWhileLoopSize = 5 // size of a for/while loop
-let tryCatchSize = 5  // size of a try/catch 
-let tryFinallySize = 5 // size of a try/finally
-let closureTotalSize = 10 // Total cost of a closure. Each closure adds a class definition
-let methodDefnTotalSize = 1  // Total cost of a method definition
+let [<Literal>] callSize = 1  // size of a function call 
+let [<Literal>] forAndWhileLoopSize = 5 // size of a for/while loop
+let [<Literal>] tryCatchSize = 5  // size of a try/catch 
+let [<Literal>] tryFinallySize = 5 // size of a try/finally
+let [<Literal>] closureTotalSize = 10 // Total cost of a closure. Each closure adds a class definition
+let [<Literal>] methodDefnTotalSize = 1  // Total cost of a method definition
 
 //-------------------------------------------------------------------------
 // Partial information about an expression.
@@ -244,9 +239,9 @@ let BoundValueInfoBySize vinfo =
 // What we know about the world 
 //------------------------------------------------------------------------- 
 
-let jitOptDefault = true
-let localOptDefault = true
-let crossModuleOptDefault = true
+let [<Literal>] jitOptDefault = true
+let [<Literal>] localOptDefault = true
+let [<Literal>] crossModuleOptDefault = true
 
 type OptimizationSettings = 
     { abstractBigTargets : bool;
@@ -933,7 +928,7 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
 // Size constants and combinators
 //------------------------------------------------------------------------- 
 
-let localVarSize = 1
+let [<Literal>] localVarSize = 1
 
 let rec AddTotalSizesAux acc l = match l with [] -> acc | h::t -> AddTotalSizesAux (h.TotalSize + acc) t
 let AddTotalSizes l = AddTotalSizesAux 0 l
@@ -1209,7 +1204,7 @@ let AbstractAndRemapModulInfo msg g m (repackage,hidden) info =
 //------------------------------------------------------------------------- 
 
 // Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
-let suffixForVariablesThatMayNotBeEliminated = "$cont"
+let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
 
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 

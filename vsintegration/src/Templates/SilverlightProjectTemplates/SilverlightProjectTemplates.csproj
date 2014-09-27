@@ -76,6 +76,7 @@
     </VSTemplate>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ProjectTemplates\SilverlightLibrary\AssemblyInfo.fs" />
     <None Include="ProjectTemplates\SilverlightLibrary\Library1.fs" />
     <None Include="ProjectTemplates\SilverlightLibrary\SilverlightLibrary.fsproj" />
     <None Include="ProjectTemplates\SilverlightLibrary\Script.fsx" />

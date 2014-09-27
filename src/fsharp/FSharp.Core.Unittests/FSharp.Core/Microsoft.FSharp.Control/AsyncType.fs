@@ -91,6 +91,7 @@ type AsyncType() =
                                             (fun _ -> result := "Cancel"),
                                             cts.Token)
             cts.Cancel()
+            Async.Sleep(1000) |> Async.RunSynchronously
             Assert.AreEqual("Cancel", !result)
         )
 
@@ -125,7 +126,12 @@ type AsyncType() =
     member this.CreateTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-        use t : Task<string> = Async.StartAsTask a
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t : Task<string> =
+#else
+        use t : Task<string> =
+#endif
+            Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
         Assert.AreEqual(s, t.Result)    
@@ -134,7 +140,12 @@ type AsyncType() =
     member this.StartTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-        use t = Async.StartAsTask a
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
         Assert.AreEqual(s, t.Result)    
@@ -144,7 +155,12 @@ type AsyncType() =
         let a = async { 
             do raise (Exception ())
          }
-        use t = Async.StartAsTask a
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartAsTask a
         let mutable exceptionThrown = false
         try 
             this.WaitASec t
@@ -158,7 +174,12 @@ type AsyncType() =
         let a = async {
                 while true do ()
             }
-        use t = Async.StartAsTask a
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartAsTask a
         Async.CancelDefaultToken () 
         let mutable exceptionThrown = false
         try
@@ -178,7 +199,12 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t = Async.StartAsTask(a, cancellationToken=token)
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartAsTask(a, cancellationToken=token)
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.IsTrue
         cts.Cancel()
@@ -195,7 +221,12 @@ type AsyncType() =
     [<Test>]
     member this.TaskAsyncValue () =
         let s = "Test"
-        use t = Task.Factory.StartNew(Func<_>(fun () -> s))
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif
+            Task.Factory.StartNew(Func<_>(fun () -> s))
         let a = async {
                 let! s1 = Async.AwaitTask(t)
                 return s = s1
@@ -204,7 +235,12 @@ type AsyncType() =
         
     [<Test>]
     member this.TaskAsyncValueException () =
-        use t = Task.Factory.StartNew(Func<unit>(fun () -> raise <| Exception()))
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif
+            Task.Factory.StartNew(Func<unit>(fun () -> raise <| Exception()))
         let a = async {
                 try
                     let! v = Async.AwaitTask(t)
@@ -218,7 +254,11 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t : Task<unit>=  
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t : Task<unit>= 
+#else
+        use t : Task<unit>=
+#endif 
           Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
         let a = async {

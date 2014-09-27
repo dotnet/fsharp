@@ -1474,8 +1474,13 @@ namespace Microsoft.FSharp.Control
         static member Sleep(dueTime : int) : Async<unit> = 
             // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the Delay task
             unprotectedPrimitiveWithResync ( fun ({ aux = aux} as args) ->
-                TaskHelpers.continueWithUnit(Task.Delay(dueTime, aux.token), args)
-                )
+                let mutable the_exn = null
+                let task = try Task.Delay(dueTime, aux.token)
+                           with e -> the_exn <- e; null
+                match the_exn with
+                | null -> TaskHelpers.continueWithUnit(task, args)
+                | e -> aux.econt e
+            )
 #else
         static member Sleep(dueTime) : Async<unit> =
             unprotectedPrimitiveWithResync (fun ({ aux = aux } as args) ->

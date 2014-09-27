@@ -83,6 +83,20 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
     </ProjectReference>
+    <ProjectReference Include="..\..\Templates\NetCore78ProjectTemplates\NetCore78ProjectTemplates.csproj">
+      <Project>{1A8DBF70-4178-4AE3-AF5F-39DDD5692210}</Project>
+      <Name>NetCore78ProjectTemplates</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Templates\NetCore259ProjectTemplates\NetCore259ProjectTemplates.csproj">
+      <Project>{D9D95330-3626-4199-B7AF-17B8E4AF6D87}</Project>
+      <Name>NetCore259ProjectTemplates</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
     <ProjectReference Include="..\..\Templates\PortableLibraryProjectTemplates\PortableLibraryProjectTemplates.csproj">
       <Project>{DB374A0C-7560-479F-9B21-D37C81F7624F}</Project>
       <Name>PortableLibraryProjectTemplates</Name>

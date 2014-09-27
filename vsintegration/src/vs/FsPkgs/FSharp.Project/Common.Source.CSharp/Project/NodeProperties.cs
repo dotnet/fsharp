@@ -6,10 +6,12 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Designer.Interfaces;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Xml;
@@ -464,7 +466,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-                var res = BuildActionTypeConverter.Instance.ConvertFromString(this.Node.ItemNode.ItemName);
+                var res = BuildActionTypeConverter.Instance.ConvertFromString(this.Node.ProjectMgr.BuildActionConverter, this.Node.ItemNode.ItemName);
                 if (res is VSLangProj.prjBuildAction)
                 {
                     return (VSLangProj.prjBuildAction)res;
@@ -473,7 +475,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             set
             {
-                this.Node.ItemNode.ItemName = BuildActionTypeConverter.Instance.ConvertToString(value);
+                this.Node.ItemNode.ItemName = BuildActionTypeConverter.Instance.ConvertToString(this.Node.ProjectMgr.BuildActionConverter, value);
             }
         }
 
@@ -483,11 +485,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get 
             {
-                return BuildActionTypeConverter.Instance.ConvertToString(this.BuildAction);
+                return BuildActionTypeConverter.Instance.ConvertToString(this.Node.ProjectMgr.BuildActionConverter, this.BuildAction);
             }
             set
             {
-                var res = BuildActionTypeConverter.Instance.ConvertFromString(value);
+                var res = BuildActionTypeConverter.Instance.ConvertFromString(this.Node.ProjectMgr.BuildActionConverter, value);
                 if (res is VSLangProj.prjBuildAction)
                 {
                     this.BuildAction = (VSLangProj.prjBuildAction)res;
@@ -527,65 +529,123 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
-            if (sourceType == typeof(string))
-            {
-                return true;
-            }
-            return base.CanConvertFrom(context, sourceType);
+            return (sourceType == typeof(string)) ? true : base.CanConvertFrom(context, sourceType);
         }
 
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
-            return base.CanConvertTo(context, destinationType);
+            return (destinationType == typeof(string)) ? true : base.CanConvertTo(context, destinationType);
         }
 
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
             if (destinationType == typeof(string))
             {
-                switch ((VSLangProj.prjBuildAction)value)
-                {
-                    case VSLangProj.prjBuildAction.prjBuildActionCompile:
-                        return "Compile";
-                    case VSLangProj.prjBuildAction.prjBuildActionContent:
-                        return "Content";
-                    case VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource:
-                        return "EmbeddedResource";
-                    case VSLangProj.prjBuildAction.prjBuildActionNone:
-                        return "None";
-                }
+                var reply = ConvertToString(GetBuildActionConverter(context), value);
+                if (reply != null) return reply;
             }
             return base.ConvertTo(context, culture, value, destinationType);
         }
 
+        public string ConvertToString(BuildActionConverter buildActionConverter, object value)
+        {
+            switch ((VSLangProj.prjBuildAction)value)
+            {
+            case VSLangProj.prjBuildAction.prjBuildActionCompile:
+                return "Compile";
+            case VSLangProj.prjBuildAction.prjBuildActionContent:
+                return "Content";
+            case VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource:
+                return "EmbeddedResource";
+            case VSLangProj.prjBuildAction.prjBuildActionNone:
+                return "None";
+            default:
+                if (buildActionConverter != null)
+                {
+                    // Not standard buildAction, so must have been registered.
+                    // Convert it to the name of the BuildAction at position index in the StandardValues from the BuildActionConverter
+                    int index = (int)value;
+                    var actions = buildActionConverter.RegisteredBuildActions;
+                    if (index >= 0 && index < actions.Count)
+                    {
+                        return actions[index].Name;
+                    }
+                }
+                return "None";
+            }
+        }
+        
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
             if (value is string)
             {
-                string strVal = (string)value;
-                if (strVal.Equals("Compile", StringComparison.OrdinalIgnoreCase))
-                {
-                    return VSLangProj.prjBuildAction.prjBuildActionCompile;
-                }
-                else if (strVal.Equals("Content", StringComparison.OrdinalIgnoreCase))
-                {
-                    return VSLangProj.prjBuildAction.prjBuildActionContent;
-                }
-                else if (strVal.Equals("EmbeddedResource", StringComparison.OrdinalIgnoreCase))
-                {
-                    return VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource;
-                }
-                else if (strVal.Equals("None", StringComparison.OrdinalIgnoreCase))
-                {
-                    return VSLangProj.prjBuildAction.prjBuildActionNone;
-                }
+                var reply = ConvertFromString(GetBuildActionConverter(context), (string)value);
+                if (reply != null) return reply;
             }
             return base.ConvertFrom(context, culture, value);
         }
 
+        public object ConvertFromString(BuildActionConverter buildActionConverter, string value)
+        {
+            if (value.Equals("Compile", StringComparison.OrdinalIgnoreCase))
+            {
+                return VSLangProj.prjBuildAction.prjBuildActionCompile;
+            }
+            else if (value.Equals("Content", StringComparison.OrdinalIgnoreCase))
+            {
+                return VSLangProj.prjBuildAction.prjBuildActionContent;
+            }
+            else if (value.Equals("EmbeddedResource", StringComparison.OrdinalIgnoreCase))
+            {
+                return VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource;
+            }
+            else if (value.Equals("None", StringComparison.OrdinalIgnoreCase))
+            {
+                return VSLangProj.prjBuildAction.prjBuildActionNone;
+            }
+            else
+            {
+                if (buildActionConverter != null)
+                {
+                    // Not standard buildAction, so must have been registered.
+                    // Convert it to the index in the StandardValues from the BuildActionConverter.
+                    var actions = buildActionConverter.RegisteredBuildActions;
+                    var reply = actions.ToList().FindIndex(i => value.Equals(i.Name, StringComparison.OrdinalIgnoreCase));
+                    if (reply != -1) return (VSLangProj.prjBuildAction)reply;
+                }
+            }
+            return VSLangProj.prjBuildAction.prjBuildActionNone;
+        }
+
         public override StandardValuesCollection GetStandardValues(ITypeDescriptorContext context)
         {
-            return new StandardValuesCollection(new[] { VSLangProj.prjBuildAction.prjBuildActionNone, VSLangProj.prjBuildAction.prjBuildActionCompile, VSLangProj.prjBuildAction.prjBuildActionContent, VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource });
+            var buildActionConverter = GetBuildActionConverter(context);
+            if(buildActionConverter != null)
+            {
+                var results = new List<VSLangProj.prjBuildAction>();
+                foreach (var a in buildActionConverter.RegisteredBuildActions)
+                {
+                    results.Add((VSLangProj.prjBuildAction)this.ConvertFrom(context, CultureInfo.CurrentUICulture, a.Name));
+                }
+                return new StandardValuesCollection(results);
+            }
+            else
+            {
+                return new StandardValuesCollection(new[] { VSLangProj.prjBuildAction.prjBuildActionNone, VSLangProj.prjBuildAction.prjBuildActionCompile, VSLangProj.prjBuildAction.prjBuildActionContent, VSLangProj.prjBuildAction.prjBuildActionEmbeddedResource });
+            }
+        }
+
+        private static BuildActionConverter GetBuildActionConverter(ITypeDescriptorContext context)
+        {
+            if (context != null)
+            {
+                BuildableNodeProperties nodeProperties = context.Instance as BuildableNodeProperties;
+                if (nodeProperties != null)
+                {
+                    return nodeProperties.Node.ProjectMgr.BuildActionConverter;
+                }
+            }
+            return null;
         }
     }
 

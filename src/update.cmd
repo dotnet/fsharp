@@ -44,6 +44,8 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
+%SN32% -Vr Unittests,b03f5f7f11d50a3a
+%SN32% -Vr Salsa,b03f5f7f11d50a3a
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Core,b03f5f7f11d50a3a
@@ -61,6 +63,8 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
+    %SN64% -Vr Unittests,b03f5f7f11d50a3a
+    %SN64% -Vr Salsa,b03f5f7f11d50a3a
 )
 
 rem Only GACing FSharp.Core for now

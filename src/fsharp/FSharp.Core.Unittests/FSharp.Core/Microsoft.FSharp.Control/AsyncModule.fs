@@ -264,7 +264,10 @@ type AsyncModule() =
                 :? InvalidOperationException as e when e.Message = "EXPECTED" -> return ()
             }
         Async.RunSynchronously(test)
-
+        
+#if FSHARP_CORE_NETCORE_PORTABLE
+// nothing
+#else
     [<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
@@ -285,6 +288,7 @@ type AsyncModule() =
         f 5000 |> Async.StartImmediate 
         Assert.AreEqual(origTid, !finalTid)
         Assert.AreEqual(5000, !cnt)
+#endif
 
     [<Test>]
     member this.``AwaitWaitHandle With Cancellation``() = 
@@ -344,6 +348,9 @@ type AsyncModule() =
 #if FSHARP_CORE_PORTABLE
 // nothing
 #else
+#if FSHARP_CORE_NETCORE_PORTABLE
+// nothing
+#else
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
@@ -371,12 +378,16 @@ type AsyncModule() =
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
 #endif
+#endif
 
 #if FSHARP_CORE_PORTABLE
 // nothing
 #else
 #if FSHARP_CORE_2_0
 // nothing
+#else
+#if FSHARP_CORE_NETCORE_PORTABLE
+//nothing
 #else
 // we are on the desktop
     member this.RunExeAndExpectOutput(exeName, expected:string) =
@@ -457,5 +468,6 @@ AwaitWaitHandleAlreadySignaled1 [|("ok", false); ("unhandled", false)|]
 """               )
 #endif
 
+#endif
 #endif
 #endif

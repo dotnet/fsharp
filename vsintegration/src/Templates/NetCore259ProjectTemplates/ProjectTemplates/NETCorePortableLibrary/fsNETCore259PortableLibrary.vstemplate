@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <VSTemplate Version="3.0.0" Type="Project" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
   <TemplateData>
-    <Name Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5047" />
-    <Description Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5048" />
+    <Name Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5051" />
+    <Description Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5052" />
     <Icon Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="4002" />
-    <TemplateID>Microsoft.FSharp.NETCorePortableLibrary</TemplateID>
+    <TemplateID>Microsoft.FSharp.NETCore259PortableLibrary</TemplateID>
     <ProjectType>FSharp</ProjectType>
     <RequiredFrameworkVersion>4.5</RequiredFrameworkVersion>
     <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
@@ -15,6 +15,7 @@
   </TemplateData>
   <TemplateContent>
     <Project File="PortableLibrary.fsproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="AssemblyInfo.fs">AssemblyInfo.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="PortableLibrary1.fs">PortableLibrary1.fs</ProjectItem>
       <ProjectItem ReplaceParameters="true">Script.fsx</ProjectItem>
     </Project>

@@ -630,13 +630,7 @@ namespace Microsoft.FSharp.Collections
         MapDebugView<'Key,'Value when 'Key : comparison>(v: Map<'Key,'Value>)  =  
 
          [<System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)>]
-         member x.Items = v |> Seq.truncate 1000 |> Seq.map (fun kvp -> { key = kvp.Key; value=kvp.Value})  |> Seq.toArray 
-
-    and 
-        [<DebuggerDisplay("{value}", Name="[{key}]", Type="")>]
-        [<NoEquality; NoComparison>]
-        MapDebugViewKeyValuePair = { key:obj; value:obj } 
-            
+         member x.Items = v |> Seq.truncate 10000 |> Seq.toArray
 #endif
         
 

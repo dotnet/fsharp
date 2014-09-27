@@ -35,13 +35,33 @@ set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
-if /I "%2" == "coreunit" (goto :COREUNIT)
+if /I "%2" == "coreunit" (
+   set coreunitsuffix=net40
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable47" (
+   set coreunitsuffix=portable47
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable7" (
+   set coreunitsuffix=portable7
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable78" (
+   set coreunitsuffix=portable78
+   goto :COREUNIT
+)
+if /I "%2" == "coreunitportable259" (
+   set coreunitsuffix=portable259
+   goto :COREUNIT
+)
+if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 :USAGE
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -95,6 +115,8 @@ set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETF
 set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
 set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\2.3.5.1
 set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.3.1.0
+set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.3.1
+set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.3.1
 set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
 
 REM == open source logic        
@@ -102,12 +124,16 @@ if exist "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
 if exist "%FSCBinPath%\..\..\net20\bin\FSharp.Core.dll" set FSCOREDLL20PATH=%FSCBinPath%\..\..\net20\bin
 if exist "%FSCBinPath%\..\..\portable47\bin\FSharp.Core.dll" set FSCOREDLLPORTABLEPATH=%FSCBinPath%\..\..\portable47\bin
 if exist "%FSCBinPath%\..\..\portable7\bin\FSharp.Core.dll" set FSCOREDLLNETCOREPATH=%FSCBinPath%\..\..\portable7\bin
+IF exist "%FSCBinPath%\..\..\portable78\bin\FSharp.Core.dll" set FSCOREDLLNETCORE78PATH=%FSCBinPath%\..\..\portable78\bin
+IF exist "%FSCBinPath%\..\..\portable259\bin\FSharp.Core.dll" set FSCOREDLLNETCORE259PATH=%FSCBinPath%\..\..\portable259\bin
 if exist "%FSCBinPath%\FSharp.Data.TypeProviders.dll" set FSDATATPPATH=%FSCBinPath%
 
 set FSCOREDLLPATH=%FSCOREDLLPATH%\FSharp.Core.dll
 set FSCOREDLL20PATH=%FSCOREDLL20PATH%\FSharp.Core.dll
 set FSCOREDLLPORTABLEPATH=%FSCOREDLLPORTABLEPATH%\FSharp.Core.dll
 set FSCOREDLLNETCOREPATH=%FSCOREDLLNETCOREPATH%\FSharp.Core.dll
+set FSCOREDLLNETCORE78PATH=%FSCOREDLLNETCORE78PATH%\FSharp.Core.dll
+set FSCOREDLLNETCORE259PATH=%FSCOREDLLNETCORE259PATH%\FSharp.Core.dll
 set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll
 
 for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
@@ -134,9 +160,9 @@ goto :EOF
 
 :COREUNIT
 
-set XMLFILE=CoreUnit_Xml.xml
-set OUTPUTFILE=CoreUnit_Output.log
-set ERRORFILE=CoreUnit_Error.log
+set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
+set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
+set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 set FILEDIR=%~dp0
 
 where.exe nunit-console.exe > NUL 2> NUL 
@@ -144,7 +170,28 @@ if errorlevel 1 (
   echo Error: nunit-console.exe is not in the PATH
   exit /b 1
 )
-echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
-     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\FSharp.Core.Unittests.dll 
+echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+
+goto :EOF
+
+:IDEUNIT
+
+set XMLFILE=IDEUnit_Xml.xml
+set OUTPUTFILE=IDEUnit_Output.log
+set ERRORFILE=IDEUnit_Error.log
+set FILEDIR=%~dp0
+
+where.exe nunit-console-x86.exe > NUL 2> NUL 
+if errorlevel 1 (
+  echo Error: nunit-console-x86.exe is not in the PATH
+  exit /b 1
+)
+
+for /f "tokens=*" %%a in  ('where.exe nunit-console-x86.exe')  do  (set nunitlocation=%%~dpa)
+xcopy /y "%nunitlocation%\lib\*.dll" "%FSCBINPATH%"
+
+echo nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\Unittests.dll 
+     nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FILEDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF

@@ -194,7 +194,7 @@ namespace Microsoft.FSharp.Collections
         
         let rec spliceOutSuccessor t = 
             match t with 
-            | SetEmpty -> failwith "internal error: Map.spliceOutSuccessor"
+            | SetEmpty -> failwith "internal error: Set.spliceOutSuccessor"
             | SetOne (k2) -> k2,SetEmpty
             | SetNode (k2,l,r,_) ->
                 match l with 

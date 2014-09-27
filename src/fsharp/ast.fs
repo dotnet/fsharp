@@ -1725,31 +1725,17 @@ let mkSynApp5 f x1 x2 x3 x4 x5 m = mkSynApp1 (mkSynApp4 f x1 x2 x3 x4 m) x5 m
 let mkSynDotParenSet  m a b c = mkSynTrifix m parenSet a b c
 let mkSynDotBrackGet  m mDot a b   = SynExpr.DotIndexedGet(a,[SynIndexerArg.One b],mDot,m)
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
-
 let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet(arr,[sliceArg],mDot,m)
 
-let mkSlice m mDot arr sliceArgs = 
-    //let args = [ for arg in sliceArgs do
-    //                match arg with 
-    //                | SynIndexerArg.Range (x1,x2) -> yield x1; yield x2
-    //                | SynIndexerArg.One x -> yield x ]
-    SynExpr.DotIndexedGet(arr,sliceArgs,mDot,m)
-
-let mkSynDotBrackSlice2Get  m mDot arr sliceArg1 sliceArg2 = 
-    match sliceArg1, sliceArg2 with 
-    | SynIndexerArg.One x1, SynIndexerArg.One x2 -> mkSynDotBrackGet m mDot arr (SynExpr.Tuple([x1;x2],[],unionRanges x1.Range x2.Range))
-    | _ -> mkSlice m mDot arr [ sliceArg1; sliceArg2 ] 
-
-let mkSynDotBrackSlice3Get  m mDot arr sliceArg1 sliceArg2 sliceArg3 = 
-    match sliceArg1, sliceArg2, sliceArg3 with 
-    | SynIndexerArg.One x1, SynIndexerArg.One x2, SynIndexerArg.One x3 -> mkSynDotBrackGet m mDot arr (SynExpr.Tuple([x1;x2;x3],[],unionRanges x1.Range x3.Range))
-    | _ -> mkSlice m mDot arr [ sliceArg1; sliceArg2; sliceArg3 ] 
-
-let mkSynDotBrackSlice4Get  m mDot arr sliceArg1 sliceArg2 sliceArg3 sliceArg4 =
-    match sliceArg1, sliceArg2, sliceArg3, sliceArg4 with 
-    | SynIndexerArg.One x1, SynIndexerArg.One x2, SynIndexerArg.One x3, SynIndexerArg.One x4 -> mkSynDotBrackGet m mDot arr (SynExpr.Tuple([x1;x2;x3;x4],[],unionRanges x1.Range x4.Range))
-    | _ -> mkSlice m mDot arr [ sliceArg1; sliceArg2; sliceArg3; sliceArg4 ] 
-    
+let mkSynDotBrackSeqSliceGet  m mDot arr (argslist:list<SynIndexerArg>) = 
+    let notsliced=[ for arg in argslist do
+                       match arg with 
+                       | SynIndexerArg.One x -> yield x
+                       | _ -> () ]
+    if notsliced.Length = argslist.Length then
+        SynExpr.DotIndexedGet(arr,[SynIndexerArg.One (SynExpr.Tuple(notsliced,[],unionRanges (Seq.head notsliced).Range (Seq.last notsliced).Range))],mDot,m)
+    else
+        SynExpr.DotIndexedGet(arr,argslist,mDot,m)
 
 let mkSynDotParenGet lhsm dotm a b   = 
     match b with

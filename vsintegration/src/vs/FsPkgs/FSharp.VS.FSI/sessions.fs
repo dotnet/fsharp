@@ -171,6 +171,50 @@ let determineFsiPath () =
     else
         raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
 
+let readLinesAsync (reader: System.IO.StreamReader) trigger =
+    let buffer = System.Text.StringBuilder(1024)
+    let byteBuffer = Array.zeroCreate 128
+    let encoding = System.Text.Encoding.UTF8
+    let decoder = encoding.GetDecoder()
+    let async0 = async.Return 0
+    let charBuffer = 
+        let maxCharsInBuffer = encoding.GetMaxCharCount byteBuffer.Length
+        Array.zeroCreate maxCharsInBuffer
+
+    let rec findLinesInBuffer pos =
+        if pos >= buffer.Length then max (buffer.Length - 1) 0 // exit and point to the last char
+        else
+        let c = buffer.[pos]
+        let deletePos = match c with
+                        | '\r' when (pos + 1) < buffer.Length && buffer.[pos + 1] = '\n' -> Some(pos + 2)
+                        | '\r' when (pos + 1) = buffer.Length -> None
+                        | '\r' -> Some(pos + 1)
+                        | '\n' -> Some(pos + 1)
+                        | _  ->  None
+
+        match deletePos with
+        | Some deletePos ->
+            let line = buffer.ToString(0, pos)
+            trigger line
+            buffer.Remove(0, deletePos) |> ignore
+            findLinesInBuffer 0
+        | None ->  findLinesInBuffer (pos + 1)
+
+    let rec read pos = 
+        async {
+            let! bytesRead = 
+                try 
+                    reader.BaseStream.AsyncRead(byteBuffer, 0, byteBuffer.Length)
+                with
+                    | :? IOException -> async0
+            if bytesRead <> 0 then
+                let charsRead = decoder.GetChars(byteBuffer, 0, bytesRead, charBuffer, 0)
+                buffer.Append(charBuffer, 0, charsRead) |> ignore
+                let newPos = findLinesInBuffer pos
+                return! read newPos
+        }
+    Async.StartImmediate (read 0)
+
 let fsiStartInfo channelName =
     let procInfo = new ProcessStartInfo()
     let fsiPath  = determineFsiPath () 
@@ -208,16 +252,21 @@ let fsiProcess (procInfo:ProcessStartInfo) =
     let outW,outE = let e = new Event<_>() in e.Trigger, e.Publish
     let errW,errE = let e = new Event<_>() in e.Trigger, e.Publish
     let exitE = (cmdProcess.Exited |> Observable.map (fun x -> x)) // this gives the event the F# "standard" event type IEvent<'a> rather than IEvent<_,_>
-        
-    // wire up output (to both stdout and stderr) 
-    cmdProcess.OutputDataReceived |> catchAll |> Observable.add(fun data -> 
+
+    let stdOutNewLine = Event<_>()
+    let stdErrNewLine = Event<_>()
+
+    // add subscribers prior to hooking to events to avoid data loss if event is emitted before the subscription
+    stdOutNewLine.Publish |> catchAll |> Observable.add(fun data -> 
         //System.Windows.Forms.MessageBox.Show (sprintf "OutputDataRecieved '%s'\n" data.Data) |> ignore
-        outW(data.Data));
-    cmdProcess.ErrorDataReceived  |> catchAll |> Observable.add (fun data -> errW(data.Data));
+        outW(data)
+        );
+    stdErrNewLine.Publish |> catchAll |> Observable.add (fun data -> errW(data))
 
     let _ = cmdProcess.Start()
-    cmdProcess.BeginOutputReadLine();
-    cmdProcess.BeginErrorReadLine();    
+    // hook up stdout\stderr data events
+    readLinesAsync cmdProcess.StandardOutput stdOutNewLine.Trigger
+    readLinesAsync cmdProcess.StandardError  stdErrNewLine.Trigger
 
     // wire up input 
     // Fix 982: Force input to be written in UTF8 regardless of the apparent encoding.

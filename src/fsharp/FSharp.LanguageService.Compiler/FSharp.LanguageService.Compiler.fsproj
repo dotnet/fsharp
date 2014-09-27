@@ -56,6 +56,7 @@
       <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ilpars.fsy</Link>
     </FsYacc>
+    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\ExtensibleDumper.fsi">
       <Link>ExtensibleDumper.fsi</Link>
     </Compile>

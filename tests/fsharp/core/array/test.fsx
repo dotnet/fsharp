@@ -1330,6 +1330,39 @@ module bug872632 =
 
     do check "bug872632" Foo.x.Length 8
 
+module manyIndexes =
+    open System
+    
+    // Bug in F# 3.1: Indexer Properties was incorrectly limited to 4 arguments. There were no limits in previous versions of F#, and shouldn't be in future versions
+    // Repro code for bug in F# 3.1.  This compiles perfectly in F# 3.0
+    
+    // ----------------------------------------------------------------------------
+    type Test () =
+        /// Variable number of arguments with indexer property
+        member x.Item with get ([<ParamArray>] objs: obj[]) = objs
+        
+        /// PASS: Variable number of arguments with member function
+        member x.Foo ([<ParamArray>] objs: obj[]) = objs
+
+    // ----------------------------------------------------------------------------
+    let CompileIndexerTest = 
+        let test = Test ()
+    
+        // No problems with method having vaiable number of parameters
+        let u1 = test.Foo(null, null, null, null)
+        let u2 = test.Foo(null, null, null, null, null)
+        let u3 = test.Foo(null, null, null, null, null, null, null, null, null)
+    
+        // Bug was that the indexer Property was limited to 4 parameters (Issue introduced by matrix slicing code)
+        let u4 = test.[null]
+        let u5 = test.[null, null]
+        let u6 = test.[null, null, null]
+        let u7 = test.[null, null, null, null]
+        let u8 = test.[null, null, null, null, null]                                                    // Ensure that F# 3.1 is not unhappy with more than 4 arguments
+        let u9 = test.[null, null, null, null, null, null, null, null, null, null, null, null, null]    // Ensure that F# 3.1 is not unhappy with many more than 4 arguments, 13 arguments would be really unlucky
+        0
+
+
 #if Portable
 #else    // this overload of CreateInstance doesn't exist in portable
 module bug6447 =

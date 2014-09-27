@@ -31,16 +31,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
-      <Name>FSharp.Compiler.Service</Name>
-      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.fsproj">
-      <Name>FSharp.Compiler.Service</Name>
-      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>

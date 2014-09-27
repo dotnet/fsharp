@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Xml;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 
 // NOTE:
 // When converting, System.TypeConverter.Convert* passes us CultureInfo.CurrentCulture - this is wrong!
@@ -142,6 +143,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     internal class BuildActionConverter : TypeConverter
     {
         List<BuildAction> buildActions = new List<BuildAction>();
+
+        public ReadOnlyCollection<BuildAction> RegisteredBuildActions
+        {
+            get
+            {
+                return buildActions.AsReadOnly();
+            }
+        }
 
         public BuildActionConverter()
         {

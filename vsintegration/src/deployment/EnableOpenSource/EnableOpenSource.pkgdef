@@ -19,16 +19,16 @@
 "name"="FSharp.Core"
 "publicKeyToken"="b03f5f7f11d50a3a"
 "culture"="neutral"
-"oldVersion"="4.3.0.0-4.3.1.0"
+"oldVersion"="2.3.5.1-4.3.1.9055"
 "newVersion"="4.3.1.9055"
 "codeBase"="$PackageFolder$\FSharp.Core.dll"
 
-[$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{ABDE3CAF-B048-4A9B-A0A3-FC026E38BC90}]
-"name"="FSharp.Core"
+[$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{2DB67780-3B09-41E5-A8DC-92AF2E1665BD}}]
+"name"="FSharp.Editor"
 "publicKeyToken"="b03f5f7f11d50a3a"
 "culture"="neutral"
-"oldVersion"="4.3.0.0-4.3.1.0"
-"newVersion"="4.3.1.9055"
+"oldVersion"="12.0.0.0"
+"newVersion"="12.0.0.9055"
 "codeBase"="$PackageFolder$\FSharp.Editor.dll"
 
 [$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{EBAA5FAC-BE56-4693-82AB-0FD093861AAE}]

@@ -77,6 +77,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ProjectTemplates\Library\Library.fsproj" />
+    <None Include="ProjectTemplates\Library\AssemblyInfo.fs" />
     <None Include="ProjectTemplates\Library\Library1.fs" />
     <None Include="ProjectTemplates\Library\Script.fsx" />
   </ItemGroup>

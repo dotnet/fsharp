@@ -52,11 +52,9 @@ Core04		fsharp\core\members\ops
 Core05		..\testsprivate\fsharp\core\mscorlib
 Core05		fsharp\core\namespaces
 Core05		fsharp\core\nested
-Core05		fsharp\core\netcore
 Core05		fsharp\core\parsing
 Core05		fsharp\core\patterns
 Core05		fsharp\core\pinvoke
-Core05		fsharp\core\portable
 Core05		fsharp\core\printf
 Core05		fsharp\core\printing
 Core05		fsharp\core\queriesCustomQueryOps
@@ -79,6 +77,12 @@ Core07		fsharp\core\tlr
 Core07		fsharp\core\topinit
 Core07		fsharp\core\unicode
 Core07		fsharp\core\verify
+
+# these take a long time, isolate in their own tags
+Portable47		fsharp\core\portable
+Portable7		fsharp\core\netcore\netcore7
+Portable78		fsharp\core\netcore\netcore78
+Portable259		fsharp\core\netcore\netcore259
 
 Samples01		..\testsprivate\fsharp\samples\adCenter
 Samples01		..\testsprivate\fsharp\samples\AntColony

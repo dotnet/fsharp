@@ -57,3 +57,4 @@ tests/projects/Sample_VS2012_FSharp_ConsoleApp_net45_with_resource/Sample_VS2012
 *.suo
 obj
 extras
+ossreadme*.txt

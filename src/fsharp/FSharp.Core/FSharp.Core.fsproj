@@ -20,6 +20,8 @@
     <OtherFlags Condition=" '$(TargetFramework)'=='net20'">$(OtherFlags) --compiling-fslib-20:"$(SystemRoot)\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll" </OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='net40'">$(OtherFlags) --compiling-fslib-40</OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='portable7'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='portable78'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
 
 
