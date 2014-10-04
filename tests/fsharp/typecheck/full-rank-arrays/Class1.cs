@@ -180,4 +180,27 @@ namespace HighRankArrayTests
             throw new NotImplementedException();
         }
     }
+    
+   public static class MethodsReturningHighDArrays
+   {
+        public static T1[,] Example1<T1>()
+        {
+            throw new NotImplementedException();
+        }
+        
+        public static T1[,,,,,] Example1<T1>(int x)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static T1[,] Example2<T1>()
+        {
+            throw new NotImplementedException();
+        }
+
+        public static T1[,,,,,,] Example2<T1, T2>()
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
