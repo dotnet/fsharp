@@ -2774,9 +2774,12 @@ and GenArgsAndIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
 
 /// Generate an indirect call, converting to an ILX callfunc instruction
 and GenIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
-
+    
     // Fold in the new types into the environment as we generate the formal types. 
     let ilxClosureApps = 
+        // keep only non-erased type arguments when computing indirect call
+        let tyargs = DropErasedTyargs tyargs 
+
         let typars,formalFuncTyp = tryDestForallTy cenv.g functy
 
         let feenv = eenv.tyenv.Add typars

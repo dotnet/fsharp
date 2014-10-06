@@ -1,0 +1,97 @@
+type T() =
+    member this.H<[<Measure>]'u> (x : int<'u>) = x
+
+    member this.F<[<Measure>]'u> (x : int<'u>) =
+        let g x =
+            this.H x
+
+        g x
+
+[<Measure>] type M
+
+type TheType = { A : int; B : int; D : int; G : seq<int> } with
+    static member Create a b _ d _ _ g = { A = a; B = b; D = d; G = g }
+    
+let CreateBadImageFormatException () =
+    let create a b c d (e:int<_>) (f:int) g = TheType.Create a b (int c) d e f g
+    seq { yield create 0 0 0 0 0 0 [0] }
+
+module TestLibrary =
+
+    [<Measure>] 
+    type unit =
+        //converts an integer into a  unit of measureof type int<seconds> 
+        static member convertLP x = LanguagePrimitives.Int32WithMeasure x  
+        static member convert x = x * 1<unit> 
+        static member convertFromInt (x: int) = x * 1<unit>  //not generic 
+ 
+
+    //add a unit of measure to a number and convert it back again
+    let test1 num =  
+        let output = unit.convertLP(num)
+        int output
+    let test2 num =  
+        let output = unit.convert(num)
+        int output
+
+
+    //convert the number in a sub function
+    let test3 num = 
+        let convert i =         
+            unit.convertLP(i)
+        let output = convert num //BadImageFormatException is thrown here
+        int output               //type of output inferred as int ?!
+
+    let test4 num = 
+        let convert (i : int) =  //type of i is specified
+            unit.convertLP(i)
+        let output = convert num //BadImageFormatException is thrown here
+        int output               //type of output inferred as int ?!
+
+    let test5 num =  //type of num is inferred as int<u'> but no compile errors are reported 
+        let convert i =          
+            unit.convert(i)
+        let output = convert num //BadImageFormatException is thrown here
+        int output 
+
+    let test6 (num : int) =  
+        let convert i =          //inference looks incorrect
+            unit.convert(i)   
+        let output = convert num //BadImageFormatException is thrown here
+        int output 
+
+
+    //two work arounds to the problem
+    let test7 num =  
+        let convert (i : int) =  //with the type specified here, this doesn't crash
+            unit.convert(i)
+        let output = convert num 
+        int output 
+
+    let test8 num =  
+        let convert i  =  
+            unit.convertFromInt(i)  //with the type specified in the converter no exception
+        let output = convert num  
+        int output
+
+
+    printfn "test 1: %i" (test1 1000)
+    printfn "test 2: %i" (test2 1000)
+    printfn "test 3: %i" (test3 1000)
+    printfn "test 4: %i" (test4 1000)
+    printfn "test 5: %i" (test5 1000)
+    printfn "test 6: %i" (test6 1000)
+    printfn "test 7: %i" (test7 1000)
+    printfn "test 8: %i" (test8 1000)
+
+
+[<EntryPoint>]
+let main argv = 
+    // test1
+    let _ = T().F (LanguagePrimitives.Int32WithMeasure<M> 0)
+    // test2
+    for _ in CreateBadImageFormatException () do ()
+
+    System.IO.File.WriteAllText("test.ok","ok"); 
+
+    0
