@@ -323,104 +323,82 @@
         <b>Questions?</b> If you have questions about the source code, please ask in the issues and discussion forums.
     </p>
 
-    <h3>Compilation Instructions</h3>
-
-
-    <p>
-        The compiler is compiled as a set of .NET 4.0 components using a bootstrap process.
-        When you build the compiler using the standard instructions below, you get <code>fsc.exe</code>, <code>fsi.exe</code>, <code>FSharp.Core.dll</code>, <code>FSharp.Compiler.dll</code> and some related DLLs.
-    </p>
-
 
     <h3>1.  Building a Proto Compiler</h3>
 
+    <p>
+        The compiler is compiled as a set of .NET 4.0 components using a bootstrap process.
+    </p>
+
     <p>This uses the lkg compiler to build.  Note that you need the .NET framework 3.5 installed on your machine in order to complete this step.</p>
     <pre>
-    cd src 
-    gacutil /i ..\lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
-    msbuild fsharp-proto-build.proj
+    gacutil /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
+    msbuild src/fsharp-proto-build.proj
     </pre>
 
-    <h3>2.  Building an F# (Debug) library, compiler, type providers and unit tests</h3>
+    <h3>2.  Building an F# (Debug) library and compiler</h3>
 
-    <p>This uses the proto compiler to build FSharp.Core.dll, FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
+    <p>This uses the proto compiler to build FSharp.Core.dll, FSharp.Compiler.dll and fsc.exe.</p>
     <pre>
-        msbuild fsharp-library-build.proj /p:TargetFramework=net40
-        msbuild fsharp-compiler-build.proj /p:TargetFramework=net40
-        msbuild fsharp-typeproviders-build.proj /p:TargetFramework=net40
-        msbuild fsharp-library-unittests-build.proj /p:TargetFramework=net40
-        msbuild fsharp-library-build.proj /p:TargetFramework=net20
-        msbuild fsharp-library-build.proj /p:TargetFramework=portable47
-        msbuild fsharp-library-build.proj /p:TargetFramework=portable7
+        msbuild src/fsharp-library-build.proj 
+        msbuild src/fsharp-compiler-build.proj 
     </pre>
-    <p>
-        Use this script to add the built FSharp.Core to the
-        GAC, <b>add required strong name validation skips</b>, and NGen the compiler and libraries.
-        This requires admin privileges.
-    </p>
+    <p>You can now use the updated commpiler in <code>Debug\net40\bin\fsc.exe</code> to develop and test basic language and tool features.</p>
+
+
+    <h3>3. Full Steps Before Running Tests</h3>
+
+    <p>See <a href="tests\TESTGUIDE.html">tests\TESTGUIDE.html</a> to run tests.</p>
+    
+    <p>Prior to a <b>Debug</b> test run, you need to complete <b>all<b> of these steps:</p>
     <pre>
-        update.cmd debug -ngen
+        msbuild src/fsharp-library-build.proj  /p:Configuration=Debug
+        msbuild src/fsharp-compiler-build.proj  /p:Configuration=Debug
+        msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Debug
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=Debug
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Debug
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Debug
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Debug
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Debug
+        msbuild src/fsharp-library-unittests-build.proj  /p:Configuration=Debug
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Debug
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Debug
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Debug
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Debug
+        src\update.cmd debug -ngen
+        tests\BuildTestTools.cmd Debug 
     </pre>
-
-    <h3>3. Running Tests</h3>
-
-    <p>There are language tests under the <code>tests</code> directory. The test apparatus uses batch files, assuming <a href="http://www.perl.org/get.html">Perl</a> (ActiveState Perl 5.16.3 is known to work fine) is installed. You can run these on Windows using:</p>
-<pre>
-    cd ..\tests
-    BuildTestTools.cmd debug
-    Runtests.cmd debug fsharp
-    Runtests.cmd debug fsharpqa
-    Runtests.cmd debug coreunit    
-</pre>
-    <p>
-        For more details on how to run, debug, and write tests, see <a href="tests\TESTGUIDE.html">tests\TESTGUIDE.html</a>.
-    </p>
-
-
-    <p>You can also use the F# compiler and F# interactive as follows:</p>
-
-<pre>
-    ..\Debug\net40\bin\fsc.exe /help
-    ..\Debug\net40\bin\fsi.exe /help
-    ..\Debug\net40\bin\fsi.exe
-    1 + 1;;
-    #q;;
-</pre>
-    <p>Compile hello world.</p>
-<pre>
-    echo printfn "hello world" > hello.fs
-    ..\Debug\net40\bin\fsc.exe hello.fs
-    copy ..\Debug\net40\bin\FSharp.Core.dll .
-    hello.exe
-    del /q hello.fs
-    del /q FSharp.Core.dll 
-</pre>
-
-    <h3>4. [Optional] Building and testing the "release" compiler</h3>
-
-    <p>This uses the proto compiler to build the FSharp.Compiler.dll and fsc.exe to run on for Mono/.NET 4.0.</p>
+    <p>[Optional] If building and testing the Visual Studio bits (see below) you will also need:</p>
     <pre>
-    msbuild fsharp-compiler-build.proj /p:TargetFramework=net40 /p:Configuration=Release
+        msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Debug
+        msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Debug
     </pre>
-    <p>
-        Use this script to add the built FSharp.Core to the
-        GAC, <b>add required strong name validation skips</b>, and NGen the compiler and libraries.
-        This requires admin privileges.
-    </p>
+
+    <p>Prior to a <b>Release</b> test run, you need to do all of these:</p>
     <pre>
-        update.cmd debug -ngen
+        msbuild src/fsharp-library-build.proj  /p:Configuration=Release
+        msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
+        msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Release
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=Release
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+        msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+        msbuild src/fsharp-library-unittests-build.proj  /p:Configuration=Release
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+        msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+        src\update.cmd release -ngen
+        tests\BuildTestTools.cmd Release 
+    </pre>
+    <p>[Optional] If building and testing the Visual Studio bits (see below) you will also need:</p>
+    <pre>
+        msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+        msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
     </pre>
 
-
-
-    <h3>5. [Optional] Open a solution with Visual Studio </h3>
-
-    <p>
-        You can use "fsharp.sln" to browse source code using Visual Studio.
-        However, you need to complete step 1) and 2) in order to properly
-        open this solution. In addition, FSharp.Core.Unittests project requires NUnit installed.
-    </p>
-    <h3>6. [Optional] Build Visual Studio components </h3>
+    <h3>4. [Optional] Build and Install Visual Studio components </h3>
     <p>
         To build the VS components:
     </p>
@@ -428,59 +406,52 @@
         cd ..\vsintegration
         msbuild fsharp-vsintegration-build.proj
     </pre>
-
-    <h3>6. [Optional] Build and install Visual Studio components </h3>
     <p>
         To install the VS components:
     </p>
-    <p>
-        Ensure that the VSIX package is uninstalled, in VS select Tools/Extensions and Updates, 
-       If the packages VisualStudio.FSharp.EnableOpenSource is installed, select Uninstall
-    </p>
+    <ul>
+        <li>
+            First ensure that the VSIX package is uninstalled, in VS select Tools/Extensions and Updates,
+            If the packages VisualStudio.FSharp.EnableOpenSource is installed, select Uninstall
+        </li>
+        <li>Then:</li>
+    </ul>
     <pre>
         ..\Debug\net40\bin\EnableOpenSource.vsix
     </pre>
     <p>
-        Restart Visual Studio, now it should be running the open source FSharp.VS.FSI.
+        Now restart Visual Studio, now it should be running your freshly built components.
     </p>
-    <pre>
-    </pre>
 
     <h3>Notes on the build</h3>
 
-    <p>
-        The compiler binaries produced are "private" and
-        strong-named signed with a test key (src\fsharp\test.snk). They use CLI assembly version nunmber 2.9.9.999. You can place these components in the GAC but they will not replace
-        the components used by Visual Studio or other normal F# programs.
-    </p>
-
-    <p>
-        The prerequisites and build command line for compiling the source (on Windows) are shown
-        later in this README. Here's the logic of the build:
-    </p>
     <ul>
+        <li>
+            The <code>update.cmd</code> script add the built FSharp.Core to the
+            GAC, adds required strong name validation skips, and NGens the compiler and libraries.
+            This requires admin privileges.
+        </li>
+        <li>
+            The compiler binaries produced are "private" and strong-named signed with a test key (src\fsharp\test.snk).
+        </li>
         <li>We first need an existing F# compiler, using the one in the 'lkg' directory. Let's assume this compiler has an FSharp.Core.dll with version X.</li>
         <li>
             We use this compiler to compile the source in this distribution, to produce a "proto" compiler, in the Proto
             directory. When run, this compiler still relies on the FSharp.Core.dll with version X.
         </li>
         <li>
-            We use the proto compiler to compile the source for FSharp.Core.dll in this distribution, producing
-            an FSharp.Core.dll with the version identified in src\source-build-version, usually 1.9.999.
+            We use the proto compiler to compile the source for FSharp.Core.dll in this distribution.
         </li>
         <li>
             We use the proto compiler to compile the source for FSharp.Compiler.dll, fsc.exe, fsi.exe and other
-            binaries found in this distribution. When run, these binaries will rely on the FSharp.Core.dll with version
-            1.9.999. This is good, since it means the 1.9.999 binaries now form a consistent, bootstrapped compiler. If
-            you like you should now be able to throw away the compiler with version X.
+            binaries found in this distribution.
+        </li>
+        <li>
+            Some additional tools are required to build the compiler, notably fslex.exe, fsyacc.exe,
+            FSharp.PowerPack.Build.Tasks.dll, FsSrGen.exe, FSharp.SRGen.Build.Tasks.dll and the other
+            tools found in the lkg directory.
         </li>
     </ul>
-    <p>
-        Some additional tools are required to build the compiler, notably fslex.exe, fsyacc.exe,
-        FSharp.PowerPack.Build.Tasks.dll, FsSrGen.exe, FSharp.SRGen.Build.Tasks.dll and the other
-        tools found in the lkg directory. These are "Last Known Good" binaries created from a version of the F# Power Pack
-        on CodePlex. If you like you can throw away these binaries and use your own compiled versions of these tools.
-    </p>
 
 
 </body>

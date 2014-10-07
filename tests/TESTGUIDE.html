@@ -2,7 +2,7 @@
 
 <head>
     <attribute>
-        <title>Visual F# Tests</title>
+        <title>F# Compiler, Core Library and Visual F# Tools Tests</title>
 
 
         <style type="text/css">
@@ -305,22 +305,22 @@
 
 <body>
 
-<h1>Visual F# Tests</h1>
+<h1>F# Compiler, Core Library and Visual F# Tools Tests</h1>
 <h3>Test Suites</h3>
 
-<p>The Visual F# tests are split into a few different suites.  Understanding the suites' structure, similarities, and differences is important when running, debugging, or authoring the tests.
+<p>The F# tests are split into a few different suites.  Understanding the suites' structure, similarities, and differences is important when running, debugging, or authoring the tests.
 
 <p><b>FSharp Suite (aka "Cambridge Suite")</b>
 <p>The test cases for this suite reside under <code>tests\fsharp</code>.  This suite dates back to F#'s origins at Microsoft Research, Cambridge, and utilizes a simple batch script framework to execute.  In general, this suite has broad coverage of mainline compiler and runtime scenarios.
 
 <p><b>FSharpQA Suite (aka "Redmond Suite")</b>
-<p>The test cases for this suite reside under <code>tests\fsharpqa\source</code>.  This suite was first created as the initial F# integration in Visual Studio 2010 was developed.  Tests for this suite are driven by the "RunAll" framework, implemented in Perl.  This suite is rather large and has broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
+<p>The test cases for this suite reside under <code>tests\fsharpqa\source</code>.  This suite was first created as the initial F# integration for F# 2.0.  Tests for this suite are driven by the "RunAll" framework, implemented in Perl.  This suite is rather large and has broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
 
-<p><b>Core Unit Test Suite</b>
-<p>The test cases for this suite reside next to the product code, at <code>src\fsharp\FSharp.Core.Unittests</code>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite focuses on validation of the core F# types and the public surface area of FSharp.Core.dll.
+<p><b>Compiler and Library Core Unit Test Suite</b>
+<p>The test cases for this suite reside next to the F# core library code, at <code>src\fsharp\FSharp.Core.Unittests</code>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite focuses on validation of the core F# types and the public surface area of FSharp.Core.dll.
 
-<p><b>IDE Unit Test Suite</b>
-<p>The test cases for this suite reside next to the product code, at <code>vsintegration\src\unittests</code>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
+<p><b>Visual F# Tools IDE Unit Test Suite</b>
+<p>The test cases for this suite reside next to the Visual F# Tools code, at <code>vsintegration\src\unittests</code>.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
 
 
 <p><h3>Prerequisites</h3>
@@ -331,25 +331,8 @@
 </ul>
 <p>Perl and NUnit should be included in the %PATH% to make execution easiest.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
 
-<p>Before running tests, make sure you have successfully built all required projects, both product and test:
-<ul>
-        <li><code>msbuild src\fsharp-compiler-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate the compiler, libraries, and interative for .NET 4</li>
-        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET 2</li>
-        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 47</li>
-        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 7</li>
-        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 78</li>
-        <li><code>msbuild src\fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=&lt;debug|release&gt;</code> to generate the libraries for .NET portable profile 259</li>
-        <li><code>msbuild src\fsharp-typeproviders-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Data.TypeProviders.dll for .NET 4</li>
-        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests</li>
-        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 47</li>
-        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 7</li>
-        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 78</li>
-        <li><code>msbuild src\fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=&lt;debug|release&gt;</code> to generate FSharp.Core unit tests for .NET portable profile 259</li>
-        <li><code>msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate all Visual Studio integration components</li>
-        <li><code>msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=&lt;debug|release&gt;</code> to generate IDE unit tests</li>
-        <li><code>src\update.cmd &lt;debug|release&gt; -ngen</code> to update the GAC, add strong name validation skips, and ngen latest-built binaries</li>
-        <li><code>tests\BuildTestTools.cmd &lt;debug|release&gt;</code> to build and binplace tools used during testing</li>
-</ul>
+<p>Before running tests, make sure you have successfully built all required projects as specified in the 'Prepare For Tests' section of the <a href="../DEVGUIDE.html">DEVGUIDE</a>.
+  Don't forget to build and install the Visual Studio components as well if you want to run the IDE tests below.
 
 <p><h3>Running Tests</h3>
 
@@ -387,7 +370,7 @@
 
 <p><b>FSharp Suite</b>
 
-<p>These tests are fairly easy to execute directly when needed, without help from <code>RunTests.cmd</code> or <code>RunAll.pl</code>.  Test area directories in this suite will have either a <code>Build.bat</code> script, a <code>Run.bat</code> script, or both.  To run the test area, you can simply call <code>Build.bat</code> (if it exists), then <code>Run.bat</code> (if it exists).  In this way it is simple to re-run a specific test area by itself.  <b><font color="red">NOTE:</font></b> If you are re-running tests manually like this, make sure you set environment variables similarly to how RunTests.cmd does (e.g. %FSCBINPATH%), to ensure tests are running against your open-built bits, and not against a Visual Studio deployment of F#.
+<p>These tests are fairly easy to execute directly when needed, without help from <code>RunTests.cmd</code> or <code>RunAll.pl</code>.  Test area directories in this suite will have either a <code>Build.bat</code> script, a <code>Run.bat</code> script, or both.  To run the test area, you can simply call <code>Build.bat</code> (if it exists), then <code>Run.bat</code> (if it exists).  In this way it is simple to re-run a specific test area by itself.  <b><font color="red">NOTE:</font></b> If you are re-running tests manually like this, make sure you set environment variables similarly to how RunTests.cmd does (e.g. %FSCBINPATH%), to ensure tests are running against your open-built bits, and not against another deployment of F#.
 
 <p><code>Build.bat</code> and <code>Run.bat</code> scripts typically invoke <code>tests\Config.bat</code> to pick up a variety of environment variables and configuration options, then invoke <code>tests\fsharp\single-test-build.bat</code> and <code>tests\fsharp\single-test-run.bat</code>.  This will compile and execute the local <code>test.fsx</code> file using some combination of compiler or fsi flags.  If the compilation and execution encounter no errors, the test is considered to have passed.
 
@@ -401,7 +384,7 @@
 
 <p>You can execute and re-run these tests using any standard NUnit approach - via graphical <code>nunit.exe</code> or on the command line via <code>nunit-console.exe</code>.
 
-<p><b>IDE Unit Test Suite</b>
+<p><b>Visual F# Tools IDE Unit Test Suite</b>
 
 <p>To build the unit test binary, call <code>msbuild fsharp-vsintegration-unittests-build.proj /p:TargetFramework=net40</code> from the <code>src</code> directory.  Tests are contained in the binary <code>Unittests.dll</code>. The IDE unit tests rely on the "Salsa" library, which is a set of Visual Studio mocks.  The code for Salsa resides at <code>vsintegration\src\Salsa</code>.  Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, either <code>nunit-console-x86.exe</code> or <code>nunit-x86.exe</code>.
 
@@ -411,7 +394,7 @@
 <h3>Other Tips</h3>
 <ul>
 <li>Run as admin, or a handful of tests will fail</li>
-<li><b>Don't</b> run tests from a Visual Studio developer command prompt.  Running from a developer command prompt will put Visual Studio F# tools on the %PATH%, which is not desirable when testing open F# tools.</li>
+<li><b>Don't</b> run tests from a Visual Studio developer command prompt.  Running from a developer command prompt will put the Visual Studio F# tools on the %PATH%, which is not desirable when testing open F# tools.</li>
 <li>Making the tests run faster</li>
 <ul>
 <li>NGen-ing the F# bits (fsc, fsi, FSharp.Core, etc) will result in tests executing much faster.  Make sure you run <code>src\update.cmd</code> with the <code>-ngen</code> flag before running tests.</li>
