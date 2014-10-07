@@ -2,7 +2,7 @@
 
 <head>
     <attribute>
-        <title>Visual F# Tools</title>
+        <title>F# Compiler, Core Library and Visual F# Tools</title>
 
 
         <style type="text/css">
@@ -305,10 +305,10 @@
 
 <body>
 
-    <h1>F# Compiler + Library Open Contribution Repository</h1>
+    <h1>F# Compiler, Core Library and Visual F# Tools Open Contribution Repository</h1>
 
     <p>
-        This repo is where you can contribute to the F# compiler.
+        This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
         To learn what F# is and why it&#39;s interesting, go to <a href="http://fsharp.org">fsharp.org</a>.
         To get a free F# environment, go to <a href="http://fsharp.org/use/windows">fsharp.org</a>.
     </p>
@@ -328,9 +328,7 @@
 
     <p>
         The compiler is compiled as a set of .NET 4.0 components using a bootstrap process.
-    </p>
-
-    <p>This uses the lkg compiler to build.  Note that you need the .NET framework 3.5 installed on your machine in order to complete this step.</p>
+     This uses the lkg compiler to build.  Note that you need the .NET framework 3.5 installed on your machine in order to complete this step.</p>
     <pre>
     gacutil /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
     msbuild src/fsharp-proto-build.proj
@@ -338,19 +336,21 @@
 
     <h3>2.  Building an F# (Debug) library and compiler</h3>
 
-    <p>This uses the proto compiler to build FSharp.Core.dll, FSharp.Compiler.dll and fsc.exe.</p>
+    <p>This uses the proto compiler to build <code>FSharp.Core.dll</code> <code>FSharp.Compiler.dll</code>, <code>fsc.exe</code> and <code>fsi.exe</code></p>
     <pre>
         msbuild src/fsharp-library-build.proj 
         msbuild src/fsharp-compiler-build.proj 
     </pre>
-    <p>You can now use the updated commpiler in <code>Debug\net40\bin\fsc.exe</code> to develop and test basic language and tool features.</p>
+    <p>You can now use the updated F# compiler in <code>Debug\net40\bin\fsc.exe</code> and F# Interactive in <code>Debug\net40\bin\fsi.exe</code> to develop and test basic language and tool features.<p>
+    <p><b>Note:</b> The updated library is not used until you run <code>update.cmd</code>, see below. The updated
+    compiler is not run 'pre-compiled' until you run <code>update.cmd -ngen</code>, see below. </p>
 
 
     <h3>3. Full Steps Before Running Tests</h3>
 
-    <p>See <a href="tests\TESTGUIDE.html">tests\TESTGUIDE.html</a> to run tests.</p>
+    <p>See <a href="TESTGUIDE.html">TESTGUIDE.html</a> for instructions on how to run tests.</p>
     
-    <p>Prior to a <b>Debug</b> test run, you need to complete <b>all<b> of these steps:</p>
+    <p>Prior to a <b>Debug</b> test run, you need to complete <b>all</b> of these steps:</p>
     <pre>
         msbuild src/fsharp-library-build.proj  /p:Configuration=Debug
         msbuild src/fsharp-compiler-build.proj  /p:Configuration=Debug
@@ -368,13 +368,13 @@
         src\update.cmd debug -ngen
         tests\BuildTestTools.cmd Debug 
     </pre>
-    <p>[Optional] If building and testing the Visual Studio bits (see below) you will also need:</p>
+    <p>[Optional] If testing the Visual Studio bits (see below) you will also need:</p>
     <pre>
         msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Debug
         msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Debug
     </pre>
 
-    <p>Prior to a <b>Release</b> test run, you need to do all of these:</p>
+    <p>Prior to a <b>Release</b> test run, you need to do <b>all</b> of these:</p>
     <pre>
         msbuild src/fsharp-library-build.proj  /p:Configuration=Release
         msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
@@ -392,19 +392,18 @@
         src\update.cmd release -ngen
         tests\BuildTestTools.cmd Release 
     </pre>
-    <p>[Optional] If building and testing the Visual Studio bits (see below) you will also need:</p>
+    <p>[Optional] If testing the Visual F# IDE Tools (see below) you will also need:</p>
     <pre>
         msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
         msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
     </pre>
 
-    <h3>4. [Optional] Build and Install Visual Studio components </h3>
+    <h3>4. [Optional] Build and Install the Visual F# IDE Tools </h3>
     <p>
         To build the VS components:
     </p>
     <pre>
-        cd ..\vsintegration
-        msbuild fsharp-vsintegration-build.proj
+        msbuild vsintegration\fsharp-vsintegration-build.proj
     </pre>
     <p>
         To install the VS components:
@@ -417,10 +416,10 @@
         <li>Then:</li>
     </ul>
     <pre>
-        ..\Debug\net40\bin\EnableOpenSource.vsix
+        Debug\net40\bin\EnableOpenSource.vsix
     </pre>
     <p>
-        Now restart Visual Studio, now it should be running your freshly built components.
+        Now restart Visual Studio, now it should be running your freshly built Visual F# IDE Tools.
     </p>
 
     <h3>Notes on the build</h3>

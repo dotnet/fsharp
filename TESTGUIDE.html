@@ -331,12 +331,14 @@
 </ul>
 <p>Perl and NUnit should be included in the %PATH% to make execution easiest.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
 
-<p>Before running tests, make sure you have successfully built all required projects as specified in the 'Prepare For Tests' section of the <a href="../DEVGUIDE.html">DEVGUIDE</a>.
+<p>Before running tests, make sure you have successfully built all required projects as specified in the 'Prepare For Tests' section of the <a href="DEVGUIDE.html">DEVGUIDE</a>.
   Don't forget to build and install the Visual Studio components as well if you want to run the IDE tests below.
 
-<p><h3>Running Tests</h3>
+<h3>Running Tests</h3>
 
-<p>The script <code>tests\RunTests.cmd</code> has been provided to make execution of the above suites very simple.  You can kick off a full test run of any of the above suites like this:
+<p Note: <b>Don't</b> run tests from a Visual Studio developer command prompt.</b> (see below)</p>
+
+<p>The script <code>tests\RunTests.cmd</code> has been provided to make execution of the above suites simple.  You can kick off a full test run of any of the above suites like this:
 <pre>
     RunTests.cmd &lt;debug|release&gt; fsharp [tags to run] [tags not to run]
     RunTests.cmd &lt;debug|release&gt; fsharpqa [tags to run] [tags not to run]
