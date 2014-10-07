@@ -1098,7 +1098,7 @@ let CompilePatternBasic
             | TPat_array (argpats,ty,_) -> 
                 match discrim with
                 | Test.ArrayLength (n,_) when List.length argpats = n ->
-                    let accessf' j tpinst e' = mkCallArrayGet g exprm 1 ty (accessf tpinst e') [(mkInt g exprm j)]
+                    let accessf' j tpinst e' = mkCallArrayGet g exprm ty (accessf tpinst e') (mkInt g exprm j)
                     mkSubFrontiers path accessf' active' argpats (fun path j -> PathArray(path,ty,List.length argpats,j))
                 // Successful length tests refute all other lengths
                 | Test.ArrayLength _ -> 
