@@ -19,47 +19,47 @@ namespace HighRankArrayTests
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,] array)
+        public ClassWithArrayCtor(T[, ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,] array)
+        public ClassWithArrayCtor(T[, , ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,,] array)
+        public ClassWithArrayCtor(T[, , , ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,,,] array)
+        public ClassWithArrayCtor(T[, , , , ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,,,,] array)
+        public ClassWithArrayCtor(T[, , , , , ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,,,,,] array)
+        public ClassWithArrayCtor(T[, , , , , , ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,,,,,,] array)
+        public ClassWithArrayCtor(T[, , , , , , , ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,,,,,,,] array)
+        public ClassWithArrayCtor(T[, , , , , , , , ,] array)
         {
             m_array = array;
         }
 
-        public ClassWithArrayCtor(T[,,,,,,,,,,] array)
+        public ClassWithArrayCtor(T[, , , , , , , , , ,] array)
         {
             m_array = array;
         }
@@ -69,57 +69,57 @@ namespace HighRankArrayTests
     {
         public static void Example<T>(T[] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example<T>(T[,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,] array)
+        public static void Example<T>(T[, ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,] array)
+        public static void Example<T>(T[, , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,,] array)
+        public static void Example<T>(T[, , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,,,] array)
+        public static void Example<T>(T[, , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,,,,] array)
+        public static void Example<T>(T[, , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,,,,,] array)
+        public static void Example<T>(T[, , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,,,,,,] array)
+        public static void Example<T>(T[, , , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,,,,,,,] array)
+        public static void Example<T>(T[, , , , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
-        public static void Example<T>(T[,,,,,,,,,,] array)
+        public static void Example<T>(T[, , , , , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
     }
 
@@ -127,80 +127,80 @@ namespace HighRankArrayTests
     {
         public static void Example(T[] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , , , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
 
         public static void Example(T[, , , , , , , , , ,] array)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(array);
         }
     }
-    
-   public static class MethodsReturningHighDArrays
-   {
+
+    public static class MethodsReturningHighDArrays
+    {
         public static T1[,] Example1<T1>()
         {
-            throw new NotImplementedException();
+            return new T1[1, 1];
         }
-        
-        public static T1[,,,,,] Example1<T1>(int x)
+
+        public static T1[, , , , ,] Example1<T1>(int x)
         {
-            throw new NotImplementedException();
+            return new T1[1, 1, 1, 1, 1, 1];
         }
 
         public static T1[,] Example2<T1>()
         {
-            throw new NotImplementedException();
+            return new T1[1, 1];
         }
 
-        public static T1[,,,,,,] Example2<T1, T2>()
+        public static T1[, , , , , ,] Example2<T1, T2>()
         {
-            throw new NotImplementedException();
+            return new T1[1, 1, 1, 1, 1, 1, 1];
         }
     }
 }
