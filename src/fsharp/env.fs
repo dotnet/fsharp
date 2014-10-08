@@ -194,10 +194,7 @@ type public TcGlobals =
       measureproduct_tcr : TyconRef
       measureinverse_tcr : TyconRef
       measureone_tcr : TyconRef
-      il_arr1_tcr     : TyconRef;
-      il_arr2_tcr     : TyconRef;
-      il_arr3_tcr     : TyconRef;
-      il_arr4_tcr     : TyconRef;
+      il_arr_tcr_map : TyconRef[];
       tuple1_tcr      : TyconRef;
       tuple2_tcr      : TyconRef;
       tuple3_tcr      : TyconRef;
@@ -517,7 +514,6 @@ type public TcGlobals =
       lazy_force_info           : IntrinsicValRef;
       lazy_create_info          : IntrinsicValRef;
 
-
       array_get_info             : IntrinsicValRef;
       array_length_info          : IntrinsicValRef;
       array2D_get_info           : IntrinsicValRef;
@@ -630,10 +626,14 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let query_builder_tcref         = mk_MFLinq_tcref fslibCcu "QueryBuilder" 
   let querySource_tcr         = mk_MFLinq_tcref fslibCcu "QuerySource`2" 
   let linqExpression_tcr     = mkSysTyconRef ["System";"Linq";"Expressions"] "Expression`1"
-  let il_arr1_tcr              = mk_MFCore_tcref fslibCcu "[]`1"
-  let il_arr2_tcr              = mk_MFCore_tcref fslibCcu "[,]`1";
-  let il_arr3_tcr              = mk_MFCore_tcref fslibCcu "[,,]`1";
-  let il_arr4_tcr              = mk_MFCore_tcref fslibCcu "[,,,]`1";
+
+  let il_arr_tcr_map =
+      Array.init 32 (fun idx ->
+          let type_sig =
+              let rank = idx + 1
+              if rank = 1 then "[]`1"
+              else "[" + (String.replicate (rank - 1) ",") + "]`1"
+          mk_MFCore_tcref fslibCcu type_sig)
   
   let bool_ty         = mkNonGenericTy bool_tcr   
   let int_ty          = mkNonGenericTy int_tcr    
@@ -691,10 +691,9 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let mkSeqTy ty1         = TType_app(seq_tcr,[ty1])
   let mkQuerySourceTy ty1 ty2         = TType_app(querySource_tcr,[ty1; ty2])
   let tcref_System_Collections_IEnumerable         = mkSysTyconRef sysCollections "IEnumerable";
-  let mkArrayType ty       = TType_app(il_arr1_tcr, [ty])
-  let mk_array2_typ ty      = TType_app(il_arr2_tcr, [ty])
-  let mk_array3_typ ty      = TType_app(il_arr3_tcr, [ty])
-  let mk_array4_typ ty      = TType_app(il_arr4_tcr, [ty])
+  let mkArrayType rank (ty : TType) : TType =
+      assert (rank >= 1 && rank <= 32)
+      TType_app(il_arr_tcr_map.[rank - 1], [ty])
   let mkLazyTy ty         = TType_app(lazy_tcr, [ty])
   
   let mkPrintfFormatTy aty bty cty dty ety = TType_app(format_tcr, [aty;bty;cty;dty; ety]) 
@@ -914,9 +913,10 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let enum_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "enum"                                 ,None                 ,Some "ToEnum" ,[vara],     ([[int_ty]],varaTy))  
   let range_op_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Range"                             ,None                 ,None          ,[vara],     ([[varaTy];[varaTy]],mkSeqTy varaTy))
   let range_int32_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeInt32"                           ,None                 ,None          ,[],     ([[int_ty];[int_ty];[int_ty]],mkSeqTy int_ty))
-  let array2D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray2D"                           ,None                 ,None          ,[vara],     ([[mk_array2_typ varaTy];[int_ty]; [int_ty]],varaTy))  
-  let array3D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray3D"                           ,None                 ,None          ,[vara],     ([[mk_array3_typ varaTy];[int_ty]; [int_ty]; [int_ty]],varaTy))
-  let array4D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray4D"                           ,None                 ,None          ,[vara],     ([[mk_array4_typ varaTy];[int_ty]; [int_ty]; [int_ty]; [int_ty]],varaTy))
+  let array2D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray2D"                           ,None                 ,None          ,[vara],     ([[mkArrayType 2 varaTy];[int_ty]; [int_ty]],varaTy))  
+  let array3D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray3D"                           ,None                 ,None          ,[vara],     ([[mkArrayType 3 varaTy];[int_ty]; [int_ty]; [int_ty]],varaTy))
+  let array4D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray4D"                           ,None                 ,None          ,[vara],     ([[mkArrayType 4 varaTy];[int_ty]; [int_ty]; [int_ty]; [int_ty]],varaTy))
+
   let seq_collect_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "collect"                              ,None                 ,Some "Collect",[vara;varb;varc],([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varcTy))  
   let seq_delay_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "delay"                                ,None                 ,Some "Delay"  ,[varb],     ([[unit_ty --> mkSeqTy varbTy]], mkSeqTy varbTy)) 
   let seq_append_info            = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "append"                               ,None                 ,Some "Append" ,[varb],     ([[mkSeqTy varbTy]; [mkSeqTy varbTy]], mkSeqTy varbTy))  
@@ -925,7 +925,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 ,None                 ,None          ,[varb],     ([[mkSeqTy varbTy]; [unit_ty --> unit_ty]], mkSeqTy varbTy))
   let seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               ,None                 ,None          ,[vara;varb],([[unit_ty --> varaTy]; [varaTy --> bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))  
   let create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          ,None                 ,None          ,[vara;varb],([[varaTy --> unit_ty]; [varaTy --> unit_ty]; [(obj_ty --> (varbTy --> unit_ty)) --> varaTy]], TType_app (fslib_IEvent2_tcr, [varaTy;varbTy])))
-  let seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              ,None                 ,Some "ToArray",[varb],     ([[mkSeqTy varbTy]], mkArrayType varbTy))  
+  let seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              ,None                 ,Some "ToArray",[varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))  
   let seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               ,None                 ,Some "ToList" ,[varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  ,None                 ,Some "Map"    ,[vara;varb],([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
   let seq_singleton_info         = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "singleton"                            ,None                 ,Some "Singleton"              ,[vara],     ([[varaTy]], mkSeqTy varaTy))
@@ -940,9 +940,9 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let splice_expr_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_Splice"                            ,None                 ,None                          ,[vara],     ([[mkQuotedExprTy varaTy]], varaTy))
   let splice_raw_expr_info       = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_SpliceUntyped"                     ,None                 ,None                          ,[vara],     ([[mkRawQuotedExprTy]], varaTy))
   let new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          ,None                 ,None                          ,[],         ([[int_ty]; [int_ty]; [int_ty]; [bool_ty]; [byte_ty]], decimal_ty))
-  let array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             ,None                 ,None                          ,[vara],     ([[mkArrayType varaTy]; [int_ty]], varaTy))
-  let array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               ,None                 ,Some "Length"                 ,[vara],     ([[mkArrayType varaTy]], varaTy))
-  let unpickle_quoted_info       = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Deserialize"                          ,Some "Expr"          ,None                          ,[],          ([[system_Type_typ ;mkListTy system_Type_typ ;mkListTy mkRawQuotedExprTy ; mkArrayType byte_ty]], mkRawQuotedExprTy ))
+  let array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             ,None                 ,None                          ,[vara],     ([[mkArrayType 1 varaTy]; [int_ty]], varaTy))
+  let array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               ,None                 ,Some "Length"                 ,[vara],     ([[mkArrayType 1 varaTy]], varaTy))
+  let unpickle_quoted_info       = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Deserialize"                          ,Some "Expr"          ,None                          ,[],          ([[system_Type_typ ;mkListTy system_Type_typ ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 byte_ty]], mkRawQuotedExprTy ))
   let cast_quotation_info        = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Cast"                                 ,Some "Expr"          ,None                          ,[vara],      ([[mkRawQuotedExprTy]], mkQuotedExprTy varaTy))
   let lift_value_info            = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Value"                                ,Some "Expr"          ,None                          ,[vara],      ([[varaTy]], mkRawQuotedExprTy))
   let query_value_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "query"                                ,None                 ,None                          ,[],      ([], mkQueryBuilderTy) )
@@ -986,7 +986,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     map_tcr_canon        = mk_MFCollections_tcref   fslibCcu "Map`2";
     lazy_tcr_canon       = lazy_tcr;
     refcell_tcr_nice     = mk_MFCore_tcref     fslibCcu "ref`1";
-    array_tcr_nice       = il_arr1_tcr;
+    array_tcr_nice       = il_arr_tcr_map.[0];
     option_tcr_nice   = option_tcr_nice;
     list_tcr_nice     = list_tcr_nice;
     lazy_tcr_nice     = lazy_tcr_nice;
@@ -1032,10 +1032,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     measureproduct_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureProduct`2";
     measureinverse_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureInverse`1";
     measureone_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureOne";
-    il_arr1_tcr    = il_arr1_tcr;
-    il_arr2_tcr    = il_arr2_tcr;
-    il_arr3_tcr    = il_arr3_tcr;
-    il_arr4_tcr    = il_arr4_tcr;
+    il_arr_tcr_map = il_arr_tcr_map;
     tuple1_tcr     = tuple1_tcr;
     tuple2_tcr     = tuple2_tcr;
     tuple3_tcr     = tuple3_tcr;

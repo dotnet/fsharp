@@ -528,15 +528,13 @@ let rec sizeMeasure g ms =
 let mkNativePtrType g ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy g ty = TType_app (g.byref_tcr, [ty])
 
-let mkArrayTy g n ty m = 
-    if n = 1 then TType_app (g.il_arr1_tcr, [ty]) 
-    elif n = 2 then TType_app (g.il_arr2_tcr, [ty]) 
-    elif n = 3 then TType_app (g.il_arr3_tcr, [ty]) 
-    elif n = 4 then TType_app (g.il_arr4_tcr, [ty]) 
-    else 
-       errorR(Error(FSComp.SR.tastopsMaxArrayFour(),m));
-       TType_app (g.il_arr4_tcr, [ty]) 
-
+let mkArrayTy g rank ty m =
+    if rank < 1 || rank > 32 then
+        // TODO : Provide a better message for zero/negative inputs here.
+        errorR(Error(FSComp.SR.tastopsMaxArrayThirtyTwo(),m));
+        TType_app (g.il_arr_tcr_map.[3], [ty])
+    else
+        TType_app (g.il_arr_tcr_map.[rank - 1], [ty])
 
 //--------------------------------------------------------------------------
 // Tuple compilation (types)
@@ -1398,18 +1396,16 @@ let IsCompiledAsStaticPropertyWithField g (v:Val) =
 // Multi-dimensional array types...
 //-------------------------------------------------------------------------
 
-let isArrayTyconRef g tcr = 
-    tyconRefEq g tcr g.il_arr1_tcr || 
-    tyconRefEq g tcr g.il_arr2_tcr || 
-    tyconRefEq g tcr g.il_arr3_tcr || 
-    tyconRefEq g tcr g.il_arr4_tcr 
+let isArrayTyconRef g tcr =
+    g.il_arr_tcr_map
+    |> Array.exists (tyconRefEq g tcr)
 
-let rankOfArrayTyconRef g tcr = 
-    if tyconRefEq g tcr g.il_arr1_tcr then 1
-    elif tyconRefEq g tcr g.il_arr2_tcr then 2
-    elif tyconRefEq g tcr g.il_arr3_tcr then 3
-    elif tyconRefEq g tcr g.il_arr4_tcr then 4
-    else failwith "rankOfArrayTyconRef: unsupported array rank"
+let rankOfArrayTyconRef g tcr =
+    match g.il_arr_tcr_map |> Array.tryFindIndex (tyconRefEq g tcr) with
+    | Some idx ->
+        idx + 1
+    | None ->
+        failwith "rankOfArrayTyconRef: unsupported array rank"
 
 //-------------------------------------------------------------------------
 // Misc functions on F# types
@@ -1434,7 +1430,7 @@ let isByrefLikeTyconRef g tcref =
     isTypeConstructorEqualToOptional g g.system_RuntimeArgumentHandle_tcref tcref
 
 let isArrayTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isArrayTyconRef g tcref                | _ -> false) 
-let isArray1DTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g tcref g.il_arr1_tcr         | _ -> false) 
+let isArray1DTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g tcref g.il_arr_tcr_map.[0]  | _ -> false) 
 let isUnitTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.unit_tcr_canon tcref      | _ -> false) 
 let isObjTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Object_tcref tcref | _ -> false) 
 let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.system_Void_tcref tcref   | _ -> false) 
