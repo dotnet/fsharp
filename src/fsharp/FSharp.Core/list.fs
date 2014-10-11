@@ -59,6 +59,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Head")>]
         let head list = match list with (x:: _) -> x | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
+        [<CompiledName("TryHead")>]
+        let tryHead list = match list with (x:: _) -> Some x | [] -> None
+
         [<CompiledName("Tail")>]
         let tail list = match list with (_ :: t) -> t | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 

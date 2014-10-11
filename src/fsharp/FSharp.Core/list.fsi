@@ -619,6 +619,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ToSeq")>]
         val toSeq: list:'T list -> seq<'T>
 
+        /// <summary>Returns the first element of the list, or
+        /// <c>None</c> if the list is empty.</summary>
+        /// <param name="list">The input list.</param>
+        /// <returns>The first element of the list or None.</returns>
+        [<CompiledName("TryHead")>]
+        val tryHead: list:'T list -> 'T option
+
         /// <summary>Applies the given function to successive elements, returning <c>Some(x)</c> the first
         /// result where function returns <c>Some(x)</c> for some x. If no such element 
         /// exists then return <c>None</c>.</summary>

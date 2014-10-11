@@ -457,6 +457,26 @@ type ArrayModule() =
         Assert.IsTrue( (nullArr = [|null; null; null|]) )
         
         ()
+
+    
+    [<Test>]
+    member this.TryHead() =
+        // integer array
+        let resultInt = Array.tryHead  [|2..2..20|]        
+        Assert.AreEqual(2, resultInt.Value)
+        
+        // string array
+        let resultStr = Array.tryHead  [|"a";"b";"c";"d"|]         
+        Assert.AreEqual("a", resultStr.Value)
+
+        // empty array   
+        let resultNone = Array.tryHead [||]
+        Assert.AreEqual(None, resultNone)
+
+        // null array
+        let nullArr = null:string[]      
+        CheckThrowsArgumentNullException (fun () -> Array.tryHead nullArr |> ignore) 
+        ()
         
     [<Test>]
     member this.Exists() =

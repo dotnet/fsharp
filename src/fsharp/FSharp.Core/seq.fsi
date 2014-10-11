@@ -407,6 +407,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Head")>]
         val head: source:seq<'T> -> 'T
 
+        /// <summary>Returns the first element of the sequence, or None if the sequence is empty.</summary>
+        ///
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The first element of the sequence or None.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("TryHead")>]
+        val tryHead: source:seq<'T> -> 'T option
+
         /// <summary>Returns the last element of the sequence.</summary>
         /// <param name="source">The input sequence.</param>
         /// <returns>The last element of the sequence.</returns>

@@ -1547,6 +1547,13 @@ namespace Microsoft.FSharp.Collections
             if (e.MoveNext()) then e.Current
             else invalidArg "source" InputSequenceEmptyString
 
+        [<CompiledName("TryHead")>]
+        let tryHead (source : seq<_>) =
+            checkNonNull "source" source
+            use e = source.GetEnumerator() 
+            if (e.MoveNext()) then Some e.Current
+            else None
+
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source

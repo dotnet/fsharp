@@ -39,6 +39,27 @@ type SeqModule2() =
         let nullSeq:seq<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.head nullSeq) 
         () 
+
+    [<Test>]
+    member this.TryHead() =
+        // int Seq     
+        let IntSeq =
+            seq { for i in 0 .. 9 -> i }
+                    
+        let intResult = Seq.tryHead IntSeq
+
+        // string Seq
+        let strResult = Seq.tryHead (seq ["first"; "second";  "third"])
+        Assert.AreEqual("first", strResult.Value)
+         
+        // Empty Seq
+        let emptyResult = Seq.tryHead Seq.empty
+        Assert.AreEqual(None, emptyResult)
+      
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.head nullSeq) 
+        () 
         
         
     [<Test>]

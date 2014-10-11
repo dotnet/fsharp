@@ -601,6 +601,19 @@ type ListModule() =
     [<Test>]
     member this.``exactlyOne should fail on lists with more than one element``() =
         CheckThrowsArgumentException(fun () -> List.exactlyOne ["1"; "2"] |> ignore)
+
+    [<Test>]
+    member this.TryHead() =
+        // integer List
+        let resultInt = List.tryHead  [2..2..20]        
+        Assert.AreEqual(2, resultInt.Value)
+        
+        // string List
+        let resultStr = List.tryHead  ["a";"b";"c";"d"]         
+        Assert.AreEqual("a", resultStr.Value)
+            
+        let resultNone = List.tryHead []
+        Assert.AreEqual(None, resultNone)
         
     [<Test>]
     member this.last() =

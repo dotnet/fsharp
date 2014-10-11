@@ -100,6 +100,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The created array.</returns>
         [<CompiledName("Create")>]
         val create: count:int -> value:'T -> 'T[]
+
+        /// <summary>Returns the first element of the array, or
+        /// <c>None</c> if the array is empty.</summary>
+        /// <param name="array">The input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>The first element of the array or None.</returns>
+        [<CompiledName("TryHead")>]
+        val tryHead: array:'T[] -> 'T option
          
         /// <summary>Applies the given function to successive elements, returning the first
         /// result where function returns <c>Some(x)</c> for some <c>x</c>. If the function 

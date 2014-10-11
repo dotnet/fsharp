@@ -52,6 +52,11 @@ namespace Microsoft.FSharp.Collections
                 array.[i] <- x
             array
 
+        [<CompiledName("TryHead")>]
+        let tryHead (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then None
+            else Some array.[0]
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (array: 'T[]) = 
