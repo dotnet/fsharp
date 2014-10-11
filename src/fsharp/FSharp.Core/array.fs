@@ -106,6 +106,28 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len - 1 do
                 result.[i] <- f array.[i]
             concatArrays result
+        
+        [<CompiledName("SplitAt")>]
+        let splitAt index (array:'T[]) =
+            checkNonNull "array" array
+            if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))            
+            if array.Length < index then raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+            if index = 0 then
+                let right : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+                Array.Copy(array, right, array.Length)
+                [||],right
+            elif index = array.Length then
+                let left : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+                Array.Copy(array, left, array.Length)
+                left,[||] else
+
+            let res1 : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked index
+            let res2 : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (array.Length-index)
+
+            Array.Copy(array, 0, res1, 0, index)
+            Array.Copy(array, index, res2, 0, array.Length-index)
+
+            res1,res2
 
         [<CompiledName("Take")>]
         let take count (array : 'T[]) =

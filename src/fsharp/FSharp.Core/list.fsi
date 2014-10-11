@@ -546,6 +546,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Sort")>]
         val sort: list:'T list -> 'T list when 'T : comparison
 
+        /// <summary>Splits a list into two lists, at the given index.</summary>
+        /// <param name="index">The index at which the list is split.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The two split lists.</returns>
+        ///
+        /// <exception cref="System.InvalidOperationException">Thrown when split index exceeds the number of elements
+        /// in the list.</exception>
+        [<CompiledName("SplitAt")>]
+        val splitAt: index:int -> list:'T list -> ('T list * 'T list)
+
         /// <summary>Returns the sum of the elements in the list.</summary>
         /// <param name="list">The input list.</param>
         /// <returns>The resulting sum.</returns>

@@ -239,6 +239,31 @@ type ListModule() =
         Assert.AreEqual(0, result2.[0])
         Assert.AreEqual(1, result2.[1])
         () 
+
+    [<Test>]
+    member this.splitAt() =        
+        Assert.AreEqual(([],[]), List.splitAt 0 [])
+
+        Assert.AreEqual([1..4], List.splitAt 4 [1..10] |> fst)       
+        Assert.AreEqual([5..10], List.splitAt 4 [1..10] |> snd)      
+
+        Assert.AreEqual([], List.splitAt 0 [1..2] |> fst)
+        Assert.AreEqual([1..2], List.splitAt 0 [1..2] |> snd)
+
+        Assert.AreEqual([1], List.splitAt 1 [1..2] |> fst)
+        Assert.AreEqual([2], List.splitAt 1 [1..2] |> snd)
+
+        Assert.AreEqual([1..2], List.splitAt 2 [1..2] |> fst)
+        Assert.AreEqual([], List.splitAt 2 [1..2] |> snd)
+
+        Assert.AreEqual(["a"], List.splitAt 1 ["a";"b";"c"] |> fst)
+        Assert.AreEqual(["b";"c"], List.splitAt 1 ["a";"b";"c"] |> snd)
+
+        // split should fail if index exceeds bounds
+        CheckThrowsInvalidOperationExn (fun () -> List.splitAt 1 [] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.splitAt -1 [0;1] |> ignore)
+        CheckThrowsInvalidOperationExn (fun () -> List.splitAt 5 ["str1";"str2";"str3";"str4"] |> ignore)
+
     [<Test>]
     member this.Exists() =
         // integer List

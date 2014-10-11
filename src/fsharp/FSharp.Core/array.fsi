@@ -622,6 +622,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("SortInPlace")>]
         val sortInPlace: array:'T[] -> unit when 'T : comparison 
 
+        /// <summary>Splits an array into two arrays, at the given index.</summary>
+        /// <param name="index">The index at which the array is split.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>The two split arrays.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when split index exceeds the number of elements
+        /// in the array.</exception>
+        [<CompiledName("SplitAt")>]
+        val splitAt: index:int -> array:'T[] -> ('T[] * 'T[])
+
         /// <summary>Returns the sum of the elements in the array.</summary>
         /// <param name="array">The input array.</param>
         /// <returns>The resulting sum.</returns>

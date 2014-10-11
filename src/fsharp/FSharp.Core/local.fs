@@ -284,6 +284,30 @@ module internal List =
             let cons = freshConsNoTail x
             takeFreshConsTail cons (n - 1) xs
             cons
+
+    let rec splitAtFreshConsTail cons index l =
+        if index = 0 then
+            setFreshConsTail cons []
+            l
+        else
+        match l with
+        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x :: xs ->
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                splitAtFreshConsTail cons2 (index - 1) xs
+ 
+    let splitAt index l =
+        if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))            
+        if index = 0 then [], l else
+        match l with
+        | []  -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | [_] -> if index = 1 then l, [] else raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x::xs ->
+            if index = 1 then [x], xs else
+            let cons = freshConsNoTail x
+            let tail = splitAtFreshConsTail cons (index - 1) xs
+            cons, tail    
       
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.

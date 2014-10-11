@@ -211,6 +211,34 @@ type ArrayModule() =
         Assert.AreEqual([|"a"|],Array.takeWhile (fun x -> x <> "ab") [|"a"; "ab"; "abc"; "abcd"; "abcde"|])
 
         CheckThrowsArgumentNullException (fun () -> Array.takeWhile (fun _ -> failwith "should not be used") null |> ignore) 
+
+    [<Test>]
+    member this.splitAt() =        
+        Assert.AreEqual([||], Array.splitAt 0 [||] |> fst)  
+        Assert.AreEqual([||], Array.splitAt 0 [||] |> snd)
+
+        Assert.AreEqual([|1..4|], Array.splitAt 4 [|1..10|] |> fst)       
+        Assert.AreEqual([|5..10|], Array.splitAt 4 [|1..10|] |> snd)      
+
+        Assert.AreEqual([||], Array.splitAt 0 [|1..2|] |> fst)
+        Assert.AreEqual([|1..2|], Array.splitAt 0 [|1..2|] |> snd)
+
+        Assert.AreEqual([|1|], Array.splitAt 1 [|1..2|] |> fst)
+        Assert.AreEqual([|2|], Array.splitAt 1 [|1..2|] |> snd)
+
+        Assert.AreEqual([|1..2|], Array.splitAt 2 [|1..2|] |> fst)
+        Assert.AreEqual([||], Array.splitAt 2 [|1..2|] |> snd)
+
+        Assert.AreEqual([|"a"|], Array.splitAt 1 [|"a";"b";"c"|] |> fst)
+        Assert.AreEqual([|"b";"c"|], Array.splitAt 1 [|"a";"b";"c"|] |> snd)
+
+        // split should fail if index exceeds bounds
+        CheckThrowsInvalidOperationExn (fun () -> Array.splitAt 1 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.splitAt -1 [|0;1|] |> ignore)
+        CheckThrowsInvalidOperationExn (fun () -> Array.splitAt 5 [|"str1";"str2";"str3";"str4"|] |> ignore)
+        
+        CheckThrowsArgumentNullException (fun () -> Array.splitAt 0 null |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.splitAt 1 null |> ignore)
         
     [<Test>]
     member this.Blit() = 

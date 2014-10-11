@@ -86,6 +86,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Choose")>]
         let choose f xs = chooseAllAcc f xs []
+    
+        [<CompiledName("SplitAt")>]
+        let splitAt index (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt index list
 
         [<CompiledName("Take")>]
         let take count (list : 'T list) = Microsoft.FSharp.Primitives.Basics.List.take count list
