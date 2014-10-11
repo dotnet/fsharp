@@ -379,6 +379,16 @@ type ListModule() =
         () 
 
     [<Test>]
+    member this.replicate() = 
+        // replicate should create multiple copies of the given value
+        Assert.AreEqual([],List.replicate 0 null)
+        Assert.AreEqual([],List.replicate 0 1)
+        Assert.AreEqual([null],List.replicate 1 null)
+        Assert.AreEqual(["1";"1"],List.replicate 2 "1")
+
+        CheckThrowsArgumentException (fun () ->  List.replicate -1 null |> ignore)
+
+    [<Test>]
     member this.FindIndex() =
         // integer List
         let intArr = [ 1..20 ]

@@ -1059,7 +1059,16 @@ namespace Microsoft.FSharp.Collections
 
         let fromGenerator f = mkSeq(fun () -> Generator.EnumerateFromGenerator (f()))
         let toGenerator (ie : seq<_>) = Generator.GenerateFromEnumerator (ie.GetEnumerator())
-
+            
+        [<CompiledName("Replicate")>]
+        let replicate count x =
+            #if FX_ATLEAST_40
+            System.Linq.Enumerable.Repeat(x,count)
+            #else
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            seq { for _ in 1 .. count -> x }
+            #endif
+            
 
         [<CompiledName("Append")>]
         let append (source1: seq<'T>) (source2: seq<'T>) = 

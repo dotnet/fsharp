@@ -106,6 +106,16 @@ type SeqModule() =
         VerifySeqsEqual expectedResultNull appendNullSeq
          
         ()
+
+    [<Test>]
+    member this.replicate() =
+        // replicate should create multiple copies of the given value
+        Assert.IsTrue(Seq.isEmpty <| Seq.replicate 0 null)
+        Assert.IsTrue(Seq.isEmpty <| Seq.replicate 0 1)
+        Assert.AreEqual(null, Seq.head <| Seq.replicate 1 null)
+        Assert.AreEqual(["1";"1"],Seq.replicate 2 "1" |> Seq.toList)
+
+        CheckThrowsArgumentException (fun () ->  Seq.replicate -1 null |> ignore)
         
         
     [<Test>]

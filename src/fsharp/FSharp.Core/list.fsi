@@ -480,7 +480,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ReduceBack")>]
         val reduceBack: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
-        /// <summary>Creates a list by calling the given generator on each index.</summary>
+        /// <summary>Creates a list by replicating the given initial value.</summary>
         /// <param name="count">The number of elements to replicate.</param>
         /// <param name="initial">The value to replicate</param>
         /// <returns>The generated list.</returns>

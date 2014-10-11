@@ -721,6 +721,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reduce")>]
         val reduce: reduction:('T -> 'T -> 'T) -> source:seq<'T> -> 'T
 
+        /// <summary>Creates a sequence by replicating the given initial value.</summary>
+        /// <param name="count">The number of elements to replicate.</param>
+        /// <param name="initial">The value to replicate</param>
+        /// <returns>The generated sequence.</returns>
+        [<CompiledName("Replicate")>]
+        val replicate: count:int -> initial:'T -> seq<'T>
+
         /// <summary>Like fold, but computes on-demand and returns the sequence of intermediary and final results.</summary>
         ///
         /// <param name="folder">A function that updates the state with each element from the sequence.</param>

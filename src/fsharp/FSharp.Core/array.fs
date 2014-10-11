@@ -102,6 +102,14 @@ namespace Microsoft.FSharp.Collections
             match arrays with 
             | :? ('T[][]) as ts -> ts |> concatArrays // avoid a clone, since we only read the array
             | _ -> arrays |> Seq.toArray |> concatArrays
+            
+        [<CompiledName("Replicate")>]
+        let replicate count x = 
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            let arr = (Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count : 'T array)  
+            for i = 0 to count - 1 do 
+                arr.[i] <- x
+            arr
 
         [<CompiledName("Collect")>]
         let collect (f : 'T -> 'U[])  (array : 'T[]) : 'U[]=

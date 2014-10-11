@@ -239,6 +239,16 @@ type ArrayModule() =
         
         CheckThrowsArgumentNullException (fun () -> Array.splitAt 0 null |> ignore)
         CheckThrowsArgumentNullException (fun () -> Array.splitAt 1 null |> ignore)
+
+    [<Test>]
+    member this.replicate() =
+        // replicate should create multiple copies of the given value
+        Assert.AreEqual([||],Array.replicate 0 null)
+        Assert.AreEqual([||],Array.replicate 0 1)
+        Assert.AreEqual([|null|],Array.replicate 1 null)
+        Assert.AreEqual([|"1";"1"|],Array.replicate 2 "1")
+
+        CheckThrowsArgumentException (fun () ->  Array.replicate -1 null |> ignore)
         
     [<Test>]
     member this.Blit() = 

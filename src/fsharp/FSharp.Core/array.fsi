@@ -530,6 +530,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ReduceBack")>]
         val reduceBack: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
 
+        /// <summary>Creates an array by replicating the given initial value.</summary>
+        /// <param name="count">The number of elements to replicate.</param>
+        /// <param name="initial">The value to replicate</param>
+        /// <returns>The generated array.</returns>
+        [<CompiledName("Replicate")>]
+        val replicate: count:int -> initial:'T -> 'T[]
+
         /// <summary>Returns a new array with the elements in reverse order.</summary>
         /// <param name="array">The input array.</param>
         /// <returns>The reversed array.</returns>
