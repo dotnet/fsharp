@@ -177,7 +177,12 @@ namespace Microsoft.FSharp.Collections
             let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (n1 + n2)
             Array.Copy(array1, 0, res, 0, n1)
             Array.Copy(array2, 0, res, n1, n2)
-            res            
+            res   
+                     
+        [<CompiledName("Head")>]
+        let head (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then invalidArg "array" InputArrayEmptyString else array.[0]
 
         [<CompiledName("Copy")>]
         let copy (array: 'T[]) =

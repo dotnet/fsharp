@@ -963,6 +963,20 @@ type ArrayModule() =
         ()
 
     [<Test>]
+    member this.Hd() =
+        // integer array
+        let resultInt = Array.head [|2..2..20|]
+        Assert.AreEqual(2, resultInt)
+        
+        // string array
+        let resultStr = Array.head [|"a";"b";"c";"d"|] 
+        Assert.AreEqual("a", resultStr)
+            
+        CheckThrowsArgumentException(fun () -> Array.head [||] |> ignore)        
+        CheckThrowsArgumentNullException(fun () -> Array.head null |> ignore)
+        ()    
+
+    [<Test>]
     member this.Init() = 
         this.InitTester Array.init Array.init
         

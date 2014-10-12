@@ -322,6 +322,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Get")>]
         val get: array:'T[] -> index:int -> 'T
 
+        /// <summary>Returns the first element of the array.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The first element of the array.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
+        [<CompiledName("Head")>]
+        val head: array:'T[] -> 'T
+
         /// <summary>Creates an array given the dimension and a generator function to compute the elements.</summary>
         /// <param name="count">The number of elements to initialize.</param>
         /// <param name="initializer">The function to generate the initial values for each index.</param>
