@@ -931,6 +931,16 @@ namespace Microsoft.FSharp.Collections
             while (e1.MoveNext() && e2.MoveNext()) do
                 f e1.Current e2.Current;
 
+        [<CompiledName("IterateIndexed2")>]
+        let iteri2 f (source1 : seq<_>) (source2 : seq<_>) = 
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            use e1 = source1.GetEnumerator()
+            use e2 = source2.GetEnumerator()
+            let mutable i = 0 
+            while (e1.MoveNext() && e2.MoveNext()) do
+                f i e1.Current e2.Current
+                i <- i + 1
 
         // Build an IEnumerble by wrapping/transforming iterators as they get generated.
         let revamp f (ie : seq<_>) = mkSeq (fun () -> f (ie.GetEnumerator()))

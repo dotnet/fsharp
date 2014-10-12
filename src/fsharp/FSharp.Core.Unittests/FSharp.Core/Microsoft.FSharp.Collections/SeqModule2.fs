@@ -267,6 +267,49 @@ type SeqModule2() =
         let nullseq:seq<'a> =  null
         CheckThrowsArgumentNullException (fun () -> Seq.iteri funcint nullseq |> ignore)  
         ()
+
+    [<Test>]
+    member this.Iteri2() =
+
+        //seq int
+        let seqint = seq [ 1..3]
+        let cacheint = ref 0
+       
+        let funcint x y z = cacheint := !cacheint + x + y + z
+        Seq.iteri2 funcint seqint seqint
+        Assert.AreEqual(15,!cacheint)
+              
+        //seq str
+        let seqStr = seq ["first";"second"]
+        let cachestr = ref 0
+        let funcstr (x:int) (y:string) (z:string) = cachestr := !cachestr + x + y.Length + z.Length
+        Seq.iteri2 funcstr seqStr seqStr
+         
+        Assert.AreEqual(23,!cachestr)
+        
+        // empty seq
+        let emptyseq = Seq.empty
+        let resultEpt = ref 0
+        Seq.iteri2 (fun x y z -> Assert.Fail()) emptyseq emptyseq 
+
+        // null seq
+        let nullseq:seq<'a> =  null
+        CheckThrowsArgumentNullException (fun () -> Seq.iteri2 funcint nullseq nullseq |> ignore)  
+        
+        // len1 <> len2
+        let shorterSeq = seq { 1..3 }
+        let longerSeq = seq { 2..2..100 }
+
+        let testSeqLengths seq1 seq2 =
+            let cache = ref 0
+            let f x y z = cache := !cache + x + y + z
+            Seq.iteri2 f seq1 seq2
+            !cache
+
+        Assert.AreEqual(21, testSeqLengths shorterSeq longerSeq)
+        Assert.AreEqual(21, testSeqLengths longerSeq shorterSeq)
+
+        ()
         
     [<Test>]
     member this.Length() =

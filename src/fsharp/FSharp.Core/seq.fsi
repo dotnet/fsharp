@@ -522,6 +522,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Iterate2")>]
         val iter2: action:('T1 -> 'T2 -> unit) -> source1:seq<'T1> -> source2:seq<'T2> -> unit
 
+        /// <summary>Applies the given function to two collections simultaneously. If one sequence is shorter than 
+        /// the other then the remaining elements of the longer sequence are ignored. The integer passed to the
+        /// function indicates the index of element.</summary>
+        ///
+        /// <param name="action">A function to apply to each pair of elements from the input sequences along with their index.</param>
+        /// <param name="source1">The first input sequence.</param>
+        /// <param name="source2">The second input sequence.</param>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        [<CompiledName("IterateIndexed2")>]
+        val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> source1:seq<'T1> -> source2:seq<'T2> -> unit
+
         /// <summary>Returns the length of the sequence</summary>
         ///
         /// <param name="source">The input sequence.</param>
