@@ -566,6 +566,40 @@ type SeqModule2() =
         Assert.AreEqual(0,!i)
         
     [<Test>]
+    member this.Mapi2WithSideEffects () =
+        let i = ref 0
+        let f _ x y = i := !i + 1; x*x
+        let e = (Seq.mapi2 f [1;2] [1;2]).GetEnumerator()
+
+        CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
+        Assert.AreEqual(0, !i)
+        if not (e.MoveNext()) then Assert.Fail()
+        Assert.AreEqual(1, !i)
+        let _ = e.Current
+        Assert.AreEqual(1, !i)
+        let _ = e.Current
+        Assert.AreEqual(1, !i)
+
+        if not (e.MoveNext()) then Assert.Fail()
+        Assert.AreEqual(2, !i)
+        let _ = e.Current
+        Assert.AreEqual(2, !i)
+        let _ = e.Current
+        Assert.AreEqual(2, !i)
+
+        if e.MoveNext() then Assert.Fail()
+        Assert.AreEqual(2,!i)
+        CheckThrowsInvalidOperationExn  (fun _ -> e.Current|>ignore)
+        Assert.AreEqual(2, !i)
+
+        i := 0
+        let e = (Seq.mapi2 f [] []).GetEnumerator()
+        if e.MoveNext() then Assert.Fail()
+        Assert.AreEqual(0,!i)
+        if e.MoveNext() then Assert.Fail()
+        Assert.AreEqual(0,!i)
+
+    [<Test>]
     member this.Collect() =
          // integer Seq
         let funcInt x = seq [x+1]
@@ -627,6 +661,44 @@ type SeqModule2() =
         
         ()
         
+    [<Test>]
+    member this.Mapi2() =
+         // integer Seq
+        let funcInt x y z = x+y+z
+        let resultInt = Seq.mapi2 funcInt { 1..10 } {2..2..20}
+        let expectedint = seq [3;7;11;15;19;23;27;31;35;39]
+
+        VerifySeqsEqual expectedint resultInt
+
+        // string Seq
+        let funcStr (x:int) (y:int) (z:string) = x+y+z.Length
+        let resultStr = Seq.mapi2 funcStr (seq[3;6;9;11]) (seq ["Lists"; "Are";  "Commonly" ; "List" ])
+        let expectedSeq = seq [8;10;19;18]
+
+        VerifySeqsEqual expectedSeq resultStr
+
+        // empty Seq
+        let resultEpt = Seq.mapi2 funcInt Seq.empty Seq.empty
+        VerifySeqsEqual Seq.empty resultEpt
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        let validSeq = seq [1]
+        CheckThrowsArgumentNullException (fun () -> Seq.mapi2 funcInt nullSeq validSeq |> ignore)
+
+        // len1 <> len2
+        let shorterSeq = seq { 1..10 }
+        let longerSeq = seq { 2..20 }
+
+        let testSeqLengths seq1 seq2 =
+            let f x y z = x + y + z
+            Seq.mapi2 f seq1 seq2
+
+        VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths shorterSeq longerSeq)
+        VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths longerSeq shorterSeq)
+
+        ()
+
     [<Test>]
     member this.Max() =
          // integer Seq

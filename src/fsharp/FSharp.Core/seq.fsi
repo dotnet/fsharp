@@ -603,6 +603,21 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MapIndexed")>]
         val mapi: mapping:(int -> 'T -> 'U) -> source:seq<'T> -> seq<'U>
 
+        /// <summary>Builds a new collection whose elements are the results of applying the given function
+        /// to the corresponding pairs of elements from the two sequences. If one input sequence is shorter than 
+        /// the other then the remaining elements of the longer sequence are ignored. The integer index passed to the
+        /// function indicates the index (from 0) of element being transformed.</summary>
+        ///
+        /// <param name="mapping">A function to transform pairs of items from the input sequences that also supplies the current index.</param>
+        /// <param name="source1">The first input sequence.</param>
+        /// <param name="source2">The second input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
+        [<CompiledName("MapIndexed2")>]
+        val mapi2: mapping:(int -> 'T1 -> 'T2 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> seq<'U>
+
         /// <summary>Returns the greatest of all elements of the sequence, compared via Operators.max</summary>
         ///
         /// <param name="source">The input sequence.</param>

@@ -146,6 +146,24 @@ namespace Microsoft.FSharp.Collections
                             e2.Dispose()
               }
 
+      let mapi2 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) : IEnumerator<_> =
+          let i = ref (-1)
+          upcast
+              {  new MapEnumerator<_>() with
+                     member this.DoMoveNext curr =
+                        i := !i + 1
+                        if (e1.MoveNext() && e2.MoveNext()) then
+                           curr <- f !i e1.Current e2.Current
+                           true
+                        else
+                           false
+                     member this.Dispose() =
+                        try
+                            e1.Dispose()
+                        finally
+                            e2.Dispose()
+              }
+
       let map3 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) (e3 : IEnumerator<_>) : IEnumerator<_> = 
         upcast 
             {  new MapEnumerator<_>() with
@@ -966,6 +984,12 @@ namespace Microsoft.FSharp.Collections
         let mapi f source      = 
             checkNonNull "source" source
             revamp  (IEnumerator.mapi   f) source
+
+        [<CompiledName("MapIndexed2")>]
+        let mapi2 f source1 source2 =
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            revamp2 (IEnumerator.mapi2    f) source1 source2
 
         [<CompiledName("Map2")>]
         let map2 f source1 source2 = 
