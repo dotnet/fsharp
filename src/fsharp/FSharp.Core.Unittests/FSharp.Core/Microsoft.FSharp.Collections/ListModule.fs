@@ -263,6 +263,16 @@ type ListModule() =
         CheckThrowsInvalidOperationExn (fun () -> List.splitAt 1 [] |> ignore)
         CheckThrowsArgumentException (fun () -> List.splitAt -1 [0;1] |> ignore)
         CheckThrowsInvalidOperationExn (fun () -> List.splitAt 5 ["str1";"str2";"str3";"str4"] |> ignore)
+        ()
+
+    [<Test>]
+    member this.countBy() =
+        // countBy should work on empty list
+        Assert.AreEqual([],List.countBy (fun _ -> failwith "should not be executed") [])
+
+        // countBy should count by the given key function
+        Assert.AreEqual([5,1; 2,2; 3,2],List.countBy id [5;2;2;3;3])
+        Assert.AreEqual([3,3; 2,2; 1,3],List.countBy (fun x -> if x < 3 then x else 3) [5;2;1;2;3;3;1;1])
 
     [<Test>]
     member this.Exists() =

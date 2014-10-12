@@ -421,7 +421,18 @@ type ArrayModule() =
         CheckThrowsNullRefException (fun () -> Array.concat nullArrays |> ignore) 
                 
         () 
-        
+
+    [<Test>]
+    member this.countBy() =
+        // countBy should work on empty array
+        Assert.AreEqual([],Array.countBy (fun _ -> failwith "should not be executed") [||])
+
+        // countBy should not work on null
+        CheckThrowsArgumentNullException(fun () -> Array.countBy (fun _ -> failwith "should not be executed") null |> ignore)
+
+        // countBy should count by the given key function
+        Assert.AreEqual([| 5,1; 2,2; 3,2 |],Array.countBy id [|5;2;2;3;3|])
+        Assert.AreEqual([| 3,3; 2,2; 1,3 |],Array.countBy (fun x -> if x < 3 then x else 3) [|5;2;1;2;3;3;1;1|])
 
     [<Test>]
     member this.Copy() =

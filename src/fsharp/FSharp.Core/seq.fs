@@ -1369,9 +1369,7 @@ namespace Microsoft.FSharp.Collections
                 source |> iter (fun v -> 
                     let key = StructBox (keyf v )
                     let mutable prev = Unchecked.defaultof<_>
-                    let ok = dict.TryGetValue(key, &prev)
-                    if ok then dict.[key] <- prev + 1
-                    else dict.[key] <- 1)
+                    if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1)
 
                 dict |> map (fun group -> (group.Key.Value, group.Value)))
 

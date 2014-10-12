@@ -94,6 +94,19 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Copy")>]
         val copy: array:'T[] -> 'T[]
 
+        /// <summary>Applies a key-generating function to each element of an array and returns an array yielding unique
+        /// keys and their number of occurrences in the original array.</summary>
+        ///
+        /// <param name="projection">A function transforming each item of the input array into a key to be
+        /// compared against the others.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        [<CompiledName("CountBy")>]
+        val countBy : projection:('T -> 'Key) -> array:'T[] -> ('Key * int)[] when 'Key : equality
+
         /// <summary>Creates an array whose elements are all initially the given value.</summary>
         /// <param name="count">The length of the array to create.</param>
         /// <param name="value">The value for the elements.</param>

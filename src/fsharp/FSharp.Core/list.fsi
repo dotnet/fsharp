@@ -109,6 +109,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("DistinctBy")>]
         val distinctBy: projection:('T -> 'Key) -> list:'T list -> 'T list when 'Key : equality
 
+        /// <summary>Applies a key-generating function to each element of a list and returns a list yielding unique
+        /// keys and their number of occurrences in the original list.</summary>
+        ///
+        /// <param name="projection">A function transforming each item of the input list into a key to be
+        /// compared against the others.</param>
+        /// <param name="list">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        [<CompiledName("CountBy")>]
+        val countBy : projection:('T -> 'Key) -> list:'T list -> ('Key * int) list when 'Key : equality
+
         /// <summary>Returns an empty list of the given type.</summary>
         [<GeneralizableValue>]
         [<CompiledName("Empty")>]

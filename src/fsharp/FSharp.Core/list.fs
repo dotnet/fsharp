@@ -32,6 +32,23 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
+        [<CompiledName("CountBy")>]
+        let countBy projection (list:'T list) =
+            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,int>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+            let rec loop srcList  =
+                match srcList with
+                | [] -> ()
+                | h::t ->
+                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection h)
+                    let mutable prev = 0
+                    if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
+                    loop t
+            loop list
+            let mutable result = []
+            for group in dict do
+                result <- (group.Key.Value, group.Value) :: result
+            result |> rev
+
         [<CompiledName("Map")>]
         let map f list = Microsoft.FSharp.Primitives.Basics.List.map f list
 

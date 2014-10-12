@@ -183,7 +183,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Contains")>]
         val inline contains: value:'T -> source:seq<'T> -> bool when 'T : equality
 
-        /// <summary>Applies a key-generating function to each element of a sequence and return a sequence yielding unique
+        /// <summary>Applies a key-generating function to each element of a sequence and returns a sequence yielding unique
         /// keys and their number of occurrences in the original sequence.</summary>
         /// 
         /// <remarks>Note that this function returns a sequence that digests the whole initial sequence as soon as 
@@ -191,7 +191,7 @@ namespace Microsoft.FSharp.Collections
         /// large or infinite sequences. The function makes no assumption on the ordering of the original 
         /// sequence.</remarks>
         ///
-        /// <param name="projection">A function transforming each item of input sequence into a key to be
+        /// <param name="projection">A function transforming each item of the input sequence into a key to be
         /// compared against the others.</param>
         /// <param name="source">The input sequence.</param>
         ///

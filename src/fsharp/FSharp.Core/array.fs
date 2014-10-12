@@ -168,6 +168,24 @@ namespace Microsoft.FSharp.Collections
             Array.Copy(array, 0, res, 0, count)
             res
 
+        [<CompiledName("CountBy")>]
+        let countBy projection (array:'T[]) =
+            checkNonNull "array" array
+            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,int>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+
+            // Build the groupings
+            for v in array do
+                let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection v)
+                let mutable prev = Unchecked.defaultof<_>
+                if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
+
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
+            let mutable i = 0
+            for group in dict do
+                res.[i] <- group.Key.Value, group.Value
+                i <- i + 1
+            res
+
         [<CompiledName("Append")>]
         let append (array1:'T[]) (array2:'T[]) = 
             checkNonNull "array1" array1
