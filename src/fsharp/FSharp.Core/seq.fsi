@@ -351,6 +351,19 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Fold")>]
         val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> source:seq<'T> -> 'State
 
+        /// <summary>Applies a function to corresponding elements of two collections, threading an accumulator argument
+        /// through the computation. The two sequences need not have equal lengths:
+        /// when one sequence is exhausted any remaining elements in the other sequence are ignored.
+        /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jN</c>
+        /// then computes <c>f (... (f s i0 j0)...) iN jN</c>.</summary>
+        /// <param name="folder">The function to update the state given the input elements.</param>
+        /// <param name="state">The initial state.</param>
+        /// <param name="source1">The first input sequence.</param>
+        /// <param name="source2">The second input sequence.</param>
+        /// <returns>The final state value.</returns>
+        [<CompiledName("Fold2")>]
+        val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> source1:seq<'T1> -> source2:seq<'T2> -> 'State
+
         /// <summary>Tests if all elements of the sequence satisfy the given predicate.</summary>
         ///
         /// <remarks>The predicate is applied to the elements of the input sequence. If any application 

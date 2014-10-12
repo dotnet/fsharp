@@ -1044,7 +1044,23 @@ namespace Microsoft.FSharp.Collections
             use e = source.GetEnumerator() 
             let mutable state = x 
             while e.MoveNext() do
-                state <- f state  e.Current;
+                state <- f state e.Current;
+            state
+
+        [<CompiledName("Fold2")>]
+        let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) = 
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+
+            use e1 = source1.GetEnumerator() 
+            use e2 = source2.GetEnumerator() 
+
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+
+            let mutable state = state
+            while e1.MoveNext() && e2.MoveNext() do
+                state <- f.Invoke(state, e1.Current, e2.Current)
+
             state
 
         [<CompiledName("Reduce")>]

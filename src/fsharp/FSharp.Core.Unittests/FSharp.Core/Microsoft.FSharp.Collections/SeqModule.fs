@@ -667,6 +667,40 @@ type SeqModule() =
         
         CheckThrowsArgumentNullException (fun () -> Seq.fold funcInt 1 nullSeq |> ignore) 
         () 
+
+
+
+    [<Test>]
+    member this.Fold2() =
+        Assert.AreEqual([(3,5); (2,3); (1,1)],Seq.fold2 (fun acc x y -> (x,y)::acc) [] (seq [ 1..3 ])  (seq [1..2..6]))
+
+        // integer List  
+        let funcInt x y z = x + y + z
+        let resultInt = Seq.fold2 funcInt 9 (seq [ 1..10 ]) (seq [1..2..20])
+        Assert.AreEqual(164, resultInt)
+        
+        // string List        
+        let funcStr x y z = x + y + z        
+        let resultStr = Seq.fold2 funcStr "*" ["a"; "b";  "c" ; "d" ] ["A"; "B";  "C" ; "D" ]        
+        Assert.AreEqual("*aAbBcCdD", resultStr)
+        
+        // empty List
+        let emptyArr:int list = [ ]
+        let resultEpt = Seq.fold2 funcInt 5 emptyArr emptyArr        
+        Assert.AreEqual(5, resultEpt)
+
+        Assert.AreEqual(0,Seq.fold2 funcInt 0 Seq.empty (seq [1]))
+        Assert.AreEqual(-1,Seq.fold2 funcInt -1 (seq [1]) Seq.empty)
+            
+        Assert.AreEqual(2,Seq.fold2 funcInt 0 (seq [1;2]) (seq [1]))
+        Assert.AreEqual(4,Seq.fold2 funcInt 0 (seq [1]) (seq [3;6]))
+
+        // null Seq
+        let nullSeq:seq<'a> = null     
+        
+        CheckThrowsArgumentNullException (fun () -> Seq.fold2 funcInt 0 nullSeq (seq [1])  |> ignore) 
+        CheckThrowsArgumentNullException (fun () -> Seq.fold2 funcInt 0 (seq [1]) nullSeq |> ignore) 
+        ()
         
     [<Test>]
     member this.ForAll() =
