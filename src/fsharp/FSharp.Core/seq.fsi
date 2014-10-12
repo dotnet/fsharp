@@ -554,7 +554,7 @@ namespace Microsoft.FSharp.Collections
         /// the other then the remaining elements of the longer sequence are ignored.</summary>
         ///
         /// <param name="mapping">A function to transform pairs of items from the input sequences.</param>
-        /// <param name="source">The first input sequence.</param>
+        /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
         ///
         /// <returns>The result sequence.</returns>
@@ -562,6 +562,21 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when either of the input sequences is null.</exception>
         [<CompiledName("Map2")>]
         val map2: mapping:('T1 -> 'T2 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> seq<'U>
+
+        /// <summary>Builds a new collection whose elements are the results of applying the given function
+        /// to the corresponding triples of elements from the three sequences. If one input sequence if shorter than
+        /// the others then the remaining elements of the longer sequences are ignored.</summary>
+        ///
+        /// <param name="mapping">The function to transform triples of elements from the input sequences.</param>
+        /// <param name="source1">The first input sequence.</param>
+        /// <param name="source2">The second input sequence.</param>
+        /// <param name="source3">The third input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when any of the input sequences is null.</exception>
+        [<CompiledName("Map3")>]
+        val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> source3:seq<'T3> -> seq<'U>
 
         /// <summary>Builds a new collection whose elements are the results of applying the given function
         /// to each of the elements of the collection. The integer index passed to the

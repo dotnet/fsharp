@@ -292,6 +292,20 @@ namespace Microsoft.FSharp.Collections
                 res.[i] <- f.Invoke(array1.[i], array2.[i])
             res
 
+        [<CompiledName("Map3")>]
+        let map3 f (array1: 'T1[]) (array2: 'T2[]) (array3: 'T3[]) = 
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+            checkNonNull "array3" array3
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            let len1 = array1.Length
+            if not (len1 = array2.Length && len1 = array3.Length) then invalidArg "" (SR.GetString(SR.arraysHadDifferentLengths))
+            
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
+            for i = 0 to len1 - 1 do
+                res.[i] <- f.Invoke(array1.[i], array2.[i], array3.[i])
+            res
+
         [<CompiledName("MapIndexed2")>]
         let mapi2 f (array1: 'T[]) (array2: 'U[]) = 
             checkNonNull "array1" array1

@@ -146,6 +146,28 @@ namespace Microsoft.FSharp.Collections
                             e2.Dispose()
               }
 
+      let map3 f (e1 : IEnumerator<_>) (e2 : IEnumerator<_>) (e3 : IEnumerator<_>) : IEnumerator<_> = 
+        upcast 
+            {  new MapEnumerator<_>() with
+                   member this.DoMoveNext curr = 
+                      let n1 = e1.MoveNext()
+                      let n2 = e2.MoveNext()
+                      let n3 = e3.MoveNext()
+
+                      if n1 && n2 && n3 then 
+                         curr <- f e1.Current e2.Current e3.Current
+                         true
+                      else
+                         false
+                   member this.Dispose() = 
+                      try
+                          e1.Dispose()
+                      finally
+                          try
+                              e2.Dispose()
+                          finally
+                              e3.Dispose()
+            }
 
       let choose f (e : IEnumerator<'T>) = 
           let started = ref false 
@@ -914,6 +936,8 @@ namespace Microsoft.FSharp.Collections
         let revamp f (ie : seq<_>) = mkSeq (fun () -> f (ie.GetEnumerator()))
         let revamp2 f (ie1 : seq<_>) (source2 : seq<_>) = 
             mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()))
+        let revamp3 f (ie1 : seq<_>) (source2 : seq<_>) (source3 : seq<_>) = 
+            mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()) (source3.GetEnumerator()))
 
         [<CompiledName("Filter")>]
         let filter f source      = 
@@ -938,6 +962,13 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source1" source1
             checkNonNull "source2" source2
             revamp2 (IEnumerator.map2    f) source1 source2
+
+        [<CompiledName("Map3")>]
+        let map3 f source1 source2 source3 = 
+            checkNonNull "source1" source1
+            checkNonNull "source2" source2
+            checkNonNull "source3" source3
+            revamp3 (IEnumerator.map3    f) source1 source2 source3
 
         [<CompiledName("Choose")>]
         let choose f source      = 

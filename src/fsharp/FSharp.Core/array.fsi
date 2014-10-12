@@ -428,9 +428,24 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array1">The first input array.</param>
         /// <param name="array2">The second input array.</param>
         /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when any of the input arrays is null.</exception>
         /// <returns>The array of transformed elements.</returns>
         [<CompiledName("Map2")>]
         val map2: mapping:('T1 -> 'T2 -> 'U) -> array1:'T1[] -> array2:'T2[] -> 'U[]
+
+        /// <summary>Builds a new collection whose elements are the results of applying the given function
+        /// to the corresponding triples from the three collections. The three input
+        /// arrays must have the same length, otherwise an <c>ArgumentException</c> is
+        /// raised.</summary>
+        /// <param name="mapping">The function to transform the pairs of the input elements.</param>
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        /// <param name="array3">The third input array.</param>
+        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when any of the input arrays is null.</exception>
+        /// <returns>The array of transformed elements.</returns>
+        [<CompiledName("Map3")>]
+        val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> 'U[]
 
         /// <summary>Builds a new collection whose elements are the results of applying the given function
         /// to the corresponding elements of the two collections pairwise, also passing the index of 

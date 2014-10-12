@@ -346,8 +346,41 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.map2 funcInt nullSeq validSeq |> ignore)
         
         ()
-        
-        
+
+
+    [<Test>]
+    member this.Map3() = 
+        // Integer seq
+        let funcInt a b c = (a + b) * c
+        let resultInt = Seq.map3 funcInt { 1..8 } { 2..9 } { 3..10 }
+        let expectedInt = seq [9; 20; 35; 54; 77; 104; 135; 170]
+        VerifySeqsEqual expectedInt resultInt
+
+        // First seq is shorter
+        VerifySeqsEqual (seq [9; 20]) (Seq.map3 funcInt { 1..2 } { 2..9 } { 3..10 })
+        // Second seq is shorter
+        VerifySeqsEqual (seq [9; 20; 35]) (Seq.map3 funcInt { 1..8 } { 2..4 } { 3..10 })
+        // Third seq is shorter
+        VerifySeqsEqual (seq [9; 20; 35; 54]) (Seq.map3 funcInt { 1..8 } { 2..6 } { 3..6 })
+
+        // String seq
+        let funcStr a b c = a + b + c
+        let resultStr = Seq.map3 funcStr ["A";"B";"C";"D"] ["a";"b";"c";"d"] ["1";"2";"3";"4"]
+        let expectedStr = seq ["Aa1";"Bb2";"Cc3";"Dd4"]
+        VerifySeqsEqual expectedStr resultStr
+
+        // Empty seq
+        let resultEmpty = Seq.map3 funcStr Seq.empty Seq.empty Seq.empty
+        VerifySeqsEqual Seq.empty resultEmpty
+
+        // Null seq
+        let nullSeq = null : seq<_>
+        let nonNullSeq = seq [1]
+        CheckThrowsArgumentNullException (fun () -> Seq.map3 funcInt nullSeq nonNullSeq nullSeq |> ignore)
+
+        ()
+
+
     member private this.MapWithSideEffectsTester (map : (int -> int) -> seq<int> -> seq<int>) expectExceptions =
         let i = ref 0
         let f x = i := !i + 1; x*x

@@ -95,6 +95,38 @@ type ArrayModule2() =
         ()
 
     [<Test>]
+    member this.Map3() =
+        // Integer array
+        let funcInt a b c = (a + b) * c
+        let resultInt = Array.map3 funcInt [| 1..8 |] [| 2..9 |] [| 3..10 |]
+        if resultInt <> [| 9; 20; 35; 54; 77; 104; 135; 170 |] then Assert.Fail()
+
+        // First array is shorter
+        CheckThrowsArgumentException (fun () -> Array.map3 funcInt [| 1..2 |] [| 2..9 |] [| 3..10 |] |> ignore)
+        // Second array is shorter
+        CheckThrowsArgumentException (fun () -> Array.map3 funcInt [| 1..8 |] [| 2..6 |] [| 3..10 |] |> ignore)
+        // Third array is shorter
+        CheckThrowsArgumentException (fun () -> Array.map3 funcInt [| 1..8 |] [| 2..9 |] [| 3..6 |] |> ignore)
+        
+        // String array
+        let funcStr a b c = a + b + c
+        let resultStr = Array.map3 funcStr [| "A";"B";"C";"D" |] [| "a";"b";"c";"d" |] [| "1";"2";"3";"4" |]
+        if resultStr <> [| "Aa1";"Bb2";"Cc3";"Dd4" |] then Assert.Fail()
+
+        // Empty array
+        let resultEmpty = Array.map3 funcStr [||] [||] [||]
+        if resultEmpty <> [||] then Assert.Fail()
+
+        // Null array
+        let nullArray = null : int[]
+        let nonNullArray = [|1|]
+        CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nullArray nonNullArray nonNullArray |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nonNullArray nullArray nonNullArray |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nonNullArray nonNullArray nullArray |> ignore)
+
+        ()
+
+    [<Test>]
     member this.Mapi() = 
         // integer array 
         let funcInt x y = x+y
