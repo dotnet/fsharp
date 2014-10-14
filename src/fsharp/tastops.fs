@@ -4266,27 +4266,29 @@ let decideStaticOptimizationConstraint g c =
         // Both types must be nominal for a definite result
        let rec checkTypes a b =
            let a = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g a)
-           let b = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g b)
-           match a, b with
-           | AppTy g (tcref1, _), AppTy g (tcref2, _) -> 
+           match a with
+           | AppTy g (tcref1, _) ->
+               let b = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g b)
+               match b with 
+               | AppTy g (tcref2, _) -> 
                 if tyconRefEq g tcref1 tcref2 then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
-           | FunTy g (dty1, rty1), FunTy g (dty2, rty2) ->
-                let dtyCheck = checkTypes dty1 dty2
-                if dtyCheck = StaticOptimizationAnswer.Unknown then 
-                    StaticOptimizationAnswer.Unknown
-                else
-                    let rtyCheck = checkTypes rty1 rty2
-                    if dtyCheck = rtyCheck then rtyCheck else StaticOptimizationAnswer.Unknown
-           | TupleTy g (t1::ts1), TupleTy g (t2::ts2) ->
-                let rec iter l1 l2 prev =
-                    match l1, l2 with
-                    | [], [] -> prev
-                    | t1::ts1, t2::ts2 -> 
-                        let r = checkTypes t1 t2
-                        if r = StaticOptimizationAnswer.Unknown || r <> prev then StaticOptimizationAnswer.Unknown else iter ts1 ts2 r
-                    | _ -> StaticOptimizationAnswer.Unknown
-                let r = checkTypes t1 t2
-                if r = StaticOptimizationAnswer.Unknown then StaticOptimizationAnswer.Unknown else iter ts1 ts2 r
+               | TupleTy g _  | FunTy g _  -> StaticOptimizationAnswer.No
+               | _ -> StaticOptimizationAnswer.Unknown
+
+           | FunTy g _ ->
+               let b = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g b)
+               match b with 
+               | FunTy g _   -> StaticOptimizationAnswer.Yes
+               | AppTy g _ | TupleTy g _ -> StaticOptimizationAnswer.No
+               | _ -> StaticOptimizationAnswer.Unknown
+           | TupleTy g ts1 -> 
+               let b = normalizeEnumTy g (stripTyEqnsAndMeasureEqns g b)
+               match b with 
+               | TupleTy g ts2 ->
+                if ts1.Length = ts2.Length then StaticOptimizationAnswer.Yes
+                else StaticOptimizationAnswer.No
+               | AppTy g _ | FunTy g _ -> StaticOptimizationAnswer.No
+               | _ -> StaticOptimizationAnswer.Unknown
            | _ -> StaticOptimizationAnswer.Unknown
        checkTypes a b
     | TTyconIsStruct a -> 

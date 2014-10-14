@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Collections
         let inline Structural<'T when 'T : equality> : IEqualityComparer<'T> = 
             LanguagePrimitives.FastGenericEqualityComparer<'T>
               
-        let LimitedStructural<'T when 'T : equality>(limit) : IEqualityComparer<'T> = 
+        let inline LimitedStructural<'T when 'T : equality>(limit) : IEqualityComparer<'T> = 
             LanguagePrimitives.FastLimitedGenericEqualityComparer<'T>(limit)
               
         let Reference<'T when 'T : not struct > : IEqualityComparer<'T> = 
@@ -38,7 +38,7 @@ namespace Microsoft.FSharp.Collections
     module ComparisonIdentity = 
 
 
-        let Structural<'T when 'T : comparison > : IComparer<'T> = 
+        let inline Structural<'T when 'T : comparison > : IComparer<'T> = 
             LanguagePrimitives.FastGenericComparer<'T>
             
         let FromFunction comparer = 

@@ -13,7 +13,7 @@ namespace Microsoft.FSharp.Collections
     module ComparisonIdentity = 
       
         /// <summary>Structural comparison.  Compare using Operators.compare.</summary>
-        val Structural<'T> : IComparer<'T> when 'T : comparison 
+        val inline Structural<'T> : IComparer<'T> when 'T : comparison 
         
         /// <summary>Compare using the given comparer function.</summary>
         /// <param name="comparer">A function to compare two values.</param>
@@ -28,7 +28,7 @@ namespace Microsoft.FSharp.Collections
         // inline justification: allows specialization of structural hash functions based on type
         val inline Structural<'T> : IEqualityComparer<'T>  when 'T : equality
         
-        val LimitedStructural<'T> : limit: int -> IEqualityComparer<'T>  when 'T : equality
+        val inline LimitedStructural<'T> : limit: int -> IEqualityComparer<'T>  when 'T : equality
         
         /// <summary>Physical hashing (hash on reference identity of objects, and the contents of value types).  
         /// Hash using LanguagePrimitives.PhysicalEquality and LanguagePrimitives.PhysicalHash,

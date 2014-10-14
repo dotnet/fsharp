@@ -895,6 +895,10 @@ namespace Microsoft.FSharp.Core
 
         module HashCompare = 
         
+            //-------------------------------------------------------------------------
+            // LangaugePrimitives.HashCompare: Physical Equality
+            //------------------------------------------------------------------------- 
+
             // NOTE: compiler/optimizer is aware of this function and optimizes calls to it in many situations
             // where it is known that PhysicalEqualityObj is identical to reference comparison
             let PhysicalEqualityIntrinsic (x:'T) (y:'T) : bool when 'T : not struct = 
@@ -915,48 +919,37 @@ namespace Microsoft.FSharp.Core
 
 
             //-------------------------------------------------------------------------
+            // LangaugePrimitives.HashCompare: Comparison
+            //
             // Bi-modal generic comparison helper implementation.
             //
-            // For structured data (records, tuples, unions) the IComparable implementation on 
-            // types is run in either Equivalence Relation or Partial Equivalence Relation (PER) mode.
+            // The comparison implementation is run in either Equivalence Relation or Partial 
+            // Equivalence Relation (PER) mode which governs what happens when NaNs are compared.
             //
-            // In the second mode, generic comparison of two NaN values is recorded by clearing
-            // the PERMode.mode variable. PER mode can also be thought of as "no pair of NaNs detected yet" mode.
-            // Entry points that care about NaN pairs set the PERMode.mode variable and if it remains un-set by
-            // the end of their execution then no NaN pair was detected.
-            //
-            // From the library spec point of view:
-            //   - GenericComparisonWithComparer will (a) make IComparable calls in the same mode as 
-            //     called and (b) if in PER node then a NaN pair will cause the outer operation that entered
-            //     PER mode to return false.
-            //
-            //   - GenericLessThan, GenericGreaterThan etc. enters PER mode and retores the previous PER mode on exit
-            //
-            //   - GenericComparison clears PER mode and retores the previous PER mode on exit
-            //
-            //   - GenericEquality is implemented via obj.Equals and always has ER semantics
-            //
-            // Note that some representations chosen by F# are legitimately allowed to be null, e.g. the empty list. 
-            // However, because null values don't support the polymorphic virtual comparison operation CompareTo 
-            // the test for nullness must be made on the caller side.
+            // Some representations chosen by F# are legitimately allowed to be null, e.g. the None value.
+            // However, null values don't support the polymorphic virtual comparison operation CompareTo 
+            // so the test for nullness must be made on the caller side.
             //------------------------------------------------------------------------- 
 
-            
             let FailGenericComparison (obj: obj)  = 
                 raise (new System.ArgumentException(SR.GetString1(SR.genericCompareFail1, obj.GetType().ToString())))
             
                
+            /// This type has two instances - fsComparerER and fsComparerThrow.
+            ///   - fsComparerER  = ER semantics = no throw on NaN comparison = new GenericComparer(false) = GenericComparer = GenericComparison
+            ///   - fsComparerPER  = PER semantics = local throw on NaN comparison = new GenericComparer(true) = LessThan/GreaterThan etc.
             type GenericComparer(throwsOnPER:bool) = 
-                
                 interface System.Collections.IComparer 
-                abstract CompareC : obj * obj -> int   // implemented further below
-                member  c.ThrowsOnPER() = throwsOnPER
+                member  c.ThrowsOnPER = throwsOnPER
 
+            /// The unique exception object that is thrown locally when NaNs are compared in PER mode (by fsComparerPER)
+            /// This exception should never be observed by user code.
             let NaNException = new System.Exception()                                                 
                     
+            /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
+            /// specification.  The treatment of NaNs is governed by "comp".
             let rec GenericCompare (comp:GenericComparer) (xobj:obj,yobj:obj) = 
                 (*if objEq xobj yobj then 0 else *)
-                  //System.Console.WriteLine("xobj = {0}, yobj = {1}, NaNs = {2}, PERMode.mode = {3}", [| xobj; yobj; box PER_NAN_PAIR_DETECTED; box PERMode.mode |])
                   match xobj,yobj with 
                    | null,null -> 0
                    | null,_ -> -1
@@ -982,14 +975,15 @@ namespace Microsoft.FSharp.Core
                        x.CompareTo(yobj,comp)
                    // Check for IComparable
                    | (:? System.IComparable as x),_ -> 
-                       match xobj,yobj with 
-                       | (:? float as x),(:? float as y) -> 
-                            if (System.Double.IsNaN x || System.Double.IsNaN y) && (comp.ThrowsOnPER()) then 
-                                raise NaNException
-                       | (:? float32 as x),(:? float32 as y) -> 
-                            if (System.Single.IsNaN x || System.Single.IsNaN y) && (comp.ThrowsOnPER()) then 
-                                raise NaNException
-                       | _ -> ()
+                       if comp.ThrowsOnPER then 
+                           match xobj,yobj with 
+                           | (:? float as x),(:? float as y) -> 
+                                if (System.Double.IsNaN x || System.Double.IsNaN y) then 
+                                    raise NaNException
+                           | (:? float32 as x),(:? float32 as y) -> 
+                                if (System.Single.IsNaN x || System.Single.IsNaN y) then 
+                                    raise NaNException
+                           | _ -> ()
                        x.CompareTo(yobj)
                    | (:? nativeint as x),(:? nativeint as y) -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                    | (:? unativeint as x),(:? unativeint as y) -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
@@ -1179,28 +1173,35 @@ namespace Microsoft.FSharp.Core
                     res
 
             type GenericComparer with
-                
                 interface System.Collections.IComparer with
                     override c.Compare(x:obj,y:obj) = GenericCompare c (x,y)
-                override c.CompareC(x:obj,y:obj) =  GenericCompare c (x,y)
             
-            let fsComparer        = GenericComparer(true)  
-            let fsComparerNoThrow = GenericComparer(false) 
+            /// The unique object for comparing values in PER mode (where local exceptions are thrown when NaNs are compared)
+            let fsComparerPER        = GenericComparer(true)  
+
+            /// The unique object for comparing values in ER mode (where "0" is returned when NaNs are compared)
+            let fsComparerER = GenericComparer(false) 
                     
-            // NOTE: compiler/optimizer is aware of this function and optimizes calls to it in many situations
-            // where it is known how GenericComparisonObjBimodal will dispatch via IComparable.
+            /// Compare two values of the same generic type, using "comp".
+            //
+            // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
+            //
+            // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
+            // cases where it is known how a particular type implements generic comparison.
             let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                // if 'T = float then x.CompareTo(y)
-                // if 'T = float32 then x.CompareTo(y)
                 comp.Compare(box x, box y)
 
+            /// Compare two values of the same generic type, in either PER or ER mode, but include static optimizations
+            /// for various well-known cases.
+            //
+            // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
+            //
             let inline GenericComparisonWithComparerFast<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
                  GenericComparisonWithComparerIntrinsic comp x y
                  when 'T : bool   = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : sbyte  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : int16  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : int32  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int    = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : int64  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : nativeint  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : byte   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
@@ -1208,8 +1209,7 @@ namespace Microsoft.FSharp.Core
                  when 'T : uint32 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
                  when 'T : uint64 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
                  when 'T : unativeint = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 // Multi-modal direct implementation for float/float32 all of "clt", "cgt" and "ceq" may fail on NaN. In this case we must detect our mode
-                 // and possibly change PERMode.mode. We do this by bailing out to call GenericComparisonWithComparerIntrinsic
+                 // Note, these bail out to GenericComparisonWithComparerIntrinsic if called with NaN values, because clt and cgt and ceq all return "false" for that case.
                  when 'T : float  = if (# "clt" x y : bool #) then (-1) else if (# "cgt" x y : bool #) then 1 else if (# "ceq" x y : bool #) then 0 else GenericComparisonWithComparerIntrinsic comp x y
                  when 'T : float32 = if (# "clt" x y : bool #) then (-1) else if (# "cgt" x y : bool #) then 1 else if (# "ceq" x y : bool #) then 0 else GenericComparisonWithComparerIntrinsic comp x y
                  when 'T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
@@ -1223,56 +1223,62 @@ namespace Microsoft.FSharp.Core
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
 #endif
-                 when ^T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                 when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
 
+            /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
+            //
+            // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on "T".
             let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
-                GenericComparisonWithComparerIntrinsic (fsComparerNoThrow :> System.Collections.IComparer) x y
+                GenericComparisonWithComparerIntrinsic (fsComparerER :> IComparer) x y
 
 
-            // Check for 'T = float or 'T = float32 (in case we didn't resolve this statically).
-            // In these cases we must use the right "clt" to cope with NaN.  Note "<" etc. take
-            // on a different meaning for floats nested inside data structures than when immediately 
-            // applied to type float.  This gives us the IEEE semantics when "<" etc. are used on
-            // floats, and a sound structural semantics when used on structured data, though 
-            // comparisons on structural data containing floats do not get optimized.
+            /// Generic less-than. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
             let GenericLessThanIntrinsic (x:'T) (y:'T) = 
                 try
-                    (# "clt" (GenericComparisonWithComparerIntrinsic fsComparer x y) 0 : bool #)
+                    (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) 0 : bool #)
                 with
                     | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
                     
             
+            /// Generic greater-than. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
             let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
                 try
-                    (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparer x y) 0 : bool #)
+                    (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) 0 : bool #)
                 with
                     | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
             
              
+            /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
             let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
                 try
-                    (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparer x y) (-1) : bool #)
+                    (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) (-1) : bool #)
                 with
                     | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
                     
             
             
+            /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
             let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
                 try
-                    (# "clt" (GenericComparisonWithComparerIntrinsic fsComparer x y) 1 : bool #)
+                    (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) 1 : bool #)
                 with
                     | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
 
 
-            /// Core implementation of structural comparison on arbitrary values.
+            /// Compare two values of the same generic type, in ER mode, with static optimizations 
+            /// for known cases.
             let inline GenericComparisonFast<'T> (x:'T) (y:'T) : int = 
                  GenericComparisonIntrinsic x y
                  when 'T : bool   = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : sbyte  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : int16  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : int32  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int    = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : int64  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : nativeint  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : byte   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
@@ -1293,13 +1299,12 @@ namespace Microsoft.FSharp.Core
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
 #endif
-                 when ^T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                 when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
-              
+            /// Generic less-than with static optimizations for some well-known cases.
             let inline GenericLessThanFast (x:'T) (y:'T) = 
                 GenericLessThanIntrinsic x y
                 when 'T : bool   = (# "clt" x y : bool #)
-                when 'T : int    = (# "clt" x y : bool #)
                 when 'T : sbyte  = (# "clt" x y : bool #)
                 when 'T : int16  = (# "clt" x y : bool #)
                 when 'T : int32  = (# "clt" x y : bool #)
@@ -1313,12 +1318,12 @@ namespace Microsoft.FSharp.Core
                 when 'T : float  = (# "clt" x y : bool #) 
                 when 'T : float32= (# "clt" x y : bool #) 
                 when 'T : char   = (# "clt" x y : bool #)
-                when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
               
+            /// Generic greater-than with static optimizations for some well-known cases.
             let inline GenericGreaterThanFast (x:'T) (y:'T) = 
                 GenericGreaterThanIntrinsic x y
                 when 'T : bool       = (# "cgt" x y : bool #)
-                when 'T : int        = (# "cgt" x y : bool #)
                 when 'T : sbyte      = (# "cgt" x y : bool #)
                 when 'T : int16      = (# "cgt" x y : bool #)
                 when 'T : int32      = (# "cgt" x y : bool #)
@@ -1332,12 +1337,12 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = (# "cgt" x y : bool #) 
                 when 'T : float32    = (# "cgt" x y : bool #) 
                 when 'T : char       = (# "cgt" x y : bool #)
-                when ^T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
 
+            /// Generic less-than-or-equal with static optimizations for some well-known cases.
             let inline GenericLessOrEqualFast (x:'T) (y:'T) = 
                 GenericLessOrEqualIntrinsic x y
                 when 'T : bool       = not (# "cgt" x y : bool #)
-                when 'T : int        = not (# "cgt" x y : bool #)
                 when 'T : sbyte      = not (# "cgt" x y : bool #)
                 when 'T : int16      = not (# "cgt" x y : bool #)
                 when 'T : int32      = not (# "cgt" x y : bool #)
@@ -1351,12 +1356,12 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "cgt.un" x y : bool #) 
                 when 'T : float32    = not (# "cgt.un" x y : bool #) 
                 when 'T : char       = not(# "cgt" x y : bool #)
-                when ^T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
 
+            /// Generic greater-than-or-equal with static optimizations for some well-known cases.
             let inline GenericGreaterOrEqualFast (x:'T) (y:'T) = 
                 GenericGreaterOrEqualIntrinsic x y
                 when 'T : bool       = not (# "clt" x y : bool #)
-                when 'T : int        = not (# "clt" x y : bool #)
                 when 'T : sbyte      = not (# "clt" x y : bool #)
                 when 'T : int16      = not (# "clt" x y : bool #)
                 when 'T : int32      = not (# "clt" x y : bool #)
@@ -1370,11 +1375,11 @@ namespace Microsoft.FSharp.Core
                 when 'T : float      = not (# "clt.un" x y : bool #) 
                 when 'T : float32    = not (# "clt.un" x y : bool #)
                 when 'T : char       = not (# "clt" x y : bool #)
-                when ^T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
 
 
             //-------------------------------------------------------------------------
-            // EQUALITY
+            // LangaugePrimitives.HashCompare: EQUALITY
             //------------------------------------------------------------------------- 
 
 
@@ -1472,6 +1477,14 @@ namespace Microsoft.FSharp.Core
 
 
 
+            /// The core implementation of generic equality between two objects.  This corresponds
+            /// to th e pseudo-code in the F# language spec.
+            //
+            // Run in either PER or ER mode.  In PER mode, equality involving a NaN returns "false".
+            // In ER mode, equality on two NaNs returns "true".
+            //
+            // If "er" is true the "iec" is fsEqualityComparerNoHashingER
+            // If "er" is false the "iec" is fsEqualityComparerNoHashingPER
             let rec GenericEqualityObj (er:bool) (iec:System.Collections.IEqualityComparer) ((xobj:obj),(yobj:obj)) : bool = 
                 (*if objEq xobj yobj then true else  *)
                 match xobj,yobj with 
@@ -1635,30 +1648,53 @@ namespace Microsoft.FSharp.Core
                     res
 
 
-            let fsEqualityComparer = 
+            /// One of the two unique instances of System.Collections.IEqualityComparer. Implements PER semantics
+            /// where equality on NaN returns "false".
+            let fsEqualityComparerNoHashingPER = 
                 { new System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)  // PER Semantics
                     override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
                     
-            let fsEqualityComparerER = 
+            /// One of the two unique instances of System.Collections.IEqualityComparer. Implements ER semantics
+            /// where equality on NaN returns "true".
+            let fsEqualityComparerNoHashingER = 
                 { new System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
                     override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
 
-            let rec GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                fsEqualityComparer.Equals((box x), (box y))
+            /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
+            //
+            // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on "T".
+            let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
+                GenericEqualityObj false fsEqualityComparerNoHashingPER ((box x), (box y))
                 
-            let rec GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                fsEqualityComparerER.Equals((box x), (box y))
+            /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
+            //
+            // ER semantics is used for recursive calls when implementing .Equals(that) for structural data, see the code generated for record and union types in augment.fs
+            //
+            // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on "T".
+            let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
+                GenericEqualityObj true fsEqualityComparerNoHashingER ((box x), (box y))
                 
-            let rec GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
+            /// Implements generic equality between two values using "comp" for recursive calls.
+            //
+            // The compiler optimizer is aware of this function  (see use of generic_equality_withc_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
+            // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
+            let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
                 comp.Equals((box x),(box y))
                 
 
+            /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
+            //
+            // ER semantics is used for recursive calls when implementing .Equals(that) for structural data, see the code generated for record and union types in augment.fs
+            //
+            // If no static optimization applies, this becomes GenericEqualityERIntrinsic.
             let inline GenericEqualityERFast (x : 'T) (y : 'T) : bool = 
                   GenericEqualityERIntrinsic x y
                   when 'T : bool    = (# "ceq" x y : bool #)
-                  when 'T : int     = (# "ceq" x y : bool #)
                   when 'T : sbyte   = (# "ceq" x y : bool #)
                   when 'T : int16   = (# "ceq" x y : bool #)
                   when 'T : int32   = (# "ceq" x y : bool #)
@@ -1681,12 +1717,14 @@ namespace Microsoft.FSharp.Core
                         (# "ceq" x y : bool #)
                   when 'T : char    = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
-                  when ^T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                                
+            /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
+            //
+            // If no static optimization applies, this becomes GenericEqualityIntrinsic.
             let inline GenericEqualityFast (x : 'T) (y : 'T) : bool = 
                   GenericEqualityIntrinsic x y
                   when 'T : bool    = (# "ceq" x y : bool #)
-                  when 'T : int     = (# "ceq" x y : bool #)
                   when 'T : sbyte   = (# "ceq" x y : bool #)
                   when 'T : int16   = (# "ceq" x y : bool #)
                   when 'T : int32   = (# "ceq" x y : bool #)
@@ -1701,13 +1739,18 @@ namespace Microsoft.FSharp.Core
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
-                  when ^T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   
-            // Note, because of the static optimization conditionals for float and float32, this operation has PER semantics
+            /// A compiler intrinsic generated during optimization of calls to GenericEqualityIntrinsic on tuple values.
+            //
+            // If no static optimization applies, this becomes GenericEqualityIntrinsic.
+            //
+            // Note, although this function says "WithComparer", the static optimization conditionals for float and float32
+            // mean that it has PER semantics. This is OK because calls to this function are only generated by 
+            // the F# compiler, ultimately stemming from an optimization of GenericEqualityIntrinsic when used on a tuple type.
             let inline GenericEqualityWithComparerFast (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool = 
                   GenericEqualityWithComparerIntrinsic comp x y
                   when 'T : bool    = (# "ceq" x y : bool #)
-                  when 'T : int     = (# "ceq" x y : bool #)
                   when 'T : sbyte   = (# "ceq" x y : bool #)
                   when 'T : int16   = (# "ceq" x y : bool #)
                   when 'T : int32   = (# "ceq" x y : bool #)
@@ -1722,51 +1765,23 @@ namespace Microsoft.FSharp.Core
                   when 'T : nativeint  = (# "ceq" x y : bool #)
                   when 'T : unativeint  = (# "ceq" x y : bool #)
                   when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))                  
-                  when ^T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+                  when 'T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                   
-            // Note, because of the static optimization conditionals for float and float32, this operation has ER semantics
-            let inline GenericEqualityWithComparerERFast (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool = 
-                  GenericEqualityWithComparerIntrinsic comp x y
-                  when 'T : bool    = (# "ceq" x y : bool #)
-                  when 'T : int     = (# "ceq" x y : bool #)
-                  when 'T : sbyte   = (# "ceq" x y : bool #)
-                  when 'T : int16   = (# "ceq" x y : bool #)
-                  when 'T : int32   = (# "ceq" x y : bool #)
-                  when 'T : int64   = (# "ceq" x y : bool #)
-                  when 'T : byte    = (# "ceq" x y : bool #)
-                  when 'T : uint16  = (# "ceq" x y : bool #)
-                  when 'T : uint32  = (# "ceq" x y : bool #)
-                  when 'T : uint64  = (# "ceq" x y : bool #)    
-                  when 'T : nativeint  = (# "ceq" x y : bool #)
-                  when 'T : unativeint  = (# "ceq" x y : bool #)
-                  when 'T : float = 
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
-                        true
-                    else
-                        (# "ceq" x y : bool #)
-                  when 'T : float32 =
-                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
-                        true
-                    else
-                        (# "ceq" x y : bool #)                  
-                  when 'T : char    = (# "ceq" x y : bool #)
-                  when 'T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
-                  when ^T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
-
 
             let inline GenericInequalityFast (x:'T) (y:'T) = (not(GenericEqualityFast x y) : bool)
             let inline GenericInequalityERFast (x:'T) (y:'T) = (not(GenericEqualityERFast x y) : bool)
 
 
             //-------------------------------------------------------------------------
-            // HASHING
+            // LangaugePrimitives.HashCompare: HASHING.  
             //------------------------------------------------------------------------- 
 
 
 
             let defaultHashNodes = 18 
 
-            type CountLimitedHasher(sz:int) =
+            /// The implementation of IEqualityComparer, using depth-limited for hashing and PER semantics for NaN equality.
+            type CountLimitedHasherPER(sz:int) =
                 [<DefaultValue>]
                 val mutable nodeCount : int
                 
@@ -1774,21 +1789,24 @@ namespace Microsoft.FSharp.Core
                     if (System.Threading.Interlocked.CompareExchange(&(x.nodeCount), sz, 0) = 0) then 
                         x
                     else
-                        new CountLimitedHasher(sz)
+                        new CountLimitedHasherPER(sz)
                 
                 interface IEqualityComparer 
-                    
 
+            /// The implementation of IEqualityComparer, using unlimited depth for hashing and ER semantics for NaN equality.
             type UnlimitedHasherER() =
-                
                 interface IEqualityComparer 
                 
-            type UnlimitedHasher() =
+            /// The implementation of IEqualityComparer, using unlimited depth for hashing and PER semantics for NaN equality.
+            type UnlimitedHasherPER() =
                 interface IEqualityComparer
                     
 
-            let fsUnlimitedHasherER = UnlimitedHasherER()
-            let fsUnlimitedHasher = UnlimitedHasher()
+            /// The unique object for unlimited depth for hashing and ER semantics for equality.
+            let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER()
+
+            /// The unique object for unlimited depth for hashing and PER semantics for equality.
+            let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER()
              
             let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
 
@@ -1853,10 +1871,11 @@ namespace Microsoft.FSharp.Core
                   | _ -> 
                      HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
 
-            // Core implementation of structural hashing.  Search for the IStructuralHash interface.
-            // Arrays and strings are structurally hashed through a separate technique.
-            // Objects which do not support this interface get hashed using a virtual
-            // call to the standard Object::GetStructuralHashCode().
+            // Core implementation of structural hashing, corresponds to pseudo-code in the 
+            // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
+            // Arrays are structurally hashed through a separate technique.
+            //
+            // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
             let rec GenericHashParamObj (iec : System.Collections.IEqualityComparer) (x: obj) : int =
                   match x with 
                   | null -> 0 
@@ -1867,17 +1886,14 @@ namespace Microsoft.FSharp.Core
                       | :? (int[]) as ba -> GenericHashInt32Array ba 
                       | :? (int64[]) as ba -> GenericHashInt64Array ba 
                       | _ -> GenericHashArbArray iec a 
-                  // REVIEW: System.Array implements IStructuralEquatable in Dev10
                   | :? IStructuralEquatable as a ->    
                       a.GetHashCode(iec)
                   | _ -> 
                       x.GetHashCode()
 
 
-            // optimized case - hash on things compatible with obj[]
-
-
-            type CountLimitedHasher with
+            /// Fill in the implementation of CountLimitedHasherPER
+            type CountLimitedHasherPER with
                 
                 interface System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) =
@@ -1889,97 +1905,191 @@ namespace Microsoft.FSharp.Core
                         else
                             -1
                
+            /// Fill in the implementation of UnlimitedHasherER
             type UnlimitedHasherER with
                 
                 interface System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)
                     override iec.GetHashCode(x:obj) = GenericHashParamObj iec  x
                    
-            type UnlimitedHasher with
+            /// Fill in the implementation of UnlimitedHasherPER
+            type UnlimitedHasherPER with
                 interface System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)
                     override iec.GetHashCode(x:obj) = GenericHashParamObj iec x
 
-            // Represents an call to structural hashing that was not optimized by static conditionals.
-            // NOTE: compiler/optimizer is aware of this function and optimizes calls to it in many situations
-            let GenericHashIntrinsic x = GenericHashParamObj fsUnlimitedHasher (box(x))
+            /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
+            //
+            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on type "T".
+            let GenericHashIntrinsic x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box(x))
 
-            let LimitedGenericHashIntrinsic limit x = GenericHashParamObj (CountLimitedHasher(limit)) (box(x))
+            /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
+            let LimitedGenericHashIntrinsic limit x = GenericHashParamObj (CountLimitedHasherPER(limit)) (box(x))
 
-            // Represents a recursive call to structural hashing that was not optimized by static conditionals.
-            // For unoptimized recursive calls we fetch the generic hasher
-            let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (x : 'T) : int =
-                GenericHashParamObj comp (box(x))
+            /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
+            //
+            // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
+            // a CountLimitedHasherPER.
+            //
+            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on type "T".
+            let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
+                GenericHashParamObj iec (box(x))
                 
+            /// Direct call to GetHashCode on the string type
+            let inline HashString (s:string) = 
+                 match s with 
+                 | null -> 0 
+                 | _ -> (# "call instance int32 [mscorlib]System.String::GetHashCode()" s : int #)
                     
-             /// Core entry into structural hashing.  Hash to a given depth limit.
-            let inline GenericHashWithComparerFast (comp : System.Collections.IEqualityComparer) (x:'T) : int = 
-                GenericHashWithComparerIntrinsic comp x 
+            // from mscorlib v4.0.30319
+            let inline HashChar (x:char) = (# "or" (# "shl" x 16 : int #) x : int #)
+            let inline HashSByte (x:sbyte) = (# "xor" (# "shl" x 8 : int #) x : int #)
+            let inline HashInt16 (x:int16) = (# "or" (# "conv.u2" x : int #) (# "shl" x 16 : int #) : int #)
+            let inline HashInt64 (x:int64) = (# "xor" (# "conv.i4" x : int #) (# "conv.i4" (# "shr" x 32 : int #) : int #) : int #)
+            let inline HashUInt64 (x:uint64) = (# "xor" (# "conv.i4" x : int #) (# "conv.i4" (# "shr.un" x 32 : int #) : int #) : int #)
+            let inline HashIntPtr (x:nativeint) = (# "conv.i4" (# "conv.u8" x : uint64 #) : int #)
+            let inline HashUIntPtr (x:unativeint) = (# "and" (# "conv.i4" (# "conv.u8" x : uint64 #) : int #) 0x7fffffff : int #)
+
+            /// Core entry into structural hashing for either limited or unlimited hashing.  
+            //
+            // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
+            // a CountLimitedHasherPER.
+            let inline GenericHashWithComparerFast (iec : System.Collections.IEqualityComparer) (x:'T) : int = 
+                GenericHashWithComparerIntrinsic iec x 
                 when 'T : bool   = (# "" x : int #)
-                when 'T : int    = (# "" x : int #)
                 when 'T : int32  = (# "" x : int #)
                 when 'T : byte   = (# "" x : int #)
                 when 'T : uint32 = (# "" x : int #)                          
-                when 'T : string = 
-                    match (# "" x : obj #) with 
-                    | null -> 0 
-                    | _ -> (# "call instance int32 [mscorlib]System.String:: GetHashCode()" x : int #)
+                when 'T : char = HashChar (# "" x : char #)                         
+                when 'T : sbyte = HashSByte (# "" x : sbyte #)                          
+                when 'T : int16 = HashInt16 (# "" x : int16 #)
+                when 'T : int64 = HashInt64 (# "" x : int64 #)
+                when 'T : uint64 = HashUInt64 (# "" x : uint64 #)
+                when 'T : nativeint = HashIntPtr (# "" x : nativeint #)
+                when 'T : unativeint = HashUIntPtr (# "" x : unativeint #)
+                when 'T : uint16 = (# "" x : int #)                    
+                when 'T : string = HashString  (# "" x : string #)
                     
-             /// Core entry into structural hashing.  Hash to a given depth limit.
+            /// Core entry into depth-unlimited structural hashing.  Hash to a given depth limit.
             let inline GenericHashFast (x:'T) : int = 
                 GenericHashIntrinsic x 
                 when 'T : bool   = (# "" x : int #)
-                when 'T : int    = (# "" x : int #)
                 when 'T : int32  = (# "" x : int #)
                 when 'T : byte   = (# "" x : int #)
-                when 'T : uint32 = (# "" x : int #)                    
-                when 'T : string = 
-                 match (# "" x : obj #) with 
-                 | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String:: GetHashCode()" x : int #)
+                when 'T : uint32 = (# "" x : int #)
+                when 'T : char = HashChar (# "" x : char #)
+                when 'T : sbyte = HashSByte (# "" x : sbyte #)
+                when 'T : int16 = HashInt16 (# "" x : int16 #)
+                when 'T : int64 = HashInt64 (# "" x : int64 #)
+                when 'T : uint64 = HashUInt64 (# "" x : uint64 #)
+                when 'T : nativeint = HashIntPtr (# "" x : nativeint #)
+                when 'T : unativeint = HashUIntPtr (# "" x : unativeint #)
+                when 'T : uint16 = (# "" x : int #)                    
+                when 'T : string = HashString  (# "" x : string #)
 
-             /// Core entry into structural hashing.  Hash to a given depth limit.
+            /// Core entry into depth-limited structural hashing.  
             let inline GenericLimitedHashFast (limit:int) (x:'T) : int = 
                 LimitedGenericHashIntrinsic limit x 
                 when 'T : bool   = (# "" x : int #)
-                when 'T : int    = (# "" x : int #)
                 when 'T : int32  = (# "" x : int #)
                 when 'T : byte   = (# "" x : int #)
                 when 'T : uint32 = (# "" x : int #)                    
-                when 'T : string = 
-                 match (# "" x : obj #) with 
-                 | null -> 0 
-                 | _ -> (# "call instance int32 [mscorlib]System.String:: GetHashCode()" x : int #)
+                when 'T : char = HashChar (# "" x : char #)                          
+                when 'T : sbyte = HashSByte (# "" x : sbyte #)                          
+                when 'T : int16 = HashInt16 (# "" x : int16 #)
+                when 'T : int64 = HashInt64 (# "" x : int64 #)
+                when 'T : uint64 = HashUInt64 (# "" x : uint64 #)
+                when 'T : nativeint = HashIntPtr (# "" x : nativeint #)
+                when 'T : unativeint = HashUIntPtr (# "" x : unativeint #)
+                when 'T : uint16 = (# "" x : int #)                    
+                when 'T : string = HashString  (# "" x : string #)
 
 
+            /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
+            //
+            // The F# compiler optimizer generates calls to this function when GenericHashWithComparerIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) = 
                 TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)
 
+            /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
+            //
+            // The F# compiler optimizer generates calls to this function when GenericHashWithComparerIntrinsic is used 
+            // statically with a tuple type.
+            //
+            // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) =
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
 
+            /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
+            //
+            // The F# compiler optimizer generates calls to this function when GenericHashWithComparerIntrinsic is used 
+            // statically with a tuple type.
+            //
+            // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) = 
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))
 
+            /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
+            //
+            // The F# compiler optimizer generates calls to this function when GenericHashWithComparerIntrinsic is used 
+            // statically with a tuple type.
+            //
+            // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) = 
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))) (GenericHashWithComparerFast comparer x5)
 
-            // Note: because these FastEqualsTupleN functions are devirtualized by (=), they have PER semantics
+            /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples
+            //
+            // The F# compiler optimizer generates calls to this function when GenericEqualityIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastEqualsTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) (y1,y2) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2
 
+            /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples.  
+            //
+            // The F# compiler optimizer generates calls to this function when GenericEqualityIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastEqualsTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) (y1,y2,y3) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3
 
+            /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples (with PER semantics).  
+            //
+            // The F# compiler optimizer generates calls to this function when GenericEqualityIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastEqualsTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) (y1,y2,y3,y4) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3 &&
                 GenericEqualityWithComparerFast comparer x4 y4
 
+            /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples.  
+            //
+            // The F# compiler optimizer generates calls to this function when GenericEqualityIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastEqualsTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
@@ -1987,11 +2097,25 @@ namespace Microsoft.FSharp.Core
                 GenericEqualityWithComparerFast comparer x4 y4 &&
                 GenericEqualityWithComparerFast comparer x5 y5
 
+            /// Compiler intrinsic generated for devirtualized calls to structural comparison on tuples (with ER semantics)
+            //
+            // The F# compiler optimizer generates calls to this function when GenericComparisonIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastCompareTuple2 (comparer:System.Collections.IComparer) (x1,x2) (y1,y2) =
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 GenericComparisonWithComparerFast comparer x2 y2
 
+            /// Compiler intrinsic generated for devirtualized calls to structural comparison on tuples (with ER semantics)
+            //
+            // The F# compiler optimizer generates calls to this function when GenericComparisonIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastCompareTuple3 (comparer:System.Collections.IComparer) (x1,x2,x3) (y1,y2,y3) =
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
@@ -1999,6 +2123,13 @@ namespace Microsoft.FSharp.Core
                 if n <> 0 then n else
                 GenericComparisonWithComparerFast comparer x3 y3
 
+            /// Compiler intrinsic generated for devirtualized calls to structural comparison on tuples (with ER semantics)
+            //
+            // The F# compiler optimizer generates calls to this function when GenericComparisonIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastCompareTuple4 (comparer:System.Collections.IComparer) (x1,x2,x3,x4) (y1,y2,y3,y4) = 
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
@@ -2008,6 +2139,13 @@ namespace Microsoft.FSharp.Core
                 if n <> 0 then n else
                 GenericComparisonWithComparerFast comparer x4 y4
             
+            /// Compiler intrinsic generated for devirtualized calls to structural comparison on tuples (with ER semantics)
+            //
+            // The F# compiler optimizer generates calls to this function when GenericComparisonIntrinsic is used 
+            // statically with a tuple type.
+            // 
+            // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
+            // often statically optimized or devirtualized based on the statically known type.
             let inline FastCompareTuple5 (comparer:System.Collections.IComparer) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) =
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
@@ -2019,9 +2157,15 @@ namespace Microsoft.FSharp.Core
                 if n <> 0 then n else
                 GenericComparisonWithComparerFast comparer x5 y5
 
+        //-------------------------------------------------------------------------
+        // LanguagePrimitives: PUBLISH HASH, EQUALITY AND COMPARISON FUNCTIONS.  
+        //------------------------------------------------------------------------- 
 
 
+
+        // Publish the intrinsic plus the static optimization conditionals
         let inline GenericEquality               x y = HashCompare.GenericEqualityFast               x y
+
         let inline GenericEqualityER            x y = HashCompare.GenericEqualityERFast            x y
         let inline GenericEqualityWithComparer comp   x y = HashCompare.GenericEqualityWithComparerFast   comp x y
         let inline GenericComparison             x y = HashCompare.GenericComparisonFast             x y
@@ -2047,13 +2191,17 @@ namespace Microsoft.FSharp.Core
         let inline PhysicalEquality x y     = HashCompare.PhysicalEqualityFast x y
         let inline PhysicalHash x           = HashCompare.PhysicalHashFast x
         
-        let GenericComparer = HashCompare.fsComparerNoThrow :> System.Collections.IComparer
-        let GenericEqualityComparer = HashCompare.fsUnlimitedHasher :> System.Collections.IEqualityComparer
-        let GenericEqualityERComparer = HashCompare.fsUnlimitedHasherER :> System.Collections.IEqualityComparer
+        let GenericComparer = HashCompare.fsComparerER :> System.Collections.IComparer
+        let GenericEqualityComparer = HashCompare.fsEqualityComparerUnlimitedHashingPER :> System.Collections.IEqualityComparer
+        let GenericEqualityERComparer = HashCompare.fsEqualityComparerUnlimitedHashingER :> System.Collections.IEqualityComparer
 
         let inline GenericHash x                = HashCompare.GenericHashFast x
         let inline GenericLimitedHash limit x   = HashCompare.GenericLimitedHashFast limit x
         let inline GenericHashWithComparer comp x = HashCompare.GenericHashWithComparerFast comp x
+
+        //-------------------------------------------------------------------------
+        // LanguagePrimitives: PUBLISH IEqualityComparer AND IComparer OBJECTS
+        //------------------------------------------------------------------------- 
 
 
         let inline MakeGenericEqualityComparer<'T>() = 
@@ -2068,7 +2216,7 @@ namespace Microsoft.FSharp.Core
                   member self.GetHashCode(x) = GenericLimitedHash limit x 
                   member self.Equals(x,y) = GenericEquality x y }
 
-(*
+        let BoolIEquality    = MakeGenericEqualityComparer<bool>()
         let CharIEquality    = MakeGenericEqualityComparer<char>()
         let StringIEquality  = MakeGenericEqualityComparer<string>()
         let SByteIEquality   = MakeGenericEqualityComparer<sbyte>()
@@ -2089,15 +2237,16 @@ namespace Microsoft.FSharp.Core
         type FastGenericEqualityComparerTable<'T>() = 
             static let f : System.Collections.Generic.IEqualityComparer<'T> = 
                 match typeof<'T> with 
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolIEquality)
                 | ty when ty.Equals(typeof<byte>)       -> unboxPrim (box ByteIEquality)
+                | ty when ty.Equals(typeof<int32>)      -> unboxPrim (box Int32IEquality)
+                | ty when ty.Equals(typeof<uint32>)     -> unboxPrim (box UInt32IEquality)
                 | ty when ty.Equals(typeof<char>)       -> unboxPrim (box CharIEquality)
                 | ty when ty.Equals(typeof<sbyte>)      -> unboxPrim (box SByteIEquality)
                 | ty when ty.Equals(typeof<int16>)      -> unboxPrim (box Int16IEquality)
-                | ty when ty.Equals(typeof<int32>)      -> unboxPrim (box Int32IEquality)
                 | ty when ty.Equals(typeof<int64>)      -> unboxPrim (box Int64IEquality)
                 | ty when ty.Equals(typeof<nativeint>)  -> unboxPrim (box IntPtrIEquality)
                 | ty when ty.Equals(typeof<uint16>)     -> unboxPrim (box UInt16IEquality)
-                | ty when ty.Equals(typeof<uint32>)     -> unboxPrim (box UInt32IEquality)
                 | ty when ty.Equals(typeof<uint64>)     -> unboxPrim (box UInt64IEquality)
                 | ty when ty.Equals(typeof<unativeint>) -> unboxPrim (box UIntPtrIEquality)
                 | ty when ty.Equals(typeof<float>)      -> unboxPrim (box FloatIEquality)
@@ -2107,53 +2256,84 @@ namespace Microsoft.FSharp.Core
                 | _ -> MakeGenericEqualityComparer<'T>()
             static member Function : System.Collections.Generic.IEqualityComparer<'T> = f
 
-        let FastGenericEqualityComparer<'T> = FastGenericEqualityComparerTable<'T>.Function
-*)
-        let inline FastGenericEqualityComparer<'T> = MakeGenericEqualityComparer<'T>() 
+        let FastGenericEqualityComparerFromTable<'T> = FastGenericEqualityComparerTable<'T>.Function
+
+        // This is the implementation of HashIdentity.Structural.  In most cases this just becomes
+        // FastGenericEqualityComparerFromTable.
+        let inline FastGenericEqualityComparer<'T> = 
+            // This gets used if 'T can't be resolved to anything interesting
+            FastGenericEqualityComparerFromTable<'T>
+            // When 'T is a primitive, just use the fixed entry in the table
+            when 'T : bool   = FastGenericEqualityComparerFromTable<'T>
+            when 'T : int32  = FastGenericEqualityComparerFromTable<'T>
+            when 'T : byte   = FastGenericEqualityComparerFromTable<'T>
+            when 'T : uint32 = FastGenericEqualityComparerFromTable<'T>
+            when 'T : string = FastGenericEqualityComparerFromTable<'T>
+            when 'T : sbyte  = FastGenericEqualityComparerFromTable<'T>
+            when 'T : int16  = FastGenericEqualityComparerFromTable<'T>
+            when 'T : int64  = FastGenericEqualityComparerFromTable<'T>
+            when 'T : nativeint  = FastGenericEqualityComparerFromTable<'T>
+            when 'T : uint16 = FastGenericEqualityComparerFromTable<'T>
+            when 'T : uint64 = FastGenericEqualityComparerFromTable<'T>
+            when 'T : unativeint = FastGenericEqualityComparerFromTable<'T>
+            when 'T : float  = FastGenericEqualityComparerFromTable<'T>
+            when 'T : float32 = FastGenericEqualityComparerFromTable<'T>
+            when 'T : char   = FastGenericEqualityComparerFromTable<'T>
+            when 'T : decimal = FastGenericEqualityComparerFromTable<'T>
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever 'T is resolved to a nominal or tuple type 
+             // and none of the other rules above apply.
+             //
+             // When 'T is statically known to be nominal or tuple, it is better to inline the implementation of 
+             // MakeGenericEqualityComparer. This is then reduced by further inlining to the primitives 
+             // known to the F# compiler which are then often optimized for the particular nominal type involved.
+            when 'T : 'T = MakeGenericEqualityComparer<'T>()
+
         let inline FastLimitedGenericEqualityComparer<'T>(limit) = MakeGenericLimitedEqualityComparer<'T>(limit) 
 
-        let inline MakeFastGenericComparer<'T>()  = 
+        let inline MakeGenericComparer<'T>()  = 
             { new System.Collections.Generic.IComparer<'T> with 
                  member __.Compare(x,y) = GenericComparison x y }
 
-        let CharComparer    = MakeFastGenericComparer<char>()
-        let StringComparer  = MakeFastGenericComparer<string>()
-        let SByteComparer   = MakeFastGenericComparer<sbyte>()
-        let Int16Comparer   = MakeFastGenericComparer<int16>()
-        let Int32Comparer   = MakeFastGenericComparer<int32>()
-        let Int64Comparer   = MakeFastGenericComparer<int64>()
-        let IntPtrComparer  = MakeFastGenericComparer<nativeint>()
-        let ByteComparer    = MakeFastGenericComparer<byte>()
-        let UInt16Comparer  = MakeFastGenericComparer<uint16>()
-        let UInt32Comparer  = MakeFastGenericComparer<uint32>()
-        let UInt64Comparer  = MakeFastGenericComparer<uint64>()
-        let UIntPtrComparer = MakeFastGenericComparer<unativeint>()
-        let FloatComparer   = MakeFastGenericComparer<float>()
-        let Float32Comparer = MakeFastGenericComparer<float32>()
-        let DecimalComparer = MakeFastGenericComparer<decimal>()
+        let CharComparer    = MakeGenericComparer<char>()
+        let StringComparer  = MakeGenericComparer<string>()
+        let SByteComparer   = MakeGenericComparer<sbyte>()
+        let Int16Comparer   = MakeGenericComparer<int16>()
+        let Int32Comparer   = MakeGenericComparer<int32>()
+        let Int64Comparer   = MakeGenericComparer<int64>()
+        let IntPtrComparer  = MakeGenericComparer<nativeint>()
+        let ByteComparer    = MakeGenericComparer<byte>()
+        let UInt16Comparer  = MakeGenericComparer<uint16>()
+        let UInt32Comparer  = MakeGenericComparer<uint32>()
+        let UInt64Comparer  = MakeGenericComparer<uint64>()
+        let UIntPtrComparer = MakeGenericComparer<unativeint>()
+        let FloatComparer   = MakeGenericComparer<float>()
+        let Float32Comparer = MakeGenericComparer<float32>()
+        let DecimalComparer = MakeGenericComparer<decimal>()
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
         type FastGenericComparerTable<'T>() = 
+
+            // The CLI implementation of mscorlib optimizes array sorting
+            // when the comparer is either null or precisely
+            // reference-equals to System.Collections.Generic.Comparer<'T>.Default.
+            // This is an indication that a "fast" array sorting helper can be used.
+            //
+            // So, for all the types listed below, we want to pass in a value of "null" for
+            // the comparer object.  Note that F# generic comparison coincides precisely with 
+            // System.Collections.Generic.Comparer<'T>.Default for these types.
+            //
+            // A "null" comparer is only valid if the values do not have identity, e.g. integers.
+            // That is, an unstable sort of the array must be the semantically the 
+            // same as a stable sort of the array. See Array.stableSortInPlace.
+            //
+            // REVIEW: in a future version we could extend this to include additional types 
             static let fCanBeNull : System.Collections.Generic.IComparer<'T>  = 
                 match typeof<'T> with 
                 | ty when ty.Equals(typeof<nativeint>)  -> unboxPrim (box IntPtrComparer)
                 | ty when ty.Equals(typeof<unativeint>) -> unboxPrim (box UIntPtrComparer)
-                
-                // The CLI implementation of mscorlib optimizes array sorting
-                // when the comparer is either null or precisely
-                // reference-equals to System.Collections.Generic.Comparer<'T>.Default.
-                // This is an indication that a "fast" array sorting helper can be used.
-                //
-                // For all the types listed below, F# generic comparison 
-                // coincides precisely with System.Collections.Generic.Comparer<'T>.Default.
-                //
-                // ALSO: This must only be null if the values do not have identity, e.g. integers.
-                // That is, an unstable sort of the array must be the semantically the 
-                // same as a stable sort of the array. See Array.stableSortInPlace.
-                //
-                // REVIEW: in a future version we could extend this to include additional types 
                 | ty when ty.Equals(typeof<byte>)       -> null    
                 | ty when ty.Equals(typeof<char>)       -> null    
                 | ty when ty.Equals(typeof<sbyte>)      -> null     
@@ -2167,7 +2347,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> null    
                 | ty when ty.Equals(typeof<decimal>)    -> null    
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
-                | _ -> MakeFastGenericComparer<'T>()
+                | _ -> MakeGenericComparer<'T>()
 
             static let f : System.Collections.Generic.IComparer<'T>  = 
                 match typeof<'T> with 
@@ -2190,26 +2370,65 @@ namespace Microsoft.FSharp.Core
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
                     // For example, for any value type.
-                    MakeFastGenericComparer<'T>()
+                    MakeGenericComparer<'T>()
 
             static member Value : System.Collections.Generic.IComparer<'T> = f
 
             static member ValueCanBeNullIfDefaultSemantics : System.Collections.Generic.IComparer<'T> = fCanBeNull
         
-        let FastGenericComparer<'T> = FastGenericComparerTable<'T>.Value
+        let FastGenericComparerFromTable<'T> = 
+            FastGenericComparerTable<'T>.Value
+
+        let inline FastGenericComparer<'T> = 
+            // This gets used is 'T can't be resolved to anything interesting
+            FastGenericComparerFromTable<'T>
+            // When 'T is a primitive, just use the fixed entry in the table
+            when 'T : bool   = FastGenericComparerFromTable<'T>
+            when 'T : sbyte  = FastGenericComparerFromTable<'T>
+            when 'T : int16  = FastGenericComparerFromTable<'T>
+            when 'T : int32  = FastGenericComparerFromTable<'T>
+            when 'T : int64  = FastGenericComparerFromTable<'T>
+            when 'T : nativeint  = FastGenericComparerFromTable<'T>
+            when 'T : byte   = FastGenericComparerFromTable<'T>
+            when 'T : uint16 = FastGenericComparerFromTable<'T>
+            when 'T : uint32 = FastGenericComparerFromTable<'T>
+            when 'T : uint64 = FastGenericComparerFromTable<'T>
+            when 'T : unativeint = FastGenericComparerFromTable<'T>
+            when 'T : float  = FastGenericComparerFromTable<'T>
+            when 'T : float32 = FastGenericComparerFromTable<'T>
+            when 'T : char   = FastGenericComparerFromTable<'T>
+            when 'T : string = FastGenericComparerFromTable<'T>
+            when 'T : decimal = FastGenericComparerFromTable<'T>
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever 'T is resolved by inlining to be a nominal type 
+             // and none of the other rules above apply
+             //
+             // In this case it is better to inline the implementation of MakeGenericComparer so that
+             // the comparison object is eventually reduced to the primitives known to the F# compiler
+             // which are then optimized for the particular nominal type involved.
+            when 'T : 'T = MakeGenericComparer<'T>()
+            
         let FastGenericComparerCanBeNull<'T> = FastGenericComparerTable<'T>.ValueCanBeNullIfDefaultSemantics
 
+        //-------------------------------------------------------------------------
+        // LanguagePrimitives: ENUMS
+        //------------------------------------------------------------------------- 
 
-        let inline EnumOfValue (u : 'u) : 'e when 'e : enum<'u> = 
-            unboxPrim<'e>(box u)
-            when 'e : 'e = (retype u : 'e)
-
-        let inline EnumToValue (e : 'e) : 'u when 'e : enum<'u> = 
-            unboxPrim<'u>(box e)
+        let inline EnumOfValue (u : 'T) : 'Enum when 'Enum : enum<'T> = 
+            unboxPrim<'Enum>(box u)
              // According to the somewhat subtle rules of static optimizations,
-             // this condition is used whenever ^T is resolved to a nominal type
-            when 'e : 'e = (retype e : 'u)
+             // this condition is used whenever 'Enum is resolved to a nominal type
+            when 'Enum : 'Enum = (retype u : 'Enum)
 
+        let inline EnumToValue (e : 'Enum) : 'T when 'Enum : enum<'T> = 
+            unboxPrim<'T>(box e)
+             // According to the somewhat subtle rules of static optimizations,
+             // this condition is used whenever 'Enum is resolved to a nominal type
+            when 'Enum : 'Enum = (retype e : 'T)
+
+        //-------------------------------------------------------------------------
+        // LanguagePrimitives: MEASURES
+        //------------------------------------------------------------------------- 
 
         let inline FloatWithMeasure (f : float) : float<'Measure> = retype f
         let inline Float32WithMeasure (f : float32) : float32<'Measure> = retype f
@@ -2393,8 +2612,8 @@ namespace Microsoft.FSharp.Core
 
             static member Result : 'T = result
 
-        let GenericZeroDynamic< 'T >() : 'T = GenericZeroDynamicImplTable<'T>.Result
-        let GenericOneDynamic< 'T >() : 'T = GenericOneDynamicImplTable<'T>.Result
+        let GenericZeroDynamic<'T>() : 'T = GenericZeroDynamicImplTable<'T>.Result
+        let GenericOneDynamic<'T>() : 'T = GenericOneDynamicImplTable<'T>.Result
 
         let inline GenericZero< ^T when ^T : (static member Zero : ^T) > : ^T =
             GenericZeroDynamic<(^T)>()
@@ -2669,11 +2888,11 @@ namespace System
                 comparer.GetHashCode(t.Item1)
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other,(HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other,(HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
 
     type Tuple<'T1,'T2> with 
         override x.ToString() = 
@@ -2692,11 +2911,11 @@ namespace System
                 HashCompare.FastHashTuple2 comparer (retype t : ('T1 * 'T2))
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
                     
 
     type Tuple<'T1,'T2,'T3> with
@@ -2717,11 +2936,11 @@ namespace System
                 HashCompare.FastHashTuple3 comparer (retype t : ('T1 * 'T2 * 'T3))
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
             
     type Tuple<'T1,'T2,'T3,'T4> with
         override x.ToString() = 
@@ -2742,11 +2961,11 @@ namespace System
                 HashCompare.FastHashTuple4 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4))
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
 
     type Tuple<'T1,'T2,'T3,'T4,'T5> with
         override x.ToString() = 
@@ -2768,11 +2987,11 @@ namespace System
                 HashCompare.FastHashTuple5 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4 * 'T5))
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
 
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6> with
         override x.ToString() = 
@@ -2816,11 +3035,11 @@ namespace System
                 TupleUtils.combineTupleHashCodes [|(comparer.GetHashCode(t.Item1))  ; (comparer.GetHashCode(t.Item2)) ; (comparer.GetHashCode(t.Item3)) ; (comparer.GetHashCode(t.Item4)) ; (comparer.GetHashCode(t.Item5)) ; (comparer.GetHashCode(t.Item6))|]
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
 
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7> with
         override x.ToString() = 
@@ -2869,11 +3088,11 @@ namespace System
                 TupleUtils.combineTupleHashCodes [|(comparer.GetHashCode(t.Item1))  ; (comparer.GetHashCode(t.Item2)) ; (comparer.GetHashCode(t.Item3)) ; (comparer.GetHashCode(t.Item4)) ; (comparer.GetHashCode(t.Item5)) ; (comparer.GetHashCode(t.Item6)) ; (comparer.GetHashCode(t.Item7))|]
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
             
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest> with
         override x.ToString() = 
@@ -2928,11 +3147,11 @@ namespace System
                 TupleUtils.combineTupleHashCodes [|(comparer.GetHashCode(t.Item1))  ; (comparer.GetHashCode(t.Item2)) ; (comparer.GetHashCode(t.Item3)) ; (comparer.GetHashCode(t.Item4)) ; (comparer.GetHashCode(t.Item5)) ; (comparer.GetHashCode(t.Item6)) ; (comparer.GetHashCode(t.Item7)) ; (comparer.GetHashCode(t.Rest))|]
         interface IComparable with
             override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparer :> System.Collections.IComparer))
+                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
         override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsUnlimitedHasher)
+            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
         override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparer)
+            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
 #else        
 #endif
 

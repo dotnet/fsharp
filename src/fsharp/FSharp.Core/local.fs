@@ -41,7 +41,7 @@ module internal List =
             else
                 distinctToFreshConsTail cons hashSet rest
 
-    let distinct (comparer: System.Collections.Generic.IEqualityComparer<'T>) (list:'T list) =       
+    let distinctWithComparer (comparer: System.Collections.Generic.IEqualityComparer<'T>) (list:'T list) =       
         match list with
         | [] -> []
         | [h] -> [h]
@@ -63,7 +63,7 @@ module internal List =
             else
                 distinctByToFreshConsTail cons hashSet keyf rest
 
-    let distinctBy (comparer: System.Collections.Generic.IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
+    let distinctByWithComparer (comparer: System.Collections.Generic.IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
         match list with
         | [] -> []
         | [h] -> [h]
@@ -627,6 +627,7 @@ module internal Array =
             | _,_ ->
             let comparer = match comparer with null -> LanguagePrimitives.FastGenericComparer<'Key> | _ -> comparer
             qsort(keys, values, 0, keys.Length-1, comparer)
+
         static member Sort<'Key,'Value  when 'Key : comparison>(keys : 'Key[], values : 'Value[]) =
             let valuesExist = 
                 match values with
@@ -637,13 +638,7 @@ module internal Array =
             | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
             | _,_ ->   
             qsort(keys,values,0,keys.Length-1,LanguagePrimitives.FastGenericComparer<'Key>)
-(*
-        static member Sort<'Key,'Value when 'Key : comparison>(keys : 'Key[], values : 'Value[], start : int, last : int) =
-            match keys with
-            | null -> raise (ArgumentNullException())
-            | _ ->        
-            qsort(keys,values,start,last,LanguagePrimitives.FastGenericComparer<'Key>)
-*)
+
         static member Sort<'Key,'Value when 'Key : comparison>(keys : 'Key[], values : 'Value[], start : int, length : int, comparer : IComparer<'Key>) =
             match keys with
             | null -> raise (ArgumentNullException())

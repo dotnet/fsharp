@@ -59,10 +59,10 @@ namespace Microsoft.FSharp.Collections
         let iter f list = Microsoft.FSharp.Primitives.Basics.List.iter f list
         
         [<CompiledName("Distinct")>]
-        let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinct HashIdentity.Structural<'T> list
+        let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
 
         [<CompiledName("DistinctBy")>]
-        let distinctBy keyf (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctBy HashIdentity.Structural<_> keyf list
+        let distinctBy keyf (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctByWithComparer HashIdentity.Structural<_> keyf list
 
         [<CompiledName("OfArray")>]
         let ofArray (array:'T array) = Microsoft.FSharp.Primitives.Basics.List.ofArray array

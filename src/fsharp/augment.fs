@@ -229,7 +229,7 @@ let mkRecdCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_,thate) com
     expr    
 
 
-/// Build the equality implementation wrapper for a record type 
+/// Build the .Equals(that) equality implementation wrapper for a record type 
 let mkRecdEquality g tcref (tycon:Tycon) = 
     let m = tycon.Range
     let fields = tycon.AllInstanceFieldsAsList 
