@@ -3,6 +3,8 @@
 /// Derived expression manipulation and construction functions.
 module internal Microsoft.FSharp.Compiler.Tastops 
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open System.Collections.Generic 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 

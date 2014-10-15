@@ -8,8 +8,8 @@
 
 module M
 
-let (!!) x y = List.nth x y;;
-let (!!!) x y = List.nth x y
+let (!!) x y = List.item y x;;
+let (!!!) x y = List.item y x
 
 let err = [1 .. 10] !! 2            // error
 let err2 = [1 .. 10] !!! 2          // error

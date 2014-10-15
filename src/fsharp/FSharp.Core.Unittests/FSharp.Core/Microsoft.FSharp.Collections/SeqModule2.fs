@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+#nowarn "44" // This construct is deprecated. please use Seq.item
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
 open System
@@ -784,7 +785,8 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.min nullSeq |> ignore)
         
         ()
-        
+
+
     [<Test>]
     member this.Nth() =
          
@@ -812,7 +814,32 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () ->Seq.nth 3 nullSeq |> ignore)
         
         ()
-         
+
+    [<Test>]
+    member this.Item() =
+         // integer Seq
+        let resultInt = Seq.item 3 { 10..20 }
+        Assert.AreEqual(13, resultInt)
+
+        // string Seq
+        let resultStr = Seq.item 2 (seq ["Lists"; "Are"; "Cool" ; "List" ])
+        Assert.AreEqual("Cool", resultStr)
+
+        // empty Seq
+        CheckThrowsArgumentException(fun () -> Seq.item 0 (Seq.empty : seq<decimal>) |> ignore)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.item 3 nullSeq |> ignore)
+
+        // Negative index
+        for i = -1 downto -10 do
+           CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
+
+        // Out of range
+        for i = 11 to 20 do
+           CheckThrowsArgumentException (fun () -> Seq.item i { 10 .. 20 } |> ignore)
+
     [<Test>]
     member this.Of_Array() =
          // integer Seq

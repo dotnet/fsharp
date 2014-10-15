@@ -11,6 +11,8 @@
 
 module internal Microsoft.FSharp.Compiler.Env 
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 

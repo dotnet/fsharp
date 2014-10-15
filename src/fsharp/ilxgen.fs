@@ -6,6 +6,8 @@
 
 module internal Microsoft.FSharp.Compiler.Ilxgen
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open System.IO
 open System.Collections.Generic
 open Internal.Utilities

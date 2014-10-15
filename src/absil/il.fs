@@ -3,6 +3,7 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 
 #nowarn "49"
+#nowarn "44" // This construct is deprecated. please use List.item
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
 #nowarn "346" // The struct, record or union type 'IlxExtensionType' has an explicit implementation of 'Object.Equals'. ...
 

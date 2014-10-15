@@ -284,6 +284,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("IsEmpty")>]
         val isEmpty: list:'T list -> bool
 
+        /// <summary>Indexes into the list. The first element has index 0.</summary>
+        /// <param name="index">The index to retrieve.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The value at the given index.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input list does not contain enough elements.</exception>
+        [<CompiledName("Item")>]
+        val item: index:int -> list:'T list -> 'T
+
         /// <summary>Applies the given function to each element of the collection.</summary>
         /// <param name="action">The function to apply to elements from the input list.</param>
         /// <param name="list">The input list.</param>
@@ -413,7 +421,9 @@ namespace Microsoft.FSharp.Collections
         /// <param name="list">The input list.</param>
         /// <param name="index">The index to retrieve.</param>
         /// <returns>The value at the given index.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input list does not contain enough elements.</exception>
         [<CompiledName("Get")>]
+        [<Obsolete("please use List.item")>]
         val nth: list:'T list -> index:int -> 'T
 
         /// <summary>Builds a list from the given array.</summary>

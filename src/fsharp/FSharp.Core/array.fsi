@@ -332,6 +332,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// <param name="index">The input index.</param>
         /// <returns>The value of the array at the given index.</returns>
+        /// <exception cref="System.NullReferenceException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
         [<CompiledName("Get")>]
         val get: array:'T[] -> index:int -> 'T
 
@@ -405,6 +407,15 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentException">Thrown when the input does not have any elements.</exception>
         [<CompiledName("Last")>]
         val inline last: array:'T[] -> 'T
+
+        /// <summary>Gets an element from an array.</summary>
+        /// <param name="index">The input index.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>The value of the array at the given index.</returns>
+        /// <exception cref="System.NullReferenceException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
+        [<CompiledName("Item")>]
+        val item: index:int -> array:'T[] -> 'T
 
         /// <summary>Returns the length of an array. You can also use property arr.Length.</summary>
         /// <param name="array">The input array.</param>
@@ -610,6 +621,8 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// <param name="index">The input index.</param>
         /// <param name="value">The input value.</param>
+        /// <exception cref="System.NullReferenceException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.IndexOutOfRangeException">Thrown when the index is negative or the input array does not contain enough elements.</exception>
         [<CompiledName("Set")>]
         val set: array:'T[] -> index:int -> value:'T -> unit
 

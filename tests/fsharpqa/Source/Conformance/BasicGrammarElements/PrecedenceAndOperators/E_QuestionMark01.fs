@@ -9,8 +9,8 @@
 //<Expects status="error" span="(16,27-16,28)" id="FS1208">Invalid prefix operator</Expects>
 module M
 
-let (?!!) x y = List.nth x y         // error
-let (?!!!) x y = List.nth x y        // error
+let (?!!) x y = List.item y x         // error
+let (?!!!) x y = List.item y x        // error
 
 let err = [1 .. 10] ?!! 2            // error
 let err2 = [1 .. 10] ?!!! 2          // error

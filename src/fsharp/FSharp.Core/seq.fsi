@@ -492,6 +492,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("InitializeInfinite")>]
         val initInfinite: initializer:(int -> 'T) -> seq<'T>
 
+        /// <summary>Computes the element at the specified index in the collection.</summary>
+        /// <param name="index">The index of the element to retrieve.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The element at the specified index of the sequence.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
+        [<CompiledName("Item")>]
+        [<Obsolete("please use Seq.item")>]
+        val item: index:int -> source:seq<'T> -> 'T
+
         /// <summary>Applies the given function to each element of the collection.</summary>
         ///
         /// <param name="action">A function to apply to each element of the sequence.</param>
@@ -700,7 +710,9 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The nth element of the sequence.</returns>
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
         [<CompiledName("Get")>]
+        [<Obsolete("please use Seq.item")>]
         val nth: index:int -> source:seq<'T> -> 'T
 
 

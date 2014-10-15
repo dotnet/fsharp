@@ -3482,7 +3482,7 @@ do printf "Test c27mog7keh2\n"; stdout.Flush();  let f x    = if x%2 =0 then Som
 do printf "Test c2e8,h2\n"; stdout.Flush();  let f z x  = (z+1) * x % 1397    in verify(List.fold f 2 xxs = Seq.fold f 2 xie)
 do printfn "seq reduce"; if Seq.reduce (fun x y -> x/y) [5*4*3*2; 4;3;2;1] = 5 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 
-do printf "Test c2grgeh2\n"; stdout.Flush();  verify(List.nth xxs 3 = Seq.nth 3 xie)  (* err: args wrong way around for List.nth *)
+do printf "Test c2grgeh2\n"; stdout.Flush();  verify(List.item 3 xxs = Seq.item 3 xie)
 
 
 (*---------------------------------------------------------------------------
@@ -4468,7 +4468,7 @@ do check "bug5995.Enum.B" (string ToStringEnum.B) "B"
 
 module Check1178 = begin
   do printf "\n\nTest 1178: check finite/infinite sequences have lazy (f i) for each i\n\n"  
-  (* Test cases for Seq.nth. *)
+  (* Test cases for Seq.item. *)
   let counter = ref 0
   let reset r = r := 0
   let fails f = try f() |> ignore;false with _ -> true
@@ -4476,16 +4476,16 @@ module Check1178 = begin
   
   (* Bug 1178: Check Seq.init only computes f on the items requested *)
   let initial_100 = Seq.init 100 (fun i -> incr counter; i)
-  do reset counter; claim(Seq.nth 0  initial_100=0);  claim(!counter = 1)
-  do reset counter; claim(Seq.nth 50 initial_100=50); claim(!counter = 1)
-  do reset counter; claim(fails (fun () -> Seq.nth 100 initial_100));   claim(!counter = 0)
-  do reset counter; claim(fails (fun () -> Seq.nth (-10) initial_100)); claim(!counter = 0)
+  do reset counter; claim(Seq.item 0  initial_100=0);  claim(!counter = 1)
+  do reset counter; claim(Seq.item 50 initial_100=50); claim(!counter = 1)
+  do reset counter; claim(fails (fun () -> Seq.item 100 initial_100));   claim(!counter = 0)
+  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_100)); claim(!counter = 0)
 
   let initial_w = Seq.initInfinite (fun i -> incr counter; i)
-  do reset counter; claim(Seq.nth 0  initial_w=0);  claim(!counter = 1)
-  do reset counter; claim(Seq.nth 50 initial_w=50); claim(!counter = 1)
-  do reset counter; claim(fails (fun () -> Seq.nth (-10) initial_w)); claim(!counter = 0)
-  do reset counter; claim(fails (fun () -> Seq.nth (-1) initial_w)); claim(!counter = 0)
+  do reset counter; claim(Seq.item 0  initial_w=0);  claim(!counter = 1)
+  do reset counter; claim(Seq.item 50 initial_w=50); claim(!counter = 1)
+  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_w)); claim(!counter = 0)
+  do reset counter; claim(fails (fun () -> Seq.item (-1) initial_w)); claim(!counter = 0)
 
   (* Check *)
   let on p f x y = f (p x) (p y)

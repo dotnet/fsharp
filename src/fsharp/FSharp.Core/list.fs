@@ -88,13 +88,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Append")>]
         let append list1 list2 = list1 @ list2
 
-        [<CompiledName("Get")>]
-        let rec nth list index = 
-            match list with 
-            | h::t when index >= 0 -> 
-                if index = 0 then h else nth t (index - 1)
-            | _ ->  
+        [<CompiledName("Item")>]
+        let rec item index list =
+            match list with
+            | h::t when index >= 0 ->
+                if index = 0 then h else item (index - 1) t
+            | _ ->
                 invalidArg "index" (SR.GetString(SR.indexOutOfBounds))
+
+        [<CompiledName("Get")>]
+        let nth list index = item index list
 
         let rec chooseAllAcc f xs acc =
             match xs with 

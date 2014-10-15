@@ -6,6 +6,8 @@
 
 module internal Microsoft.FSharp.Compiler.NicePrint
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 

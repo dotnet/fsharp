@@ -4,6 +4,8 @@
 /// with generalization at appropriate points.
 module internal Microsoft.FSharp.Compiler.TypeChecker
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 

@@ -822,6 +822,9 @@ namespace Microsoft.FSharp.Collections
                 res.[i] <- array.[startIndex + i]
             res
 
+        [<CompiledName("Item")>]
+        let item n (array:_[]) =
+            array.[n]
 
         [<CompiledName("Get")>]
         let get (array:_[]) n = 

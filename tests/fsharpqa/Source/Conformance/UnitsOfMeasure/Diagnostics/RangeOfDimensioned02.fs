@@ -5,7 +5,7 @@
 
 [<Measure>] type Kg
 
-let v1 = [1.0<Kg> .. 2.0<Kg> .. 5.0<Kg>] |> Seq.nth 1
+let v1 = [1.0<Kg> .. 2.0<Kg> .. 5.0<Kg>] |> Seq.item 1
 
 (if v1 = 3.0<Kg> then 0 else 1) |> exit
 

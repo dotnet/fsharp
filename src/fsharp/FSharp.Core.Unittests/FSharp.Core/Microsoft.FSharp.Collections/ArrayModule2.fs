@@ -841,3 +841,28 @@ type ArrayModule2() =
         CheckThrowsArgumentException(fun () -> Array.zip3 [|1..10|] [|1..10|] [|2..20|] |> ignore)
         
         ()
+
+    [<Test>]
+    member this.Item() =
+        // integer array
+        let resultInt = Array.item 3 [|1..8|]
+        Assert.AreEqual(4, resultInt)
+
+        // string array
+        let resultStr = Array.item 2 [|"Arrays"; "are"; "commonly"; "array" |]
+        Assert.AreEqual("commonly", resultStr)
+
+        // empty array
+        CheckThrowsIndexOutRangException(fun () -> Array.item 0 ([| |] : decimal[]) |> ignore)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsNullRefException (fun () -> Array.item 0 nullArr |> ignore)
+
+        // Negative index
+        for i = -1 downto -10 do
+           CheckThrowsIndexOutRangException (fun () -> Array.item i [|1..8|] |> ignore)
+
+        // Out of range
+        for i = 11 to 20 do
+           CheckThrowsIndexOutRangException (fun () -> Array.item i [|1..8|] |> ignore)

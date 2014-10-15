@@ -8,6 +8,7 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 #nowarn "42" // This construct is deprecated: it is only for use in the F# library
+#nowarn "44" // This construct is deprecated. please use List.item
 
 open System
 open System.IO

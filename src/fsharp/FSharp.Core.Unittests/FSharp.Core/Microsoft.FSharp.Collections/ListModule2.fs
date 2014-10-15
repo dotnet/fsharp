@@ -3,6 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.List module
 
+#nowarn "44" // This construct is deprecated. please use List.item
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
 open System
@@ -254,7 +255,28 @@ type ListModule02() =
         CheckThrowsArgumentException ( fun() -> List.nth List.empty 1)
 
         ()
-        
+
+    [<Test>]
+    member this.Item() =
+        // integer List
+        let resultInt = List.item 3 [3;7;9;4;8;1;1;2]
+        Assert.AreEqual(4, resultInt)
+
+        // string List
+        let resultStr = List.item 3 ["a";"b";"c";"d"]
+        Assert.AreEqual("d", resultStr)
+
+        // empty List
+        CheckThrowsArgumentException (fun() -> List.item 1 List.empty)
+
+        // Negative index
+        for i = -1 downto -10 do
+           CheckThrowsArgumentException (fun () -> List.item i [3;7;9;4;8;1;1;2] |> ignore)
+
+        // Out of range
+        for i = 8 to 16 do
+           CheckThrowsArgumentException (fun () -> List.item i [3;7;9;4;8;1;1;2] |> ignore)
+
 
     [<Test>]
     member this.Of_Array() =

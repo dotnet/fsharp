@@ -4628,7 +4628,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
         this.CloseSolution(solution)
         let project,solution = OpenExistingProject(this.VS, dir, projName)
-        let file = List.nth (GetOpenFiles(project)) 0
+        let file = List.item 0 (GetOpenFiles(project))
         MoveCursorToEndOfMarker(file,"x.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions

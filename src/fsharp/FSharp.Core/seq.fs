@@ -59,8 +59,7 @@ namespace Microsoft.FSharp.Collections
       let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
       let rec nth index (e : IEnumerator<'T>) = 
-          if not (e.MoveNext()) then  invalidArg "index" (SR.GetString(SR.notEnoughElements));
-          if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative));
+          if not (e.MoveNext()) then invalidArg "index" (SR.GetString(SR.notEnoughElements))
           if index = 0 then e.Current
           else nth (index-1) e
 
@@ -897,11 +896,15 @@ namespace Microsoft.FSharp.Collections
             while e.MoveNext() do
                 f e.Current;
 
-        [<CompiledName("Get")>]
-        let nth     i (source : seq<'T>) = 
+        [<CompiledName("Item")>]
+        let item i (source : seq<'T>) =
             checkNonNull "source" source
+            if i < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))
             use e = source.GetEnumerator()
             IEnumerator.nth i e
+
+        [<CompiledName("Get")>]
+        let nth i (source : seq<'T>) = item i source
 
         [<CompiledName("IterateIndexed")>]
         let iteri f (source : seq<'T>) = 
