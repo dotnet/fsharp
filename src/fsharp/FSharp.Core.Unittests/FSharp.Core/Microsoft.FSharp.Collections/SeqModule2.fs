@@ -1452,3 +1452,29 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun () -> Seq.tryPick funcNull nullSeq |> ignore)
    
         ()
+
+    [<Test>]
+    member this.tryItem() =
+        // integer Seq
+        let resultInt = Seq.tryItem 3 { 10..20 }
+        Assert.AreEqual(Some(13), resultInt)
+
+        // string Seq
+        let resultStr = Seq.tryItem 2 (seq ["Lists"; "Are"; "Cool"; "List" ])
+        Assert.AreEqual(Some("Cool"), resultStr)
+
+        // empty Seq
+        let resultEmpty = Seq.tryItem 0 Seq.empty
+        Assert.AreEqual(None, resultEmpty)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.tryItem 3 nullSeq |> ignore)
+
+        // Negative index
+        let resultNegativeIndex = Seq.tryItem -1 { 10..20 }
+        Assert.AreEqual(None, resultNegativeIndex)
+
+        // Index greater than length
+        let resultIndexGreater = Seq.tryItem 31 { 10..20 }
+        Assert.AreEqual(None, resultIndexGreater)

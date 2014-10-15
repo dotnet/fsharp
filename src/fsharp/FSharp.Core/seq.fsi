@@ -974,6 +974,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFindIndex")>]
         val tryFindIndex : predicate:('T -> bool) -> source:seq<'T> -> int option
 
+        /// <summary>Tries to find the nth element in the sequence.
+        /// Returns <c>None</c> if index is negative or the input sequence does not contain enough elements.</summary>
+        /// <param name="index">The index of element to retrieve.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The nth element of the sequence or <c>None</c>.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("TryItem")>]
+        val tryItem: index:int -> source:seq<'T> -> 'T option
+
         /// <summary>Applies the given function to successive elements, returning the first
         /// result where the function returns "Some(x)".</summary>
         ///

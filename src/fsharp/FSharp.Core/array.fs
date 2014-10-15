@@ -826,6 +826,12 @@ namespace Microsoft.FSharp.Collections
         let item n (array:_[]) =
             array.[n]
 
+        [<CompiledName("TryItem")>]
+        let tryItem index (array:'T[]) =
+            checkNonNull "array" array
+            if index < 0 || index >= array.Length then None
+            else Some(array.[index])
+
         [<CompiledName("Get")>]
         let get (array:_[]) n = 
             array.[n]

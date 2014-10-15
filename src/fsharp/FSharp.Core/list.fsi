@@ -675,6 +675,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFindIndex")>]
         val tryFindIndex: predicate:('T -> bool) -> list:'T list -> int option
 
+        /// <summary>Tries to find the nth element in the list.
+        /// Returns <c>None</c> if index is negative or the list does not contain enough elements.</summary>
+        /// <param name="index">The index to retrieve.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The value at the given index or <c>None</c>.</returns>
+        [<CompiledName("TryItem")>]
+        val tryItem: index:int -> list:'T list -> 'T option
+
         /// <summary>Splits a list of pairs into two lists.</summary>
         /// <param name="list">The input list.</param>
         /// <returns>Two lists of split elements.</returns>

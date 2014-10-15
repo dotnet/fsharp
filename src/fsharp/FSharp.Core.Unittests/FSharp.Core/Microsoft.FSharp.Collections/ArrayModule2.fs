@@ -866,3 +866,32 @@ type ArrayModule2() =
         // Out of range
         for i = 11 to 20 do
            CheckThrowsIndexOutRangException (fun () -> Array.item i [|1..8|] |> ignore)
+
+    [<Test>]
+    member this.tryItem() =
+        // integer array
+        let intArr = [| 3;4;7;8;10 |]
+        let resultInt = Array.tryItem 3 intArr
+        Assert.AreEqual(Some(8), resultInt)
+
+        // string array
+        let strArr = [| "Lists"; "are"; "commonly"; "list" |]
+        let resultStr = Array.tryItem 1 strArr
+        Assert.AreEqual(Some("are"), resultStr)
+
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEmpty = Array.tryItem 1 emptyArr
+        Assert.AreEqual(None, resultEmpty)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.tryItem 0 nullArr |> ignore)
+
+        // Negative index
+        let resultNegativeIndex = Array.tryItem -1 [| 3;1;6;2 |]
+        Assert.AreEqual(None, resultNegativeIndex)
+
+        // Index greater than length
+        let resultIndexGreater = Array.tryItem 14 [| 3;1;6;2 |]
+        Assert.AreEqual(None, resultIndexGreater)

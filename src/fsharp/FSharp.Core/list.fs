@@ -96,6 +96,14 @@ namespace Microsoft.FSharp.Collections
             | _ ->
                 invalidArg "index" (SR.GetString(SR.indexOutOfBounds))
 
+        [<CompiledName("TryItem")>]
+        let rec tryItem index list =
+            match list with
+            | h::t when index >= 0 ->
+                if index = 0 then Some h else tryItem (index - 1) t
+            | _ ->
+                None
+
         [<CompiledName("Get")>]
         let nth list index = item index list
 

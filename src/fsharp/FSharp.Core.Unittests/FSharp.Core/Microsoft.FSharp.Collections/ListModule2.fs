@@ -700,3 +700,25 @@ type ListModule02() =
         Assert.AreEqual(empTriple, resultEpt)
        
         ()            
+
+    [<Test>]
+    member this.tryItem() =
+        // integer List
+        let resultInt = List.tryItem 4 [3;7;9;4;8;1;1;2]
+        Assert.AreEqual(Some(8), resultInt)
+
+        // string List
+        let resultStr = List.tryItem 2 ["a";"b";"c";"d"]
+        Assert.AreEqual(Some("c"), resultStr)
+
+        // empty List
+        let resultEmpty = List.tryItem 0 List.empty
+        Assert.AreEqual(None, resultEmpty)
+
+        // Negative index
+        let resultNegativeIndex = List.tryItem -1 [3;1;6;2]
+        Assert.AreEqual(None, resultNegativeIndex)
+
+        // Index equals to length
+        let resultIndexGreater = List.tryItem 4 [3;1;6;2]
+        Assert.AreEqual(None, resultIndexGreater)
