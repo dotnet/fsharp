@@ -2228,7 +2228,9 @@ Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitiv
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicOperators
 Microsoft.FSharp.Core.LanguagePrimitives: SByte SByteWithMeasure(SByte)
 Microsoft.FSharp.Core.LanguagePrimitives: Single Float32WithMeasure(Single)
+Microsoft.FSharp.Core.LanguagePrimitives: System.Collections.Generic.IComparer`1[T] FastGenericComparerFromTable[T]()
 Microsoft.FSharp.Core.LanguagePrimitives: System.Collections.Generic.IComparer`1[T] FastGenericComparer[T]()
+Microsoft.FSharp.Core.LanguagePrimitives: System.Collections.Generic.IEqualityComparer`1[T] FastGenericEqualityComparerFromTable[T]()
 Microsoft.FSharp.Core.LanguagePrimitives: System.Collections.Generic.IEqualityComparer`1[T] FastGenericEqualityComparer[T]()
 Microsoft.FSharp.Core.LanguagePrimitives: System.Collections.Generic.IEqualityComparer`1[T] FastLimitedGenericEqualityComparer[T](Int32)
 Microsoft.FSharp.Core.LanguagePrimitives: System.Collections.IComparer GenericComparer
