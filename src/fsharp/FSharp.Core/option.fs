@@ -44,6 +44,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Bind")>]
         let bind f inp = match inp with None -> None | Some x -> f x
 
+        [<CompiledName("Filter")>]
+        let filter f inp = match inp with None -> None | Some x -> if f x then Some x else None
+
         [<CompiledName("ToArray")>]
         let toArray option = match option with  None -> [| |] | Some x -> [| x |]
 
