@@ -918,7 +918,35 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () -> Seq.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullSeq  |> ignore)   
         ()
 
-         
+    [<Test>]
+    member this.ReduceBack() =
+        // int Seq
+        let funcInt x y = x - y
+        let IntSeq = seq { 1..4 }
+        let reduceInt = Seq.reduceBack funcInt IntSeq
+        Assert.AreEqual((1-(2-(3-4))), reduceInt)
+
+        // string Seq
+        let funcStr (x:string) (y:string) = y.Remove(0,x.Length)
+        let strSeq = seq [ "A"; "B"; "C"; "D" ; "ABCDE" ]
+        let reduceStr = Seq.reduceBack  funcStr strSeq
+        Assert.AreEqual("E", reduceStr)
+        
+        // string Seq
+        let funcStr2 elem acc = sprintf "%s%s" elem acc
+        let strSeq2 = seq [ "A" ]
+        let reduceStr2 = Seq.reduceBack  funcStr2 strSeq2
+        Assert.AreEqual("A", reduceStr2)
+
+        // Empty Seq
+        CheckThrowsArgumentException (fun () -> Seq.reduceBack funcInt Seq.empty |> ignore)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.reduceBack funcInt nullSeq |> ignore)
+
+        ()
+
     [<Test>]
     member this.Scan() =
         // integer Seq

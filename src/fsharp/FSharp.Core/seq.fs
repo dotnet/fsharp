@@ -1231,6 +1231,29 @@ namespace Microsoft.FSharp.Collections
                     res.Add(e.Current)
                 res.ToArray()
 
+        let foldArraySubRight (f:OptimizedClosures.FSharpFunc<'T,_,_>) (arr: 'T[]) start fin acc =
+            let mutable state = acc
+            for i = fin downto start do
+                state <- f.Invoke(arr.[i], state)
+            state
+
+        [<CompiledName("FoldBack")>]
+        let foldBack<'T,'State> f (source : seq<'T>) (x:'State) =
+            checkNonNull "source" source
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let arr = toArray source
+            let len = arr.Length
+            foldArraySubRight f arr 0 (len - 1) x
+
+        [<CompiledName("ReduceBack")>]
+        let reduceBack f (source : seq<'T>) =
+            checkNonNull "source" source
+            let arr = toArray source
+            match arr.Length with
+            | 0 -> invalidArg "source" InputSequenceEmptyString
+            | len ->
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+                foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
 
         [<CompiledName("Singleton")>]
         let singleton x = mkSeq (fun () -> IEnumerator.Singleton x)

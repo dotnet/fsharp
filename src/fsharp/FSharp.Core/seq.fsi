@@ -364,6 +364,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Fold2")>]
         val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> source1:seq<'T1> -> source2:seq<'T2> -> 'State
 
+        /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
+        /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c>
+        /// then computes <c>f i0 (... (f iN s)...)</c></summary>
+        /// <param name="folder">The function to update the state given the input elements.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <param name="state">The initial state.</param>
+        /// <returns>The state object after the folding function is applied to each element of the sequence.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("FoldBack")>]
+        val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> 'State
+
         /// <summary>Tests if all elements of the sequence satisfy the given predicate.</summary>
         ///
         /// <remarks>The predicate is applied to the elements of the input sequence. If any application 
@@ -794,6 +805,18 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The generated sequence.</returns>
         [<CompiledName("Replicate")>]
         val replicate: count:int -> initial:'T -> seq<'T>
+
+        /// <summary>Applies a function to each element of the sequence, starting from the end, threading an accumulator argument
+        /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
+        /// then computes <c>f i0 (...(f iN-1 iN))</c>.</summary>
+        /// <param name="reduction">A function that takes in the next-to-last element of the sequence and the
+        /// current accumulated result to produce the next accumulated result.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The final result of the reductions.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        [<CompiledName("ReduceBack")>]
+        val reduceBack: reduction:('T -> 'T -> 'T) -> source:seq<'T> -> 'T
 
         /// <summary>Like fold, but computes on-demand and returns the sequence of intermediary and final results.</summary>
         ///

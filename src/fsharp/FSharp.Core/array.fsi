@@ -291,13 +291,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Fold")>]
         val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array: 'T[] -> 'State
 
-        /// <summary>Applies a function to each element of the array, threading an accumulator argument
+        /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
         /// <c>f i0 (...(f iN s))</c></summary>
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="array">The input array.</param>
         /// <param name="state">The initial state.</param>
-        /// <returns>The final state.</returns>
+        /// <returns>The state object after the folding function is applied to each element of the array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("FoldBack")>]
         val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State
 
@@ -569,12 +570,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reduce")>]
         val reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
 
-        /// <summary>Applies a function to each element of the array, threading an accumulator argument
+        /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
-        /// then computes <c>f i0 (...(f iN-1 iN))</c>.
-        /// Raises ArgumentException if the array has size zero.</summary>
-        /// <param name="reduction">The function to reduce a pair of elements to a single element.</param>
+        /// then computes <c>f i0 (...(f iN-1 iN))</c>.</summary>
+        /// <param name="reduction">A function that takes in the next-to-last element of the list and the
+        /// current accumulated result to produce the next accumulated result.</param>
         /// <param name="array">The input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
         /// <returns>The final result of the reductions.</returns>
         [<CompiledName("ReduceBack")>]

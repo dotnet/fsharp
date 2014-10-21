@@ -215,13 +215,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Fold2")>]
         val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> list1:'T1 list -> list2:'T2 list -> 'State
 
-        /// <summary>Applies a function to each element of the collection, threading an accumulator argument
+        /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then 
         /// computes <c>f i0 (...(f iN s))</c>.</summary>
         /// <param name="folder">The function to update the state given the input elements.</param>
         /// <param name="list">The input list.</param>
         /// <param name="state">The initial state.</param>
-        /// <returns>The final state value.</returns>
+        /// <returns>The state object after the folding function is applied to each element of the list.</returns>
         [<CompiledName("FoldBack")>]
         val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> list:'T list -> state:'State -> 'State
 
@@ -489,15 +489,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reduce")>]
         val reduce: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 
-        /// <summary>Applies a function to each element of the collection, threading an accumulator argument
+        /// <summary>Applies a function to each element of the collection, starting from the end, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
         /// <c>f i0 (...(f iN-1 iN))</c>.</summary>
-        ///
-        /// <remarks>Raises <c>System.ArgumentException</c> if <c>list</c> is empty</remarks>
-        /// <param name="reduction">The function to reduce two list elements to a single element.</param>
+        /// <param name="reduction">A function that takes in the next-to-last element of the list and the
+        /// current accumulated result to produce the next accumulated result.</param>
         /// <param name="list">The input list.</param>
         /// <exception cref="System.ArgumentException">Thrown when the list is empty.</exception>
-        /// <returns>The final reduced value.</returns>
+        /// <returns>The final result of the reductions.</returns>
         [<CompiledName("ReduceBack")>]
         val reduceBack: reduction:('T -> 'T -> 'T) -> list:'T list -> 'T
 

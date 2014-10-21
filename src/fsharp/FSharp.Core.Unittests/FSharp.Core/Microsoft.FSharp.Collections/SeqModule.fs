@@ -703,6 +703,42 @@ type SeqModule() =
         ()
         
     [<Test>]
+    member this.FoldBack() =
+        // int Seq
+        let funcInt x y = x-y
+        let IntSeq = seq { 1..4 }
+        let foldInt = Seq.foldBack funcInt IntSeq 6
+        Assert.AreEqual((1-(2-(3-(4-6)))), foldInt)
+
+        // string Seq
+        let funcStr (x:string) (y:string) = y.Remove(0,x.Length)
+        let strSeq = seq [ "A"; "B"; "C"; "D" ]
+        let foldStr = Seq.foldBack  funcStr strSeq "ABCDE"
+        Assert.AreEqual("E", foldStr)
+        
+        // single element
+        let funcStr2 elem acc = sprintf "%s%s" elem acc
+        let strSeq2 = seq [ "A" ]
+        let foldStr2 = Seq.foldBack funcStr2 strSeq2 "X"
+        Assert.AreEqual("AX", foldStr2)
+
+        // Empty Seq
+        let emptySeq = Seq.empty
+        let foldEmpty = Seq.foldBack funcInt emptySeq 1
+        Assert.AreEqual(1, foldEmpty)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.foldBack funcInt nullSeq 1 |> ignore)
+
+        // Validate that foldBack with the cons operator and the empty list returns a copy of the sequence
+        let cons x y = x :: y
+        let identityFoldr = Seq.foldBack cons IntSeq []
+        Assert.AreEqual([1;2;3;4], identityFoldr)
+
+        ()
+
+    [<Test>]
     member this.ForAll() =
 
         let funcInt x  = if x%2 = 0 then true else false
