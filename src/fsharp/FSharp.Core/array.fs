@@ -473,6 +473,20 @@ namespace Microsoft.FSharp.Collections
                 Array.Copy(array, count, res, 0, skippedLen)
                 res
 
+        [<CompiledName("SkipWhile")>]
+        let skipWhile p (array: 'T[]) =
+            checkNonNull "array" array
+            let mutable i = 0
+            let len = array.Length
+            while i < len && p array.[i] do i <- i + 1
+
+            match len - i with
+            | 0 -> [| |]
+            | resLen ->
+                let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked resLen
+                Array.Copy(array, i, res, 0, resLen)
+                res
+
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) = 
             checkNonNull "array1" array1

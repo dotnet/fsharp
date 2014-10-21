@@ -550,6 +550,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Skip")>]
         val skip: count:int -> list: 'T list -> 'T list
 
+        /// <summary>Bypasses elements in a list while the given predicate returns <c>true</c>, and then returns
+        /// the remaining elements of the list.</summary>
+        /// <param name="predicate">A function that evaluates an element of the list to a boolean value.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The result list.</returns>
+        [<CompiledName("SkipWhile")>]
+        val skipWhile: predicate:('T -> bool) -> list:'T list -> 'T list
+
         /// <summary>Sorts the given list using the given comparison function.</summary>
         ///
         /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>

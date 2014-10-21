@@ -450,6 +450,32 @@ type ListModule02() =
         CheckThrowsArgumentException(fun () -> List.skip 1 [] |> ignore)
         CheckThrowsArgumentException(fun () -> List.skip 4 [1; 2; 3] |> ignore)
 
+    [<Test>]
+    member this.SkipWhile() =
+        // integer list
+        let funcInt x = (x < 4)
+        let intList = [1..10]
+        let resultInt = List.skipWhile funcInt intList
+        if resultInt <> [4..10] then Assert.Fail()
+
+        // string list
+        let funcStr (s:string) = s.Length < 8
+        let strList = [ "Lists"; "are";  "commonly" ; "list" ]
+        let resultStr = List.skipWhile funcStr strList
+        if resultStr <> [ "commonly" ; "list" ] then Assert.Fail()
+
+        // empty list
+        let resultEmpt = List.skipWhile (fun _ -> failwith "unexpected error") []
+        if resultEmpt <> [] then Assert.Fail()
+
+        // skip all
+        let resultAll = List.skipWhile (fun _ -> true) intList
+        if resultAll <> [] then Assert.Fail()
+
+        // skip none
+        let resultNone = List.skipWhile (fun _ -> false) intList
+        if resultNone <> intList then Assert.Fail()
+
         ()
 
     [<Test>]

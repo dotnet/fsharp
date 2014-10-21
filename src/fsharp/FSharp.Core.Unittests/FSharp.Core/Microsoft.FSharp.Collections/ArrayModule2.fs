@@ -471,6 +471,35 @@ type ArrayModule2() =
         CheckThrowsArgumentException (fun () -> Array.skip 1 [||] |> ignore)
         CheckThrowsArgumentException (fun () -> Array.skip 4 [|1; 2; 3|] |> ignore)
 
+    [<Test>]
+    member this.SkipWhile() =
+        // integer array
+        let funcInt x = (x < 4)
+        let intArr = [|1..10|]
+        let resultInt = Array.skipWhile funcInt intArr
+        if resultInt <> [|4..10|] then Assert.Fail()
+
+        // string array
+        let funcStr (s:string) = s.Length < 8
+        let strArr = [| "Lists"; "are";  "commonly" ; "list" |]
+        let resultStr = Array.skipWhile funcStr strArr
+        if resultStr <> [| "commonly" ; "list" |] then Assert.Fail()
+
+        // empty array
+        let resultEmpt = Array.skipWhile (fun _ -> failwith "unexpected error") [| |]
+        if resultEmpt <> [| |] then Assert.Fail()
+
+        // null array
+        CheckThrowsArgumentNullException (fun () -> Array.skipWhile (fun _ -> failwith "unexpected error") null |> ignore)
+
+        // skip all
+        let resultAll = Array.skipWhile (fun _ -> true) intArr
+        if resultAll <> [| |] then Assert.Fail()
+
+        // skip none
+        let resultNone = Array.skipWhile (fun _ -> false) intArr
+        if resultNone <> intArr then Assert.Fail()
+
         ()
 
     [<Test>]

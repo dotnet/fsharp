@@ -410,6 +410,12 @@ namespace Microsoft.FSharp.Collections
                 | [] -> invalidArg "count" (SR.GetString(SR.outOfRange))
             loop count list
 
+        [<CompiledName("SkipWhile")>]
+        let rec skipWhile p xs =
+            match xs with
+            | head :: tail when p head -> skipWhile p tail
+            | _ -> xs
+
         [<CompiledName("SortWith")>]
         let sortWith cmp xs = Microsoft.FSharp.Primitives.Basics.List.sortWith cmp xs
 

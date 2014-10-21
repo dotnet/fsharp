@@ -636,6 +636,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Skip")>]
         val skip: count:int -> array:'T[] -> 'T[]
 
+        /// <summary>Bypasses elements in an array while the given predicate returns <c>true</c>, and then returns
+        /// the remaining elements in a new array.</summary>
+        /// <param name="predicate">A function that evaluates an element of the array to a boolean value.</param>
+        /// <param name="source">The input array.</param>
+        /// <returns>The created sub array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        [<CompiledName("SkipWhile")>]
+        val skipWhile: predicate:('T -> bool) -> array:'T[] -> 'T[]
+
         /// <summary>Builds a new array that contains the given subrange specified by
         /// starting index and length.</summary>
         /// <param name="array">The input array.</param>
