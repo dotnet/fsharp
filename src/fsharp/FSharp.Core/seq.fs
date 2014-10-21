@@ -1109,12 +1109,14 @@ namespace Microsoft.FSharp.Collections
             match source with 
             | :? ('T[]) as res -> (res.Clone() :?> 'T[])
             | :? ('T list) as res -> List.toArray res
-            //| :? ICollection<'T> as res -> ...
+            | :? ICollection<'T> as res -> 
+                // Directly create an array and copy ourselves. 
+                // This avoids an extra copy if using ResizeArray in fallback below.
+                let arr = Array.zeroCreateUnchecked res.Count
+                res.CopyTo(arr, 0)
+                arr
             | _ -> 
-                use e = source.GetEnumerator()
-                let res = new ResizeArray<_>()
-                while e.MoveNext() do
-                    res.Add(e.Current)
+                let res = ResizeArray<_>(source)                
                 res.ToArray()
 
 

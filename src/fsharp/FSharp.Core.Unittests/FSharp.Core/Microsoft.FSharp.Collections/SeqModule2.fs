@@ -989,13 +989,13 @@ type SeqModule2() =
         ()
         
     [<Test>]
-    member this.To_Array() =
+    member this.ToArray() =
         // integer Seq
         let resultInt = Seq.toArray(seq [1;2;4;5;7])
      
         let expectedInt = [|1;2;4;5;7|]
         Assert.AreEqual(expectedInt,resultInt)
-        
+
         // string Seq
         let resultStr =Seq.toArray (seq ["str1";"str2";"str3"])
     
@@ -1006,13 +1006,37 @@ type SeqModule2() =
         let resultEpt = Seq.toArray Seq.empty 
         Assert.AreEqual([||],resultEpt)
         
-         
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.toArray null |> ignore)
         ()
+        
+    [<Test>]    
+    member this.ToArrayFromICollection() =
+        let inputCollection = ResizeArray(seq [1;2;4;5;7])
+        let resultInt = Seq.toArray(inputCollection)
+        let expectedInt = [|1;2;4;5;7|]
+        Assert.AreEqual(expectedInt,resultInt)        
     
+    [<Test>]    
+    member this.ToArrayEmptyInput() =
+        let resultInt = Seq.toArray(Seq.empty<int>)
+        let expectedInt = Array.empty<int>
+        Assert.AreEqual(expectedInt,resultInt)        
+
+    [<Test>]    
+    member this.ToArrayFromArray() =
+        let resultInt = Seq.toArray([|1;2;4;5;7|])
+        let expectedInt = [|1;2;4;5;7|]
+        Assert.AreEqual(expectedInt,resultInt)        
+    
+    [<Test>]    
+    member this.ToArrayFromList() =
+        let resultInt = Seq.toArray([1;2;4;5;7])
+        let expectedInt = [|1;2;4;5;7|]
+        Assert.AreEqual(expectedInt,resultInt)        
+
     [<Test>]
-    member this.To_List() =
+    member this.ToList() =
         // integer Seq
         let resultInt = Seq.toList (seq [1;2;4;5;7])
         let expectedInt = [1;2;4;5;7]
