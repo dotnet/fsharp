@@ -46,6 +46,13 @@ namespace Microsoft.FSharp.Core
             str |> iteri (fun i c -> res.Append(f i c) |> ignore);
             res.ToString()
 
+        [<CompiledName("Filter")>]
+        let filter (f: char -> bool) (str:string) =
+            let str = emptyIfNull str
+            let res = new System.Text.StringBuilder(str.Length)
+            str |> iter (fun c -> if f c then res.Append(c) |> ignore)
+            res.ToString()
+
         [<CompiledName("Collect")>]
         let collect (f: char -> string) (str:string) =
             let str = emptyIfNull str

@@ -86,6 +86,20 @@ type StringModule() =
         Assert.AreEqual("", e2)
 
     [<Test>]
+    member this.Filter() =
+        let e1 = String.filter (fun c -> true) "foo"
+        Assert.AreEqual("foo", e1)
+
+        let e2 = String.filter (fun c -> true) null 
+        Assert.AreEqual("", e2)
+
+        let e3 = String.filter (fun c -> c <> 'o') "foo bar"
+        Assert.AreEqual("f bar", e3)
+
+        let e4 = String.filter (fun c -> c <> 'o') ""
+        Assert.AreEqual("", e4)
+
+    [<Test>]
     member this.Collect() =
         let e1 = String.collect (fun c -> "a"+string c) "foo"
         Assert.AreEqual("afaoao", e1)
