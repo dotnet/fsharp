@@ -1961,6 +1961,11 @@ namespace Microsoft.FSharp.Control
             protectedPrimitiveWithResync (fun args -> 
                 TaskHelpers.continueWith(task, args)
                 )
+
+        static member AwaitTask (task:Task) : Async<unit> = 
+            protectedPrimitiveWithResync (fun args -> 
+                TaskHelpers.continueWithUnit(task, args)
+                )
 #endif
 
     module CommonExtensions =

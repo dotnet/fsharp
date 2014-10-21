@@ -341,6 +341,9 @@ namespace Microsoft.FSharp.Control
         /// Return an asynchronous computation that will wait for the given task to complete and return
         /// its result.
         static member AwaitTask: task: Task<'T> -> Async<'T>
+        /// Return an asynchronous computation that will wait for the given task to complete and return
+        /// its result.
+        static member AwaitTask: task: Task -> Async<unit>
 #endif            
 
         /// <summary>Creates an asynchronous computation that will sleep for the given time. This is scheduled
