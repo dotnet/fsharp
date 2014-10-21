@@ -263,8 +263,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             int endLine,
             int endColumn)
 		{
-            if (String.IsNullOrEmpty(file))
-                return;
+            if (file == null)
+                file = String.Empty;
             
             bool isWarning = errorEvent is BuildWarningEventArgs;
             TaskPriority priority = isWarning ? TaskPriority.Normal : TaskPriority.High;
