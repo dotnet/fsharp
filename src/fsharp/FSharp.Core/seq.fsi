@@ -818,6 +818,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ReduceBack")>]
         val reduceBack: reduction:('T -> 'T -> 'T) -> source:seq<'T> -> 'T
 
+        /// <summary>Returns a new sequence with the elements in reverse order.</summary>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The reversed sequence.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("Reverse")>]
+        val rev: source:seq<'T> -> seq<'T>
+
         /// <summary>Like fold, but computes on-demand and returns the sequence of intermediary and final results.</summary>
         ///
         /// <param name="folder">A function that updates the state with each element from the sequence.</param>

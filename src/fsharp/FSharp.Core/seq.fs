@@ -1704,3 +1704,11 @@ namespace Microsoft.FSharp.Collections
                     v
             else
                 invalidArg "source" InputSequenceEmptyString
+
+        [<CompiledName("Reverse")>]
+        let rev source =
+            checkNonNull "source" source
+            mkDelayedSeq (fun () ->
+                let array = source |> toArray
+                Array.Reverse array
+                array :> seq<_>)

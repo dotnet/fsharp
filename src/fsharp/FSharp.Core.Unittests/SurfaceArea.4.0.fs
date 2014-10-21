@@ -436,6 +436,7 @@ Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] OfList[T](Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] ReadOnly[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Replicate[T](Int32, T)
+Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Reverse[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Singleton[T](T)
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] SkipWhile[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Skip[T](Int32, System.Collections.Generic.IEnumerable`1[T])

@@ -948,6 +948,24 @@ type SeqModule2() =
         ()
 
     [<Test>]
+    member this.Rev() =
+        // integer Seq
+        let resultInt = Seq.rev (seq [5;4;3;2;1])
+        VerifySeqsEqual (seq[1;2;3;4;5]) resultInt
+
+        // string Seq
+        let resultStr = Seq.rev (seq ["A"; "B";  "C" ; "D" ])
+        VerifySeqsEqual (seq["D";"C";"B";"A"]) resultStr
+
+        // empty Seq
+        VerifySeqsEqual Seq.empty (Seq.rev Seq.empty)
+
+        // null Seq
+        let nullSeq : seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.rev nullSeq  |> ignore)
+        ()
+
+    [<Test>]
     member this.Scan() =
         // integer Seq
         let funcInt x y = x+y
