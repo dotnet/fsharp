@@ -427,6 +427,32 @@ type ListModule02() =
         () 
 
     [<Test>]
+    member this.Skip() =
+        // integer List
+        let resultInt = List.skip 2 [1..10]
+        Assert.AreEqual([3..10], resultInt)
+        
+        let resultInt2 = List.skip 0 [1..10]
+        Assert.AreEqual([1..10], resultInt2)
+        
+        let resultInt3 = List.skip -1 [1..10]
+        Assert.AreEqual([1..10], resultInt3)
+
+        // string List
+        let resultStr = List.skip 2 ["str1";"str2";"str3";"str4"]
+        Assert.AreEqual(["str3";"str4"], resultStr)
+
+        // empty List
+        let resultEpt = List.skip 0 []
+        Assert.AreEqual([], resultEpt)
+
+        // exceptions
+        CheckThrowsArgumentException(fun () -> List.skip 1 [] |> ignore)
+        CheckThrowsArgumentException(fun () -> List.skip 4 [1; 2; 3] |> ignore)
+
+        ()
+
+    [<Test>]
     member this.Sort() =
         // integer List  
         let intArr = [3;5;7;2;4;8]

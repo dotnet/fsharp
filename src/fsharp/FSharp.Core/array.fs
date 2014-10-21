@@ -460,6 +460,19 @@ namespace Microsoft.FSharp.Collections
                 if f array.[i] then Some array.[i]  else loop (i+1)
             loop 0 
 
+        [<CompiledName("Skip")>]
+        let skip count (array:'T[]) =
+            checkNonNull "array" array
+            if count > array.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
+            if count = array.Length then
+                [| |]
+            else
+                let count = max count 0
+                let skippedLen = array.Length - count
+                let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked skippedLen
+                Array.Copy(array, count, res, 0, skippedLen)
+                res
+
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) = 
             checkNonNull "array1" array1

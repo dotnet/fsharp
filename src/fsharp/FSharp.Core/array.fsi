@@ -626,6 +626,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Set")>]
         val set: array:'T[] -> index:int -> value:'T -> unit
 
+        /// <summary>Builds a new array that contains the elements of the given array, excluding the first N elements.</summary>
+        /// <param name="count">The number of elements to skip.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>A copy of the input array, after removing the first N elements.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.ArgumentExcepion">Thrown when count is negative or exceeds the number of 
+        /// elements in the array.</exception>
+        [<CompiledName("Skip")>]
+        val skip: count:int -> array:'T[] -> 'T[]
+
         /// <summary>Builds a new array that contains the given subrange specified by
         /// starting index and length.</summary>
         /// <param name="array">The input array.</param>

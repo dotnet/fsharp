@@ -446,6 +446,34 @@ type ArrayModule2() =
         ()
 
     [<Test>]
+    member this.Skip() =
+        // integer array
+        let resultInt = Array.skip 2 [|1..10|]
+        if resultInt <> [|3..10|] then Assert.Fail()
+        
+        let resultInt2 = Array.skip 0 [|1..10|]
+        if resultInt2 <> [|1..10|] then Assert.Fail()
+        
+        let resultInt3 = Array.skip -5 [|1..10|]
+        if resultInt3 <> [|1..10|] then Assert.Fail()
+
+        // string List
+        let resultStr = Array.skip 2 [|"str1";"str2";"str3";"str4"|]
+        if resultStr <> [|"str3";"str4"|] then Assert.Fail()
+
+        // empty List
+        let resultEpt = Array.skip 0 [||]
+        if resultEpt <> [||] then Assert.Fail()
+
+        // exceptions
+        CheckThrowsArgumentNullException (fun () -> Array.skip 0 (null:string[]) |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.skip -3 (null:string[]) |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.skip 1 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.skip 4 [|1; 2; 3|] |> ignore)
+
+        ()
+
+    [<Test>]
     member this.Set() =
         // integer array  
         let intArr = [|10;9;8;7|]

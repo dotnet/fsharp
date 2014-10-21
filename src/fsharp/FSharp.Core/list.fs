@@ -400,6 +400,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Zip3")>]
         let zip3 x1 x2 x3 =  Microsoft.FSharp.Primitives.Basics.List.zip3 x1 x2 x3
 
+        [<CompiledName("Skip")>]
+        let skip count list =
+            if count <= 0 then list else
+            let rec loop i lst =
+                match lst with
+                | _ when i = 0 -> lst
+                | _::t -> loop (i-1) t
+                | [] -> invalidArg "count" (SR.GetString(SR.outOfRange))
+            loop count list
+
         [<CompiledName("SortWith")>]
         let sortWith cmp xs = Microsoft.FSharp.Primitives.Basics.List.sortWith cmp xs
 

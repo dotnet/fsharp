@@ -541,6 +541,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Singleton")>]
         val inline singleton: value:'T -> 'T list
 
+        /// <summary>Returns the list after removing the first N elements.</summary>
+        /// <param name="count">The number of elements to skip.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The list after removing the first N elements.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when count is negative or exceeds the number of 
+        /// elements in the list.</exception>
+        [<CompiledName("Skip")>]
+        val skip: count:int -> list: 'T list -> 'T list
+
         /// <summary>Sorts the given list using the given comparison function.</summary>
         ///
         /// <remarks>This is a stable sort, i.e. the original order of equal elements is preserved.</remarks>
