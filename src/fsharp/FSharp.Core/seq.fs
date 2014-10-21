@@ -1712,3 +1712,9 @@ namespace Microsoft.FSharp.Collections
                 let array = source |> toArray
                 Array.Reverse array
                 array :> seq<_>)
+
+        [<CompiledName("Permute")>]
+        let permute f (source : seq<_>) =
+            checkNonNull "source" source
+            mkDelayedSeq (fun () ->
+                source |> toArray |> Array.permute f :> seq<_>)

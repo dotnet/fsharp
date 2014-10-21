@@ -556,6 +556,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="indexMap">The function that maps input indices to output indices.</param>
         /// <param name="array">The input array.</param>
         /// <returns>The output array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("Permute")>]
         val permute : indexMap:(int -> int) -> array:'T[] -> 'T[]
 

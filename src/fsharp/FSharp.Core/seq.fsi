@@ -756,6 +756,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Pairwise")>]
         val pairwise: source:seq<'T> -> seq<'T * 'T>
 
+        /// <summary>Returns a sequence with all elements permuted according to the
+        /// specified permutation.</summary>
+        ///
+        /// <param name="indexMap">The function that maps input indices to output indices.</param>
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("Permute")>]
+        val permute: indexMap:(int -> int) -> source:seq<'T> -> seq<'T>
+
         /// <summary>Applies the given function to successive elements, returning the first
         /// <c>x</c> where the function returns "Some(x)".</summary>
         ///

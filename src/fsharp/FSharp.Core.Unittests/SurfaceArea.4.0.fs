@@ -434,6 +434,7 @@ Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Initialize[T](Int32, Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] OfArray[T](T[])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] OfList[T](Microsoft.FSharp.Collections.FSharpList`1[T])
+Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Permute[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Int32,System.Int32], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] ReadOnly[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Replicate[T](Int32, T)
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[T] Reverse[T](System.Collections.Generic.IEnumerable`1[T])

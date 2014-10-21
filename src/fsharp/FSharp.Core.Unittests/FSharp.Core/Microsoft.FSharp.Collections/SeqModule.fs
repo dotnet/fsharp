@@ -625,6 +625,33 @@ type SeqModule() =
         ()
     
     [<Test>]
+    member this.Permute() =
+        let mapIndex i = (i + 1) % 4
+
+        // integer seq
+        let intSeq = seq { 1..4 }
+        let resultInt = Seq.permute mapIndex intSeq
+        VerifySeqsEqual (seq [4;1;2;3]) resultInt
+
+        // string seq
+        let resultStr = Seq.permute mapIndex [|"Lists"; "are";  "commonly"; "list" |]
+        VerifySeqsEqual (seq ["list"; "Lists"; "are";  "commonly" ]) resultStr
+
+        // empty seq
+        let resultEpt = Seq.permute mapIndex [||]
+        VerifySeqsEqual Seq.empty resultEpt
+
+        // null seq
+        let nullSeq = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Seq.permute mapIndex nullSeq |> ignore)
+
+        // argument exceptions
+        CheckThrowsArgumentException (fun () -> Seq.permute (fun _ -> 10) [0..9] |> Seq.iter ignore)
+        CheckThrowsArgumentException (fun () -> Seq.permute (fun _ -> 0) [0..9] |> Seq.iter ignore)
+
+        ()
+
+    [<Test>]
     member this.Pick() =
     
         let digits = [| 1 .. 10 |] |> Seq.ofArray
