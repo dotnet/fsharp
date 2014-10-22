@@ -62,7 +62,24 @@ type SeqModule2() =
         CheckThrowsArgumentNullException (fun () ->Seq.head nullSeq) 
         () 
         
+    [<Test>]
+    member this.Tl() =
+        // integer seq  
+        let resultInt = Seq.tail <| seq { 1..10 }        
+        Assert.AreEqual(seq { 2..10 }, resultInt)
         
+        // string seq    
+        let resultStr = Seq.tail <| seq { yield "a"; yield "b"; yield "c"; yield "d" }      
+        Assert.AreEqual(seq { yield "b";  yield "c" ; yield "d" }, resultStr)
+        
+        // 1-element seq    
+        let resultStr2 = Seq.tail <| seq { yield "a" }      
+        Assert.AreEqual(Seq.empty, resultStr2)
+
+        CheckThrowsArgumentNullException(fun () -> Seq.tail null |> ignore)
+        CheckThrowsArgumentException(fun () -> Seq.tail Seq.empty |> Seq.iter (fun _ -> failwith "Should not be reached"))
+        ()
+
     [<Test>]
     member this.Last() =
              

@@ -63,6 +63,15 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             (array.Length = 0)
 
+        [<CompiledName("Tail")>]
+        let tail (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then invalidArg "array" (SR.GetString(SR.notEnoughElements))
+            let len = array.Length - 1
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked<'T> len
+            Array.Copy(array, 1, result, 0, len)
+            result
+
         [<CompiledName("Empty")>]
         let empty<'T> = ([| |] : 'T [])
 

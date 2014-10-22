@@ -708,6 +708,25 @@ type ArrayModule2() =
         ()
 
     [<Test>]
+    member this.Tl() =
+        // integer array  
+        let resultInt = Array.tail [|1..10|]        
+        Assert.AreEqual([|2..10|], resultInt)
+        
+        // string array    
+        let resultStr = Array.tail [| "a"; "b"; "c"; "d" |]        
+        Assert.AreEqual([| "b";  "c" ; "d" |], resultStr)
+        
+        // 1-element array    
+        let resultStr2 = Array.tail [| "a" |]        
+        Assert.AreEqual([| |], resultStr2)
+
+        CheckThrowsArgumentException(fun () -> Array.tail [||] |> ignore)
+
+        CheckThrowsArgumentNullException(fun () -> Array.tail null |> ignore)
+        ()
+
+    [<Test>]
     member this.To_List() =
         // integer array  
         let resultInt = Array.toList [|1..10|]

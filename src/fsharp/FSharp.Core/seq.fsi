@@ -943,6 +943,18 @@ namespace Microsoft.FSharp.Collections
                                       when ^U : (static member ( + ) : ^U * ^U -> ^U) 
                                       and  ^U : (static member Zero : ^U)
 
+        /// <summary>Returns a sequence that skips 1 element of the underlying sequence and then yields the
+        /// remaining elements of the sequence.</summary>
+        ///
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The result sequence.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.InvalidOperationException">Thrown when the input sequence is empty.</exception>
+        [<CompiledName("Tail")>]
+        val tail: source:seq<'T> -> seq<'T>
+
         /// <summary>Returns the first N elements of the sequence.</summary>
         /// <remarks>Throws <c>InvalidOperationException</c>
         /// if the count exceeds the number of elements in the sequence. <c>Seq.truncate</c>

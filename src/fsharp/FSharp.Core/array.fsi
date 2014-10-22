@@ -769,6 +769,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TakeWhile")>]
         val takeWhile: predicate:('T -> bool) -> array:'T[] -> 'T[]
 
+        /// <summary>Returns a new array containing the elements of the original except the first element.</summary>
+        ///
+        /// <param name="array">The input array.</param>
+        /// <exception cref="System.ArgumentException">Thrown when the array is empty.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>A new array containing the elements of the original except the first element.</returns>
+        [<CompiledName("Tail")>]
+        val tail: array:'T[] -> 'T[]
+
         /// <summary>Builds a list from the given array.</summary>
         /// <param name="array">The input array.</param>
         /// <returns>The list of array elements.</returns>

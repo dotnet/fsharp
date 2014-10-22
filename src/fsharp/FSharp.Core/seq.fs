@@ -1680,6 +1680,15 @@ namespace Microsoft.FSharp.Collections
             if (e.MoveNext()) then Some e.Current
             else None
 
+        [<CompiledName("Tail")>]
+        let tail (source: seq<'T>) =
+            checkNonNull "source" source
+            seq { use e = source.GetEnumerator() 
+                  if not (e.MoveNext()) then 
+                      invalidArg "source" (SR.GetString(SR.notEnoughElements))
+                  while e.MoveNext() do
+                      yield e.Current }
+
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
             checkNonNull "source" source
