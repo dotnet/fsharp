@@ -3956,7 +3956,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc  selfv eenvouter expr =
         let rec getCallStructure tvacc vacc (e,ety) = 
             match e with 
             | Expr.TyLambda(_,tvs,body,_m,bty) -> 
-                getCallStructure (tvs :: tvacc) vacc (body,bty)
+                getCallStructure ((DropErasedTypars tvs) :: tvacc) vacc (body,bty)
             | Expr.Lambda (_,_,_,vs,body,_,bty) when not isLocalTypeFunc -> 
                 // Transform a lambda taking untupled arguments into one 
                 // taking only a single tupled argument if necessary.  REVIEW: do this earlier 
