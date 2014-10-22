@@ -610,6 +610,33 @@ type SeqModule() =
         ()
     
     [<Test>]
+    member this.FindBack() =
+        // integer Seq
+        let funcInt x = x % 5 = 0
+        Assert.AreEqual(20, Seq.findBack funcInt <| seq { 1..20 })
+        Assert.AreEqual(15, Seq.findBack funcInt <| seq { 1..19 })
+        Assert.AreEqual(5, Seq.findBack funcInt <| seq { 5..9 })
+
+        // string Seq
+        let funcStr (s:string) = s.Contains("Expected")
+        let strSeq = seq [ "Not Expected"; "Expected Content"]
+        let findStr = Seq.findBack funcStr strSeq
+        Assert.AreEqual("Expected Content", findStr)
+
+        // Empty Seq
+        let emptySeq = Seq.empty
+        CheckThrowsKeyNotFoundException(fun () -> Seq.findBack funcInt emptySeq |> ignore)
+
+        // Not found
+        let emptySeq = Seq.empty
+        CheckThrowsKeyNotFoundException(fun () -> seq { 1..20 } |> Seq.findBack (fun _ -> false) |> ignore)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.findBack funcInt nullSeq |> ignore)
+        ()
+
+    [<Test>]
     member this.FindIndex() =
         
         // integer Seq
@@ -648,7 +675,26 @@ type SeqModule() =
         // argument exceptions
         CheckThrowsArgumentException (fun () -> Seq.permute (fun _ -> 10) [0..9] |> Seq.iter ignore)
         CheckThrowsArgumentException (fun () -> Seq.permute (fun _ -> 0) [0..9] |> Seq.iter ignore)
+        ()
 
+    [<Test>]
+    member this.FindIndexBack() =
+        // integer Seq
+        let digits = seq { 1..100 }
+        let idx = digits |> Seq.findIndexBack (fun i -> i.ToString().Length = 1)
+        Assert.AreEqual(idx, 8)
+
+        // string Seq
+        let funcStr (s:string) = s.Contains("Expected")
+        let strSeq = seq [ "Not Expected"; "Expected Content" ]
+        let findStr = Seq.findIndexBack funcStr strSeq
+        Assert.AreEqual(1, findStr)
+
+        // empty Seq
+        CheckThrowsKeyNotFoundException(fun () -> Seq.findIndexBack (fun i -> true) Seq.empty |> ignore)
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.findIndexBack (fun i -> true) null |> ignore)
         ()
 
     [<Test>]

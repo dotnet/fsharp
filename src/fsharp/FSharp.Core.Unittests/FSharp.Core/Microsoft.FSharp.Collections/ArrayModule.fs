@@ -661,13 +661,42 @@ type ArrayModule() =
         
         // empty array
         let emptyArr:int[] = [| |] 
-        CheckThrowsKeyNotFoundException (fun () -> Array.find (fun x -> true) emptyArr |> ignore)        
+        CheckThrowsKeyNotFoundException (fun () -> Array.find (fun _ -> true) emptyArr |> ignore)
+
+        // not found
+        CheckThrowsKeyNotFoundException (fun () -> Array.find (fun _ -> false) intArr |> ignore)
 
         // null array
         let nullArr = null:string[] 
         CheckThrowsArgumentNullException (fun () -> Array.find funcStr nullArr |> ignore) 
         
         () 
+
+    [<Test>]
+    member this.FindBack() =
+        // integer array
+        let funcInt x = if (x%5 = 0) then true else false
+        Assert.AreEqual(20, Array.findBack funcInt [| 1..20 |])
+        Assert.AreEqual(15, Array.findBack funcInt [| 1..19 |])
+        Assert.AreEqual(5, Array.findBack funcInt [| 5..9 |])
+
+        // string array
+        let strArr = [|"Lists"; "are"; "a"; "commonly"; "data";"structor" |]
+        let funcStr (x:string) = x.Length > 7
+        let resultStr = Array.findBack funcStr strArr
+        Assert.AreEqual("structor", resultStr)
+
+        // empty array
+        CheckThrowsKeyNotFoundException (fun () -> Array.findBack (fun _ -> true) [| |] |> ignore)
+
+        // not found
+        CheckThrowsKeyNotFoundException (fun () -> Array.findBack (fun _ -> false) [| 1..20 |] |> ignore)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.findBack funcStr nullArr |> ignore)
+
+        ()
 
     [<Test>]
     member this.FindIndex() =
@@ -685,8 +714,10 @@ type ArrayModule() =
         
         // empty array
         let emptyArr:int[] = [| |]  
-        CheckThrowsKeyNotFoundException(fun() -> Array.findIndex (fun x -> true) emptyArr |> ignore) 
+        CheckThrowsKeyNotFoundException(fun() -> Array.findIndex (fun _ -> true) emptyArr |> ignore)
         
+        // not found
+        CheckThrowsKeyNotFoundException(fun() -> Array.findIndex (fun _ -> false) intArr |> ignore)
 
         // null array
         let nullArr = null:string[]  
@@ -694,6 +725,32 @@ type ArrayModule() =
         
         () 
         
+    [<Test>]
+    member this.FindIndexBack() =
+        // integer array
+        let funcInt x = if (x%5 = 0) then true else false
+        Assert.AreEqual(19, Array.findIndexBack funcInt [| 1..20 |])
+        Assert.AreEqual(14, Array.findIndexBack funcInt [| 1..19 |])
+        Assert.AreEqual(0, Array.findIndexBack funcInt [| 5..9 |])
+
+        // string array
+        let strArr = [|"Lists"; "are"; "a"; "commonly"; "data";"structor" |]
+        let funcStr (x:string) = if (x.Length >7) then true else false
+        let resultStr = Array.findIndexBack funcStr strArr
+        Assert.AreEqual(5, resultStr)
+
+        // empty array
+        CheckThrowsKeyNotFoundException(fun() -> Array.findIndexBack (fun _ -> true) [| |] |> ignore)
+
+        // not found
+        CheckThrowsKeyNotFoundException(fun() -> Array.findIndexBack (fun _ -> false) [| 1..20 |] |> ignore)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.findIndexBack funcStr nullArr |> ignore)
+
+        ()
+
     [<Test>]
     member this.Pick() =
         // integers

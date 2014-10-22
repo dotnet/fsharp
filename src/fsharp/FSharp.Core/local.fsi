@@ -39,6 +39,14 @@ module internal Array =
 
     val inline init : int -> (int -> 'T) -> 'T[]
 
+    val findBack: predicate:('T -> bool) -> array:'T[] -> 'T
+
+    val tryFindBack: predicate:('T -> bool) -> array:'T[] -> 'T option
+
+    val findIndexBack: predicate:('T -> bool) -> array:'T[] -> int
+
+    val tryFindIndexBack: predicate:('T -> bool) -> array:'T[] -> int option
+
     val permute : indexMap:(int -> int) -> 'T[] -> 'T[]
 
     val unstableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 

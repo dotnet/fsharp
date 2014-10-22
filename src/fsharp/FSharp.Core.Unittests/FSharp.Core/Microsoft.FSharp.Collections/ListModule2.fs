@@ -668,6 +668,29 @@ type ListModule02() =
         ()
         
     [<Test>]
+    member this.TryFindBack() =
+        // integer List
+        Assert.AreEqual(Some 20, [1..20] |> List.tryFindBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 15, [1..19] |> List.tryFindBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 5, [5..9] |> List.tryFindBack (fun x -> x%5 = 0))
+
+        // string List
+        let resultStr = ["a";"b";"cc";"dd"] |> List.tryFindBack (fun (x:string) -> x.Length > 1)
+        Assert.AreEqual(Some "dd", resultStr)
+
+        // empty List
+        Assert.AreEqual(None, [] |> List.tryFindBack  (fun _ -> true))
+
+        // not found
+        Assert.AreEqual(None, [1..20] |> List.tryFindBack  (fun _ -> false))
+
+        // Head satisfy
+        let resultHead = [7 .. -1 .. 1] |> List.tryFindBack (fun x -> x % 7 = 0)
+        Assert.AreEqual(Some 7, resultHead)
+
+        ()
+
+    [<Test>]
     member this.TryFindIndex() =
         // integer List  
         let resultInt = [1..10] |> List.tryFindIndex (fun x -> x%7 = 0)          
@@ -680,6 +703,25 @@ type ListModule02() =
         // empty List     
         let resultEpt = [] |> List.tryFindIndex  (fun x -> x%7 = 0)          
         Assert.AreEqual(None, resultEpt)
+        ()
+
+    [<Test>]
+    member this.TryFindIndexBack() =
+        // integer List
+        Assert.AreEqual(Some 19, [1..20] |> List.tryFindIndexBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 14, [1..19] |> List.tryFindIndexBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 0, [5..9] |> List.tryFindIndexBack (fun x -> x%5 = 0))
+
+        // string List
+        let resultStr = ["a";"b";"cc";"dd"] |> List.tryFindIndexBack (fun (x:string) -> x.Length > 1)
+        Assert.AreEqual(Some 3, resultStr)
+
+        // empty List
+        Assert.AreEqual(None, [] |> List.tryFindIndexBack (fun _ -> true))
+
+        // not found
+        Assert.AreEqual(None, [1..20] |> List.tryFindIndexBack (fun _ -> false))
+
         ()
 
     [<Test>]

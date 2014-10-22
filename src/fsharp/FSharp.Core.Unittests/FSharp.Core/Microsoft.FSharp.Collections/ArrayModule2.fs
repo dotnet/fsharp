@@ -786,7 +786,30 @@ type ArrayModule2() =
         
         ()
         
-        
+    [<Test>]
+    member this.TryFindBack() =
+        // integer array
+        let funcInt x = x%5 = 0
+        Assert.AreEqual(Some 20, [| 1..20 |] |> Array.tryFindBack funcInt)
+        Assert.AreEqual(Some 15, [| 1..19 |] |> Array.tryFindBack funcInt)
+        Assert.AreEqual(Some 5, [| 5..9 |] |> Array.tryFindBack funcInt)
+
+        // string array
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFindBack (fun (x:string) -> x.Length > 4)
+        Assert.AreEqual(Some "commonly", resultStr)
+
+        // empty array
+        Assert.AreEqual(None, [| |] |> Array.tryFindBack (fun _ -> failwith "error"))
+
+        // not found
+        Assert.AreEqual(None, [| 1..20 |] |> Array.tryFindBack (fun _ -> false))
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.tryFindBack (fun _ -> failwith "error") nullArr |> ignore)
+
+        ()
+
     [<Test>]
     member this.TryFindIndex() =
         // integer array  
@@ -805,6 +828,30 @@ type ArrayModule2() =
         let nullArr = null:string[]      
         CheckThrowsArgumentNullException (fun () -> Array.tryFindIndex (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
+        ()
+
+    [<Test>]
+    member this.TryFindIndexBack() =
+        // integer array
+        let funcInt x = x%5 = 0
+        Assert.AreEqual(Some 19, [| 1..20 |] |> Array.tryFindIndexBack funcInt)
+        Assert.AreEqual(Some 14, [| 1..19 |] |> Array.tryFindIndexBack funcInt)
+        Assert.AreEqual(Some 0, [| 5..9 |] |> Array.tryFindIndexBack funcInt)
+
+        // string array
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFindIndexBack (fun (x:string) -> x.Length > 4)
+        Assert.AreEqual(Some 2, resultStr)
+
+        // empty array
+        Assert.AreEqual(None, [| |] |> Array.tryFindIndexBack (fun _ -> true))
+
+        // not found
+        Assert.AreEqual(None, [| 1..20 |] |> Array.tryFindIndexBack (fun _ -> false))
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.tryFindIndexBack (fun (x:string) -> x.Length > 4) nullArr |> ignore)
+
         ()
 
     [<Test>]

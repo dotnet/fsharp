@@ -876,6 +876,7 @@ namespace Microsoft.FSharp.Collections
         
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
         let mkUnfoldSeq f x = mkSeq (fun () -> IEnumerator.unfold f x) 
+        let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
         
         [<CompiledName("Delay")>]
         let delay f = mkDelayedSeq f
@@ -1055,7 +1056,7 @@ namespace Microsoft.FSharp.Collections
         let pick f source  = 
             checkNonNull "source" source
             match tryPick f source with 
-            | None -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+            | None -> indexNotFound()
             | Some x -> x
           
         [<CompiledName("TryFind")>]
@@ -1072,7 +1073,7 @@ namespace Microsoft.FSharp.Collections
         let find f source = 
             checkNonNull "source" source
             match tryFind f source with 
-            | None -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+            | None -> indexNotFound()
             | Some x -> x
 
         [<CompiledName("Take")>]
@@ -1289,6 +1290,16 @@ namespace Microsoft.FSharp.Collections
                       zref := f !zref ie.Current 
                       yield !zref }
 
+        [<CompiledName("TryFindBack")>]
+        let tryFindBack f (source : seq<'T>) =
+            checkNonNull "source" source
+            source |> toArray |> Array.tryFindBack f
+
+        [<CompiledName("FindBack")>]
+        let findBack f source =
+            checkNonNull "source" source
+            source |> toArray |> Array.findBack f
+
         [<CompiledName("FindIndex")>]
         let findIndex p (source:seq<_>) = 
             checkNonNull "source" source
@@ -1299,7 +1310,7 @@ namespace Microsoft.FSharp.Collections
                         i
                     else loop (i+1)
                 else
-                    raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt))) 
+                    indexNotFound()
             loop 0
 
         [<CompiledName("TryFindIndex")>]
@@ -1315,7 +1326,15 @@ namespace Microsoft.FSharp.Collections
                     None
             loop 0
 
-        
+        [<CompiledName("TryFindIndexBack")>]
+        let tryFindIndexBack f (source : seq<'T>) =
+            checkNonNull "source" source
+            source |> toArray |> Array.tryFindIndexBack f
+
+        [<CompiledName("FindIndexBack")>]
+        let findIndexBack f source =
+            checkNonNull "source" source
+            source |> toArray |> Array.findIndexBack f
 
         // windowed : int -> seq<'T> -> seq<'T[]>
         [<CompiledName("Windowed")>]

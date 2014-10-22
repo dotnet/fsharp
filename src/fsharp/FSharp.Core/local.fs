@@ -659,6 +659,36 @@ module internal Array =
             arr.[i] <- f i
         arr
 
+    let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
+    let findBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then indexNotFound()
+            elif f array.[i] then array.[i]
+            else loop (i - 1)
+        loop (array.Length - 1)
+
+    let tryFindBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then None
+            elif f array.[i] then Some array.[i]
+            else loop (i - 1)
+        loop (array.Length - 1)
+
+    let findIndexBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then indexNotFound()
+            elif f array.[i] then i
+            else loop (i - 1)
+        loop (array.Length - 1)
+
+    let tryFindIndexBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then None
+            elif f array.[i] then Some i
+            else loop (i - 1)
+        loop (array.Length - 1)
+
     let permute indexMap (arr : _[]) = 
         let res  = zeroCreateUnchecked arr.Length
         let inv = zeroCreateUnchecked arr.Length

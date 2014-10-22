@@ -384,8 +384,11 @@ type ListModule() =
         
         // empty List
         let emptyArr:int list = [ ]   
-        CheckThrowsKeyNotFoundException (fun () -> List.find (fun x -> true) emptyArr |> ignore) 
+        CheckThrowsKeyNotFoundException (fun () -> List.find (fun _ -> true) emptyArr |> ignore)
                 
+        // not found
+        CheckThrowsKeyNotFoundException (fun () -> List.find (fun _ -> false) intArr |> ignore)
+
         () 
 
     [<Test>]
@@ -399,6 +402,29 @@ type ListModule() =
         CheckThrowsArgumentException (fun () ->  List.replicate -1 null |> ignore)
 
     [<Test>]
+    member this.FindBack() =
+        // integer List
+        let funcInt x = if (x%5 = 0) then true else false
+        Assert.AreEqual(20, List.findBack funcInt [ 1..20 ])
+        Assert.AreEqual(15, List.findBack funcInt [ 1..19 ])
+        Assert.AreEqual(5, List.findBack funcInt [ 5..9 ])
+
+        // string List
+        let strArr = ["."; ".."; "..."; "...."]
+        let funcStr (x:string) = x.Length > 2
+        let resultStr = List.findBack funcStr strArr
+        Assert.AreEqual("....", resultStr)
+
+        // empty List
+        CheckThrowsKeyNotFoundException (fun () -> List.findBack (fun _ -> true) [] |> ignore)
+
+        // not found
+        CheckThrowsKeyNotFoundException (fun () -> List.findBack (fun _ -> false) [ 1..20 ] |> ignore)
+
+        ()
+
+
+    [<Test>]
     member this.FindIndex() =
         // integer List
         let intArr = [ 1..20 ]
@@ -408,16 +434,41 @@ type ListModule() =
         
         // string List
         let strArr = ["."; ".."; "..."; "...."] 
-        let funcStr (x:string) = if (x.Length >2) then true else false
+        let funcStr (x:string) = if (x.Length > 2) then true else false
         let resultStr = List.findIndex funcStr strArr        
         Assert.AreEqual(2, resultStr)
         
         // empty List
         let emptyArr:int list = [ ]  
-        CheckThrowsKeyNotFoundException (fun () -> List.findIndex (fun x -> true) emptyArr |> ignore)   
+        CheckThrowsKeyNotFoundException (fun () -> List.findIndex (fun _ -> true) emptyArr |> ignore)
                 
+        // not found
+        CheckThrowsKeyNotFoundException (fun () -> List.findIndex (fun _ -> false) intArr |> ignore)
+
         () 
         
+    [<Test>]
+    member this.FindIndexBack() =
+        // integer List
+        let funcInt x = if (x%5 = 0) then true else false
+        Assert.AreEqual(19, List.findIndexBack funcInt [ 1..20 ])
+        Assert.AreEqual(14, List.findIndexBack funcInt [ 1..19 ])
+        Assert.AreEqual(0, List.findIndexBack funcInt [ 5..9 ])
+
+        // string List
+        let strArr = ["."; ".."; "..."; "...."]
+        let funcStr (x:string) = x.Length > 2
+        let resultStr = List.findIndexBack funcStr strArr
+        Assert.AreEqual(3, resultStr)
+
+        // empty List
+        CheckThrowsKeyNotFoundException (fun () -> List.findIndexBack (fun _ -> true) [] |> ignore)
+
+        // not found
+        CheckThrowsKeyNotFoundException (fun () -> List.findIndexBack (fun _ -> false) [ 1..20 ] |> ignore)
+
+        ()
+
     [<Test>]
     member this.TryPick() =
         // integer List

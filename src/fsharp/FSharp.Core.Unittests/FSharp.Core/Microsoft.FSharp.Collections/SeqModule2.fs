@@ -1338,6 +1338,32 @@ type SeqModule2() =
         ()
         
     [<Test>]
+    member this.TryFindBack() =
+        // integer Seq
+        let resultInt = Seq.tryFindBack (fun x -> (x%2=0)) (seq [1;2;4;5;7])
+        Assert.AreEqual(Some 4, resultInt)
+
+        // integer Seq - None
+        let resultInt = Seq.tryFindBack (fun x -> (x%2=0)) (seq [1;3;5;7])
+        Assert.AreEqual(None, resultInt)
+
+        // string Seq
+        let resultStr = Seq.tryFindBack (fun (x:string) -> x.Contains("2")) (seq ["str1";"str2";"str2x";"str3"])
+        Assert.AreEqual(Some "str2x", resultStr)
+
+        // string Seq - None
+        let resultStr = Seq.tryFindBack (fun (x:string) -> x.Contains("2")) (seq ["str1";"str4";"str3"])
+        Assert.AreEqual(None, resultStr)
+
+        // empty Seq
+        let resultEpt = Seq.tryFindBack (fun x -> (x%2=0)) Seq.empty
+        Assert.AreEqual(None, resultEpt)
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.tryFindBack (fun x -> (x%2=0))  null |> ignore)
+        ()
+
+    [<Test>]
     member this.TryFindIndex() =
 
         // integer Seq
@@ -1365,6 +1391,33 @@ type SeqModule2() =
         CheckThrowsArgumentNullException(fun() -> Seq.tryFindIndex (fun x -> (x % 2 = 0))  null |> ignore)
         ()
         
+    [<Test>]
+    member this.TryFindIndexBack() =
+
+        // integer Seq
+        let resultInt = Seq.tryFindIndexBack (fun x -> (x % 5 = 0)) [5; 9; 10; 12]
+        Assert.AreEqual(Some(2), resultInt)
+
+        // integer Seq - None
+        let resultInt = Seq.tryFindIndexBack (fun x -> (x % 5 = 0)) [9;3;11]
+        Assert.AreEqual(None, resultInt)
+
+        // string Seq
+        let resultStr = Seq.tryFindIndexBack (fun (x:string) -> x.Contains("2")) ["str1"; "str2"; "str2x"; "str3"]
+        Assert.AreEqual(Some(2), resultStr)
+
+        // string Seq - None
+        let resultStr = Seq.tryFindIndexBack (fun (x:string) -> x.Contains("2")) ["str1"; "str4"; "str3"]
+        Assert.AreEqual(None, resultStr)
+
+        // empty Seq
+        let resultEpt = Seq.tryFindIndexBack (fun x -> (x%2=0)) Seq.empty
+        Assert.AreEqual(None, resultEpt)
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.tryFindIndexBack (fun x -> (x % 2 = 0))  null |> ignore)
+        ()
+
     [<Test>]
     member this.Unfold() =
         // integer Seq

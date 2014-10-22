@@ -16,6 +16,8 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module List = 
 
+        let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
         [<CompiledName("Length")>]
         let length (list: 'T list) = list.Length
         
@@ -356,10 +358,16 @@ namespace Microsoft.FSharp.Collections
                 exists2aux f list1 list2
 
         [<CompiledName("Find")>]
-        let rec find f list = match list with [] -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  | h::t -> if f h then h else find f t
+        let rec find f list = match list with [] -> indexNotFound()  | h::t -> if f h then h else find f t
 
         [<CompiledName("TryFind")>]
         let rec tryFind f list = match list with [] -> None | h::t -> if f h then Some h else tryFind f t
+
+        [<CompiledName("FindBack")>]
+        let findBack f list = list |> toArray |> Array.findBack f
+
+        [<CompiledName("TryFindBack")>]
+        let tryFindBack f list = list |> toArray |> Array.tryFindBack f
 
         [<CompiledName("TryPick")>]
         let rec tryPick f list = 
@@ -373,7 +381,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Pick")>]
         let rec pick f list = 
             match list with 
-            | [] -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+            | [] -> indexNotFound()
             | h::t -> 
                 match f h with 
                 | None -> pick f t 
@@ -445,7 +453,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("FindIndex")>]
         let findIndex f list = 
-            let rec loop n = function[] -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  | h::t -> if f h then n else loop (n+1) t
+            let rec loop n = function[] -> indexNotFound()  | h::t -> if f h then n else loop (n+1) t
             loop 0 list
 
         [<CompiledName("TryFindIndex")>]
@@ -453,6 +461,12 @@ namespace Microsoft.FSharp.Collections
             let rec loop n = function[] -> None | h::t -> if f h then Some n else loop (n+1) t
             loop 0 list
         
+        [<CompiledName("FindIndexBack")>]
+        let findIndexBack f list = list |> toArray |> Array.findIndexBack f
+
+        [<CompiledName("TryFindIndexBack")>]
+        let tryFindIndexBack f list = list |> toArray |> Array.tryFindIndexBack f
+
         [<CompiledName("Sum")>]
         let inline sum          (list:list<_>) = Seq.sum list
 

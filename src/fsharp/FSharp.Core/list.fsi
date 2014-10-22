@@ -171,6 +171,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Find")>]
         val find: predicate:('T -> bool) -> list:'T list -> 'T
 
+        /// <summary>Returns the last element for which the given function returns <c>true</c>.
+        /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="list">The input list.</param>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if the predicate evaluates to false for
+        /// all the elements of the list.</exception>
+        /// <returns>The last element that satisfies the predicate.</returns>
+        [<CompiledName("FindBack")>]
+        val findBack: predicate:('T -> bool) -> list:'T list -> 'T
+
         /// <summary>Returns the index of the first element in the list
         /// that satisfies the given predicate.
         /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
@@ -181,6 +191,17 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The index of the first element that satisfies the predicate.</returns>
         [<CompiledName("FindIndex")>]
         val findIndex: predicate:('T -> bool) -> list:'T list -> int
+
+        /// <summary>Returns the index of the last element in the list
+        /// that satisfies the given predicate.
+        /// Raises <c>KeyNotFoundException</c> if no such element exists.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="list">The input list.</param>
+        /// <exception cref="System.ArgumentException">Thrown if the predicate evaluates to false for all the
+        /// elements of the list.</exception>
+        /// <returns>The index of the last element that satisfies the predicate.</returns>
+        [<CompiledName("FindIndexBack")>]
+        val findIndexBack: predicate:('T -> bool) -> list:'T list -> int
 
         /// <summary>Returns a new collection containing only the elements of the collection
         /// for which the given predicate returns "true"</summary>
@@ -681,6 +702,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFind")>]
         val tryFind: predicate:('T -> bool) -> list:'T list -> 'T option
 
+        /// <summary>Returns the last element for which the given function returns <c>true.</c>.
+        /// Return <c>None</c> if no such element exists.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The last element for which the predicate returns true, or None if
+        /// every element evaluates to false.</returns>
+        [<CompiledName("TryFindBack")>]
+        val tryFindBack: predicate:('T -> bool) -> list:'T list -> 'T option
+
         /// <summary>Returns the index of the first element in the list
         /// that satisfies the given predicate.
         /// Return <c>None</c> if no such element exists.</summary>
@@ -698,6 +728,16 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The value at the given index or <c>None</c>.</returns>
         [<CompiledName("TryItem")>]
         val tryItem: index:int -> list:'T list -> 'T option
+
+        /// <summary>Returns the index of the last element in the list
+        /// that satisfies the given predicate.
+        /// Return <c>None</c> if no such element exists.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The index of the last element for which the predicate returns true, or None if
+        /// every element evaluates to false.</returns>
+        [<CompiledName("TryFindIndexBack")>]
+        val tryFindIndexBack: predicate:('T -> bool) -> list:'T list -> int option
 
         /// <summary>Splits a list of pairs into two lists.</summary>
         /// <param name="list">The input list.</param>

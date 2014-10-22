@@ -27,6 +27,8 @@ namespace Microsoft.FSharp.Collections
             | null -> nullArg argName 
             | _ -> ()
 
+        let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
         [<CompiledName("Length")>]
         let length (array: _[])    = array.Length
         
@@ -404,7 +406,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             let rec loop i = 
                 if i >= array.Length then 
-                    raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+                    indexNotFound()
                 else 
                     match f array.[i] with 
                     | None -> loop(i+1)
@@ -457,7 +459,7 @@ namespace Microsoft.FSharp.Collections
         let find f (array: _[]) = 
             checkNonNull "array" array
             let rec loop i = 
-                if i >= array.Length then raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt))) else 
+                if i >= array.Length then indexNotFound() else
                 if f array.[i] then array.[i]  else loop (i+1)
             loop 0 
 
@@ -495,6 +497,26 @@ namespace Microsoft.FSharp.Collections
                 let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked resLen
                 Array.Copy(array, i, res, 0, resLen)
                 res
+
+        [<CompiledName("FindBack")>]
+        let findBack f (array: _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.findBack f array
+
+        [<CompiledName("TryFindBack")>]
+        let tryFindBack f (array: _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.tryFindBack f array
+
+        [<CompiledName("FindIndexBack")>]
+        let findIndexBack f (array : _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.findIndexBack f array
+
+        [<CompiledName("TryFindIndexBack")>]
+        let tryFindIndexBack f (array : _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack f array
 
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) = 
@@ -731,7 +753,7 @@ namespace Microsoft.FSharp.Collections
             let len = array.Length 
             let rec go n = 
                 if n >= len then 
-                    raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+                    indexNotFound()
                 elif f array.[n] then 
                     n 
                 else go (n+1)

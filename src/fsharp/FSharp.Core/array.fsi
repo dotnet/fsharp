@@ -243,16 +243,40 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Find")>]
         val find: predicate:('T -> bool) -> array:'T[] -> 'T
 
-        /// <summary>Returns the index of the first element in the array
-        /// that satisfies the given predicate. Raise <c>KeyNotFoundException</c> if 
-        /// none of the elements satisy the predicate.</summary>
+        /// <summary>Returns the last element for which the given function returns 'true'.
+        /// Raise <c>KeyNotFoundException</c> if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
         /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
         /// never returns true.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>The last element for which <c>predicate</c> returns true.</returns>
+        [<CompiledName("FindBack")>]
+        val findBack: predicate:('T -> bool) -> array:'T[] -> 'T
+
+        /// <summary>Returns the index of the first element in the array
+        /// that satisfies the given predicate. Raise <c>KeyNotFoundException</c> if 
+        /// none of the elements satisfy the predicate.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
+        /// never returns true.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// <returns>The index of the first element in the array that satisfies the given predicate.</returns>
         [<CompiledName("FindIndex")>]
         val findIndex: predicate:('T -> bool) -> array:'T[] -> int
+
+        /// <summary>Returns the index of the last element in the array
+        /// that satisfies the given predicate. Raise <c>KeyNotFoundException</c> if
+        /// none of the elements satisfy the predicate.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        /// <exception cref="System.Collections.Generic.KeyNotFoundException">Thrown if <c>predicate</c>
+        /// never returns true.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>The index of the last element in the array that satisfies the given predicate.</returns>
+        [<CompiledName("FindIndexBack")>]
+        val findIndexBack: predicate:('T -> bool) -> array:'T[] -> int
 
         /// <summary>Tests if all elements of the array satisfy the given predicate.</summary>
         ///
@@ -798,10 +822,20 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryFind")>]
         val tryFind: predicate:('T -> bool) -> array:'T[] -> 'T option
 
+        /// <summary>Returns the last element for which the given function returns <c>true</c>.
+        /// Return <c>None</c> if no such element exists.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>The last element that satisfies the predicate, or None.</returns>
+        [<CompiledName("TryFindBack")>]
+        val tryFindBack: predicate:('T -> bool) -> array:'T[] -> 'T option
+
         /// <summary>Returns the index of the first element in the array
         /// that satisfies the given predicate.</summary>
         /// <param name="predicate">The function to test the input elements.</param>
         /// <param name="array">The input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// <returns>The index of the first element that satisfies the predicate, or None.</returns>
         [<CompiledName("TryFindIndex")>]
         val tryFindIndex : predicate:('T -> bool) -> array:'T[] -> int option
@@ -814,6 +848,15 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         [<CompiledName("TryItem")>]
         val tryItem: index:int -> array:'T[] -> 'T option
+
+        /// <summary>Returns the index of the last element in the array
+        /// that satisfies the given predicate.</summary>
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array">The input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>The index of the last element that satisfies the predicate, or None.</returns>
+        [<CompiledName("TryFindIndexBack")>]
+        val tryFindIndexBack : predicate:('T -> bool) -> array:'T[] -> int option
 
         /// <summary>Splits an array of pairs into two arrays.</summary>
         /// <param name="array">The input array.</param>
