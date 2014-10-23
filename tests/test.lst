@@ -33,6 +33,7 @@ Core02		fsharp\core\hiding
 Core03		fsharp\core\innerpoly
 Core03		fsharp\core\int32
 Core03		fsharp\core\internalsvisible
+Core03		fsharp\core\interop
 Core03		fsharp\core\lazy
 Core03		fsharp\core\letrec
 Core03		fsharp\core\libtest

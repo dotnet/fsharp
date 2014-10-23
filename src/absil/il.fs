@@ -45,6 +45,15 @@ let notlazy v = Lazy.CreateFromValue v
 let lazyMap f (x:Lazy<_>) =  
       if x.IsValueCreated then notlazy (f (x.Force())) else lazy (f (x.Force()))
 
+type PrimaryAssembly = 
+    | Mscorlib
+    | DotNetCore   
+
+    member this.Name = 
+        match this with
+        | Mscorlib -> "mscorlib"
+        | DotNetCore -> "System.Runtime"
+
 // -------------------------------------------------------------------- 
 // Utilities: type names
 // -------------------------------------------------------------------- 
@@ -2847,41 +2856,43 @@ let typ_is_boxed = function ILType.Boxed _ -> true | _ -> false
 let typ_is_value = function ILType.Value _ -> true | _ -> false
 
 
-let tspec_is_primaryAssembly ilg (tspec:ILTypeSpec) n = 
+let tspec_is_primaryAssembly (tspec:ILTypeSpec) n = 
   let tref = tspec.TypeRef
   let scoref = tref.Scope
   (tref.Name = n) &&
   match scoref with
-  | ILScopeRef.Assembly n -> n.Name = ilg.primaryAssemblyName
+  | ILScopeRef.Assembly n -> 
+      n.Name = PrimaryAssembly.Mscorlib.Name || 
+      n.Name = PrimaryAssembly.DotNetCore.Name
   | ILScopeRef.Module _ -> false
   | ILScopeRef.Local -> true
 
-let typ_is_boxed_mscorlib_typ ilg (ty:ILType) n = 
-  typ_is_boxed ty && tspec_is_primaryAssembly ilg ty.TypeSpec n
+let typ_is_boxed_mscorlib_typ (ty:ILType) n = 
+  typ_is_boxed ty && tspec_is_primaryAssembly ty.TypeSpec n
 
-let typ_is_value_mscorlib_typ ilg (ty:ILType) n = 
-  typ_is_value ty && tspec_is_primaryAssembly ilg ty.TypeSpec n
+let typ_is_value_mscorlib_typ (ty:ILType) n = 
+  typ_is_value ty && tspec_is_primaryAssembly ty.TypeSpec n
       
-let isILObjectTy            ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_Object
-let isILStringTy            ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_String
-let typ_is_AsyncCallback     ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_AsyncCallback
-let isILTypedReferenceTy    ilg ty = typ_is_value_mscorlib_typ ilg ty tname_TypedReference
-let typ_is_IAsyncResult ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_IAsyncResult
-let typ_is_IComparable  ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_IComparable
-let isILSByteTy        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_SByte
-let isILByteTy         ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Byte
-let isILInt16Ty        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Int16
-let isILUInt16Ty       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UInt16
-let isILInt32Ty        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Int32
-let isILUInt32Ty       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UInt32
-let isILInt64Ty        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Int64
-let isILUInt64Ty       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UInt64
-let isILIntPtrTy       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_IntPtr
-let isILUIntPtrTy      ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UIntPtr
-let isILBoolTy         ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Bool
-let isILCharTy         ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Char
-let isILSingleTy       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Single
-let isILDoubleTy       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Double
+let isILObjectTy            ty = typ_is_boxed_mscorlib_typ ty tname_Object
+let isILStringTy            ty = typ_is_boxed_mscorlib_typ ty tname_String
+let typ_is_AsyncCallback     ty = typ_is_boxed_mscorlib_typ ty tname_AsyncCallback
+let isILTypedReferenceTy    ty = typ_is_value_mscorlib_typ ty tname_TypedReference
+let typ_is_IAsyncResult ty = typ_is_boxed_mscorlib_typ ty tname_IAsyncResult
+let typ_is_IComparable  ty = typ_is_boxed_mscorlib_typ ty tname_IComparable
+let isILSByteTy        ty = typ_is_value_mscorlib_typ ty tname_SByte
+let isILByteTy         ty = typ_is_value_mscorlib_typ ty tname_Byte
+let isILInt16Ty        ty = typ_is_value_mscorlib_typ ty tname_Int16
+let isILUInt16Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt16
+let isILInt32Ty        ty = typ_is_value_mscorlib_typ ty tname_Int32
+let isILUInt32Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt32
+let isILInt64Ty        ty = typ_is_value_mscorlib_typ ty tname_Int64
+let isILUInt64Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt64
+let isILIntPtrTy       ty = typ_is_value_mscorlib_typ ty tname_IntPtr
+let isILUIntPtrTy      ty = typ_is_value_mscorlib_typ ty tname_UIntPtr
+let isILBoolTy         ty = typ_is_value_mscorlib_typ ty tname_Bool
+let isILCharTy         ty = typ_is_value_mscorlib_typ ty tname_Char
+let isILSingleTy       ty = typ_is_value_mscorlib_typ ty tname_Single
+let isILDoubleTy       ty = typ_is_value_mscorlib_typ ty tname_Double
 
 // -------------------------------------------------------------------- 
 // Rescoping
