@@ -35,6 +35,7 @@ set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 
 rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0\TestResults
+if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
