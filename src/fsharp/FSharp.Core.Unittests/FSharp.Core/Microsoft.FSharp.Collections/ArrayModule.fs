@@ -1009,6 +1009,43 @@ type ArrayModule() =
     member this.``exactlyOne should fail on arrays with more than one element``() =
         CheckThrowsArgumentException(fun () -> Array.exactlyOne [|"1"; "2"|] |> ignore)
 
+    [<Test>]
+    member this.GroupBy() =
+        let funcInt x = x%5
+             
+        let IntArray = [| 0 .. 9 |]
+                    
+        let group_byInt = Array.groupBy funcInt IntArray
+        
+        let expectedIntArray = 
+            [| for i in 0..4 -> i, [|i; i+5|] |]
+
+        if group_byInt <> expectedIntArray then Assert.Fail()
+             
+        // string array
+        let funcStr (x:string) = x.Length
+        let strArray = [|"l1ngth7"; "length 8";  "l2ngth7" ; "length  9"|]
+        
+        let group_byStr = Array.groupBy funcStr strArray
+        let expectedStrArray = 
+            [|
+                7, [|"l1ngth7"; "l2ngth7"|]
+                8, [|"length 8"|]
+                9, [|"length  9"|]
+            |]
+       
+        if group_byStr <> expectedStrArray then Assert.Fail()
+
+        // Empty array
+        let emptyArray = [||]
+        let group_byEmpty = Array.groupBy funcInt emptyArray
+        let expectedEmptyArray = [||]
+
+        if emptyArray <> expectedEmptyArray then Assert.Fail()
+
+        CheckThrowsArgumentNullException(fun () -> Array.groupBy funcInt (null : int array) |> ignore)
+        ()
+
     member private this.InitTester initInt initString = 
         // integer array
         let resultInt : int[] = initInt 3 (fun x -> x + 3) 

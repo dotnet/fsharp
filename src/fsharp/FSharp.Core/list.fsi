@@ -284,6 +284,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ForAll2")>]
         val forall2: predicate:('T1 -> 'T2 -> bool) -> list1:'T1 list -> list2:'T2 list -> bool
 
+        /// <summary>Applies a key-generating function to each element of a list and yields a list of 
+        /// unique keys. Each unique key contains a list of all elements that match 
+        /// to this key.</summary>
+        ///
+        /// <param name="projection">A function that transforms an element of the list into a comparable key.</param>
+        /// <param name="list">The input list.</param>
+        ///
+        /// <returns>The result list.</returns>
+        [<CompiledName("GroupBy")>]
+        val groupBy : projection:('T -> 'Key) -> list:'T list -> ('Key * 'T list) list when 'Key : equality
+
         /// <summary>Returns the first element of the list.</summary>
         ///
         /// <param name="list">The input list.</param>

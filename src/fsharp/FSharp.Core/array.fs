@@ -7,6 +7,7 @@ namespace Microsoft.FSharp.Collections
     open System.Collections.Generic
     open System.Diagnostics.CodeAnalysis
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -400,6 +401,32 @@ namespace Microsoft.FSharp.Collections
             if len1 <> array2.Length then invalidArg "array2" (SR.GetString(SR.arraysHadDifferentLengths))
             let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i+1))
             loop 0
+
+        [<CompiledName("GroupBy")>]
+        let groupBy keyf (array: 'T[]) =
+            checkNonNull "array" array
+            let dict = new Dictionary<RuntimeHelpers.StructBox<'Key>,ResizeArray<'T>>(RuntimeHelpers.StructBox<'Key>.Comparer)
+
+            // Build the groupings
+            for i = 0 to (array.Length - 1) do
+                let v = array.[i]
+                let key = RuntimeHelpers.StructBox (keyf v)
+                let ok, prev = dict.TryGetValue(key)
+                if ok then 
+                    prev.Add(v)
+                else 
+                    let prev = new ResizeArray<'T>(1)
+                    dict.[key] <- prev
+                    prev.Add(v)
+                     
+            // Return the array-of-arrays.
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
+            let mutable i = 0
+            for group in dict do
+                result.[i] <- group.Key.Value, group.Value.ToArray()
+                i <- i + 1
+
+            result
 
         [<CompiledName("Pick")>]
         let pick f (array: _[]) = 

@@ -373,6 +373,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Head")>]
         val head: array:'T[] -> 'T
 
+        /// <summary>Applies a key-generating function to each element of an array and yields an array of 
+        /// unique keys. Each unique key contains an array of all elements that match 
+        /// to this key.</summary>
+        ///
+        /// <param name="projection">A function that transforms an element of the array into a comparable key.</param>
+        /// <param name="array">The input array.</param>
+        ///
+        /// <returns>The result array.</returns>
+        [<CompiledName("GroupBy")>]
+        val groupBy : projection:('T -> 'Key) -> array:'T[] -> ('Key * 'T[])[]  when 'Key : equality
+
         /// <summary>Creates an array given the dimension and a generator function to compute the elements.</summary>
         /// <param name="count">The number of elements to initialize.</param>
         /// <param name="initializer">The function to generate the initial values for each index.</param>

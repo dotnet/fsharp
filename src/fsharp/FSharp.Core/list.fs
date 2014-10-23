@@ -393,6 +393,31 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
+        [<CompiledName("GroupBy")>]
+        let groupBy keyf (list: 'T list) =
+            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,ResizeArray<'T>>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+
+            // Build the groupings
+            let rec loop list =
+                match list with
+                | v :: t -> 
+                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf v)
+                    let ok,prev = dict.TryGetValue(key)
+                    if ok then
+                        prev.Add(v)
+                    else 
+                        let prev = new ResizeArray<'T>(1)
+                        dict.[key] <- prev
+                        prev.Add(v)
+                    loop t
+                | _ -> ()
+            loop list
+
+            // Return the list-of-lists.
+            dict
+            |> Seq.map (fun group -> (group.Key.Value, Seq.toList group.Value))
+            |> Seq.toList
+
         [<CompiledName("Partition")>]
         let partition p x = Microsoft.FSharp.Primitives.Basics.List.partition p x
             

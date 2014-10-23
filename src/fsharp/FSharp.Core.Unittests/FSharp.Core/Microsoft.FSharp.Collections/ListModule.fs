@@ -647,6 +647,42 @@ type ListModule() =
         ()
 
     [<Test>]
+    member this.GroupBy() =
+        let funcInt x = x%5
+             
+        let IntList = [ 0 .. 9 ]
+                    
+        let group_byInt = List.groupBy funcInt IntList
+        
+        let expectedIntList = 
+            [ for i in 0..4 -> i, [i; i+5] ]
+
+        Assert.AreEqual(expectedIntList, group_byInt)
+             
+        // string list
+        let funcStr (x:string) = x.Length
+        let strList = ["l1ngth7"; "length 8";  "l2ngth7" ; "length  9"]
+        
+        let group_byStr = List.groupBy funcStr strList
+        let expectedStrList = 
+            [
+                7, ["l1ngth7"; "l2ngth7"]
+                8, ["length 8"]
+                9, ["length  9"]
+            ]
+       
+        Assert.AreEqual(expectedStrList, group_byStr)
+
+        // Empty list
+        let emptyList = []
+        let group_byEmpty = List.groupBy funcInt emptyList
+        let expectedEmptyList = []
+
+        Assert.AreEqual(expectedEmptyList, emptyList)
+
+        ()
+
+    [<Test>]
     member this.Hd() =
         // integer List
         let resultInt = List.head  [2..2..20]        
