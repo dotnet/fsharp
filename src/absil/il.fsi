@@ -20,7 +20,12 @@ type ILList<'T> = ThreeList<'T>
 //#if ABSIL_USES_LIST_FOR_ILLIST
 type ILList<'T> = 'T list
 //#endif
- 
+
+type PrimaryAssembly = 
+    | Mscorlib
+    | DotNetCore
+
+    member Name: string
 
 // ====================================================================
 // .NET binaries can be converted to the data structures below by using 
@@ -2212,23 +2217,23 @@ val addPropertyNeverAttrs : ILGlobals -> ILPropertyDef -> ILPropertyDef
 val addFieldNeverAttrs : ILGlobals -> ILFieldDef -> ILFieldDef
 
 /// Discriminating different important built-in types
-val isILObjectTy: ILGlobals -> ILType -> bool
-val isILStringTy: ILGlobals -> ILType -> bool
-val isILSByteTy: ILGlobals -> ILType -> bool
-val isILByteTy: ILGlobals -> ILType -> bool
-val isILInt16Ty: ILGlobals -> ILType -> bool
-val isILUInt16Ty: ILGlobals -> ILType -> bool
-val isILInt32Ty: ILGlobals -> ILType -> bool
-val isILUInt32Ty: ILGlobals -> ILType -> bool
-val isILInt64Ty: ILGlobals -> ILType -> bool
-val isILUInt64Ty: ILGlobals -> ILType -> bool
-val isILIntPtrTy: ILGlobals -> ILType -> bool
-val isILUIntPtrTy: ILGlobals -> ILType -> bool
-val isILBoolTy: ILGlobals -> ILType -> bool
-val isILCharTy: ILGlobals -> ILType -> bool
-val isILTypedReferenceTy: ILGlobals -> ILType -> bool
-val isILDoubleTy: ILGlobals -> ILType -> bool
-val isILSingleTy: ILGlobals -> ILType -> bool
+val isILObjectTy: ILType -> bool
+val isILStringTy: ILType -> bool
+val isILSByteTy: ILType -> bool
+val isILByteTy: ILType -> bool
+val isILInt16Ty: ILType -> bool
+val isILUInt16Ty: ILType -> bool
+val isILInt32Ty: ILType -> bool
+val isILUInt32Ty: ILType -> bool
+val isILInt64Ty: ILType -> bool
+val isILUInt64Ty: ILType -> bool
+val isILIntPtrTy: ILType -> bool
+val isILUIntPtrTy: ILType -> bool
+val isILBoolTy: ILType -> bool
+val isILCharTy: ILType -> bool
+val isILTypedReferenceTy: ILType -> bool
+val isILDoubleTy: ILType -> bool
+val isILSingleTy: ILType -> bool
 
 /// Get a public key token from a public key.
 val sha1HashBytes : byte[] -> byte[] (* SHA1 hash *)

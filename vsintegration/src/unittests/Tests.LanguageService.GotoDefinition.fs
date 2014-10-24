@@ -1309,17 +1309,31 @@ type GotoDefinitionTests()  =
       let lines = 
         [ "#light"
           "[<Struct>]"
-          "type Astruct ="
-          "  val a : int"
-          "  new(a) = { a = a }" 
-          "let a = Astruct(0)"
+          "type Astruct(x:int, y:int) ="
+          "  [<DefaultValue()>]"
+          "  val mutable a : int"
+          "  new(a) = Astruct(a, a)" 
+          "type AS = Astruct"
+          "let a1 = Astruct(0)"
+          "let b1 = Astruct(0, 1)"
+          "let c1 = Astruct()"
+          "let a2 = AS(0)"
+          "let b2 = AS(0, 1)"
+          "let c2 = AS()"
         ]
       
       let (_,_, file) = this.CreateSingleFileProject(lines)
-
-      MoveCursorToStartOfMarker (file, "Astruct(0)")
-      let res = GotoDefinitionAtCursor file |> fun x -> x.ToOption() |>  Option.map (fun (res, _) -> res.iStartLine + 1, res.iStartIndex + 1)
-      AssertEqual(Some(5, 3), res)
+      let checkGTD marker (line, col) =        
+          MoveCursorToStartOfMarker (file, marker)
+          let res = GotoDefinitionAtCursor file |> fun x -> x.ToOption() |>  Option.map (fun (res, _) -> res.iStartLine + 1, res.iStartIndex + 1)
+          AssertEqual(Some(line, col), res)
+      
+      checkGTD "Astruct(0)" (6, 3)
+      checkGTD "Astruct(0, 1)" (3, 6)
+      checkGTD "Astruct()" (3, 6)
+      checkGTD "AS(0)" (6, 3)
+      checkGTD "AS(0, 1)" (3, 6)
+      checkGTD "AS()" (3, 6)
 
     // ********** GetCompleteIdentifierIsland tests **********
 

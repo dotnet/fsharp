@@ -1802,59 +1802,47 @@ type NetCoreSystemRuntimeTraits(primaryAssembly) =
         member this.MarshalByRefObjectScopeRef      = None
         member this.ArgIteratorTypeScopeRef         = None
 
-type PrimaryAssembly = 
-    | Mscorlib
-    | NamedMscorlib of string
-    | DotNetCore   
+let getSystemRuntimeInitializer (primaryAssembly: PrimaryAssembly) (mkReference : string -> AssemblyReference) : ISystemRuntimeCcuInitializer = 
+    let name = primaryAssembly.Name
+    let primaryAssemblyReference = mkReference name
 
-    member this.Name = 
-        match this with
-        | Mscorlib -> "mscorlib"
-        | DotNetCore -> "System.Runtime"
-        | NamedMscorlib name -> name
+    match primaryAssembly with
+    | Mscorlib ->
+        {
+            new ISystemRuntimeCcuInitializer with
+                member this.BeginLoadingSystemRuntime(resolver, noData) = 
+                    let mscorlibRef = resolver primaryAssemblyReference
+                    let traits = (IL.mkMscorlibBasedTraits mscorlibRef.FSharpViewOfMetadata.ILScopeRef)
+                    (mkILGlobals traits (Some name) noData), box mscorlibRef
+                member this.EndLoadingSystemRuntime(state, _resolver) = 
+                    unbox state
+        }
 
-    member this.GetSystemRuntimeInitializer(mkReference : string -> AssemblyReference) : ISystemRuntimeCcuInitializer = 
-        let name = this.Name
-        let primaryAssemblyReference = mkReference name
-
-        match this with
-        | Mscorlib 
-        | NamedMscorlib _->
-            {
-                new ISystemRuntimeCcuInitializer with
-                    member this.BeginLoadingSystemRuntime(resolver, noData) = 
-                        let mscorlibRef = resolver primaryAssemblyReference
-                        let traits = (IL.mkMscorlibBasedTraits mscorlibRef.FSharpViewOfMetadata.ILScopeRef)
-                        (mkILGlobals traits (Some name) noData), box mscorlibRef
-                    member this.EndLoadingSystemRuntime(state, _resolver) = 
-                        unbox state
-            }
-
-        | DotNetCore ->
-            let systemReflectionRef = mkReference "System.Reflection"
-            let systemDiagnosticsDebugRef = mkReference "System.Diagnostics.Debug"
-            let systemLinqExpressionsRef = mkReference "System.Linq.Expressions"
-            let systemCollectionsRef = mkReference "System.Collections"
-            let systemRuntimeInteropServicesRef = mkReference "System.Runtime.InteropServices"
-            {
-                new ISystemRuntimeCcuInitializer with
-                    member this.BeginLoadingSystemRuntime(resolver, noData) = 
-                        let primaryAssembly = resolver primaryAssemblyReference
-                        let traits = new NetCoreSystemRuntimeTraits(primaryAssembly.FSharpViewOfMetadata.ILScopeRef)
-                        mkILGlobals traits (Some name) noData, box (primaryAssembly, traits)
-                    member this.EndLoadingSystemRuntime(state, resolver) = 
-                        let (primaryAssembly : ImportedAssembly, traits : NetCoreSystemRuntimeTraits) = unbox state
-                        // finish initialization of SystemRuntimeTraits
-                        traits.FixupImportedAssemblies
-                            (
-                                systemReflectionRef             = resolver CcuLoadFailureAction.RaiseError systemReflectionRef,
-                                systemDiagnosticsDebugRef       = resolver CcuLoadFailureAction.RaiseError systemDiagnosticsDebugRef,
-                                systemRuntimeInteropServicesRef = resolver CcuLoadFailureAction.ReturnNone systemRuntimeInteropServicesRef,
-                                systemLinqExpressionsRef        = resolver CcuLoadFailureAction.RaiseError systemLinqExpressionsRef,
-                                systemCollectionsRef            = resolver CcuLoadFailureAction.RaiseError systemCollectionsRef
-                            )
-                        primaryAssembly
-            }
+    | DotNetCore ->
+        let systemReflectionRef = mkReference "System.Reflection"
+        let systemDiagnosticsDebugRef = mkReference "System.Diagnostics.Debug"
+        let systemLinqExpressionsRef = mkReference "System.Linq.Expressions"
+        let systemCollectionsRef = mkReference "System.Collections"
+        let systemRuntimeInteropServicesRef = mkReference "System.Runtime.InteropServices"
+        {
+            new ISystemRuntimeCcuInitializer with
+                member this.BeginLoadingSystemRuntime(resolver, noData) = 
+                    let primaryAssembly = resolver primaryAssemblyReference
+                    let traits = new NetCoreSystemRuntimeTraits(primaryAssembly.FSharpViewOfMetadata.ILScopeRef)
+                    mkILGlobals traits (Some name) noData, box (primaryAssembly, traits)
+                member this.EndLoadingSystemRuntime(state, resolver) = 
+                    let (primaryAssembly : ImportedAssembly, traits : NetCoreSystemRuntimeTraits) = unbox state
+                    // finish initialization of SystemRuntimeTraits
+                    traits.FixupImportedAssemblies
+                        (
+                            systemReflectionRef             = resolver CcuLoadFailureAction.RaiseError systemReflectionRef,
+                            systemDiagnosticsDebugRef       = resolver CcuLoadFailureAction.RaiseError systemDiagnosticsDebugRef,
+                            systemRuntimeInteropServicesRef = resolver CcuLoadFailureAction.ReturnNone systemRuntimeInteropServicesRef,
+                            systemLinqExpressionsRef        = resolver CcuLoadFailureAction.RaiseError systemLinqExpressionsRef,
+                            systemCollectionsRef            = resolver CcuLoadFailureAction.RaiseError systemCollectionsRef
+                        )
+                    primaryAssembly
+        }
 
 
 type TcConfigBuilder =
@@ -2400,7 +2388,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
             AssemblyReference(range0, GetFSharpCoreReferenceUsedByCompiler()), None
         | _ -> res
-    let primaryAssemblyCcuInitializer = data.primaryAssembly.GetSystemRuntimeInitializer(computeKnownDllReference >> fst)
+    let primaryAssemblyCcuInitializer = getSystemRuntimeInitializer data.primaryAssembly (computeKnownDllReference >> fst)
 
     // If either mscorlib.dll/System.Runtime.dll or fsharp.core.dll are explicitly specified then we require the --noframework flag.
     // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does

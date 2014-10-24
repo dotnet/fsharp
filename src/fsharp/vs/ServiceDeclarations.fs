@@ -144,11 +144,12 @@ module internal ItemDescriptionsImpl =
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (fun v -> v.Range)
 
-    let rangeOfMethInfo (minfo:MethInfo) = 
+    let rangeOfMethInfo (g:TcGlobals) (minfo:MethInfo) = 
         match minfo with
 #if EXTENSIONTYPING 
         |   ProvidedMeth(_,mi,_,_) -> definitionLocationOfProvidedItem mi
 #endif
+        |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(tcref.Range)
         |   _ -> minfo.ArbitraryValRef |> Option.map (fun v -> v.Range)
 
     let rangeOfEventInfo (einfo:EventInfo) = 
@@ -158,10 +159,6 @@ module internal ItemDescriptionsImpl =
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (fun v -> v.Range)
       
-    // skip all default generated constructors for structs
-    let (|FilterDefaultStructCtors|) ctors =
-        ctors |> List.filter (function DefaultStructCtor _ -> false | _ -> true)
-
     let rec rangeOfItem (g:TcGlobals) isDeclInfo d = 
         match d with
         | Item.Value vref  | Item.CustomBuilder (_,vref) -> Some (if isDeclInfo then vref.Range else vref.DefinitionRange)
@@ -173,11 +170,11 @@ module internal ItemDescriptionsImpl =
         | Item.ILField _               -> None
         | Item.Property(_,pinfos)      -> rangeOfPropInfo pinfos.Head 
         | Item.Types(_,(typ :: _))     -> tryNiceEntityRefOfTy typ |> Option.map (fun tcref -> tcref.Range)
-        | Item.CustomOperation (_,_,Some minfo)  -> rangeOfMethInfo minfo
+        | Item.CustomOperation (_,_,Some minfo)  -> rangeOfMethInfo g minfo
         | Item.TypeVar _  -> None
         | Item.ModuleOrNamespaces(modref :: _) -> Some modref.Range
-        | Item.MethodGroup(_,(minfo :: _)) 
-        | Item.CtorGroup(_,FilterDefaultStructCtors(minfo :: _)) -> rangeOfMethInfo minfo
+        | Item.MethodGroup(_,minfo :: _) 
+        | Item.CtorGroup(_,minfo :: _) -> rangeOfMethInfo g minfo
         | Item.ActivePatternResult(APInfo _,_, _, m) -> Some m
         | Item.SetterArg (_,item) -> rangeOfItem g isDeclInfo item
         | Item.ArgName _ -> None
@@ -186,6 +183,11 @@ module internal ItemDescriptionsImpl =
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
     let computeCcuOfTyconRef (tcref:TyconRef) = 
         if tcref.IsProvided then None else ccuOfTyconRef tcref
+
+    let ccuOfMethInfo (g:TcGlobals) (minfo:MethInfo) = 
+        match minfo with
+        | DefaultStructCtor(_, AppTy g (tcref, _)) -> computeCcuOfTyconRef tcref
+        | _ -> minfo.ArbitraryValRef |> Option.bind ccuOfValRef
 
     let rec ccuOfItem g d = 
         match d with
@@ -197,8 +199,8 @@ module internal ItemDescriptionsImpl =
         | Item.Event einfo                     -> einfo.ArbitraryValRef |> Option.bind ccuOfValRef
         | Item.ILField _                       -> None
         | Item.Property(_,pinfos)              -> pinfos.Head.ArbitraryValRef |> Option.bind ccuOfValRef
-        | Item.MethodGroup(_,(minfo :: _)) 
-        | Item.CtorGroup(_,FilterDefaultStructCtors(minfo :: _)) -> minfo.ArbitraryValRef |> Option.bind ccuOfValRef
+        | Item.MethodGroup(_,minfo :: _) 
+        | Item.CtorGroup(_,minfo :: _)         -> ccuOfMethInfo g minfo
         | Item.Types(_,(typ :: _))             -> tryNiceEntityRefOfTy typ |> Option.bind (fun tcref -> computeCcuOfTyconRef tcref)
         | Item.TypeVar _  -> None
         | Item.CustomOperation (_,_,Some minfo)       -> minfo.ArbitraryValRef |> Option.bind ccuOfValRef

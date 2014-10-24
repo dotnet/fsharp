@@ -155,12 +155,6 @@ exception InternalCommandLineOption of string * range
 exception HashLoadedSourceHasIssues of (*warnings*) exn list * (*errors*) exn list * range
 exception HashLoadedScriptConsideredSource of range  
 
-type PrimaryAssembly = 
-    | Mscorlib
-    | NamedMscorlib of string
-    | DotNetCore
-    member Name : string
-
 type AssemblyReference = 
     | AssemblyReference of range * string 
     member Range : range
