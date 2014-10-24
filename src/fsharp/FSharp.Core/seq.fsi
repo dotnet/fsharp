@@ -826,12 +826,17 @@ namespace Microsoft.FSharp.Collections
         /// <summary>Returns a sequence with all elements permuted according to the
         /// specified permutation.</summary>
         ///
+        /// <remarks>Note that this function returns a sequence that digests the whole initial sequence as soon as
+        /// that sequence is iterated. As a result this function should not be used with
+        /// large or infinite sequences.</remarks>
+        ///
         /// <param name="indexMap">The function that maps input indices to output indices.</param>
         /// <param name="source">The input sequence.</param>
         ///
         /// <returns>The result sequence.</returns>
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
         [<CompiledName("Permute")>]
         val permute: indexMap:(int -> int) -> source:seq<'T> -> seq<'T>
 

@@ -536,6 +536,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="indexMap">The function to map input indices to output indices.</param>
         /// <param name="list">The input list.</param>
         /// <returns>The permuted list.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when indexMap does not produce a valid permutation.</exception>
         [<CompiledName("Permute")>]
         val permute : indexMap:(int -> int) -> list:'T list -> 'T list
 
