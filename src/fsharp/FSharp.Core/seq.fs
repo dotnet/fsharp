@@ -1032,6 +1032,11 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             revamp  (IEnumerator.choose f) source
 
+        [<CompiledName("Indexed")>]
+        let indexed source =
+            checkNonNull "source" source
+            mapi (fun i x -> i,x) source
+
         [<CompiledName("Zip")>]
         let zip source1 source2  = 
             checkNonNull "source1" source1

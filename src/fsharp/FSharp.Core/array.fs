@@ -240,6 +240,14 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "list" list
             Microsoft.FSharp.Primitives.Basics.List.toArray list
 
+        [<CompiledName("Indexed")>]
+        let indexed (array: 'T[]) =
+            checkNonNull "array" array
+            let len = array.Length
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+            for i = 0 to len - 1 do
+                res.[i] <- (i,array.[i])
+            res
 
         [<CompiledName("Iterate")>]
         let inline iter f (array: 'T[]) = 

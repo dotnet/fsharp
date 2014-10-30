@@ -384,6 +384,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("GroupBy")>]
         val groupBy : projection:('T -> 'Key) -> array:'T[] -> ('Key * 'T[])[]  when 'Key : equality
 
+        /// <summary>Builds a new array whose elements are the corresponding elements of the input array
+        /// paired with the integer index (from 0) of each element.</summary>
+        /// <param name="array">The input array.</param>
+        /// <returns>The array of indexed elements.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        [<CompiledName("Indexed")>]
+        val indexed: array:'T[] -> (int * 'T)[]
+
         /// <summary>Creates an array given the dimension and a generator function to compute the elements.</summary>
         /// <param name="count">The number of elements to initialize.</param>
         /// <param name="initializer">The function to generate the initial values for each index.</param>

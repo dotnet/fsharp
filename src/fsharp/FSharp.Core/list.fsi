@@ -303,6 +303,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Head")>]
         val head: list:'T list -> 'T
 
+        /// <summary>Returns a new list whose elements are the corresponding elements
+        /// of the input list paired with the index (from 0) of each element.</summary>
+        /// <param name="list">The input list.</param>
+        /// <returns>The list of indexed elements.</returns>
+        [<CompiledName("Indexed")>]
+        val indexed: list:'T list -> (int * 'T) list
+
         /// <summary>Creates a list by calling the given generator on each index.</summary>
         /// <param name="length">The length of the list to generate.</param>
         /// <param name="initializer">The function to generate an element from an index.</param>

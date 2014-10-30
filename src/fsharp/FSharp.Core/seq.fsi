@@ -505,6 +505,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("IsEmpty")>]
         val isEmpty: source:seq<'T> -> bool
 
+        /// <summary>Builds a new collection whose elements are the corresponding elements of the input collection
+        /// paired with the integer index (from 0) of each element.</summary>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The result sequence.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("Indexed")>]
+        val indexed: source:seq<'T> -> seq<int * 'T>
+
         /// <summary>Generates a new sequence which, when iterated, will return successive
         /// elements by calling the given function, up to the given count.  Each element is saved after its
         /// initialization.  The function is passed the index of the item being

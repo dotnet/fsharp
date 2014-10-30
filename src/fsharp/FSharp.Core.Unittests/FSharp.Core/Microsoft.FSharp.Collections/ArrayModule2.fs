@@ -42,6 +42,28 @@ type ArrayModule2() =
         ()
 
     [<Test>]
+    member this.Indexed() =
+        // integer array
+        let resultInt = Array.indexed [|10..2..20|]
+        Assert.AreEqual([|(0,10);(1,12);(2,14);(3,16);(4,18);(5,20)|], resultInt)
+
+        // string array
+        let funcStr (x:int) (y:string) =  x+ y.Length
+        let resultStr = Array.indexed [| "Lists"; "Are"; "Commonly"; "List" |]
+        Assert.AreEqual([| (0,"Lists");(1,"Are");(2,"Commonly");(3,"List") |], resultStr)
+
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEpt = Array.indexed emptyArr
+        Assert.AreEqual([| |], resultEpt)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.indexed nullArr |> ignore)
+
+        ()
+
+    [<Test>]
     member this.Map() = 
         // integer array
         let funcInt x = 

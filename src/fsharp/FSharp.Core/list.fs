@@ -64,6 +64,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MapIndexed")>]
         let mapi f list = Microsoft.FSharp.Primitives.Basics.List.mapi f list
 
+        [<CompiledName("Indexed")>]
+        let indexed list = Microsoft.FSharp.Primitives.Basics.List.indexed list
+
         [<CompiledName("Iterate")>]
         let iter f list = Microsoft.FSharp.Primitives.Basics.List.iter f list
         

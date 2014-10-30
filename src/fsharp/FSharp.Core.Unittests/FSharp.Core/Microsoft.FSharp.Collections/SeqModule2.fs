@@ -737,6 +737,29 @@ type SeqModule2() =
         VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths shorterSeq longerSeq)
         VerifySeqsEqual (seq [3;6;9;12;15;18;21;24;27;30]) (testSeqLengths longerSeq shorterSeq)
 
+    [<Test>]
+    member this.Indexed() =
+
+         // integer Seq
+        let resultInt = Seq.indexed { 10..2..20 }
+        let expectedint = seq [(0,10);(1,12);(2,14);(3,16);(4,18);(5,20)]
+
+        VerifySeqsEqual expectedint resultInt
+
+        // string Seq
+        let resultStr = Seq.indexed (seq ["Lists"; "Are"; "Commonly"; "List" ])
+        let expectedStr = seq [(0,"Lists");(1,"Are");(2,"Commonly");(3,"List")]
+
+        VerifySeqsEqual expectedStr resultStr
+
+        // empty Seq
+        let resultEpt = Seq.indexed Seq.empty
+        VerifySeqsEqual Seq.empty resultEpt
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.indexed nullSeq |> ignore)
+
         ()
 
     [<Test>]

@@ -177,6 +177,23 @@ type ListModule02() =
         ()
 
     [<Test>]
+    member this.Indexed() =
+        // integer List
+        Assert.AreEqual([(0,10);(1,12);(2,14);(3,16);(4,18);(5,20)], List.indexed [10..2..20])
+        Assert.AreEqual([(0,10)], List.indexed [10])
+
+        // string List
+        let resultStr = List.indexed ["a";"b";"c";"d"]
+        Assert.AreEqual([(0,"a");(1,"b");(2,"c");(3,"d")], resultStr)
+
+        // empty List
+        let emptyList:string list = []
+        let resultEpt = List.indexed emptyList
+        Assert.AreEqual(List.empty<int*string>, resultEpt)
+
+        ()
+
+    [<Test>]
     member this.Max() = 
         // integer List 
         let resultInt = List.max  [2..2..20]        
