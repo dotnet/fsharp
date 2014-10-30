@@ -3534,11 +3534,13 @@ namespace Microsoft.FSharp.Collections
 
         let notStarted() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationNotStarted)))
         let alreadyFinished() = raise (new System.InvalidOperationException(SR.GetString(SR.enumerationAlreadyFinished)))
+        let outOfRange() = raise (System.IndexOutOfRangeException(SR.GetString(SR.indexOutOfBounds)))
+
         let nonempty x = match x with [] -> false | _ -> true
         // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
         // tail cons cells is permitted in carefully written library code.
-        let setFreshConsTail cons t = 
-            cons.(::).1 <- t
+        let inline setFreshConsTail cons t = cons.(::).1 <- t
+        let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
         // Return the last cons it the chain
         let rec appendToFreshConsTail cons xs = 
@@ -3589,11 +3591,6 @@ namespace Microsoft.FSharp.Collections
 
         let rec lengthAcc acc xs = match xs with [] -> acc | _ :: t -> lengthAcc (acc+1) t 
 
-        //let rec getRange startIndex endIndex xs = 
-        //    match xs with 
-        //    | [] -> []
-        //    | h :: t -> 
-            
         let rec nth l n = 
             match l with 
             | [] -> raise (new System.ArgumentException(SR.GetString(SR.indexOutOfBounds),"n"))
@@ -3601,6 +3598,37 @@ namespace Microsoft.FSharp.Collections
                if n < 0 then raise (new System.ArgumentException(SR.GetString(SR.inputMustBeNonNegative),"n"))
                elif n = 0 then h
                else nth t (n - 1)
+
+        // similar to 'takeFreshConsTail' but with exceptions same as array slicing
+        let rec sliceFreshConsTail cons n l =
+            if n = 0 then setFreshConsTail cons [] else
+            match l with
+            | [] -> outOfRange()
+            | x::xs ->
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                sliceFreshConsTail cons2 (n - 1) xs
+
+        // similar to 'take' but with n representing an index, not a number of elements
+        // and with exceptions matching array slicing
+        let sliceTake n l =
+            if n < 0 then outOfRange()
+            match l with
+            | [] -> outOfRange()
+            | x::xs ->
+                let cons = freshConsNoTail x
+                sliceFreshConsTail cons n xs
+                cons
+
+        // similar to 'skip' but with exceptions same as array slicing
+        let sliceSkip n l =
+            if n < 0 then outOfRange()
+            let rec loop i lst =
+                match lst with
+                | _ when i = 0 -> lst
+                | _::t -> loop (i-1) t
+                | [] -> outOfRange()
+            loop n l
 
     type List<'T> with
 #if FX_NO_DEBUG_DISPLAYS
@@ -3619,9 +3647,7 @@ namespace Microsoft.FSharp.Collections
                if n > 1000 then "Length > 1000"
                else System.String.Concat( [| "Length = "; n.ToString() |])
            txt
-       
-        
-        
+
         member l.Head   = match l with a :: _ -> a | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
         member l.Tail   = match l with _ :: b -> b | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
 
@@ -3647,9 +3673,14 @@ namespace Microsoft.FSharp.Collections
            | [h1;h2;h3] -> System.Text.StringBuilder().Append("[").Append(anyToStringShowingNull h1).Append("; ").Append(anyToStringShowingNull h2).Append("; ").Append(anyToStringShowingNull h3).Append("]").ToString()
            | h1 :: h2 :: h3 :: _ -> System.Text.StringBuilder().Append("[").Append(anyToStringShowingNull h1).Append("; ").Append(anyToStringShowingNull h2).Append("; ").Append(anyToStringShowingNull h3).Append("; ... ]").ToString() 
 
-        //member x.GetSlice(startIndex: int option ,endIndex: int option ) = 
-        //    let startIndex = match startIndex with Some x -> x | None -> 0
-        //    PrivateListHelpers.getRange startIndex endIndex l []
+        member l.GetSlice(startIndex: int option, endIndex: int option ) = 
+            match (startIndex, endIndex) with
+            | None, None -> l
+            | Some(i), None -> PrivateListHelpers.sliceSkip i l
+            | None, Some(j) -> PrivateListHelpers.sliceTake j l
+            | Some(i), Some(j) ->
+                if i > j then [] else
+                PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
 
         interface IEnumerable<'T> with
             member l.GetEnumerator() = PrivateListHelpers.mkListEnumerator l
@@ -5253,7 +5284,7 @@ namespace Microsoft.FSharp.Core
             let inline GetStringSlice (str:string) start finish =
                 let start, finish = ComputeSlice start finish str.Length
                 let len = finish-start+1
-                if len < 0 then String.Empty
+                if len <= 0 then String.Empty
                 else str.Substring(start, len)
 
             [<NoDynamicInvocation>]

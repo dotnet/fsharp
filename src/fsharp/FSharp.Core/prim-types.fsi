@@ -1770,6 +1770,7 @@ namespace Microsoft.FSharp.Collections
         
         /// <summary>Gets the number of items contained in the list</summary>
         member Length : int
+
         /// <summary>Gets a value indicating if the list contains no entries</summary>
         member IsEmpty : bool
 
@@ -1785,8 +1786,11 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The value at the given index.</returns>
         member Item : index:int -> 'T with get 
         
-        // /// Get the elements of the list from the given start index to the given end index.
-        // member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
+        /// <summary>Gets a slice of the list, the elements of the list from the given start index to the given end index.</summary>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="endIndex">The end index.</param>
+        /// <returns>The sub list specified by the input indices.</returns>
+        member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
         
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
         /// <param name="head">A new head value for the list.</param>

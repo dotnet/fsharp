@@ -224,6 +224,7 @@ Microsoft.FSharp.Collections.FSharpList`1[T]: Int32 get_Tag()
 Microsoft.FSharp.Collections.FSharpList`1[T]: Microsoft.FSharp.Collections.FSharpList`1+Tags[T]
 Microsoft.FSharp.Collections.FSharpList`1[T]: Microsoft.FSharp.Collections.FSharpList`1[T] Cons(T, Microsoft.FSharp.Collections.FSharpList`1[T])
 Microsoft.FSharp.Collections.FSharpList`1[T]: Microsoft.FSharp.Collections.FSharpList`1[T] Empty
+Microsoft.FSharp.Collections.FSharpList`1[T]: Microsoft.FSharp.Collections.FSharpList`1[T] GetSlice(Microsoft.FSharp.Core.FSharpOption`1[System.Int32], Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
 Microsoft.FSharp.Collections.FSharpList`1[T]: Microsoft.FSharp.Collections.FSharpList`1[T] Tail
 Microsoft.FSharp.Collections.FSharpList`1[T]: Microsoft.FSharp.Collections.FSharpList`1[T] TailOrNull
 Microsoft.FSharp.Collections.FSharpList`1[T]: Microsoft.FSharp.Collections.FSharpList`1[T] get_Empty()
