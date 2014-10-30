@@ -473,6 +473,17 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Last")>]
         val last: source:seq<'T> -> 'T
 
+        /// <summary>Returns the last element of the sequence.
+        /// Return <c>None</c> if no such element exists.</summary>
+        ///
+        /// <param name="source">The input sequence.</param>
+        ///
+        /// <returns>The last element of the sequence or None.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("TryLast")>]
+        val tryLast: source:seq<'T> -> 'T option
+
         /// <summary>Returns the only element of the sequence.</summary>
         ///
         /// <param name="source">The input sequence.</param>

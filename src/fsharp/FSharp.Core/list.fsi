@@ -367,6 +367,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Length")>]
         val length: list:'T list -> int
 
+        /// <summary>Returns the last element of the list.
+        /// Return <c>None</c> if no such element exists.</summary>
+        /// <param name="list">The input list.</param>
+        /// <returns>The last element of the list or None.</returns>
+        [<CompiledName("TryLast")>]
+        val tryLast: list:'T list -> 'T option
+
         /// <summary>Builds a new collection whose elements are the results of applying the given function
         /// to each of the elements of the collection.</summary>
         /// <param name="mapping">The function to transform elements from the input list.</param>

@@ -721,7 +721,22 @@ type ListModule() =
             
         let resultNone = List.tryHead []
         Assert.AreEqual(None, resultNone)
-        
+
+    [<Test>]
+    member this.TryLast() =
+        // integer List
+        let intResult = List.tryLast [1..9]
+        Assert.AreEqual(9, intResult.Value)
+                 
+        // string List
+        let strResult = List.tryLast (["first"; "second";  "third"])
+        Assert.AreEqual("third", strResult.Value)
+         
+        // Empty List
+        let emptyResult = List.tryLast List.empty
+        Assert.IsTrue(emptyResult.IsNone)
+        () 
+
     [<Test>]
     member this.last() =
         // last should fail on empty list

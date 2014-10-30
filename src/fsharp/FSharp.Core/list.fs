@@ -28,6 +28,13 @@ namespace Microsoft.FSharp.Collections
             | _ :: tail -> last tail
             | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
+        [<CompiledName("TryLast")>]
+        let rec tryLast (list: 'T list) =
+            match list with
+            | [x] -> Some x
+            | _ :: tail -> tryLast tail
+            | [] -> None
+
         [<CompiledName("Reverse")>]
         let rev list = Microsoft.FSharp.Primitives.Basics.List.rev list
 

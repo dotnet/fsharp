@@ -458,6 +458,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The length of the array.</returns>
         [<CompiledName("Length")>]
         val length: array:'T[] -> int
+        
+        /// <summary>Returns the last element of the array.
+        /// Return <c>None</c> if no such element exists.</summary>
+        /// <param name="array">The input array.</param>
+        /// <returns>The last element of the array or None.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception> 
+        [<CompiledName("TryLast")>]
+        val tryLast: array:'T[] -> 'T option
 
         /// <summary>Builds a new array whose elements are the results of applying the given function
         /// to each of the elements of the array.</summary>

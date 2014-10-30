@@ -101,6 +101,28 @@ type SeqModule2() =
         let nullSeq:seq<'a> = null
         CheckThrowsArgumentNullException (fun () ->Seq.last nullSeq) 
         () 
+
+    [<Test>]
+    member this.TryLast() =
+             
+        let IntSeq =
+            seq { for i in 0 .. 9 -> i }
+                    
+        let intResult = Seq.tryLast IntSeq
+        Assert.AreEqual(9, intResult.Value)
+                 
+        // string Seq
+        let strResult = Seq.tryLast (seq ["first"; "second";  "third"])
+        Assert.AreEqual("third", strResult.Value)
+         
+        // Empty Seq
+        let emptyResult = Seq.tryLast Seq.empty
+        Assert.IsTrue(emptyResult.IsNone)
+      
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () ->Seq.tryLast nullSeq |> ignore) 
+        () 
         
     [<Test>]
     member this.ExactlyOne() =

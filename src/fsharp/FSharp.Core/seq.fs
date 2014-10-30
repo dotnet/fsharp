@@ -1734,6 +1734,16 @@ namespace Microsoft.FSharp.Collections
             else
                 invalidArg "source" InputSequenceEmptyString
 
+        [<CompiledName("TryLast")>]
+        let tryLast (source : seq<_>) =
+            checkNonNull "source" source
+            use e = source.GetEnumerator() 
+            if e.MoveNext() then 
+                let mutable res = e.Current
+                while (e.MoveNext()) do res <- e.Current
+                Some res
+            else
+                None
 
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
