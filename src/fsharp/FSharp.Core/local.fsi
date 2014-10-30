@@ -18,6 +18,7 @@ module internal List =
     val map2 : mapping:('T1 -> 'T2 -> 'U) -> 'T1 list -> 'T2 list -> 'U list
     val mapi : (int -> 'T -> 'U) -> 'T list -> 'U list
     val indexed : 'T list -> (int * 'T) list
+    val mapFold : ('State -> 'T -> 'U * 'State) -> 'State -> 'T list -> 'U list * 'State
     val forall : predicate:('T -> bool) -> 'T list -> bool
     val exists : predicate:('T -> bool) -> 'T list -> bool
     val rev: 'T list -> 'T list
@@ -47,6 +48,10 @@ module internal Array =
     val findIndexBack: predicate:('T -> bool) -> array:'T[] -> int
 
     val tryFindIndexBack: predicate:('T -> bool) -> array:'T[] -> int option
+
+    val mapFold : ('State -> 'T -> 'U * 'State) -> 'State -> 'T[] -> 'U[] * 'State
+
+    val mapFoldBack : ('T -> 'State -> 'U * 'State) -> 'T[] -> 'State -> 'U[] * 'State
 
     val permute : indexMap:(int -> int) -> 'T[] -> 'T[]
 

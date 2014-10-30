@@ -408,6 +408,24 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Map3")>]
         val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> list1:'T1 list -> list2:'T2 list -> list3:'T3 list -> 'U list
 
+        /// <summary>Combines map and fold. Builds a new list whose elements are the results of applying the given function
+        /// to each of the elements of the input list. The function is also used to accumulate a final value.</summary>
+        /// <param name="mapping">The function to transform elements from the input list and accumulate the final value.</param>
+        /// <param name="state">The initial state.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The list of transformed elements, and the final accumulated value.</returns>
+        [<CompiledName("MapFold")>]
+        val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> list:'T list -> 'Result list * 'State
+
+        /// <summary>Combines map and foldBack. Builds a new list whose elements are the results of applying the given function
+        /// to each of the elements of the input list. The function is also used to accumulate a final value.</summary>
+        /// <param name="mapping">The function to transform elements from the input list and accumulate the final value.</param>
+        /// <param name="list">The input list.</param>
+        /// <param name="state">The initial state.</param>
+        /// <returns>The list of transformed elements, and the final accumulated value.</returns>
+        [<CompiledName("MapFoldBack")>]
+        val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> list:'T list -> state:'State -> 'Result list * 'State
+
         /// <summary>Builds a new collection whose elements are the results of applying the given function
         /// to each of the elements of the collection. The integer index passed to the
         /// function indicates the index (from 0) of element being transformed.</summary>

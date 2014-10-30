@@ -149,6 +149,30 @@ module internal List =
             indexedToFreshConsTail cons t 1
             cons
 
+    let rec mapFoldToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<'State, 'T, 'U * 'State>) acc xs =
+        match xs with
+        | [] ->
+            setFreshConsTail cons [];
+            acc
+        | (h::t) ->
+            let x',s' = f.Invoke(acc,h)
+            let cons2 = freshConsNoTail x'
+            setFreshConsTail cons cons2;
+            mapFoldToFreshConsTail cons2 f s' t
+
+    let mapFold f acc xs =
+        match xs with
+        | [] -> [], acc
+        | [h] ->
+            let x',s' = f acc h
+            [x'],s'
+        | (h::t) ->
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let x',s' = f.Invoke(acc,h)
+            let cons = freshConsNoTail x'
+            let s' = mapFoldToFreshConsTail cons f s' t
+            cons, s'
+
     let rec forall f xs1 = 
         match xs1 with 
         | [] -> true
@@ -719,6 +743,31 @@ module internal Array =
             if inv.[i] <> 1uy then invalidArg "indexMap" (SR.GetString(SR.notAPermutation))
         res
 
+    let mapFold f acc (array : _[]) =
+        match array.Length with
+        | 0 -> [| |], acc
+        | len ->
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable acc = acc
+            let res = zeroCreateUnchecked len
+            for i = 0 to len - 1 do
+                let h',s' = f.Invoke(acc,array.[i])
+                res.[i] <- h'
+                acc <- s'
+            res, acc
+
+    let mapFoldBack f (array : _[]) acc =
+        match array.Length with
+        | 0 -> [| |], acc
+        | len ->
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable acc = acc
+            let res = zeroCreateUnchecked len
+            for i = len - 1 downto 0 do
+                let h',s' = f.Invoke(array.[i],acc)
+                res.[i] <- h'
+                acc <- s'
+            res, acc
 
     let unstableSortInPlaceBy (f: 'T -> 'U) (array : array<'T>) =
         let len = array.Length 

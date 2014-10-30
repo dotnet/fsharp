@@ -430,7 +430,6 @@ type SeqModule2() =
         
         ()
 
-
     [<Test>]
     member this.Map3() = 
         // Integer seq
@@ -463,6 +462,55 @@ type SeqModule2() =
 
         ()
 
+    [<Test>]
+    member this.MapFold() =
+        // integer Seq
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = Seq.mapFold funcInt 100 <| seq { 1..10 }
+        VerifySeqsEqual (seq [ 1;20;3;40;5;60;7;80;9;100 ]) resultInt
+        Assert.AreEqual(105, resultIntAcc)
+
+        // string Seq
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Seq.mapFold funcStr "" <| seq [ "";"BB";"C";"" ]
+        VerifySeqsEqual (seq [ "empty";"bb";"c";"empty" ]) resultStr
+        Assert.AreEqual("BBC", resultStrAcc)
+
+        // empty Seq
+        let resultEpt,resultEptAcc = Seq.mapFold funcInt 100 Seq.empty
+        VerifySeqsEqual Seq.empty resultEpt
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null Seq
+        let nullArr = null:seq<string>
+        CheckThrowsArgumentNullException (fun () -> Seq.mapFold funcStr "" nullArr |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.MapFoldBack() =
+        // integer Seq
+        let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
+        let resultInt,resultIntAcc = Seq.mapFoldBack funcInt (seq { 1..10 }) 100
+        VerifySeqsEqual (seq [ 1;2;3;4;5;6;7;80;90;100 ]) resultInt
+        Assert.AreEqual(106, resultIntAcc)
+
+        // string Seq
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Seq.mapFoldBack funcStr (seq [ "";"BB";"C";"" ]) ""
+        VerifySeqsEqual (seq [ "empty";"bb";"c";"empty" ]) resultStr
+        Assert.AreEqual("CBB", resultStrAcc)
+
+        // empty Seq
+        let resultEpt,resultEptAcc = Seq.mapFoldBack funcInt Seq.empty 100
+        VerifySeqsEqual Seq.empty resultEpt
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null Seq
+        let nullArr = null:seq<string>
+        CheckThrowsArgumentNullException (fun () -> Seq.mapFoldBack funcStr nullArr "" |> ignore)
+
+        ()
 
     member private this.MapWithSideEffectsTester (map : (int -> int) -> seq<int> -> seq<int>) expectExceptions =
         let i = ref 0

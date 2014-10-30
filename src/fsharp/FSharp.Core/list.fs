@@ -67,6 +67,25 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Indexed")>]
         let indexed list = Microsoft.FSharp.Primitives.Basics.List.indexed list
 
+        [<CompiledName("MapFold")>]
+        let mapFold<'T,'State,'Result> (f:'State -> 'T -> 'Result * 'State) acc list =
+            Microsoft.FSharp.Primitives.Basics.List.mapFold f acc list
+
+        [<CompiledName("MapFoldBack")>]
+        let mapFoldBack<'T,'State,'Result> (f:'T -> 'State -> 'Result * 'State) list acc =
+            match list with
+            | [] -> [], acc
+            | [h] -> let h',s' = f h acc in [h'], s'
+            | _ ->
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+                let rec loop res list =
+                    match list, res with
+                    | [], _ -> res
+                    | h::t, (list', acc') ->
+                        let h',s' = f.Invoke(h,acc')
+                        loop (h'::list', s') t
+                loop ([], acc) (rev list)
+
         [<CompiledName("Iterate")>]
         let iter f list = Microsoft.FSharp.Primitives.Basics.List.iter f list
         

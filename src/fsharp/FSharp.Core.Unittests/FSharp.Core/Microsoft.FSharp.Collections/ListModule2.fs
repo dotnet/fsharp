@@ -194,6 +194,59 @@ type ListModule02() =
         ()
 
     [<Test>]
+    member this.MapFold() =
+        // integer List
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = List.mapFold funcInt 100 [ 1..10 ]
+        Assert.AreEqual([1;20;3;40;5;60;7;80;9;100], resultInt)
+        Assert.AreEqual(105, resultIntAcc)
+
+        // integer List single item
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = List.mapFold funcInt 100 [ 2 ]
+        Assert.AreEqual([20], resultInt)
+        Assert.AreEqual(101, resultIntAcc)
+
+        // string List
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = List.mapFold funcStr "" ["";"BB";"C";""]
+        Assert.AreEqual(["empty";"bb";"c";"empty"], resultStr)
+        Assert.AreEqual("BBC", resultStrAcc)
+
+        // empty List
+        let resultEpt,resultEptAcc = List.mapFold funcInt 100 []
+        Assert.AreEqual([], resultEpt)
+        Assert.AreEqual(100, resultEptAcc)
+
+        ()
+
+    [<Test>]
+    member this.MapFoldBack() =
+        // integer List
+        let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
+        let resultInt,resultIntAcc = List.mapFoldBack funcInt [ 1..10 ] 100
+        Assert.AreEqual([1;2;3;4;5;6;7;80;90;100], resultInt)
+        Assert.AreEqual(106, resultIntAcc)
+
+        // integer List single item
+        let resultInt,resultIntAcc = List.mapFoldBack funcInt [1] 100
+        Assert.AreEqual([10], resultInt)
+        Assert.AreEqual(102, resultIntAcc)
+
+        // string List
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = List.mapFoldBack funcStr ["";"BB";"C";""] ""
+        Assert.AreEqual(["empty";"bb";"c";"empty"], resultStr)
+        Assert.AreEqual("CBB", resultStrAcc)
+
+        // empty List
+        let resultEpt,resultEptAcc = List.mapFoldBack funcInt [] 100
+        Assert.AreEqual([], resultEpt)
+        Assert.AreEqual(100, resultEptAcc)
+
+        ()
+
+    [<Test>]
     member this.Max() = 
         // integer List 
         let resultInt = List.max  [2..2..20]        

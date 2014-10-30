@@ -372,6 +372,16 @@ namespace Microsoft.FSharp.Collections
                 res.[i] <- f.Invoke(i,array.[i])
             res
 
+        [<CompiledName("MapFold")>]
+        let mapFold<'T,'State,'Result> (f : 'State -> 'T -> 'Result * 'State) acc array =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.mapFold f acc array
+
+        [<CompiledName("MapFoldBack")>]
+        let mapFoldBack<'T,'State,'Result> (f : 'T -> 'State -> 'Result * 'State) array acc =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.mapFoldBack f array acc
+
         [<CompiledName("Exists")>]
         let exists (f: 'T -> bool) (array:'T[]) =
             checkNonNull "array" array

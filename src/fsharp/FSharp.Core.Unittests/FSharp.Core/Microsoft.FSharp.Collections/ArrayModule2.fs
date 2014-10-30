@@ -149,6 +149,56 @@ type ArrayModule2() =
         ()
 
     [<Test>]
+    member this.MapFold() =
+        // integer array
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = Array.mapFold funcInt 100 [| 1..10 |]
+        if resultInt <> [| 1;20;3;40;5;60;7;80;9;100 |] then Assert.Fail()
+        Assert.AreEqual(105, resultIntAcc)
+
+        // string array
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Array.mapFold funcStr "" [| "";"BB";"C";"" |]
+        if resultStr <> [| "empty";"bb";"c";"empty" |] then Assert.Fail()
+        Assert.AreEqual("BBC", resultStrAcc)
+
+        // empty array
+        let resultEpt,resultEptAcc = Array.mapFold funcInt 100 [| |]
+        if resultEpt <> [| |] then Assert.Fail()
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.mapFold funcStr "" nullArr |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.MapFoldBack() =
+        // integer array
+        let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
+        let resultInt,resultIntAcc = Array.mapFoldBack funcInt [| 1..10 |] 100
+        if resultInt <> [| 1;2;3;4;5;6;7;80;90;100 |] then Assert.Fail()
+        Assert.AreEqual(106, resultIntAcc)
+
+        // string array
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Array.mapFoldBack funcStr [| "";"BB";"C";"" |] ""
+        if resultStr <> [| "empty";"bb";"c";"empty" |] then Assert.Fail()
+        Assert.AreEqual("CBB", resultStrAcc)
+
+        // empty array
+        let resultEpt,resultEptAcc = Array.mapFoldBack funcInt [| |] 100
+        if resultEpt <> [| |] then Assert.Fail()
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.mapFoldBack funcStr nullArr "" |> ignore)
+
+        ()
+
+    [<Test>]
     member this.Mapi() = 
         // integer array 
         let funcInt x y = x+y

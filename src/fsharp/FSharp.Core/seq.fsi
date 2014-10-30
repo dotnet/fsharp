@@ -639,6 +639,30 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Map2")>]
         val map2: mapping:('T1 -> 'T2 -> 'U) -> source1:seq<'T1> -> source2:seq<'T2> -> seq<'U>
 
+        /// <summary>Combines map and fold. Builds a new collection whose elements are the results of applying the given function
+        /// to each of the elements of the collection. The function is also used to accumulate a final value.</summary>
+        /// <remarks>This function digests the whole initial sequence as soon as it is called. As a result this function should
+        /// not be used with large or infinite sequences.</remarks>
+        /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
+        /// <param name="state">The initial state.</param>
+        /// <param name="array">The input collection.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input collection is null.</exception>
+        /// <returns>The collection of transformed elements, and the final accumulated value.</returns>
+        [<CompiledName("MapFold")>]
+        val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> source:seq<'T> -> seq<'Result> * 'State
+
+        /// <summary>Combines map and foldBack. Builds a new collection whose elements are the results of applying the given function
+        /// to each of the elements of the collection. The function is also used to accumulate a final value.</summary>
+        /// <remarks>This function digests the whole initial sequence as soon as it is called. As a result this function should
+        /// not be used with large or infinite sequences.</remarks>
+        /// <param name="mapping">The function to transform elements from the input collection and accumulate the final value.</param>
+        /// <param name="array">The input collection.</param>
+        /// <param name="state">The initial state.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input collection is null.</exception>
+        /// <returns>The collection of transformed elements, and the final accumulated value.</returns>
+        [<CompiledName("MapFoldBack")>]
+        val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> source:seq<'T> -> state:'State -> seq<'Result> * 'State
+
         /// <summary>Builds a new collection whose elements are the results of applying the given function
         /// to the corresponding triples of elements from the three sequences. If one input sequence if shorter than
         /// the others then the remaining elements of the longer sequences are ignored.</summary>

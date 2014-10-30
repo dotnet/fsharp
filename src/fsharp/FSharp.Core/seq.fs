@@ -1776,3 +1776,16 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             mkDelayedSeq (fun () ->
                 source |> toArray |> Array.permute f :> seq<_>)
+
+        [<CompiledName("MapFold")>]
+        let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
+            checkNonNull "source" source
+            let arr,state = source |> toArray |> Array.mapFold f acc
+            readonly arr, state
+
+        [<CompiledName("MapFoldBack")>]
+        let mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
+            checkNonNull "source" source
+            let array = source |> toArray
+            let arr,state = Array.mapFoldBack f array acc
+            readonly arr, state

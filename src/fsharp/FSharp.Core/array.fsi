@@ -496,6 +496,26 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Map2")>]
         val map2: mapping:('T1 -> 'T2 -> 'U) -> array1:'T1[] -> array2:'T2[] -> 'U[]
 
+        /// <summary>Combines map and fold. Builds a new array whose elements are the results of applying the given function
+        /// to each of the elements of the input array. The function is also used to accumulate a final value.</summary>
+        /// <param name="mapping">The function to transform elements from the input array and accumulate the final value.</param>
+        /// <param name="state">The initial state.</param>
+        /// <param name="array">The input array.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>The array of transformed elements, and the final accumulated value.</returns>
+        [<CompiledName("MapFold")>]
+        val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> array:'T[] -> 'Result[] * 'State
+
+        /// <summary>Combines map and foldBack. Builds a new array whose elements are the results of applying the given function
+        /// to each of the elements of the input array. The function is also used to accumulate a final value.</summary>
+        /// <param name="mapping">The function to transform elements from the input array and accumulate the final value.</param>
+        /// <param name="array">The input array.</param>
+        /// <param name="state">The initial state.</param>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <returns>The array of transformed elements, and the final accumulated value.</returns>
+        [<CompiledName("MapFoldBack")>]
+        val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> array:'T[] -> state:'State -> 'Result[] * 'State
+
         /// <summary>Builds a new collection whose elements are the results of applying the given function
         /// to the corresponding triples from the three collections. The three input
         /// arrays must have the same length, otherwise an <c>ArgumentException</c> is
