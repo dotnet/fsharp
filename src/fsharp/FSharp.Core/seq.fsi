@@ -916,6 +916,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Scan")>]
         val scan<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> source:seq<'T> -> seq<'State>
 
+        /// <summary>Like <c>foldBack</c>, but returns the sequence of intermediary and final results.</summary>
+        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
+        /// sequence is iterated. As a result this function should not be used with large or infinite sequences.
+        /// </remarks>
+        /// <param name="folder">A function that updates the state with each element from the sequence.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <param name="state">The initial state.</param>
+        /// <returns>The resulting sequence of computed states.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        [<CompiledName("ScanBack")>]
+        val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> seq<'State>
+
         /// <summary>Returns a sequence that yields one item only.</summary>
         ///
         /// <param name="value">The input item.</param>

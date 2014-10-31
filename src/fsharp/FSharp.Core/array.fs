@@ -682,16 +682,6 @@ namespace Microsoft.FSharp.Collections
                 res <- f.Invoke(array.[i],res)
             res
 
-        let scanSubRight f (array : _[]) start fin initState = 
-            checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable state = initState 
-            let res = create (2+fin-start) initState 
-            for i = fin downto start do
-                state <- f.Invoke(array.[i],state);
-                res.[i - start] <- state
-            res
-
         let scanSubLeft f  initState (array : _[]) start fin = 
             checkNonNull "array" array
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
@@ -711,8 +701,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ScanBack")>]
         let scanBack<'T,'State> f (array : 'T[]) (acc:'State) = 
             checkNonNull "array" array
-            let len = array.Length
-            scanSubRight f array 0 (len - 1) acc
+            Microsoft.FSharp.Primitives.Basics.Array.scanSubRight f array 0 (array.Length - 1) acc
 
         [<CompiledName("Singleton")>]
         let inline singleton value = [|value|]

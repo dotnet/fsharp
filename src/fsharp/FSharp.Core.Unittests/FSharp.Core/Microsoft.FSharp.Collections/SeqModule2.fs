@@ -1101,6 +1101,46 @@ type SeqModule2() =
         ()
         
     [<Test>]
+    member this.ScanBack() =
+        // integer Seq
+        let funcInt x y = x+y
+        let resultInt = Seq.scanBack funcInt { 1..10 } 9
+        let expectedInt = seq [64;63;61;58;54;49;43;36;28;19;9]
+        VerifySeqsEqual expectedInt resultInt
+
+        // string Seq
+        let funcStr x y = x+y
+        let resultStr = Seq.scanBack funcStr (seq ["A";"B";"C";"D"]) "X"
+        let expectedStr = seq ["ABCDX";"BCDX";"CDX";"DX";"X"]
+        VerifySeqsEqual expectedStr resultStr
+
+        // empty Seq
+        let resultEpt = Seq.scanBack funcInt Seq.empty 5
+        let expectedEpt = seq [5]
+        VerifySeqsEqual expectedEpt resultEpt
+
+        // null Seq
+        let seqNull:seq<'a> = null
+        CheckThrowsArgumentNullException(fun() -> Seq.scanBack funcInt seqNull 5 |> ignore)
+
+        // exception cases
+        let funcEx x (s:'State) = raise <| new System.FormatException() : 'State
+        // calling scanBack with funcEx does not throw
+        let resultEx = Seq.scanBack funcEx (seq {1..10}) 0
+        // reading from resultEx throws
+        CheckThrowsFormatException(fun() -> Seq.head resultEx |> ignore)
+
+        // Result consumes entire input sequence as soon as it is accesses an element
+        let i = ref 0
+        let funcState x s = (i := !i + x); x+s
+        let resultState = Seq.scanBack funcState (seq {1..3}) 0
+        Assert.AreEqual(0, !i)
+        use e = resultState.GetEnumerator()
+        Assert.AreEqual(6, !i)
+
+        ()
+
+    [<Test>]
     member this.Singleton() =
         // integer Seq
         let resultInt = Seq.singleton 1

@@ -55,6 +55,8 @@ module internal Array =
 
     val permute : indexMap:(int -> int) -> 'T[] -> 'T[]
 
+    val scanSubRight: f:('T -> 'State -> 'State) -> array:'T[] -> start:int -> fin:int -> initState:'State -> 'State[]
+
     val unstableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
 
     val unstableSortInPlace: array:'T[] -> unit when 'T : comparison 

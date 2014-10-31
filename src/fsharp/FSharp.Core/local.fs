@@ -769,6 +769,16 @@ module internal Array =
                 acc <- s'
             res, acc
 
+    let scanSubRight f (array : _[]) start fin initState =
+        let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+        let mutable state = initState
+        let res = zeroCreateUnchecked (fin-start+2)
+        res.[fin - start + 1] <- state
+        for i = fin downto start do
+            state <- f.Invoke(array.[i], state);
+            res.[i - start] <- state
+        res
+
     let unstableSortInPlaceBy (f: 'T -> 'U) (array : array<'T>) =
         let len = array.Length 
         if len < 2 then () 

@@ -1318,6 +1318,14 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             source |> toArray |> Array.findBack f
 
+        [<CompiledName("ScanBack")>]
+        let scanBack<'T,'State> f (source : seq<'T>) (acc:'State) =
+            checkNonNull "source" source
+            mkDelayedSeq(fun () ->
+                let arr = source |> toArray
+                let res = Array.scanSubRight f arr 0 (arr.Length - 1) acc
+                res :> seq<_>)
+
         [<CompiledName("FindIndex")>]
         let findIndex p (source:seq<_>) = 
             checkNonNull "source" source
