@@ -29,8 +29,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("IterateIndexed")>]
         let iteri f (str:string) =
             let str = emptyIfNull str
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             for i = 0 to str.Length - 1 do
-                f i str.[i] 
+                f.Invoke(i, str.[i]) 
 
         [<CompiledName("Map")>]
         let map (f: char -> char) (str:string) =
@@ -43,7 +44,8 @@ namespace Microsoft.FSharp.Core
         let mapi (f: int -> char -> char) (str:string) =
             let str = emptyIfNull str
             let res = new System.Text.StringBuilder(str.Length)
-            str |> iteri (fun i c -> res.Append(f i c) |> ignore);
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            str |> iteri (fun i c -> res.Append(f.Invoke(i, c)) |> ignore);
             res.ToString()
 
         [<CompiledName("Filter")>]

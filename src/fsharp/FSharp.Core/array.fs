@@ -716,14 +716,12 @@ namespace Microsoft.FSharp.Collections
         let reduce f (array : _[]) = 
             checkNonNull "array" array
             let len = array.Length
-            if len = 0 then 
-                invalidArg "array" InputArrayEmptyString
-            else 
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-                let mutable res = array.[0]
-                for i = 1 to len - 1 do
-                    res <- f.Invoke(res,array.[i])
-                res
+            if len = 0 then invalidArg "array" InputArrayEmptyString else
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable res = array.[0]
+            for i = 1 to len - 1 do
+                res <- f.Invoke(res,array.[i])
+            res
 
         [<CompiledName("ReduceBack")>]
         let reduceBack f (array : _[]) = 
