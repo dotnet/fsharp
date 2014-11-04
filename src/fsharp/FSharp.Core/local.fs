@@ -426,6 +426,22 @@ module internal List =
                 let cons = freshConsNoTail h
                 truncateToFreshConsTail cons (count-1) t
                 cons
+           
+    let rec unfoldToFreshConsTail cons f s =
+        match f s with
+        | None -> setFreshConsTail cons []
+        | Some (x,s') ->
+            let cons2 = freshConsNoTail x
+            setFreshConsTail cons cons2
+            unfoldToFreshConsTail cons2 f s'
+
+    let unfold (f:'State -> ('T * 'State) option) (s:'State) =
+        match f s with
+        | None -> []
+        | Some (x,s') ->
+            let cons = freshConsNoTail x
+            unfoldToFreshConsTail cons f s'
+            cons
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.

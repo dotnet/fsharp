@@ -814,6 +814,23 @@ type ListModule02() =
         ()
 
     [<Test>]
+    member this.Unfold() =
+        // integer Seq
+        let resultInt = List.unfold (fun x -> if x < 20 then Some (x+1,x*2) else None) 1
+        Assert.AreEqual([2;3;5;9;17], resultInt)
+
+        // string Seq
+        let resultStr = List.unfold (fun (x:string) -> if x.Contains("unfold") then Some("a","b") else None) "unfold"
+        Assert.AreEqual(["a"], resultStr)
+
+        // empty seq
+        //let resultEpt = List.unfold (fun _ -> Option<string>.None) 1
+        let resultEpt = List.unfold (fun _ -> None) 1
+        Assert.AreEqual([], resultEpt)
+
+        ()
+
+    [<Test>]
     member this.Unzip() =
         // integer List  
         let resultInt =  List.unzip [(1,2);(2,4);(3,6)]         

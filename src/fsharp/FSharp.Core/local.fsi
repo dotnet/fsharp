@@ -24,6 +24,7 @@ module internal List =
     val rev: 'T list -> 'T list
     val concat : seq<'T list> -> 'T list
     val iteri : action:(int -> 'T -> unit) -> 'T list -> unit
+    val unfold : ('State -> ('T * 'State) option) -> 'State -> 'T list
     val unzip : ('T1 * 'T2) list -> 'T1 list * 'T2 list
     val unzip3 : ('T1 * 'T2 * 'T3) list -> 'T1 list * 'T2 list * 'T3 list
     val zip : 'T1 list -> 'T2 list -> ('T1 * 'T2) list

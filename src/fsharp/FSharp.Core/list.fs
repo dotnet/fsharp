@@ -573,3 +573,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Truncate")>]
         let truncate count list = Microsoft.FSharp.Primitives.Basics.List.truncate count list
+
+        [<CompiledName("Unfold")>]
+        let unfold<'T,'State> (f:'State -> ('T*'State) option) (s:'State) = Microsoft.FSharp.Primitives.Basics.List.unfold f s
