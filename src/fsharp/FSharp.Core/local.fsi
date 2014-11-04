@@ -34,6 +34,7 @@ module internal List =
     val toArray : 'T list -> 'T[]
     val sortWith : ('T -> 'T -> int) -> 'T list -> 'T list
     val splitAt : int -> 'T list -> ('T list * 'T list)
+    val truncate : int -> 'T list -> 'T list
 
 module internal Array =
     // The input parameter should be checked by callers if necessary

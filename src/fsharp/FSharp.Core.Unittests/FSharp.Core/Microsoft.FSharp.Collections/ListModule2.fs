@@ -718,6 +718,25 @@ type ListModule02() =
         ()   
 
     [<Test>]
+    member this.Truncate() =
+        // integer list
+        Assert.AreEqual([1..3], List.truncate 3 [1..5])
+        Assert.AreEqual([1..5], List.truncate 10 [1..5])
+        Assert.AreEqual([], List.truncate 0 [1..5])
+
+        // string list
+        Assert.AreEqual(["str1";"str2"], List.truncate 2 ["str1";"str2";"str3"])
+
+        // empty list
+        Assert.AreEqual([], List.truncate 0 [])
+        Assert.AreEqual([], List.truncate 1 [])
+
+        // negative count
+        CheckThrowsArgumentException(fun() -> List.truncate -1 [1..5] |> ignore)
+
+        ()
+
+    [<Test>]
     member this.TryFind() =
         // integer List  
         let resultInt = [1..10] |> List.tryFind (fun x -> x%7 = 0)          

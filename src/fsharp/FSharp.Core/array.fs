@@ -944,13 +944,24 @@ namespace Microsoft.FSharp.Collections
             for i = targetIndex to targetIndex + count - 1 do 
                 target.[i] <- x
 
-
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (array:'T[]) =
             checkNonNull "array" array
             if array.Length = 1 then array.[0]
             elif array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
+
+        [<CompiledName("Truncate")>]
+        let truncate count (array:'T[]) =
+            checkNonNull "array" array
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count = 0 then empty
+            else
+                let len = array.Length
+                let count' = Operators.min count len
+                let result : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count'
+                Array.Copy(array, result, count')
+                result
 
 #if FX_NO_TPL_PARALLEL
 #else

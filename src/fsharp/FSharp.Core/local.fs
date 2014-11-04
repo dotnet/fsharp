@@ -405,7 +405,28 @@ module internal List =
             if p h 
             then cons, (partitionToFreshConsTailLeft cons p t)
             else (partitionToFreshConsTailRight cons p t), cons
-           
+
+    let rec truncateToFreshConsTail cons count list =
+        if count = 0 then setFreshConsTail cons [] else
+        match list with
+        | [] -> setFreshConsTail cons []
+        | h::t ->
+            let cons2 = freshConsNoTail h
+            setFreshConsTail cons cons2;
+            truncateToFreshConsTail cons2 (count-1) t
+
+    let truncate count list =
+        if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+        match list with
+        | [] -> list
+        | _ :: ([] as nil) -> if count > 0 then list else nil
+        | h::t ->
+            if count = 0 then []
+            else
+                let cons = freshConsNoTail h
+                truncateToFreshConsTail cons (count-1) t
+                cons
+
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
     let rec unzipToFreshConsTail cons1a cons1b x = 

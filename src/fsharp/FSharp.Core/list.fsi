@@ -727,6 +727,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryHead")>]
         val tryHead: list:'T list -> 'T option
 
+        /// <summary>Returns at most N elements in a new list.</summary>
+        /// <param name="count">The maximum number of items to return.</param>
+        /// <param name="array">The input list.</param>
+        /// <returns>The result list.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when the count is negative.</exception>
+        [<CompiledName("Truncate")>]
+        val truncate: count:int -> list:'T list -> 'T list
+
         /// <summary>Applies the given function to successive elements, returning <c>Some(x)</c> the first
         /// result where function returns <c>Some(x)</c> for some x. If no such element 
         /// exists then return <c>None</c>.</summary>

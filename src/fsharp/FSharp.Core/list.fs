@@ -570,4 +570,6 @@ namespace Microsoft.FSharp.Collections
             | [x] -> x
             | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString            
             | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
-                
+
+        [<CompiledName("Truncate")>]
+        let truncate count list = Microsoft.FSharp.Primitives.Basics.List.truncate count list

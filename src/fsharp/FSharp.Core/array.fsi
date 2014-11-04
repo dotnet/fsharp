@@ -861,6 +861,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ToSeq")>]
         val toSeq: array:'T[] -> seq<'T>
 
+        /// <summary>Returns at most N elements in a new array.</summary>
+        /// <param name="count">The maximum number of items to return.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>The result array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the count is negative.</exception>
+        [<CompiledName("Truncate")>]
+        val truncate: count:int -> array:'T[] -> 'T[]
+
         /// <summary>Returns the first element for which the given function returns <c>true</c>.
         /// Return <c>None</c> if no such element exists.</summary>
         /// <param name="predicate">The function to test the input elements.</param>

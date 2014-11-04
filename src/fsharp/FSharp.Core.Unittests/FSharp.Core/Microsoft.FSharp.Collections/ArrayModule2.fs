@@ -839,6 +839,28 @@ type ArrayModule2() =
         ()   
 
     [<Test>]
+    member this.Truncate() =
+        // integer array
+        Assert.AreEqual([|1..3|], Array.truncate 3 [|1..5|])
+        Assert.AreEqual([|1..5|], Array.truncate 10 [|1..5|])
+        Assert.AreEqual([| |], Array.truncate 0 [|1..5|])
+
+        // string array
+        Assert.AreEqual([|"str1";"str2"|], Array.truncate 2 [|"str1";"str2";"str3"|])
+
+        // empty array
+        Assert.AreEqual([| |], Array.truncate 0 [| |])
+        Assert.AreEqual([| |], Array.truncate 1 [| |])
+
+        // null array
+        CheckThrowsArgumentNullException(fun() -> Array.truncate 1 null |> ignore)
+
+        // negative count
+        CheckThrowsArgumentException(fun() -> Array.truncate -1 [|1..5|] |> ignore)
+
+        ()
+
+    [<Test>]
     member this.TryFind() =
         // integer array  
         let resultInt = [|1..10|] |> Array.tryFind (fun x -> x%7 = 0)  
