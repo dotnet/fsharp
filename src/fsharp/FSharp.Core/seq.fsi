@@ -1180,16 +1180,13 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Unfold")>]
         val unfold   : generator:('State -> ('T * 'State) option) -> state:'State -> seq<'T>
 
-        /// <summary>Returns a sequence that yields sliding windows of containing elements drawn from the input
+        /// <summary>Returns a sequence that yields sliding windows containing elements drawn from the input
         /// sequence. Each window is returned as a fresh array.</summary>
-        ///
         /// <param name="windowSize">The number of elements in each window.</param>
         /// <param name="source">The input sequence.</param>
-        ///
         /// <returns>The result sequence.</returns>
-        ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the input sequence is empty.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when windowSize is not positive.</exception>
         [<CompiledName("Windowed")>]
         val windowed: windowSize:int -> source:seq<'T> -> seq<'T[]>
 

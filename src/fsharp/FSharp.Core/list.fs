@@ -456,6 +456,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Unzip3")>]
         let unzip3 x = Microsoft.FSharp.Primitives.Basics.List.unzip3 x
 
+        [<CompiledName("Windowed")>]
+        let windowed n x = Microsoft.FSharp.Primitives.Basics.List.windowed n x
+
         [<CompiledName("Zip")>]
         let zip x1 x2 =  Microsoft.FSharp.Primitives.Basics.List.zip x1 x2
 

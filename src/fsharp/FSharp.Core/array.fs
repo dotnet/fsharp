@@ -569,6 +569,19 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack f array
 
+        [<CompiledName("Windowed")>]
+        let windowed windowSize (array:'T[]) =
+            checkNonNull "array" array
+            if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
+            let len = array.Length
+            if windowSize > len then
+                [| |]
+            else
+                let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len - windowSize + 1) : 'T[][]
+                for i = 0 to len - windowSize do
+                    res.[i] <- array.[i..i+windowSize-1]
+                res
+
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) = 
             checkNonNull "array1" array1

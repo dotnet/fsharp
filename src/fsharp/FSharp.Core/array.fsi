@@ -945,6 +945,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Where")>]
         val where: predicate:('T -> bool) -> array:'T[] -> 'T[]
 
+        /// <summary>Returns an array of sliding windows containing elements drawn from the input
+        /// array. Each window is returned as a fresh array.</summary>
+        /// <param name="windowSize">The number of elements in each window.</param>
+        /// <param name="array">The input array.</param>
+        /// <returns>The result array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when windowSize is not positive.</exception>
+        [<CompiledName("Windowed")>]
+        val windowed : windowSize:int -> array:'T[] -> 'T[][]
+
         /// <summary>Combines the two arrays into an array of pairs. The two arrays must have equal lengths, otherwise an <c>ArgumentException</c> is
         /// raised.</summary>
         /// <param name="array1">The first input array.</param>

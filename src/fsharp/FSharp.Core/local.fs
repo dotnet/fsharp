@@ -499,6 +499,39 @@ module internal List =
             unzip3ToFreshConsTail res1a res1b res1c t; 
             res1a,res1b,res1c
 
+    let rec windowedToFreshConsTail cons windowSize i l (arr:'T[]) =
+        match l with
+        | [] -> setFreshConsTail cons []
+        | h::t ->
+            arr.[i] <- h
+            let i = (i+1) % windowSize
+            let result = arrayZeroCreate windowSize : 'T[]
+            System.Array.Copy(arr, i, result, 0, windowSize - i)
+            System.Array.Copy(arr, 0, result, windowSize - i, i)
+            let cons2 = freshConsNoTail result
+            setFreshConsTail cons cons2
+            windowedToFreshConsTail cons2 windowSize i t arr
+
+    let windowed windowSize list =
+        if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
+        match list with
+        | [] -> []
+        | _ ->
+            let arr = arrayZeroCreate windowSize
+            let rec loop i r l =
+                match l with
+                | [] -> if r = 0 && i = windowSize then [arr.Clone() :?> 'T[]] else []
+                | h::t ->
+                    arr.[i] <- h
+                    if r = 0 then
+                        let cons = freshConsNoTail (arr.Clone() :?> 'T[])
+                        windowedToFreshConsTail cons windowSize 0 t arr
+                        cons
+                    else
+                        loop (i+1) (r-1) t
+
+            loop 0 (windowSize - 1) list
+
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
     let rec zipToFreshConsTail cons xs1 xs2 = 

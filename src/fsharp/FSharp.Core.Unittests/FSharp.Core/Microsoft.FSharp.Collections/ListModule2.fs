@@ -18,6 +18,14 @@ Make sure each method works on:
 * Empty List (0 elements)
 *)
 
+type ListWindowedTestInput<'t> =
+    {
+        InputList : 't list
+        WindowSize : int
+        ExpectedList : 't[] list
+        Exception : Type option
+    }
+
 [<TestFixture>]
 type ListModule02() =
     [<Test>]
@@ -865,6 +873,90 @@ type ListModule02() =
 
         // null List
         
+        ()
+
+    [<Test>]
+    member this.Windowed() =
+        let testWindowed config =
+            try
+                config.InputList
+                |> List.windowed config.WindowSize
+                |> (fun actual -> Assert.AreEqual(config.ExpectedList,actual))
+            with
+            | _ when Option.isNone config.Exception -> Assert.Fail()
+            | e when e.GetType() = (Option.get config.Exception) -> ()
+            | _ -> Assert.Fail()
+
+        {
+          InputList = [1..10]
+          WindowSize = 1
+          ExpectedList =  [ for i in 1..10 do yield [| i |] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 5
+          ExpectedList =  [ for i in 1..6 do yield [| i; i+1; i+2; i+3; i+4 |] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 10
+          ExpectedList =  [ yield [| 1 .. 10 |] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 25
+          ExpectedList = []
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = ["str1";"str2";"str3";"str4"]
+          WindowSize = 2
+          ExpectedList =  [ [|"str1";"str2"|]; [|"str2";"str3"|]; [|"str3";"str4"|] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = []
+          WindowSize = 2
+          ExpectedList = []
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 0
+          ExpectedList =  []
+          Exception = Some typeof<ArgumentException>
+        } |> testWindowed
+
+        // expectedLists indexed by arraySize,windowSize
+        let expectedLists = Array2D.zeroCreate 6 6
+        expectedLists.[1,1] <- [ [|1|] ]
+        expectedLists.[2,1] <- [ [|1|]; [|2|] ]
+        expectedLists.[2,2] <- [ [|1; 2|] ]
+        expectedLists.[3,1] <- [ [|1|]; [|2|]; [|3|] ]
+        expectedLists.[3,2] <- [ [|1; 2|]; [|2; 3|] ]
+        expectedLists.[3,3] <- [ [|1; 2; 3|] ]
+        expectedLists.[4,1] <- [ [|1|]; [|2|]; [|3|]; [|4|] ]
+        expectedLists.[4,2] <- [ [|1; 2|]; [|2; 3|]; [|3; 4|] ]
+        expectedLists.[4,3] <- [ [|1; 2; 3|]; [|2; 3; 4|] ]
+        expectedLists.[4,4] <- [ [|1; 2; 3; 4|] ]
+        expectedLists.[5,1] <- [ [|1|]; [|2|]; [|3|]; [|4|]; [|5|] ]
+        expectedLists.[5,2] <- [ [|1; 2|]; [|2; 3|]; [|3; 4|]; [|4; 5|] ]
+        expectedLists.[5,3] <- [ [|1; 2; 3|]; [|2; 3; 4|]; [|3; 4; 5|] ]
+        expectedLists.[5,4] <- [ [|1; 2; 3; 4|]; [|2; 3; 4; 5|] ]
+        expectedLists.[5,5] <- [ [|1; 2; 3; 4; 5|] ]
+
+        for arraySize = 0 to 5 do
+            for windowSize = -1 to 5 do
+                if windowSize <= 0 then
+                    CheckThrowsArgumentException (fun () -> List.windowed windowSize [1..arraySize] |> ignore)
+                elif arraySize < windowSize then
+                    Assert.AreEqual([], List.windowed windowSize [1..arraySize])
+                else
+                    Assert.AreEqual(expectedLists.[arraySize, windowSize], List.windowed windowSize [1..arraySize])
+
         ()
 
     [<Test>]

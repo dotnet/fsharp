@@ -18,6 +18,14 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
+type ArrayWindowedTestInput<'t> =
+    {
+        InputArray : 't[]
+        WindowSize : int
+        ExpectedArray : 't[][]
+        Exception : Type option
+    }
+
 [<TestFixture>]
 type ArrayModule2() =
 
@@ -999,6 +1007,96 @@ type ArrayModule2() =
 
         // null array
         
+        ()
+
+    [<Test>]
+    member this.Windowed() =
+        let testWindowed config =
+            try
+                config.InputArray
+                |> Array.windowed config.WindowSize
+                |> (fun actual -> Assert.AreEqual(config.ExpectedArray,actual))
+            with
+            | _ when Option.isNone config.Exception -> Assert.Fail()
+            | e when e.GetType() = (Option.get config.Exception) -> ()
+            | _ -> Assert.Fail()
+
+        {
+          InputArray = [|1..10|]
+          WindowSize = 1
+          ExpectedArray =  [| for i in 1..10 do yield [| i |] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 5
+          ExpectedArray =  [| for i in 1..6 do yield [| i; i+1; i+2; i+3; i+4 |] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 10
+          ExpectedArray =  [| yield [| 1 .. 10 |] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 25
+          ExpectedArray = [| |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|"str1";"str2";"str3";"str4"|]
+          WindowSize = 2
+          ExpectedArray =  [| [|"str1";"str2"|]; [|"str2";"str3"|]; [|"str3";"str4"|] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [| |]
+          WindowSize = 2
+          ExpectedArray = [| |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = null
+          WindowSize = 2
+          ExpectedArray = [| |]
+          Exception = Some typeof<ArgumentNullException>
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 0
+          ExpectedArray =  [| |]
+          Exception = Some typeof<ArgumentException>
+        } |> testWindowed
+
+        // expectedArrays indexed by arraySize,windowSize
+        let expectedArrays = Array2D.zeroCreate 6 6
+        expectedArrays.[1,1] <- [| [|1|] |]
+        expectedArrays.[2,1] <- [| [|1|]; [|2|] |]
+        expectedArrays.[2,2] <- [| [|1; 2|] |]
+        expectedArrays.[3,1] <- [| [|1|]; [|2|]; [|3|] |]
+        expectedArrays.[3,2] <- [| [|1; 2|]; [|2; 3|] |]
+        expectedArrays.[3,3] <- [| [|1; 2; 3|] |]
+        expectedArrays.[4,1] <- [| [|1|]; [|2|]; [|3|]; [|4|] |]
+        expectedArrays.[4,2] <- [| [|1; 2|]; [|2; 3|]; [|3; 4|] |]
+        expectedArrays.[4,3] <- [| [|1; 2; 3|]; [|2; 3; 4|] |]
+        expectedArrays.[4,4] <- [| [|1; 2; 3; 4|] |]
+        expectedArrays.[5,1] <- [| [|1|]; [|2|]; [|3|]; [|4|]; [|5|] |]
+        expectedArrays.[5,2] <- [| [|1; 2|]; [|2; 3|]; [|3; 4|]; [|4; 5|] |]
+        expectedArrays.[5,3] <- [| [|1; 2; 3|]; [|2; 3; 4|]; [|3; 4; 5|] |]
+        expectedArrays.[5,4] <- [| [|1; 2; 3; 4|]; [|2; 3; 4; 5|] |]
+        expectedArrays.[5,5] <- [| [|1; 2; 3; 4; 5|] |]
+
+        for arraySize = 0 to 5 do
+            for windowSize = -1 to 5 do
+                if windowSize <= 0 then
+                    CheckThrowsArgumentException (fun () -> Array.windowed windowSize [|1..arraySize|] |> ignore)
+                elif arraySize < windowSize then
+                    Assert.AreEqual([| |], Array.windowed windowSize [|1..arraySize|])
+                else
+                    Assert.AreEqual(expectedArrays.[arraySize, windowSize], Array.windowed windowSize [|1..arraySize|])
+
         ()
 
     [<Test>]
