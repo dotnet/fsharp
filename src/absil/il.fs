@@ -198,15 +198,15 @@ let b3 n =  ((n >>> 24) &&& 0xFF)
 module SHA1 = 
     let inline (>>>&)  (x:int) (y:int)  = int32 (uint32 x >>> y)
     let f(t,b,c,d) = 
-        if t < 20 then (b &&& c) ||| ((~~~b) &&& d) else
-        if t < 40 then b ^^^ c ^^^ d else
-        if t < 60 then (b &&& c) ||| (b &&& d) ||| (c &&& d) else
-        b ^^^ c ^^^ d
+        if t < 20 then (b &&& c) ||| ((~~~b) &&& d)
+        elif t < 40 then b ^^^ c ^^^ d
+        elif t < 60 then (b &&& c) ||| (b &&& d) ||| (c &&& d)
+        else b ^^^ c ^^^ d
 
-    let k0to19 = 0x5A827999
-    let k20to39 = 0x6ED9EBA1
-    let k40to59 = 0x8F1BBCDC
-    let k60to79 = 0xCA62C1D6
+    let [<Literal>] k0to19 = 0x5A827999
+    let [<Literal>] k20to39 = 0x6ED9EBA1
+    let [<Literal>] k40to59 = 0x8F1BBCDC
+    let [<Literal>] k60to79 = 0xCA62C1D6
 
     let k t = 
         if t < 20 then k0to19 
@@ -223,7 +223,7 @@ module SHA1 =
 
     let rot_left32 x n =  (x <<< n) ||| (x >>>& (32-n))
 
-    let sha_eof sha = sha.eof
+    let inline sha_eof sha = sha.eof
 
     (* padding and length (in bits!) recorded at end *)
     let sha_after_eof sha  = 
@@ -260,43 +260,41 @@ module SHA1 =
         let res = (b0 <<< 24) ||| (b1 <<< 16) ||| (b2 <<< 8) ||| b3
         res
 
-
     let sha1_hash sha = 
-        let h0 = ref 0x67452301
-        let h1 = ref 0xEFCDAB89
-        let h2 = ref 0x98BADCFE
-        let h3 = ref 0x10325476
-        let h4 = ref 0xC3D2E1F0
-        let a = ref 0
-        let b = ref 0
-        let c = ref 0
-        let d = ref 0
-        let e = ref 0
+        let mutable h0 = 0x67452301
+        let mutable h1 = 0xEFCDAB89
+        let mutable h2 = 0x98BADCFE
+        let mutable h3 = 0x10325476
+        let mutable h4 = 0xC3D2E1F0
+        let mutable a = 0
+        let mutable b = 0
+        let mutable c = 0
+        let mutable d = 0
+        let mutable e = 0
         let w = Array.create 80 0x00
         while (not (sha_eof sha)) do
-          for i = 0 to 15 do
-            w.[i] <- sha_read32 sha
-          for t = 16 to 79 do
-            w.[t] <- rot_left32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1;
-          a := !h0; 
-          b := !h1; 
-          c := !h2; 
-          d := !h3; 
-          e := !h4;
-          for t = 0 to 79 do
-            let temp =  (rot_left32 !a 5) + f(t,!b,!c,!d) + !e + w.[t] + k(t)
-            e := !d; 
-            d := !c; 
-            c :=  rot_left32 !b 30; 
-            b := !a; 
-            a := temp;
-          h0 := !h0 + !a; 
-          h1 := !h1 + !b; 
-          h2 := !h2 + !c;  
-          h3 := !h3 + !d; 
-          h4 := !h4 + !e
-        done;
-        (!h0,!h1,!h2,!h3,!h4)
+            for i = 0 to 15 do
+                w.[i] <- sha_read32 sha
+            for t = 16 to 79 do
+                w.[t] <- rot_left32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1
+            a <- h0 
+            b <- h1
+            c <- h2
+            d <- h3
+            e <- h4
+            for t = 0 to 79 do
+                let temp = (rot_left32 a 5) + f(t,b,c,d) + e + w.[t] + k(t)
+                e <- d
+                d <- c
+                c <- rot_left32 b 30
+                b <- a
+                a <- temp
+            h0 <- h0 + a
+            h1 <- h1 + b
+            h2 <- h2 + c
+            h3 <- h3 + d
+            h4 <- h4 + e
+        h0,h1,h2,h3,h4
 
     let sha1HashBytes s = 
         let (_h0,_h1,_h2,h3,h4) = sha1_hash { stream = SHABytes s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4

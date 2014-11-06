@@ -34,6 +34,7 @@ module internal List =
     val take : int -> 'T list -> 'T list
     val takeWhile : ('T -> bool) -> 'T list -> 'T list
     val toArray : 'T list -> 'T[]
+    val inline ofSeq : seq<'T> -> 'T List
     val sortWith : ('T -> 'T -> int) -> 'T list -> 'T list
     val splitAt : int -> 'T list -> ('T list * 'T list)
     val truncate : int -> 'T list -> 'T list
@@ -57,8 +58,10 @@ module internal Array =
     val mapFoldBack : ('T -> 'State -> 'U * 'State) -> 'T[] -> 'State -> 'U[] * 'State
 
     val permute : indexMap:(int -> int) -> 'T[] -> 'T[]
-
+    
     val scanSubRight: f:('T -> 'State -> 'State) -> array:'T[] -> start:int -> fin:int -> initState:'State -> 'State[]
+
+    val inline subUnchecked : int -> int -> 'T[] -> 'T[]
 
     val unstableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
 

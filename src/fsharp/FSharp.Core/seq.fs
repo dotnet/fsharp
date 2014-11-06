@@ -1215,17 +1215,9 @@ namespace Microsoft.FSharp.Collections
             (source :> seq<'T>)
 
         [<CompiledName("ToList")>]
-        let toList (source : seq<'T>) = 
+        let toList (source : seq<'T>) =
             checkNonNull "source" source
-            match source with 
-            | :? ('T list) as res -> res
-            | :? ('T[]) as res -> List.ofArray res
-            | _ -> 
-                use e = source.GetEnumerator()
-                let mutable res = [] 
-                while e.MoveNext() do
-                    res <- e.Current :: res
-                List.rev res
+            Microsoft.FSharp.Primitives.Basics.List.ofSeq source
 
         // Create a new object to ensure underlying array may not be mutated by a backdoor cast 
         [<CompiledName("OfArray")>]
