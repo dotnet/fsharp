@@ -2004,6 +2004,44 @@ module ExceptionInAsyncParallelOrHowToInvokeContinuationTwice =
     check "ExceptionInAsyncParallelOrHowToInvokeContinuationTwice" (Seq.init 30 (ignore >> test) |> Seq.forall id) true
     
 
+// [Asyncs] Better stack traces for Async
+module BetterStacksTest1 = 
+
+    let FunctionRaisingException() = 
+       async { do failwith "" }
+
+    let f2() = 
+       async { for i in 0 .. 10 do 
+                 do! FunctionRaisingException() }
+
+
+    let v = 
+        try 
+            f2() |> Async.StartImmediate 
+            ""
+        with e -> e.StackTrace
+
+    //printfn "STACK 1\n------------------------------------\n%s\n----------------------------------" v
+
+    test "BetterStacks1" (v.Contains("FunctionRaisingException"))
+
+module BetterStacksTest2 = 
+
+    let FunctionRaisingException() = 
+       async { do failwith "" }
+
+    let f2() = 
+       Async.FromContinuations(fun (cont, econt, ccont) -> Async.StartWithContinuations(FunctionRaisingException(), cont, econt, ccont))
+
+    let v = 
+        try 
+            f2() |> Async.StartImmediate 
+            ""
+        with e -> e.StackTrace
+
+    //printfn "STACK #2\n------------------------------------\n%s\n----------------------------------" v
+
+    test "BetterStacks2" (v.Contains("FunctionRaisingException"))
 
 // [Asyncs] Cancellation inside Async.AwaitWaitHandle may release source WaitHandle
 module Bug391710 =
