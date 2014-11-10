@@ -390,7 +390,8 @@ let warningOn err level specificWarnOn =
     List.mem n specificWarnOn ||
     // Some specific warnings are never on by default, i.e. unused variable warnings
     match n with 
-    | 1182 -> false 
+    | 1182 -> false // chkUnusedValue - off by default
+    | 3180 -> false // abImplicitHeapAllocation - off by default
     | _ -> level >= GetWarningLevel err 
 
 let SplitRelatedErrors(err:PhasedError) = 

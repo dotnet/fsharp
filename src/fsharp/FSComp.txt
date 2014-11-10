@@ -250,7 +250,6 @@ elDeprecatedOperator,"The treatment of this operator is now handled directly by 
 # -----------------------------------------------------------------------------
 405,chkProtectedOrBaseCalled,"A protected member is called or 'base' is being used. This is only allowed in the direct implementation of members since they could escape their object scope."
 406,chkByrefUsedInInvalidWay,"The byref-typed variable '%s' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions."
-407,chkMutableUsedInInvalidWay,"The mutable variable '%s' is used in an invalid way. Mutable variables cannot be captured by closures. Consider eliminating this use of mutation or using a heap-allocated mutable reference cell via 'ref' and '!'."
 408,chkBaseUsedInInvalidWay,"The 'base' keyword is used in an invalid way. Base calls cannot be used in closures. Consider using a private member to make base calls."
 chkVariableUsedInInvalidWay,"The variable '%s' is used in an invalid way"
 410,chkTypeLessAccessibleThanType,"The type '%s' is less accessible than the value, member or type '%s' it is used in"
@@ -1332,3 +1331,4 @@ descriptionUnavailable,"(description unavailable...)"
 3177,tastConstantExpressionOverflow,"This literal expression or attribute argument results in an arithmetic overflow."
 3178,tcIllegalStructTypeForConstantExpression,"This is not valid literal expression. The [<Literal>] attribute will be ignored."
 3179,fscSystemRuntimeInteropServicesIsRequired,"System.Runtime.InteropServices assembly is required to use UnknownWrapper\DispatchWrapper classes."
+3180,abImplicitHeapAllocation,"The mutable local '%s' is implicitly allocated as a reference cell because it has been captured by a closure. This warning is for informational purposes only to indicate where implicit allocations are performed."

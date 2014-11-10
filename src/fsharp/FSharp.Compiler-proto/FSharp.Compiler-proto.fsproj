@@ -358,6 +358,9 @@
     <Compile Include="..\opt.fsi">
       <Link>opt.fsi</Link>
     </Compile>
+    <Compile Include="..\autobox.fs">
+      <Link>autobox.fs</Link>
+    </Compile>
     <Compile Include="..\opt.fs">
       <Link>opt.fs</Link>
     </Compile>

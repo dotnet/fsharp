@@ -7124,11 +7124,21 @@ let doesActivePatternHaveFreeTypars g (v:ValRef) =
 type ExprRewritingEnv = 
     { PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option;
       PostTransform: Expr -> Expr option;
+      PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option;
       IsUnderQuotations: bool }    
 
-let rec rewrite_bind env (TBind(v,e,letSeqPtOpt)) = TBind(v,RewriteExpr env e,letSeqPtOpt) 
+let rec rewriteBind env bind = 
+     match env.PreInterceptBinding  with 
+     | Some f -> 
+         match f (RewriteExpr env) bind with 
+         | Some res -> res
+         | None -> rewriteBindStructure env bind
+     | None -> rewriteBindStructure env bind
+     
+and rewriteBindStructure env (TBind(v,e,letSeqPtOpt)) = 
+     TBind(v,RewriteExpr env e,letSeqPtOpt) 
 
-and rewrite_binds env binds = FlatList.map (rewrite_bind env) binds
+and rewriteBinds env binds = FlatList.map (rewriteBind env) binds
 
 and RewriteExpr env expr =
   match expr with 
@@ -7192,7 +7202,7 @@ and rewriteExprStructure env expr =
       mkAndSimplifyMatch spBind exprm m ty dtree' targets'
 
   | Expr.LetRec (binds,e,m,_) ->
-      let binds = rewrite_binds env binds
+      let binds = rewriteBinds env binds
       let e' = RewriteExpr env e
       Expr.LetRec(binds,e',m,NewFreeVarsCache())
 
@@ -7216,7 +7226,7 @@ and rewriteLinearExpr env expr contf =
     | None -> 
         match expr with 
         | Expr.Let (bind,body,m,_) ->  
-            let bind = rewrite_bind env bind
+            let bind = rewriteBind env bind
             rewriteLinearExpr env body (contf << (fun body' ->
                 mkLetBind m bind body'))
         | Expr.Sequential  (e1,e2,dir,spSeq,m) ->
@@ -7251,7 +7261,7 @@ and rewriteDecisionTree env x =
       TDSwitch (e',cases',dflt',m)
 
   | TDBind (bind,body) ->
-      let bind' = rewrite_bind env bind
+      let bind' = rewriteBind env bind
       let body = rewriteDecisionTree env body
       TDBind (bind',body)
 
@@ -7274,8 +7284,8 @@ and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef e
     
 and rewriteModuleOrNamespaceDef env x = 
     match x with 
-    | TMDefRec(tycons,binds,mbinds,m) -> TMDefRec(tycons,rewrite_binds env binds,rewriteModuleOrNamespaceBindings env mbinds,m)
-    | TMDefLet(bind,m)         -> TMDefLet(rewrite_bind env bind,m)
+    | TMDefRec(tycons,binds,mbinds,m) -> TMDefRec(tycons,rewriteBinds env binds,rewriteModuleOrNamespaceBindings env mbinds,m)
+    | TMDefLet(bind,m)         -> TMDefLet(rewriteBind env bind,m)
     | TMDefDo(e,m)             -> TMDefDo(RewriteExpr env e,m)
     | TMDefs defs             -> TMDefs(rewriteModuleOrNamespaceDefs env defs)
     | TMAbstract mexpr        -> TMAbstract(rewriteModuleOrNamespaceExpr env mexpr)

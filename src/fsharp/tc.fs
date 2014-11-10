@@ -11516,6 +11516,7 @@ module IncrClassChecking = begin
                 | _ -> None
             Tastops.RewriteExpr { PreIntercept=Some FixupExprNode 
                                   PostTransform = (fun _ -> None)
+                                  PreInterceptBinding=None
                                   IsUnderQuotations=true } expr 
 
 

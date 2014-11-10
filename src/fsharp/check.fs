@@ -261,19 +261,16 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
         let cantBeFree v = 
            // First, if v is a syntactic argument, then it can be free since it was passed in. 
            // The following can not be free: 
-           //   a) "Local" mutables, being mutables such that: 
-           //         i)  the mutable has no arity (since arity implies top-level storage, top level mutables...) 
-           //             Note: "this" arguments to instance members on mutable structs are mutable arguments. 
-           //   b) BaseVal can never escape. 
-           //   c) Byref typed values can never escape. 
+           //   a) BaseVal can never escape. 
+           //   b) Byref typed values can never escape. 
+           // Note that: Local mutables can be free, as they will be boxed later.
 
            // These checks must correspond to the tests governing the error messages below. 
            let passedIn = ListSet.contains valEq v syntacticArgs 
            if passedIn then
                false
            else
-               (v.IsMutable && v.ValReprInfo.IsNone) ||
-               (v.BaseOrThisInfo = BaseVal  && not passedIn) ||
+               (v.BaseOrThisInfo = BaseVal) ||
                (isByrefLikeTy cenv.g v.Type)
 
         let frees = freeInExpr CollectLocals body
@@ -288,8 +285,6 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
                 // As such, partial applications involving byref arguments could lead to closures containing byrefs. 
                 // For safety, such functions are assumed to have no known arity, and so can not accept byrefs. 
                 errorR(Error(FSComp.SR.chkByrefUsedInInvalidWay(v.DisplayName), m))
-            elif v.IsMutable then 
-                errorR(Error(FSComp.SR.chkMutableUsedInInvalidWay(v.DisplayName), m))
             elif v.BaseOrThisInfo = BaseVal then
                 errorR(Error(FSComp.SR.chkBaseUsedInInvalidWay(), m))
             else

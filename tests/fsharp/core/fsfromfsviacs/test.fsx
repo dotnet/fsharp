@@ -1,9 +1,9 @@
 // #Conformance #Interop #Unions 
 open Lib
 
-let failures = ref false
+let mutable failures = false
 let report_failure () = 
-  stderr.WriteLine " NO"; failures := true
+  stderr.WriteLine " NO"; failures <- true
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
 
 let r1 = Lib2.r1
@@ -48,7 +48,7 @@ let _ = test "fejio2dw" (Lib2.rr1 = ref r1)
 *)
 
 let _ = 
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
+  if failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 
         System.IO.File.WriteAllText("test.ok","ok"); 
         exit 0)

@@ -861,6 +861,8 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
             let optEnvFirstLoop,implFile,implFileOptData = 
                 Opt.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvFirstLoop,isIncrementalFragment,tcConfig.emitTailcalls,implFile)
 
+            let implFile = AutoBox.TransformImplFile tcGlobals importMap implFile 
+                            
             // Only do this on the first pass!
             let optSettings = { optSettings with abstractBigTargets = false }
             let optSettings = { optSettings with reportingPhase = false }
@@ -892,7 +894,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
             let implFile = 
                 Lowertop.LowerImplFile tcGlobals implFile
-              
+
             let implFile,optEnvFinalSimplify =
                 if tcConfig.doFinalSimplify then 
                     //ReportTime tcConfig ("Final simplify pass");

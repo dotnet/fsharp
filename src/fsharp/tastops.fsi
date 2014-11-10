@@ -1306,6 +1306,7 @@ val doesActivePatternHaveFreeTypars : Env.TcGlobals -> ValRef -> bool
 type ExprRewritingEnv = 
     {PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option;
      PostTransform: Expr -> Expr option;
+     PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option;
      IsUnderQuotations: bool }    
 
 val RewriteExpr : ExprRewritingEnv -> Expr -> Expr
