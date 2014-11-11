@@ -800,6 +800,22 @@ type MethInfo =
         | FSMeth(_,_,vref,_) when x.IsExtensionMember -> vref.TopValActualParent
         | _ -> tcrefOfAppTy x.TcGlobals x.EnclosingType 
 
+    /// Get the information about provided static parameters, if any 
+    member x.ProvidedStaticParameterInfo = 
+        match x with
+        | ILMeth _ -> None
+        | FSMeth _  -> None
+#if EXTENSIONTYPING
+        | ProvidedMeth (_, mb, _, m) -> 
+            let staticParams = mb.PApplyWithProvider((fun (mb,provider) -> mb.GetStaticParametersForMethod(provider)), range=m) 
+            let staticParams = staticParams.PApplyArray(id, "GetStaticParameters", m)
+            match staticParams with 
+            | [| |] -> None
+            | _ -> Some (mb,staticParams)
+#endif
+        | DefaultStructCtor _ -> None
+
+
     /// Get the extension method priority of the method, if it has one.
     member x.ExtensionMemberPriorityOption = 
         match x with

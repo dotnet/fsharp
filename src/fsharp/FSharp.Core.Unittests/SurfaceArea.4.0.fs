@@ -919,6 +919,8 @@ Microsoft.FSharp.Core.CompilerServices.IProvidedNamespace: System.String Namespa
 Microsoft.FSharp.Core.CompilerServices.IProvidedNamespace: System.String get_NamespaceName()
 Microsoft.FSharp.Core.CompilerServices.IProvidedNamespace: System.Type ResolveTypeName(System.String)
 Microsoft.FSharp.Core.CompilerServices.IProvidedNamespace: System.Type[] GetTypes()
+Microsoft.FSharp.Core.CompilerServices.ITypeProvider2: System.Reflection.MethodBase ApplyStaticArgumentsForMethod(System.Reflection.MethodBase, System.String, System.Object[])
+Microsoft.FSharp.Core.CompilerServices.ITypeProvider2: System.Reflection.ParameterInfo[] GetStaticParametersForMethod(System.Reflection.MethodBase)
 Microsoft.FSharp.Core.CompilerServices.ITypeProvider: Byte[] GetGeneratedAssemblyContents(System.Reflection.Assembly)
 Microsoft.FSharp.Core.CompilerServices.ITypeProvider: Microsoft.FSharp.Core.CompilerServices.IProvidedNamespace[] GetNamespaces()
 Microsoft.FSharp.Core.CompilerServices.ITypeProvider: Microsoft.FSharp.Quotations.FSharpExpr GetInvokerExpression(System.Reflection.MethodBase, Microsoft.FSharp.Quotations.FSharpExpr[])

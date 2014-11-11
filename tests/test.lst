@@ -144,6 +144,7 @@ Samples07		..\testsprivate\fsharp\samples\XBoxLiveLogViewer
 Samples07		..\testsprivate\fsharp\samples\XNA\WindowsXNAGame
 Samples07		..\testsprivate\fsharp\samples\XNA\XBox360Game
 
+TypeProviders01		fsharp\typeProviders\helloWorld
 TypeProviders01		..\testsprivate\fsharp\typeProviders\builtin\DbmlFile
 TypeProviders01		fsharp\typeProviders\builtin\EdmxFile
 TypeProviders01		fsharp\typeProviders\builtin\ODataService
@@ -152,7 +153,6 @@ TypeProviders01		fsharp\typeProviders\builtin\SqlEntityConnection
 TypeProviders01		fsharp\typeProviders\builtin\WsdlService
 TypeProviders01		fsharp\typeProviders\diamondAssembly
 TypeProviders01		fsharp\typeProviders\globalNamespace
-TypeProviders01		fsharp\typeProviders\helloWorld
 TypeProviders01		fsharp\typeProviders\helloWorldCSharp
 TypeProviders01		fsharp\typeProviders\negTests
 TypeProviders01		fsharp\typeProviders\splitAssembly

@@ -209,6 +209,7 @@ module internal ExtensionTyping =
         member IsConstructor : bool
         member GetParameters : unit -> ProvidedParameterInfo[]
         member GetGenericArguments : unit -> ProvidedType[]
+        member GetStaticParametersForMethod : ITypeProvider -> ProvidedParameterInfo[]
         static member TaintedGetHashCode : Tainted<ProvidedMethodBase> -> int
         static member TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool 
 
@@ -358,6 +359,9 @@ module internal ExtensionTyping =
     /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
     /// after other checks are made).
     val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:obj[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
+
+    /// Try to apply a provided method to the given static arguments. 
+    val TryApplyProvidedMethod : methBeforeArguments:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * range -> Tainted<ProvidedMethodBase> option
 
     /// Try to resolve a type in the given extension type resolver
     val TryResolveProvidedType : ResolutionEnvironment * Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option

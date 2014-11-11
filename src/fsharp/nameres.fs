@@ -961,7 +961,7 @@ let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceR
 
 /// Given a provided type or provided namespace, resolve the type name using the type provider API.
 /// If necessary, incorporate the provided type or namespace into the entity.
-let ResolveProvidedTypeNameInEntity (amap, m, typeName, staticResInfo: TypeNameResolutionStaticArgsInfo, modref: ModuleOrNamespaceRef) = 
+let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespaceRef) = 
     match modref.TypeReprInfo with
     | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) ->
         match modref.Deref.PublicPath with
@@ -980,14 +980,15 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, staticResInfo: TypeNameR
     | TProvidedTypeExtensionPoint info ->
         let sty = info.ProvidedType
         let resolutionEnvironment = info.ResolutionEnvironment
-        if staticResInfo.NumStaticArgs > 0 then 
-            error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(),m))
             
         if resolutionEnvironment.showResolutionMessages then
             dprintfn "resolving name '%s' in TProvidedTypeExtensionPoint '%s'" typeName (sty.PUntaint((fun sty -> sty.FullName), m))
 
         match sty.PApply((fun sty -> sty.GetNestedType(typeName)), m) with
-        | Tainted.Null -> []
+        | Tainted.Null -> 
+            //if staticResInfo.NumStaticArgs > 0 then 
+            //    error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(),m))
+            []
         | nestedSty -> 
             [AddEntityForProvidedType (amap, modref, resolutionEnvironment, nestedSty, m) ]
     | _ -> []
@@ -1009,7 +1010,7 @@ let LookupTypeNameInEntityMaybeHaveArity (amap, m, nm, staticResInfo:TypeNameRes
 #if EXTENSIONTYPING
     let tcrefs =
         match tcrefs with 
-        | [] -> ResolveProvidedTypeNameInEntity (amap, m, nm, staticResInfo, modref)
+        | [] -> ResolveProvidedTypeNameInEntity (amap, m, nm, modref)
         | _ -> tcrefs
 #else
     amap |> ignore

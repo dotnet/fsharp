@@ -728,6 +728,45 @@ module internal ExtensionTyping =
         static member TaintedEquals (pt1:Tainted<ProvidedMethodBase>, pt2:Tainted<ProvidedMethodBase>) = 
            Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
+        member __.GetStaticParametersForMethod(provider: ITypeProvider) = 
+            let bindingFlags = BindingFlags.Instance ||| BindingFlags.NonPublic ||| BindingFlags.Public 
+
+            let staticParams = 
+                match provider with 
+                | :? ITypeProvider2 as itp2 -> 
+                    itp2.GetStaticParametersForMethod(x)  
+                | _ -> 
+                    // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement an appropriate method called GetStaticParametersForMethod
+                    let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<MethodBase> |], null)  
+                    if isNull meth then [| |] else
+                    let paramsAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
+                    paramsAsObj :?> ParameterInfo[] 
+
+            staticParams |> ProvidedParameterInfo.CreateArray ctxt
+
+        member __.ApplyStaticArgumentsForMethod(provider: ITypeProvider, fullNameAfterArguments:string, staticArgs: obj[]) = 
+            let bindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.InvokeMethod
+
+            let mb = 
+                match provider with 
+                | :? ITypeProvider2 as itp2 -> 
+                    itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)  
+                | _ -> 
+                    // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement a method called GetStaticParametersForMethod
+                    let meth = provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null, [| typeof<MethodBase>; typeof<string>; typeof<obj[]> |], null)  
+                    match meth with 
+                    | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
+                    | _ -> 
+                    let mbAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
+                    match mbAsObj with 
+                    | :? MethodBase as mb -> mb
+                    | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
+            match mb with 
+            | :? MethodInfo as mi -> (mi |> ProvidedMethodInfo.Create ctxt : ProvidedMethodInfo) :> ProvidedMethodBase
+            | :? ConstructorInfo as ci -> (ci |> ProvidedConstructorInfo.Create ctxt : ProvidedConstructorInfo) :> ProvidedMethodBase
+            | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
+
+
     and [<AllowNullLiteral; Sealed>] 
         ProvidedFieldInfo (x: System.Reflection.FieldInfo,ctxt) = 
         inherit ProvidedMemberInfo(x,ctxt)
@@ -749,12 +788,16 @@ module internal ExtensionTyping =
         override __.Equals y = assert false; match y with :? ProvidedFieldInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 
+
+
     and [<AllowNullLiteral; Sealed>] 
         ProvidedMethodInfo (x: System.Reflection.MethodInfo, ctxt) = 
         inherit ProvidedMethodBase(x,ctxt)
-        /// MethodInfo.ReturnType cannot be null
+
         member __.ReturnType = x.ReturnType |> ProvidedType.CreateWithNullCheck ctxt "ReturnType"
+
         static member Create ctxt x = match x with null -> null | t -> ProvidedMethodInfo (t,ctxt)
+
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedMethodInfo.Create ctxt)
         member __.Handle = x
         member __.MetadataToken = x.MetadataToken
@@ -1120,7 +1163,7 @@ module internal ExtensionTyping =
                     | None ->
                         errorR(Error(FSComp.SR.etUnsupportedMemberKind(memberName,fullName),m))   
 
-    let ValidateProvidedTypeDefinition(m,st:Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
+    let ValidateProvidedTypeDefinition(m, st:Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
 
         // Validate the Name, Namespace and FullName properties
         let name = CheckAndComputeProvidedNameProperty(m, st, (fun st -> st.Name), "Name")
@@ -1208,8 +1251,44 @@ module internal ExtensionTyping =
 
         encContrib st, nameContrib st
 
+    let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tainted<ProvidedParameterInfo[]>, m) =
+        let defaultArgValues = 
+            staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))),range=m)
+
+        let defaultArgValues = defaultArgValues.PUntaint(id,m)
+
+        let nonDefaultArgs = 
+            (staticArgs,defaultArgValues) 
+            ||> Array.zip 
+            |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
+                let actualArgValue = string  staticArg 
+                match defaultArgValue with 
+                | Some v when v = actualArgValue -> None
+                | _ -> Some (defaultArgName, actualArgValue))
+        PrettyNaming.mangleProvidedTypeName (nm, nonDefaultArgs)
+
+    /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
+    let TryApplyProvidedMethod(methBeforeArgs:Tainted<ProvidedMethodBase>, staticArgs:obj[], m:range) =
+        if staticArgs.Length = 0 then 
+            Some methBeforeArgs
+        else
+            let mangledName = 
+                let nm = methBeforeArgs.PUntaint((fun x -> x.Name),m)
+                let staticParams = methBeforeArgs.PApplyWithProvider((fun (mb,resolver) -> mb.GetStaticParametersForMethod(resolver)),range=m) 
+                let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
+                mangledName
+ 
+            match methBeforeArgs.PApplyWithProvider((fun (mb,provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgs)),range=m) with 
+            | Tainted.Null -> None
+            | methWithArguments -> 
+                let actualName = methWithArguments.PUntaint((fun x -> x.Name),m)
+                if actualName <> mangledName then 
+                    error(Error(FSComp.SR.etProvidedAppliedMethodHadWrongName(methWithArguments.TypeProviderDesignation, mangledName, actualName),m))
+                Some methWithArguments
+
+
     /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-    let TryApplyProvidedType(typeBeforeArguments:Tainted<ProvidedType>, (optGeneratedTypePath: string list option), staticArgs:obj[], m:range) =
+    let TryApplyProvidedType(typeBeforeArguments:Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs:obj[], m:range) =
         if staticArgs.Length = 0 then 
             Some (typeBeforeArguments , (fun () -> ()))
         else 
@@ -1222,21 +1301,8 @@ module internal ExtensionTyping =
                     // Otherwise, use the full path of the erased type, including mangled arguments
                     let nm = typeBeforeArguments.PUntaint((fun x -> x.Name),m)
                     let enc,_ = ILPathToProvidedType (typeBeforeArguments,m)
-                    let defaultArgValues = 
-                        typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,resolver) -> 
-                            typeBeforeArguments.GetStaticParameters(resolver) 
-                            |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))),range=m)
-                    let defaultArgValues = defaultArgValues.PUntaint(id,m)
-
-                    let nonDefaultArgs = 
-                        (staticArgs,defaultArgValues) 
-                        ||> Array.zip 
-                        |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
-                            let actualArgValue = string  staticArg 
-                            match defaultArgValue with 
-                            | Some v when v = actualArgValue -> None
-                            | _ -> Some (defaultArgName, actualArgValue))
-                    let mangledName = PrettyNaming.mangleProvidedTypeName (nm, nonDefaultArgs)
+                    let staticParams = typeBeforeArguments.PApplyWithProvider((fun (mb,resolver) -> mb.GetStaticParameters(resolver)),range=m) 
+                    let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
                     enc @ [ mangledName ]
  
             match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgs)),range=m) with 
