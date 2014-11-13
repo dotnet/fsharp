@@ -1735,10 +1735,11 @@ type CalledMeth<'T>
                         match epinfos with 
                         | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
                             let pminfo = pinfo.SetterMethod
-                            let pminst = freshenMethInfo m pminfo
+                            let pminst = match minfo with
+                                         | MethInfo.FSMeth(_,TType.TType_app(_,types),_,_) -> types
+                                         | _ -> freshenMethInfo m pminfo
                             Choice1Of2(AssignedItemSetter(id,AssignedPropSetter(pinfo,pminfo, pminst), e))
-                        |  _ ->
-    
+                        |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm),ad,m,returnedObjTy) with
                             | finfo :: _ -> 
                                 Choice1Of2(AssignedItemSetter(id,AssignedILFieldSetter(finfo), e))
