@@ -1200,7 +1200,7 @@ let AbstractAndRemapModulInfo msg g m (repackage,hidden) info =
     info
 
 //-------------------------------------------------------------------------
-// Misc helerps
+// Misc helpers
 //------------------------------------------------------------------------- 
 
 // Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
@@ -1854,7 +1854,7 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
     let cost,valu = 
       match op with
       | TOp.UnionCase c -> 2,MakeValueInfoForUnionCase c (Array.ofList argValues)
-      | TOp.ExnConstr _ -> 2,valu (* REVIEW: information collection possilbe here *)
+      | TOp.ExnConstr _ -> 2,valu (* REVIEW: information collection possible here *)
       | TOp.Tuple       -> 1, MakeValueInfoForTuple (Array.ofList argValues)
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
@@ -2491,6 +2491,25 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
                 MightMakeCriticalTailcall = false;
                 Info=UnknownValue})
 
+    // Analyze the name of the given symbol
+    | Expr.Val(vref,_,_),_,_ when valRefEq cenv.g vref cenv.g.nameof_vref -> 
+        let name =
+            match args.Head with
+            | Expr.Val(r,_,_) -> r.CompiledName
+            | Expr.App(Expr.Val(r,_,_),_,_,_,_) -> r.CompiledName
+            | Expr.Let(_,Expr.Val(r,_,_),_,_) -> r.CompiledName
+            | Expr.Let(_,Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(r,_,_),_,_,_,_),_,_),_,_) -> r.CompiledName
+            | Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(r,_,_),_,_,_,_),_,_) -> r.CompiledName
+            | Expr.Op(TOp.ValFieldGet(r),_,_,_) -> r.FieldName
+            | Expr.Lambda(_,_,_,_,Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,r,_,_,_),_,_,_),_,_) -> r.Name
+            | _ -> "unknown value"
+        
+        Some( Expr.Const(Const.String name,m,cenv.g.string_ty),
+              { TotalSize=1;
+                FunctionSize=1
+                HasEffect=false;
+                MightMakeCriticalTailcall = false;
+                Info=UnknownValue})
     | _ -> None
 
 /// Attempt to inline an application of a known value at callsites

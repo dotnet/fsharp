@@ -2292,6 +2292,10 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         val inline typeof<'T> : System.Type
 
+        /// <summary>Returns the name of the given symbol.</summary>        
+        [<CompiledName("NameOf")>]
+        val inline nameof : 'T -> string
+
         /// <summary>An internal, library-only compiler intrinsic for compile-time 
         /// generation of a RuntimeMethodHandle.</summary>
         [<CompiledName("MethodHandleOf")>]

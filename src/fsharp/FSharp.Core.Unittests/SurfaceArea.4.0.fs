@@ -2592,6 +2592,7 @@ Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
 Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
 #endif
                                                                 @"
+Microsoft.FSharp.Core.Operators: System.String NameOf[T](T)
 Microsoft.FSharp.Core.Operators: System.String ToString()
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)

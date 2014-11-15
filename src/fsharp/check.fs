@@ -456,6 +456,19 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
         CheckExpr cenv env body
     | Expr.Const (_,m,ty) -> 
         CheckTypePermitByrefs cenv m ty 
+
+    | Expr.App(Expr.Val (v,_,_),_,_,args,m) -> 
+        if cenv.reportErrors then 
+            if valRefEq cenv.g v cenv.g.nameof_vref then
+                match args with
+                | [Expr.Val(_,_,_)]
+                | [Expr.App(Expr.Val(_,_,_),_,_,_,_)]
+                | [Expr.Let(_,Expr.Val(_,_,_),_,_)]
+                | [Expr.Let(_,Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(_,_,_),_,_,_,_),_,_),_,_)]
+                | [Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(_,_,_),_,_,_,_),_,_)]
+                | [Expr.Op(TOp.ValFieldGet(_),_,_,_)]
+                | [Expr.Lambda(_,_,_,_,Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,_,_,_,_),_,_,_),_,_)] -> ()
+                | _ -> errorR(Error(FSComp.SR.nameofNotPermitted(), m))
             
     | Expr.Val (v,vFlags,m) -> 
           if cenv.reportErrors then 

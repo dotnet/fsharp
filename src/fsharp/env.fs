@@ -421,6 +421,8 @@ type public TcGlobals =
       reraise_vref              : ValRef;      
       typeof_info               : IntrinsicValRef;
       typeof_vref               : ValRef;
+      nameof_info               : IntrinsicValRef;
+      nameof_vref               : ValRef;
       methodhandleof_info       : IntrinsicValRef;
       methodhandleof_vref       : ValRef;
       sizeof_vref               : ValRef;
@@ -908,6 +910,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                ,None                 ,Some "Raise"  ,[vara],([[mkSysNonGenericTy sys "Exception"]],varaTy))  
   let reraise_info               = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "reraise"                              ,None                 ,Some "Reraise",[vara],     ([[unit_ty]],varaTy))
   let typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               ,None                 ,Some "TypeOf" ,[vara],     ([],system_Type_typ))  
+  let nameof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nameof"                               ,None                 ,Some "NameOf" ,[vara],     ([[varaTy]],string_ty))
   let methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       ,None                 ,Some "MethodHandleOf",[vara;varb],([[varaTy --> varbTy]],system_RuntimeMethodHandle_typ))
   let sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               ,None                 ,Some "SizeOf" ,[vara],     ([],int_ty))  
   let unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            ,None                 ,Some "DefaultOf",[vara],     ([],varaTy))  
@@ -1344,6 +1347,8 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     reraise_vref               = ValRefForIntrinsic reraise_info;
     methodhandleof_info        = methodhandleof_info;
     methodhandleof_vref        = ValRefForIntrinsic methodhandleof_info;
+    nameof_info                = nameof_info;
+    nameof_vref                = ValRefForIntrinsic nameof_info;
     typeof_info                = typeof_info;
     typeof_vref                = ValRefForIntrinsic typeof_info;
     sizeof_vref                = ValRefForIntrinsic sizeof_info;
