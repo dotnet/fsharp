@@ -425,6 +425,20 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
     | Some (typ1,typ2) -> 
          errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)),m))
 
+// tries to extract the name of an expression
+let extractNameOf (args:Exprs) =
+    match args with
+    | [expr] ->
+        match expr with
+        | Expr.Val(r,_,_) -> Some r.CompiledName
+        | Expr.App(Expr.Val(r,_,_),_,_,_,_) -> Some r.CompiledName
+        | Expr.Let(_,Expr.Val(r,_,_),_,_) -> Some r.CompiledName
+        | Expr.Let(_,Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(r,_,_),_,_,_,_),_,_),_,_) -> Some r.CompiledName
+        | Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(r,_,_),_,_,_,_),_,_) -> Some r.CompiledName
+        | Expr.Op(TOp.ValFieldGet(r),_,_,_) -> Some r.FieldName
+        | Expr.Lambda(_,_,_,_,Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,r,_,_,_),_,_,_),_,_) -> Some r.Name
+        | _ -> None
+    | _ -> None
 
 let rec CheckExpr   (cenv:cenv) (env:env) expr = 
     CheckExprInContext cenv env expr GeneralContext
@@ -458,17 +472,8 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
         CheckTypePermitByrefs cenv m ty 
 
     | Expr.App(Expr.Val (v,_,_),_,_,args,m) -> 
-        if cenv.reportErrors then 
-            if valRefEq cenv.g v cenv.g.nameof_vref then
-                match args with
-                | [Expr.Val(_,_,_)]
-                | [Expr.App(Expr.Val(_,_,_),_,_,_,_)]
-                | [Expr.Let(_,Expr.Val(_,_,_),_,_)]
-                | [Expr.Let(_,Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(_,_,_),_,_,_,_),_,_),_,_)]
-                | [Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(_,_,_),_,_,_,_),_,_)]
-                | [Expr.Op(TOp.ValFieldGet(_),_,_,_)]
-                | [Expr.Lambda(_,_,_,_,Expr.Op(TOp.ILCall(_,_,_,_,_,_,_,_,_,_,_),_,_,_),_,_)] -> ()
-                | _ -> errorR(Error(FSComp.SR.nameofNotPermitted(), m))
+        if cenv.reportErrors && valRefEq cenv.g v cenv.g.nameof_vref && extractNameOf args = None then
+            errorR(Error(FSComp.SR.nameofNotPermitted(), m))
             
     | Expr.Val (v,vFlags,m) -> 
           if cenv.reportErrors then 
