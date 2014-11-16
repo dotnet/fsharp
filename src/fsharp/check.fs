@@ -426,7 +426,7 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
          errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)),m))
 
 // tries to extract the name of an expression
-let extractNameOf (args:Exprs) =
+let extractNameOf args =
     match args with
     | [expr] ->
         match expr with

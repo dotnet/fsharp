@@ -2491,8 +2491,8 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
                 MightMakeCriticalTailcall = false;
                 Info=UnknownValue})
 
-    // Analyze the name of the given symbol and rewrite AST to constant string expression wth the name
-    | Expr.Val(vref,_,_),_,_ when valRefEq cenv.g vref cenv.g.nameof_vref -> 
+    // Analyze the name of the given symbol and rewrite AST to constant string expression with the name
+    | Expr.Val(vref,_,_),_,_ when valRefEq cenv.g vref cenv.g.nameof_vref ->
         match PostTypecheckSemanticChecks.extractNameOf args with
         | Some name ->        
             Some( Expr.Const(Const.String name,m,cenv.g.string_ty),
