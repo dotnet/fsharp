@@ -80,3 +80,17 @@ type BasicNameOfTests() =
     member this.``static property name`` () =
         let b = nameof(BasicNameOfTests.StaticProperty)
         Assert.AreEqual("get_StaticProperty",b)
+
+    [<Test>]
+    member this.``nameof local property with encapsulated name`` () =
+        let ``local property with encapsulated name and %.f`` = 0
+        let b = nameof(``local property with encapsulated name and %.f``)
+        Assert.AreEqual("local property with encapsulated name and %.f",b)
+
+    member this.MethodGroup() = ()    
+    member this.MethodGroup(i:int) = ()
+
+    [<Test>]
+    member this.``method group name lookup`` () =
+        let b = nameof(this.MethodGroup)
+        Assert.AreEqual("MethodGroup",b)
