@@ -105,6 +105,8 @@ type BasicNameOfTests() =
         let b = nameof(``local property with encapsulated name and %.f``)
         Assert.AreEqual("local property with encapsulated name and %.f",b)
 
+[<TestFixture>]
+type MethodGroupTests() =
     member this.MethodGroup() = ()    
     member this.MethodGroup(i:int) = ()
 
@@ -112,3 +114,28 @@ type BasicNameOfTests() =
     member this.``method group name lookup`` () =
         let b = nameof(this.MethodGroup)
         Assert.AreEqual("MethodGroup",b)
+
+[<TestFixture>]
+type OperatorNameTests() =    
+
+    [<Test>]
+    member this.``lookup name of typeof operator`` () =
+        let b = nameof(typeof<int>)
+        Assert.AreEqual("TypeOf",b)
+
+    [<Test>]
+    member this.``lookup name of + operator`` () =
+        let b = nameof(+)
+        Assert.AreEqual("op_Addition",b)
+
+    [<Test>]
+    member this.``lookup name of |> operator`` () =
+        let a = nameof(|>)
+        Assert.AreEqual("op_PipeRight",a)
+        let b = nameof(op_PipeRight)
+        Assert.AreEqual("op_PipeRight",b)
+
+    [<Test>]
+    member this.``lookup name of nameof operator`` () =
+        let b = nameof(nameof)
+        Assert.AreEqual("NameOf",b)
