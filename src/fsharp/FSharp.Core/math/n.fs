@@ -1551,7 +1551,7 @@ module internal BigNatModule =
     let ofString (str:string) =
         // Would it be better to split string half and combine results? 
         let len = str.Length
-        if System.String.IsNullOrEmpty str then invalidArg "str" "empty string";
+        if System.String.IsNullOrEmpty str then invalidArg (nameof str) "empty string";
         let ten = embed 10
         let rec build acc i =
             if i=len then

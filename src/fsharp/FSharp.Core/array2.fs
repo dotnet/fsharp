@@ -87,7 +87,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate")>]
         let iter f array = 
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let count1 = length1 array 
             let count2 = length2 array 
             let b1 = base1 array 
@@ -98,7 +98,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("IterateIndexed")>]
         let iteri (f : int -> int -> 'T -> unit) (array:'T[,]) =
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let count1 = length1 array 
             let count2 = length2 array 
             let b1 = base1 array 
@@ -110,31 +110,31 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Map")>]
         let map f array = 
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f array.[i,j])
 
         [<CompiledName("MapIndexed")>]
         let mapi f array = 
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f.Invoke(i, j, array.[i,j]))
 
         [<CompiledName("Copy")>]
         let copy array = 
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> array.[i,j])
             
         [<CompiledName("Rebase")>]
         let rebase array = 
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let b1 = base1 array
             let b2 = base2 array
             init (length1 array) (length2 array) (fun i j -> array.[b1+i,b2+j])
 
         [<CompiledName("CopyTo")>]
         let blit (source : 'T[,])  sourceIndex1 sourceIndex2 (target : 'T[,]) targetIndex1 targetIndex2 count1 count2 = 
-            checkNonNull "source" source
-            checkNonNull "target" target
+            checkNonNull (nameof source) source
+            checkNonNull (nameof target) target
             if sourceIndex1 < source.GetLowerBound(0) then invalidArg "sourceIndex1" (SR.GetString(SR.outOfRange))
             if sourceIndex2 < source.GetLowerBound(1) then invalidArg "sourceIndex2" (SR.GetString(SR.outOfRange))
             if targetIndex1 < target.GetLowerBound(0) then invalidArg "targetIndex1" (SR.GetString(SR.outOfRange))

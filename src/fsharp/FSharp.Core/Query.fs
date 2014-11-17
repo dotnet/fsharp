@@ -102,7 +102,7 @@ type QueryBuilder() =
                                       and default ^Value : int>
                   (source: QuerySource<'T,'Q>, f : 'T -> Nullable< ^Value >) : Nullable< ^Value >  =
         let source = source.Source
-        checkNonNull "source" source
+        checkNonNull (nameof source) source
         use e = source.GetEnumerator() 
         let mutable acc : ^Value = LanguagePrimitives.GenericZero< (^Value) >
         while e.MoveNext() do
@@ -122,7 +122,7 @@ type QueryBuilder() =
                       
              (source: QuerySource<'T,'Q>, selector: 'T -> Nullable< ^Value >) : Nullable< ^Value >   =  
         let source = source.Source
-        checkNonNull "source" source
+        checkNonNull (nameof source) source
         use e = source.GetEnumerator() 
         let mutable acc = LanguagePrimitives.GenericZero< (^Value) >
         let mutable count = 0
@@ -140,7 +140,7 @@ type QueryBuilder() =
                                   and default ^Value : float >
              (source: QuerySource<'T,'Q>, selector: 'T -> ^Value) : ^Value =  
         let source = source.Source
-        checkNonNull "source" source
+        checkNonNull (nameof source) source
         use e = source.GetEnumerator() 
         let mutable acc = LanguagePrimitives.GenericZero< (^U) >
         let mutable count = 0

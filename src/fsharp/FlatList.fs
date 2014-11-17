@@ -60,7 +60,7 @@ module internal FlatList =
     let fold2 f acc (x:FlatList<_>) (y:FlatList<_>) = 
         match x.array,y.array with 
         | null,null -> acc 
-        | null,_ | _,null -> invalidArg "x" "mismatched list lengths"
+        | null,_ | _,null -> invalidArg (nameof x) "mismatched list lengths"
         | arr1,arr2 -> Array.fold2 f acc arr1 arr2
 
     let foldBack f (x:FlatList<_>) acc  = 
@@ -71,13 +71,13 @@ module internal FlatList =
     let foldBack2 f (x:FlatList<_>) (y:FlatList<_>) acc = 
         match x.array,y.array with 
         | null,null -> acc 
-        | null,_ | _,null -> invalidArg "x" "mismatched list lengths"
+        | null,_ | _,null -> invalidArg (nameof x) "mismatched list lengths"
         | arr1,arr2 -> Array.foldBack2 f arr1 arr2 acc
 
     let map2 f (x:FlatList<_>) (y:FlatList<_>) = 
         match x.array,y.array with 
         | null,null -> FlatList.Empty 
-        | null,_ | _,null -> invalidArg "x" "mismatched list lengths"
+        | null,_ | _,null -> invalidArg (nameof x) "mismatched list lengths"
         | arr1,arr2 -> FlatList(Array.map2 f arr1 arr2)
 
     let forall f (x:FlatList<_>) = 
@@ -88,13 +88,13 @@ module internal FlatList =
     let forall2 f (x1:FlatList<_>) (x2:FlatList<_>) = 
         match x1.array, x2.array with 
         | null,null -> true
-        | null,_ | _,null -> invalidArg "x1" "mismatched list lengths"
+        | null,_ | _,null -> invalidArg (nameof x1) "mismatched list lengths"
         | arr1,arr2 -> Array.forall2 f arr1 arr2
 
     let iter2 f (x1:FlatList<_>) (x2:FlatList<_>) = 
         match x1.array, x2.array with 
         | null,null -> ()
-        | null,_ | _,null -> invalidArg "x1" "mismatched list lengths"
+        | null,_ | _,null -> invalidArg (nameof x1) "mismatched list lengths"
         | arr1,arr2 -> Array.iter2 f arr1 arr2
 
     let partition f (x:FlatList<_>) = 
@@ -186,7 +186,7 @@ module internal FlatList =
     let zip (x:FlatList<_>) (y:FlatList<_>) = 
         match x.array,y.array with 
         | null,null -> FlatList.Empty
-        | null,_ | _,null -> invalidArg "x" "mismatched list lengths"
+        | null,_ | _,null -> invalidArg (nameof x) "mismatched list lengths"
         | arr1,arr2 -> FlatList(Array.zip arr1 arr2)
 
 #endif

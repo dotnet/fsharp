@@ -182,7 +182,7 @@ module LeafExpressionConverter =
 
     let isFunctionType typ = equivHeadTypes typ (typeof<(int -> int)>)
     let getFunctionType typ = 
-        if not (isFunctionType typ) then invalidArg "typ" "cannot convert recursion except for function types"
+        if not (isFunctionType typ) then invalidArg (nameof typ) "cannot convert recursion except for function types"
         let tyargs = typ.GetGenericArguments()
         tyargs.[0], tyargs.[1]
     

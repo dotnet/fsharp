@@ -61,7 +61,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate")>]
         let iter f array =
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let len1 = length1 array
             let len2 = length2 array
             let len3 = length3 array
@@ -72,7 +72,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Map")>]
         let map f array =
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let len1 = length1 array
             let len2 = length2 array
             let len3 = length3 array
@@ -85,7 +85,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("IterateIndexed")>]
         let iteri f array =
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let len1 = length1 array
             let len2 = length2 array
             let len3 = length3 array
@@ -97,7 +97,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("MapIndexed")>]
         let mapi f array =
-            checkNonNull "array" array
+            checkNonNull (nameof array) array
             let len1 = length1 array
             let len2 = length2 array
             let len3 = length3 array
