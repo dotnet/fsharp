@@ -431,6 +431,11 @@ let extractNameOf args =
     | [expr] ->
         match expr with
         | Expr.Val(r,_,_) -> Some r.CompiledName
+        | Expr.App(Expr.Val(r,_,_),_,_,[Expr.Const(constant,_,_)],_) -> 
+            if r.CompiledName.StartsWith("get_") && constant = Const.Unit then // TODO: We need a better way to find property getters
+                Some r.CompiledName
+            else
+                None  // the function was applied
         | Expr.App(Expr.Val(r,_,_),_,_,_,_) -> Some r.CompiledName
         | Expr.Let(_,Expr.Val(r,_,_),_,_) -> Some r.CompiledName
         | Expr.Let(_,Expr.Lambda(_,_,_,_,Expr.App(Expr.Val(r,_,_),_,_,_,_),_,_),_,_) -> Some r.CompiledName

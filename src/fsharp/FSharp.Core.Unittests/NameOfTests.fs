@@ -20,9 +20,27 @@ type BasicNameOfTests() =
         Assert.AreEqual("result",nameof result)
 
     [<Test>]
-    member this.``local function name`` () =
+    member this.``local int function name`` () =
         let myFunction x = 0 * x
         let b = nameof myFunction
+        Assert.AreEqual("myFunction",b)
+
+    [<Test>]
+    member this.``local curried function name`` () =
+        let curriedFunction x y = x * y
+        let b = nameof curriedFunction
+        Assert.AreEqual("curriedFunction",b)
+
+    [<Test>]
+    member this.``local tupled function name`` () =
+        let tupledFunction(x,y) = x * y
+        let b = nameof tupledFunction
+        Assert.AreEqual("tupledFunction",b)
+
+    [<Test>]
+    member this.``local unit function name`` () =
+        let myFunction() = 1
+        let b = nameof(myFunction)
         Assert.AreEqual("myFunction",b)
 
     [<Test>]
