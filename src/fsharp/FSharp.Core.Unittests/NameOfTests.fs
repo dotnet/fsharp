@@ -146,3 +146,12 @@ type OperatorNameTests() =
     member this.``lookup name of nameof operator`` () =
         let b = nameof(nameof)
         Assert.AreEqual("NameOf",b)
+
+[<TestFixture>]
+type UserDefinedNameOfTests() =
+    [<Test>]
+    member this.``userdefined nameof should shadow the operator`` () =        
+        let nameof x = "test" + x.ToString()
+
+        let y = nameof 1
+        Assert.AreEqual("test1",y)
