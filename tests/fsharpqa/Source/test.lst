@@ -235,8 +235,7 @@ Conformance08			Conformance\UnitsOfMeasure\Parenthesis
 Conformance08			Conformance\UnitsOfMeasure\Parsing
 Conformance08			Conformance\UnitsOfMeasure\TypeChecker
 Conformance08			Conformance\UnitsOfMeasure\WithOOP
-
-Conformance09			Conformance\Expressions\DataExpressions\NameOf
+Conformance08			Conformance\Expressions\DataExpressions\NameOf
 
 NoHostedCompiler,TypeProviders01			TypeProviders\Arrays
 NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\EdmxFile
