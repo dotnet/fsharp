@@ -99,12 +99,12 @@ type BasicNameOfTests() =
     [<Test>]
     member this.``member property name`` () =
         let b = nameof(this.MemberProperty)
-        Assert.AreEqual("get_MemberProperty",b)
+        Assert.AreEqual("MemberProperty",b)
 
     [<Test>]
     member this.``static property name`` () =
         let b = nameof(BasicNameOfTests.StaticProperty)
-        Assert.AreEqual("get_StaticProperty",b)
+        Assert.AreEqual("StaticProperty",b)
 
     [<Test>]
     member this.``nameof local property with encapsulated name`` () =

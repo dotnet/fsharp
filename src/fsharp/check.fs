@@ -433,13 +433,13 @@ let extractNameOf args =
         | Expr.Val(r,_,_) -> Some(r.CompiledName)
         | Expr.App(Expr.Val(r,_,_),_,_,Expr.Const(constant,_,_)::_,_) -> 
             if r.CompiledName.StartsWith("get_") && constant = Const.Unit then // TODO: We need a better way to find static property getters
-                Some(r.CompiledName)
+                Some(r.CompiledName.Substring(4))
             else
                 None  // the function was applied
         | Expr.App(Expr.Val(r,_,_),_,_,[],_) -> Some(r.CompiledName)
         | Expr.App(Expr.Val(r,_,_),_,_,_,_) ->
             if r.CompiledName.StartsWith("get_") then // TODO: We need a better way to find member property getters
-                Some(r.CompiledName)
+                Some(r.CompiledName.Substring(4))
             else
                 None  // the function was applied
         | Expr.Let(_,Expr.Val(r,_,_),_,_) -> Some(r.CompiledName)
