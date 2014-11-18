@@ -1,8 +1,6 @@
 // #Regression #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
 #light
 
-// FSB 1368, named arguments implicitly using property setters for generic class do not typecheck correctly
-
 module GenericInheritedClass2 =
     type R =
         class
@@ -28,8 +26,7 @@ module GenericInheritedClassExt2 =
         member x.C with set v =  v |> Seq.iter x.w.Add 
 
     // Standard construction
-    let x1 = GenericInheritedClass2.S(1,"1",A = 2, B = "2",C = [ 3] )
-
+    let x1 = GenericInheritedClass2.S(1,"1", A = 2, B = "2",C = [ 3] )
     if x1.x <> 3   then exit 1
     if x1.y <> "21" then exit 1
     if x1.w.Count <> 1 then exit 1

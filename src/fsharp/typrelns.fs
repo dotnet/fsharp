@@ -1643,7 +1643,8 @@ type CalledMeth<'T>
        callerObjArgTys: TType list,   // the types of the actual object argument, if any 
        curriedCallerArgs: (CallerArg<'T> list * CallerNamedArg<'T> list) list,     // the data about any arguments supplied by the caller 
        allowParamArgs:bool,       // do we allow the use of a param args method in its "expanded" form?
-       allowOutAndOptArgs: bool)  // do we allow the use of the transformation that converts out arguments as tuple returns?
+       allowOutAndOptArgs: bool,  // do we allow the use of the transformation that converts out arguments as tuple returns?
+       tyargsOpt : TType option) // method parameters
     =
     let g = infoReader.g
     let methodRetTy = minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
@@ -1738,6 +1739,10 @@ type CalledMeth<'T>
                             let pminst = match minfo with
                                          | MethInfo.FSMeth(_,TType.TType_app(_,types),_,_) -> types
                                          | _ -> freshenMethInfo m pminfo
+
+                            let pminst = match tyargsOpt with
+                                          | Some(TType.TType_app(_, types)) -> types
+                                          | _ -> pminst
                             Choice1Of2(AssignedItemSetter(id,AssignedPropSetter(pinfo,pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm),ad,m,returnedObjTy) with
