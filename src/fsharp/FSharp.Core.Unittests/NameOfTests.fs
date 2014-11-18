@@ -169,6 +169,14 @@ type NameOfOperatorInQuotations() =
         ()
 
 [<TestFixture>]
+type NameOfOperatorForGenerics() =
+    [<Test>]
+    member this.``use it in a generic function`` () =
+        let fullyGeneric x = x
+        let b = nameof(fullyGeneric)
+        Assert.AreEqual("fullyGeneric",b)
+
+[<TestFixture>]
 type UserDefinedNameOfTests() =
     [<Test>]
     member this.``userdefined nameof should shadow the operator`` () =        
