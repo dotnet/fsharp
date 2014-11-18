@@ -445,8 +445,8 @@ module internal Impl =
             | _ -> caseTyp
 
     let getUnionTagConverter (typ:Type,bindingFlags) = 
-        if isOptionType typ then (fun tag -> match tag with 0 -> "None" | 1 -> "Some" | _ -> invalidArg (nameof tag) (SR.GetString(SR.outOfRange)))
-        elif isListType typ then (fun tag -> match tag with  0 -> "Empty" | 1 -> "Cons" | _ -> invalidArg (nameof tag) (SR.GetString(SR.outOfRange)))
+        if isOptionType typ then (fun tag -> match tag with 0 -> "None" | 1 -> "Some" | _ -> invalidArg "tag" (SR.GetString(SR.outOfRange)))
+        elif isListType typ then (fun tag -> match tag with  0 -> "Empty" | 1 -> "Cons" | _ -> invalidArg "tag" (SR.GetString(SR.outOfRange)))
         else 
           let tagfieldmap = getUnionTypeTagNameMap (typ,bindingFlags) |> Map.ofSeq
           (fun tag -> tagfieldmap.[tag])
@@ -556,12 +556,12 @@ module internal Impl =
             meth.Invoke(null,BindingFlags.Static ||| BindingFlags.InvokeMethod ||| bindingFlags,null,args,null))
 #endif
     let checkUnionType(unionType,bindingFlags) =
-        checkNonNull (nameof unionType) unionType;
+        checkNonNull "unionType" unionType;
         if not (isUnionType (unionType,bindingFlags)) then 
             if isUnionType (unionType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg (nameof unionType) (SR.GetString1(SR.privateUnionType, unionType.FullName))
+                invalidArg "unionType" (SR.GetString1(SR.privateUnionType, unionType.FullName))
             else
-                invalidArg (nameof unionType) (SR.GetString1(SR.notAUnionType, unionType.FullName))
+                invalidArg "unionType" (SR.GetString1(SR.notAUnionType, unionType.FullName))
     let emptyObjArray : obj[] = [| |]
 
     //-----------------------------------------------------------------
@@ -613,11 +613,11 @@ module internal Impl =
             let tysB = tys.[maxTuple-1..]
             let tyB = mkTupleType tysB
             tuple8.MakeGenericType(Array.append tysA [| tyB |])
-        | _ -> invalidArg (nameof tys) (SR.GetString(SR.invalidTupleTypes))
+        | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
 
     let rec getTupleTypeInfo    (typ:Type) = 
-      if not (isTupleType (typ) ) then invalidArg (nameof typ) (SR.GetString1(SR.notATupleType, typ.FullName));
+      if not (isTupleType (typ) ) then invalidArg "typ" (SR.GetString1(SR.notATupleType, typ.FullName));
       let tyargs = typ.GetGenericArguments()
       if tyargs.Length = maxTuple then 
           let tysA = tyargs.[0..tupleEncField-1]
@@ -708,10 +708,10 @@ module internal Impl =
             maker1,Some(etys.[tupleEncField])
 
     let getTupleReaderInfo (typ:Type,index:int) =         
-        if index < 0 then invalidArg (nameof index) (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+        if index < 0 then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
         let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
         let get index = 
-            if index >= props.Length then invalidArg (nameof index) (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+            if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
             props.[index]
         
         if index < tupleEncField then
@@ -726,7 +726,7 @@ module internal Impl =
     
       
     let getFunctionTypeInfo (typ:Type) =
-      if not (isFunctionType typ) then invalidArg (nameof typ) (SR.GetString1(SR.notAFunctionType, typ.FullName))
+      if not (isFunctionType typ) then invalidArg "typ" (SR.GetString1(SR.notAFunctionType, typ.FullName))
       let tyargs = typ.GetGenericArguments()
       tyargs.[0], tyargs.[1]
 
@@ -827,9 +827,9 @@ module internal Impl =
     let checkExnType (exceptionType, bindingFlags) =
         if not (isExceptionRepr (exceptionType,bindingFlags)) then 
             if isExceptionRepr (exceptionType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg (nameof exceptionType) (SR.GetString1(SR.privateExceptionType, exceptionType.FullName))
+                invalidArg "exceptionType" (SR.GetString1(SR.privateExceptionType, exceptionType.FullName))
             else
-                invalidArg (nameof exceptionType) (SR.GetString1(SR.notAnExceptionType, exceptionType.FullName))
+                invalidArg "exceptionType" (SR.GetString1(SR.notAnExceptionType, exceptionType.FullName))
            
     let checkRecordType(argName,recordType,bindingFlags) =
         checkNonNull argName recordType;
@@ -885,47 +885,47 @@ type UnionCaseInfo(typ: System.Type, tag:int) =
 type FSharpType = 
 
     static member IsTuple(typ:Type) =  
-        Impl.checkNonNull (nameof typ) typ;
+        Impl.checkNonNull "typ" typ;
         Impl.isTupleType typ
 
     static member IsRecord(typ:Type,?bindingFlags) =  
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
 
-        Impl.checkNonNull (nameof typ) typ;
+        Impl.checkNonNull "typ" typ;
         Impl.isRecordType (typ,bindingFlags)
 
     static member IsUnion(typ:Type,?bindingFlags) =  
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof typ) typ;
+        Impl.checkNonNull "typ" typ;
         let typ = Impl.getTypeOfReprType (typ ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.isUnionType (typ,bindingFlags)
 
     static member IsFunction(typ:Type) =  
-        Impl.checkNonNull (nameof typ) typ;
+        Impl.checkNonNull "typ" typ;
         let typ = Impl.getTypeOfReprType (typ ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.isFunctionType typ
 
     static member IsModule(typ:Type) =  
-        Impl.checkNonNull (nameof typ) typ;
+        Impl.checkNonNull "typ" typ;
         Impl.isModuleType typ
 
     static member MakeFunctionType(domain:Type,range:Type) = 
-        Impl.checkNonNull (nameof domain) domain;
-        Impl.checkNonNull (nameof range) range;
+        Impl.checkNonNull "domain" domain;
+        Impl.checkNonNull "range" range;
         Impl.func.MakeGenericType [| domain; range |]
 
     static member MakeTupleType(types:Type[]) =  
-        Impl.checkNonNull (nameof types) types;
+        Impl.checkNonNull "types" types;
         if types |> Array.exists (function null -> true | _ -> false) then 
-             invalidArg (nameof types) (SR.GetString(SR.nullsNotAllowedInArray))
+             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
         Impl.mkTupleType types
 
     static member GetTupleElements(tupleType:Type) =
-        Impl.checkTupleType(nameof tupleType,tupleType);
+        Impl.checkTupleType("tupleType",tupleType);
         Impl.getTupleTypeInfo tupleType
 
     static member GetFunctionElements(functionType:Type) =
-        Impl.checkNonNull (nameof functionType) functionType;
+        Impl.checkNonNull "functionType" functionType;
         let functionType = Impl.getTypeOfReprType (functionType ,BindingFlags.Public ||| BindingFlags.NonPublic)
         Impl.getFunctionTypeInfo functionType
 
@@ -936,19 +936,19 @@ type FSharpType =
 
     static member GetUnionCases (unionType:Type,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof unionType) unionType;
+        Impl.checkNonNull "unionType" unionType;
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags);
         Impl.getUnionTypeTagNameMap(unionType,bindingFlags) |> Array.mapi (fun i _ -> UnionCaseInfo(unionType,i))
 
     static member IsExceptionRepresentation(exceptionType:Type, ?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
-        Impl.checkNonNull (nameof exceptionType) exceptionType;
+        Impl.checkNonNull "exceptionType" exceptionType;
         Impl.isExceptionRepr(exceptionType,bindingFlags)
 
     static member GetExceptionFields(exceptionType:Type, ?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof exceptionType) exceptionType;
+        Impl.checkNonNull "exceptionType" exceptionType;
         Impl.checkExnType(exceptionType,bindingFlags);
         Impl.fieldPropsOfRecordType (exceptionType,bindingFlags) 
 
@@ -966,21 +966,21 @@ type FSharpValue =
         Impl.getRecordConstructor (recordType,bindingFlags) args
 
     static member GetRecordField(record:obj,info:PropertyInfo) =
-        Impl.checkNonNull (nameof info) info;
-        Impl.checkNonNull (nameof record) record;
+        Impl.checkNonNull "info" info;
+        Impl.checkNonNull "record" record;
         let reprty = record.GetType() 
-        if not (Impl.isRecordType(reprty,BindingFlags.Public ||| BindingFlags.NonPublic)) then invalidArg (nameof record) (SR.GetString(SR.objIsNotARecord));
+        if not (Impl.isRecordType(reprty,BindingFlags.Public ||| BindingFlags.NonPublic)) then invalidArg "record" (SR.GetString(SR.objIsNotARecord));
         info.GetValue(record,null)
 
     static member GetRecordFields(record:obj,?bindingFlags) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof record) record;
+        Impl.checkNonNull "record" record;
         let typ = record.GetType() 
-        if not (Impl.isRecordType(typ,bindingFlags)) then invalidArg (nameof record) (SR.GetString(SR.objIsNotARecord));
+        if not (Impl.isRecordType(typ,bindingFlags)) then invalidArg "record" (SR.GetString(SR.objIsNotARecord));
         Impl.getRecordReader (typ,bindingFlags) record
 
     static member PreComputeRecordFieldReader(info:PropertyInfo) = 
-        Impl.checkNonNull (nameof info) info;
+        Impl.checkNonNull "info" info;
         (fun (obj:obj) -> info.GetValue(obj,null))
 
     static member PreComputeRecordReader(recordType:Type,?bindingFlags) : (obj -> obj[]) =  
@@ -999,9 +999,9 @@ type FSharpValue =
         Impl.getRecordConstructorMethod(recordType,bindingFlags)
 
     static member MakeFunction(functionType:Type,implementation:(obj->obj)) = 
-        Impl.checkNonNull (nameof functionType) functionType;
-        if not (Impl.isFunctionType functionType) then invalidArg (nameof functionType) (SR.GetString1(SR.notAFunctionType, functionType.FullName));
-        Impl.checkNonNull (nameof implementation) implementation;
+        Impl.checkNonNull "functionType" functionType;
+        if not (Impl.isFunctionType functionType) then invalidArg "functionType" (SR.GetString1(SR.notAFunctionType, functionType.FullName));
+        Impl.checkNonNull "implementation" implementation;
         let domain,range = Impl.getFunctionTypeInfo functionType
         let dynCloMakerTy = typedefof<DynamicFunction<obj,obj>>
         let saverTy = dynCloMakerTy.MakeGenericType [| domain; range |]
@@ -1010,53 +1010,53 @@ type FSharpValue =
         f implementation
 
     static member MakeTuple(tupleElements: obj[],tupleType:Type) =
-        Impl.checkNonNull (nameof tupleElements) tupleElements;
-        Impl.checkTupleType(nameof tupleType,tupleType) 
+        Impl.checkNonNull "tupleElements" tupleElements;
+        Impl.checkTupleType("tupleType",tupleType) 
         Impl.getTupleConstructor tupleType tupleElements
     
     static member GetTupleFields(tuple:obj) = // argument name(s) used in error message
-        Impl.checkNonNull (nameof tuple) tuple;
+        Impl.checkNonNull "tuple" tuple;
         let typ = tuple.GetType() 
-        if not (Impl.isTupleType typ ) then invalidArg (nameof tuple) (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
+        if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
         Impl.getTupleReader typ tuple
 
     static member GetTupleField(tuple:obj,index:int) = // argument name(s) used in error message
-        Impl.checkNonNull (nameof tuple) tuple;
+        Impl.checkNonNull "tuple" tuple;
         let typ = tuple.GetType() 
-        if not (Impl.isTupleType typ ) then invalidArg (nameof tuple) (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
+        if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
         let fields = Impl.getTupleReader typ tuple
-        if index < 0 || index >= fields.Length then invalidArg (nameof index) (SR.GetString2(SR.tupleIndexOutOfRange, tuple.GetType().FullName, index.ToString()));
+        if index < 0 || index >= fields.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, tuple.GetType().FullName, index.ToString()));
         fields.[index]
     
     static member PreComputeTupleReader(tupleType:Type) : (obj -> obj[])  =
-        Impl.checkTupleType(nameof tupleType,tupleType) 
+        Impl.checkTupleType("tupleType",tupleType) 
         Impl.getTupleReader tupleType
     
     static member PreComputeTuplePropertyInfo(tupleType:Type,index:int) =
-        Impl.checkTupleType(nameof tupleType,tupleType) 
+        Impl.checkTupleType("tupleType",tupleType) 
         Impl.getTupleReaderInfo (tupleType,index)
     
     static member PreComputeTupleConstructor(tupleType:Type) = 
-        Impl.checkTupleType(nameof tupleType,tupleType) 
+        Impl.checkTupleType("tupleType",tupleType) 
         Impl.getTupleConstructor tupleType
 
     static member PreComputeTupleConstructorInfo(tupleType:Type) =
-        Impl.checkTupleType(nameof tupleType,tupleType) 
+        Impl.checkTupleType("tupleType",tupleType) 
         Impl.getTupleConstructorInfo (tupleType) 
 
     static member MakeUnion(unionCase:UnionCaseInfo,args: obj [],?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
-        Impl.checkNonNull (nameof unionCase) unionCase;
+        Impl.checkNonNull "unionCase" unionCase;
         Impl.getUnionCaseConstructor (unionCase.DeclaringType,unionCase.Tag,bindingFlags) args
 
     static member PreComputeUnionConstructor (unionCase:UnionCaseInfo,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof unionCase) unionCase;
+        Impl.checkNonNull "unionCase" unionCase;
         Impl.getUnionCaseConstructor (unionCase.DeclaringType,unionCase.Tag,bindingFlags)
 
     static member PreComputeUnionConstructorInfo(unionCase:UnionCaseInfo, ?bindingFlags) =
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof unionCase) unionCase;
+        Impl.checkNonNull "unionCase" unionCase;
         Impl.getUnionCaseConstructorMethod (unionCase.DeclaringType,unionCase.Tag,bindingFlags)
 
     static member GetUnionFields(obj:obj,unionType:Type,?bindingFlags) = 
@@ -1065,13 +1065,13 @@ type FSharpValue =
                 match typ with 
                 | null -> 
                     match obj with 
-                    | null -> invalidArg (nameof obj) (SR.GetString(SR.objIsNullAndNoType))
+                    | null -> invalidArg "obj" (SR.GetString(SR.objIsNullAndNoType))
                     | _ -> obj.GetType()
                 | _ -> typ 
         //System.Console.WriteLine("typ1 = {0}",box unionType)
         let unionType = ensureType(unionType,obj) 
         //System.Console.WriteLine("typ2 = {0}",box unionType)
-        Impl.checkNonNull (nameof unionType) unionType;
+        Impl.checkNonNull "unionType" unionType;
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
         //System.Console.WriteLine("typ3 = {0}",box unionType)
         Impl.checkUnionType(unionType,bindingFlags);
@@ -1081,7 +1081,7 @@ type FSharpValue =
         
     static member PreComputeUnionTagReader(unionType: Type,?bindingFlags) : (obj -> int) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof unionType) unionType;
+        Impl.checkNonNull "unionType" unionType;
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags);
         Impl.getUnionTagReader (unionType ,bindingFlags)
@@ -1089,20 +1089,20 @@ type FSharpValue =
 
     static member PreComputeUnionTagMemberInfo(unionType: Type,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof unionType) unionType;
+        Impl.checkNonNull "unionType" unionType;
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags);
         Impl.getUnionTagMemberInfo(unionType ,bindingFlags)
 
     static member PreComputeUnionReader(unionCase: UnionCaseInfo,?bindingFlags) : (obj -> obj[])  = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof unionCase) unionCase;
+        Impl.checkNonNull "unionCase" unionCase;
         let typ = unionCase.DeclaringType 
         Impl.getUnionCaseRecordReader (typ,unionCase.Tag,bindingFlags)
 
     static member GetExceptionFields(exn:obj, ?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
-        Impl.checkNonNull (nameof exn) exn;
+        Impl.checkNonNull "exn" exn;
         let typ = exn.GetType() 
         Impl.checkExnType(typ,bindingFlags);
         Impl.getRecordReader (typ,bindingFlags) exn

@@ -119,7 +119,7 @@ module internal List =
             let cons2 = freshConsNoTail (f.Invoke(h1,h2))
             setFreshConsTail cons cons2;
             map2ToFreshConsTail cons2 f t1 t2
-        | _ -> invalidArg (nameof xs2) (SR.GetString(SR.listsHadDifferentLengths))
+        | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
 
     let map2 f xs1 xs2 = 
         match xs1,xs2 with
@@ -129,7 +129,7 @@ module internal List =
             let cons = freshConsNoTail (f.Invoke(h1,h2))
             map2ToFreshConsTail cons f t1 t2
             cons
-        | _ -> invalidArg (nameof xs2) (SR.GetString(SR.listsHadDifferentLengths))
+        | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
 
     let rec indexedToFreshConsTail cons xs i =
         match xs with
@@ -327,7 +327,7 @@ module internal List =
            
       
     let init count f = 
-        if count < 0 then  invalidArg (nameof count) InputMustBeNonNegativeString
+        if count < 0 then  invalidArg "count" InputMustBeNonNegativeString
         if count = 0 then [] 
         else 
             let res = freshConsNoTail (f 0)
@@ -344,7 +344,7 @@ module internal List =
             takeFreshConsTail cons2 (n - 1) xs
  
     let take n l =
-        if n < 0 then invalidArg (nameof n) InputMustBeNonNegativeString
+        if n < 0 then invalidArg "count" InputMustBeNonNegativeString
         if n = 0 then [] else 
         match l with
         | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
@@ -366,7 +366,7 @@ module internal List =
                 splitAtFreshConsTail cons2 (index - 1) xs
  
     let splitAt index l =
-        if index < 0 then invalidArg (nameof index) (SR.GetString(SR.inputMustBeNonNegative))            
+        if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))            
         if index = 0 then [], l else
         match l with
         | []  -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
@@ -442,7 +442,7 @@ module internal List =
             truncateToFreshConsTail cons2 (count-1) t
 
     let truncate count list =
-        if count < 0 then invalidArg (nameof count) (SR.GetString(SR.inputMustBeNonNegative))
+        if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
         match list with
         | [] -> list
         | _ :: ([] as nil) -> if count > 0 then list else nil
@@ -539,7 +539,7 @@ module internal List =
             windowedToFreshConsTail cons2 windowSize i t arr
 
     let windowed windowSize list =
-        if windowSize <= 0 then invalidArg (nameof windowSize) (SR.GetString(SR.inputMustBeNonNegative))
+        if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
         match list with
         | [] -> []
         | _ ->
@@ -569,7 +569,7 @@ module internal List =
             setFreshConsTail cons cons2;
             zipToFreshConsTail cons2 t1 t2
         | _ -> 
-            invalidArg (nameof xs2) (SR.GetString(SR.listsHadDifferentLengths))
+            invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -581,7 +581,7 @@ module internal List =
             zipToFreshConsTail res t1 t2; 
             res
         | _ -> 
-            invalidArg (nameof xs2) (SR.GetString(SR.listsHadDifferentLengths))
+            invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -594,7 +594,7 @@ module internal List =
             setFreshConsTail cons cons2;
             zip3ToFreshConsTail cons2 t1 t2 t3
         | _ -> 
-            invalidArg (nameof xs1) (SR.GetString(SR.listsHadDifferentLengths))
+            invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -607,7 +607,7 @@ module internal List =
             zip3ToFreshConsTail res t1 t2 t3; 
             res
         | _ -> 
-            invalidArg (nameof xs1) (SR.GetString(SR.listsHadDifferentLengths))
+            invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
 
     let rec takeWhileFreshConsTail cons p l =
         match l with
@@ -714,7 +714,7 @@ module internal Array =
         (# "newarr !0" type ('T) count : 'T array #)
 
     let inline init (count:int) (f: int -> 'T) = 
-        if count < 0 then invalidArg (nameof count) InputMustBeNonNegativeString
+        if count < 0 then invalidArg "count" InputMustBeNonNegativeString
         let arr = (zeroCreateUnchecked count : 'T array)  
         for i = 0 to count - 1 do 
             arr.[i] <- f i
@@ -755,11 +755,11 @@ module internal Array =
         let inv = zeroCreateUnchecked arr.Length
         for i = 0 to arr.Length - 1 do 
             let j = indexMap i 
-            if j < 0 || j >= arr.Length then invalidArg (nameof indexMap) (SR.GetString(SR.notAPermutation))
+            if j < 0 || j >= arr.Length then invalidArg "indexMap" (SR.GetString(SR.notAPermutation))
             res.[j] <- arr.[i]
             inv.[j] <- 1uy
         for i = 0 to arr.Length - 1 do 
-            if inv.[i] <> 1uy then invalidArg (nameof indexMap) (SR.GetString(SR.notAPermutation))
+            if inv.[i] <> 1uy then invalidArg "indexMap" (SR.GetString(SR.notAPermutation))
         res
 
     let mapFold f acc (array : _[]) =
