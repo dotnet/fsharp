@@ -70,6 +70,13 @@ type BasicNameOfTests() =
         Assert.AreEqual("MemberMethod",b)
 
     [<Test>]
+    member this.``member function which is defined below`` () =
+        let b = nameof(this.MemberMethodDefinedBelow)
+        Assert.AreEqual("MemberMethodDefinedBelow",b)
+
+    member this.MemberMethodDefinedBelow(x,y) = x * y
+
+    [<Test>]
     member this.``static member function name`` () =
         let b = nameof(BasicNameOfTests.StaticMethod)
         Assert.AreEqual("StaticMethod",b)
