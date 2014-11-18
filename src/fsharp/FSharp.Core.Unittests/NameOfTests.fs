@@ -158,6 +158,17 @@ type PatternMatchingOfOperatorNameTests() =
         | _ ->  Assert.Fail("not expected")
 
 [<TestFixture>]
+type NameOfOperatorInQuotations() =        
+    [<Test>]
+    member this.``use it in a quotation`` () =
+        let q =
+            <@ 
+                let f(x:int) = nameof x
+                f 20
+            @>
+        ()
+
+[<TestFixture>]
 type UserDefinedNameOfTests() =
     [<Test>]
     member this.``userdefined nameof should shadow the operator`` () =        
