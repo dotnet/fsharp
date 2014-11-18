@@ -23,7 +23,7 @@
 "newVersion"="4.4.0.9055"
 "codeBase"="$PackageFolder$\FSharp.Core.dll"
 
-[$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{2DB67780-3B09-41E5-A8DC-92AF2E1665BD}}]
+[$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{2DB67780-3B09-41E5-A8DC-92AF2E1665BD}]
 "name"="FSharp.Editor"
 "publicKeyToken"="b03f5f7f11d50a3a"
 "culture"="neutral"
