@@ -148,6 +148,16 @@ type OperatorNameTests() =
         Assert.AreEqual("NameOf",b)
 
 [<TestFixture>]
+type PatternMatchingOfOperatorNameTests() =    
+    member this.Method1(i:int) = ()
+
+    [<Test>]
+    member this.``use it as a match case`` () =
+        match "Method1" with
+        | x when x = nameof(this.Method1) -> ()
+        | _ ->  Assert.Fail("not expected")
+
+[<TestFixture>]
 type UserDefinedNameOfTests() =
     [<Test>]
     member this.``userdefined nameof should shadow the operator`` () =        
