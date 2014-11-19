@@ -82,16 +82,6 @@ type BasicNameOfTests() =
         Assert.AreEqual("StaticMethod",b)
 
     [<Test>]
-    member this.``library function name`` () =
-        let b = nameof(List.map)
-        Assert.AreEqual("Map",b)
-
-    [<Test>]
-    member this.``static class function name`` () =
-        let b = nameof(Tuple.Create)
-        Assert.AreEqual("Create",b)
-
-    [<Test>]
     member this.``class member lookup`` () =
         let b = nameof(localConstant)
         Assert.AreEqual("localConstant",b)
@@ -137,6 +127,18 @@ type MethodGroupTests() =
         Assert.AreEqual("MethodGroup",b)
 
 [<TestFixture>]
+type FrameworkMethodTests() =
+    [<Test>]
+    member this.``library function name`` () =
+        let b = nameof(List.map)
+        Assert.AreEqual("Map",b)
+
+    [<Test>]
+    member this.``static class function name`` () =
+        let b = nameof(Tuple.Create)
+        Assert.AreEqual("Create",b)
+
+[<TestFixture>]
 type OperatorNameTests() =    
 
     [<Test>]
@@ -166,7 +168,7 @@ type PatternMatchingOfOperatorNameTests() =
     member this.Method1(i:int) = ()
 
     [<Test>]
-    member this.``use it as a match case`` () =
+    member this.``use it as a match case guard`` () =
         match "Method1" with
         | x when x = nameof(this.Method1) -> ()
         | _ ->  Assert.Fail("not expected")
