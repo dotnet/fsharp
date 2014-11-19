@@ -106,6 +106,20 @@ type BasicNameOfTests() =
         let b = nameof(BasicNameOfTests.StaticProperty)
         Assert.AreEqual("StaticProperty",b)
 
+    member this.get_XYZ() = 1
+
+    [<Test>]
+    member this.``member method starting with get_`` () =
+        let b = nameof(this.get_XYZ)
+        Assert.AreEqual("get_XYZ",b)
+
+    static member get_SXYZ() = 1
+
+    [<Test>]
+    member this.``static method starting with get_`` () =
+        let b = nameof(BasicNameOfTests.get_SXYZ)
+        Assert.AreEqual("get_SXYZ",b)
+
     [<Test>]
     member this.``nameof local property with encapsulated name`` () =
         let ``local property with encapsulated name and %.f`` = 0
