@@ -19,6 +19,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private ProjectNode project;
 
         /// <summary>
+        /// Easy access to canonical name
+        /// </summary>
+        internal string CanonicalName
+        {
+            get
+            {
+                string canonicalName;
+                return ErrorHandler.Succeeded(get_CanonicalName(out canonicalName)) ? canonicalName : null;
+            }
+        }
+
+        /// <summary>
         /// Constructor for IVSOutput2 implementation
         /// </summary>
         /// <param name="projectManager">Project that produce this output</param>
@@ -34,6 +46,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             project = projectManager;
             output = outputAssembly;
         }
+
+        /// <summary>
+        /// Easy access to output properties
+        /// </summary>
+        internal string GetMetadata(string name)
+        {
+            object value;
+            return ErrorHandler.Succeeded(get_Property(name, out value)) ? value as string : null;
+        }
+
         #region IVsOutput2 Members
 
         public int get_CanonicalName(out string pbstrCanonicalName)

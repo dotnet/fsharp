@@ -770,6 +770,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public bool CanUseTargetFSharpCoreReference { get; set; }
 
+        /// <summary>
+        /// Easy access to the collection of visible, user-defined project items
+        /// </summary>
+        public IEnumerable<Build.Evaluation.ProjectItem> VisibleItems
+        {
+            get { return MSBuildProject.GetStaticAndVisibleItemsInOrder(this.buildProject); }
+        }
+
         #region overridden properties
         public override int MenuCommandId
         {
