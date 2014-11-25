@@ -14,6 +14,6 @@ Imports System.Runtime.CompilerServices
 <Assembly: AssemblyCulture("")>
 
 #if STAMP_OSS_VERSION
-<Assembly: AssemblyVersion("12.0.0.9055")>       '// The assembly version for THE OSS BUILD
-<Assembly: AssemblyFileVersion("12.0.0.9055")>
+<Assembly: AssemblyVersion("14.0.0.9055")>       '// The assembly version for THE OSS BUILD
+<Assembly: AssemblyFileVersion("14.0.0.9055")>
 #end if

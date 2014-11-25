@@ -32,6 +32,6 @@ Imports System.Runtime.InteropServices
 ' You can specify all the values or you can default the Build and Revision Numbers 
 ' by using the '*' as shown below:
 #if STAMP_OSS_VERSION
-<Assembly: AssemblyVersion("12.0.0.9055")>       '// The assembly version for THE OSS BUILD
-<Assembly: AssemblyFileVersion("12.0.0.9055")>
+<Assembly: AssemblyVersion("14.0.0.9055")>       '// The assembly version for THE OSS BUILD
+<Assembly: AssemblyFileVersion("14.0.0.9055")>
 #end if
