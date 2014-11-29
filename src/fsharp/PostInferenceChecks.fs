@@ -33,11 +33,11 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 //--------------------------------------------------------------------------
 
 let testFlagMemberBody = ref false
-let testHookMemberBody membInfo (expr:Expr) =
+let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
     if !testFlagMemberBody then
         let m = expr.Range 
         printf "TestMemberBody,%A,%s,%d,%d,%d,%d\n"
-          (membInfo.MemberFlags.MemberKind)          
+          membInfo.MemberFlags.MemberKind
           m.FileName
           m.StartLine
           m.StartColumn
@@ -739,7 +739,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckTypeInstNoByrefs cenv m tyargs;
         CheckExprs cenv env args 
 
-and CheckLambdas memInfo cenv env inlined topValInfo alwaysCheckNoReraise e m ety =
+and CheckLambdas (memInfo: ValMemberInfo option) cenv env inlined topValInfo alwaysCheckNoReraise e m ety =
     // The topValInfo here says we are _guaranteeing_ to compile a function value 
     // as a .NET method with precisely the corresponding argument counts. 
     match e with

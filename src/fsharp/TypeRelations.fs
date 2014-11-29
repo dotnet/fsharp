@@ -715,7 +715,7 @@ module SignatureConformance = begin
                 let ucases1 = r1.UnionCasesAsList
                 let ucases2 = r2.UnionCasesAsList
                 if ucases1.Length <> ucases2.Length then
-                  let names l = List.map (fun c -> c.Id.idText) l
+                  let names (l: UnionCase list) = l |> List.map (fun c -> c.Id.idText)
                   reportNiceError "union case" (names ucases1) (names ucases2) 
                 else List.forall2 (checkUnionCase aenv) ucases1 ucases2
             | (TRecdRepr implFields), (TRecdRepr sigFields) -> 

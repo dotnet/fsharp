@@ -90,7 +90,7 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
             ()
 #endif
     match tryRescopeEntity ccu tycon with 
-    | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m));
+    | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
     | Some tcref -> tcref
     
 
@@ -364,7 +364,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
             let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m)::constraints) else constraints
             let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m)::constraints) else constraints
             let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m)::constraints) else constraints
-            tp.FixupConstraints constraints);
+            tp.FixupConstraints constraints)
         tps
 
 
@@ -388,7 +388,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
             match keylist with 
             | [] -> ()
             | key::rest -> 
-                buckets.[key] <- (rest,v) :: (if buckets.ContainsKey key then buckets.[key] else []);
+                buckets.[key] <- (rest,v) :: (if buckets.ContainsKey key then buckets.[key] else [])
 
         [ for (KeyValue(key,items)) in buckets -> nodef key items ]
 
@@ -516,19 +516,19 @@ let ImportILAssembly(amap:(unit -> ImportMap),m,auxModuleLoader,sref,sourceDir,f
             | _ -> error(InternalError("ImportILAssembly: cannot reference .NET netmodules directly, reference the containing assembly instead",m))
         let nm = aref.Name
         let mty = ImportILAssemblyTypeDefs(amap,m,auxModuleLoader,aref,ilModule)
-        let ccuData = 
-          { IsFSharp=false;
-            UsesQuotations=false;
+        let ccuData : CcuData = 
+          { IsFSharp=false
+            UsesQuotations=false
 #if EXTENSIONTYPING
-            InvalidateEvent=invalidateCcu;
-            IsProviderGenerated = false;
+            InvalidateEvent=invalidateCcu
+            IsProviderGenerated = false
             ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
 #endif
-            QualifiedName= Some sref.QualifiedName;
-            Contents = NewCcuContents sref m nm mty ;
-            ILScopeRef = sref;
-            Stamp = newStamp();
-            SourceCodeDirectory = sourceDir;  // note: not an accurate value, but IL assemblies don't give us this information in any attributes. 
+            QualifiedName= Some sref.QualifiedName
+            Contents = NewCcuContents sref m nm mty 
+            ILScopeRef = sref
+            Stamp = newStamp()
+            SourceCodeDirectory = sourceDir  // note: not an accurate value, but IL assemblies don't give us this information in any attributes. 
             FileName = filename
             MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (amap()).g ty1 ty2)
             TypeForwarders = 

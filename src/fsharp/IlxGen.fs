@@ -776,7 +776,7 @@ let StorageForValRef m (v: ValRef) eenv = StorageForVal m v.Deref eenv
 let IsValRefIsDllImport g (vref:ValRef) = 
     vref.Attribs |> HasFSharpAttributeOpt g g.attrib_DllImportAttribute 
 
-let GetMethodSpecForMemberVal amap g memberInfo (vref:ValRef) = 
+let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) = 
     let m = vref.Range
     let tps,curriedArgInfos,returnTy,retInfo = 
          assert(vref.ValReprInfo.IsSome);

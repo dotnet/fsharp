@@ -3051,7 +3051,7 @@ module DebugPrint = begin
 
         let layoutUnionCaseArgTypes argtys = sepListL (wordL "*") (List.map typeL argtys)
 
-        let ucaseL prefixL ucase =
+        let ucaseL prefixL (ucase: UnionCase) =
             let nmL = wordL (DemangleOperatorName ucase.Id.idText)
             match ucase.RecdFields |> List.map (fun rfld -> rfld.FormalType) with
             | []     -> (prefixL ^^ nmL)
@@ -4620,7 +4620,7 @@ and remapRecdField g tmenv x =
           rfield_fattribs = x.rfield_fattribs |> remapAttribs g tmenv; } 
 and remapRecdFields g tmenv (x:TyconRecdFields) = x.AllFieldsAsList |> List.map (remapRecdField g tmenv) |> MakeRecdFieldsTable 
 
-and remapUnionCase g tmenv x = 
+and remapUnionCase g tmenv (x:UnionCase) = 
     { x with 
           FieldTable = x.FieldTable |> remapRecdFields g tmenv;
           ReturnType     = x.ReturnType     |> remapType tmenv;
@@ -4942,7 +4942,7 @@ and remarkBind m (TBind(v,repr,_)) =
 //--------------------------------------------------------------------------
 
 let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let ucaseAllocObservable uc = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
+let ucaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
 let isUnionCaseAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> ucaseAllocObservable
   
 let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
@@ -6960,7 +6960,7 @@ let ModuleNameIsMangled g attrs =
 let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute attrs 
 
 
-let MemberIsCompiledAsInstance g parent isExtensionMember membInfo attrs =
+let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo:ValMemberInfo) attrs =
     // All extension members are compiled as static members
     if isExtensionMember then false
     // Anything implementing a dispatch slot is compiled as an instance member

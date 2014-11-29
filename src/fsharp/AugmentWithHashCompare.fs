@@ -818,7 +818,7 @@ let TyconIsCandidateForAugmentationWithHash g tycon = TyconIsCandidateForAugment
 // IComparable semantics associated with F# types.  
 //------------------------------------------------------------------------- 
 
-let slotImplMethod (final,c,slotsig) = 
+let slotImplMethod (final,c,slotsig) : ValMemberInfo = 
   { ImplementedSlotSigs=[slotsig];
     MemberFlags=
         { IsInstance=true; 
@@ -829,7 +829,7 @@ let slotImplMethod (final,c,slotsig) =
     IsImplemented=false;
     ApparentParent=c} 
 
-let nonVirtualMethod c = 
+let nonVirtualMethod c : ValMemberInfo = 
   { ImplementedSlotSigs=[];
     MemberFlags={ IsInstance=true; 
                   IsDispatchSlot=false;

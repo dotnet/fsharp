@@ -1300,7 +1300,7 @@ module private TastDefinitionPrinting =
             let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
             sepListL (wordL "*") (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
 
-    let layoutUnionCase denv  prefixL ucase =
+    let layoutUnionCase denv  prefixL (ucase:UnionCase) =
         let nmL = wordL (DemangleOperatorName ucase.Id.idText) 
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
         match ucase.RecdFields with

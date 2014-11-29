@@ -3612,16 +3612,16 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                   ILScopeRef = ilScopeRef;
                   ILAssemblyRefs = ilAssemblyRefs }
             tcImports.RegisterDll(dllinfo);
-            let ccuData = 
-              { IsFSharp=false;
-                UsesQuotations=false;
-                InvalidateEvent=(new Event<_>()).Publish;
+            let ccuData : CcuData = 
+              { IsFSharp=false
+                UsesQuotations=false
+                InvalidateEvent=(new Event<_>()).Publish
                 IsProviderGenerated = true
-                QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m));
-                Contents = NewCcuContents ilScopeRef m ilShortAssemName (NewEmptyModuleOrNamespaceType Namespace) ;
-                ILScopeRef = ilScopeRef;
-                Stamp = newStamp();
-                SourceCodeDirectory = "";  
+                QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m))
+                Contents = NewCcuContents ilScopeRef m ilShortAssemName (NewEmptyModuleOrNamespaceType Namespace) 
+                ILScopeRef = ilScopeRef
+                Stamp = newStamp()
+                SourceCodeDirectory = ""  
                 FileName = Some fileName
                 MemberSignatureEquality = (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll g ty1 ty2)
                 ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
@@ -3629,14 +3629,14 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     
             let ccu = CcuThunk.Create(ilShortAssemName,ccuData)
             let ccuinfo = 
-                { FSharpViewOfMetadata=ccu; 
-                  ILScopeRef = ilScopeRef; 
-                  AssemblyAutoOpenAttributes = [];
-                  AssemblyInternalsVisibleToAttributes = [];
-                  IsProviderGenerated = true;
-                  TypeProviders=[];
+                { FSharpViewOfMetadata=ccu 
+                  ILScopeRef = ilScopeRef 
+                  AssemblyAutoOpenAttributes = []
+                  AssemblyInternalsVisibleToAttributes = []
+                  IsProviderGenerated = true
+                  TypeProviders=[]
                   FSharpOptimizationData = notlazy None }
-            tcImports.RegisterCcu(ccuinfo);
+            tcImports.RegisterCcu(ccuinfo)
             // Yes, it is generative
             true, dllinfo.ProviderGeneratedStaticLinkMap
 
@@ -3682,7 +3682,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let pdbDir = (try Filename.directoryName filename with _ -> ".") 
                 let pdbFile = (try Filename.chopExtension filename with _ -> filename)+".pdb" 
                 if FileSystem.SafeExists pdbFile then 
-                    if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir;
+                    if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir
                     Some pdbDir
                 else 
                     None 
@@ -3691,7 +3691,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData, tcConfig.shadowCopyReferences)
 
-        tcImports.AttachDisposeAction(fun _ -> ILBinaryReader.CloseILModuleReader ilILBinaryReader);
+        tcImports.AttachDisposeAction(fun _ -> ILBinaryReader.CloseILModuleReader ilILBinaryReader)
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
       with e ->
         error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message),m))
@@ -3871,7 +3871,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             match providers with
             | [] -> 
                 if wasApproved then
-                    warning(Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts(fileNameOfRuntimeAssembly,typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName),m)); 
+                    warning(Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts(fileNameOfRuntimeAssembly,typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName),m)) 
             | _ -> 
 
                 if typeProviderEnvironment.showResolutionMessages then
@@ -3937,7 +3937,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             | _ -> error(InternalError("PrepareToImportReferencedIlDll: cannot reference .NET netmodules directly, reference the containing assembly instead",m))
 
         let nm = aref.Name
-        if verbose then dprintn ("Converting IL assembly to F# data structures "+nm);
+        if verbose then dprintn ("Converting IL assembly to F# data structures "+nm)
         let auxModuleLoader = tcImports.MkLoaderForMultiModuleIlAssemblies m
         let invalidateCcu = new Event<_>()
         let ccu = Import.ImportILAssembly(tcImports.GetImportMap,m,auxModuleLoader,ilScopeRef,tcConfig.implicitIncludeDir, Some filename,ilModule,invalidateCcu.Publish)
@@ -3945,16 +3945,16 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let ilg = defaultArg ilGlobalsOpt EcmaILGlobals
 
         let ccuinfo = 
-            { FSharpViewOfMetadata=ccu; 
-              ILScopeRef = ilScopeRef; 
-              AssemblyAutoOpenAttributes = GetAutoOpenAttributes ilg ilModule;
-              AssemblyInternalsVisibleToAttributes = GetInternalsVisibleToAttributes ilg ilModule;
+            { FSharpViewOfMetadata=ccu 
+              ILScopeRef = ilScopeRef 
+              AssemblyAutoOpenAttributes = GetAutoOpenAttributes ilg ilModule
+              AssemblyInternalsVisibleToAttributes = GetInternalsVisibleToAttributes ilg ilModule
 #if EXTENSIONTYPING
-              IsProviderGenerated = false; 
-              TypeProviders = [];
+              IsProviderGenerated = false 
+              TypeProviders = []
 #endif
               FSharpOptimizationData = notlazy None }
-        tcImports.RegisterCcu(ccuinfo);
+        tcImports.RegisterCcu(ccuinfo)
         let phase2 () = 
 #if EXTENSIONTYPING
             ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
@@ -3970,14 +3970,14 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let ilModule = dllinfo.RawMetadata 
         let ilScopeRef = dllinfo.ILScopeRef 
         let ilShortAssemName = getNameOfScopeRef ilScopeRef 
-        if verbose then dprintn ("Converting F# assembly to F# data structures "+(getNameOfScopeRef ilScopeRef));
+        if verbose then dprintn ("Converting F# assembly to F# data structures "+(getNameOfScopeRef ilScopeRef))
         let attrs = GetCustomAttributesOfIlModule ilModule 
-        assert (List.exists IsSignatureDataVersionAttr attrs);
-        if verbose then dprintn ("Relinking interface info from F# assembly "+ilShortAssemName);
+        assert (List.exists IsSignatureDataVersionAttr attrs)
+        if verbose then dprintn ("Relinking interface info from F# assembly "+ilShortAssemName)
         let resources = ilModule.Resources.AsList 
         let externalSigAndOptData = ["FSharp.Core";"FSharp.LanguageService.Compiler"]
         if not(List.contains ilShortAssemName externalSigAndOptData) then 
-            assert (List.exists IsSignatureDataResource resources);
+            assert (List.exists IsSignatureDataResource resources)
         let optDataReaders = 
             resources 
             |> List.choose (fun r -> if IsOptimizationDataResource r then Some(GetOptimizationDataResourceName r,r.GetByteReader(m)) else None)
@@ -3994,9 +3994,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 if List.contains ilShortAssemName externalSigAndOptData then 
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not sigDataReaders.IsEmpty then 
-                        error(Error(FSComp.SR.buildDidNotExpectSigdataResource(),m));
+                        error(Error(FSComp.SR.buildDidNotExpectSigdataResource(),m))
                     if not (FileSystem.SafeExists sigFileName)  then 
-                        error(Error(FSComp.SR.buildExpectedSigdataFile(), m));
+                        error(Error(FSComp.SR.buildExpectedSigdataFile(), m))
                     [ (ilShortAssemName, (fun () -> FileSystem.ReadAllBytesShim sigFileName))]
                   else
                     sigDataReaders
@@ -4009,9 +4009,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     if List.contains ilShortAssemName externalSigAndOptData then 
                         let optDataFile = Path.ChangeExtension(filename, "optdata")
                         if not optDataReaders.IsEmpty then 
-                            error(Error(FSComp.SR.buildDidNotExpectOptDataResource(),m));
+                            error(Error(FSComp.SR.buildDidNotExpectOptDataResource(),m))
                         if not (FileSystem.SafeExists optDataFile)  then 
-                            error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile),m));
+                            error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile),m))
                         [ (ilShortAssemName, (fun () -> FileSystem.ReadAllBytesShim optDataFile))]
                     else
                         optDataReaders
@@ -4093,7 +4093,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let phase2 () = 
             (* Relink *)
             (* dprintf "Phase2: %s\n" filename; REMOVE DIAGNOSTICS *)
-            ccuRawDataAndInfos |> List.iter (fun (data,_,_) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(m,nm,lookupOnly=false))) |> ignore);
+            ccuRawDataAndInfos |> List.iter (fun (data,_,_) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(m,nm,lookupOnly=false))) |> ignore)
 #if EXTENSIONTYPING
             ccuRawDataAndInfos |> List.iter (fun (_,_,phase2) -> phase2())
 #endif
@@ -4325,7 +4325,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                   sysCcu.FSharpViewOfMetadata
             else
                 let search = 
-                    seq { yield sysCcu.FSharpViewOfMetadata; 
+                    seq { yield sysCcu.FSharpViewOfMetadata 
                           yield! frameworkTcImports.GetCcusInDeclOrder() 
                           for dllName in SystemAssemblies tcConfig.primaryAssembly.Name do 
                             match frameworkTcImports.CcuTable.TryFind dllName with 

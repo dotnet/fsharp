@@ -1259,10 +1259,12 @@ let p_typs = (p_list p_typ)
 
 let fill_p_attribs,p_attribs = p_hole()
 
-let p_nonlocal_val_ref {EnclosingEntity=a;ItemKey= key } st =
+let p_nonlocal_val_ref (nlv:NonLocalValOrMemberRef) st =
+    let a = nlv.EnclosingEntity
+    let key = nlv.ItemKey
     let pkey = key.PartialKey
-    p_tcref "nlvref" a st; 
-    p_option p_string pkey.MemberParentMangledName st;
+    p_tcref "nlvref" a st
+    p_option p_string pkey.MemberParentMangledName st
     p_bool pkey.MemberIsOverride st; 
     p_string pkey.LogicalName st; 
     p_int pkey.TotalArgCount st; 
@@ -1280,14 +1282,15 @@ let fill_u_typ,u_typ = u_hole()
 let u_typs = (u_list u_typ)
 let fill_u_attribs,u_attribs = u_hole()
 
-let u_nonlocal_val_ref st = 
+let u_nonlocal_val_ref st : NonLocalValOrMemberRef = 
     let a = u_tcref st 
     let b1 = u_option u_string st
     let b2 = u_bool st
     let b3 = u_string st
     let c = u_int st
     let d = u_option u_typ st
-    {EnclosingEntity = a; ItemKey=ValLinkageFullKey({ MemberParentMangledName=b1; MemberIsOverride=b2;LogicalName=b3; TotalArgCount=c }, d) }
+    { EnclosingEntity = a
+      ItemKey=ValLinkageFullKey({ MemberParentMangledName=b1; MemberIsOverride=b2;LogicalName=b3; TotalArgCount=c }, d) }
   
 let u_vref st = 
     let tag = u_byte st
@@ -1722,7 +1725,7 @@ and p_attrib_expr (AttribExpr(e1,e2)) st =
 and p_attrib_arg (AttribNamedArg(a,b,c,d)) st = 
     p_tup4 p_string p_typ p_bool p_attrib_expr (a,b,c,d) st
 
-and p_member_info x st = 
+and p_member_info (x:ValMemberInfo) st = 
     p_tup4 (p_tcref "member_info")  p_MemberFlags (p_list p_slotsig) p_bool 
         (x.ApparentParent,x.MemberFlags,x.ImplementedSlotSigs,x.IsImplemented) st
 
@@ -2003,7 +2006,7 @@ and u_attrib_arg st  =
     let a,b,c,d = u_tup4 u_string u_typ u_bool u_attrib_expr st 
     AttribNamedArg(a,b,c,d)
 
-and u_member_info st = 
+and u_member_info st : ValMemberInfo = 
     let x2,x3,x4,x5 = u_tup4 u_tcref u_MemberFlags (u_list u_slotsig) u_bool st
     { ApparentParent=x2;
       MemberFlags=x3;

@@ -2987,7 +2987,7 @@ type PropertyCollector(g,amap,m,typ,optFilter,ad) =
         else
             props.[pinfo] <- pinfo
 
-    member x.Collect(membInfo,vref:ValRef) = 
+    member x.Collect(membInfo:ValMemberInfo,vref:ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.PropertyGet ->
             let pinfo = FSProp(g,typ,Some vref,None) 
