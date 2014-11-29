@@ -433,13 +433,17 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Local -> "<local>"
     | ILScopeRef.Module mref -> mref.Name
     | ILScopeRef.Assembly aref -> aref.Name
+
 let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)
   
 let mangledPathOfCompPath (CompPath(_,path))  = List.map fst path
+
 let publicPathOfCompPath (id:Ident) cpath = PubPath(Array.append (Array.ofList (mangledPathOfCompPath cpath)) [| id.idText |])
+
 let parentCompPath (CompPath(scoref,cpath)) = 
     let a,_ = List.frontAndBack cpath 
     CompPath(scoref,a)
+
 let mkNestedCPath (CompPath(scoref,p)) n modKind = CompPath(scoref,p@[(n,modKind)])
 
 #if EXTENSIONTYPING
@@ -1190,12 +1194,16 @@ and
   TyconObjModelKind = 
     /// Indicates the type is a class (also used for units-of-measure)
     | TTyconClass 
+
     /// Indicates the type is an interface 
     | TTyconInterface 
+
     /// Indicates the type is a struct 
     | TTyconStruct 
+
     /// Indicates the type is a delegate with the given Invoke signature 
     | TTyconDelegate of SlotSig 
+
     /// Indicates the type is an enumeration 
     | TTyconEnum
     
@@ -1209,8 +1217,10 @@ and
     TyconObjModelData = 
     { /// Indicates whether the type declaration is a class, interface, enum, delegate or struct 
       fsobjmodel_kind: TyconObjModelKind
+
       /// The declared abstract slots of the class, interface or struct 
       fsobjmodel_vslots: ValRef list
+
       /// The fields of the class, struct or enum 
       fsobjmodel_rfields: TyconRecdFields }
 
@@ -1334,28 +1344,56 @@ and
 
       /// Name/declaration-location of the field 
       rfield_id: Ident }
+
+    ///  Indicates the declared visibility of the field, not taking signatures into account 
     member v.Accessibility = v.rfield_access
+
+    /// Attributes attached to generated property 
     member v.PropertyAttribs = v.rfield_pattribs
+
+    /// Attributes attached to generated field 
     member v.FieldAttribs = v.rfield_fattribs
+
+    /// Declaration-location of the field 
     member v.Range = v.rfield_id.idRange
+
+    /// Name/declaration-location of the field 
     member v.Id = v.rfield_id
+
+    /// Name of the field 
     member v.Name = v.rfield_id.idText
+
+      /// Indicates a compiler generated field, not visible to Intellisense or name resolution 
     member v.IsCompilerGenerated = v.rfield_secret
+
+    /// Is the field declared mutable in F#? 
     member v.IsMutable = v.rfield_mutable
+
+    /// Indicates a static field 
     member v.IsStatic = v.rfield_static
+
+    /// Indicates a volatile field 
     member v.IsVolatile = v.rfield_volatile
+
+    /// The type of the field, w.r.t. the generic parameters of the enclosing type constructor 
     member v.FormalType = v.rfield_type
+
+    /// XML Documentation signature for the field
     member v.XmlDoc = v.rfield_xmldoc
+
+    /// Get or set the XML documentation signature for the field
     member v.XmlDocSig
         with get() = v.rfield_xmldocsig
         and set(x) = v.rfield_xmldocsig <- x
 
+    /// The default initialization info, for static literals 
     member v.LiteralValue = 
         match v.rfield_const  with 
         | None -> None
         | Some Const.Zero -> None
         | Some k -> Some k
 
+    /// Indicates if the field is zero-initialized
     member v.IsZeroInit = 
         match v.rfield_const  with 
         | None -> false 
