@@ -646,7 +646,7 @@ type internal LineTokenizer(text:string,
                   | RQUOTE_DOT (s,raw) -> 
                       delayToken(DOT, rightc, rightc)
                       false, (RQUOTE (s,raw), leftc, rightc - 1)
-                  | INFIX_COMPARE_OP (Lexfilter.TyparsCloseOp(greaters,afterOp) as opstr) -> 
+                  | INFIX_COMPARE_OP (LexFilter.TyparsCloseOp(greaters,afterOp) as opstr) -> 
                       match afterOp with
                       | None -> ()
                       | Some tok -> delayToken(tok, leftc + greaters.Length, rightc)

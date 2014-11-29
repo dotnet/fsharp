@@ -29,7 +29,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 #if NO_COMPILER_BACKEND
 #else
-open Microsoft.FSharp.Compiler.Ilxgen
+open Microsoft.FSharp.Compiler.IlxGen
 #endif
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -43,11 +43,11 @@ open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Infos.AttributeChecking
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Opt
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.Optimizer
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Build
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Fscopts
+open Microsoft.FSharp.Compiler.FscOptions
 open Microsoft.FSharp.Compiler.DiagnosticMessage
 
 #if EXTENSIONTYPING
@@ -197,8 +197,8 @@ let TypeCheck (tcConfig,tcImports,tcGlobals,errorLogger:ErrorLogger,assemblyName
     try 
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(),Range.rangeStartup))
         let ccuName = assemblyName
-        let tcInitialState = TypecheckInitialState (rangeStartup,ccuName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv0)
-        TypecheckClosedInputSet ((fun () -> errorLogger.ErrorCount > 0),tcConfig,tcImports,tcGlobals,None,tcInitialState,inputs)
+        let tcInitialState = GetInitialTcState (rangeStartup,ccuName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv0)
+        TypeCheckClosedInputSet ((fun () -> errorLogger.ErrorCount > 0),tcConfig,tcImports,tcGlobals,None,tcInitialState,inputs)
     with e -> 
         errorRecovery e rangeStartup
 #if SQM_SUPPORT
@@ -496,7 +496,7 @@ let getTcImportsFromCommandLine(displayPSTypeProviderSecurityDialogBlockingUI : 
 
             ReportTime tcConfig "Typecheck"
             use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
-            let tcEnv0 = GetInitialTypecheckerEnv (Some assemblyName) rangeStartup tcConfig tcImports tcGlobals
+            let tcEnv0 = GetInitialTcEnv (Some assemblyName) rangeStartup tcConfig tcImports tcGlobals
 
             // typecheck 
             let inputs : ParsedInput list = inputs |> List.map fst
@@ -757,14 +757,14 @@ let GenerateOptimizationData(tcConfig) =
 
 let EncodeOptimizationData(tcGlobals,tcConfig,outfile,exportRemapping,data) = 
     if GenerateOptimizationData tcConfig then 
-        let data = map2Of2 (Opt.RemapLazyModulInfo tcGlobals exportRemapping) data
+        let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
         if verbose then dprintn "Generating optimization data attribute...";
         // REVIEW: need a better test for this
         let outFileNoExtension = Filename.chopExtension outfile
         let isCompilerServiceDll = outFileNoExtension.Contains("FSharp.LanguageService.Compiler")
         if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll then 
             let ccu,modulInfo = data
-            let bytes = Pickle.pickleObjWithDanglingCcus outfile tcGlobals ccu Opt.p_LazyModuleInfo modulInfo
+            let bytes = TastPickle.pickleObjWithDanglingCcus outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName,bytes);
         // As with the sigdata file, the optdata gets written to a file for FSharp.Core, FSharp.Compiler.Silverlight and FSharp.LanguageService.Compiler
@@ -773,7 +773,7 @@ let EncodeOptimizationData(tcGlobals,tcConfig,outfile,exportRemapping,data) =
         else
             let (ccu, optData) = 
                 if tcConfig.onlyEssentialOptimizationData || tcConfig.useOptimizationDataFile 
-                then map2Of2 Opt.AbstractLazyModulInfoToEssentials data 
+                then map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
                 else data
             [ WriteOptimizationData (tcGlobals, outfile, ccu, optData) ]
     else
@@ -1813,7 +1813,7 @@ module FileWriter =
 #if STATISTICS
               Ilread.report oc;
 #endif
-              Ilxgen.ReportStatistics oc;
+              IlxGen.ReportStatistics oc;
           with _ -> ()
 
 
@@ -1902,7 +1902,7 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
                                     ), (fun tcConfigB -> 
                         // display the banner text, if necessary
                         if not bannerAlreadyPrinted then 
-                            Microsoft.FSharp.Compiler.Fscopts.DisplayBannerText tcConfigB
+                            Microsoft.FSharp.Compiler.FscOptions.DisplayBannerText tcConfigB
                     ), 
                         false, // optimizeForMemory - fsc.exe can use as much memory as it likes to try to compile as fast as possible
                         exiter,
@@ -2067,9 +2067,9 @@ let main2c(Args(tcConfig,errorLogger,staticLinker,ilGlobals,outfile,pdbfile,ilxM
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlGen)
     
     ReportTime tcConfig "ILX -> IL (Unions)"; 
-    let ilxMainModule = EraseIlxUnions.ConvModule ilGlobals ilxMainModule
+    let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
     ReportTime tcConfig "ILX -> IL (Funcs)"; 
-    let ilxMainModule = EraseIlxFuncs.ConvModule ilGlobals ilxMainModule 
+    let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
     abortOnError(errorLogger,tcConfig,exiter)
     Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)

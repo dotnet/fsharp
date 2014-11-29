@@ -8,15 +8,15 @@ open System.IO
 open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Text
+open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.Pickle
+open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.SR
 open Microsoft.FSharp.Compiler.DiagnosticMessage
@@ -31,14 +31,14 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.ConstraintSolver
 open Microsoft.FSharp.Compiler.MSBuildResolver
-open Microsoft.FSharp.Compiler.Typrelns
-open Microsoft.FSharp.Compiler.Nameres
+open Microsoft.FSharp.Compiler.TypeRelations
+open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Internal.Utilities.FileSystem
 open Internal.Utilities.Collections
@@ -154,8 +154,8 @@ let RangeOfError(err:PhasedError) =
       | FullAbstraction(_,m)
       | InterfaceNotRevealed(_,_,m) 
       | WrappedError (_,m)
-      | Patcompile.MatchIncomplete (_,_,m)
-      | Patcompile.RuleNeverMatched m 
+      | PatternMatchCompilation.MatchIncomplete (_,_,m)
+      | PatternMatchCompilation.RuleNeverMatched m 
       | ValNotMutable(_,_,m)
       | ValNotLocal(_,_,m) 
       | MissingFields(_,m) 
@@ -191,7 +191,6 @@ let RangeOfError(err:PhasedError) =
       | UnresolvedOverloading(_,_,_,m) 
       | UnresolvedConversionOperator (_,_,_,m)
       | PossibleOverload(_,_,_, m) 
-      //| PossibleBestOverload(_,_,m) 
       | VirtualAugmentationOnNullValuedType(m)
       | NonVirtualAugmentationOnNullValuedType(m)
       | NonRigidTypar(_,_,_,_,_,m)
@@ -266,8 +265,8 @@ let GetErrorNumber(err:PhasedError) =
       | LetRecEvaluatedOutOfOrder  _ -> 22
       | NameClash _ -> 23
       // 24 cannot be reused
-      | Patcompile.MatchIncomplete _ -> 25
-      | Patcompile.RuleNeverMatched _ -> 26
+      | PatternMatchCompilation.MatchIncomplete _ -> 25
+      | PatternMatchCompilation.RuleNeverMatched _ -> 26
       | ValNotMutable _ -> 27
       | ValNotLocal _ -> 28
       | MissingFields _ -> 29
@@ -1202,7 +1201,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
     #endif
       | FullAbstraction(s,_) -> os.Append(FullAbstractionE().Format s) |> ignore
       | WrappedError (exn,_) -> OutputExceptionR os exn
-      | Patcompile.MatchIncomplete (isComp,cexOpt,_) -> 
+      | PatternMatchCompilation.MatchIncomplete (isComp,cexOpt,_) -> 
           os.Append(MatchIncomplete1E().Format) |> ignore
           match cexOpt with 
           | None -> ()
@@ -1210,7 +1209,7 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
           | Some (cex,true) ->  os.Append(MatchIncomplete3E().Format cex) |> ignore
           if isComp then 
               os.Append(MatchIncomplete4E().Format) |> ignore
-      | Patcompile.RuleNeverMatched _ -> os.Append(RuleNeverMatchedE().Format) |> ignore
+      | PatternMatchCompilation.RuleNeverMatched _ -> os.Append(RuleNeverMatchedE().Format) |> ignore
       | ValNotMutable _ -> os.Append(ValNotMutableE().Format) |> ignore
       | ValNotLocal _ -> os.Append(ValNotLocalE().Format) |> ignore
       | ObsoleteError (s, _) 
@@ -1676,6 +1675,7 @@ type CompilerTarget =
 
 type ResolveAssemblyReferenceMode = Speculative | ReportErrors
 
+/// Represents the file or string used for the --version flag
 type VersionFlag = 
     | VersionString of string
     | VersionFile of string
@@ -1736,7 +1736,7 @@ type ImportedAssembly =
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list;
 #endif
-      FSharpOptimizationData : Microsoft.FSharp.Control.Lazy<Option<Opt.LazyModuleInfo>> }
+      FSharpOptimizationData : Microsoft.FSharp.Control.Lazy<Option<Optimizer.LazyModuleInfo>> }
 
 type AvailableImportedAssembly =
     | ResolvedImportedAssembly of ImportedAssembly
@@ -1953,7 +1953,7 @@ type TcConfigBuilder =
       mutable doTLR         : bool (* run TLR     pass? *)
       mutable doFinalSimplify : bool (* do final simplification pass *)
       mutable optsOn        : bool (* optimizations are turned on *)
-      mutable optSettings   : Opt.OptimizationSettings 
+      mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
       mutable lcid          : int option
 
@@ -2116,7 +2116,7 @@ type TcConfigBuilder =
           doTLR         = false 
           doFinalSimplify = false
           optsOn        = false 
-          optSettings   = Opt.OptimizationSettings.Defaults
+          optSettings   = Optimizer.OptimizationSettings.Defaults
           emitTailcalls = true
           lcid = None
           // See bug 6071 for product banner spec
@@ -3024,7 +3024,7 @@ let QualFileNameOfModuleName m filename modname = QualifiedNameOfFile(mkSynId m 
 let QualFileNameOfFilename m filename = QualifiedNameOfFile(mkSynId m (CanonicalizeFilename filename + (if IsScript filename then "$fsx" else "")))
 
 // Interactive fragments
-let QualFileNameOfUniquePath (m, p: string list) = QualifiedNameOfFile(mkSynId m (String.concat "_" p))
+let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) = QualifiedNameOfFile(mkSynId m (String.concat "_" p))
 
 let QualFileNameOfSpecs filename specs = 
     match specs with 
@@ -3036,7 +3036,7 @@ let QualFileNameOfImpls filename specs =
     | [SynModuleOrNamespace(modname,true,_,_,_,_,m)] -> QualFileNameOfModuleName m filename modname
     | _ -> QualFileNameOfFilename (rangeN filename 1) filename
 
-let PrepandPathToQualFileName x (QualifiedNameOfFile(q)) = QualFileNameOfUniquePath (q.idRange,pathOfLid x@[q.idText])
+let PrepandPathToQualFileName x (QualifiedNameOfFile(q)) = ComputeQualifiedNameOfFileFromUniquePath (q.idRange,pathOfLid x@[q.idText])
 let PrepandPathToImpl x (SynModuleOrNamespace(p,c,d,e,f,g,h)) = SynModuleOrNamespace(x@p,c,d,e,f,g,h)
 let PrepandPathToSpec x (SynModuleOrNamespaceSig(p,c,d,e,f,g,h)) = SynModuleOrNamespaceSig(x@p,c,d,e,f,g,h)
 
@@ -3196,7 +3196,7 @@ let ParseOneInputLexbuf (tcConfig:TcConfig,lexResourceManager,conditionalCompila
         let input = 
             Lexhelp.usingLexbufForParsing (lexbuf,filename) (fun lexbuf ->
                 if verbose then dprintn ("Parsing... "+shortFilename);
-                let tokenizer = Lexfilter.LexFilter(lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
+                let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
 
                 if tcConfig.tokenizeOnly then 
                     while true do 
@@ -3346,7 +3346,6 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
 //----------------------------------------------------------------------------
 // Typecheck and optimization environments on disk
 //--------------------------------------------------------------------------
-open Pickle
 
 let IsSignatureDataResource         (r: ILResource) = String.hasPrefix r.Name FSharpSignatureDataResourceName
 let IsOptimizationDataResource      (r: ILResource) = String.hasPrefix r.Name FSharpOptimizationDataResourceName
@@ -3376,8 +3375,8 @@ let PickleToResource file g scope rname p x =
       CustomAttrs = emptyILCustomAttrs }
 #endif
 
-let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledModuleInfo> = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleModuleInfo (byteReader())
+let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
 
 #if NO_COMPILER_BACKEND
 #else
@@ -3394,20 +3393,22 @@ let WriteSignatureData (tcConfig:TcConfig,tcGlobals,exportRemapping,ccu:CcuThunk
         dprintf "---------------------- END OF APPLYING EXPORT REMAPPING TO SIGNATURE DATA------------\n";
         dprintf "Signature data after remap:\n%s\n" (Layout.showL (Layout.squashTo 192 (entityL mspec)));
 #endif
-    PickleToResource file tcGlobals ccu (FSharpSignatureDataResourceName+"."+ccu.AssemblyName) pickleModuleInfo 
+    PickleToResource file tcGlobals ccu (FSharpSignatureDataResourceName+"."+ccu.AssemblyName) pickleCcuInfo 
         { mspec=mspec; 
           compileTimeWorkingDir=tcConfig.implicitIncludeDir;
           usesQuotations = ccu.UsesQuotations }
 #endif // NO_COMPILER_BACKEND
 
 let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule Opt.u_LazyModuleInfo (byteReader())
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule Optimizer.u_CcuOptimizationInfo (byteReader())
 
 #if NO_COMPILER_BACKEND
 #else
 let WriteOptimizationData (tcGlobals, file, ccu,modulInfo) = 
-    if verbose then  dprintf "Optimization data after remap:\n%s\n" (Layout.showL (Layout.squashTo 192 (Opt.moduleInfoL tcGlobals modulInfo)));
-    PickleToResource file tcGlobals ccu (FSharpOptimizationDataResourceName+"."+ccu.AssemblyName) Opt.p_LazyModuleInfo modulInfo
+#if DEBUG
+    if verbose then  dprintf "Optimization data after remap:\n%s\n" (Layout.showL (Layout.squashTo 192 (Optimizer.moduleInfoL tcGlobals modulInfo)));
+#endif
+    PickleToResource file tcGlobals ccu (FSharpOptimizationDataResourceName+"."+ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 #endif
 
 //----------------------------------------------------------------------------
@@ -3423,10 +3424,17 @@ let availableToOptionalCcu = function
 // TcConfigProvider
 //--------------------------------------------------------------------------
 
+/// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
+/// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
 type TcConfigProvider = 
     | TcConfigProvider of (unit -> TcConfig)
     member x.Get() = (let (TcConfigProvider(f)) = x in f())
+
+    /// Get a TcConfigProvider which will return only the exact TcConfig.
     static member Constant(tcConfig) = TcConfigProvider(fun () -> tcConfig)
+
+    /// Get a TcConfigProvider which will continue to respect changes in the underlying
+    /// TcConfigBuilder rather than delivering snapshots.
     static member BasedOnMutableBuilder(tcConfigB) = TcConfigProvider(fun () -> TcConfig.Create(tcConfigB,validate=false))
     
     
@@ -3435,7 +3443,7 @@ type TcConfigProvider =
 //--------------------------------------------------------------------------
 
           
-/// Tables of imported assemblies.      
+/// Repreesnts a table of imported assemblies with their resolutions.
 [<Sealed>] 
 type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResolutions, importsBase:TcImports option, ilGlobalsOpt) = 
 
@@ -4010,7 +4018,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
                 let optDatas = Map.ofList optDataReaders
 
-                let minfo : PickledModuleInfo = data.RawData 
+                let minfo : PickledCcuInfo = data.RawData 
                 let mspec = minfo.mspec 
 
 #if EXTENSIONTYPING
@@ -4396,11 +4404,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             disposeActions <- []
             for action in actions do action()
 
-//----------------------------------------------------------------------------
-// Add "#r" and "#I" declarations to the tcConfig
-//--------------------------------------------------------------------------
-
-// Add the reference and add the ccu to the type checking environment . Only used by F# Interactive
+/// Process #r in F# Interactive.
+/// Adds the reference to the tcImports and add the ccu to the type checking environment.
 let RequireDLL (tcImports:TcImports) tcEnv m file = 
     let RequireResolved = function
         | ResolvedImportedAssembly(ccuinfo) -> ccuinfo
@@ -4804,11 +4809,11 @@ type LoadClosure with
 // Build the initial type checking environment
 //--------------------------------------------------------------------------
 
-let implicitOpen tcGlobals amap m tcEnv p =
+let ApplyImplicitOpen tcGlobals amap m tcEnv p =
     if verbose then dprintf "opening %s\n" p 
     Tc.TcOpenDecl TcResultsSink.NoSink tcGlobals amap m m tcEnv (pathToSynLid m (splitNamespace p))
 
-let GetInitialTypecheckerEnv (assemblyName:string option) (initm:range) (tcConfig:TcConfig) (tcImports:TcImports) tcGlobals  =    
+let GetInitialTcEnv (assemblyName:string option) (initm:range) (tcConfig:TcConfig) (tcImports:TcImports) tcGlobals  =    
     let initm = initm.StartRange
     if verbose then dprintf "--- building initial tcEnv\n"         
     let internalsAreVisibleHere (ccuinfo:ImportedAssembly) =
@@ -4827,22 +4832,17 @@ let GetInitialTypecheckerEnv (assemblyName:string option) (initm:range) (tcConfi
                                                                              ccuinfo.AssemblyAutoOpenAttributes,
                                                                              ccuinfo |> internalsAreVisibleHere)    
     let amap = tcImports.GetImportMap()
-    let tcEnv = Tc.CreateInitialTcEnv(tcGlobals,amap,initm,ccus) |> (fun tce ->
-            if tcConfig.checkOverflow then
-                List.fold (implicitOpen tcGlobals amap initm) tce [FSharpLib.CoreOperatorsCheckedName]
-            else
-                tce)
-    if verbose then dprintf "--- opening implicit paths\n" 
-    if verbose then dprintf "--- GetInitialTypecheckerEnv, top modules = %s\n" (String.concat ";" (NameMap.domainL tcEnv.NameEnv.eModulesAndNamespaces)) 
-    if verbose then dprintf "<-- GetInitialTypecheckerEnv\n" 
+    let tcEnv = Tc.CreateInitialTcEnv(tcGlobals,amap,initm,ccus)
+    let tcEnv = 
+        if tcConfig.checkOverflow then
+            ApplyImplicitOpen tcGlobals amap initm tcEnv FSharpLib.CoreOperatorsCheckedName
+        else
+            tcEnv
     tcEnv
 
 //----------------------------------------------------------------------------
 // TYPECHECK
 //--------------------------------------------------------------------------
-
-(* The incremental state of type checking files *)
-(* REVIEW: clean this up  *)
 
 type RootSigs =  Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
 type RootImpls = Zset<QualifiedNameOfFile >
@@ -4856,7 +4856,7 @@ type TcState =
       tcsNiceNameGen: NiceNameGenerator
       tcsTcSigEnv: TcEnv
       tcsTcImplEnv: TcEnv
-      (* The accumulated results of type checking for this assembly *)
+      /// The accumulated results of type checking for this assembly 
       tcsRootSigsAndImpls : TypecheckerSigsAndImpls }
     member x.NiceNameGenerator = x.tcsNiceNameGen
     member x.TcEnvFromSignatures = x.tcsTcSigEnv
@@ -4868,7 +4868,7 @@ type TcState =
                  tcsTcImplEnv = tcEnvAtEndOfLastInput } 
 
  
-let TypecheckInitialState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,niceNameGen,tcEnv0) =
+let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,niceNameGen,tcEnv0) =
     ignore tcImports
     if verbose then dprintf "Typecheck (constructing initial state)....\n"
     // Create a ccu to hold all the results of compilation 
@@ -4930,7 +4930,7 @@ let CheckSimulateException(tcConfig:TcConfig) =
 
 
 (* Typecheck a single file or interactive entry into F# Interactive *)
-let TypecheckOneInputEventually
+let TypeCheckOneInputEventually
       (checkForErrors , tcConfig:TcConfig, tcImports:TcImports,  
        tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
   eventually {
@@ -5036,7 +5036,7 @@ let TypecheckOneInputEventually
                     //   [CHECK: Why? This seriously degraded performance] 
                     NewCcuContents ILScopeRef.Local m tcState.tcsCcu.AssemblyName allImplementedSigModulTyp
 
-                if verbose then  dprintf "done TypecheckOneInputEventually...\n"
+                if verbose then  dprintf "done TypeCheckOneInputEventually...\n"
 
                 let topSigsAndImpls = RootSigsAndImpls(rootSigs,rootImpls,allSigModulTyp,allImplementedSigModulTyp)
                 let res = (topAttrs,[implFile], tcEnvAtEnd, tcSigEnv, tcImplEnv,topSigsAndImpls,ccuType)
@@ -5057,9 +5057,9 @@ let TypecheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPat
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false,GetScopedPragmasForInput(inp),oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)
-    TypecheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp) |> Eventually.force
+    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp) |> Eventually.force
 
-let TypecheckMultipleInputsFinish(results,tcState: TcState) =
+let TypeCheckMultipleInputsFinish(results,tcState: TcState) =
     let tcEnvsAtEndFile,topAttrs,mimpls = List.unzip3 results
     
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
@@ -5072,15 +5072,15 @@ let TypecheckMultipleInputsFinish(results,tcState: TcState) =
 
 let TypecheckMultipleInputs(checkForErrors,tcConfig:TcConfig,tcImports,tcGlobals,prefixPathOpt,tcState,inputs) =
     let results,tcState =  List.mapFold (TypecheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) tcState inputs
-    TypecheckMultipleInputsFinish(results,tcState)
+    TypeCheckMultipleInputsFinish(results,tcState)
 
-let TypecheckSingleInputAndFinishEventually(checkForErrors,tcConfig:TcConfig,tcImports,tcGlobals,prefixPathOpt,tcSink,tcState,input) =
+let TypeCheckSingleInputAndFinishEventually(checkForErrors,tcConfig:TcConfig,tcImports,tcGlobals,prefixPathOpt,tcSink,tcState,input) =
     eventually {
-        let! results,tcState =  TypecheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
-        return TypecheckMultipleInputsFinish([results],tcState)
+        let! results,tcState =  TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
+        return TypeCheckMultipleInputsFinish([results],tcState)
     }
 
-let TypecheckClosedInputSetFinish(mimpls,tcState) =
+let TypeCheckClosedInputSetFinish(mimpls,tcState) =
     // Publish the latest contents to the CCU 
     tcState.tcsCcu.Deref.Contents <- tcState.tcsCcuType
 
@@ -5089,14 +5089,14 @@ let TypecheckClosedInputSetFinish(mimpls,tcState) =
     rootSigs |> Zmap.iter (fun qualNameOfFile _ ->  
       if not (Zset.contains qualNameOfFile rootImpls) then 
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
-    if verbose then  dprintf "done TypecheckClosedInputSet...\n"
+    if verbose then  dprintf "done TypeCheckClosedInputSet...\n"
     let tassembly = TAssembly(mimpls)
     tcState, tassembly    
     
-let TypecheckClosedInputSet(checkForErrors,tcConfig,tcImports,tcGlobals,prefixPathOpt,tcState,inputs) =
+let TypeCheckClosedInputSet(checkForErrors,tcConfig,tcImports,tcGlobals,prefixPathOpt,tcState,inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
     let (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState = TypecheckMultipleInputs (checkForErrors,tcConfig,tcImports,tcGlobals,prefixPathOpt,tcState,inputs)
-    let tcState,tassembly = TypecheckClosedInputSetFinish (mimpls, tcState)
+    let tcState,tassembly = TypeCheckClosedInputSetFinish (mimpls, tcState)
     tcState, topAttrs, tassembly, tcEnvAtEndOfLastFile
 
 type OptionSwitch = 

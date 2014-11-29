@@ -34,10 +34,10 @@ open Microsoft.FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open Microsoft.FSharp.Compiler.Interactive.Settings
 open Microsoft.FSharp.Compiler.Interactive.RuntimeHelpers
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Fscopts
+open Microsoft.FSharp.Compiler.FscOptions
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Ilxgen
+open Microsoft.FSharp.Compiler.IlxGen
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -45,12 +45,12 @@ open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Opt
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.Optimizer
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Build
 open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.PostTypecheckSemanticChecks
+open Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
@@ -228,13 +228,13 @@ type FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWriter) =
           Layout.wordL ""
             
     /// Display the signature of an F# value declaration, along with its actual value.
-    member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: Ilxgen.IlxAssemblyGenerator, v:Val) =
+    member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: IlxGen.IlxAssemblyGenerator, v:Val) =
         // Implemented via a lookup from v to a concrete (System.Object,System.Type).
         // This (obj,objTy) pair can then be fed to the fsi value printer.
         // Note: The value may be (null:Object).
         // Note: A System.Type allows the value printer guide printing of nulls, e.g. as None or [].
         //-------
-        // Ilxgen knows what the v:Val was converted to w.r.t. AbsIL datastructures.
+        // IlxGen knows what the v:Val was converted to w.r.t. AbsIL datastructures.
         // Ilreflect knows what the AbsIL was generated to.
         // Combining these allows for obtaining the (obj,objTy) by reflection where possible.
         // This assumes the v:Val was given appropriate storage, e.g. StaticField.
@@ -726,11 +726,11 @@ type FsiConsoleInput(fsiOptions: FsiCommandLineOptions, inReader: TextReader, ou
 [<AutoSerializable(false)>]
 [<NoEquality; NoComparison>]
 type FsiDynamicCompilerState =
-    { optEnv    : Opt.IncrementalOptimizationEnv
+    { optEnv    : Optimizer.IncrementalOptimizationEnv
       emEnv     : ILRuntimeWriter.emEnv
-      tcGlobals : Env.TcGlobals
+      tcGlobals : TcGlobals
       tcState   : Build.TcState 
-      ilxGenerator : Ilxgen.IlxAssemblyGenerator
+      ilxGenerator : IlxGen.IlxAssemblyGenerator
       // Why is this not in FsiOptions?
       timing    : bool }
 
@@ -796,7 +796,7 @@ type FsiDynamicCompiler(timeReporter : FsiTimeReporter,
         // Typecheck. The lock stops the type checker running at the same time as the 
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let (tcState:TcState),topCustomAttrs,declaredImpls,tcEnvAtEndOfLastInput =
-            lock tcLockObject (fun _ -> TypecheckClosedInputSet(errorLogger.CheckForErrors,tcConfig,tcImports,tcGlobals, Some prefixPath,tcState,inputs))
+            lock tcLockObject (fun _ -> TypeCheckClosedInputSet(errorLogger.CheckForErrors,tcConfig,tcImports,tcGlobals, Some prefixPath,tcState,inputs))
 
 #if DEBUG
         // Logging/debugging
@@ -834,9 +834,9 @@ type FsiDynamicCompiler(timeReporter : FsiTimeReporter,
         errorLogger.AbortOnError();
             
         ReportTime tcConfig "ILX -> IL (Unions)"; 
-        let ilxMainModule = EraseIlxUnions.ConvModule ilGlobals ilxMainModule
+        let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
         ReportTime tcConfig "ILX -> IL (Funcs)"; 
-        let ilxMainModule = EraseIlxFuncs.ConvModule ilGlobals ilxMainModule 
+        let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
         errorLogger.AbortOnError();   
               
@@ -937,7 +937,7 @@ type FsiDynamicCompiler(timeReporter : FsiTimeReporter,
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,(* isModule: *) true,defs,PreXmlDoc.Empty,[],None,rangeStdin)
-        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, QualFileNameOfUniquePath (rangeStdin,prefixPath),[],[],[impl],true (* isLastCompiland *) ))
+        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],true (* isLastCompiland *) ))
         let istate,tcEnvAtEndOfLastInput = ProcessInputs (istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
@@ -955,7 +955,7 @@ type FsiDynamicCompiler(timeReporter : FsiTimeReporter,
         let istate = fsiDynamicCompiler.EvalParsedDefinitions (istate, false, true, defs)
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
-        | Nameres.Item.Value vref -> 
+        | NameResolution.Item.Value vref -> 
              if not tcConfig.noFeedback then 
                  valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, vref.Deref)
              
@@ -1062,10 +1062,10 @@ type FsiDynamicCompiler(timeReporter : FsiTimeReporter,
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         let optEnv0 = InitialOptimizationEnv tcImports tcGlobals
         let emEnv = ILRuntimeWriter.emEnv0
-        let tcEnv = GetInitialTypecheckerEnv None rangeStdin tcConfig tcImports tcGlobals
+        let tcEnv = GetInitialTcEnv None rangeStdin tcConfig tcImports tcGlobals
         let ccuName = assemblyName 
 
-        let tcState = TypecheckInitialState (rangeStdin,ccuName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv)
+        let tcState = GetInitialTcState (rangeStdin,ccuName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv)
 
         let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig,tcImports,tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu )
         {optEnv    = optEnv0;
@@ -1097,10 +1097,10 @@ type FsiIntellisenseProvider(tcGlobals, tcImports: TcImports) =
 
         let amap = tcImports.GetImportMap()
         let infoReader = new Infos.InfoReader(tcGlobals,amap)
-        let ncenv = new Nameres.NameResolver(tcGlobals,amap,infoReader,Nameres.FakeInstantiationGenerator)
+        let ncenv = new NameResolution.NameResolver(tcGlobals,amap,infoReader,NameResolution.FakeInstantiationGenerator)
         // Note: for the accessor domain we should use (AccessRightsOfEnv tcState.TcEnvFromImpls)
         let ad = Infos.AccessibleFromSomeFSharpCode
-        let nItems = Nameres.ResolvePartialLongIdent ncenv tcState.TcEnvFromImpls.NameEnv (ConstraintSolver.IsApplicableMethApprox tcGlobals amap rangeStdin) rangeStdin ad lid false
+        let nItems = NameResolution.ResolvePartialLongIdent ncenv tcState.TcEnvFromImpls.NameEnv (ConstraintSolver.IsApplicableMethApprox tcGlobals amap rangeStdin) rangeStdin ad lid false
         let names  = nItems |> List.map (fun d -> d.DisplayName tcGlobals) 
         let names  = names |> List.filter (fun (name:string) -> name.StartsWith(stem,StringComparison.Ordinal)) 
         names
@@ -1471,7 +1471,7 @@ type FsiStdinLexerProvider(tcConfigB, fsiStdinSyphon,
         let skip = true  // don't report whitespace from lexer 
         let defines = "INTERACTIVE"::tcConfigB.conditionalCompilationDefines
         let lexargs = mkLexargs (sourceFileName,defines, interactiveInputLightSyntaxStatus, lexResourceManager, ref [], errorLogger) 
-        let tokenizer = Lexfilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
+        let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
 
@@ -1539,7 +1539,7 @@ type FsiInteractionProcessor(tcConfigB,
 
 
     /// Parse one interaction. Called on the parser thread.
-    let ParseInteraction (tokenizer:Lexfilter.LexFilter) =   
+    let ParseInteraction (tokenizer:LexFilter.LexFilter) =   
         let lastToken = ref Parser.ELSE // Any token besides SEMICOLON_SEMICOLON will do for initial value 
         try 
             if !progress then fprintfn fsiConsoleOutput.Out "In ParseInteraction...";
@@ -1734,7 +1734,7 @@ type FsiInteractionProcessor(tcConfigB,
     ///
     /// During processing of startup scripts, this runs on the main thread.
 
-    member __.ParseAndProcessAndEvalOneInteractionFromLexbuf (exitViaKillThread, runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:Lexfilter.LexFilter) =
+    member __.ParseAndProcessAndEvalOneInteractionFromLexbuf (exitViaKillThread, runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter) =
 
         if tokenizer.LexBuffer.IsPastEndOfStream then 
             let stepStatus = 

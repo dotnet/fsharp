@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.MSBuildResolver
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Core.CompilerServices
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -55,7 +55,7 @@ val lightSyntaxDefaultExtensions : string list
 // Parsing inputs
 //--------------------------------------------------------------------------
   
-val QualFileNameOfUniquePath : range * string list -> Ast.QualifiedNameOfFile
+val ComputeQualifiedNameOfFileFromUniquePath : range * string list -> Ast.QualifiedNameOfFile
 
 val PrependPathToInput : Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
@@ -67,6 +67,7 @@ val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeL
 // Errors
 //--------------------------------------------------------------------------
 
+/// Represents the style being used to format errros
 type ErrorStyle = 
     | DefaultErrors 
     | EmacsErrors 
@@ -74,35 +75,39 @@ type ErrorStyle =
     | VSErrors
     
 
+/// Get the location associated with an error
 val RangeOfError : PhasedError -> range option
+
+/// Get the number associated with an error
 val GetErrorNumber : PhasedError -> int
+
+/// Split errors into a "main" error and a set of associated errors
 val SplitRelatedErrors : PhasedError -> PhasedError * PhasedError list
+
+/// Output an error to a buffer
 val OutputPhasedError : StringBuilder -> PhasedError -> bool -> unit
-val SanitizeFileName : filename:string -> implicitIncludeDir:string -> string
+
+/// Output an error or warning to a buffer
 val OutputErrorOrWarning : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool -> StringBuilder -> PhasedError -> unit
+
+/// Output extra context information for an error or warning to a buffer
 val OutputErrorOrWarningContext : prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedError -> unit
 
 type ErrorLocation =
-    {
-        Range : range
-        File : string
-        TextRepresentation : string
-        IsEmpty : bool
-    }
+    { Range : range
+      File : string
+      TextRepresentation : string
+      IsEmpty : bool }
 
 type CanonicalInformation = 
-    {
-        ErrorNumber : int
-        Subcategory : string
-        TextRepresentation : string
-    }
+    { ErrorNumber : int
+      Subcategory : string
+      TextRepresentation : string }
 
 type DetailedIssueInfo = 
-    {
-        Location : ErrorLocation option
-        Canonical : CanonicalInformation
-        Message : string
-    }
+    { Location : ErrorLocation option
+      Canonical : CanonicalInformation
+      Message : string }
 
 type ErrorOrWarning = 
     | Short of bool * string
@@ -136,10 +141,14 @@ type OptionSpec =
     | OptionUnit of (unit -> unit)
     | OptionHelp of (CompilerOptionBlock list -> unit)                      // like OptionUnit, but given the "options"
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
+
 and  CompilerOption      = 
     /// CompilerOption(name, argumentDescriptionString, actionSpec, exceptionOpt, helpTextOpt
-    CompilerOption of string * string * OptionSpec * Option<exn> * string option
-and  CompilerOptionBlock = PublicOptions  of string * CompilerOption list | PrivateOptions of CompilerOption list
+    | CompilerOption of string * string * OptionSpec * Option<exn> * string option
+
+and  CompilerOptionBlock = 
+    | PublicOptions  of string * CompilerOption list 
+    | PrivateOptions of CompilerOption list
 
 val printCompilerOptionBlocks : CompilerOptionBlock list -> unit  // for printing usage
 val dumpCompilerOptionBlocks  : CompilerOptionBlock list -> unit  // for QA
@@ -193,60 +202,61 @@ type ResolveAssemblyReferenceMode =
     | Speculative 
     | ReportErrors
 
+/// Represents the file or string used for the --version flag
 type VersionFlag = 
     | VersionString of string
     | VersionFile of string
     | VersionNone
-    member GetVersionInfo : (*implicitIncludeDir:*)string -> ILVersionInfo
-    member GetVersionString : (*implicitIncludeDir:*)string -> string
+    member GetVersionInfo : implicitIncludeDir:string -> ILVersionInfo
+    member GetVersionString : implicitIncludeDir:string -> string
 
      
 type TcConfigBuilder =
-    { mutable primaryAssembly : PrimaryAssembly;
-      mutable autoResolveOpenDirectivesToDlls: bool;
-      mutable noFeedback: bool;
-      mutable stackReserveSize: int32 option;
-      mutable implicitIncludeDir: string;
-      mutable openBinariesInMemory: bool;
-      mutable openDebugInformationForLaterStaticLinking: bool;
-      defaultFSharpBinariesDir: string;
-      mutable compilingFslib: bool;
-      mutable compilingFslib20: string option;
-      mutable compilingFslib40: bool;
-      mutable useIncrementalBuilder: bool;
-      mutable includes: string list;
-      mutable implicitOpens: string list;
-      mutable useFsiAuxLib: bool;
-      mutable framework: bool;
+    { mutable primaryAssembly : PrimaryAssembly
+      mutable autoResolveOpenDirectivesToDlls: bool
+      mutable noFeedback: bool
+      mutable stackReserveSize: int32 option
+      mutable implicitIncludeDir: string
+      mutable openBinariesInMemory: bool
+      mutable openDebugInformationForLaterStaticLinking: bool
+      defaultFSharpBinariesDir: string
+      mutable compilingFslib: bool
+      mutable compilingFslib20: string option
+      mutable compilingFslib40: bool
+      mutable useIncrementalBuilder: bool
+      mutable includes: string list
+      mutable implicitOpens: string list
+      mutable useFsiAuxLib: bool
+      mutable framework: bool
       mutable resolutionEnvironment : Microsoft.FSharp.Compiler.MSBuildResolver.ResolutionEnvironment
       mutable implicitlyResolveAssemblies : bool
       mutable addVersionSpecificFrameworkReferences : bool
       /// Set if the user has explicitly turned indentation-aware syntax on/off
-      mutable light: bool option;
-      mutable conditionalCompilationDefines: string list;
+      mutable light: bool option
+      mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
-      mutable loadedSources: (range * string) list;
+      mutable loadedSources: (range * string) list
       
-      mutable referencedDLLs: AssemblyReference  list;
-      mutable knownUnresolvedReferences : UnresolvedAssemblyReference list;
-      optimizeForMemory: bool;
+      mutable referencedDLLs: AssemblyReference  list
+      mutable knownUnresolvedReferences : UnresolvedAssemblyReference list
+      optimizeForMemory: bool
       mutable subsystemVersion : int * int
       mutable useHighEntropyVA : bool
-      mutable inputCodePage: int option;
-      mutable embedResources : string list;
-      mutable globalWarnAsError: bool;
-      mutable globalWarnLevel: int;
-      mutable specificWarnOff: int list; 
-      mutable specificWarnOn: int list; 
+      mutable inputCodePage: int option
+      mutable embedResources : string list
+      mutable globalWarnAsError: bool
+      mutable globalWarnLevel: int
+      mutable specificWarnOff: int list 
+      mutable specificWarnOn: int list 
       mutable specificWarnAsError: int list 
       mutable specificWarnAsWarn : int list
-      mutable mlCompatibility:bool;
-      mutable checkOverflow:bool;
-      mutable showReferenceResolutions:bool;
-      mutable outputFile : string option;
-      mutable resolutionFrameworkRegistryBase : string;
-      mutable resolutionAssemblyFoldersSuffix : string; 
-      mutable resolutionAssemblyFoldersConditions : string;          
+      mutable mlCompatibility:bool
+      mutable checkOverflow:bool
+      mutable showReferenceResolutions:bool
+      mutable outputFile : string option
+      mutable resolutionFrameworkRegistryBase : string
+      mutable resolutionAssemblyFoldersSuffix : string 
+      mutable resolutionAssemblyFoldersConditions : string          
       mutable platform : ILPlatform option
       mutable prefer32Bit : bool
       mutable useMonoResolution : bool
@@ -305,7 +315,7 @@ type TcConfigBuilder =
       mutable doTLR         : bool 
       mutable doFinalSimplify : bool
       mutable optsOn        : bool 
-      mutable optSettings   : Opt.OptimizationSettings 
+      mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
       mutable lcid         : int option
       mutable productNameForBannerText : string
@@ -354,44 +364,44 @@ type TcConfigBuilder =
 // Immutable TcConfig
 type TcConfig =
     member primaryAssembly: PrimaryAssembly
-    member autoResolveOpenDirectivesToDlls: bool;
-    member noFeedback: bool;
-    member stackReserveSize: int32 option;
-    member implicitIncludeDir: string;
-    member openBinariesInMemory: bool;
-    member openDebugInformationForLaterStaticLinking: bool;
-    member fsharpBinariesDir: string;
-    member compilingFslib: bool;
-    member compilingFslib20: string option;
-    member compilingFslib40: bool;
-    member useIncrementalBuilder: bool;
-    member includes: string list;
-    member implicitOpens: string list;
-    member useFsiAuxLib: bool;
-    member framework: bool;
+    member autoResolveOpenDirectivesToDlls: bool
+    member noFeedback: bool
+    member stackReserveSize: int32 option
+    member implicitIncludeDir: string
+    member openBinariesInMemory: bool
+    member openDebugInformationForLaterStaticLinking: bool
+    member fsharpBinariesDir: string
+    member compilingFslib: bool
+    member compilingFslib20: string option
+    member compilingFslib40: bool
+    member useIncrementalBuilder: bool
+    member includes: string list
+    member implicitOpens: string list
+    member useFsiAuxLib: bool
+    member framework: bool
     member implicitlyResolveAssemblies : bool
     /// Set if the user has explicitly turned indentation-aware syntax on/off
-    member light: bool option;
-    member conditionalCompilationDefines: string list;
+    member light: bool option
+    member conditionalCompilationDefines: string list
     member subsystemVersion : int * int
     member useHighEntropyVA : bool
-    member referencedDLLs: AssemblyReference list;
-    member optimizeForMemory: bool;
-    member inputCodePage: int option;
-    member embedResources : string list;
-    member globalWarnAsError: bool;
-    member globalWarnLevel: int;
-    member specificWarnOn: int list; 
-    member specificWarnOff: int list; 
+    member referencedDLLs: AssemblyReference list
+    member optimizeForMemory: bool
+    member inputCodePage: int option
+    member embedResources : string list
+    member globalWarnAsError: bool
+    member globalWarnLevel: int
+    member specificWarnOn: int list 
+    member specificWarnOff: int list 
     member specificWarnAsError: int list 
     member specificWarnAsWarn : int list
-    member mlCompatibility:bool;
-    member checkOverflow:bool;
-    member showReferenceResolutions:bool;
-    member outputFile : string option;
-    member resolutionFrameworkRegistryBase : string;
-    member resolutionAssemblyFoldersSuffix : string; 
-    member resolutionAssemblyFoldersConditions : string;          
+    member mlCompatibility:bool
+    member checkOverflow:bool
+    member showReferenceResolutions:bool
+    member outputFile : string option
+    member resolutionFrameworkRegistryBase : string
+    member resolutionAssemblyFoldersSuffix : string 
+    member resolutionAssemblyFoldersConditions : string          
     member platform : ILPlatform option
     member prefer32Bit : bool
     member useMonoResolution : bool
@@ -449,7 +459,7 @@ type TcConfig =
     member doDetuple     : bool 
     member doTLR         : bool 
     member doFinalSimplify : bool
-    member optSettings   : Opt.OptimizationSettings 
+    member optSettings   : Optimizer.OptimizationSettings 
     member emitTailcalls : bool
     member lcid          : int option
     member optsOn        : bool 
@@ -496,8 +506,9 @@ type TcConfig =
 // Tables of referenced DLLs 
 //--------------------------------------------------------------------------
 
+/// Represents a resolved imported binary
 type ImportedBinary = 
-    { FileName: string;
+    { FileName: string
       RawMetadata: ILModuleDef
 #if EXTENSIONTYPING
       ProviderGeneratedAssembly: System.Reflection.Assembly option
@@ -507,16 +518,17 @@ type ImportedBinary =
       ILAssemblyRefs : ILAssemblyRef list
       ILScopeRef: ILScopeRef}
 
+/// Represents a resolved imported assembly
 type ImportedAssembly = 
-    { ILScopeRef: ILScopeRef;
-      FSharpViewOfMetadata: CcuThunk;
-      AssemblyAutoOpenAttributes: string list;
-      AssemblyInternalsVisibleToAttributes: string list;
+    { ILScopeRef: ILScopeRef
+      FSharpViewOfMetadata: CcuThunk
+      AssemblyAutoOpenAttributes: string list
+      AssemblyInternalsVisibleToAttributes: string list
 #if EXTENSIONTYPING
-      IsProviderGenerated: bool;
-      mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list;
+      IsProviderGenerated: bool
+      mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list
 #endif
-      FSharpOptimizationData : Lazy<Option<Opt.LazyModuleInfo>> }
+      FSharpOptimizationData : Lazy<Option<Optimizer.LazyModuleInfo>> }
 
 
 [<Sealed>] 
@@ -527,11 +539,18 @@ type TcAssemblyResolutions =
     static member BuildFromPriorResolutions     : TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
     
 
+/// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
+/// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
 [<Sealed>]
 type TcConfigProvider = 
+    /// Get a TcConfigProvider which will return only the exact TcConfig.
     static member Constant : TcConfig -> TcConfigProvider
+
+    /// Get a TcConfigProvider which will continue to respect changes in the underlying
+    /// TcConfigBuilder rather than delivering snapshots.
     static member BasedOnMutableBuilder : TcConfigBuilder -> TcConfigProvider
 
+/// Repreesnts a table of imported assemblies with their resolutions.
 [<Sealed>] 
 type TcImports =
     interface System.IDisposable
@@ -573,98 +592,118 @@ type TcImports =
 // Special resources in DLLs
 //--------------------------------------------------------------------------
 
+/// Determine if an IL resource attached to an F# assemnly is an F# signature data resource
 val IsSignatureDataResource : ILResource -> bool
+
+/// Determine if an IL resource attached to an F# assemnly is an F# optimization data resource
 val IsOptimizationDataResource : ILResource -> bool
+
+/// Determine if an IL resource attached to an F# assemnly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource : ILResource -> bool
 
 #if NO_COMPILER_BACKEND
 #else
+/// Write F# signature data as an IL resource
 val WriteSignatureData : TcConfig * TcGlobals * Tastops.Remap * CcuThunk * string -> ILResource
-val WriteOptimizationData :  TcGlobals * string * CcuThunk * Opt.LazyModuleInfo -> ILResource
+
+/// Write F# optimization data as an IL resource
+val WriteOptimizationData :  TcGlobals * string * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
 #endif
 
-val GetNameOfILModule : ILModuleDef -> string
-
+/// Get the name used for FSharp.Core
 val GetFSharpCoreLibraryName : unit -> string
 
-//----------------------------------------------------------------------------
-// Finding and requiring DLLs
-//--------------------------------------------------------------------------
-
+/// Process #r in F# Interactive.
+/// Adds the reference to the tcImports and add the ccu to the type checking environment.
 val RequireDLL : TcImports -> TcEnv -> range -> string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
-//----------------------------------------------------------------------------
-// Processing # commands
-//--------------------------------------------------------------------------
-
+/// Processing # commands
 val ProcessMetaCommandsFromInput : 
               ('T -> range * string -> 'T) * 
               ('T -> range * string -> 'T) * 
               ('T -> range * string -> unit) -> TcConfigBuilder -> Ast.ParsedInput -> string -> 'T -> 'T
 
 
+/// Find the scoped #nowarn pragmas with their range information
 val GetScopedPragmasForInput : Ast.ParsedInput -> ScopedPragma list
+
+/// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetErrorLoggerFilteringByScopedPragmas : checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
 
+/// Process the #nowarn in an input
 val ApplyNoWarnsToTcConfig : TcConfig -> (Ast.ParsedInput*string) -> TcConfig
-val ApplyMetaCommandsFromInputToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
-val GetAssemblyResolutionInformation : TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
 
-//----------------------------------------------------------------------------
-// Loading the default library sets
-//--------------------------------------------------------------------------
-                
+/// Process all the #r, #I etc. in an input
+val ApplyMetaCommandsFromInputToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
+
+/// This list is the default set of references for "non-project" files. 
 val DefaultBasicReferencesForOutOfProjectSources : string list
 
-//----------------------------------------------------------------------------
-// Parsing inputs
-//--------------------------------------------------------------------------
+/// Parse one input file
 val ParseOneInputFile : TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: bool * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
 
 //----------------------------------------------------------------------------
 // Type checking and querying the type checking state
 //--------------------------------------------------------------------------
 
-val GetInitialTypecheckerEnv : string option -> range -> TcConfig -> TcImports -> TcGlobals -> TcEnv
+/// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
+/// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
+val GetInitialTcEnv : string option -> range -> TcConfig -> TcImports -> TcGlobals -> TcEnv
                 
 [<Sealed>]
+/// Represents the incremental type checking state for a set of inputs
 type TcState =
     member NiceNameGenerator : Ast.NiceNameGenerator
+
+    /// The CcuThunk for the current assembly being checked
     member Ccu : CcuThunk
+    
+    /// Get the typing environment implied by the set of signature files and/or inferred signatures of implementation files checked so far
     member TcEnvFromSignatures : TcEnv
-    member NextStateAfterIncrementalFragment : TcEnv -> TcState
+
+    /// Get the typing environment implied by the set of implemetation files checked so far
     member TcEnvFromImpls : TcEnv
 
-val TypecheckInitialState : 
+    member NextStateAfterIncrementalFragment : TcEnv -> TcState
+
+/// Get the initial type checking state for a set of inputs
+val GetInitialTcState : 
     range * string * TcConfig * TcGlobals * TcImports * Ast.NiceNameGenerator * TcEnv -> TcState
 
-val TypecheckOneInputEventually :
-    (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * Nameres.TcResultsSink * TcState * Ast.ParsedInput  
+/// Check one input, returned as an Eventually computation
+val TypeCheckOneInputEventually :
+    (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
            -> Eventually<(TcEnv * TopAttribs * Tast.TypedImplFile list) * TcState>
 
-val TypecheckMultipleInputsFinish :
-    (TcEnv * TopAttribs * 'T list) list * TcState
-        -> (TcEnv * TopAttribs * 'T list) * TcState
+/// Finish the checking of multiple inputs 
+val TypeCheckMultipleInputsFinish : (TcEnv * TopAttribs * 'T list) list * TcState -> (TcEnv * TopAttribs * 'T list) * TcState
     
-val TypecheckClosedInputSetFinish :
-    TypedImplFile list * TcState 
-        -> TcState * TypedAssembly
+/// Finish the checking of a closed set of inputs 
+val TypeCheckClosedInputSetFinish : TypedImplFile list * TcState -> TcState * TypedAssembly
 
-val TypecheckClosedInputSet :
+/// Check a closed set of inputs 
+val TypeCheckClosedInputSet :
     (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * TcState * Ast.ParsedInput  list 
         -> TcState * TopAttribs * Tast.TypedAssembly * TcEnv
 
-val TypecheckSingleInputAndFinishEventually :
-    (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * Nameres.TcResultsSink * TcState * Ast.ParsedInput 
+/// Check a single input and finish the checking
+val TypeCheckSingleInputAndFinishEventually :
+    (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * Tast.TypedImplFile list) * TcState>
 
+/// Parse and process a set of compiler options
 val ParseCompilerOptions : (string -> unit) -> CompilerOptionBlock list -> string list -> unit
+
+/// Report a warning through the current error logger 
 val ReportWarning : int -> int list -> int list -> PhasedError -> bool
+
+/// Report a warning through the current error logger, but as an error
 val ReportWarningAsError : int -> int list -> int list -> int list -> int list -> bool -> PhasedError -> bool
 
 //----------------------------------------------------------------------------
 // #load closure
 //--------------------------------------------------------------------------
+
 type CodeContext =
     | Evaluation
     | Compilation

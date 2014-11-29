@@ -15,6 +15,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Build
 open Microsoft.FSharp.Compiler.Tastops
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
@@ -1082,10 +1083,10 @@ module internal IncrementalFSharpBuild =
 
     open IncrementalBuild
     open Microsoft.FSharp.Compiler.Build
-    open Microsoft.FSharp.Compiler.Fscopts
+    open Microsoft.FSharp.Compiler.FscOptions
     open Microsoft.FSharp.Compiler.Ast
     open Microsoft.FSharp.Compiler.ErrorLogger
-    open Microsoft.FSharp.Compiler.Env
+    open Microsoft.FSharp.Compiler.TcGlobals
     open Microsoft.FSharp.Compiler.TypeChecker
     open Microsoft.FSharp.Compiler.Tast 
     open Microsoft.FSharp.Compiler.Range
@@ -1427,8 +1428,8 @@ module internal IncrementalFSharpBuild =
                     errorLogger.Warning(e)
                     frameworkTcImports           
 
-            let tcEnv0 = GetInitialTypecheckerEnv (Some assemblyName) rangeStartup tcConfig tcImports tcGlobals
-            let tcState0 = TypecheckInitialState (rangeStartup,assemblyName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv0)
+            let tcEnv0 = GetInitialTcEnv (Some assemblyName) rangeStartup tcConfig tcImports tcGlobals
+            let tcState0 = GetInitialTcState (rangeStartup,assemblyName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv0)
             let tcAcc = 
                 { tcGlobals=tcGlobals
                   tcImports=tcImports
@@ -1456,11 +1457,11 @@ module internal IncrementalFSharpBuild =
                         Trace.PrintLine("FSharpBackgroundBuild", fun _ -> sprintf "Typechecking %s..." filename)                
                         beforeTypeCheckFile.Trigger filename
                         let! (tcEnv,topAttribs,typedImplFiles),tcState = 
-                            TypecheckOneInputEventually ((fun () -> errorLogger.ErrorCount > 0),
+                            TypeCheckOneInputEventually ((fun () -> errorLogger.ErrorCount > 0),
                                                          tcConfig,tcAcc.tcImports,
                                                          tcAcc.tcGlobals,
                                                          None,
-                                                         Nameres.TcResultsSink.NoSink,
+                                                         NameResolution.TcResultsSink.NoSink,
                                                          tcAcc.tcState,input)
                         
                         /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
@@ -1505,8 +1506,8 @@ module internal IncrementalFSharpBuild =
             Trace.PrintLine("FSharpBackgroundBuildVerbose", fun _ -> sprintf "Finalizing Type Check" )
             let finalAcc = tcStates.[tcStates.Length-1]
             let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnv, (Option.get acc.topAttribs), acc.typedImplFiles)
-            let (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState = TypecheckMultipleInputsFinish (results,finalAcc.tcState)
-            let tcState,tassembly = TypecheckClosedInputSetFinish (mimpls,tcState)
+            let (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState = TypeCheckMultipleInputsFinish (results,finalAcc.tcState)
+            let tcState,tassembly = TypeCheckClosedInputSetFinish (mimpls,tcState)
             tcState, topAttrs, tassembly, tcEnvAtEndOfLastFile, finalAcc.tcImports, finalAcc.tcGlobals, finalAcc.tcConfig
 
         // END OF BUILD TASK FUNCTIONS
@@ -1618,7 +1619,7 @@ module internal IncrementalFSharpBuild =
         member __.TypeCheck() = 
             let newPartialBuild = IncrementalBuild.Eval "FinalizeTypeCheck" partialBuild
             partialBuild <- newPartialBuild
-            match GetScalarResult<Build.TcState * TypeChecker.TopAttribs * Tast.TypedAssembly * TypeChecker.TcEnv * Build.TcImports * Env.TcGlobals * Build.TcConfig>("FinalizeTypeCheck",partialBuild) with
+            match GetScalarResult<Build.TcState * TypeChecker.TopAttribs * Tast.TypedAssembly * TypeChecker.TcEnv * Build.TcImports * TcGlobals * Build.TcConfig>("FinalizeTypeCheck",partialBuild) with
             | Some((tcState,topAttribs,typedAssembly,tcEnv,tcImports,tcGlobals,tcConfig),_) -> tcState,topAttribs,typedAssembly,tcEnv,tcImports,tcGlobals,tcConfig
             | None -> failwith "Build was not evaluated."
         
@@ -1688,7 +1689,7 @@ module internal IncrementalFSharpBuild =
                 try
                     ParseCompilerOptions
                         (fun _sourceOrDll -> () )
-                        (Fscopts.GetCoreServiceCompilerOptions tcConfigB)
+                        (FscOptions.GetCoreServiceCompilerOptions tcConfigB)
                         commandLineArgs             
                 with e -> errorRecovery e range0
 

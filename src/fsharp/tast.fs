@@ -1,5 +1,9 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
   
+//-------------------------------------------------------------------------
+// Defines the typed abstract syntax trees used throughout the F# compiler.
+//------------------------------------------------------------------------- 
+
 module internal Microsoft.FSharp.Compiler.Tast 
 
 open System
@@ -1465,7 +1469,7 @@ and
       /// Get a table of values indexed by logical name
       member mtyp.AllValsByLogicalName = 
           let addValByName (x:Val) tab = 
-             // Note: names may occur twice prior to raising errors about this in PostTypecheckSemanticChecks
+             // Note: names may occur twice prior to raising errors about this in PostTypeCheckSemanticChecks
              // Earlier ones take precedence sice we report errors about the later ones
              if not x.IsMember && not x.IsCompilerGenerated then 
                  NameMap.add x.LogicalName x tab 
@@ -2847,13 +2851,6 @@ and RecdFieldRef =
 and 
   /// The algebra of types
     [<NoEquality; NoComparison>]
-// REMOVING because of possible stack overflow 
-
-#if EXTENSIBLE_DUMPER
-#if DEBUG
-    [<System.Diagnostics.DebuggerTypeProxy(typedefof<Internal.Utilities.Diagnostic.ExtensibleDumper>)>]
-#endif  
-#endif  
     TType =
 
     /// TType_forall(typars, bodyTy).
@@ -3102,7 +3099,7 @@ and CcuResolutionResult =
     | UnresolvedCcu of string
 
 /// Represents the information saved in the assembly signature data resource for an F# assembly
-and PickledModuleInfo =
+and PickledCcuInfo =
   { mspec: ModuleOrNamespace
     compileTimeWorkingDir: string
     usesQuotations : bool }

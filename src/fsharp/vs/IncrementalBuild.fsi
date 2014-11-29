@@ -6,6 +6,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Build
 
 
@@ -159,10 +160,10 @@ module internal IncrementalFSharpBuild =
       /// Ensure that the given file has been typechecked.
       /// Get the preceding typecheck state of a slot, allow stale results.
       member GetAntecedentTypeCheckResultsBySlot :
-        int -> (Build.TcState * Build.TcImports * Microsoft.FSharp.Compiler.Env.TcGlobals * Build.TcConfig * (PhasedError * bool) list * System.DateTime) option
+        int -> (Build.TcState * Build.TcImports * Microsoft.FSharp.Compiler.TcGlobals.TcGlobals * Build.TcConfig * (PhasedError * bool) list * System.DateTime) option
 
       /// Get the final typecheck result. Only allowed when 'generateTypedImplFiles' was set on Create, otherwise the TypedAssembly will have not implementations.
-      member TypeCheck : unit -> Build.TcState * TypeChecker.TopAttribs * Tast.TypedAssembly * TypeChecker.TcEnv * Build.TcImports * Env.TcGlobals * Build.TcConfig
+      member TypeCheck : unit -> Build.TcState * TypeChecker.TopAttribs * Tast.TypedAssembly * TypeChecker.TcEnv * Build.TcImports * TcGlobals * Build.TcConfig
 
       /// Attempts to find the slot of the given input file name. Throws an exception if it couldn't find it.    
       member GetSlotOfFileName : string -> int
