@@ -1683,7 +1683,7 @@ type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string opt
 
 module FileWriter = 
     let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
-        let (SigningInfo(delaysign, signer, container)) = signingInfo
+        let (SigningInfo(delaysign, signerOpt, container)) = signingInfo
         try
             if !progress then dprintn "Writing assembly...";
             try 
@@ -1692,28 +1692,27 @@ module FileWriter =
                     if isSome container then
                         Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
                     else
-                        match signer with 
+                        match signerOpt with 
                         | None -> None
-                        | Some(s) ->
+                        | Some s ->
                             try 
-                            if delaysign then
-                                Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
-                            else
-                                Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
+                                if delaysign then
+                                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
+                                else
+                                    Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
                             with e -> 
                                 // Note:: don't use errorR here since we really want to fail and not produce a binary
                                 error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
-                ILBinaryWriter.WriteILBinary 
-                  outfile
-                  { ilg = ilGlobals
-                    pdbfile = pdbfile
-                    emitTailcalls = tcConfig.emitTailcalls
-                    showTimes = tcConfig.showTimes
-                    signer = signer
-                    fixupOverlappingSequencePoints = false
-                    dumpDebugInfo = tcConfig.dumpDebugInfo } 
-                  ilxMainModule
-                  tcConfig.noDebugData
+                let options : ILBinaryWriter.options = 
+                    { ilg = ilGlobals
+                      pdbfile = pdbfile
+                      emitTailcalls = tcConfig.emitTailcalls
+                      showTimes = tcConfig.showTimes
+                      signer = signer
+                      fixupOverlappingSequencePoints = false
+                      dumpDebugInfo = tcConfig.dumpDebugInfo } 
+                ILBinaryWriter.WriteILBinary (outfile, options, ilxMainModule, tcConfig.noDebugData)
+
             with Failure msg -> 
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile,msg), rangeCmdArgs))
         with e -> 
