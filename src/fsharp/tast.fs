@@ -411,11 +411,6 @@ type ModuleOrNamespaceKind =
     | Namespace
 
 
-/// The information ILXGEN needs about the location of an item
-type CompilationPath = 
-    | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
-    member x.ILScopeRef = (let (CompPath(scoref,_)) = x in scoref)
-    member x.AccessPath = (let (CompPath(_,p)) = x in p)
 
 
 /// A public path records where a construct lives within the global namespace
@@ -428,23 +423,25 @@ type PublicPath      =
         pp.[0..pp.Length-2]
 
 
+/// The information ILXGEN needs about the location of an item
+type CompilationPath = 
+    | CompPath of ILScopeRef * (string * ModuleOrNamespaceKind) list
+    member x.ILScopeRef = (let (CompPath(scoref,_)) = x in scoref)
+    member x.AccessPath = (let (CompPath(_,p)) = x in p)
+    member x.MangledPath = List.map fst x.AccessPath
+    member x.NestedPublicPath (id:Ident) = PubPath(Array.append (Array.ofList x.MangledPath) [| id.idText |])
+    member x.ParentCompPath = 
+        let a,_ = List.frontAndBack x.AccessPath
+        CompPath(x.ILScopeRef,a)
+    member x.NestedCompPath n modKind = CompPath(x.ILScopeRef,x.AccessPath@[(n,modKind)])
+
+
 let getNameOfScopeRef sref = 
     match sref with 
     | ILScopeRef.Local -> "<local>"
     | ILScopeRef.Module mref -> mref.Name
     | ILScopeRef.Assembly aref -> aref.Name
 
-let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)
-  
-let mangledPathOfCompPath (CompPath(_,path))  = List.map fst path
-
-let publicPathOfCompPath (id:Ident) cpath = PubPath(Array.append (Array.ofList (mangledPathOfCompPath cpath)) [| id.idText |])
-
-let parentCompPath (CompPath(scoref,cpath)) = 
-    let a,_ = List.frontAndBack cpath 
-    CompPath(scoref,a)
-
-let mkNestedCPath (CompPath(scoref,p)) n modKind = CompPath(scoref,p@[(n,modKind)])
 
 #if EXTENSIONTYPING
 let definitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttributeProvider>) =
@@ -1656,7 +1653,7 @@ and Construct =
                 let enclosingName = ExtensionTyping.GetFSharpPathToProvidedType(st,m)
                 CompPath(ilScopeRef,enclosingName |> List.map(fun id->id,ModuleOrNamespaceKind.Namespace))
             | Some p -> p
-        let pubpath = publicPathOfCompPath id cpath
+        let pubpath = cpath.NestedPublicPath id
 
         let repr = Construct.NewProvidedTyconRepr(resolutionEnvironment, st, importProvidedType, isSuppressRelocate, m)
 
@@ -1701,7 +1698,7 @@ and Construct =
             entity_tycon_repr_accessibility = access
             entity_exn_info=TExnNone
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_pubpath=cpath |> Option.map (publicPathOfCompPath id)
+            entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
             entity_accessiblity=access
             entity_attribs=attribs
@@ -2502,7 +2499,7 @@ and NonLocalEntityRef    =
                             entity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
                             newEntity
                         else
-                            let cpath = mkNestedCPath entity.CompilationPath entity.LogicalName ModuleOrNamespaceKind.Namespace
+                            let cpath = entity.CompilationPath.NestedCompPath entity.LogicalName ModuleOrNamespaceKind.Namespace
                             let newEntity = 
                                 Construct.NewModuleOrNamespace 
                                     (Some cpath) 
@@ -3116,12 +3113,42 @@ and UnionCaseRef =
     member x.TyconRef = let (UCRef(tcref,_)) = x in tcref
     member x.CaseName = let (UCRef(_,nm)) = x in nm
     member x.Tycon = x.TyconRef.Deref
+    member x.UnionCase = 
+        match x.TyconRef.GetUnionCaseByName x.CaseName with 
+        | Some res -> res
+        | None -> error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
+    member x.Attribs = x.UnionCase.Attribs
+    member x.Range = x.UnionCase.Range
+    member x.Index = 
+        try 
+           // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
+            x.TyconRef.UnionCasesArray |> Array.findIndex (fun ucspec -> ucspec.DisplayName = x.CaseName) 
+        with :? KeyNotFoundException -> 
+            error(InternalError(sprintf "union case %s not found in type %s" x.CaseName x.TyconRef.LogicalName, x.TyconRef.Range))
+    member x.AllFieldsAsList = x.UnionCase.FieldTable.AllFieldsAsList
+    member x.ReturnType = x.UnionCase.ReturnType
+    member x.FieldByIndex n = x.UnionCase.FieldTable.FieldByIndex n
 
 and RecdFieldRef = 
     | RFRef of TyconRef * string
     member x.TyconRef = let (RFRef(tcref,_)) = x in tcref
     member x.FieldName = let (RFRef(_,id)) = x in id
     member x.Tycon = x.TyconRef.Deref
+    member x.RecdField = 
+        let (RFRef(tcref,id)) = x
+        match tcref.GetFieldByName id with 
+        | Some res -> res
+        | None -> error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
+    member x.PropertyAttribs = x.RecdField.PropertyAttribs
+    member x.Range = x.RecdField.Range
+
+    member x.Index =
+        let (RFRef(tcref,id)) = x
+        try 
+            // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
+            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.Name = id)  
+        with :? KeyNotFoundException -> 
+            error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
 and 
   /// The algebra of types
@@ -4018,47 +4045,6 @@ let ccuEq (mv1: CcuThunk) (mv2: CcuThunk) =
 /// For derefencing in the middle of a pattern
 let (|ValDeref|) (vr :ValRef) = vr.Deref
 
-//---------------------------------------------------------------------------
-// Get information from refs
-//---------------------------------------------------------------------------
-
-exception InternalUndefinedTyconItem of (string * string -> int * string) * TyconRef * string
-
-type UnionCaseRef with 
-    member x.UnionCase = 
-        let (UCRef(tcref,nm)) = x
-        match tcref.GetUnionCaseByName nm with 
-        | Some res -> res
-        | None -> error (InternalUndefinedTyconItem (FSComp.SR.tastUndefinedTyconItemUnionCase, tcref, nm))
-    member x.Attribs = x.UnionCase.Attribs
-    member x.Range = x.UnionCase.Range
-    member x.Index = 
-        let (UCRef(tcref,id)) = x
-        try 
-           // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            tcref.UnionCasesArray |> Array.findIndex (fun ucspec -> ucspec.DisplayName = id) 
-        with :? KeyNotFoundException -> 
-            error(InternalError(sprintf "union case %s not found in type %s" id tcref.LogicalName, tcref.Range))
-    member x.AllFieldsAsList = x.UnionCase.FieldTable.AllFieldsAsList
-    member x.ReturnType = x.UnionCase.ReturnType
-    member x.FieldByIndex n = x.UnionCase.FieldTable.FieldByIndex n
-
-type RecdFieldRef with 
-    member x.RecdField = 
-        let (RFRef(tcref,id)) = x
-        match tcref.GetFieldByName id with 
-        | Some res -> res
-        | None -> error (InternalUndefinedTyconItem (FSComp.SR.tastUndefinedTyconItemField, tcref, id))
-    member x.PropertyAttribs = x.RecdField.PropertyAttribs
-    member x.Range = x.RecdField.Range
-
-    member x.Index =
-        let (RFRef(tcref,id)) = x
-        try 
-            // REVIEW: this could be faster, e.g. by storing the index in the NameMap 
-            tcref.AllFieldsArray |> Array.findIndex (fun rfspec -> rfspec.Name = id)  
-        with :? KeyNotFoundException -> 
-            error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
 //--------------------------------------------------------------------------
 // Make references to TAST items
@@ -4087,25 +4073,24 @@ let mkNestedNonLocalEntityRef (nleref:NonLocalEntityRef) id = mkNonLocalEntityRe
 let mkNonLocalTyconRef nleref id = ERefNonLocal (mkNestedNonLocalEntityRef nleref id)
 let mkNonLocalTyconRefPreResolved x nleref id = ERefNonLocalPreResolved x (mkNestedNonLocalEntityRef nleref id)
 
-let mkNestedUnionCaseRef tcref (uc: UnionCase) = mkUnionCaseRef tcref uc.Id.idText
-let mkNestedRecdFieldRef tcref (rf: RecdField) = mkRecdFieldRef tcref rf.Name
-
 type EntityRef with 
     
-    member tcref.UnionCasesAsRefList         = tcref.UnionCasesAsList         |> List.map (mkNestedUnionCaseRef tcref)
-    member tcref.TrueInstanceFieldsAsRefList = tcref.TrueInstanceFieldsAsList |> List.map (mkNestedRecdFieldRef tcref)
-    member tcref.AllFieldAsRefList           = tcref.AllFieldsAsList          |> List.map (mkNestedRecdFieldRef tcref)
+    member tcref.UnionCasesAsRefList         = tcref.UnionCasesAsList         |> List.map tcref.NestedUnionCaseRef
+    member tcref.TrueInstanceFieldsAsRefList = tcref.TrueInstanceFieldsAsList |> List.map tcref.NestedRecdFieldRef
+    member tcref.AllFieldAsRefList           = tcref.AllFieldsAsList          |> List.map tcref.NestedRecdFieldRef
 
-    member tcref.MkNestedTyconRef (x:Entity) : TyconRef  = 
+    member tcref.NestedTyconRef (x:Entity) = 
         match tcref with 
         | ERefLocal _ -> mkLocalTyconRef x
         | ERefNonLocal nlr -> mkNonLocalTyconRefPreResolved x nlr x.LogicalName
 
-    member tcref.MkNestedRecdFieldRef tycon (rf:Ident) = mkRecdFieldRef (tcref.MkNestedTyconRef tycon) rf.idText 
+    member tcref.RecdFieldRefInNestedTycon tycon (id:Ident) = mkRecdFieldRef (tcref.NestedTyconRef tycon) id.idText 
+    member tcref.NestedRecdFieldRef  (rf: RecdField) = mkRecdFieldRef tcref rf.Name
+    member tcref.NestedUnionCaseRef  (uc: UnionCase) = mkUnionCaseRef tcref uc.Id.idText
 
 /// Make a reference to a union case for type in a module or namespace
 let mkModuleUnionCaseRef (modref:ModuleOrNamespaceRef) tycon uc = 
-    mkNestedUnionCaseRef (modref.MkNestedTyconRef tycon) uc
+    (modref.NestedTyconRef tycon).NestedUnionCaseRef uc
 
 let VRefLocal    x : ValRef = { binding=x; nlr=Unchecked.defaultof<_> }      
 let VRefNonLocal x : ValRef = { binding=Unchecked.defaultof<_>; nlr=x }      
@@ -4364,7 +4349,9 @@ let primValRefEq compilingFslib fslibCcu (x : ValRef) (y : ValRef) =
 // pubpath/cpath mess
 //---------------------------------------------------------------------------
 
-let stringOfAccess (TAccess paths) = String.concat ";" (List.map mangledTextOfCompPath paths)
+let stringOfAccess (TAccess paths) = 
+    let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+    String.concat ";" (List.map mangledTextOfCompPath paths)
 
 let demangledPathOfCompPath (CompPath(_,path)) = 
     path |> List.map (fun (nm,k) -> Entity.DemangleEntityName nm k)
@@ -4466,7 +4453,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_xmldoc=doc
         entity_xmldocsig=""
-        entity_pubpath=cpath |> Option.map (publicPathOfCompPath id)
+        entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
         entity_accessiblity=access
         entity_tycon_repr_accessibility=access
         entity_modul_contents = notlazy (NewEmptyModuleOrNamespaceType ModuleOrType)
@@ -4512,7 +4499,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_accessiblity=access
         entity_xmldoc = docOption
         entity_xmldocsig=""        
-        entity_pubpath=cpath |> Option.map (publicPathOfCompPath (mkSynId m nm))
+        entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
         entity_cpath = cpath
         entity_il_repr_cache = newCache() } 
 
@@ -4601,60 +4588,59 @@ let NewClonedTycon orig =  NewModifiedTycon (fun d -> d) orig
 
 //------------------------------------------------------------------------------
 
-/// Combine two maps where the given function reconciles entries that have the same key
-let private combineMaps f m1 m2 = 
-    Map.foldBack (fun k v acc -> Map.add k (if Map.containsKey k m2 then f [v;Map.find k m2] else f [v]) acc) m1 
-      (Map.foldBack (fun k v acc -> if Map.containsKey k m1 then acc else Map.add k (f [v]) acc) m2 Map.empty)
+/// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
+/// duplicate modules etc.
+let CombineCcuContentFragments m l = 
 
-let private combineMultiMaps f (m1: MultiMap<_,_>) (m2: MultiMap<_,_>) = 
-    Map.foldBack (fun k v acc -> List.foldBack (MultiMap.add k) (if Map.containsKey k m2 then f [v;Map.find k m2] else f [v]) acc) m1 
-      (Map.foldBack (fun k v acc -> if Map.containsKey k m1 then acc else List.foldBack (MultiMap.add k) (f [v]) acc) m2 MultiMap.empty)
+    let CombineMaps f m1 m2 = 
+        Map.foldBack (fun k v acc -> Map.add k (if Map.containsKey k m2 then f [v;Map.find k m2] else f [v]) acc) m1 
+          (Map.foldBack (fun k v acc -> if Map.containsKey k m1 then acc else Map.add k (f [v]) acc) m2 Map.empty)
 
+    /// Combine module types when multiple namespace fragments contribute to the
+    /// same namespace, making new module specs as we go.
+    let rec CombineModuleOrNamespaceTypes path m (mty1:ModuleOrNamespaceType)  (mty2:ModuleOrNamespaceType)  = 
+        match mty1.ModuleOrNamespaceKind,mty2.ModuleOrNamespaceKind  with 
+        | Namespace,Namespace -> 
+            let kind = mty1.ModuleOrNamespaceKind
+            let entities = 
+                (mty1.AllEntitiesByLogicalMangledName,mty2.AllEntitiesByLogicalMangledName) 
+                ||>  CombineMaps (CombineEntityList path) 
 
-/// Combine module types when multiple namespace fragments contribute to the
-/// same namespace, making new module specs as we go.
-let rec private combineModuleOrNamespaceTypes path m (mty1:ModuleOrNamespaceType)  (mty2:ModuleOrNamespaceType)  = 
-    match mty1.ModuleOrNamespaceKind,mty2.ModuleOrNamespaceKind  with 
-    | Namespace,Namespace -> 
-        let kind = mty1.ModuleOrNamespaceKind
-        // REVIEW: this is not preserving order as we merge namespace declaration groups
-        let entities = 
-            (mty1.AllEntitiesByLogicalMangledName,mty2.AllEntitiesByLogicalMangledName) 
-            ||>  combineMaps (combineEntityList path) 
+            let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
-        let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+            ModuleOrNamespaceType(kind, vals, QueueList.ofList (NameMap.range entities))
 
-        new ModuleOrNamespaceType(kind, vals, QueueList.ofList (NameMap.range entities))
+        | Namespace, _ | _,Namespace -> 
+            error(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path),m))
 
-    | Namespace, _ | _,Namespace -> 
-        error(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path),m))
+        | _-> 
+            error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path),m))
 
-    | _-> 
-        error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path),m))
+    and CombineEntityList path l = 
+        match l with
+        | h :: t -> List.fold (CombineEntites path) h t
+        | _ -> failwith "CombineEntityList"
 
-and private combineEntityList path l = 
-    match l with
-    | h :: t -> List.fold (combineEntites path) h t
-    | _ -> failwith "combineEntityList"
+    and CombineEntites path (entity1:Entity) (entity2:Entity) = 
 
-and private combineEntites path (entity1:Entity) (entity2:Entity) = 
-
-    match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
-    | true,true -> 
-        entity1 |> NewModifiedTycon (fun data1 -> 
-                    { data1 with 
-                         entity_xmldoc = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
-                         entity_attribs = entity1.Attribs @ entity2.Attribs
-                         entity_modul_contents=lazy (combineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType) }) 
-    | false,false -> 
-        error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
-    | _,_ -> 
-        error(Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
+        match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
+        | true,true -> 
+            entity1 |> NewModifiedTycon (fun data1 -> 
+                        { data1 with 
+                             entity_xmldoc = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
+                             entity_attribs = entity1.Attribs @ entity2.Attribs
+                             entity_modul_contents=lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType) }) 
+        | false,false -> 
+            error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
+        | _,_ -> 
+            error(Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
     
-and combineModuleOrNamespaceTypeList path m l = 
-    match l with
-    | h :: t -> List.fold (combineModuleOrNamespaceTypes path m) h t
-    | _ -> failwith "combineModuleOrNamespaceTypeList"
+    and CombineModuleOrNamespaceTypeList path m l = 
+        match l with
+        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path m) h t
+        | _ -> failwith "CombineModuleOrNamespaceTypeList"
+
+    CombineModuleOrNamespaceTypeList [] m l
 
 //--------------------------------------------------------------------------
 // Resource format for pickled data

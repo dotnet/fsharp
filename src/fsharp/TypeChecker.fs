@@ -552,7 +552,7 @@ let MakeInnerEnv env nm modKind =
     let path = env.ePath @ [nm]
     (* Note: here we allocate a new module type accumulator *)
     let mtypeAcc = ref (NewEmptyModuleOrNamespaceType modKind)
-    let cpath = mkNestedCPath env.eCompPath nm.idText modKind
+    let cpath = env.eCompPath.NestedCompPath nm.idText modKind
     { env with ePath = path 
                eCompPath = cpath
                eAccessPath = cpath
@@ -569,7 +569,7 @@ let MakeInnerEnvForTyconRef _cenv env tcref isExtrinsicExtension =
         // Regular members get access to protected stuff 
         let env = EnterFamilyRegion tcref env
         // Note: assumes no nesting 
-        let eAccessPath = mkNestedCPath env.eCompPath tcref.LogicalName ModuleOrType
+        let eAccessPath = env.eCompPath.NestedCompPath tcref.LogicalName ModuleOrType
         { env with 
              eAccessRights = computeAccessRights eAccessPath env.eInternalsVisibleCompPaths env.eFamilyType // update this computed field
              eAccessPath = eAccessPath }
@@ -594,14 +594,14 @@ let LocateEnv ccu env enclosingNamespacePath =
     let env = List.fold (fun env id -> MakeInnerEnv env id Namespace |> fst) env enclosingNamespacePath
     env
 
-let BuildRootModuleType enclosingNamespacePath cpath mtyp = 
+let BuildRootModuleType enclosingNamespacePath (cpath:CompilationPath) mtyp = 
     (enclosingNamespacePath,(cpath, mtyp)) 
-        ||> List.foldBack (fun id (cpath, mtyp) -> (parentCompPath cpath, wrapModuleOrNamespaceTypeInNamespace  id (parentCompPath cpath) mtyp))
+        ||> List.foldBack (fun id (cpath, mtyp) -> (cpath.ParentCompPath, wrapModuleOrNamespaceTypeInNamespace  id cpath.ParentCompPath mtyp))
         |> snd
         
-let BuildRootModuleExpr enclosingNamespacePath cpath mexpr = 
+let BuildRootModuleExpr enclosingNamespacePath (cpath:CompilationPath) mexpr = 
     (enclosingNamespacePath,(cpath, mexpr)) 
-        ||> List.foldBack (fun id (cpath, mexpr) -> (parentCompPath cpath, wrapModuleOrNamespaceExprInNamespace id (parentCompPath cpath) mexpr))
+        ||> List.foldBack (fun id (cpath, mexpr) -> (cpath.ParentCompPath, wrapModuleOrNamespaceExprInNamespace id cpath.ParentCompPath mexpr))
         |> snd
 
 let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env = 
@@ -5797,7 +5797,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
                fspecs 
                |> List.filter (fun rfld -> rfld.Name |> fieldNameUnbound)
                |> List.filter (fun f -> not f.IsZeroInit)
-               |> List.map (fun fspec ->fspec.Name, mkRecdFieldGet cenv.g (oldve',mkNestedRecdFieldRef tcref fspec,tinst,m))
+               |> List.map (fun fspec ->fspec.Name, mkRecdFieldGet cenv.g (oldve',tcref.NestedRecdFieldRef fspec,tinst,m))
 
     let fldsList = fldsList @ oldFldsList
 
@@ -13456,7 +13456,7 @@ module EstablishTypeDefinitionCores = begin
                         | _ -> failwith "unreachable"
 
                     if ExtensionTyping.IsGeneratedTypeDirectReference (typeBeforeArguments, m) then 
-                        let optGeneratedTypePath = Some (mangledPathOfCompPath tcref.CompilationPath @ [ tcref.LogicalName ])
+                        let optGeneratedTypePath = Some (tcref.CompilationPath.MangledPath @ [ tcref.LogicalName ])
                         let _hasNoArgs,providedTypeAfterStaticArguments,checkTypeName = TcProvidedTypeAppToStaticConstantArgs cenv envinner optGeneratedTypePath tpenv tcrefBeforeStaticArguments args m
                         let isGenerated = providedTypeAfterStaticArguments.PUntaint((fun st -> not st.IsErased),m)
                         if isGenerated  then 
@@ -13547,7 +13547,7 @@ module EstablishTypeDefinitionCores = begin
                     error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig,nm),m))
 
                 // Embed the type into the module we're compiling
-                let cpath = mkNestedCPath eref.CompilationPath eref.LogicalName ModuleOrNamespaceKind.ModuleOrType
+                let cpath = eref.CompilationPath.NestedCompPath eref.LogicalName ModuleOrNamespaceKind.ModuleOrType
                 let access = combineAccess tycon.Accessibility (if st.PUntaint((fun st -> st.IsPublic || st.IsNestedPublic), m) then taccessPublic else taccessPrivate cpath)
 
                 let nestedTycon = Construct.NewProvidedTycon(resolutionEnvironment, st, 
@@ -13556,7 +13556,7 @@ module EstablishTypeDefinitionCores = begin
                                                              m=m, cpath=cpath, access = access)
                 eref.ModuleOrNamespaceType.AddProvidedTypeEntity(nestedTycon)
 
-                let nestedTyRef = eref.MkNestedTyconRef nestedTycon
+                let nestedTyRef = eref.NestedTyconRef nestedTycon
                 let ilOrigTypeRef = GetOriginalILTypeRefOfProvidedType (st, m)
                                 
                 // Record the details so we can map System.Type --> TyconRef
@@ -13866,10 +13866,10 @@ module EstablishTypeDefinitionCores = begin
                 let nenv = envinner.NameEnv
                 // Record fields should be visible from IntelliSense, so add fake names for them (similarly to "let a = ..")
                 for fspec in (fields |> List.filter (fun fspec -> not fspec.IsCompilerGenerated)) do
-                    let info = RecdFieldInfo(thisTyInst, mkNestedRecdFieldRef thisTyconRef fspec)
+                    let info = RecdFieldInfo(thisTyInst, thisTyconRef.NestedRecdFieldRef fspec)
                     let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
                     // Name resolution gives better info for tooltips
-                    let item = FreshenRecdFieldRef cenv.nameResolver m (mkNestedRecdFieldRef thisTyconRef fspec)
+                    let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.NestedRecdFieldRef fspec)
                     CallNameResolutionSink cenv.tcSink (fspec.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
                     // Environment is needed for completions
                     CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
@@ -14907,7 +14907,7 @@ let rec TcSignatureElement cenv parent endm (env: TcEnv) e : Eventually<TcEnv> =
 
                     let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env modulTypeRoot
                     // Publish the combined module type
-                    env.eModuleOrNamespaceTypeAccumulator := combineModuleOrNamespaceTypeList [] m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
+                    env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
                     env
 
             return env
@@ -15134,7 +15134,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
 
                   let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env modulTypeRoot
                   // Publish the combined module type
-                  env.eModuleOrNamespaceTypeAccumulator := combineModuleOrNamespaceTypeList [] m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
+                  env.eModuleOrNamespaceTypeAccumulator := CombineCcuContentFragments m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
                   env
           
           let mexprRoot = BuildRootModuleExpr enclosingNamespacePath envinner.eCompPath mexpr

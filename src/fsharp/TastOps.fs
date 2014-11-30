@@ -3448,7 +3448,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
                                 mhi
                             | _ -> 
                                 // The field is not in the signature. Hence it is regarded as hidden. 
-                                let rfref = mkNestedRecdFieldRef tcref rfield
+                                let rfref = tcref.NestedRecdFieldRef rfield
                                 { mhi with mhiRecdFields =  Zset.add rfref mhi.mhiRecdFields })
                         entity.AllFieldsArray
                 |> List.foldBack  (fun (ucase:UnionCase) mhi ->
@@ -3458,7 +3458,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
                                 mhi
                             | _ -> 
                                 // The constructor is not in the signature. Hence it is regarded as hidden. 
-                                let ucref = mkNestedUnionCaseRef tcref ucase
+                                let ucref = tcref.NestedUnionCaseRef ucase
                                 { mhi with mhiUnionCases =  Zset.add ucref mhi.mhiUnionCases })
                         (entity.UnionCasesAsList)  
         (mrpi,mhi) 
@@ -3597,7 +3597,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                (fun (rfield:RecdField) mhi ->
                    if not (canAccessFromEverywhere rfield.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
-                       let rfref = mkNestedRecdFieldRef tcref rfield
+                       let rfref = tcref.NestedRecdFieldRef rfield
                        { mhi with mhiRecdFields = Zset.add rfref mhi.mhiRecdFields } 
                    else mhi)
                tycon.AllFieldsArray  
@@ -3605,7 +3605,7 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                (fun (ucase:UnionCase) mhi ->
                    if not (canAccessFromEverywhere ucase.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
-                       let ucref = mkNestedUnionCaseRef tcref ucase
+                       let ucref = tcref.NestedUnionCaseRef ucase
                        { mhi with mhiUnionCases = Zset.add ucref mhi.mhiUnionCases } 
                    else mhi)
                (tycon.UnionCasesAsList)   

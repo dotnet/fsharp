@@ -396,10 +396,10 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
  
 
 /// Import an IL type definition as a new F# TAST Entity node.
-let rec ImportILTypeDef amap m scoref cpath enc nm (tdef:ILTypeDef)  =
+let rec ImportILTypeDef amap m scoref (cpath:CompilationPath) enc nm (tdef:ILTypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes = 
         lazy 
-            let cpath = mkNestedCPath cpath nm ModuleOrType
+            let cpath = cpath.NestedCompPath nm ModuleOrType
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
     // Add the type itself. 
     NewILTycon 
@@ -414,7 +414,7 @@ let rec ImportILTypeDef amap m scoref cpath enc nm (tdef:ILTypeDef)  =
 
 /// Import a list of (possibly nested) IL types as a new ModuleOrNamespaceType node
 /// containing new entities, bucketing by namespace along the way.
-and ImportILTypeDefList amap m cpath enc items =
+and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
     // Split into the ones with namespaces and without. Add the ones with namespaces in buckets.
     // That is, discriminate based in the first element of the namespace list (e.g. "System") 
     // and, for each bag, fold-in a lazy computation to add the types under that bag .
@@ -427,7 +427,7 @@ and ImportILTypeDefList amap m cpath enc items =
         items 
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
-                let modty = lazy (ImportILTypeDefList amap m (mkNestedCPath cpath n Namespace) enc tgs)
+                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
                 NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] modty)
             (fun (n,info:Lazy<_>) -> 
                 let (scoref2,_,lazyTypeDef:Lazy<ILTypeDef>) = info.Force()
@@ -484,7 +484,7 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod:ILModuleDef) 
     let scoref = ILScopeRef.Assembly aref
     let mtypsForExportedTypes = ImportILAssemblyExportedTypes amap m auxModLoader scoref mainmod.ManifestOfAssembly.ExportedTypes
     let mainmod = ImportILAssemblyMainTypeDefs amap m scoref mainmod
-    combineModuleOrNamespaceTypeList [] m (mainmod :: mtypsForExportedTypes)
+    CombineCcuContentFragments m (mainmod :: mtypsForExportedTypes)
 
 /// Import the type forwarder table for an IL assembly
 let ImportILAssemblyTypeForwarders (amap, m, exportedTypes:ILExportedTypesAndForwarders) = 

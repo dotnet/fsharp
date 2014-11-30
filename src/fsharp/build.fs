@@ -722,12 +722,6 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
       | UndefinedName(_,k,id,_) -> 
           os.Append(k (DecompileOpName id.idText)) |> ignore
                 
-      | InternalUndefinedTyconItem(f,tcref,s) ->
-          let _, errs = f((fullDisplayTextOfTyconRef tcref), s)
-          os.Append(errs) |> ignore
-      | InternalUndefinedItemRef(f,smr,ccuName,s) ->
-          let _, errs = f(smr, ccuName, s)
-          os.Append(errs) |> ignore
       | FieldNotMutable  _ -> 
           os.Append(FieldNotMutableE().Format) |> ignore
       | FieldsFromDifferentTypes (_,fref1,fref2,_) -> 
@@ -5028,7 +5022,7 @@ let TypeCheckOneInputEventually
                     | Some prefixPath -> 
                         TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
 
-                let allImplementedSigModulTyp = combineModuleOrNamespaceTypeList [] m [implFileSigType; allImplementedSigModulTyp]
+                let allImplementedSigModulTyp = CombineCcuContentFragments m [implFileSigType; allImplementedSigModulTyp]
 
                 // Add it to the CCU 
                 let ccuType = 

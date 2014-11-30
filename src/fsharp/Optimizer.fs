@@ -1038,12 +1038,12 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         | TupleValue vinfos         -> 
             TupleValue (Array.map abstractExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> 
-            if hiddenTyconRepr tcref.Deref || Array.exists (mkNestedRecdFieldRef tcref >> hiddenRecdField) tcref.AllFieldsArray
+            if hiddenTyconRepr tcref.Deref || Array.exists (tcref.NestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
             then UnknownValue 
             else RecdValue (tcref,Array.map abstractExprInfo vinfos)
         | UnionCaseValue(ucref,vinfos) -> 
             let tcref = ucref.TyconRef
-            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Array.exists (mkNestedUnionCaseRef tcref >> hiddenUnionCase) 
+            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Array.exists (tcref.NestedUnionCaseRef >> hiddenUnionCase) 
             then UnknownValue 
             else UnionCaseValue (ucref,Array.map abstractExprInfo vinfos)
         | SizeValue(_vdepth,vinfo)   -> MakeSizedValueInfo (abstractExprInfo vinfo)

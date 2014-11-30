@@ -3115,8 +3115,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         infos 
 
     /// Make a reference to a record or class field
-    let MakeRecdFieldInfo g typ tcref fspec = 
-        RecdFieldInfo(argsOfAppTy g typ,mkNestedRecdFieldRef tcref fspec)
+    let MakeRecdFieldInfo g typ (tcref:TyconRef) fspec = 
+        RecdFieldInfo(argsOfAppTy g typ,tcref.NestedRecdFieldRef fspec)
 
     /// Get the F#-declared record fields or class 'val' fields of a type
     let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,_ad) _m typ =

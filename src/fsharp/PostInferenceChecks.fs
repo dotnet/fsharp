@@ -1164,7 +1164,7 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
     let isHidden = 
         IsHiddenTycon env.sigToImplRemapInfo tycon || 
         IsHiddenTyconRepr env.sigToImplRemapInfo tycon || 
-        (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (mkNestedRecdFieldRef (mkLocalTyconRef tycon) rfield))
+        (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo ((mkLocalTyconRef tycon).NestedRecdFieldRef rfield))
     let access =  AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv (fun () -> rfield.Name) access rfield.Range rfield.FormalType;
     CheckTypePermitByrefs cenv rfield.Range rfield.FormalType;
