@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-/// Loading initial context, reporting errors etc.
-module internal Microsoft.FSharp.Compiler.Build
+/// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
+module internal Microsoft.FSharp.Compiler.CompileOps
+
 open System
 open System.Text
 open System.IO
@@ -22,7 +23,6 @@ open Microsoft.FSharp.Compiler.SR
 open Microsoft.FSharp.Compiler.DiagnosticMessage
 
 module Tc = Microsoft.FSharp.Compiler.TypeChecker
-module SR = Microsoft.FSharp.Compiler.SR
 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Range
@@ -71,13 +71,13 @@ open FullCompiler
 // Some Globals
 //--------------------------------------------------------------------------
 
-let sigSuffixes = [".mli";".fsi"]
+let FSharpSigFileSuffixes = [".mli";".fsi"]
 let mlCompatSuffixes = [".mli";".ml"]
-let implSuffixes = [".ml";".fs";".fsscript";".fsx"]
+let FSharpImplFileSuffixes = [".ml";".fs";".fsscript";".fsx"]
 let resSuffixes = [".resx"]
-let scriptSuffixes = [".fsscript";".fsx"]
-let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ scriptSuffixes
-let lightSyntaxDefaultExtensions : string list = [ ".fs";".fsscript";".fsx";".fsi" ]
+let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
+let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
+let FSharpLightSyntaxFileSuffixes : string list = [ ".fs";".fsscript";".fsx";".fsi" ]
 
 
 //----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ exception HashLoadedScriptConsideredSource of range
 exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileName option*) string option
 
 
-let RangeOfError(err:PhasedError) = 
+let GetRangeOfError(err:PhasedError) = 
   let rec RangeFromException = function
       | ErrorFromAddingConstraint(_,err2,_) -> RangeFromException err2 
 #if EXTENSIONTYPING
@@ -1363,35 +1363,33 @@ let SanitizeFileName fileName implicitIncludeDir =
     with _ ->
         fileName
 
+[<RequireQualifiedAccess>]
 type ErrorLocation =
-    {
-        Range : range
-        File : string
-        TextRepresentation : string
-        IsEmpty : bool
-    }
+    { Range : range
+      File : string
+      TextRepresentation : string
+      IsEmpty : bool }
 
+[<RequireQualifiedAccess>]
 type CanonicalInformation = 
-    {
-        ErrorNumber : int
-        Subcategory : string
-        TextRepresentation : string
-    }
+    { ErrorNumber : int
+      Subcategory : string
+      TextRepresentation : string }
 
+[<RequireQualifiedAccess>]
 type DetailedIssueInfo = 
-    {
-        Location : ErrorLocation option
-        Canonical : CanonicalInformation
-        Message : string
-    }
+    { Location : ErrorLocation option
+      Canonical : CanonicalInformation
+      Message : string }
 
+[<RequireQualifiedAccess>]
 type ErrorOrWarning = 
     | Short of bool * string
     | Long of bool * DetailedIssueInfo
 
 /// returns sequence that contains ErrorOrWarning for the given error + ErrorOrWarning for all related errors
 let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle,warn, err:PhasedError) = 
-    let outputWhere (showFullPaths,errorStyle) m = 
+    let outputWhere (showFullPaths,errorStyle) m : ErrorLocation = 
         if m = rangeStartup || m = rangeCmdArgs then 
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
         else
@@ -1441,11 +1439,11 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
         let errors = ResizeArray()
         let report err =
             let OutputWhere(err) = 
-                match RangeOfError err with 
+                match GetRangeOfError err with 
                 | Some m -> Some(outputWhere (showFullPaths,errorStyle) m)
                 | None -> None
 
-            let OutputCanonicalInformation(err:PhasedError,subcategory, errorNumber) = 
+            let OutputCanonicalInformation(err:PhasedError,subcategory, errorNumber) : CanonicalInformation = 
                 let text = 
                     match errorStyle with
                     // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
@@ -1461,7 +1459,7 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
                 OutputPhasedError os mainError flattenErrors;
                 os.ToString()
             
-            let entry = { Location = where; Canonical = canonical; Message = message }
+            let entry : DetailedIssueInfo = { Location = where; Canonical = canonical; Message = message }
             
             errors.Add ( ErrorOrWarning.Long( not warn, entry ) )
 
@@ -1476,7 +1474,7 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
                         OutputPhasedError os err flattenErrors
                         os.ToString()
 
-                    let entry = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
+                    let entry : DetailedIssueInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
                     errors.Add( ErrorOrWarning.Long (not warn, entry) )
 
                 | _ -> 
@@ -1506,9 +1504,9 @@ let rec OutputErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,err
     for e in errors do
         Printf.bprintf os "\n"
         match e with
-        | Short(_, txt) -> 
+        | ErrorOrWarning.Short(_, txt) -> 
             os.Append txt |> ignore
-        | Long(_, details) ->
+        | ErrorOrWarning.Long(_, details) ->
             match details.Location with
             | Some l when not l.IsEmpty -> os.Append(l.TextRepresentation) |> ignore
             | _ -> ()
@@ -1516,7 +1514,7 @@ let rec OutputErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,err
             os.Append( details.Message ) |> ignore
       
 let OutputErrorOrWarningContext prefix fileLineFn os err =
-    match RangeOfError err with
+    match GetRangeOfError err with
     | None   -> ()      
     | Some m -> 
         let filename = m.FileName
@@ -2144,7 +2142,7 @@ type TcConfigBuilder =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)    
         if sourceFiles = [] then errorR(Error(FSComp.SR.buildNoInputsSpecified(),rangeCmdArgs));
         let ext() = match tcConfigB.target with Dll -> ".dll" | Module -> ".netmodule" | ConsoleExe | WinExe -> ".exe"
-        let implFiles = sourceFiles |> List.filter (fun lower -> List.exists (Filename.checkSuffix (String.lowercase lower)) implSuffixes)
+        let implFiles = sourceFiles |> List.filter (fun lower -> List.exists (Filename.checkSuffix (String.lowercase lower)) FSharpImplFileSuffixes)
         let outfile = 
             match tcConfigB.outputFile, List.rev implFiles with 
             | None,[] -> "out" + ext()
@@ -2636,7 +2634,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member tcConfig.ComputeLightSyntaxInitialStatus filename = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
         let lower = String.lowercase filename
-        let lightOnByDefault = List.exists (Filename.checkSuffix lower) lightSyntaxDefaultExtensions
+        let lightOnByDefault = List.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
         if lightOnByDefault then (tcConfig.light <> Some(false)) else (tcConfig.light = Some(true) )
 
     member tcConfig.GetAvailableLoadedSources() =
@@ -2917,17 +2915,15 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member tcConfig.CoreLibraryDllReference() = fslibReference
                
 
-let warningMem n l = List.mem n l
-
-let ReportWarning (globalWarnLevel : int) (specificWarnOff : int list) (specificWarnOn : int list) err = 
+let ReportWarning (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list) err = 
     let n = GetErrorNumber err
-    warningOn err globalWarnLevel specificWarnOn && not (warningMem n specificWarnOff)
+    warningOn err globalWarnLevel specificWarnOn && not (List.mem n specificWarnOff)
 
-let ReportWarningAsError (globalWarnLevel : int) (specificWarnOff : int list) (specificWarnOn : int list) (specificWarnAsError : int list) (specificWarnAsWarn : int list) (globalWarnAsError : bool) err =
-    (warningOn err globalWarnLevel specificWarnOn) &&
-    not(warningMem (GetErrorNumber err) specificWarnAsWarn) &&
-    ((globalWarnAsError && not (warningMem (GetErrorNumber err) specificWarnOff)) ||
-     warningMem (GetErrorNumber err) specificWarnAsError)
+let ReportWarningAsError (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list, specificWarnAsError : int list, specificWarnAsWarn : int list, globalWarnAsError : bool) err =
+    warningOn err globalWarnLevel specificWarnOn &&
+    not (List.mem (GetErrorNumber err) specificWarnAsWarn) &&
+    ((globalWarnAsError && not (List.mem (GetErrorNumber err) specificWarnOff)) ||
+     List.mem (GetErrorNumber err) specificWarnAsError)
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
@@ -2968,7 +2964,7 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile,scopedPragmas,errorLogger:Er
     override x.WarnSinkImpl err = 
         let report = 
             let warningNum = GetErrorNumber err
-            match RangeOfError err with 
+            match GetRangeOfError err with 
             | Some m -> 
                 not (scopedPragmas |> List.exists (fun pragma ->
                     match pragma with 
@@ -3010,7 +3006,7 @@ let CanonicalizeFilename filename =
 
 let IsScript filename = 
     let lower = String.lowercase filename 
-    scriptSuffixes |> List.exists (Filename.checkSuffix lower)
+    FSharpScriptFileSuffixes |> List.exists (Filename.checkSuffix lower)
     
 // Give a unique name to the different kinds of inputs. Used to correlate signature and implementation files
 //   QualFileNameOfModuleName - files with a single module declaration or an anonymous module
@@ -3161,10 +3157,10 @@ let ParseInput (lexer,errorLogger:ErrorLogger,lexbuf:UnicodeLexing.Lexbuf,defaul
             if mlCompatSuffixes |> List.exists (Filename.checkSuffix lower)   then  
                 mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup; 
 
-            if implSuffixes |> List.exists (Filename.checkSuffix lower)   then  
+            if FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)   then  
                 let impl = Parser.implementationFile lexer lexbuf 
                 PostParseModuleImpls (defaultNamespace,filename,isLastCompiland,impl)
-            elif sigSuffixes |> List.exists (Filename.checkSuffix lower)  then  
+            elif FSharpSigFileSuffixes |> List.exists (Filename.checkSuffix lower)  then  
                 let intfs = Parser.signatureFile lexer lexbuf 
                 PostParseModuleSpecs (defaultNamespace,filename,isLastCompiland,intfs)
             else 
@@ -3232,7 +3228,7 @@ let ParseOneInputLexbuf (tcConfig:TcConfig,lexResourceManager,conditionalCompila
 let ParseOneInputFile (tcConfig:TcConfig,lexResourceManager,conditionalCompilationDefines,filename,isLastCompiland,errorLogger,retryLocked) =
     try 
        let lower = String.lowercase filename
-       if List.exists (Filename.checkSuffix lower) (sigSuffixes@implSuffixes)  then  
+       if List.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes)  then  
             if not(FileSystem.SafeExists(filename)) then
                 error(Error(FSComp.SR.buildCouldNotFindSourceFile(filename),rangeStartup))
             // bug 3155: if the file name is indirect, use a full path
@@ -3307,7 +3303,7 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
 #endif       
 #if DEBUG
         let itFailed = ref false
-        let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'build.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
+        let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
         unresolved 
         |> List.iter (fun (UnresolvedAssemblyReference(referenceText,_ranges)) ->
             if referenceText.Contains("mscorlib") then
@@ -3376,17 +3372,7 @@ let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithR
 #else
 let WriteSignatureData (tcConfig:TcConfig,tcGlobals,exportRemapping,ccu:CcuThunk,file) : ILResource = 
     let mspec = ccu.Contents
-#if DEBUG
-    if !verboseStamps then 
-        dprintf "Signature data before remap:\n%s\n" (Layout.showL (Layout.squashTo 192 (entityL mspec)));
-        dprintf "---------------------- START OF APPLYING EXPORT REMAPPING TO SIGNATURE DATA------------\n";
-#endif
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
-#if DEBUG
-    if !verboseStamps then 
-        dprintf "---------------------- END OF APPLYING EXPORT REMAPPING TO SIGNATURE DATA------------\n";
-        dprintf "Signature data after remap:\n%s\n" (Layout.showL (Layout.squashTo 192 (entityL mspec)));
-#endif
     PickleToResource file tcGlobals ccu (FSharpSignatureDataResourceName+"."+ccu.AssemblyName) pickleCcuInfo 
         { mspec=mspec; 
           compileTimeWorkingDir=tcConfig.implicitIncludeDir;
@@ -4545,29 +4531,34 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig:TcConfig) (inp:ParsedInput,pa
     ProcessMetaCommandsFromInput (getWarningNumber, addReferencedAssemblyByPath, addLoadedSource) tcConfigB inp pathOfMetaCommandSource ()
     TcConfig.Create(tcConfigB,validate=false)
 
-let GetAssemblyResolutionInformation(tcConfig : TcConfig) : AssemblyResolution list * UnresolvedAssemblyReference list =
+//----------------------------------------------------------------------------
+// Compute the load closure of a set of script files
+//--------------------------------------------------------------------------
+
+let GetAssemblyResolutionInformation(tcConfig : TcConfig) =
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
     let assemblyList = TcAssemblyResolutions.GetAllDllReferences(tcConfig)
     let resolutions = TcAssemblyResolutions.Resolve(tcConfig,assemblyList,[])
     resolutions.GetAssemblyResolutions(),resolutions.GetUnresolvedReferences()
     
-type LoadClosure = {
-        /// The source files along with the ranges of the #load positions in each file.
-        SourceFiles: (string * range list) list
-        /// The resolved references along with the ranges of the #r positions in each file.
-        References: (string * AssemblyResolution list) list
-        /// The list of references that were not resolved during load closure. These may still be extension references.
-        UnresolvedReferences : UnresolvedAssemblyReference list
-        /// The list of all sources in the closure with inputs when available
-        Inputs: (string * ParsedInput option) list
-        /// The #nowarns
-        NoWarns: (string * range list) list
-        /// Errors seen while parsing root of closure
-        RootErrors : PhasedError list
-        /// Warnings seen while parsing root of closure
-        RootWarnings : PhasedError list        
-    }
-    
+[<RequireQualifiedAccess>]
+type LoadClosure = 
+    { /// The source files along with the ranges of the #load positions in each file.
+      SourceFiles: (string * range list) list
+      /// The resolved references along with the ranges of the #r positions in each file.
+      References: (string * AssemblyResolution list) list
+      /// The list of references that were not resolved during load closure. These may still be extension references.
+      UnresolvedReferences : UnresolvedAssemblyReference list
+      /// The list of all sources in the closure with inputs when available
+      Inputs: (string * ParsedInput option) list
+      /// The #nowarns
+      NoWarns: (string * range list) list
+      /// Errors seen while parsing root of closure
+      RootErrors : PhasedError list
+      /// Warnings seen while parsing root of closure
+      RootWarnings : PhasedError list }   
+
+
 [<RequireQualifiedAccess>]
 type CodeContext =
     | Evaluation // in fsi.exe
@@ -4578,11 +4569,11 @@ type CodeContext =
 module private ScriptPreprocessClosure = 
     open Internal.Utilities.Text.Lexing
     
-    type private ClosureDirective = 
+    type ClosureDirective = 
         | SourceFile of string * range * string // filename, range, source text
         | ClosedSourceFile of string * range * ParsedInput option * PhasedError list * PhasedError list * (string * range) list // filename, range, errors, warnings, nowarns
         
-    type private Observed() =
+    type Observed() =
         let seen = System.Collections.Generic.Dictionary<_,bool>()
         member ob.SetSeen(check) = 
             if not(seen.ContainsKey(check)) then 
@@ -4610,7 +4601,7 @@ module private ScriptPreprocessClosure =
         ParseOneInputLexbuf (tcConfig,lexResourceManager,defines,lexbuf,filename,isLastCompiland,errorLogger) 
           
     /// Create a TcConfig for load closure starting from a single .fsx file
-    let CreateScriptSourceTcConfig(filename:string,codeContext) =  
+    let CreateScriptSourceTcConfig (filename:string, codeContext) =  
         let projectDir = Path.GetDirectoryName(filename)
         let isInteractive = (codeContext = CodeContext.Evaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
@@ -4628,7 +4619,7 @@ module private ScriptPreprocessClosure =
         tcConfigB.implicitlyResolveAssemblies <- false
         TcConfig.Create(tcConfigB,validate=true)
         
-    let private SourceFileOfFilename(filename,m,inputCodePage:int option) : ClosureDirective list = 
+    let SourceFileOfFilename(filename,m,inputCodePage:int option) : ClosureDirective list = 
         try
             let filename = FileSystem.SafeGetFullPath(filename)
             use stream = FileSystem.FileStreamReadShim filename
@@ -4661,7 +4652,7 @@ module private ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB,validate=false),nowarns
     
-    let private FindClosureDirectives(closureDirectives,tcConfig:TcConfig,codeContext,lexResourceManager:Lexhelp.LexResourceManager) =
+    let FindClosureDirectives(closureDirectives,tcConfig:TcConfig,codeContext,lexResourceManager:Lexhelp.LexResourceManager) =
         let tcConfig = ref tcConfig
         
         let observedSources = Observed()
@@ -4704,7 +4695,7 @@ module private ScriptPreprocessClosure =
         closureDirectives |> List.map FindClosure |> List.concat, !tcConfig
         
     /// Reduce the full directive closure into LoadClosure
-    let private GetLoadClosure(rootFilename,closureDirectives,tcConfig,codeContext) = 
+    let GetLoadClosure(rootFilename,closureDirectives,tcConfig,codeContext) = 
     
         // Mark the last file as isLastCompiland. closureDirectives is currently reversed.
         let closureDirectives =
@@ -4717,15 +4708,14 @@ module private ScriptPreprocessClosure =
         let sourceFiles = ref []
         let sourceInputs = ref []
         let globalNoWarns = ref []
-        let ExtractOne = function
+        for directive in closureDirectives do
+            match directive with 
             | ClosedSourceFile(filename,m,input,_,_,noWarns) -> 
                 let filename = FileSystem.SafeGetFullPath(filename)
                 sourceFiles := (filename,m) :: !sourceFiles  
                 globalNoWarns := (!globalNoWarns @ noWarns) 
                 sourceInputs := (filename,input) :: !sourceInputs                 
             | _ -> failwith "Unexpected"
-            
-        closureDirectives |> List.iter ExtractOne // This unreverses the list of sources 
         
         // Resolve all references.
         let resolutionErrors = ref []
@@ -4748,7 +4738,7 @@ module private ScriptPreprocessClosure =
             | _ -> [],[] // When no file existed.
         
         let isRootRange exn =
-            match RangeOfError exn with
+            match GetRangeOfError exn with
             | Some m -> 
                 // Return true if the error was *not* from a #load-ed file.
                 let isArgParameterWhileNotEditing = (codeContext <> CodeContext.Editing) && (m = range0 || m = rangeStartup || m = rangeCmdArgs)
@@ -4760,17 +4750,18 @@ module private ScriptPreprocessClosure =
         let rootErrors = rootErrors |> List.filter isRootRange
         let rootWarnings = rootWarnings |> List.filter isRootRange
         
-        let result = {SourceFiles = List.groupByFirst !sourceFiles
-                      References = List.groupByFirst references
-                      UnresolvedReferences = unresolvedReferences
-                      Inputs = !sourceInputs
-                      NoWarns = List.groupByFirst !globalNoWarns
-                      RootErrors = rootErrors
-                      RootWarnings = rootWarnings}       
+        let result : LoadClosure = 
+            { SourceFiles = List.groupByFirst !sourceFiles
+              References = List.groupByFirst references
+              UnresolvedReferences = unresolvedReferences
+              Inputs = !sourceInputs
+              NoWarns = List.groupByFirst !globalNoWarns
+              RootErrors = rootErrors
+              RootWarnings = rootWarnings}       
+
         result
-        
-    /// Given source text, find the full load closure
-    /// Used from service.fs, when editing a script file
+
+    /// Given source text, find the full load closure. Used from service.fs, when editing a script file
     let GetFullClosureOfScriptSource(filename,source,codeContext,lexResourceManager:Lexhelp.LexResourceManager) = 
         let tcConfig = CreateScriptSourceTcConfig(filename,codeContext)
         let protoClosure = [SourceFile(filename,range0,source)]
@@ -4787,30 +4778,27 @@ module private ScriptPreprocessClosure =
 
 type LoadClosure with
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText(filename:string,source:string,codeContext,lexResourceManager:Lexhelp.LexResourceManager) : LoadClosure = 
+    static member ComputeClosureOfSourceText (filename:string, source:string, codeContext, lexResourceManager:Lexhelp. LexResourceManager) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
-        ScriptPreprocessClosure.GetFullClosureOfScriptSource(filename,source,codeContext,lexResourceManager)
+        ScriptPreprocessClosure.GetFullClosureOfScriptSource (filename, source, codeContext, lexResourceManager)
 
     /// Used from fsi.fs and fsc.fs, for #load and command line.
     /// The resulting references are then added to a TcConfig.
-    static member ComputeClosureOfSourceFiles(tcConfig:TcConfig,files:(string*range) list,codeContext,useDefaultScriptingReferences:bool,lexResourceManager:Lexhelp.LexResourceManager) : LoadClosure = 
+    static member ComputeClosureOfSourceFiles (tcConfig:TcConfig, files:(string*range) list, codeContext, useDefaultScriptingReferences:bool, lexResourceManager:Lexhelp.LexResourceManager) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)
-        ScriptPreprocessClosure.GetFullClosureOfScriptFiles(tcConfig,files,codeContext,useDefaultScriptingReferences,lexResourceManager)
+        ScriptPreprocessClosure.GetFullClosureOfScriptFiles (tcConfig, files, codeContext, useDefaultScriptingReferences, lexResourceManager)
         
               
 
 //----------------------------------------------------------------------------
-// Build the initial type checking environment
+// Initial type checking environment
 //--------------------------------------------------------------------------
 
-let ApplyImplicitOpen tcGlobals amap m tcEnv p =
-    if verbose then dprintf "opening %s\n" p 
-    Tc.TcOpenDecl TcResultsSink.NoSink tcGlobals amap m m tcEnv (pathToSynLid m (splitNamespace p))
-
-let GetInitialTcEnv (assemblyName:string option) (initm:range) (tcConfig:TcConfig) (tcImports:TcImports) tcGlobals  =    
+/// Build the initial type checking environment
+let GetInitialTcEnv (assemblyName:string option, initm:range, tcConfig:TcConfig, tcImports:TcImports, tcGlobals)  =    
     let initm = initm.StartRange
-    if verbose then dprintf "--- building initial tcEnv\n"         
-    let internalsAreVisibleHere (ccuinfo:ImportedAssembly) =
+
+    let internalsAreVisibleHere (asm:ImportedAssembly) =
         match assemblyName with
         | None -> false
         | Some assemblyName ->
@@ -4818,24 +4806,55 @@ let GetInitialTcEnv (assemblyName:string option) (initm:range) (tcConfig:TcConfi
                 try                    
                     System.Reflection.AssemblyName(visibleTo).Name = assemblyName                
                 with e ->
-                    warning(InvalidInternalsVisibleToAssemblyName(visibleTo,ccuinfo.FSharpViewOfMetadata.FileName))
+                    warning(InvalidInternalsVisibleToAssemblyName(visibleTo,asm.FSharpViewOfMetadata.FileName))
                     false
-            let internalsVisibleTos = ccuinfo.AssemblyInternalsVisibleToAttributes
+            let internalsVisibleTos = asm.AssemblyInternalsVisibleToAttributes
             List.exists isTargetAssemblyName internalsVisibleTos
-    let ccus = tcImports.GetImportedAssemblies() |> List.map (fun ccuinfo -> ccuinfo.FSharpViewOfMetadata,
-                                                                             ccuinfo.AssemblyAutoOpenAttributes,
-                                                                             ccuinfo |> internalsAreVisibleHere)    
+
+    let ccus = 
+        tcImports.GetImportedAssemblies() 
+        |> List.map (fun asm -> asm.FSharpViewOfMetadata, asm.AssemblyAutoOpenAttributes, asm |> internalsAreVisibleHere)    
+
     let amap = tcImports.GetImportMap()
-    let tcEnv = Tc.CreateInitialTcEnv(tcGlobals,amap,initm,ccus)
+
+    let tcEnv = Tc.CreateInitialTcEnv(tcGlobals, amap, initm, ccus)
+
     let tcEnv = 
         if tcConfig.checkOverflow then
-            ApplyImplicitOpen tcGlobals amap initm tcEnv FSharpLib.CoreOperatorsCheckedName
+            Tc.TcOpenDecl TcResultsSink.NoSink tcGlobals amap initm initm tcEnv (pathToSynLid initm (splitNamespace FSharpLib.CoreOperatorsCheckedName))
         else
             tcEnv
     tcEnv
 
 //----------------------------------------------------------------------------
-// TYPECHECK
+// Fault injection
+
+/// Inject faults into checking
+let CheckSimulateException(tcConfig:TcConfig) = 
+    match tcConfig.simulateException with
+    | Some("tc-oom") -> raise(System.OutOfMemoryException())
+    | Some("tc-an") -> raise(System.ArgumentNullException("simulated"))
+    | Some("tc-invop") -> raise(System.InvalidOperationException())
+    | Some("tc-av") -> raise(System.AccessViolationException())
+    | Some("tc-aor") -> raise(System.ArgumentOutOfRangeException())
+    | Some("tc-dv0") -> raise(System.DivideByZeroException())
+    | Some("tc-nfn") -> raise(System.NotFiniteNumberException())
+    | Some("tc-oe") -> raise(System.OverflowException())
+    | Some("tc-atmm") -> raise(System.ArrayTypeMismatchException())
+    | Some("tc-bif") -> raise(System.BadImageFormatException())
+    | Some("tc-knf") -> raise(System.Collections.Generic.KeyNotFoundException())
+    | Some("tc-ior") -> raise(System.IndexOutOfRangeException())
+    | Some("tc-ic") -> raise(System.InvalidCastException())
+    | Some("tc-ip") -> raise(System.InvalidProgramException())
+    | Some("tc-ma") -> raise(System.MemberAccessException())
+    | Some("tc-ni") -> raise(System.NotImplementedException())
+    | Some("tc-nr") -> raise(System.NullReferenceException())
+    | Some("tc-oc") -> raise(System.OperationCanceledException())
+    | Some("tc-fail") -> failwith "simulated"
+    | _ -> ()
+
+//----------------------------------------------------------------------------
+// Type-check sets of files
 //--------------------------------------------------------------------------
 
 type RootSigs =  Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
@@ -4864,7 +4883,6 @@ type TcState =
  
 let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,niceNameGen,tcEnv0) =
     ignore tcImports
-    if verbose then dprintf "Typecheck (constructing initial state)....\n"
     // Create a ccu to hold all the results of compilation 
     let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType Namespace)
     let ccu = 
@@ -4884,7 +4902,7 @@ let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,
                                MemberSignatureEquality= (Tastops.typeEquivAux EraseAll tcGlobals)
                                TypeForwarders=Map.empty })
 
-    (* OK, is this is the F# library CCU then fix it up. *)
+    // OK, is this is the FSharp.Core CCU then fix it up. 
     if tcConfig.compilingFslib then 
         tcGlobals.fslibCcu.Fixup(ccu)
       
@@ -4899,31 +4917,8 @@ let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,
       tcsTcImplEnv=tcEnv0
       tcsRootSigsAndImpls = RootSigsAndImpls (rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp) }
 
-let CheckSimulateException(tcConfig:TcConfig) = 
-    match tcConfig.simulateException with
-    | Some("tc-oom") -> raise(System.OutOfMemoryException())
-    | Some("tc-an") -> raise(System.ArgumentNullException("simulated"))
-    | Some("tc-invop") -> raise(System.InvalidOperationException())
-    | Some("tc-av") -> raise(System.AccessViolationException())
-    | Some("tc-aor") -> raise(System.ArgumentOutOfRangeException())
-    | Some("tc-dv0") -> raise(System.DivideByZeroException())
-    | Some("tc-nfn") -> raise(System.NotFiniteNumberException())
-    | Some("tc-oe") -> raise(System.OverflowException())
-    | Some("tc-atmm") -> raise(System.ArrayTypeMismatchException())
-    | Some("tc-bif") -> raise(System.BadImageFormatException())
-    | Some("tc-knf") -> raise(System.Collections.Generic.KeyNotFoundException())
-    | Some("tc-ior") -> raise(System.IndexOutOfRangeException())
-    | Some("tc-ic") -> raise(System.InvalidCastException())
-    | Some("tc-ip") -> raise(System.InvalidProgramException())
-    | Some("tc-ma") -> raise(System.MemberAccessException())
-    | Some("tc-ni") -> raise(System.NotImplementedException())
-    | Some("tc-nr") -> raise(System.NullReferenceException())
-    | Some("tc-oc") -> raise(System.OperationCanceledException())
-    | Some("tc-fail") -> failwith "simulated"
-    | _ -> ()
 
-
-(* Typecheck a single file or interactive entry into F# Interactive *)
+/// Typecheck a single file or interactive entry into F# Interactive 
 let TypeCheckOneInputEventually
       (checkForErrors , tcConfig:TcConfig, tcImports:TcImports,  
        tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
@@ -4936,31 +4931,19 @@ let TypeCheckOneInputEventually
       let! (topAttrs, mimpls,tcEnvAtEnd,tcSigEnv,tcImplEnv,topSigsAndImpls,ccuType) = 
         eventually {
             match inp with 
-            | ParsedInput.SigFile (ParsedSigFileInput(filename,qualNameOfFile, _,_,_) as file) ->
+            | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
                 
                 // Check if we've seen this top module signature before. 
                 if Zmap.mem qualNameOfFile rootSigs then 
                     errorR(Error(FSComp.SR.buildSignatureAlreadySpecified(qualNameOfFile.Text),m.StartRange))
 
-                (* Check if the implementation came first in compilation order *)
+                // Check if the implementation came first in compilation order 
                 if Zset.contains qualNameOfFile rootImpls then 
                     errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text),m))
 
                 // Typecheck the signature file 
-#if DEBUG
-                if !verboseStamps then 
-                    dprintf "---------------------- START CHECK %A ------------\n" filename
-#else
-                filename |> ignore
-#endif
                 let! (tcEnvAtEnd,tcEnv,smodulTypeRoot) = 
-                    Tc.TypecheckOneSigFile (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcState.tcsTcSigEnv file
-
-#if DEBUG
-                if !verboseStamps then 
-                    dprintf "Type-checked signature:\n%s\n" (Layout.showL (Layout.squashTo 192 (entityTypeL smodulTypeRoot)))
-                    dprintf "---------------------- END CHECK %A ------------\n" filename
-#endif
+                    Tc.TypeCheckOneSigFile (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcState.tcsTcSigEnv file
 
                 let rootSigs = Zmap.add qualNameOfFile  smodulTypeRoot rootSigs
 
@@ -4972,7 +4955,7 @@ let TypeCheckOneInputEventually
                         let m = qualNameOfFile.Range
                         TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
 
-                let res = (EmptyTopAttrs, [],tcEnvAtEnd,tcEnv,tcState.tcsTcImplEnv,RootSigsAndImpls(rootSigs,rootImpls, allSigModulTyp, allImplementedSigModulTyp  ),tcState.tcsCcuType)
+                let res = (EmptyTopAttrs, [], tcEnvAtEnd, tcEnv, tcState.tcsTcImplEnv, RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp), tcState.tcsCcuType)
                 return res
 
             | ParsedInput.ImplFile (ParsedImplFileInput(filename,_,qualNameOfFile,_,_,_,_) as file) ->
@@ -4988,24 +4971,14 @@ let TypeCheckOneInputEventually
 
                 let tcImplEnv = tcState.tcsTcImplEnv
 
-#if DEBUG
-                if !verboseStamps then 
-                    dprintf "---------------------- START CHECK %A ------------\n" filename
-#endif
                 // Typecheck the implementation file 
                 let! topAttrs,implFile,tcEnvAtEnd = 
-                    Tc.TypecheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
+                    Tc.TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
                 let hadSig = isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile
 
-#if DEBUG
-                if !verboseStamps then 
-                    dprintf "Implementation signature:\n%s\n" (Layout.showL (Layout.squashTo 192 (entityTypeL implFileSigType)))
-                    dprintf "---------------------- END CHECK %A ------------\n" filename
-#endif
-
-                if verbose then  dprintf "done TypecheckOneImplFile...\n"
+                if verbose then  dprintf "done TypeCheckOneImplFile...\n"
                 let rootImpls = Zset.add qualNameOfFile rootImpls
         
                 // Only add it to the environment if it didn't have a signature 
@@ -5047,7 +5020,7 @@ let TypeCheckOneInputEventually
       return (tcState.TcEnvFromSignatures,EmptyTopAttrs,[]),tcState
  }
 
-let TypecheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState  inp =
+let TypeCheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState  inp =
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false,GetScopedPragmasForInput(inp),oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)
@@ -5060,21 +5033,20 @@ let TypeCheckMultipleInputsFinish(results,tcState: TcState) =
     let mimpls = List.concat mimpls
     // This is the environment required by fsi.exe when incrementally adding definitions 
     let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
-    if verbose then  dprintf "done TypecheckMultipleInputs...\n"
     
     (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState
 
-let TypecheckMultipleInputs(checkForErrors,tcConfig:TcConfig,tcImports,tcGlobals,prefixPathOpt,tcState,inputs) =
-    let results,tcState =  List.mapFold (TypecheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) tcState inputs
+let TypeCheckMultipleInputs (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
+    let results,tcState =  (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
     TypeCheckMultipleInputsFinish(results,tcState)
 
-let TypeCheckSingleInputAndFinishEventually(checkForErrors,tcConfig:TcConfig,tcImports,tcGlobals,prefixPathOpt,tcSink,tcState,input) =
+let TypeCheckSingleInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     eventually {
         let! results,tcState =  TypeCheckOneInputEventually(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
         return TypeCheckMultipleInputsFinish([results],tcState)
     }
 
-let TypeCheckClosedInputSetFinish(mimpls,tcState) =
+let TypeCheckClosedInputSetFinish (mimpls, tcState) =
     // Publish the latest contents to the CCU 
     tcState.tcsCcu.Deref.Contents <- tcState.tcsCcuType
 
@@ -5083,292 +5055,16 @@ let TypeCheckClosedInputSetFinish(mimpls,tcState) =
     rootSigs |> Zmap.iter (fun qualNameOfFile _ ->  
       if not (Zset.contains qualNameOfFile rootImpls) then 
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
-    if verbose then  dprintf "done TypeCheckClosedInputSet...\n"
+
     let tassembly = TAssembly(mimpls)
     tcState, tassembly    
     
-let TypeCheckClosedInputSet(checkForErrors,tcConfig,tcImports,tcGlobals,prefixPathOpt,tcState,inputs) =
+let TypeCheckClosedInputSet (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
-    let (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState = TypecheckMultipleInputs (checkForErrors,tcConfig,tcImports,tcGlobals,prefixPathOpt,tcState,inputs)
+    let (tcEnvAtEndOfLastFile, topAttrs, mimpls),tcState = TypeCheckMultipleInputs (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
     let tcState,tassembly = TypeCheckClosedInputSetFinish (mimpls, tcState)
     tcState, topAttrs, tassembly, tcEnvAtEndOfLastFile
 
-type OptionSwitch = 
-    | On
-    | Off
 
-type OptionSpec = 
-    | OptionClear of bool ref
-    | OptionFloat of (float -> unit)
-    | OptionInt of (int -> unit)
-    | OptionSwitch of (OptionSwitch -> unit)
-    | OptionIntList of (int -> unit)
-    | OptionIntListSwitch of (int -> OptionSwitch -> unit)
-    | OptionRest of (string -> unit)
-    | OptionSet of bool ref
-    | OptionString of (string -> unit)
-    | OptionStringList of (string -> unit)
-    | OptionStringListSwitch of (string -> OptionSwitch -> unit)
-    | OptionUnit of (unit -> unit)
-    | OptionHelp of (CompilerOptionBlock list -> unit)                      // like OptionUnit, but given the "options"
-    | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
-
-and  CompilerOption      = CompilerOption of string * string * OptionSpec * Option<exn> * string option
-and  CompilerOptionBlock = PublicOptions  of string * CompilerOption list | PrivateOptions of CompilerOption list
-let blockOptions = function PublicOptions (_,opts) -> opts | PrivateOptions opts -> opts
-
-let filterCompilerOptionBlock pred block =
-  match block with
-    | PublicOptions(heading,opts) -> PublicOptions(heading,List.filter pred opts)
-    | PrivateOptions(opts)        -> PrivateOptions(List.filter pred opts)
-
-let compilerOptionUsage (CompilerOption(s,tag,spec,_,_)) =
-  let s = if s="--" then "" else s (* s="flag" for "--flag" options. s="--" for "--" option. Adjust printing here for "--" case. *)
-  match spec with
-    | (OptionUnit _ | OptionSet _ | OptionClear _ | OptionHelp _) -> sprintf "--%s" s 
-    | OptionStringList _ -> sprintf "--%s:%s" s tag
-    | OptionIntList _ -> sprintf "--%s:%s" s tag
-    | OptionSwitch _ -> sprintf "--%s[+|-]" s 
-    | OptionStringListSwitch _ -> sprintf "--%s[+|-]:%s" s tag
-    | OptionIntListSwitch _ -> sprintf "--%s[+|-]:%s" s tag
-    | OptionString _ -> sprintf "--%s:%s" s tag
-    | OptionInt _ -> sprintf "--%s:%s" s tag
-    | OptionFloat _ ->  sprintf "--%s:%s" s tag         
-    | OptionRest _ -> sprintf "--%s ..." s
-    | OptionGeneral _  -> if tag="" then sprintf "%s" s else sprintf "%s:%s" s tag (* still being decided *)
-
-let printCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption) =
-    let flagWidth = 30 // fixed width for printing of flags, e.g. --warnaserror:<warn;...>
-    let defaultLineWidth = 80 // the fallback width
-    let lineWidth = try System.Console.BufferWidth with e -> defaultLineWidth
-    let lineWidth = if lineWidth=0 then defaultLineWidth else lineWidth (* Have seen BufferWidth=0 on Linux/Mono *)
-    // Lines have this form: <flagWidth><space><description>
-    //   flagWidth chars - for flags description or padding on continuation lines.
-    //   single space    - space.
-    //   description     - words upto but excluding the final character of the line.
-    assert(flagWidth = 30)
-    printf "%-30s" (compilerOptionUsage compilerOption)
-    let printWord column (word:string) =
-        // Have printed upto column.
-        // Now print the next word including any preceeding whitespace.
-        // Returns the column printed to (suited to folding).
-        if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
-          printfn "" (* newline *)
-          assert(flagWidth = 30)
-          printf  "%-30s %s" ""(*<--flags*) word
-          flagWidth + 1 + word.Length
-        else
-          printf  " %s" word
-          column + 1 + word.Length
-    let words = match help with None -> [| |] | Some s -> s.Split [| ' ' |]
-    let _finalColumn = Array.fold printWord flagWidth words
-    printfn "" (* newline *)
-
-let printPublicOptions (heading,opts) =
-  if nonNil opts then
-    printfn ""
-    printfn ""      
-    printfn "\t\t%s" heading
-    List.iter printCompilerOption opts
-
-let printCompilerOptionBlocks blocks =
-  let equals x y = x=y
-  let publicBlocks = List.choose (function PrivateOptions _ -> None | PublicOptions (heading,opts) -> Some (heading,opts)) blocks
-  let consider doneHeadings (heading, _opts) =
-    if Set.contains heading doneHeadings then
-      doneHeadings
-    else
-      let headingOptions = List.filter (fst >> equals heading) publicBlocks |> List.map snd |> List.concat
-      printPublicOptions (heading,headingOptions)
-      Set.add heading doneHeadings
-  List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
-
-(* For QA *)
-let dumpCompilerOption prefix (CompilerOption(str, _, spec, _, _)) =
-    printf "section='%-25s' ! option=%-30s kind=" prefix str
-    match spec with
-      | OptionUnit             _ -> printf "OptionUnit"
-      | OptionSet              _ -> printf "OptionSet"
-      | OptionClear            _ -> printf "OptionClear"
-      | OptionHelp             _ -> printf "OptionHelp"
-      | OptionStringList       _ -> printf "OptionStringList"
-      | OptionIntList          _ -> printf "OptionIntList"
-      | OptionSwitch           _ -> printf "OptionSwitch"
-      | OptionStringListSwitch _ -> printf "OptionStringListSwitch"
-      | OptionIntListSwitch    _ -> printf "OptionIntListSwitch"
-      | OptionString           _ -> printf "OptionString"
-      | OptionInt              _ -> printf "OptionInt"
-      | OptionFloat            _ -> printf "OptionFloat"
-      | OptionRest             _ -> printf "OptionRest"
-      | OptionGeneral          _ -> printf "OptionGeneral"
-    printf "\n"
-let dumpCompilerOptionBlock = function
-  | PublicOptions (heading,opts) -> List.iter (dumpCompilerOption heading)     opts
-  | PrivateOptions opts          -> List.iter (dumpCompilerOption "NoSection") opts
-let dumpCompilerOptionBlocks blocks = List.iter dumpCompilerOptionBlock blocks
-
-let isSlashOpt (opt:string) = 
-    opt.[0] = '/' && (opt.Length = 1 || not (opt.[1..].Contains "/"))
-
-//----------------------------------------------------------------------------
-// The argument parser is used by both the VS plug-in and the fsc.exe to
-// parse the include file path and other front-end arguments.
-//
-// The language service uses this function too. It's important to continue
-// processing flags even if an error is seen in one so that the best possible
-// intellisense can be show.
-//--------------------------------------------------------------------------
-let ParseCompilerOptions (collectOtherArgument : string -> unit) (blocks: CompilerOptionBlock list) args =
-  use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
-  
-  let specs : CompilerOption list = List.collect blockOptions blocks
-          
-  // returns a tuple - the option token, the option argument string
-  let parseOption (s : string) = 
-    // grab the option token
-    let opts = s.Split([|':'|])
-    let mutable opt = opts.[0]
-    if opt = "" then
-        ()
-    // if it doesn't start with a '-' or '/', reject outright
-    elif opt.[0] <> '-' && opt.[0] <> '/' then
-      opt <- ""
-    elif opt <> "--" then
-      // is it an abbreviated or MSFT-style option?
-      // if so, strip the first character and move on with your life
-      if opt.Length = 2 || isSlashOpt opt then
-        opt <- opt.[1 ..]
-      // else, it should be a non-abbreviated option starting with "--"
-      elif opt.Length > 3 && opt.StartsWith("--") then
-        opt <- opt.[2 ..]
-      else
-        opt <- ""
-
-    // get the argument string  
-    let optArgs = if opts.Length > 1 then String.Join(":",opts.[1 ..]) else ""
-    opt, optArgs
-              
-  let getOptionArg compilerOption (argString : string) =
-    if argString = "" then
-      errorR(Error(FSComp.SR.buildOptionRequiresParameter(compilerOptionUsage compilerOption),rangeCmdArgs)) 
-    argString
-    
-  let getOptionArgList compilerOption (argString : string) =
-    if argString = "" then
-      errorR(Error(FSComp.SR.buildOptionRequiresParameter(compilerOptionUsage compilerOption),rangeCmdArgs)) 
-      []
-    else
-      argString.Split([|',';';'|]) |> List.ofArray
-  
-  let getSwitchOpt (opt : string) =
-    // if opt is a switch, strip the  '+' or '-'
-    if opt <> "--" && opt.Length > 1 && (opt.EndsWith("+",StringComparison.Ordinal) || opt.EndsWith("-",StringComparison.Ordinal)) then
-      opt.[0 .. opt.Length - 2]
-    else
-      opt
-      
-  let getSwitch (s: string) = 
-    let s = (s.Split([|':'|])).[0]
-    if s <> "--" && s.EndsWith("-",StringComparison.Ordinal) then Off else On
-
-  let rec processArg args =    
-    match args with 
-    | [] -> ()
-    | opt :: t ->  
-
-        let optToken, argString = parseOption opt
-
-        let reportDeprecatedOption errOpt =
-          match errOpt with
-          | Some(e) -> warning(e)
-          | None -> ()
-
-        let rec attempt l = 
-          match l with 
-          | (CompilerOption(s, _, OptionHelp f, d, _) :: _) when optToken = s  && argString = "" -> 
-              reportDeprecatedOption d
-              f blocks; t
-          | (CompilerOption(s, _, OptionUnit f, d, _) :: _) when optToken = s  && argString = "" -> 
-              reportDeprecatedOption d
-              f (); t
-          | (CompilerOption(s, _, OptionSwitch f, d, _) :: _) when getSwitchOpt(optToken) = s && argString = "" -> 
-              reportDeprecatedOption d
-              f (getSwitch opt); t
-          | (CompilerOption(s, _, OptionSet f, d, _) :: _) when optToken = s && argString = "" -> 
-              reportDeprecatedOption d
-              f := true; t
-          | (CompilerOption(s, _, OptionClear f, d, _) :: _) when optToken = s && argString = "" -> 
-              reportDeprecatedOption d
-              f := false; t
-          | (CompilerOption(s, _, OptionString f, d, _) as compilerOption :: _) when optToken = s -> 
-              reportDeprecatedOption d
-              let oa = getOptionArg compilerOption argString
-              if oa <> "" then
-                  f (getOptionArg compilerOption oa)
-              t 
-          | (CompilerOption(s, _, OptionInt f, d, _) as compilerOption :: _) when optToken = s ->
-              reportDeprecatedOption d
-              let oa = getOptionArg compilerOption argString
-              if oa <> "" then 
-                  f (try int32 (oa) with _ -> 
-                      errorR(Error(FSComp.SR.buildArgInvalidInt(getOptionArg compilerOption argString),rangeCmdArgs)); 0)
-              t
-          | (CompilerOption(s, _, OptionFloat f, d, _) as compilerOption :: _) when optToken = s -> 
-              reportDeprecatedOption d
-              let oa = getOptionArg compilerOption argString
-              if oa <> "" then
-                  f (try float (oa) with _ -> 
-                      errorR(Error(FSComp.SR.buildArgInvalidFloat(getOptionArg compilerOption argString), rangeCmdArgs)); 0.0)
-              t
-          | (CompilerOption(s, _, OptionRest f, d, _) :: _) when optToken = s -> 
-              reportDeprecatedOption d
-              List.iter f t; []
-          | (CompilerOption(s, _, OptionIntList f, d, _) as compilerOption :: _) when optToken = s ->
-              reportDeprecatedOption d
-              let al = getOptionArgList compilerOption argString
-              if al <> [] then
-                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0)) al ;
-              t
-          | (CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
-              reportDeprecatedOption d
-              let al = getOptionArgList compilerOption argString
-              if al <> [] then
-                  let switch = getSwitch(opt)
-                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0) switch) al  
-              t
-              // here
-          | (CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _) when optToken = s -> 
-              reportDeprecatedOption d
-              let al = getOptionArgList compilerOption argString
-              if al <> [] then
-                  List.iter (fun s -> f s) (getOptionArgList compilerOption argString)
-              t
-          | (CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
-              reportDeprecatedOption d
-              let al = getOptionArgList compilerOption argString
-              if al <> [] then
-                  let switch = getSwitch(opt)
-                  List.iter (fun s -> f s switch) (getOptionArgList compilerOption argString)
-              t
-          | (CompilerOption(_, _, OptionGeneral (pred,exec), d, _) :: _) when pred args -> 
-              reportDeprecatedOption d
-              let rest = exec args in rest // arguments taken, rest remaining
-          | (_ :: more) -> attempt more 
-          | [] -> 
-              if opt.Length = 0 || opt.[0] = '-' || isSlashOpt opt
-               then 
-                  // want the whole opt token - delimiter and all
-                  let unrecOpt = (opt.Split([|':'|]).[0])
-                  errorR(Error(FSComp.SR.buildUnrecognizedOption(unrecOpt),rangeCmdArgs)) 
-                  t
-              else 
-                 (collectOtherArgument opt; t)
-        let rest = attempt specs 
-        processArg rest
-  
-  let result = processArg args
-  result
-
-do()
 
 

@@ -382,17 +382,17 @@
     <Compile Include="..\TraceCall.fs">
       <Link>TraceCall.fs</Link>
     </Compile>
-    <Compile Include="..\build.fsi">
-      <Link>build.fsi</Link>
+    <Compile Include="..\CompileOps.fsi">
+      <Link>CompileOps.fsi</Link>
     </Compile>
-    <Compile Include="..\build.fs">
-      <Link>build.fs</Link>
+    <Compile Include="..\CompileOps.fs">
+      <Link>CompileOps.fs</Link>
     </Compile>
-    <Compile Include="..\FscOptions.fsi">
-      <Link>FscOptions.fsi</Link>
+    <Compile Include="..\CompileOptions.fsi">
+      <Link>CompileOptions.fsi</Link>
     </Compile>
-    <Compile Include="..\FscOptions.fs">
-      <Link>FscOptions.fs</Link>
+    <Compile Include="..\CompileOptions.fs">
+      <Link>CompileOptions.fs</Link>
     </Compile>
     <Compile Include="..\vs\IncrementalBuild.fsi">
       <Link>IncrementalBuild.fsi</Link>

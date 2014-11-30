@@ -42,7 +42,7 @@ type IncrementalOptimizationEnv =
 /// For building optimization environments incrementally 
 val internal BindCcu : CcuThunk -> CcuOptimizationInfo -> IncrementalOptimizationEnv -> TcGlobals -> IncrementalOptimizationEnv
 
-/// The entry point. Boolean indicates 'incremental extension' in FSI 
+/// Optimize one implementation file in the given environment
 val internal OptimizeImplFile : OptimizationSettings *  CcuThunk * TcGlobals * ConstraintSolver.TcValF * Import.ImportMap * IncrementalOptimizationEnv * isIncrementalFragment: bool * emitTaicalls: bool * TypedImplFile -> IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo
 
 #if DEBUG
@@ -55,8 +55,14 @@ val p_CcuOptimizationInfo : CcuOptimizationInfo -> TastPickle.WriterState -> uni
 
 /// Rewrite the modul info using the export remapping 
 val RemapOptimizationInfo : TcGlobals -> Tastops.Remap -> (CcuOptimizationInfo -> CcuOptimizationInfo)
+
+/// Ensure that 'internal' items are not exported in the optimization info
 val AbstractOptimizationInfoToEssentials : (CcuOptimizationInfo -> CcuOptimizationInfo)
+
+/// Combine optimization infos
 val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
+
+/// Check if an expression has an effect
 val ExprHasEffect: TcGlobals -> Expr -> bool
 #endif
 

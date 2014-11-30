@@ -15208,7 +15208,7 @@ and TcModuleOrNamespace cenv env (id,isModule,defs,xml,modAttrs,vis,m:range) =
 
 
 //--------------------------------------------------------------------------
-// TypecheckOneImplFile - Typecheck all the namespace fragments in a file.
+// TypeCheckOneImplFile - Typecheck all the namespace fragments in a file.
 //-------------------------------------------------------------------------- 
 
 let AddCcuToTcEnv(g,amap,scopem,env,ccu,autoOpens,internalsVisible) = 
@@ -15363,7 +15363,7 @@ let CheckModuleSignature g cenv m denvAtEnd rootSigOpt implFileTypePriorToSig im
 
 /// Check an entire implementation file
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
-let TypecheckOneImplFile 
+let TypeCheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
        (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink) 
        env 
@@ -15448,7 +15448,7 @@ let TypecheckOneImplFile
 
 
 /// Check an entire sginature file
-let TypecheckOneSigFile  
+let TypeCheckOneSigFile  
        (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDefines,tcSink) 
        tcEnv 
        (ParsedSigFileInput(_,qualNameOfFile,_, _,sigFileFrags)) = 

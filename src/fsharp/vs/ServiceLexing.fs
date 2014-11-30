@@ -535,7 +535,7 @@ type internal LineTokenizer(text:string,
     let lexbuf = UnicodeLexing.StringAsLexbuf text
     
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
-    let fsx = Build.IsScript(filename)
+    let fsx = CompileOps.IsScript(filename)
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...

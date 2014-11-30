@@ -12,7 +12,7 @@ undefinedNameRecordLabel,"The record label '%s' is not defined"
 undefinedNameTypeParameter,"The type parameter '%s' is not defined"
 undefinedNamePatternDiscriminator,"The pattern discriminator '%s' is not defined"
 # -----------------------------------------------------------------------------
-# build.fs
+# CompileOps.fs
 # -----------------------------------------------------------------------------
 buildUnexpectedTypeArgs,"The non-generic type '%s' does not expect any type arguments, but here is given %d type argument(s)"
 203,buildInvalidWarningNumber,"Invalid warning number '%s'"

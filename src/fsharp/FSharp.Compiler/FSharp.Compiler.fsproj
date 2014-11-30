@@ -404,17 +404,17 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
-    <Compile Include="..\build.fsi">
-      <Link>Driver\build.fsi</Link>
+    <Compile Include="..\CompileOps.fsi">
+      <Link>Driver\CompileOps.fsi</Link>
     </Compile>
-    <Compile Include="..\build.fs">
-      <Link>Driver\build.fs</Link>
+    <Compile Include="..\CompileOps.fs">
+      <Link>Driver\CompileOps.fs</Link>
     </Compile>
-    <Compile Include="..\FscOptions.fsi">
-      <Link>Driver\FscOptions.fsi</Link>
+    <Compile Include="..\CompileOptions.fsi">
+      <Link>Driver\CompileOptions.fsi</Link>
     </Compile>
-    <Compile Include="..\FscOptions.fs">
-      <Link>Driver\FscOptions.fs</Link>
+    <Compile Include="..\CompileOptions.fs">
+      <Link>Driver\CompileOptions.fs</Link>
     </Compile>
     <Compile Include="..\vs\IncrementalBuild.fsi">
       <Link>Driver\IncrementalBuild.fsi</Link>

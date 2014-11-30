@@ -31,11 +31,6 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
 
-#if DEBUG
-///verboseStamps: print #stamp on each id -- very verbose - but sometimes useful. Turn on using '--stamps'
-let verboseStamps = ref false
-#endif
-
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
 //++GLOBAL MUTABLE STATE
@@ -718,13 +713,7 @@ type Entity =
     static member NewUnlinked() : Entity = { Data = nullableSlotEmpty() }
 
     /// Create a new entity with the given backing data. Only used during unpickling of F# metadata.
-    static member New reason (data: EntityData) : Entity  = 
-#if DEBUG
-        if !verboseStamps then 
-            dprintf "entity %s#%d (%s)\n" data.entity_logical_name data.entity_stamp reason
-#else
-        ignore(reason)
-#endif
+    static member New _reason (data: EntityData) : Entity  = 
         { Data = data }
 
     /// Link an entity based on empty, unlinked data to the given data. Only used during unpickling of F# metadata.
@@ -2492,7 +2481,7 @@ and NonLocalEntityRef    =
                 | [(_,st)] ->
                     // 'entity' is at position i in the dereference chain. We resolved to position 'j'.
                     // Inject namespaces until we're an position j, and then inject the type.
-                    // Note: this is similar to code in build.fs
+                    // Note: this is similar to code in CompileOps.fs
                     let rec injectNamespacesFromIToJ (entity: Entity) k = 
                         if k = j  then 
                             let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
@@ -4522,9 +4511,6 @@ let NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = Construct.N
 
 let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity,access,recValInfo,specialRepr,baseOrThis,attribs,inlineInfo,doc,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal,konst,actualParent) : Val = 
     let stamp = newStamp() 
-#if DEBUG
-    if !verboseStamps then dprintf "NewVal, %s#%d\n" logicalName stamp
-#endif
     Val.New
         { val_stamp = stamp
           val_logical_name=logicalName
@@ -4559,9 +4545,6 @@ let NewCcuContents sref m nm mty =
 let NewModifiedTycon f (orig:Tycon) = 
     let stamp = newStamp() 
     let data = orig.Data 
-#if DEBUG
-    if !verboseStamps then dprintf "NewModifiedTycon, %s#%d, based on %s#%d\n" orig.LogicalName stamp orig.LogicalName data.entity_stamp
-#endif
     Tycon.New "NewModifiedTycon" (f { data with entity_stamp=stamp }) 
     
 /// Create a module Tycon based on an existing one using the function 'f'. 
@@ -4577,9 +4560,6 @@ let NewModifiedModuleOrNamespace f orig =
 let NewModifiedVal f (orig:Val) = 
     let data = orig.Data
     let stamp = newStamp() 
-#if DEBUG
-    if !verboseStamps then dprintf "NewModifiedVal, stamp #%d, based on stamp #%d\n" stamp data.val_stamp
-#endif
     let data' = f { data with val_stamp=stamp }
     Val.New data'
 

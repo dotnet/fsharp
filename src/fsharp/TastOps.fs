@@ -2739,9 +2739,6 @@ module DebugPrint = begin
         stat
 
     let stampL _n w = 
-#if DEBUG
-        if !verboseStamps then w ^^ sepL "#" ^^ int64L _n else 
-#endif
         w
 
     let layoutTyconRef (tc:TyconRef) = wordL tc.DisplayNameWithStaticParameters |> stampL tc.Stamp
@@ -2938,11 +2935,6 @@ module DebugPrint = begin
 
     let valL (vspec:Val) =
         let vsL = wordL (DecompileOpName vspec.LogicalName) |> stampL vspec.Stamp
-        let vsL = 
-#if DEBUG
-            if !verboseStamps then vsL ^^ rightL (if isSome(vspec.PublicPath) then "+" else "-") else 
-#endif
-            vsL
         let vsL = vsL -- layoutAttribs (vspec.Attribs)
         vsL
 
@@ -3148,17 +3140,6 @@ module DebugPrint = begin
             | Expr.Const (c,_,_)  -> constL c
             | Expr.Val (v,flags,_) -> 
                  let xL = valL v.Deref 
-                 let xL =
-#if DEBUG
-                     if !verboseStamps then 
-                         let tag = 
-                           match v with
-                           | VRefLocal _    -> ""
-                           | VRefNonLocal _ -> "!!" 
-                         xL ^^ rightL tag 
-                     else
-#endif
-                         xL
                  let xL =
                      match flags with
                        | PossibleConstrainedCall _    -> xL ^^ rightL "<constrained>"
@@ -3495,10 +3476,6 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi,mhi) =
         (mrpi,mhi) 
     | Some (sigVal:Val)  -> 
         // The value is in the signature. Add the repackage entry. 
-#if DEBUG
-        if !verboseStamps then dprintf "accValRemap, remap value %s#%d --> %s#%d\n" implVal.LogicalName implVal.Stamp sigVal.LogicalName sigVal.Stamp; 
-#endif
-      
         let mrpi = { mrpi with mrpiVals = (vref,mkLocalValRef sigVal) :: mrpi.mrpiVals }
         (mrpi,mhi) 
 
@@ -4374,9 +4351,6 @@ and remapValReprInfo g tmenv (ValReprInfo(tpNames,arginfosl,retInfo)) =
     ValReprInfo(tpNames,List.mapSquared (remapArgData g tmenv) arginfosl, remapArgData g tmenv retInfo)
 
 and remapValData g tmenv d =
-#if DEBUG
-    if !verboseStamps then dprintf "remap val data #%d\n" d.val_stamp;
-#endif
     let ty = d.val_type
     let topValInfo = d.val_repr_info
     let ty' = ty |> remapPossibleForallTy g tmenv
@@ -4727,13 +4701,6 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
     
     // Values need to be copied and renamed. 
     let vs',tmenvinner = copyAndRemapAndBindVals g compgen tmenvinner vs
-#if DEBUG
-    if !verboseStamps then 
-        for tycon in tycons do 
-            dprintf "copyAndRemapAndBindTyconsAndVals: tycon %s#%d\n" tycon.LogicalName tycon.Stamp;
-        for v in vs do 
-            dprintf "copyAndRemapAndBindTyconsAndVals: val %s#%d\n" v.LogicalName v.Stamp;
-#endif
 
     // "if a type constructor is hidden then all its inner values and inner type constructors must also be hidden" 
     // Hence we can just lookup the inner tycon/value mappings in the tables. 
@@ -4742,10 +4709,6 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
         let vref = 
             try  
                let res = tmenvinner.valRemap.[v]
-#if DEBUG
-               if !verboseStamps then 
-                   dprintf "remaped internal value %s#%d --> %s#%d\n" v.LogicalName v.Stamp res.LogicalName res.Stamp;
-#endif
                res 
             with :? KeyNotFoundException -> 
                 errorR(InternalError(sprintf "couldn't remap internal value '%s'" v.LogicalName,v.Range));
@@ -4756,10 +4719,6 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
         let tcref = 
             try 
                 let res = tmenvinner.tyconRefRemap.[mkLocalTyconRef tycon]
-#if DEBUG
-                if !verboseStamps then 
-                    dprintf "remaped internal tycon %s#%d --> %s#%d\n" tycon.LogicalName tycon.Stamp res.LogicalName res.Stamp;
-#endif
                 res
             with :? KeyNotFoundException -> 
                 errorR(InternalError("couldn't remap internal tycon "^showL(DebugPrint.tyconL tycon),tycon.Range));
@@ -7294,9 +7253,6 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
     let accEntityRemap (entity:Entity) acc = 
         match tryRescopeEntity viewedCcu entity with 
         | Some eref -> 
-#if DEBUG
-            if !verboseStamps then dprintf "adding export remapping for entity %s#%d\n" entity.LogicalName entity.Stamp;
-#endif
             addTyconRefRemap (mkLocalTyconRef entity) eref acc
         | None -> 
             if entity.IsNamespace then 
@@ -7308,9 +7264,6 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
         // The acc contains the entity remappings
         match tryRescopeVal viewedCcu acc vspec with 
         | Some vref -> 
-#if DEBUG
-            if !verboseStamps then dprintf "adding export remapping for value %s#%d\n" vspec.LogicalName vspec.Stamp;
-#endif
             {acc with valRemap=acc.valRemap.Add vspec vref }
         | None -> 
             error(InternalError("Unexpected value without a pubpath when remapping assembly data",vspec.Range))

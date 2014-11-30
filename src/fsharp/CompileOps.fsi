@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-/// Loading initial context, reporting errors etc.
-module internal Microsoft.FSharp.Compiler.Build
+/// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
+module internal Microsoft.FSharp.Compiler.CompileOps
 
 open System.Text
 open Internal.Utilities
@@ -37,19 +37,27 @@ module internal FullCompiler =
 
 #endif
 
+//----------------------------------------------------------------------------
+// File names and known file suffixes
+//--------------------------------------------------------------------------
+
 /// Signature file suffixes
-val sigSuffixes : string list
+val FSharpSigFileSuffixes : string list
 
 /// Implementation file suffixes
-val implSuffixes : string list
+val FSharpImplFileSuffixes : string list
 
 /// Script file suffixes
-val scriptSuffixes : string list
+val FSharpScriptFileSuffixes : string list
 
 val IsScript : string -> bool
 
 /// File suffixes where #light is the default
-val lightSyntaxDefaultExtensions : string list
+val FSharpLightSyntaxFileSuffixes : string list
+
+
+/// Get the name used for FSharp.Core
+val GetFSharpCoreLibraryName : unit -> string
 
 //----------------------------------------------------------------------------
 // Parsing inputs
@@ -61,10 +69,8 @@ val PrependPathToInput : Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
 val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland: bool -> Ast.ParsedInput
 
-
-
 //----------------------------------------------------------------------------
-// Errors
+// Error and warnings
 //--------------------------------------------------------------------------
 
 /// Represents the style being used to format errros
@@ -72,11 +78,10 @@ type ErrorStyle =
     | DefaultErrors 
     | EmacsErrors 
     | TestErrors 
-    | VSErrors
-    
+    | VSErrors    
 
 /// Get the location associated with an error
-val RangeOfError : PhasedError -> range option
+val GetRangeOfError : PhasedError -> range option
 
 /// Get the number associated with an error
 val GetErrorNumber : PhasedError -> int
@@ -93,22 +98,26 @@ val OutputErrorOrWarning : implicitIncludeDir:string * showFullPaths: bool * fla
 /// Output extra context information for an error or warning to a buffer
 val OutputErrorOrWarningContext : prefix:string -> fileLineFunction:(string -> int -> string) -> StringBuilder -> PhasedError -> unit
 
+[<RequireQualifiedAccess>]
 type ErrorLocation =
     { Range : range
       File : string
       TextRepresentation : string
       IsEmpty : bool }
 
+[<RequireQualifiedAccess>]
 type CanonicalInformation = 
     { ErrorNumber : int
       Subcategory : string
       TextRepresentation : string }
 
+[<RequireQualifiedAccess>]
 type DetailedIssueInfo = 
     { Location : ErrorLocation option
       Canonical : CanonicalInformation
       Message : string }
 
+[<RequireQualifiedAccess>]
 type ErrorOrWarning = 
     | Short of bool * string
     | Long of bool * DetailedIssueInfo
@@ -116,43 +125,8 @@ type ErrorOrWarning =
 val CollectErrorOrWarning : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  warning:bool * PhasedError -> seq<ErrorOrWarning>
 
 //----------------------------------------------------------------------------
-// Options and configuration
+// Resolve assembly references 
 //--------------------------------------------------------------------------
-
-// For command-line options that can be suffixed with +/-
-type OptionSwitch =
-    | On
-    | Off
-
-/// The spec value describes the action of the argument,
-/// and whether it expects a following parameter.
-type OptionSpec = 
-    | OptionClear of bool ref
-    | OptionFloat of (float -> unit)
-    | OptionInt of (int -> unit)
-    | OptionSwitch of (OptionSwitch -> unit)
-    | OptionIntList of (int -> unit)
-    | OptionIntListSwitch of (int -> OptionSwitch -> unit)
-    | OptionRest of (string -> unit)
-    | OptionSet of bool ref
-    | OptionString of (string -> unit)
-    | OptionStringList of (string -> unit)
-    | OptionStringListSwitch of (string -> OptionSwitch -> unit)
-    | OptionUnit of (unit -> unit)
-    | OptionHelp of (CompilerOptionBlock list -> unit)                      // like OptionUnit, but given the "options"
-    | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
-
-and  CompilerOption      = 
-    /// CompilerOption(name, argumentDescriptionString, actionSpec, exceptionOpt, helpTextOpt
-    | CompilerOption of string * string * OptionSpec * Option<exn> * string option
-
-and  CompilerOptionBlock = 
-    | PublicOptions  of string * CompilerOption list 
-    | PrivateOptions of CompilerOption list
-
-val printCompilerOptionBlocks : CompilerOptionBlock list -> unit  // for printing usage
-val dumpCompilerOptionBlocks  : CompilerOptionBlock list -> unit  // for QA
-val filterCompilerOptionBlock : (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
 
 exception AssemblyNotResolved of (*originalName*) string * range
 exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
@@ -201,6 +175,10 @@ type CompilerTarget =
 type ResolveAssemblyReferenceMode = 
     | Speculative 
     | ReportErrors
+
+//----------------------------------------------------------------------------
+// TcConfig
+//--------------------------------------------------------------------------
 
 /// Represents the file or string used for the --version flag
 type VersionFlag = 
@@ -501,12 +479,23 @@ type TcConfig =
  
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
 
+/// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
+/// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
+[<Sealed>]
+type TcConfigProvider = 
+    /// Get a TcConfigProvider which will return only the exact TcConfig.
+    static member Constant : TcConfig -> TcConfigProvider
+
+    /// Get a TcConfigProvider which will continue to respect changes in the underlying
+    /// TcConfigBuilder rather than delivering snapshots.
+    static member BasedOnMutableBuilder : TcConfigBuilder -> TcConfigProvider
 
 //----------------------------------------------------------------------------
 // Tables of referenced DLLs 
 //--------------------------------------------------------------------------
 
 /// Represents a resolved imported binary
+[<RequireQualifiedAccess>]
 type ImportedBinary = 
     { FileName: string
       RawMetadata: ILModuleDef
@@ -519,6 +508,7 @@ type ImportedBinary =
       ILScopeRef: ILScopeRef}
 
 /// Represents a resolved imported assembly
+[<RequireQualifiedAccess>]
 type ImportedAssembly = 
     { ILScopeRef: ILScopeRef
       FSharpViewOfMetadata: CcuThunk
@@ -539,16 +529,6 @@ type TcAssemblyResolutions =
     static member BuildFromPriorResolutions     : TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
     
 
-/// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
-/// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.
-[<Sealed>]
-type TcConfigProvider = 
-    /// Get a TcConfigProvider which will return only the exact TcConfig.
-    static member Constant : TcConfig -> TcConfigProvider
-
-    /// Get a TcConfigProvider which will continue to respect changes in the underlying
-    /// TcConfigBuilder rather than delivering snapshots.
-    static member BasedOnMutableBuilder : TcConfigBuilder -> TcConfigProvider
 
 /// Repreesnts a table of imported assemblies with their resolutions.
 [<Sealed>] 
@@ -610,8 +590,10 @@ val WriteSignatureData : TcConfig * TcGlobals * Tastops.Remap * CcuThunk * strin
 val WriteOptimizationData :  TcGlobals * string * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
 #endif
 
-/// Get the name used for FSharp.Core
-val GetFSharpCoreLibraryName : unit -> string
+
+//----------------------------------------------------------------------------
+// #r and other directives
+//--------------------------------------------------------------------------
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
@@ -623,6 +605,16 @@ val ProcessMetaCommandsFromInput :
               ('T -> range * string -> 'T) * 
               ('T -> range * string -> unit) -> TcConfigBuilder -> Ast.ParsedInput -> string -> 'T -> 'T
 
+/// Process all the #r, #I etc. in an input
+val ApplyMetaCommandsFromInputToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
+
+/// Process the #nowarn in an input
+val ApplyNoWarnsToTcConfig : TcConfig -> (Ast.ParsedInput*string) -> TcConfig
+
+
+//----------------------------------------------------------------------------
+// Scoped pragmas
+//--------------------------------------------------------------------------
 
 /// Find the scoped #nowarn pragmas with their range information
 val GetScopedPragmasForInput : Ast.ParsedInput -> ScopedPragma list
@@ -630,14 +622,12 @@ val GetScopedPragmasForInput : Ast.ParsedInput -> ScopedPragma list
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetErrorLoggerFilteringByScopedPragmas : checkFile:bool * ScopedPragma list * ErrorLogger  -> ErrorLogger
 
-/// Process the #nowarn in an input
-val ApplyNoWarnsToTcConfig : TcConfig -> (Ast.ParsedInput*string) -> TcConfig
-
-/// Process all the #r, #I etc. in an input
-val ApplyMetaCommandsFromInputToTcConfig : TcConfig -> (Ast.ParsedInput * string) -> TcConfig
-
 /// This list is the default set of references for "non-project" files. 
 val DefaultBasicReferencesForOutOfProjectSources : string list
+
+//----------------------------------------------------------------------------
+// Parsing
+//--------------------------------------------------------------------------
 
 /// Parse one input file
 val ParseOneInputFile : TcConfig * Lexhelp.LexResourceManager * string list * string * isLastCompiland: bool * ErrorLogger * (*retryLocked*) bool -> ParsedInput option
@@ -648,7 +638,7 @@ val ParseOneInputFile : TcConfig * Lexhelp.LexResourceManager * string list * st
 
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
-val GetInitialTcEnv : string option -> range -> TcConfig -> TcImports -> TcGlobals -> TcEnv
+val GetInitialTcEnv : string option * range * TcConfig * TcImports * TcGlobals -> TcEnv
                 
 [<Sealed>]
 /// Represents the incremental type checking state for a set of inputs
@@ -691,38 +681,47 @@ val TypeCheckSingleInputAndFinishEventually :
     (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
         -> Eventually<(TcEnv * TopAttribs * Tast.TypedImplFile list) * TcState>
 
-/// Parse and process a set of compiler options
-val ParseCompilerOptions : (string -> unit) -> CompilerOptionBlock list -> string list -> unit
+/// Indicates if we should report a warning
+val ReportWarning : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list -> PhasedError -> bool
 
-/// Report a warning through the current error logger 
-val ReportWarning : int -> int list -> int list -> PhasedError -> bool
-
-/// Report a warning through the current error logger, but as an error
-val ReportWarningAsError : int -> int list -> int list -> int list -> int list -> bool -> PhasedError -> bool
+/// Indicates if we should report a warning as an error
+val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list * specificWarnAsError: int list * specificWarnAsWarn: int list * globalWarnAsError: bool -> PhasedError -> bool
 
 //----------------------------------------------------------------------------
 // #load closure
 //--------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
 type CodeContext =
     | Evaluation
     | Compilation
     | Editing
 
+[<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
-        SourceFiles: (string * range list) list
-        /// The resolved references along with the ranges of the #r positions in each file.
-        References: (string * AssemblyResolution list) list
-        /// The list of references that were not resolved during load closure. These may still be extension references.
-        UnresolvedReferences : UnresolvedAssemblyReference list
-        /// The list of all sources in the closure with inputs when available
-        Inputs: (string * ParsedInput option) list
-        /// The #nowarns
-        NoWarns: (string * range list) list
-        /// *Parse* errors seen while parsing root of closure
-        RootErrors : PhasedError list
-        /// *Parse* warnings seen while parsing root of closure
-        RootWarnings : PhasedError list }
+      SourceFiles: (string * range list) list
+
+      /// The resolved references along with the ranges of the #r positions in each file.
+      References: (string * AssemblyResolution list) list
+
+      /// The list of references that were not resolved during load closure. These may still be extension references.
+      UnresolvedReferences : UnresolvedAssemblyReference list
+
+      /// The list of all sources in the closure with inputs when available
+      Inputs: (string * ParsedInput option) list
+
+      /// The #nowarns
+      NoWarns: (string * range list) list
+
+      /// *Parse* errors seen while parsing root of closure
+      RootErrors : PhasedError list
+
+      /// *Parse* warnings seen while parsing root of closure
+      RootWarnings : PhasedError list }
+
+    // Used from service.fs, when editing a script file
     static member ComputeClosureOfSourceText : filename : string * source : string * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure
+
+    /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * useDefaultScriptingReferences : bool * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

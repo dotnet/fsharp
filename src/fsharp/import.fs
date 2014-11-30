@@ -51,7 +51,7 @@ type AssemblyLoader =
 ///
 /// There is normally only one ImportMap for any assembly compilation, though additional instances can be created
 /// using tcImports.GetImportMap() if needed, and it is not harmful if multiple instances are used. The object 
-/// serves as an interface through to the tables stored in the primary TcImports structures defined in build.fs. 
+/// serves as an interface through to the tables stored in the primary TcImports structures defined in CompileOps.fs. 
 [<Sealed>]
 type ImportMap(g:TcGlobals,assemblyLoader:AssemblyLoader) =
     let typeRefToTyconRefCache = new System.Collections.Generic.Dictionary<ILTypeRef,TyconRef>()

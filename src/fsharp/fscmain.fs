@@ -2,6 +2,11 @@
 
 module internal Microsoft.FSharp.Compiler.CommandLineMain
 
+open System
+open System.Diagnostics
+open System.IO
+open System.Reflection
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -9,16 +14,11 @@ open Microsoft.FSharp.Compiler.Driver
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Build
-open System.Runtime.CompilerServices
+open Microsoft.FSharp.Compiler.CompileOps
 
 /// Implement the optional resident compilation service
 module FSharpResidentCompiler = 
 
-    open System
-    open System.Diagnostics
-    open System.IO
-    open System.Reflection
     open System.Runtime.Remoting.Channels
     open System.Runtime.Remoting
     open System.Runtime.Remoting.Lifetime
@@ -30,10 +30,10 @@ module FSharpResidentCompiler =
         let output = ResizeArray()
         let outWriter isOut = 
             { new TextWriter() with 
-                 member x.Write(c:char) = lock output (fun () -> output.Add (isOut, (try Some System.Console.ForegroundColor with _ -> None) ,c)) 
+                 member x.Write(c:char) = lock output (fun () -> output.Add (isOut, (try Some Console.ForegroundColor with _ -> None) ,c)) 
                  member x.Encoding = Encoding.UTF8 }
-        do System.Console.SetOut (outWriter true)
-        do System.Console.SetError (outWriter false)
+        do Console.SetOut (outWriter true)
+        do Console.SetError (outWriter false)
         member x.GetTextAndClear() = lock output (fun () -> let res = output.ToArray() in output.Clear(); res)
 
     /// The compilation server, which runs in the server process. Accessed by clients using .NET remoting.
@@ -229,7 +229,7 @@ module FSharpResidentCompiler =
                                      Console.ForegroundColor <- consoleColor; 
                              | None -> ()
                         with _ -> ()
-                        c |> (if isOut then System.Console.Out.Write else System.Console.Error.Write)
+                        c |> (if isOut then Console.Out.Write else Console.Error.Write)
                     Some exitCode
                 with err -> 
                    let sb = System.Text.StringBuilder()
@@ -244,8 +244,8 @@ module Driver =
     let main argv = 
         // Check for --pause as the very first step so that a compiler can be attached here.
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
-            System.Console.WriteLine("Press any key to continue...")
-            System.Console.ReadKey() |> ignore
+            Console.WriteLine("Press any key to continue...")
+            Console.ReadKey() |> ignore
         if runningOnMono && argv |> Array.exists  (fun x -> x = "/resident" || x = "--resident") then 
             let argv = argv |> Array.filter (fun x -> x <> "/resident" && x <> "--resident")
 

@@ -3,12 +3,11 @@
 module internal Microsoft.FSharp.Compiler.TypeChecker
 
 open Internal.Utilities
+open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler 
-
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -26,11 +25,10 @@ type TcEnv =
     member DisplayEnv : DisplayEnv
     member NameEnv : NameResolution.NameResolutionEnv
 
-(* Incremental construction of environments, e.g. for F# Interactive *)
-val internal CreateInitialTcEnv : TcGlobals * ImportMap * range * (CcuThunk * string list * bool) list -> TcEnv 
-val internal AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * CcuThunk * autoOpens: string list * bool -> TcEnv 
-val internal AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
-val internal TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> Ast.LongIdent -> TcEnv 
+val CreateInitialTcEnv : TcGlobals * ImportMap * range * (CcuThunk * string list * bool) list -> TcEnv 
+val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * CcuThunk * autoOpens: string list * bool -> TcEnv 
+val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
+val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> Ast.LongIdent -> TcEnv 
 
 type TopAttribs =
     { mainMethodAttrs : Attribs;
@@ -40,71 +38,72 @@ type TopAttribs =
 type ConditionalDefines = 
     string list
 
-val internal EmptyTopAttrs : TopAttribs
-val internal CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
+val EmptyTopAttrs : TopAttribs
+val CombineTopAttrs : TopAttribs -> TopAttribs -> TopAttribs
 
-val internal TypecheckOneImplFile : 
+val TypeCheckOneImplFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink
       -> TcEnv 
       -> Tast.ModuleOrNamespaceType option
       -> ParsedImplFileInput
       -> Eventually<TopAttribs * Tast.TypedImplFile * TcEnv>
 
-val internal TypecheckOneSigFile : 
+val TypeCheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 
       -> TcEnv                             
       -> ParsedSigFileInput
       -> Eventually<TcEnv * TcEnv * ModuleOrNamespaceType >
 
 //-------------------------------------------------------------------------
-// exceptions arising from type checking 
+// Some of the exceptions arising from type checking. These should be moved to 
+// use ErrorLogger.
 //------------------------------------------------------------------------- 
 
-exception internal BakedInMemberConstraintName of string * range
-exception internal FunctionExpected of DisplayEnv * TType * range
-exception internal NotAFunction of DisplayEnv * TType * range * range
-exception internal Recursion of DisplayEnv * Ast.Ident * TType * TType * range
-exception internal RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
-exception internal LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
-exception internal LetRecCheckedAtRuntime of range
-exception internal LetRecUnsound of DisplayEnv * ValRef list * range
-exception internal TyconBadArgs of DisplayEnv * TyconRef * int * range
-exception internal UnionCaseWrongArguments of DisplayEnv * int * int * range
-exception internal UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
-exception internal FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
-exception internal FieldGivenTwice of DisplayEnv * RecdFieldRef * range
-exception internal MissingFields of string list * range
-exception internal UnitTypeExpected of DisplayEnv * TType * bool * range
-exception internal FunctionValueUnexpected of DisplayEnv * TType * range
-exception internal UnionPatternsBindDifferentNames of range
-exception internal VarBoundTwice of Ast.Ident
-exception internal ValueRestriction of DisplayEnv * bool * Val * Typar * range
-exception internal FieldNotMutable of DisplayEnv * RecdFieldRef * range
-exception internal ValNotMutable of DisplayEnv * ValRef * range
-exception internal ValNotLocal of DisplayEnv * ValRef * range
-exception internal InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
-exception internal IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
-exception internal IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
-exception internal StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
-exception internal RuntimeCoercionSourceSealed of DisplayEnv * TType * range
-exception internal CoercionTargetSealed of DisplayEnv * TType * range
-exception internal UpcastUnnecessary of range
-exception internal TypeTestUnnecessary of range
-exception internal SelfRefObjCtor of bool * range
-exception internal VirtualAugmentationOnNullValuedType of range
-exception internal NonVirtualAugmentationOnNullValuedType of range
-exception internal UseOfAddressOfOperator of range
-exception internal DeprecatedThreadStaticBindingWarning of range
-exception internal NotUpperCaseConstructor of range
-exception internal IntfImplInIntrinsicAugmentation of range
-exception internal IntfImplInExtrinsicAugmentation of range
-exception internal OverrideInIntrinsicAugmentation of range
-exception internal OverrideInExtrinsicAugmentation of range
-exception internal NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
-exception internal StandardOperatorRedefinitionWarning of string * range
-exception internal ParameterlessStructCtor of range
+exception BakedInMemberConstraintName of string * range
+exception FunctionExpected of DisplayEnv * TType * range
+exception NotAFunction of DisplayEnv * TType * range * range
+exception Recursion of DisplayEnv * Ast.Ident * TType * TType * range
+exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
+exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
+exception LetRecCheckedAtRuntime of range
+exception LetRecUnsound of DisplayEnv * ValRef list * range
+exception TyconBadArgs of DisplayEnv * TyconRef * int * range
+exception UnionCaseWrongArguments of DisplayEnv * int * int * range
+exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
+exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
+exception FieldGivenTwice of DisplayEnv * RecdFieldRef * range
+exception MissingFields of string list * range
+exception UnitTypeExpected of DisplayEnv * TType * bool * range
+exception FunctionValueUnexpected of DisplayEnv * TType * range
+exception UnionPatternsBindDifferentNames of range
+exception VarBoundTwice of Ast.Ident
+exception ValueRestriction of DisplayEnv * bool * Val * Typar * range
+exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
+exception ValNotMutable of DisplayEnv * ValRef * range
+exception ValNotLocal of DisplayEnv * ValRef * range
+exception InvalidRuntimeCoercion of DisplayEnv * TType * TType * range
+exception IndeterminateRuntimeCoercion of DisplayEnv * TType * TType * range
+exception IndeterminateStaticCoercion of DisplayEnv * TType * TType * range
+exception StaticCoercionShouldUseBox of DisplayEnv * TType * TType * range
+exception RuntimeCoercionSourceSealed of DisplayEnv * TType * range
+exception CoercionTargetSealed of DisplayEnv * TType * range
+exception UpcastUnnecessary of range
+exception TypeTestUnnecessary of range
+exception SelfRefObjCtor of bool * range
+exception VirtualAugmentationOnNullValuedType of range
+exception NonVirtualAugmentationOnNullValuedType of range
+exception UseOfAddressOfOperator of range
+exception DeprecatedThreadStaticBindingWarning of range
+exception NotUpperCaseConstructor of range
+exception IntfImplInIntrinsicAugmentation of range
+exception IntfImplInExtrinsicAugmentation of range
+exception OverrideInIntrinsicAugmentation of range
+exception OverrideInExtrinsicAugmentation of range
+exception NonUniqueInferredAbstractSlot of TcGlobals * DisplayEnv * string * MethInfo * MethInfo * range
+exception StandardOperatorRedefinitionWarning of string * range
+exception ParameterlessStructCtor of range
 
-val internal TcFieldInit : range -> ILFieldInit -> Tast.Const
+val TcFieldInit : range -> ILFieldInit -> Tast.Const
 
 val IsSecurityAttribute : TcGlobals -> ImportMap -> Dictionary<Stamp,bool> -> Attrib -> range -> bool
 val IsSecurityCriticalAttribute : TcGlobals -> Attrib -> bool

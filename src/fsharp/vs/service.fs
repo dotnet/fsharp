@@ -30,7 +30,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Build
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
@@ -390,7 +390,7 @@ type CapturedNameResolution(p:pos, i:Item, io:ItemOccurence, de:DisplayEnv, nre:
 [<Sealed>]
 type TypeCheckInfo
           (/// Information corresponding to miscellaneous command-line options (--define, etc).
-           _sTcConfig: Build.TcConfig,
+           _sTcConfig: TcConfig,
            g: TcGlobals,
            /// AssemblyName -> IL-Module 
            amap: Import.ImportMap,
@@ -1194,8 +1194,8 @@ module internal Parser =
                 else exn
             if reportErrors then 
                 let report exn = 
-                    let warn = warn && not (ReportWarningAsError tcConfig.globalWarnLevel tcConfig.specificWarnOff tcConfig.specificWarnOn tcConfig.specificWarnAsError tcConfig.specificWarnAsWarn tcConfig.globalWarnAsError exn)                
-                    if (not warn || ReportWarning tcConfig.globalWarnLevel tcConfig.specificWarnOff tcConfig.specificWarnOn exn) then 
+                    let warn = warn && not (ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn)                
+                    if (not warn || ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn) then 
                         let oneError trim exn = 
                             // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                             // Not ideal, but it's hard to see what else to do.
@@ -1207,7 +1207,7 @@ module internal Parser =
                                 if not warn then 
                                     errorCount <- errorCount + 1
                       
-                        let mainError,relatedErrors = Build.SplitRelatedErrors exn 
+                        let mainError,relatedErrors = CompileOps.SplitRelatedErrors exn 
                         oneError false mainError
                         List.iter (oneError true) relatedErrors
                 match exn with
@@ -1325,7 +1325,7 @@ module internal Parser =
                             tcConfig.target.IsExe && 
                             projectSourceFiles.Length >= 1 && 
                             System.String.Compare(List.last projectSourceFiles,mainInputFileName,StringComparison.CurrentCultureIgnoreCase)=0
-                        let isLastCompiland = isLastCompiland || Build.IsScript(mainInputFileName)  
+                        let isLastCompiland = isLastCompiland || CompileOps.IsScript(mainInputFileName)  
 
                         let parseResult = ParseInput(lexfun,errHandler.ErrorLogger,lexbuf,None,mainInputFileName,isLastCompiland)
                         Some parseResult
@@ -1449,7 +1449,7 @@ module internal Parser =
                 loadClosure.RootWarnings |> List.iter warnSink
                 
 
-                let fileOfBackgroundError err = (match RangeOfError (fst err) with Some m-> m.FileName | None -> null)
+                let fileOfBackgroundError err = (match GetRangeOfError (fst err) with Some m-> m.FileName | None -> null)
                 let sameFile file hashLoadInFile = 
                     (0 = String.Compare(fst hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
 
@@ -1542,7 +1542,7 @@ module internal Parser =
         reraise()
 
 type internal UnresolvedReferencesSet = 
-    val private set : System.Collections.Generic.HashSet<Build.UnresolvedAssemblyReference>
+    val private set : System.Collections.Generic.HashSet<UnresolvedAssemblyReference>
     new(unresolved) = {set = System.Collections.Generic.HashSet(unresolved, HashIdentity.Structural)}
 
     override this.Equals(o) = 
