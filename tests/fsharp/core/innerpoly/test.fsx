@@ -383,7 +383,7 @@ end
 
 #if Portable
 let aa = 
-    if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
+    if failures then (stdout.WriteLine "Test Failed"; exit 1) 
     else (stdout.WriteLine "Test Passed"; exit 0)
 #else
 do (stdout.WriteLine "Test Passed"; 
