@@ -410,11 +410,11 @@ module internal ExtensionTyping =
             try
                 st.PApplyArray(f, memberName,m)
             with :? TypeProviderError as tpe ->
-                tpe.Iter (fun e -> errorR(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(fullName,memberName,e.ContextualErrorMessage),m)))
+                tpe.Iter (fun e -> error(Error(FSComp.SR.etUnexpectedExceptionFromProvidedTypeMember(fullName,memberName,e.ContextualErrorMessage),m)))
                 [||]
 
         match result with 
-        | null -> errorR(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName,memberName),m)); [||]
+        | null -> error(Error(FSComp.SR.etUnexpectedNullFromProvidedTypeMember(fullName,memberName),m)); [||]
         | r -> r
 
     /// Try to access a member on a provided type, catching and reporting errors and checking the result is non-null, 
@@ -545,7 +545,7 @@ module internal ExtensionTyping =
         member __.IsErased = (x.Attributes &&& enum (int32 TypeProviderTypeAttributes.IsErased)) <> enum 0  
         member __.IsGenericType = x.IsGenericType
         member __.Namespace = x.Namespace
-        member pt.FullName = x.FullName
+        member __.FullName = x.FullName
         member __.IsArray = x.IsArray
         member __.Assembly = x.Assembly |> ProvidedAssembly.Create ctxt
         member __.GetInterfaces() = x.GetInterfaces() |> ProvidedType.CreateArray ctxt
@@ -1197,7 +1197,7 @@ module internal ExtensionTyping =
 
         // Try to find the type in the given provided namespace
         let rec tryNamespace (providedNamespace: Tainted<IProvidedNamespace>) = 
-            
+
             // Get the provided namespace name
             let providedNamespaceName = providedNamespace.PUntaint((fun providedNamespace -> providedNamespace.NamespaceName), range=m)
 
@@ -1218,7 +1218,7 @@ module internal ExtensionTyping =
                     Some result
             else
                 // Note: This eagerly explores all provided namespaces even if there is no match of even a prefix in the
-                // namespace names.  
+                // namespace names. 
                 let providedNamespaces = providedNamespace.PApplyArray((fun providedNamespace -> providedNamespace.GetNestedNamespaces()), "GetNestedNamespaces", range=m)
                 tryNamespaces providedNamespaces
 
