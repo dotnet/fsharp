@@ -2584,10 +2584,10 @@ module Codebuf = begin
             applyBrFixups origCode origExnClauses origReqdStringFixups origAvailBrFixups origReqdBrFixups origSeqPoints origScopes
 
         let rootScope = 
-            { Children= Array.ofList newScopes;
-              StartOffset=0;
-              EndOffset=newCode.Length;
-              Locals=[| |]; }
+            { Children= Array.ofList newScopes
+              StartOffset=0
+              EndOffset=newCode.Length
+              Locals=[| |] }
 
         (newReqdStringFixups,newExnClauses, newCode, newSeqPoints, rootScope)
 
@@ -2597,7 +2597,7 @@ end
 // ILMethodBody --> bytes
 // -------------------------------------------------------------------- 
 let GetFieldDefTypeAsBlobIdx cenv env ty = 
-    let bytes = emitBytesViaBuffer (fun bb -> bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_FIELD; 
+    let bytes = emitBytesViaBuffer (fun bb -> bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_FIELD 
                                               EmitType cenv env bb ty)
     GetBytesAsBlobIdx cenv bytes
 
@@ -2606,7 +2606,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
       if cenv.generatePdb then 
         il.Locals |> ILList.toArray |> Array.map (fun l -> 
             // Write a fake entry for the local signature headed by e_IMAGE_CEE_CS_CALLCONV_FIELD. This is referenced by the PDB file
-            ignore (FindOrAddRow cenv TableNames.StandAloneSig (SimpleSharedRow [| Blob (GetFieldDefTypeAsBlobIdx cenv env l.Type) |]));
+            ignore (FindOrAddRow cenv TableNames.StandAloneSig (SimpleSharedRow [| Blob (GetFieldDefTypeAsBlobIdx cenv env l.Type) |]))
             // Now write the type
             GetTypeAsBytes cenv env l.Type) 
       else 
@@ -2621,9 +2621,9 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         let alignedCodeSize = align 4 (codeSize + 1)
         let codePadding =  (alignedCodeSize - (codeSize + 1))
         let requiredStringFixups' = (1,requiredStringFixups)
-        methbuf.EmitByte (byte codeSize <<< 2 ||| e_CorILMethod_TinyFormat);
-        methbuf.EmitBytes code;
-        methbuf.EmitPadding codePadding;
+        methbuf.EmitByte (byte codeSize <<< 2 ||| e_CorILMethod_TinyFormat)
+        methbuf.EmitBytes code
+        methbuf.EmitPadding codePadding
         (requiredStringFixups', methbuf.Close()), seqpoints, scopes
     else
         // Use Fat format 
@@ -2640,13 +2640,13 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
         let alignedCodeSize = align 0x4 codeSize
         let codePadding =  (alignedCodeSize - codeSize)
         
-        methbuf.EmitByte flags; 
-        methbuf.EmitByte 0x30uy; // last four bits record size of fat header in 4 byte chunks - this is always 12 bytes = 3 four word chunks 
-        methbuf.EmitUInt16 (uint16 il.MaxStack);
-        methbuf.EmitInt32 codeSize;
-        methbuf.EmitInt32 localToken;
-        methbuf.EmitBytes code;
-        methbuf.EmitPadding codePadding;
+        methbuf.EmitByte flags 
+        methbuf.EmitByte 0x30uy // last four bits record size of fat header in 4 byte chunks - this is always 12 bytes = 3 four word chunks 
+        methbuf.EmitUInt16 (uint16 il.MaxStack)
+        methbuf.EmitInt32 codeSize
+        methbuf.EmitInt32 localToken
+        methbuf.EmitBytes code
+        methbuf.EmitPadding codePadding
 
         if nonNil seh then 
             // Can we use the small exception handling table format? 
@@ -2669,31 +2669,31 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
               | TypeFilterClause uncoded -> uncoded
             
             if canUseSmall then     
-                methbuf.EmitByte e_CorILMethod_Sect_EHTable;
-                methbuf.EmitByte (b0 smallSize); 
-                methbuf.EmitByte 0x00uy; 
-                methbuf.EmitByte 0x00uy;
+                methbuf.EmitByte e_CorILMethod_Sect_EHTable
+                methbuf.EmitByte (b0 smallSize) 
+                methbuf.EmitByte 0x00uy 
+                methbuf.EmitByte 0x00uy
                 seh |> List.iter (fun (st1,sz1,st2,sz2,kind) -> 
                     let k32 = kindAsInt32 kind
-                    methbuf.EmitInt32AsUInt16 k32; 
-                    methbuf.EmitInt32AsUInt16 st1; 
-                    methbuf.EmitByte (b0 sz1); 
-                    methbuf.EmitInt32AsUInt16 st2; 
-                    methbuf.EmitByte (b0 sz2);
+                    methbuf.EmitInt32AsUInt16 k32 
+                    methbuf.EmitInt32AsUInt16 st1 
+                    methbuf.EmitByte (b0 sz1) 
+                    methbuf.EmitInt32AsUInt16 st2 
+                    methbuf.EmitByte (b0 sz2)
                     methbuf.EmitInt32 (kindAsExtraInt32 kind))
             else 
                 let bigSize = (seh.Length * 24 + 4)
-                methbuf.EmitByte (e_CorILMethod_Sect_EHTable ||| e_CorILMethod_Sect_FatFormat);
-                methbuf.EmitByte (b0 bigSize);
-                methbuf.EmitByte (b1 bigSize);
-                methbuf.EmitByte (b2 bigSize);
+                methbuf.EmitByte (e_CorILMethod_Sect_EHTable ||| e_CorILMethod_Sect_FatFormat)
+                methbuf.EmitByte (b0 bigSize)
+                methbuf.EmitByte (b1 bigSize)
+                methbuf.EmitByte (b2 bigSize)
                 seh |> List.iter (fun (st1,sz1,st2,sz2,kind) -> 
                     let k32 = kindAsInt32 kind
-                    methbuf.EmitInt32 k32;
-                    methbuf.EmitInt32 st1;
-                    methbuf.EmitInt32 sz1;
-                    methbuf.EmitInt32 st2;
-                    methbuf.EmitInt32 sz2;
+                    methbuf.EmitInt32 k32
+                    methbuf.EmitInt32 st1
+                    methbuf.EmitInt32 sz1
+                    methbuf.EmitInt32 st2
+                    methbuf.EmitInt32 sz2
                     methbuf.EmitInt32 (kindAsExtraInt32 kind))
         
         let requiredStringFixups' = (12,requiredStringFixups)
@@ -2717,21 +2717,21 @@ let rec GetFieldDefAsFieldDefRow cenv env (fd: ILFieldDef) =
         (if (fd.Marshal <> None) then 0x1000 else 0x0) |||
         (if (fd.Data <> None) then 0x0100 else 0x0)
     UnsharedRow 
-        [| UShort (uint16 flags); 
-           StringE (GetStringHeapIdx cenv fd.Name);
-           Blob (GetFieldDefSigAsBlobIdx cenv env fd ); |]
+        [| UShort (uint16 flags) 
+           StringE (GetStringHeapIdx cenv fd.Name)
+           Blob (GetFieldDefSigAsBlobIdx cenv env fd ) |]
 
 and GetFieldDefSigAsBlobIdx cenv env fd = GetFieldDefTypeAsBlobIdx cenv env fd.Type
 
 and GenFieldDefPass3 cenv env fd = 
     let fidx = AddUnsharedRow cenv TableNames.Field (GetFieldDefAsFieldDefRow cenv env fd)
-    GenCustomAttrsPass3Or4 cenv (hca_FieldDef,fidx) fd.CustomAttrs;
+    GenCustomAttrsPass3Or4 cenv (hca_FieldDef,fidx) fd.CustomAttrs
     // Write FieldRVA table - fixups into data section done later 
     match fd.Data with 
     | None -> () 
     | Some b -> 
         let offs = cenv.data.Position
-        cenv.data.EmitBytes b;
+        cenv.data.EmitBytes b
         AddUnsharedRow cenv TableNames.FieldRVA 
             (UnsharedRow [| Data (offs, false); SimpleIndex (TableNames.Field,fidx) |]) |> ignore
     // Write FieldMarshal table 
@@ -2739,7 +2739,7 @@ and GenFieldDefPass3 cenv env fd =
     | None -> ()
     | Some ntyp -> 
         AddUnsharedRow cenv TableNames.FieldMarshal 
-              (UnsharedRow [| HasFieldMarshal (hfm_FieldDef, fidx);
+              (UnsharedRow [| HasFieldMarshal (hfm_FieldDef, fidx)
                               Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
     // Write Contant table 
     match fd.LiteralValue with 
@@ -2747,16 +2747,15 @@ and GenFieldDefPass3 cenv env fd =
     | Some i -> 
         AddUnsharedRow cenv TableNames.Constant 
               (UnsharedRow 
-                  [| GetFieldInitFlags i;
-                     HasConstant (hc_FieldDef, fidx);
+                  [| GetFieldInitFlags i
+                     HasConstant (hc_FieldDef, fidx)
                      Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
     // Write FieldLayout table 
     match fd.Offset with 
     | None -> ()
     | Some offset -> 
         AddUnsharedRow cenv TableNames.FieldLayout 
-              (UnsharedRow [| ULong offset;
-                                    SimpleIndex (TableNames.Field, fidx) |]) |> ignore
+              (UnsharedRow [| ULong offset; SimpleIndex (TableNames.Field, fidx) |]) |> ignore
 
                 
 // -------------------------------------------------------------------- 
@@ -2776,22 +2775,22 @@ let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp =
     let mdVersionMajor,_ = metadataSchemaVersionSupportedByCLRVersion cenv.desiredMetadataVersion
     if (mdVersionMajor = 1) then 
         SimpleSharedRow 
-            [| UShort (uint16 idx); 
-               UShort (uint16 flags);   
-               TypeOrMethodDef (fst owner, snd owner);
-               StringE (GetStringHeapIdx cenv gp.Name);
-               TypeDefOrRefOrSpec (tdor_TypeDef, 0); (* empty kind field in deprecated metadata *) |]
+            [| UShort (uint16 idx) 
+               UShort (uint16 flags)   
+               TypeOrMethodDef (fst owner, snd owner)
+               StringE (GetStringHeapIdx cenv gp.Name)
+               TypeDefOrRefOrSpec (tdor_TypeDef, 0) (* empty kind field in deprecated metadata *) |]
     else
         SimpleSharedRow 
-            [| UShort (uint16 idx); 
-               UShort (uint16 flags);   
-               TypeOrMethodDef (fst owner, snd owner);
+            [| UShort (uint16 idx) 
+               UShort (uint16 flags)   
+               TypeOrMethodDef (fst owner, snd owner)
                StringE (GetStringHeapIdx cenv gp.Name) |]
 
 and GenTypeAsGenericParamConstraintRow cenv env gpidx ty = 
     let tdorTag,tdorRow = GetTypeAsTypeDefOrRef cenv env ty
     UnsharedRow 
-        [| SimpleIndex (TableNames.GenericParam, gpidx);
+        [| SimpleIndex (TableNames.GenericParam, gpidx)
            TypeDefOrRefOrSpec (tdorTag,tdorRow) |]
 
 and GenGenericParamConstraintPass4 cenv env gpidx ty =
@@ -2822,8 +2821,8 @@ let rec GetParamAsParamRow cenv _env seq param =
         (if param.Marshal <> None then 0x2000 else 0x0000)
     
     UnsharedRow 
-        [| UShort (uint16 flags); 
-           UShort (uint16 seq); 
+        [| UShort (uint16 flags) 
+           UShort (uint16 seq) 
            StringE (GetStringHeapIdxOption cenv param.Name) |]  
 
 and GenParamPass3 cenv env seq param = 
@@ -2831,32 +2830,31 @@ and GenParamPass3 cenv env seq param =
     then ()
     else    
       let pidx = AddUnsharedRow cenv TableNames.Param (GetParamAsParamRow cenv env seq param)
-      GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) param.CustomAttrs;
+      GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) param.CustomAttrs
       // Write FieldRVA table - fixups into data section done later 
       match param.Marshal with 
       | None -> ()
       | Some ntyp -> 
           AddUnsharedRow cenv TableNames.FieldMarshal 
-                (UnsharedRow [| HasFieldMarshal (hfm_ParamDef, pidx);
-                                      Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
+                (UnsharedRow [| HasFieldMarshal (hfm_ParamDef, pidx); Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
 
 let GenReturnAsParamRow (returnv : ILReturn) = 
     let flags = (if returnv.Marshal <> None then 0x2000 else 0x0000)
     UnsharedRow 
-        [| UShort (uint16 flags); 
-           UShort 0us; (* sequence num. *)
+        [| UShort (uint16 flags) 
+           UShort 0us (* sequence num. *)
            StringE 0 |]  
 
 let GenReturnPass3 cenv (returnv: ILReturn) = 
     if isSome returnv.Marshal || nonNil  returnv.CustomAttrs.AsList then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
-        GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) returnv.CustomAttrs;
+        GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) returnv.CustomAttrs
         match returnv.Marshal with 
         | None -> ()
         | Some ntyp -> 
             AddUnsharedRow cenv TableNames.FieldMarshal   
                 (UnsharedRow 
-                    [| HasFieldMarshal (hfm_ParamDef, pidx);
+                    [| HasFieldMarshal (hfm_ParamDef, pidx)
                        Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
 
 // -------------------------------------------------------------------- 
@@ -2865,10 +2863,10 @@ let GenReturnPass3 cenv (returnv: ILReturn) =
 
 let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) = 
     emitBytesViaBuffer (fun bb -> 
-      bb.EmitByte (callconvToByte mdef.GenericParams.Length mdef.CallingConv);
-      if mdef.GenericParams.Length > 0 then bb.EmitZ32 mdef.GenericParams.Length;
-      bb.EmitZ32 mdef.Parameters.Length;
-      EmitType cenv env bb mdef.Return.Type;
+      bb.EmitByte (callconvToByte mdef.GenericParams.Length mdef.CallingConv)
+      if mdef.GenericParams.Length > 0 then bb.EmitZ32 mdef.GenericParams.Length
+      bb.EmitZ32 mdef.Parameters.Length
+      EmitType cenv env bb mdef.Return.Type
       mdef.ParameterTypes |> ILList.iter (EmitType cenv env bb))
 
 let GenMethodDefSigAsBlobIdx cenv env mdef = 
@@ -2910,7 +2908,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
-        else cenv.entrypoint <- Some (true, midx);
+        else cenv.entrypoint <- Some (true, midx)
     let codeAddr = 
       (match md.mdBody.Contents with 
       | MethodBody.IL ilmbody -> 
@@ -2920,37 +2918,37 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           // Now record the PDB record for this method - we write this out later. 
           if cenv.generatePdb then 
             cenv.pdbinfo.Add  
-              { MethToken=getUncodedToken TableNames.Method midx;
-                MethName=md.Name;
-                Params= [| |]; (* REVIEW *)
-                RootScope = rootScope;
+              { MethToken=getUncodedToken TableNames.Method midx
+                MethName=md.Name
+                Params= [| |] (* REVIEW *)
+                RootScope = rootScope
                 Range=  
                   match ilmbody.SourceMarker with 
                   | Some m  when cenv.generatePdb -> 
                       // table indexes are 1-based, document array indexes are 0-based 
                       let doc = (cenv.documents.FindOrAddSharedEntry m.Document) - 1 
 
-                      Some ({ Document=doc;
-                              Line=m.Line;
-                              Column=m.Column; },
-                            { Document=doc;
-                              Line=m.EndLine;
-                              Column=m.EndColumn; })
+                      Some ({ Document=doc
+                              Line=m.Line
+                              Column=m.Column },
+                            { Document=doc
+                              Line=m.EndLine
+                              Column=m.EndColumn })
                   | _ -> None
-                SequencePoints=seqpoints; };
+                SequencePoints=seqpoints }
          
-          cenv.AddCode code;
+          cenv.AddCode code
           addr 
       | MethodBody.Native -> 
-          failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries";
+          failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
       | _  -> 0x0000)
 
     UnsharedRow 
-       [| ULong  codeAddr ; 
-          UShort (uint16 implflags); 
-          UShort (uint16 flags); 
-          StringE (GetStringHeapIdx cenv md.Name); 
-          Blob (GenMethodDefSigAsBlobIdx cenv env md); 
+       [| ULong  codeAddr  
+          UShort (uint16 implflags) 
+          UShort (uint16 flags) 
+          StringE (GetStringHeapIdx cenv md.Name) 
+          Blob (GenMethodDefSigAsBlobIdx cenv env md) 
           SimpleIndex(TableNames.Param,cenv.GetTable(TableNames.Param).Count + 1) |]  
 
 let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
@@ -2958,19 +2956,19 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
     let midx2Tag, midx2Row = GetOverridesSpecAsMethodDefOrRef cenv env mimpl.Overrides
     AddUnsharedRow cenv TableNames.MethodImpl
         (UnsharedRow 
-             [| SimpleIndex (TableNames.TypeDef, tidx);
-                MethodDefOrRef (midxTag, midxRow);
+             [| SimpleIndex (TableNames.TypeDef, tidx)
+                MethodDefOrRef (midxTag, midxRow)
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
     
 let GenMethodDefPass3 cenv env (md:ILMethodDef) = 
     let midx = GetMethodDefIdx cenv md
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
-    if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2";
-    GenReturnPass3 cenv md.Return;  
-    md.Parameters |> ILList.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) ;
-    md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef,midx) ;
-    md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef,midx);
-    md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) ;
+    if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
+    GenReturnPass3 cenv md.Return  
+    md.Parameters |> ILList.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
+    md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef,midx) 
+    md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef,midx)
+    md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
     match md.mdBody.Contents with 
     | MethodBody.PInvoke attr ->
         let flags = 
@@ -3002,10 +3000,10 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
           (if attr.LastError then 0x0040 else 0x0000)
         AddUnsharedRow cenv TableNames.ImplMap
             (UnsharedRow 
-               [| UShort (uint16 flags); 
-                  MemberForwarded (mf_MethodDef,midx);
-                  StringE (GetStringHeapIdx cenv attr.Name); 
-                  SimpleIndex (TableNames.ModuleRef, GetModuleRefAsIdx cenv attr.Where); |]) |> ignore
+               [| UShort (uint16 flags) 
+                  MemberForwarded (mf_MethodDef,midx)
+                  StringE (GetStringHeapIdx cenv attr.Name) 
+                  SimpleIndex (TableNames.ModuleRef, GetModuleRefAsIdx cenv attr.Where) |]) |> ignore
     | _ -> ()
 
 let GenMethodDefPass4 cenv env  md = 
@@ -3017,8 +3015,8 @@ let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
     let midx = try GetMethodRefAsMethodDefIdx cenv mref with MethodDefNotFound -> 1
     AddUnsharedRow cenv TableNames.MethodSemantics
         (UnsharedRow 
-           [| UShort (uint16 kind);
-              SimpleIndex (TableNames.Method,midx);
+           [| UShort (uint16 kind)
+              SimpleIndex (TableNames.Method,midx)
               HasSemantics (hs_Property, pidx) |]) |> ignore
     
 let rec GetPropertySigAsBlobIdx cenv env prop = 
@@ -3027,9 +3025,9 @@ let rec GetPropertySigAsBlobIdx cenv env prop =
 and GetPropertySigAsBytes cenv env prop = 
     emitBytesViaBuffer (fun bb -> 
         let b =  ((hasthisToByte prop.CallingConv) ||| e_IMAGE_CEE_CS_CALLCONV_PROPERTY)
-        bb.EmitByte b;
-        bb.EmitZ32 prop.Args.Length;
-        EmitType cenv env bb prop.Type;
+        bb.EmitByte b
+        bb.EmitZ32 prop.Args.Length
+        EmitType cenv env bb prop.Type
         prop.Args |> ILList.iter (EmitType cenv env bb))
 
 and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) = 
@@ -3038,23 +3036,23 @@ and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) =
       (if prop.IsRTSpecialName then 0x0400 else 0x0) ||| 
       (if prop.Init <> None then 0x1000 else 0x0)
     UnsharedRow 
-       [| UShort (uint16 flags); 
-          StringE (GetStringHeapIdx cenv prop.Name); 
-          Blob (GetPropertySigAsBlobIdx cenv env prop); |]  
+       [| UShort (uint16 flags) 
+          StringE (GetStringHeapIdx cenv prop.Name) 
+          Blob (GetPropertySigAsBlobIdx cenv env prop) |]  
 
 /// ILPropertyDef --> Property Row + MethodSemantics entries
 and GenPropertyPass3 cenv env prop = 
     let pidx = AddUnsharedRow cenv TableNames.Property (GetPropertyAsPropertyRow cenv env prop)
-    prop.SetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0001) ;
-    prop.GetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0002) ;
+    prop.SetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0001) 
+    prop.GetMethod |> Option.iter (GenPropertyMethodSemanticsPass3 cenv pidx 0x0002) 
     // Write Constant table 
     match prop.Init with 
     | None -> ()
     | Some i -> 
         AddUnsharedRow cenv TableNames.Constant 
             (UnsharedRow 
-                [| GetFieldInitFlags i;
-                   HasConstant (hc_Property, pidx);
+                [| GetFieldInitFlags i
+                   HasConstant (hc_Property, pidx)
                    Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
     GenCustomAttrsPass3Or4 cenv (hca_Property,pidx) prop.CustomAttrs
 
@@ -3062,8 +3060,8 @@ let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
     let addIdx = try GetMethodRefAsMethodDefIdx cenv mref with MethodDefNotFound -> 1
     AddUnsharedRow cenv TableNames.MethodSemantics
         (UnsharedRow 
-            [| UShort (uint16 kind);
-               SimpleIndex (TableNames.Method,addIdx);
+            [| UShort (uint16 kind)
+               SimpleIndex (TableNames.Method,addIdx)
                HasSemantics (hs_Event, eidx) |]) |> ignore
 
 /// ILEventDef --> Event Row + MethodSemantics entries
@@ -3073,8 +3071,8 @@ and GenEventAsEventRow cenv env (md: ILEventDef) =
       (if md.IsRTSpecialName then 0x0400 else 0x0)
     let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env md.Type
     UnsharedRow 
-       [| UShort (uint16 flags); 
-          StringE (GetStringHeapIdx cenv md.Name); 
+       [| UShort (uint16 flags) 
+          StringE (GetStringHeapIdx cenv md.Name) 
           TypeDefOrRefOrSpec (tdorTag,tdorRow) |]
 
 and GenEventPass3 cenv env (md: ILEventDef) = 
@@ -3082,7 +3080,7 @@ and GenEventPass3 cenv env (md: ILEventDef) =
     md.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008  
     md.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010 
     Option.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0020) md.FireMethod  
-    List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) md.OtherMethods;
+    List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) md.OtherMethods
     GenCustomAttrsPass3Or4 cenv (hca_Event,eidx) md.CustomAttrs
 
 
@@ -3101,17 +3099,17 @@ let rec GetResourceAsManifestResourceRow cenv r =
           let alignedOffset =  (align 0x8 offset)
           let pad = alignedOffset - offset
           let resourceSize = b.Length
-          cenv.resources.EmitPadding pad;
-          cenv.resources.EmitInt32 resourceSize;
-          cenv.resources.EmitBytes b;
+          cenv.resources.EmitPadding pad
+          cenv.resources.EmitInt32 resourceSize
+          cenv.resources.EmitBytes b
           Data (alignedOffset,true),  (i_File, 0) 
       | ILResourceLocation.File (mref,offset) -> ULong offset, (i_File, GetModuleRefAsFileIdx cenv mref)
       | ILResourceLocation.Assembly aref -> ULong 0x0, (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
     UnsharedRow 
-       [| data; 
-          ULong (match r.Access with ILResourceAccess.Public -> 0x01 | ILResourceAccess.Private -> 0x02);
-          StringE (GetStringHeapIdx cenv r.Name);    
-          Implementation (fst impl, snd impl); |]
+       [| data 
+          ULong (match r.Access with ILResourceAccess.Public -> 0x01 | ILResourceAccess.Private -> 0x02)
+          StringE (GetStringHeapIdx cenv r.Name)    
+          Implementation (fst impl, snd impl) |]
 
 and GenResourcePass3 cenv r = 
   let idx = AddUnsharedRow cenv TableNames.ManifestResource (GetResourceAsManifestResourceRow cenv r)
@@ -3125,11 +3123,11 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
    try
       let env = envForTypeDef td
       let tidx = GetIdxForTypeDef cenv (TdKey(enc,td.Name))
-      td.Properties.AsList |> List.iter (GenPropertyPass3 cenv env);
-      td.Events.AsList |> List.iter (GenEventPass3 cenv env);
-      td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env);
-      td.Methods |> Seq.iter (GenMethodDefPass3 cenv env);
-      td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env  td.GenericParams.Length tidx);
+      td.Properties.AsList |> List.iter (GenPropertyPass3 cenv env)
+      td.Events.AsList |> List.iter (GenEventPass3 cenv env)
+      td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env)
+      td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
+      td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env  td.GenericParams.Length tidx)
     // ClassLayout entry if needed 
       match td.Layout with 
       | ILTypeDefLayout.Auto -> ()
@@ -3137,16 +3135,16 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
           if isSome layout.Pack || isSome layout.Size then 
             AddUnsharedRow cenv TableNames.ClassLayout
                 (UnsharedRow 
-                    [| UShort (match layout.Pack with None -> uint16 0x0 | Some p -> p);
-                       ULong (match layout.Size with None -> 0x0 | Some p -> p);
+                    [| UShort (match layout.Pack with None -> uint16 0x0 | Some p -> p)
+                       ULong (match layout.Size with None -> 0x0 | Some p -> p)
                        SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
                        
-      td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx);
-      td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef,tidx);
-      td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp) ; 
-      td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv;
+      td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx)
+      td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef,tidx)
+      td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp)  
+      td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
-      failwith  ("Error in pass3 for type "+td.Name+", error: "+e.Message);
+      failwith  ("Error in pass3 for type "+td.Name+", error: "+e.Message)
       reraise()
       raise e
 
@@ -3160,11 +3158,11 @@ let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) =
    try
        let env = envForTypeDef td
        let tidx = GetIdxForTypeDef cenv (TdKey(enc,td.Name))
-       td.Methods |> Seq.iter (GenMethodDefPass4 cenv env) ;
-       List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams; 
-       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList;
+       td.Methods |> Seq.iter (GenMethodDefPass4 cenv env) 
+       List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams 
+       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
    with e ->
-       failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message);
+       failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)
        reraise()
        raise e
 
@@ -3180,12 +3178,12 @@ let rec GenNestedExportedTypePass3 cenv cidx (ce: ILNestedExportedType) =
     let nidx = 
       AddUnsharedRow cenv TableNames.ExportedType 
         (UnsharedRow 
-            [| ULong flags ; 
-               ULong 0x0;
-               StringE (GetStringHeapIdx cenv ce.Name); 
-               StringE 0; 
+            [| ULong flags  
+               ULong 0x0
+               StringE (GetStringHeapIdx cenv ce.Name) 
+               StringE 0 
                Implementation (i_ExportedType, cidx) |])
-    GenCustomAttrsPass3Or4 cenv (hca_ExportedType,nidx) ce.CustomAttrs;
+    GenCustomAttrsPass3Or4 cenv (hca_ExportedType,nidx) ce.CustomAttrs
     GenNestedExportedTypesPass3 cenv nidx ce.Nested
 
 and GenNestedExportedTypesPass3 cenv nidx (nce: ILNestedExportedTypes) =
@@ -3199,16 +3197,16 @@ and GenExportedTypePass3 cenv (ce: ILExportedTypeOrForwarder) =
     let cidx = 
       AddUnsharedRow cenv TableNames.ExportedType 
         (UnsharedRow 
-            [| ULong flags ; 
-               ULong 0x0;
-               nelem; 
-               nselem; 
-               Implementation (fst impl, snd impl); |])
-    GenCustomAttrsPass3Or4 cenv (hca_ExportedType,cidx) ce.CustomAttrs;
+            [| ULong flags  
+               ULong 0x0
+               nelem 
+               nselem 
+               Implementation (fst impl, snd impl) |])
+    GenCustomAttrsPass3Or4 cenv (hca_ExportedType,cidx) ce.CustomAttrs
     GenNestedExportedTypesPass3 cenv cidx ce.Nested
 
 and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) = 
-    List.iter (GenExportedTypePass3 cenv) ce.AsList;
+    List.iter (GenExportedTypePass3 cenv) ce.AsList
 
 // -------------------------------------------------------------------- 
 // manifest --> generate Assembly row
@@ -3216,11 +3214,11 @@ and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
 
 and GetManifsetAsAssemblyRow cenv m = 
     UnsharedRow 
-        [|ULong m.AuxModuleHashAlgorithm;
-          UShort (match m.Version with None -> 0us | Some (x,_,_,_) -> x);
-          UShort (match m.Version with None -> 0us | Some (_,y,_,_) -> y);
-          UShort (match m.Version with None -> 0us | Some (_,_,z,_) -> z);
-          UShort (match m.Version with None -> 0us | Some (_,_,_,w) -> w);
+        [|ULong m.AuxModuleHashAlgorithm
+          UShort (match m.Version with None -> 0us | Some (x,_,_,_) -> x)
+          UShort (match m.Version with None -> 0us | Some (_,y,_,_) -> y)
+          UShort (match m.Version with None -> 0us | Some (_,_,z,_) -> z)
+          UShort (match m.Version with None -> 0us | Some (_,_,_,w) -> w)
           ULong 
             ( (match m.AssemblyLongevity with 
               | ILAssemblyLongevity.Unspecified -> 0x0000
@@ -3235,21 +3233,21 @@ and GetManifsetAsAssemblyRow cenv m =
               (if m.JitTracking then 0x8000 else 0x0) |||
               (if m.DisableJitOptimizations then 0x4000 else 0x0) |||
               (match m.PublicKey with None -> 0x0000 | Some _ -> 0x0001) ||| 
-              0x0000);
-          (match m.PublicKey with None -> Blob 0 | Some x -> Blob (GetBytesAsBlobIdx cenv x));
-          StringE (GetStringHeapIdx cenv m.Name);
-          (match m.Locale with None -> StringE 0 | Some x -> StringE (GetStringHeapIdx cenv x)); |]
+              0x0000)
+          (match m.PublicKey with None -> Blob 0 | Some x -> Blob (GetBytesAsBlobIdx cenv x))
+          StringE (GetStringHeapIdx cenv m.Name)
+          (match m.Locale with None -> StringE 0 | Some x -> StringE (GetStringHeapIdx cenv x)) |]
 
 and GenManifestPass3 cenv m = 
     let aidx = AddUnsharedRow cenv TableNames.Assembly (GetManifsetAsAssemblyRow cenv m)
-    GenSecurityDeclsPass3 cenv (hds_Assembly,aidx) m.SecurityDecls.AsList;
-    GenCustomAttrsPass3Or4 cenv (hca_Assembly,aidx) m.CustomAttrs;
-    GenExportedTypesPass3 cenv m.ExportedTypes;
+    GenSecurityDeclsPass3 cenv (hds_Assembly,aidx) m.SecurityDecls.AsList
+    GenCustomAttrsPass3Or4 cenv (hca_Assembly,aidx) m.CustomAttrs
+    GenExportedTypesPass3 cenv m.ExportedTypes
     // Record the entrypoint decl if needed. 
     match m.EntrypointElsewhere with
     | Some mref -> 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
-        else cenv.entrypoint <- Some (false, GetModuleRefAsIdx cenv mref);
+        else cenv.entrypoint <- Some (false, GetModuleRefAsIdx cenv mref)
     | None -> ()
 
 and newGuid (modul: ILModuleDef) = 
@@ -3263,10 +3261,10 @@ and GetModuleAsRow cenv (modul: ILModuleDef) =
     let modulGuid = newGuid modul
     cenv.moduleGuid <- modulGuid
     UnsharedRow 
-        [| UShort (uint16 0x0); 
-           StringE (GetStringHeapIdx cenv modul.Name); 
-           Guid (GetGuidIdx cenv modulGuid); 
-           Guid 0; 
+        [| UShort (uint16 0x0) 
+           StringE (GetStringHeapIdx cenv modul.Name) 
+           Guid (GetGuidIdx cenv modulGuid) 
+           Guid 0 
            Guid 0 |]
 
 
@@ -3290,63 +3288,63 @@ let SortTableRows tab (rows:IGenericRow[]) =
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) = 
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
-    List.iter (GenResourcePass3 cenv) modul.Resources.AsList; 
+    List.iter (GenResourcePass3 cenv) modul.Resources.AsList 
     let tds = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
-    reportTime cenv.showTimes "Module Generation Preparation";
-    GenTypeDefsPass1 [] cenv tds;
-    reportTime cenv.showTimes "Module Generation Pass 1";
-    GenTypeDefsPass2 0 [] cenv tds;
-    reportTime cenv.showTimes "Module Generation Pass 2";
-    (match modul.Manifest with None -> () | Some m -> GenManifestPass3 cenv m);
-    GenTypeDefsPass3 [] cenv tds;
-    reportTime cenv.showTimes "Module Generation Pass 3";
-    GenCustomAttrsPass3Or4 cenv (hca_Module,midx) modul.CustomAttrs;
+    reportTime cenv.showTimes "Module Generation Preparation"
+    GenTypeDefsPass1 [] cenv tds
+    reportTime cenv.showTimes "Module Generation Pass 1"
+    GenTypeDefsPass2 0 [] cenv tds
+    reportTime cenv.showTimes "Module Generation Pass 2"
+    (match modul.Manifest with None -> () | Some m -> GenManifestPass3 cenv m)
+    GenTypeDefsPass3 [] cenv tds
+    reportTime cenv.showTimes "Module Generation Pass 3"
+    GenCustomAttrsPass3Or4 cenv (hca_Module,midx) modul.CustomAttrs
     // GenericParam is the only sorted table indexed by Columns in other tables (GenericParamConstraint\CustomAttributes). 
     // Hence we need to sort it before we emit any entries in GenericParamConstraint\CustomAttributes that are attached to generic params. 
     // Note this mutates the rows in a table.  'SetRowsOfTable' clears 
     // the key --> index map since it is no longer valid 
-    cenv.GetTable(TableNames.GenericParam).SetRowsOfTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).EntriesAsArray));
-    GenTypeDefsPass4 [] cenv tds;
+    cenv.GetTable(TableNames.GenericParam).SetRowsOfTable (SortTableRows TableNames.GenericParam (cenv.GetTable(TableNames.GenericParam).EntriesAsArray))
+    GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
 let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) noDebugData cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
-        { primaryAssembly=ilg.traits.ScopeRef;
-          emitTailcalls=emitTailcalls;
-          showTimes=showTimes;
-          ilg = mkILGlobals ilg.traits None noDebugData; // assumes mscorlib is Scope_assembly _ ILScopeRef 
-          desiredMetadataVersion=desiredMetadataVersion;
-          requiredDataFixups= requiredDataFixups;
-          requiredStringFixups = [];
-          codeChunks=ByteBuffer.Create 40000;
-          nextCodeAddr = cilStartAddress;
-          data = ByteBuffer.Create 200;
-          resources = ByteBuffer.Create 200;
-          tables= Array.init 64 (fun i -> MetadataTable<_>.New ("row table "+string i,System.Collections.Generic.EqualityComparer.Default));
-          AssemblyRefs = MetadataTable<_>.New("ILAssemblyRef",System.Collections.Generic.EqualityComparer.Default);
-          documents=MetadataTable<_>.New("pdbdocs",System.Collections.Generic.EqualityComparer.Default);
-          trefCache=new Dictionary<_,_>(100);
-          pdbinfo= new ResizeArray<_>(200);
-          moduleGuid= Array.zeroCreate 16;
-          fieldDefs= MetadataTable<_>.New("field defs",System.Collections.Generic.EqualityComparer.Default);
-          methodDefIdxsByKey = MetadataTable<_>.New("method defs",System.Collections.Generic.EqualityComparer.Default);
+        { primaryAssembly=ilg.traits.ScopeRef
+          emitTailcalls=emitTailcalls
+          showTimes=showTimes
+          ilg = mkILGlobals ilg.traits None noDebugData // assumes mscorlib is Scope_assembly _ ILScopeRef 
+          desiredMetadataVersion=desiredMetadataVersion
+          requiredDataFixups= requiredDataFixups
+          requiredStringFixups = []
+          codeChunks=ByteBuffer.Create 40000
+          nextCodeAddr = cilStartAddress
+          data = ByteBuffer.Create 200
+          resources = ByteBuffer.Create 200
+          tables= Array.init 64 (fun i -> MetadataTable<_>.New ("row table "+string i,System.Collections.Generic.EqualityComparer.Default))
+          AssemblyRefs = MetadataTable<_>.New("ILAssemblyRef",System.Collections.Generic.EqualityComparer.Default)
+          documents=MetadataTable<_>.New("pdbdocs",System.Collections.Generic.EqualityComparer.Default)
+          trefCache=new Dictionary<_,_>(100)
+          pdbinfo= new ResizeArray<_>(200)
+          moduleGuid= Array.zeroCreate 16
+          fieldDefs= MetadataTable<_>.New("field defs",System.Collections.Generic.EqualityComparer.Default)
+          methodDefIdxsByKey = MetadataTable<_>.New("method defs",System.Collections.Generic.EqualityComparer.Default)
           // This uses reference identity on ILMethodDef objects
-          methodDefIdxs = new Dictionary<_,_>(100, HashIdentity.Reference);
-          propertyDefs = MetadataTable<_>.New("property defs",System.Collections.Generic.EqualityComparer.Default);
-          eventDefs = MetadataTable<_>.New("event defs",System.Collections.Generic.EqualityComparer.Default);
-          typeDefs = MetadataTable<_>.New("type defs",System.Collections.Generic.EqualityComparer.Default);
-          entrypoint=None;
-          generatePdb=generatePdb;
+          methodDefIdxs = new Dictionary<_,_>(100, HashIdentity.Reference)
+          propertyDefs = MetadataTable<_>.New("property defs",System.Collections.Generic.EqualityComparer.Default)
+          eventDefs = MetadataTable<_>.New("event defs",System.Collections.Generic.EqualityComparer.Default)
+          typeDefs = MetadataTable<_>.New("type defs",System.Collections.Generic.EqualityComparer.Default)
+          entrypoint=None
+          generatePdb=generatePdb
           // These must use structural comparison since they are keyed by arrays
-          guids=MetadataTable<_>.New("guids",HashIdentity.Structural);
-          blobs= MetadataTable<_>.New("blobs",HashIdentity.Structural);
-          strings= MetadataTable<_>.New("strings",System.Collections.Generic.EqualityComparer.Default); 
-          userStrings= MetadataTable<_>.New("user strings",System.Collections.Generic.EqualityComparer.Default); }
+          guids=MetadataTable<_>.New("guids",HashIdentity.Structural)
+          blobs= MetadataTable<_>.New("blobs",HashIdentity.Structural)
+          strings= MetadataTable<_>.New("strings",System.Collections.Generic.EqualityComparer.Default) 
+          userStrings= MetadataTable<_>.New("user strings",System.Collections.Generic.EqualityComparer.Default) }
 
     // Now the main compilation step 
-    GenModule cenv  m;
+    GenModule cenv  m
 
     // Fetch out some of the results  
     let entryPointToken = 
@@ -3354,13 +3352,13 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
         | Some (epHere,tok) -> 
             getUncodedToken (if epHere then TableNames.Method else TableNames.File) tok 
         | None -> 
-            if not isDll then dprintn "warning: no entrypoint specified in executable binary";
+            if not isDll then dprintn "warning: no entrypoint specified in executable binary"
             0x0
 
     let pdbData = 
-        { EntryPoint= (if isDll then None else Some entryPointToken);
-          ModuleID = cenv.moduleGuid;
-          Documents = cenv.documents.EntriesAsArray;
+        { EntryPoint= (if isDll then None else Some entryPointToken)
+          ModuleID = cenv.moduleGuid
+          Documents = cenv.documents.EntriesAsArray
           Methods= cenv.pdbinfo.ToArray() }
 
     let idxForNextedTypeDef (tds:ILTypeDef list, td:ILTypeDef) =
@@ -3376,20 +3374,20 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
     // turn idx tbls into token maps 
     let mappings =
      { TypeDefTokenMap = (fun t ->
-        getUncodedToken TableNames.TypeDef (idxForNextedTypeDef t));
+        getUncodedToken TableNames.TypeDef (idxForNextedTypeDef t))
        FieldDefTokenMap = (fun t fd ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd));
+        getUncodedToken TableNames.Field (GetFieldDefAsFieldDefIdx cenv tidx fd))
        MethodDefTokenMap = (fun t md ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef tidx md)));
+        getUncodedToken TableNames.Method (FindMethodDefIdx cenv (GetKeyForMethodDef tidx md)))
        PropertyTokenMap = (fun t pd ->
         let tidx = idxForNextedTypeDef t
-        getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pd)));
+        getUncodedToken TableNames.Property (cenv.propertyDefs.GetTableEntry (GetKeyForPropertyDef tidx pd)))
        EventTokenMap = (fun t ed ->
         let tidx = idxForNextedTypeDef t
         getUncodedToken TableNames.Event (cenv.eventDefs.GetTableEntry (EventKey (tidx, ed.Name)))) }
-    reportTime cenv.showTimes "Finalize Module Generation Results";
+    reportTime cenv.showTimes "Finalize Module Generation Results"
     // New return the results 
     let data = cenv.data.Close()
     let resources = cenv.resources.Close()
@@ -3401,7 +3399,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
 //=====================================================================
 
 type BinaryChunk = 
-    { size: int32; 
+    { size: int32 
       addr: int32 }
 
 let chunk sz next = ({addr=next; size=sz},next + sz) 
@@ -3418,14 +3416,14 @@ module FileSystemUtilites =
       if runningOnMono then 
         try 
             let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-            if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n";
+            if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
             let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],System.Globalization.CultureInfo.InvariantCulture)
             let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],System.Globalization.CultureInfo.InvariantCulture) |> unbox<int>
             // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
             monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| box (prevPermissions ||| 0x000001ED) |],System.Globalization.CultureInfo.InvariantCulture) |> ignore
         with e -> 
-            if progress then eprintf "failure: %s...\n" (e.ToString());
+            if progress then eprintf "failure: %s...\n" (e.ToString())
             // Fail silently
         
 let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress = 
@@ -3439,7 +3437,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let strings,userStrings,blobs,guids,tables,entryPointToken,code,requiredStringFixups,data,resources,pdbData,mappings = 
       generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress
 
-    reportTime showTimes "Generated Tables and Code";
+    reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Length
 
    // Now place the code 
@@ -3512,7 +3510,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
       (if tableSize (TableNames.GenericParamConstraint) > 0 then 0x00001000 else 0x00000000) ||| 
       0x00000200
     
-    reportTime showTimes "Layout Header of Tables";
+    reportTime showTimes "Layout Header of Tables"
 
     let guidAddress n =   (if n = 0 then 0 else (n - 1) * 0x10 + 0x01)
 
@@ -3520,48 +3518,48 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
         let tab = Array.create (strings.Length + 1) 0
         let pos = ref 1
         for i = 1 to strings.Length do
-            tab.[i] <- !pos;
+            tab.[i] <- !pos
             let s = strings.[i - 1]
             pos := !pos + s.Length
         tab
 
     let stringAddress n = 
-        if n >= Array.length stringAddressTable then failwith ("string index "+string n+" out of range");
+        if n >= Array.length stringAddressTable then failwith ("string index "+string n+" out of range")
         stringAddressTable.[n]
     
     let userStringAddressTable = 
         let tab = Array.create (Array.length userStrings + 1) 0
         let pos = ref 1
         for i = 1 to Array.length userStrings do
-            tab.[i] <- !pos;
+            tab.[i] <- !pos
             let s = userStrings.[i - 1]
             let n = s.Length + 1
             pos := !pos + n + ByteBuffer.Z32Size n
         tab
 
     let userStringAddress n = 
-        if n >= Array.length userStringAddressTable then failwith "userString index out of range";
+        if n >= Array.length userStringAddressTable then failwith "userString index out of range"
         userStringAddressTable.[n]
     
     let blobAddressTable = 
         let tab = Array.create (blobs.Length + 1) 0
         let pos = ref 1
         for i = 1 to blobs.Length do
-            tab.[i] <- !pos;
+            tab.[i] <- !pos
             let blob = blobs.[i - 1]
             pos := !pos + blob.Length + ByteBuffer.Z32Size blob.Length
         tab
 
     let blobAddress n = 
-        if n >= blobAddressTable.Length then failwith "blob index out of range";
+        if n >= blobAddressTable.Length then failwith "blob index out of range"
         blobAddressTable.[n]
     
-    reportTime showTimes "Build String/Blob Address Tables";
+    reportTime showTimes "Build String/Blob Address Tables"
 
     let sortedTables = 
       Array.init 64 (fun i -> tables.[i] |>  SortTableRows (TableName.FromIndex i))
       
-    reportTime showTimes "Sort Tables";
+    reportTime showTimes "Sort Tables"
 
     let codedTables = 
           
@@ -3657,18 +3655,18 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
         // Now the coded tables themselves  - first the schemata header 
         tablesBuf.EmitIntsAsBytes    
             [| 0x00; 0x00; 0x00; 0x00; 
-               mdtableVersionMajor; // major version of table schemata 
-               mdtableVersionMinor; // minor version of table schemata 
+               mdtableVersionMajor // major version of table schemata 
+               mdtableVersionMinor // minor version of table schemata 
                
-                ((if stringsBig then 0x01 else 0x00) |||  // bit vector for heap size 
-                 (if guidsBig then 0x02 else 0x00) |||  
-                 (if blobsBig then 0x04 else 0x00));
-               0x01; (* reserved, always 1 *) |];
+               ((if stringsBig then 0x01 else 0x00) |||  // bit vector for heap size 
+                (if guidsBig then 0x02 else 0x00) |||  
+                (if blobsBig then 0x04 else 0x00))
+               0x01 (* reserved, always 1 *) |]
  
-        tablesBuf.EmitInt32 valid1;
-        tablesBuf.EmitInt32 valid2;
-        tablesBuf.EmitInt32 sorted1;
-        tablesBuf.EmitInt32 sorted2;
+        tablesBuf.EmitInt32 valid1
+        tablesBuf.EmitInt32 valid2
+        tablesBuf.EmitInt32 sorted1
+        tablesBuf.EmitInt32 sorted2
         
         // Numbers of rows in various tables 
         for rows in sortedTables do 
@@ -3676,7 +3674,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
                 tablesBuf.EmitInt32 rows.Length 
         
         
-        reportTime showTimes "Write Header of tablebuf";
+        reportTime showTimes "Write Header of tablebuf"
 
       // The tables themselves 
         for rows in sortedTables do
@@ -3712,7 +3710,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
         tablesBuf.Close()
 
-    reportTime showTimes "Write Tables to tablebuf";
+    reportTime showTimes "Write Tables to tablebuf"
 
     let tablesStreamUnpaddedSize = codedTables.Length
     // QUERY: extra 4 empty bytes in array.exe - why? Include some extra padding after 
@@ -3729,7 +3727,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let blobsChunk,_next = chunk blobsStreamPaddedSize next
     let blobsStreamPadding = blobsChunk.size - blobsStreamUnpaddedSize
     
-    reportTime showTimes "Layout Metadata";
+    reportTime showTimes "Layout Metadata"
 
     let metadata = 
       let mdbuf =  ByteBuffer.Create 500000 
@@ -4217,117 +4215,117 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           // Note that the defaults differ between x86 and x64
           if modul.Is64Bit then
             let size = defaultArg modul.StackReserveSize 0x400000 |> int64
-            writeInt64 os size; // Stack Reserve Size Always 0x400000 (4Mb) (see Section 23.1). 
-            writeInt64 os 0x4000L; // Stack Commit Size Always 0x4000 (16Kb) (see Section 23.1). 
-            writeInt64 os 0x100000L; // Heap Reserve Size Always 0x100000 (1Mb) (see Section 23.1). 
+            writeInt64 os size // Stack Reserve Size Always 0x400000 (4Mb) (see Section 23.1). 
+            writeInt64 os 0x4000L // Stack Commit Size Always 0x4000 (16Kb) (see Section 23.1). 
+            writeInt64 os 0x100000L // Heap Reserve Size Always 0x100000 (1Mb) (see Section 23.1). 
             writeInt64 os 0x2000L // Heap Commit Size Always 0x800 (8Kb) (see Section 23.1). 
           else
             let size = defaultArg modul.StackReserveSize 0x100000
-            writeInt32 os size; // Stack Reserve Size Always 0x100000 (1Mb) (see Section 23.1). 
-            writeInt32 os 0x1000; // Stack Commit Size Always 0x1000 (4Kb) (see Section 23.1). 
-            writeInt32 os 0x100000; // Heap Reserve Size Always 0x100000 (1Mb) (see Section 23.1). 
-            writeInt32 os 0x1000; // Heap Commit Size Always 0x1000 (4Kb) (see Section 23.1).             
+            writeInt32 os size // Stack Reserve Size Always 0x100000 (1Mb) (see Section 23.1). 
+            writeInt32 os 0x1000 // Stack Commit Size Always 0x1000 (4Kb) (see Section 23.1). 
+            writeInt32 os 0x100000 // Heap Reserve Size Always 0x100000 (1Mb) (see Section 23.1). 
+            writeInt32 os 0x1000 // Heap Commit Size Always 0x1000 (4Kb) (see Section 23.1).             
        // 000000f0 - x86 location, moving on, for x64, add 0x10  
-          writeInt32 os 0x00; // Loader Flags Always 0 (see Section 23.1) 
-          writeInt32 os 0x10; // Number of Data Directories: Always 0x10 (see Section 23.1). 
-          writeInt32 os 0x00; 
-          writeInt32 os 0x00; // Export Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Loader Flags Always 0 (see Section 23.1) 
+          writeInt32 os 0x10 // Number of Data Directories: Always 0x10 (see Section 23.1). 
+          writeInt32 os 0x00 
+          writeInt32 os 0x00 // Export Table Always 0 (see Section 23.1). 
        // 00000100  
-          writeDirectory os importTableChunk; // Import Table RVA of Import Table, (see clause 24.3.1). e.g. 0000b530  
+          writeDirectory os importTableChunk // Import Table RVA of Import Table, (see clause 24.3.1). e.g. 0000b530  
           // Native Resource Table: ECMA says Always 0 (see Section 23.1), but mscorlib and other files with resources bound into executable do not.  For the moment assume the resources table is always the first resource in the file. 
-          writeDirectory os nativeResourcesChunk;
+          writeDirectory os nativeResourcesChunk
 
        // 00000110  
-          writeInt32 os 0x00; // Exception Table Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Exception Table Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Certificate Table Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Certificate Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Exception Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Exception Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Certificate Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Certificate Table Always 0 (see Section 23.1). 
        // 00000120  
-          writeDirectory os baseRelocTableChunk; 
-          writeDirectory os debugDirectoryChunk; // Debug Directory 
+          writeDirectory os baseRelocTableChunk 
+          writeDirectory os debugDirectoryChunk // Debug Directory 
        // 00000130  
-          writeInt32 os 0x00; //  Copyright Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; //  Copyright Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Global Ptr Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Global Ptr Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 //  Copyright Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 //  Copyright Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Global Ptr Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Global Ptr Always 0 (see Section 23.1). 
        // 00000140  
-          writeInt32 os 0x00; // Load Config Table Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Load Config Table Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // TLS Table Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // TLS Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Load Config Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Load Config Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // TLS Table Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // TLS Table Always 0 (see Section 23.1). 
        // 00000150   
-          writeInt32 os 0x00; // Bound Import Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Bound Import Always 0 (see Section 23.1). 
-          writeDirectory os importAddrTableChunk; // Import Addr Table, (see clause 24.3.1). e.g. 0x00002000  
+          writeInt32 os 0x00 // Bound Import Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Bound Import Always 0 (see Section 23.1). 
+          writeDirectory os importAddrTableChunk // Import Addr Table, (see clause 24.3.1). e.g. 0x00002000  
        // 00000160   
-          writeInt32 os 0x00; // Delay Import Descriptor Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Delay Import Descriptor Always 0 (see Section 23.1). 
-          writeDirectory os cliHeaderChunk;
+          writeInt32 os 0x00 // Delay Import Descriptor Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Delay Import Descriptor Always 0 (see Section 23.1). 
+          writeDirectory os cliHeaderChunk
        // 00000170  
-          writeInt32 os 0x00; // Reserved Always 0 (see Section 23.1). 
-          writeInt32 os 0x00; // Reserved Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1). 
           
-          write (Some textSectionHeaderChunk.addr) os "text section header" [| |];
+          write (Some textSectionHeaderChunk.addr) os "text section header" [| |]
           
        // 00000178  
-          writeBytes os  [| 0x2euy; 0x74uy; 0x65uy; 0x78uy; 0x74uy; 0x00uy; 0x00uy; 0x00uy; |]; // ".text\000\000\000" 
+          writeBytes os  [| 0x2euy; 0x74uy; 0x65uy; 0x78uy; 0x74uy; 0x00uy; 0x00uy; 0x00uy; |] // ".text\000\000\000" 
        // 00000180  
-          writeInt32 os textSectionSize; // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x00009584 
-          writeInt32 os textSectionAddr; //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x00020000 
-          writeInt32 os textSectionPhysSize; //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. 0x00009600 
-          writeInt32 os textSectionPhysLoc; // PointerToRawData RVA to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 00000200 
+          writeInt32 os textSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x00009584 
+          writeInt32 os textSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x00020000 
+          writeInt32 os textSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. 0x00009600 
+          writeInt32 os textSectionPhysLoc // PointerToRawData RVA to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 00000200 
        // 00000190  
-          writeInt32 os 0x00; // PointerToRelocations RVA of Relocation section. 
-          writeInt32 os 0x00; // PointerToLinenumbers Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
+          writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
        // 00000198  
-          writeInt32AsUInt16 os 0x00;// NumberOfRelocations Number of relocations, set to 0 if unused. 
-          writeInt32AsUInt16 os 0x00;  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
-          writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |]; //  Characteristics Flags describing section’s characteristics, see below. IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ 
+          writeInt32AsUInt16 os 0x00// NumberOfRelocations Number of relocations, set to 0 if unused. 
+          writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
+          writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |] //  Characteristics Flags describing section’s characteristics, see below. IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ 
           
-          write (Some dataSectionHeaderChunk.addr) os "data section header" [| |];
+          write (Some dataSectionHeaderChunk.addr) os "data section header" [| |]
           
        // 000001a0  
-          writeBytes os [| 0x2euy; 0x72uy; 0x73uy; 0x72uy; 0x63uy; 0x00uy; 0x00uy; 0x00uy; |]; // ".rsrc\000\000\000" 
-    //  writeBytes os [| 0x2e; 0x73; 0x64; 0x61; 0x74; 0x61; 0x00; 0x00; |]; // ".sdata\000\000"  
-          writeInt32 os dataSectionSize; // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x0000000c 
-          writeInt32 os dataSectionAddr; //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
+          writeBytes os [| 0x2euy; 0x72uy; 0x73uy; 0x72uy; 0x63uy; 0x00uy; 0x00uy; 0x00uy; |] // ".rsrc\000\000\000" 
+    //  writeBytes os [| 0x2e; 0x73; 0x64; 0x61; 0x74; 0x61; 0x00; 0x00; |] // ".sdata\000\000"  
+          writeInt32 os dataSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x0000000c 
+          writeInt32 os dataSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
        // 000001b0  
-          writeInt32 os dataSectionPhysSize; //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. e.g. 0x00000200 
-          writeInt32 os dataSectionPhysLoc; // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 0x00009800 
+          writeInt32 os dataSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized data, this field should be 0. e.g. 0x00000200 
+          writeInt32 os dataSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 0x00009800 
        // 000001b8  
-          writeInt32 os 0x00; // PointerToRelocations RVA of Relocation section. 
-          writeInt32 os 0x00; // PointerToLinenumbers Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
+          writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
        // 000001c0  
-          writeInt32AsUInt16 os 0x00; // NumberOfRelocations Number of relocations, set to 0 if unused. 
-          writeInt32AsUInt16 os 0x00;  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
-          writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x40uy |]; //  Characteristics Flags: IMAGE_SCN_MEM_READ |  IMAGE_SCN_CNT_INITIALIZED_DATA 
+          writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused. 
+          writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
+          writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x40uy |] //  Characteristics Flags: IMAGE_SCN_MEM_READ |  IMAGE_SCN_CNT_INITIALIZED_DATA 
           
-          write (Some relocSectionHeaderChunk.addr) os "reloc section header" [| |];
+          write (Some relocSectionHeaderChunk.addr) os "reloc section header" [| |]
        // 000001a0  
-          writeBytes os [| 0x2euy; 0x72uy; 0x65uy; 0x6cuy; 0x6fuy; 0x63uy; 0x00uy; 0x00uy; |]; // ".reloc\000\000" 
-          writeInt32 os relocSectionSize; // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x0000000c 
-          writeInt32 os relocSectionAddr; //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
+          writeBytes os [| 0x2euy; 0x72uy; 0x65uy; 0x6cuy; 0x6fuy; 0x63uy; 0x00uy; 0x00uy; |] // ".reloc\000\000" 
+          writeInt32 os relocSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment. If this value is greater than Size of Raw Data, the section is zero-padded. e.g. 0x0000000c 
+          writeInt32 os relocSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section, when loaded into memory, relative to the image base. e.g. 0x0000c000
        // 000001b0  
-          writeInt32 os relocSectionPhysSize; //  SizeOfRawData Size of the initialized reloc on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00000200 
-          writeInt32 os relocSectionPhysLoc; // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00009800 
+          writeInt32 os relocSectionPhysSize //  SizeOfRawData Size of the initialized reloc on disk in bytes, shall be a multiple of FileAlignment from the PE header. If this is less than VirtualSize the remainder of the section is zero filled. Because this field is rounded while the VirtualSize field is not it is possible for this to be greater than VirtualSize as well. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00000200 
+          writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section’s first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00009800 
        // 000001b8  
-          writeInt32 os 0x00; // PointerToRelocations RVA of Relocation section. 
-          writeInt32 os 0x00; // PointerToLinenumbers Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
+          writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
        // 000001c0  
-          writeInt32AsUInt16 os 0x00; // NumberOfRelocations Number of relocations, set to 0 if unused. 
-          writeInt32AsUInt16 os 0x00;  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
-          writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x42uy |]; //  Characteristics Flags: IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ |  
+          writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused. 
+          writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
+          writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x42uy |] //  Characteristics Flags: IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ |  
           
-          writePadding os "pad to text begin" (textSectionPhysLoc - headerSize);
+          writePadding os "pad to text begin" (textSectionPhysLoc - headerSize)
           
           // TEXT SECTION: e.g. 0x200 
           
           let textV2P v = v - textSectionAddr + textSectionPhysLoc
           
           // e.g. 0x0200 
-          write (Some (textV2P importAddrTableChunk.addr)) os "import addr table" [| |];
-          writeInt32 os importNameHintTableChunk.addr; 
-          writeInt32 os 0x00;  // QUERY 4 bytes of zeros not 2 like ECMA  24.3.1 says 
+          write (Some (textV2P importAddrTableChunk.addr)) os "import addr table" [| |]
+          writeInt32 os importNameHintTableChunk.addr 
+          writeInt32 os 0x00  // QUERY 4 bytes of zeros not 2 like ECMA  24.3.1 says 
           
           // e.g. 0x0208 
 
@@ -4340,106 +4338,106 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let headerVersionMajor,headerVersionMinor = headerVersionSupportedByCLRVersion desiredMetadataVersion
 
           writePadding os "pad to cli header" cliHeaderPadding 
-          write (Some (textV2P cliHeaderChunk.addr)) os "cli header"  [| |];
-          writeInt32 os 0x48; // size of header 
-          writeInt32AsUInt16 os headerVersionMajor; // Major part of minimum version of CLR reqd. 
-          writeInt32AsUInt16 os headerVersionMinor; // Minor part of minimum version of CLR reqd. ... 
+          write (Some (textV2P cliHeaderChunk.addr)) os "cli header"  [| |]
+          writeInt32 os 0x48 // size of header 
+          writeInt32AsUInt16 os headerVersionMajor // Major part of minimum version of CLR reqd. 
+          writeInt32AsUInt16 os headerVersionMinor // Minor part of minimum version of CLR reqd. ... 
           // e.g. 0x0210 
-          writeDirectory os metadataChunk;
-          writeInt32 os flags;
+          writeDirectory os metadataChunk
+          writeInt32 os flags
           
-          writeInt32 os entryPointToken; 
-          write None os "rest of cli header" [| |];
+          writeInt32 os entryPointToken 
+          write None os "rest of cli header" [| |]
           
           // e.g. 0x0220 
-          writeDirectory os resourcesChunk;
-          writeDirectory os strongnameChunk;
+          writeDirectory os resourcesChunk
+          writeDirectory os strongnameChunk
           // e.g. 0x0230 
-          writeInt32 os 0x00; // code manager table, always 0 
-          writeInt32 os 0x00; // code manager table, always 0 
-          writeDirectory os vtfixupsChunk; 
+          writeInt32 os 0x00 // code manager table, always 0 
+          writeInt32 os 0x00 // code manager table, always 0 
+          writeDirectory os vtfixupsChunk 
           // e.g. 0x0240 
-          writeInt32 os 0x00;  // export addr table jumps, always 0 
-          writeInt32 os 0x00;  // export addr table jumps, always 0 
-          writeInt32 os 0x00;  // managed native header, always 0 
-          writeInt32 os 0x00;  // managed native header, always 0 
+          writeInt32 os 0x00  // export addr table jumps, always 0 
+          writeInt32 os 0x00  // export addr table jumps, always 0 
+          writeInt32 os 0x00  // managed native header, always 0 
+          writeInt32 os 0x00  // managed native header, always 0 
           
-          writeBytes os code;
-          write None os "code padding" codePadding;
+          writeBytes os code
+          write None os "code padding" codePadding
           
-          writeBytes os metadata;
+          writeBytes os metadata
           
           // write 0x80 bytes of empty space for encrypted SHA1 hash, written by SN.EXE or call to signing API 
           if signer <> None then 
-            write (Some (textV2P strongnameChunk.addr)) os "strongname" (Array.create strongnameChunk.size 0x0uy);
+            write (Some (textV2P strongnameChunk.addr)) os "strongname" (Array.create strongnameChunk.size 0x0uy)
           
-          write (Some (textV2P resourcesChunk.addr)) os "raw resources" [| |];
-          writeBytes os resources;
-          write (Some (textV2P rawdataChunk.addr)) os "raw data" [| |];
-          writeBytes os data;
+          write (Some (textV2P resourcesChunk.addr)) os "raw resources" [| |]
+          writeBytes os resources
+          write (Some (textV2P rawdataChunk.addr)) os "raw data" [| |]
+          writeBytes os data
 
           writePadding os "start of import table" importTableChunkPrePadding
 
           // vtfixups would go here 
-          write (Some (textV2P importTableChunk.addr)) os "import table" [| |];
+          write (Some (textV2P importTableChunk.addr)) os "import table" [| |]
           
-          writeInt32 os importLookupTableChunk.addr;
-          writeInt32 os 0x00;
-          writeInt32 os 0x00;
-          writeInt32 os mscoreeStringChunk.addr;
-          writeInt32 os importAddrTableChunk.addr;
-          writeInt32 os 0x00;
-          writeInt32 os 0x00;
-          writeInt32 os 0x00;
-          writeInt32 os 0x00;
-          writeInt32 os 0x00; 
+          writeInt32 os importLookupTableChunk.addr
+          writeInt32 os 0x00
+          writeInt32 os 0x00
+          writeInt32 os mscoreeStringChunk.addr
+          writeInt32 os importAddrTableChunk.addr
+          writeInt32 os 0x00
+          writeInt32 os 0x00
+          writeInt32 os 0x00
+          writeInt32 os 0x00
+          writeInt32 os 0x00 
         
-          write (Some (textV2P importLookupTableChunk.addr)) os "import lookup table" [| |];
-          writeInt32 os importNameHintTableChunk.addr; 
-          writeInt32 os 0x00; 
-          writeInt32 os 0x00; 
-          writeInt32 os 0x00; 
-          writeInt32 os 0x00; 
+          write (Some (textV2P importLookupTableChunk.addr)) os "import lookup table" [| |]
+          writeInt32 os importNameHintTableChunk.addr 
+          writeInt32 os 0x00 
+          writeInt32 os 0x00 
+          writeInt32 os 0x00 
+          writeInt32 os 0x00 
           
 
-          write (Some (textV2P importNameHintTableChunk.addr)) os "import name hint table" [| |];
+          write (Some (textV2P importNameHintTableChunk.addr)) os "import name hint table" [| |]
           // Two zero bytes of hint, then Case sensitive, null-terminated ASCII string containing name to import. 
           // Shall _CorExeMain a .exe file _CorDllMain for a .dll file.
           if isDll then 
               writeBytes os [| 0x00uy;  0x00uy;  0x5fuy;  0x43uy ;  0x6fuy;  0x72uy;  0x44uy;  0x6cuy;  0x6cuy;  0x4duy;  0x61uy;  0x69uy;  0x6euy;  0x00uy |]
           else 
-              writeBytes os [| 0x00uy;  0x00uy;  0x5fuy;  0x43uy;  0x6fuy;  0x72uy;  0x45uy;  0x78uy;  0x65uy;  0x4duy;  0x61uy;  0x69uy;  0x6euy;  0x00uy |];
+              writeBytes os [| 0x00uy;  0x00uy;  0x5fuy;  0x43uy;  0x6fuy;  0x72uy;  0x45uy;  0x78uy;  0x65uy;  0x4duy;  0x61uy;  0x69uy;  0x6euy;  0x00uy |]
           
           write (Some (textV2P mscoreeStringChunk.addr)) os "mscoree string"
-            [| 0x6duy;  0x73uy;  0x63uy;  0x6fuy ;  0x72uy;  0x65uy ;  0x65uy;  0x2euy ;  0x64uy;  0x6cuy ;  0x6cuy;  0x00uy ; |];
+            [| 0x6duy;  0x73uy;  0x63uy;  0x6fuy ;  0x72uy;  0x65uy ;  0x65uy;  0x2euy ;  0x64uy;  0x6cuy ;  0x6cuy;  0x00uy ; |]
           
-          writePadding os "end of import tab" importTableChunkPadding;
+          writePadding os "end of import tab" importTableChunkPadding
           
-          writePadding os "head of entrypoint" 0x03;
+          writePadding os "head of entrypoint" 0x03
           let ep = (imageBaseReal + textSectionAddr)
           write (Some (textV2P entrypointCodeChunk.addr)) os " entrypoint code"
-                 [| 0xFFuy; 0x25uy; (* x86 Instructions for entry *) b0 ep; b1 ep; b2 ep; b3 ep |];
+                 [| 0xFFuy; 0x25uy; (* x86 Instructions for entry *) b0 ep; b1 ep; b2 ep; b3 ep |]
           if isItanium then 
               write (Some (textV2P globalpointerCodeChunk.addr)) os " itanium global pointer"
-                   [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |];
+                   [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |]
           
           if pdbfile.IsSome then 
-              write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create sizeof_IMAGE_DEBUG_DIRECTORY 0x0uy);
-              write (Some (textV2P debugDataChunk.addr)) os "debug data" (Array.create debugDataChunk.size 0x0uy);
+              write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create sizeof_IMAGE_DEBUG_DIRECTORY 0x0uy)
+              write (Some (textV2P debugDataChunk.addr)) os "debug data" (Array.create debugDataChunk.size 0x0uy)
           
-          writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize);
+          writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
           
           // DATA SECTION 
           match nativeResources with
           | [||] -> ()
           | resources ->
-                write (Some (dataSectionVirtToPhys nativeResourcesChunk.addr)) os "raw native resources" [| |];
-                writeBytes os resources;
+                write (Some (dataSectionVirtToPhys nativeResourcesChunk.addr)) os "raw native resources" [| |]
+                writeBytes os resources
 
           if dummydatap.size <> 0x0 then
-              write (Some (dataSectionVirtToPhys dummydatap.addr)) os "dummy data" [| 0x0uy |];
+              write (Some (dataSectionVirtToPhys dummydatap.addr)) os "dummy data" [| 0x0uy |]
 
-          writePadding os "end of .rsrc" (relocSectionPhysLoc - dataSectionPhysLoc - dataSectionSize);            
+          writePadding os "end of .rsrc" (relocSectionPhysLoc - dataSectionPhysLoc - dataSectionSize)            
           
           // RELOC SECTION 
 
@@ -4461,10 +4459,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
               [| b0 entrypointFixupBlock; b1 entrypointFixupBlock; b2 entrypointFixupBlock; b3 entrypointFixupBlock;
                  0x0cuy; 0x00uy; 0x00uy; 0x00uy;
                  b0 reloc; b1 reloc; 
-                 b0 reloc2; b1 reloc2; |];
-          writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize);
+                 b0 reloc2; b1 reloc2; |]
+          writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
-          os.Close();
+          os.Close()
           
           try 
               FileSystemUtilites.setExecutablePermission outfile
@@ -4475,13 +4473,13 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         // Looks like a finally...
         with e ->   
             (try 
-                os.Close(); 
+                os.Close() 
                 FileSystem.FileDelete outfile 
-             with _ -> ()); 
+             with _ -> ()) 
             reraise()
    
 
-    reportTime showTimes "Writing Image";
+    reportTime showTimes "Writing Image"
      
     if dumpDebugInfo then 
         DumpDebugInfo outfile pdbData
@@ -4531,7 +4529,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         with e -> 
             reraise()
             
-    end;
+    end
     reportTime showTimes "Finalize PDB"
 
     /// Sign the binary.  No further changes to binary allowed past this point! 
