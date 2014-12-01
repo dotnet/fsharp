@@ -127,8 +127,10 @@ namespace Microsoft.FSharp.Core
       
     [<AttributeUsage(AttributeTargets.Class,AllowMultiple=false)>]
     [<Sealed>]
-    type AllowNullLiteralAttribute() =
+    type AllowNullLiteralAttribute(value: bool) =
         inherit System.Attribute()
+        member x.Value = value
+        new () = new AllowNullLiteralAttribute(true)
       
     [<AttributeUsage(AttributeTargets.Field,AllowMultiple=false)>]
     [<Sealed>]

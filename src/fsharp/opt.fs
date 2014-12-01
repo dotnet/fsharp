@@ -2470,7 +2470,7 @@ and TryDevirtualizeApplication cenv env (f,tyargs,args,m) =
     // target type isn't 'NullNotLiked', i.e. that the target type is not an F# union, record etc. 
     // Note UnboxFast is just the .NET IL 'unbox.any' instruction. 
     | Expr.Val(v,_,_),[ty],_ when valRefEq cenv.g v cenv.g.unbox_vref && 
-                                   canUseUnboxFast cenv.g ty ->
+                                   canUseUnboxFast cenv.g m ty ->
 
         Some(DevirtualizeApplication cenv env cenv.g.unbox_fast_vref ty tyargs args m)
         

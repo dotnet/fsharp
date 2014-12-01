@@ -178,7 +178,7 @@ module internal ExtensionTyping =
         abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
         abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option 
         abstract GetXmlDocAttributes : provider:ITypeProvider -> string[]
-        abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> obj option list option
+        abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
         
     and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedAssembly = 

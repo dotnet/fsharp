@@ -812,7 +812,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
       
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
-      AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), nm),mk_MFCore_tcref fslibCcu nm) 
+      AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm),mk_MFCore_tcref fslibCcu nm) 
     
   let mkAttrib (nm:string) scopeRef : BuiltinAttribInfo = 
       let path, typeName = splitILTypeName nm

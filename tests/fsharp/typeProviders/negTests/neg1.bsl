@@ -1447,3 +1447,5 @@ neg1.fsx(448,9,448,107): typecheck error FS3148: Too many static parameters. Exp
 neg1.fsx(449,105,449,110): typecheck error FS3083: The static parameter 'Count' has already been given a value
 
 neg1.fsx(450,9,450,119): typecheck error FS3148: Too many static parameters. Expected at most 1 parameters, but got 0 unnamed and 2 named parameters.
+
+neg1.fsx(455,14,455,18): typecheck error FS0043: The type 'FSharp.HelloWorld.HelloWorldType' does not have 'null' as a proper value

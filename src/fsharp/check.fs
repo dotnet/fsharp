@@ -900,14 +900,7 @@ and CheckAttribs cenv env (attribs: Attribs) =
         |> Seq.map fst 
         |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref,m) -> 
-                let allowMultiple = 
-                    Infos.AttributeChecking.TryBindTyconRefAttribute cenv.g m cenv.g.attrib_AttributeUsageAttribute tcref 
-                             (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple",_,_,ILAttribElem.Bool res) -> Some res | _ -> None))
-                             (fun (Attrib(_,_,_,named,_,_,_)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple",_,_,AttribBoolArg(res) ) -> Some res | _ -> None))
-                             (fun _ -> None)
-                
-                (allowMultiple <> Some(true)))
+        |> List.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some(true))
     if cenv.reportErrors then 
        for (tcref,m) in duplicates do
           errorR(Error(FSComp.SR.chkAttrHasAllowMultiFalse(tcref.DisplayName), m))
@@ -1384,7 +1377,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some(true) then
                    let ty' = generalizedTyconRef (mkLocalTyconRef tycon)
-                   if not (TypeHasDefaultValue cenv.g ty') then 
+                   if not (TypeHasDefaultValue cenv.g m ty') then 
                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m));
             )
         match tycon.TypeAbbrev with                          (* And type abbreviations *)

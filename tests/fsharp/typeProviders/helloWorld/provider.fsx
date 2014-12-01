@@ -41,6 +41,11 @@ module Utils =
                 member __.ConstructorArguments = upcast [| CustomAttributeTypedArgument(typeof<string>, msg)  |]
                 member __.NamedArguments = upcast [| |] }
 
+    let mkAllowNullLiteralValueAttributeData(value: bool) = 
+        { new CustomAttributeData() with 
+                member __.Constructor =  typeof<Microsoft.FSharp.Core.AllowNullLiteralAttribute>.GetConstructors().[0]
+                member __.ConstructorArguments = upcast [| CustomAttributeTypedArgument(typeof<bool>, value)  |]
+                member __.NamedArguments = upcast [| |] }
 
 type public Runtime() =
     static member Id x = x
@@ -232,8 +237,11 @@ type public Provider() =
                    yield TypeBuilder.CreateConstructor(theNestedType,(fun _ -> [| |])) :> MemberInfo
                     |]  
 
-        and theType = TypeBuilder.CreateSimpleType(TypeContainer.Namespace(modul, namespaceName),className,members=allMembers,baseType=baseType)
-        and theNestedType = TypeBuilder.CreateSimpleType(TypeContainer.Type(theType),"NestedType",members=allMembersOfNestedType)
+        and theType = TypeBuilder.CreateSimpleType(TypeContainer.Namespace(modul, namespaceName),className,members=allMembers,baseType=baseType, 
+                                                   getCustomAttributes=(fun () -> [| mkAllowNullLiteralValueAttributeData(false) |]))
+
+        and theNestedType = TypeBuilder.CreateSimpleType(TypeContainer.Type(theType),"NestedType",members=allMembersOfNestedType, 
+                                                         getCustomAttributes=(fun () -> [| mkAllowNullLiteralValueAttributeData(true) |]))
 
         theType
     let helloWorldType = mkHelloWorldType rootNamespace "HelloWorldType" (typeof<obj>)

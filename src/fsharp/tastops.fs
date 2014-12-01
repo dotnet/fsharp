@@ -2554,6 +2554,68 @@ let TryFindILAttributeOpt attr attrs =
     | Some (AttribInfo (atref,_)) -> HasILAttribute atref attrs
     | _ -> false
 
+/// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
+/// provided attributes.
+//
+// This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
+let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref,_) as args) (tcref:TyconRef) f1 f2 f3 = 
+    ignore m; ignore f3
+    match metadataOfTycon tcref.Deref with 
+#if EXTENSIONTYPING
+    | ProvidedTypeMetadata info -> 
+        let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)),m)
+        match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)),m) with
+        | Some args -> f3 args
+        | None -> None
+#endif
+    | ILTypeMetadata (_,tdef) -> 
+        match TryDecodeILAttribute g atref (Some(atref.Scope)) tdef.CustomAttrs with 
+        | Some attr -> f1 attr
+        | _ -> None
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+        match TryFindFSharpAttribute g args tcref.Attribs with 
+        | Some attr -> f2 attr
+        | _ -> None
+
+let TryFindTyconRefBoolAttribute g m attribSpec tcref  =
+    TryBindTyconRefAttribute g m attribSpec tcref 
+                (function 
+                   | ([ ],_) -> Some true
+                   | ([ILAttribElem.Bool (v) ],_) -> Some v 
+                   | _ -> None)
+                (function 
+                   | (Attrib(_,_,[ ],_,_,_,_))  -> Some true
+                   | (Attrib(_,_,[ AttribBoolArg v ],_,_,_,_))  -> Some v 
+                   | _ -> None)
+                (function 
+                   | ([ ],_) -> Some true
+                   | ([ Some ((:? bool as v) : obj) ],_) -> Some v 
+                   | _ -> None)
+
+let TryFindAttributeUsageAttribute g m tcref  =
+    TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref 
+                (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple",_,_,ILAttribElem.Bool res) -> Some res | _ -> None))
+                (fun (Attrib(_,_,_,named,_,_,_)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple",_,_,AttribBoolArg(res) ) -> Some res | _ -> None))
+                (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple", Some ((:? bool as res) : obj)) -> Some res | _ -> None))
+
+
+/// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
+///
+/// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
+let TryFindTyconRefStringAttribute g m attribSpec tcref  =
+    TryBindTyconRefAttribute g m attribSpec tcref 
+                (function ([ILAttribElem.String (Some(msg)) ],_) -> Some msg | _ -> None)
+                (function (Attrib(_,_,[ AttribStringArg(msg) ],_,_,_,_))  -> Some msg | _ -> None)
+                (function ([ Some ((:? string as msg) : obj) ], _) -> Some msg | _ -> None)
+
+/// Check if a type definition has a specific attribute
+let TyconRefHasAttribute g m attribSpec tcref  =
+    TryBindTyconRefAttribute g m attribSpec tcref 
+                    (fun _ -> Some ()) 
+                    (fun _ -> Some ())
+                    (fun _ -> Some ())
+        |> Option.isSome
+
 //-------------------------------------------------------------------------
 // List and reference types...
 //------------------------------------------------------------------------- 
@@ -6841,28 +6903,34 @@ let TypeNullNever g ty =
     (isStructTy g underlyingTy) ||
     (isByrefTy g underlyingTy)
 
-let TypeNullIsExtraValue g ty = 
-    isILReferenceTy g ty ||
-    isDelegateTy g ty ||
-    (not (TypeNullNever g ty) && 
-     isAppTy g ty && 
-     TryFindFSharpBoolAttribute  g g.attrib_AllowNullLiteralAttribute (tyconOfAppTy g ty).Attribs = Some(true))
+
+
+/// Indicates if the type admits the use of 'null' as a value
+let TypeNullIsExtraValue g m ty = 
+    if isILReferenceTy g ty || isDelegateTy g ty then
+        // Putting AllowNullLiteralAttribute(false) on an IL or provided type means 'null' can't be used with that type
+        not (isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(false))
+    elif TypeNullNever g ty then 
+        false
+    else 
+        // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
+        isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(true)
 
 let TypeNullIsTrueValue g ty = 
     (isAppTy g ty && IsUnionTypeWithNullAsTrueValue g (tyconOfAppTy g ty))  ||
     (isUnitTy g ty)
 
-let TypeNullNotLiked g ty = 
-       not (TypeNullIsExtraValue g ty) 
+let TypeNullNotLiked g m ty = 
+       not (TypeNullIsExtraValue g m ty) 
     && not (TypeNullIsTrueValue g ty) 
     && not (TypeNullNever g ty) 
 
-let TypeSatisfiesNullConstraint g ty = 
-    TypeNullIsExtraValue g ty  
+let TypeSatisfiesNullConstraint g m ty = 
+    TypeNullIsExtraValue g m ty  
 
-let rec TypeHasDefaultValue g ty = 
+let rec TypeHasDefaultValue g m ty = 
     let ty = stripTyEqnsAndMeasureEqns g ty
-    TypeSatisfiesNullConstraint g ty  
+    TypeSatisfiesNullConstraint g m ty  
     || (isStructTy g ty &&
         // Is it an F# struct type?
         (if isFSharpStructTy g ty then 
@@ -6873,9 +6941,9 @@ let rec TypeHasDefaultValue g ty =
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some(false)))
 
-            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g)
+            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
          elif isTupleStructTy g ty then 
-            destTupleTy g ty |> List.forall (TypeHasDefaultValue g)
+            destTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
          else
             // All struct types defined in other .NET languages have a DefaultValue regardless of their
             // instantiation
@@ -6909,9 +6977,9 @@ let canUseTypeTestFast g ty =
      not (TypeNullNever g ty)
 
 // Can we use the fast helper for the 'LanguagePrimitives.IntrinsicFunctions.UnboxGeneric'? 
-let canUseUnboxFast g ty = 
+let canUseUnboxFast g m ty = 
      not (isTyparTy g ty) && 
-     not (TypeNullNotLiked g ty)
+     not (TypeNullNotLiked g m ty)
      
      
 //--------------------------------------------------------------------------

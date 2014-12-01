@@ -238,6 +238,13 @@ namespace Microsoft.FSharp.Core
         /// <returns>AllowNullLiteralAttribute</returns>
         new : unit -> AllowNullLiteralAttribute
 
+        /// <summary>Creates an instance of the attribute with the specified value</summary>
+        /// <returns>AllowNullLiteralAttribute</returns>
+        new : value: bool -> AllowNullLiteralAttribute
+
+        /// <summary>The value of the attribute, indicating whether the type allows the null literal or not</summary>
+        member Value: bool
+
     /// <summary>Adding this attribute to a value causes it to be compiled as a CLI constant literal.</summary>
     [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
     [<Sealed>]

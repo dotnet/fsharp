@@ -1585,7 +1585,7 @@ and SolveTypSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     if isTyparTy g ty then 
         AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.SupportsNull(m))
     elif 
-        TypeSatisfiesNullConstraint g ty then CompleteD
+        TypeSatisfiesNullConstraint g m ty then CompleteD
     else 
         match ty with 
         | NullableTy g _ ->
@@ -1757,7 +1757,7 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
     let ty = stripTyEqnsAndMeasureEqns g typ
     if isTyparTy g ty then 
         AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.RequiresDefaultConstructor(m))
-    elif isStructTy g ty && TypeHasDefaultValue g ty then 
+    elif isStructTy g ty && TypeHasDefaultValue g m ty then 
         CompleteD
     elif
         GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 

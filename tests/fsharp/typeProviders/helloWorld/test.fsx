@@ -111,6 +111,15 @@ module BasicErasedProvidedTypeTest =
         [| 3;6 |]
 
 
+    check "cwkeonwe09a13355 - null attrib can't be used"
+        (null: FSharp.HelloWorld.HelloWorldType.NestedType) // should NOT  give a type error - this explicitly has AllowNullLiteralAttribute(true), so a null literal is allowed
+        null
+
+    // should NOT give a type error - this doesn't have any attributes, and a null literal is allowed by default
+    check "cwkeonwe09a13355 - null attrib"
+        (null : FSharp.HelloWorld.HelloWorldSubType) 
+        null
+
     check "cwkeonwe09a13355"
         (FSharp.HelloWorld.HelloWorldType.ReturnsEmptyNewArray())
         [| |]

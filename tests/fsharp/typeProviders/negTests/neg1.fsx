@@ -449,3 +449,7 @@ module TooManyArgs =
         FSharp.GoodProviderForNegativeStaticParameterTypeTests.HelloWorldTypeWithStaticInt32Parameter<3,Count=2>.StaticProperty1 |> ignore
         FSharp.GoodProviderForNegativeStaticParameterTypeTests.HelloWorldTypeWithStaticInt32Parameter<Count=3,Count=2>.StaticProperty1 |> ignore
         //FSharp.GoodProviderForNegativeStaticParameterTypeTests.HelloWorldTypeWithStaticStringParameter<s>.StaticProperty1 |> ignore
+
+module NullLiteralNotAllowed =
+
+    let v = (null : FSharp.HelloWorld.HelloWorldType) // should give a type error - this explicitly has AllowNullLiteralAttribute(false), so a null literal is not allowed

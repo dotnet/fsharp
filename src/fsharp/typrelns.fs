@@ -461,8 +461,8 @@ module SignatureConformance = begin
                 elif fNull && not aNull then 
                   errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull))
 
-                let aNull2 = TypeNullIsExtraValue g (generalizedTyconRef (mkLocalTyconRef implTycon))
-                let fNull2 = TypeNullIsExtraValue g (generalizedTyconRef (mkLocalTyconRef implTycon))
+                let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
+                let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
                     errorR(err(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2))
                 elif fNull2 && not aNull2 then 
@@ -2166,7 +2166,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
 
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g,typ) -> 
-            if not (TypeHasDefaultValue g typ) then 
+            if not (TypeHasDefaultValue g m typ) then 
                 errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(),m))
             mkDefault (m,typ), typ)
 
