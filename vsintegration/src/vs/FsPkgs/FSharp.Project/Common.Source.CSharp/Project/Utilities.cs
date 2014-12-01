@@ -902,6 +902,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return fullPath;
         }
 
+        /// <summary>
+        /// Attempts a call to CanonicalizeFileName, but returns the input unchanged if that method throws
+        /// </summary>
+        /// <param name="anyFileName">File name to canonicalize</param>
+        /// <returns>Canonicalized file name if possible, otherwise returns input unchanged</returns>
+        public static string CanonicalizeFileNameNoThrow(string anyFileName)
+        {
+            try
+            {
+                return CanonicalizeFileName(anyFileName);
+            }
+            catch { }
+
+            return anyFileName;
+        }
 
         /// <summary>
         /// Determines if a file is a template.

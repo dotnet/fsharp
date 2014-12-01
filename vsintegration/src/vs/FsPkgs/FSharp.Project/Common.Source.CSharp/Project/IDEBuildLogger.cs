@@ -19,26 +19,26 @@ using Microsoft.VisualStudio.FSharp.LanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
-
-	/// <summary>
-	/// This class implements an MSBuild logger that output events to VS outputwindow and tasklist.
-	/// </summary>
-	[ComVisible(true)]
-	public sealed class IDEBuildLogger : Logger
-	{
-		#region fields
-		// TODO: Remove these constants when we have a version that suppoerts getting the verbosity using automation.
-#if FX_ATLEAST_45
-		private string buildVerbosityRegistryRoot = @"Software\Microsoft\VisualStudio\14.0";
-#else
-		private string buildVerbosityRegistryRoot = @"Software\Microsoft\VisualStudio\10.0";
-#endif
-		private const string buildVerbosityRegistrySubKey = @"General";
-		private const string buildVerbosityRegistryKey = "MSBuildLoggerVerbosity";
-		// TODO: Re-enable this constants when we have a version that suppoerts getting the verbosity using automation.
-		//private const string EnvironmentCategory = "Environment";
-		//private const string ProjectsAndSolutionSubCategory = "ProjectsAndSolution";
-		//private const string BuildAndRunPage = "BuildAndRun";
+    public static class LoggingConstants
+    {
+        public const string DefaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\14.0";
+        public const string BuildVerbosityRegistrySubKey = @"General";
+        public const string BuildVerbosityRegistryValue = "MSBuildLoggerVerbosity";
+        public const string UpToDateVerbosityRegistryValue = "U2DCheckVerbosity";
+    }
+    /// <summary>
+    /// This class implements an MSBuild logger that output events to VS outputwindow and tasklist.
+    /// </summary>
+    [ComVisible(true)]
+    public sealed class IDEBuildLogger : Logger
+    {
+        #region fields
+        // TODO: Remove these constants when we have a version that supports getting the verbosity using automation.
+        private string buildVerbosityRegistryRoot = LoggingConstants.DefaultVSRegistryRoot;
+        // TODO: Re-enable this constants when we have a version that suppoerts getting the verbosity using automation.
+        //private const string EnvironmentCategory = "Environment";
+        //private const string ProjectsAndSolutionSubCategory = "ProjectsAndSolution";
+        //private const string BuildAndRunPage = "BuildAndRun";
 
 		private int currentIndent;
 		private IVsOutputWindowPane outputWindowPane;
@@ -786,17 +786,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// <summary>
 		/// Sets the verbosity level.
 		/// </summary>
-		private void SetVerbosity()
-		{
-			// TODO: This should be replaced when we have a version that supports automation.
+        private void SetVerbosity()
+        {
+            // TODO: This should be replaced when we have a version that supports automation.
             if (!this.haveCachedRegistry)
             {
-                string verbosityKey = String.Format(CultureInfo.InvariantCulture, @"{0}\{1}", BuildVerbosityRegistryRoot, buildVerbosityRegistrySubKey);
+                string verbosityKey = String.Format(CultureInfo.InvariantCulture, @"{0}\{1}", BuildVerbosityRegistryRoot, LoggingConstants.BuildVerbosityRegistrySubKey);
                 using (RegistryKey subKey = Registry.CurrentUser.OpenSubKey(verbosityKey))
                 {
                     if (subKey != null)
                     {
-                        object valueAsObject = subKey.GetValue(buildVerbosityRegistryKey);
+                        object valueAsObject = subKey.GetValue(LoggingConstants.BuildVerbosityRegistryValue);
                         if (valueAsObject != null)
                         {
                             this.Verbosity = (LoggerVerbosity)((int)valueAsObject);
@@ -806,11 +806,80 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.haveCachedRegistry = true;
             }
 
-			// TODO: Continue this code to get the Verbosity when we have a version that supports automation to get the Verbosity.
-			//EnvDTE.DTE dte = this.serviceProvider.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
-			//EnvDTE.Properties properties = dte.get_Properties(EnvironmentCategory, ProjectsAndSolutionSubCategory);
-		}
+            // TODO: Continue this code to get the Verbosity when we have a version that supports automation to get the Verbosity.
+            //EnvDTE.DTE dte = this.serviceProvider.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
+            //EnvDTE.Properties properties = dte.get_Properties(EnvironmentCategory, ProjectsAndSolutionSubCategory);
+        }
 		#endregion
-	}
+    }
 
+    /// <summary>
+    /// Helper for logging to the output window
+    /// </summary>
+    public sealed class OutputWindowLogger
+    {
+        private readonly Func<bool> predicate;
+        private readonly Action<string> print;
+
+        /// <summary>
+        /// Helper to create output window logger for project up-to-date check
+        /// </summary>
+        /// <param name="pane">Output window pane to use for logging</param>
+        /// <returns>Logger</returns>
+        public static OutputWindowLogger CreateUpToDateCheckLogger(IVsOutputWindowPane pane)
+        {
+            string upToDateVerbosityKey =
+                String.Format(CultureInfo.InvariantCulture, @"{0}\{1}", LoggingConstants.DefaultVSRegistryRoot, LoggingConstants.BuildVerbosityRegistrySubKey);
+
+            var shouldLog = false;
+            using (RegistryKey subKey = Registry.CurrentUser.OpenSubKey(upToDateVerbosityKey))
+            {
+                if (subKey != null)
+                {
+                    object valueAsObject = subKey.GetValue(LoggingConstants.UpToDateVerbosityRegistryValue);
+                    if (valueAsObject != null && valueAsObject is int)
+                    {
+                        shouldLog = ((int)valueAsObject) == 1;
+                    }
+                }
+            }
+
+            return new OutputWindowLogger(() => shouldLog, pane);
+        }
+
+        /// <summary>
+        /// Creates a logger instance
+        /// </summary>
+        /// <param name="shouldLog">Predicate that will be called when logging. Should return true if logging is to be performed, false otherwise.</param>
+        /// <param name="pane">The output pane where logging should be targeted</param>
+        public OutputWindowLogger(Func<bool> shouldLog, IVsOutputWindowPane pane)
+        {
+            this.predicate = shouldLog;
+
+            if (pane is IVsOutputWindowPaneNoPump)
+            {
+                var asNoPump = pane as IVsOutputWindowPaneNoPump;
+                this.print = (s) => asNoPump.OutputStringNoPump(s);
+            }
+            else
+            {
+                this.print = (s) => pane.OutputStringThreadSafe(s);
+            }
+        }
+
+        /// <summary>
+        /// Logs a message to the output window, if the original predicate returns true
+        /// </summary>
+        /// <param name="message">Log message, can be a String.Format-style format string</param>
+        /// <param name="args">Optional aruments for format string</param>
+        public void WriteLine(string message, params object[] args)
+        {
+            if (this.predicate())
+            {
+                var s = String.Format(message, args);
+                s = String.Format("{0}{1}", s, Environment.NewLine);
+                this.print(s);
+            }
+        }
+    }
 }
