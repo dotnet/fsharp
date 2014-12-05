@@ -1484,16 +1484,44 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     inputs.Add(Utilities.CanonicalizeFileNameNoThrow(Path.Combine(projDir, propVal)));
             }
 
+            // other well-known special files that were otherwise missed
+            var specialFiles = this.project.InteropSafeIVsHierarchy as IVsProjectSpecialFiles;
+            if (specialFiles == null)
+                return false;
+
+            for (int fileId = (int)__PSFFILEID5.PSFFILEID_FIRST5; fileId <= (int)__PSFFILEID.PSFFILEID_LAST; fileId++)
+            {
+                uint itemId;
+                string fileName;
+                if (ErrorHandler.Succeeded(specialFiles.GetFile(fileId, (uint)__PSFFLAGS.PSFF_FullPath, out itemId, out fileName))
+                    && itemId != (uint)VSConstants.VSITEMID.Nil)
+                {
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow(fileName));
+                }
+            }
+
             // assembly and project references
-            foreach (var reference in this.project  .GetReferenceContainer().EnumReferences())
+            foreach (var reference in this.project.GetReferenceContainer().EnumReferences())
             {
                 if (reference is AssemblyReferenceNode)
                     inputs.Add(Utilities.CanonicalizeFileNameNoThrow(reference.Url));
                 else if (reference is ProjectReferenceNode)
                     inputs.Add(Utilities.CanonicalizeFileNameNoThrow((reference as ProjectReferenceNode).ReferencedProjectOutputPath));
+                else if (reference is ComReferenceNode)
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow((reference as ComReferenceNode).InstalledFilePath));
+                else if (reference is GroupingReferenceNode)
+                {
+                    foreach (var groupedRef in ((GroupingReferenceNode)reference).GroupedItems)
+                    {
+                        inputs.Add(Utilities.CanonicalizeFileNameNoThrow(groupedRef));
+                    }
+                }
                 else
+                {
                     // some reference type we don't know about
+                    System.Diagnostics.Debug.Assert(false, "Unexpected reference type", "{0}", reference);
                     return false;
+                }
             }
 
             return true;
