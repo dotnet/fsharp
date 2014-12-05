@@ -49,9 +49,6 @@
     <DelaySign>true</DelaySign>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
-  <PropertyGroup>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(protoCLIDir)\bin</OutputPath>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="envdte.dll" />
     <Reference Include="envdte80.dll" />
