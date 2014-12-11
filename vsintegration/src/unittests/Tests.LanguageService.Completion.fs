@@ -4559,10 +4559,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         // (ItemName, isUnique, isPrefix)
         // isUnique=true means it will be selected on ctrl-space invocation
         // isPrefix=true means it will be selected, instead of just outlined
-        AssertEqual(Some ("choose", false, true),  Match "c")
-        AssertEqual(Some ("collect", false, true), Match "co")
-        AssertEqual(Some ("concat", true, true),   Match "con")
-        AssertEqual(Some ("Cons", true, true),     Match "cons")
+        AssertEqual(Some ("empty", false, true),  Match "e")
+        AssertEqual(Some ("empty", true, true), Match "em")
       
     [<Test>]
     member public this.``BestMatch.Bug5131``() = 

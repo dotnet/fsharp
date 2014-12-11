@@ -2902,7 +2902,7 @@ query."
                                Ex1(value(*Marker6*) = v) -> ()
 
                              //Static parameters of type providers
-                             let provType = N1.T<Param1(*Marker7*)="hello", ParamIgnored(*Marker8*)=10>
+                             type provType = N1.T<Param1(*Marker7*)="hello", ParamIgnored(*Marker8*)=10>
                              """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "x1 param!")

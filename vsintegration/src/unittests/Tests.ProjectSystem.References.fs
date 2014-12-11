@@ -449,7 +449,7 @@ type References() =
             let expectedFsprojRegex = @"<Reference Include=""Test"">"
                                          + @"\s*<HintPath>Test.exe</HintPath>"  // in this directory
                                          + @"\s*</Reference>"
-            this.MakeProjectAndDo(["bar.fs"], [], "", null, (fun project ->
+            this.MakeProjectAndDo(["bar.fs"], [], "", "v4.5", (fun project ->
                 let exeCopy = Path.Combine(project.ProjectFolder, "Test.exe")
                 File.Copy(exe, exeCopy, true)                
                 Assert.IsTrue(File.Exists exeCopy, "failed to build exe")
@@ -486,7 +486,7 @@ type References() =
             let expectedFsprojRegex = @"<Reference Include=""Test"">"
                                          + @"\s*<HintPath>\.\.\\.*?</HintPath>"  // the point is, some path start with "..\", since both projects are rooted somewhere in the temp directory (where unit tests create them)
                                          + @"\s*</Reference>"
-            this.MakeProjectAndDo(["bar.fs"], [], "", null, (fun project ->
+            this.MakeProjectAndDo(["bar.fs"], [], "", "v4.5", (fun project ->
                 let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = VSCOMPONENTTYPE.VSCOMPONENTTYPE_File, bstrFile = exe)
                 let refContainer = GetReferenceContainerNode(project)
                 refContainer.AddReferenceFromSelectorData(selectorData) |> Assert.IsNotNull

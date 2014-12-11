@@ -364,7 +364,7 @@ type X() =
             fileContents = "type foo = N1.T<",
             marker = "N1",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
-                              "The static parameter 'Param1' of the provided type 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<Param1=...>'."),
+                              "The static parameter 'Param1' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<Param1=...>'."),
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
     [<Test>]
@@ -375,7 +375,7 @@ type X() =
             fileContents = "type foo = N1.T<\"foo\",",
             marker = "N1",
             expectedSquiggle= (Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,
-                              "The static parameter 'ParamIgnored' of the provided type 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."),
+                              "The static parameter 'ParamIgnored' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."),
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])      
 
     [<Test>]
