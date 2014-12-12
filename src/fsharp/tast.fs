@@ -4128,7 +4128,8 @@ let accessSubstPaths (newPath,oldPath) (TAccess paths) =
 let compPathOfCcu (ccu:CcuThunk) = CompPath(ccu.ILScopeRef,[]) 
 let taccessPublic = TAccess []
 let taccessPrivate accessPath = TAccess [accessPath]
-let taccessInternal = TAccess [CompPath(ILScopeRef.Local,[])]
+let compPathInternal = CompPath(ILScopeRef.Local,[])
+let taccessInternal = TAccess [compPathInternal]
 let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
 
 //---------------------------------------------------------------------------

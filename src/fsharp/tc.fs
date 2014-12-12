@@ -274,12 +274,12 @@ let computeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
     AccessibleFrom (eAccessPath :: eInternalsVisibleCompPaths, eFamilyType) // env.eAccessRights 
 
 let emptyTcEnv g  =
-    let cpath = CompPath (g.ilg.traits.ScopeRef,[])
+    let cpath = compPathInternal // allow internal access initially
     { eNameResEnv = NameResolutionEnv.Empty(g)
       eUngeneralizableItems=[]
       ePath=[]
-      eCompPath=cpath // dummy 
-      eAccessPath=cpath // dummy 
+      eCompPath=cpath 
+      eAccessPath=cpath  
       eAccessRights=computeAccessRights cpath [] None // compute this field 
       eInternalsVisibleCompPaths=[]
       eModuleOrNamespaceTypeAccumulator= ref (NewEmptyModuleOrNamespaceType Namespace)
