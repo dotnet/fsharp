@@ -98,3 +98,27 @@ type OptionModule() =
             let expected = None
             Assert.AreEqual(expected, actual)
         [""; "     "; "Baz Quux"; "Corge grault"] |> List.iter test
+        
+    [<Test>]
+    member this.OfToNullable() =
+        Assert.IsTrue( Option.ofNullable (System.Nullable<int>()) = None)
+        Assert.IsTrue( Option.ofNullable (System.Nullable<int>(3)) = Some 3)
+
+        Assert.IsTrue( Option.toNullable (None : int option) = System.Nullable<int>())
+        Assert.IsTrue( Option.toNullable (None : System.DateTime option) = System.Nullable())
+        Assert.IsTrue( Option.toNullable (Some 3) = System.Nullable(3))
+
+    [<Test>]
+    member this.OfToObj() =
+        Assert.IsTrue( Option.toObj (Some "3") = "3")
+        Assert.IsTrue( Option.toObj (Some "") = "")
+        Assert.IsTrue( Option.toObj (Some null) = null)
+        Assert.IsTrue( Option.toObj None = null)     
+     
+        Assert.IsTrue( Option.ofObj "3" = Some "3")
+        Assert.IsTrue( Option.ofObj "" = Some "")
+        Assert.IsTrue( Option.ofObj [| "" |] = Some [| "" |])
+        Assert.IsTrue( Option.ofObj (null : string array) = None)
+        Assert.IsTrue( Option.ofObj<string> null = None)
+        Assert.IsTrue( Option.ofObj<string[]> null = None)
+        Assert.IsTrue( Option.ofObj<int[]> null = None)

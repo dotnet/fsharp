@@ -2104,7 +2104,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Ignore")>]
         val inline ignore : value:'T -> unit
 
-        /// <summary>Unboxes a strongly typed value. This is the inverse of <c>box</c>, unbox&lt;t&gt;(box&lt;t&gt; a) equals a.</summary>
+        /// <summary>Unboxes a strongly typed value.</summary>
         /// <param name="value">The boxed value.</param>
         /// <returns>The unboxed result.</returns>
         [<CompiledName("Unbox")>]
@@ -2115,6 +2115,18 @@ namespace Microsoft.FSharp.Core
         /// <returns>The boxed object.</returns>
         [<CompiledName("Box")>]
         val inline box : value:'T -> obj
+
+        /// <summary>Try to unbox a strongly typed value.</summary>
+        /// <param name="value">The boxed value.</param>
+        /// <returns>The unboxed result as an option.</returns>
+        [<CompiledName("TryUnbox")>]
+        val inline tryUnbox : value:obj -> 'T option
+
+        /// <summary>Determines whether the given value is null.</summary>
+        /// <param name="value">The value to check.</param>
+        /// <returns>True when value is null, false otherwise.</returns>
+        [<CompiledName("IsNull")>]
+        val inline isNull : value:'T -> bool when 'T : null
 
         /// <summary>Throw a <c>System.Exception</c> exception.</summary>
         /// <param name="message">The exception message.</param>

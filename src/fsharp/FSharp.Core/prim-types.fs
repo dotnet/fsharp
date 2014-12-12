@@ -3772,6 +3772,18 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Box")>]
         let inline box   (x:'T)  = (# "box !0"       type ('T) x : obj #)
 
+        [<CompiledName("TryUnbox")>]
+        let inline tryUnbox   (x:obj)  = 
+            match x with 
+            | :? 'T as v -> Some v
+            | _ -> None
+
+        [<CompiledName("IsNull")>]
+        let inline isNull (value : 'T) = 
+            match value with 
+            | null -> true 
+            | _ -> false
+
         [<CompiledName("Raise")>]
         let raise (e: exn) = (# "throw" e : 'T #)
 

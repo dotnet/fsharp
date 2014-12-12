@@ -114,3 +114,26 @@ namespace Microsoft.FSharp.Core
         val toList: option:'T option -> 'T list
 
 
+        /// <summary>Convert the option to a Nullable value.</summary>
+        /// <param name="option">The input option.</param>
+        /// <returns>The result value.</returns>
+        [<CompiledName("ToNullable")>]
+        val toNullable: option:'T option -> Nullable<'T>
+
+        /// <summary>Convert a Nullable value to an option.</summary>
+        /// <param name="value">The input nullable value.</param>
+        /// <returns>The result option.</returns>
+        [<CompiledName("OfNullable")>]
+        val ofNullable: value:Nullable<'T> -> 'T option 
+
+        /// <summary>Convert a potentially null value to an option.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The result option.</returns>
+        [<CompiledName("OfObj")>]
+        val ofObj: value: 'T -> 'T option  when 'T : null
+
+        /// <summary>Convert an option to a potentially null value.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The result value, which is null if the input was None.</returns>
+        [<CompiledName("ToObj")>]
+        val toObj: value: 'T option -> 'T when 'T : null

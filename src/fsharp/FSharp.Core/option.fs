@@ -53,3 +53,14 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToList")>]
         let toList option = match option with  None -> [ ] | Some x -> [ x ]
 
+        [<CompiledName("ToNullable")>]
+        let toNullable option = match option with None -> System.Nullable() | Some v -> System.Nullable(v)
+
+        [<CompiledName("OfNullable")>]
+        let ofNullable (value:System.Nullable<'T>) =  if value.HasValue then Some value.Value else None
+
+        [<CompiledName("OfObj")>]
+        let ofObj value = match value with null -> None | _ -> Some value
+
+        [<CompiledName("ToObj")>]
+        let toObj value = match value with None -> null | Some x -> x
