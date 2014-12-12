@@ -1255,6 +1255,11 @@ namespace Microsoft.FSharp.Collections
             let len = arr.Length
             foldArraySubRight f arr 0 (len - 1) x
 
+        [<CompiledName("FoldBack2")>]
+        let foldBack2<'T1,'T2,'State> f (source1 : seq<'T1>) (source2 : seq<'T2>) (x:'State) =
+            let zipped = zip source1 source2
+            foldBack ((<||) f) zipped x
+
         [<CompiledName("ReduceBack")>]
         let reduceBack f (source : seq<'T>) =
             checkNonNull "source" source

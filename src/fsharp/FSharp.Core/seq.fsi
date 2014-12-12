@@ -385,6 +385,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source1">The first input sequence.</param>
         /// <param name="source2">The second input sequence.</param>
         /// <returns>The final state value.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
         [<CompiledName("Fold2")>]
         val fold2<'T1,'T2,'State> : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> source1:seq<'T1> -> source2:seq<'T2> -> 'State
 
@@ -398,6 +399,19 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("FoldBack")>]
         val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> source:seq<'T> -> state:'State -> 'State
+
+        /// <summary>Applies a function to corresponding elements of two collections, starting from the end of the shorter collection,
+        /// threading an accumulator argument through the computation. The two sequences need not have equal lengths.
+        /// If the input function is <c>f</c> and the elements are <c>i0...iN</c> and <c>j0...jM</c>, N &lt; M
+        /// then computes <c>f i0 j0 (... (f iN jN s)...)</c>.</summary>
+        /// <param name="folder">The function to update the state given the input elements.</param>
+        /// <param name="source1">The first input sequence.</param>
+        /// <param name="source2">The second input sequence.</param>
+        /// <param name="state">The initial state.</param>
+        /// <returns>The final state value.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the either of the input sequences is null.</exception>
+        [<CompiledName("FoldBack2")>]
+        val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> source1:seq<'T1> -> source2:seq<'T2> -> state:'State -> 'State
 
         /// <summary>Tests if all elements of the sequence satisfy the given predicate.</summary>
         ///
