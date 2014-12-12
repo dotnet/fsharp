@@ -11,7 +11,7 @@ open Internal.Utilities
 /// When this fix flag is true, this byte is converted to a char using the System.Console.InputEncoding.
 /// This is a code-around for bug://1345.
 /// Fixes to System.Console.ReadKey may break this code around, hence the option here.
-module ConsoleOptions =
+module internal ConsoleOptions =
 
   // Bug 4254 was fixed in Dev11 (Net4.5), so this flag tracks making this fix up version specific.
   let fixupRequired = not FSharpEnvironment.IsRunningOnNetFx45OrAbove
@@ -34,10 +34,10 @@ module ConsoleOptions =
     else
       c
 
-type Style = Prompt | Out | Error
+type internal Style = Prompt | Out | Error
 
 /// Class managing the command History.
-type History() =
+type internal History() =
     let list  = new List<string>()
     let mutable current  = 0 
 
@@ -72,14 +72,14 @@ type History() =
 
 /// List of available optionsCache
 
-type Options() = 
+type internal Options() = 
     inherit History()
     let mutable root = ""
     member x.Root with get() = root and set(v) = (root <- v)
 
 /// Cursor position management
 
-module Utils = 
+module internal Utils = 
 
     open System
     open System.Reflection
@@ -128,7 +128,7 @@ module Utils =
 
 
 [<Sealed>]
-type Cursor =
+type internal Cursor =
     static member ResetTo(top,left) = 
         Utils.guard(fun () -> 
            Console.CursorTop <- min top (Console.BufferHeight - 1);
@@ -139,7 +139,7 @@ type Cursor =
         let left = inset + position % (Console.BufferWidth - inset)
         Cursor.ResetTo(top,left)
     
-type Anchor = 
+type internal Anchor = 
     {top:int; left:int}
     static member Current(inset) = {top=Console.CursorTop;left= max inset Console.CursorLeft}
 
@@ -149,7 +149,7 @@ type Anchor =
         let top = p.top + ( (p.left - inset) + index) / (Console.BufferWidth - inset)
         Cursor.ResetTo(top,left)
     
-type ReadLineConsole() =
+type internal ReadLineConsole() =
     let history = new History()
     let mutable complete : (string option * string -> seq<string>) = fun (_s1,_s2) -> Seq.empty
     member x.SetCompletionFunction f = complete <- f

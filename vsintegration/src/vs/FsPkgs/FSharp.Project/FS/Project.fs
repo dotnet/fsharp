@@ -1728,7 +1728,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 #if DEBUG
                 compileWasActuallyCalled <- true
 #endif                    
-                let normalizedSources = sources |> Array.map (fun fn -> Internal.Utilities.FileSystem.Path.SafeGetFullPath(System.IO.Path.Combine(x.ProjectFolder, fn)))
+                let normalizedSources = sources |> Array.map (fun fn -> System.IO.Path.GetFullPath(System.IO.Path.Combine(x.ProjectFolder, fn)))
                 let r = (normalizedSources, flags)
                 sourcesAndFlags <- Some(r)
 #if DEBUG
@@ -1774,7 +1774,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 [|
                 for i in buildProject.Items do
                     if i.ItemType = "Compile" then
-                        yield Internal.Utilities.FileSystem.Path.SafeGetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
+                        yield System.IO.Path.GetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
                 |]
             member x.GetCompileItems() = let sources,_ = sourcesAndFlags.Value in sources
             member x.GetCompileFlags() =  let _,flags = sourcesAndFlags.Value in flags

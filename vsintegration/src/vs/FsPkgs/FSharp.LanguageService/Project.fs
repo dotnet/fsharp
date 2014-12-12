@@ -150,7 +150,7 @@ type internal Artifacts() =
                 | Some(site) -> 
 #if DEBUG
                     site.SourceFilesOnDisk() |> Seq.iter (fun src -> 
-                        Debug.Assert(Internal.Utilities.FileSystem.Path.SafeGetFullPath(src) = src, "SourceFilesOnDisk reported a filename that was not in canonical format")
+                        Debug.Assert(System.IO.Path.GetFullPath(src) = src, "SourceFilesOnDisk reported a filename that was not in canonical format")
                     )
 #endif
                     if site.SourceFilesOnDisk() |> Array.exists (fun src -> System.StringComparer.OrdinalIgnoreCase.Equals(src,filename)) then

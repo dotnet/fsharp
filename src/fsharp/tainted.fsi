@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler
+
+#if EXTENSIONTYPING
+
+
 open System
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
@@ -93,3 +97,5 @@ module internal Tainted =
     val EqTainted : Tainted<'T> -> Tainted<'T> -> bool when 'T : equality and 'T : not struct
     /// Compute the hash value for the tainted value
     val GetHashCodeTainted : Tainted<'T> -> int when 'T : equality
+
+#endif
