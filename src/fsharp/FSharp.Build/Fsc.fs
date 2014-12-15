@@ -350,8 +350,8 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
     /// Intercept the call to ExecuteTool to handle the host compile case.
     override fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
-        let ho = box fsc.HostObject
-        match ho with
+        let host = box fsc.HostObject
+        match host with
         | null ->
             base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
         | _ ->
@@ -362,7 +362,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             let baseCallDelegate = new System.Converter<int,int>(baseCall)
             try 
                 let ret = 
-                    (ho.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, ho, 
+                    (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host, 
                                                 [| box baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
                                                 System.Globalization.CultureInfo.InvariantCulture)
                 unbox ret

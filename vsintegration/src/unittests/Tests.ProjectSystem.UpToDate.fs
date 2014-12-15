@@ -33,6 +33,7 @@ type UpToDate() =
                     <Content Include=""content.txt"" />
                     <Resource Include=""resource.txt"" />
                     <EmbeddedResource Include=""embedresource.txt"" />
+                    <None Include=""App.config"" />
                     <None Include=""none.txt"" />
                 </ItemGroup>
             ", (fun project ->
@@ -44,6 +45,7 @@ type UpToDate() =
             let sourcePath = Path.Combine(project.ProjectFolder, "file1.fs")
             let contentPath = Path.Combine(project.ProjectFolder, "content.txt")
             let resourcePath = Path.Combine(project.ProjectFolder, "resource.txt")
+            let configPath = Path.Combine(project.ProjectFolder, "App.config")
             let nonePath = Path.Combine(project.ProjectFolder, "none.txt")
             let embedPath = Path.Combine(project.ProjectFolder, "embedresource.txt")
 
@@ -52,6 +54,7 @@ type UpToDate() =
             File.AppendAllText(sourcePath, "printfn \"hello\"")
             File.AppendAllText(contentPath, "some content")
             File.AppendAllText(resourcePath, "some resource")
+            File.AppendAllText(configPath, """<?xml version="1.0" encoding="utf-8" ?><configuration></configuration>""")
             File.AppendAllText(nonePath, "none")
             File.AppendAllText(embedPath, "some embedded resource")
 
@@ -59,11 +62,11 @@ type UpToDate() =
             project.Build(configNameDebug, output, "Build") |> ignore
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
-            // None items should not affect up-to-date
+            // None items should not affect up-to-date (unless captured by well-known items, e.g. App.config)
             File.SetLastWriteTime(nonePath, DateTime.Now.AddMinutes(5.))
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
-            for path in [sourcePath; contentPath; resourcePath; embedPath] do
+            for path in [sourcePath; contentPath; resourcePath; embedPath; configPath] do
                 printfn "Testing path %s" path
 
                 // touch file
