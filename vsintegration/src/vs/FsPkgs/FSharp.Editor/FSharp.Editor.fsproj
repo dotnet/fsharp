@@ -18,7 +18,7 @@
     <AssemblyName>FSharp.Editor</AssemblyName>
     <UseVsVersion>true</UseVsVersion>
     <TargetType>LIBRARY</TargetType>
-    <NoWarn>75</NoWarn>
+    <NoWarn>$(NoWarn);75</NoWarn>
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
   </PropertyGroup>

@@ -769,7 +769,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Checks if a project reference can be added to the hierarchy. It calls base to see if the reference is not already there, then checks for circular references.
         /// </summary>
-        /// <param name="errorHandler">The error handler delegate to return</param>
         /// <returns></returns>
         internal /*protected, but public for FSharp.Project.dll*/ override AddReferenceCheckResult CheckIfCanAddReference()
         {

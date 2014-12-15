@@ -10,7 +10,7 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Platform>x86</Platform>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}</ProjectGuid>
     <OutputType>Library</OutputType>

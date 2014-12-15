@@ -52,7 +52,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Sets this file to linked or nonlinked.
         /// </summary>
         /// <param name="isLinked"></param>
-        /// <param name="linkPath"></param>
         public void SetIsLinkedFile(bool isLinked)
         {
             this._linkFile = isLinked;

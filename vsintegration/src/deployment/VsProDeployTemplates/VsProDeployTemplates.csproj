@@ -33,6 +33,7 @@
     <CreateVsixContainer>True</CreateVsixContainer>
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == ''">..\..\..</FSharpSourcesRoot>
     <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
+    <NoWarn>$(NoWarn);2008</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -122,6 +123,9 @@
   <ItemGroup>
     <Reference Include="System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
   </ItemGroup>
+  <PropertyGroup>
+    <ProjectLanguage>CSharp</ProjectLanguage>
+  </PropertyGroup>
   <Import Project="..\..\FSharp.tools.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

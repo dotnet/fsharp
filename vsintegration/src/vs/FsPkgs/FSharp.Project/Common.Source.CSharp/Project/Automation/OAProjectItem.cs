@@ -415,7 +415,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Gets a value indicating whether the project item is open in a particular view type. 
         /// </summary>
-        /// <param name="viewKind">A Constants.vsViewKind* indicating the type of view to check./param>
+        /// <param name="viewKind">A Constants.vsViewKind* indicating the type of view to check.</param>
         /// <returns>A Boolean value indicating true if the project is open in the given view type; false if not. </returns>
         public virtual bool get_IsOpen(string viewKind)
         {

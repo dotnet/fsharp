@@ -246,7 +246,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             {
                 context.AddAttribute(VSUSERCONTEXTATTRIBUTEUSAGE.VSUC_Usage_Filter, "devlang", "fsharp");
                 context.AddAttribute(VSUSERCONTEXTATTRIBUTEUSAGE.VSUC_Usage_LookupF1_CaseSensitive, "keyword", "fsharp.typechecking.incomplete");
-                return NativeMethods.S_OK; ;
+                return NativeMethods.S_OK;
             }
             return NativeMethods.E_FAIL;
 

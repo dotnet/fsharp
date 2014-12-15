@@ -34,7 +34,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Constructor for IVSOutput2 implementation
         /// </summary>
         /// <param name="projectManager">Project that produce this output</param>
-        /// <param name="configuration">Configuration that produce this output</param>
         /// <param name="outputAssembly">MSBuild generated item corresponding to the output assembly (by default, these would be of type MainAssembly</param>
         public Output(ProjectNode projectManager, Microsoft.Build.Execution.ProjectItemInstance outputAssembly)
         {

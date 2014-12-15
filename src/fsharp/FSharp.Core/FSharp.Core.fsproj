@@ -12,7 +12,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
     <DefineConstants>RUNTIME;$(DefineConstants)</DefineConstants>
-    <NoWarn>44;45;55;62;75;1204</NoWarn>
+    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>
     <AllowCrossTargeting>true</AllowCrossTargeting>

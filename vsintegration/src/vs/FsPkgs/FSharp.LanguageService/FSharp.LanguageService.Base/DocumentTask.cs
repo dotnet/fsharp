@@ -137,7 +137,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 a();
                 return;
             }
-            Exception exn = null;;
+            Exception exn = null;
             Debug.Assert(ctxt != null, "The SynchronizationContext must be captured before calling this method");
             // Send on UI thread will execute immediately.
             ctxt.Send(ignore =>

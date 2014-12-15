@@ -796,7 +796,7 @@ let ReportTime (tcConfig:TcConfig) descr =
         let maxGen = System.GC.MaxGeneration
         let gcNow = [| for i in 0 .. maxGen -> System.GC.CollectionCount(i) |]
         let ptime = System.Diagnostics.Process.GetCurrentProcess()
-        let wsNow = ptime.WorkingSet/1000000
+        let wsNow = ptime.WorkingSet64/1000000L
 
         match !tPrev, !nPrev with
         | Some (timePrev,gcPrev:int []),Some prevDescr ->

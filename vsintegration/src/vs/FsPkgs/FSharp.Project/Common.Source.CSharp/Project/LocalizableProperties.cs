@@ -83,7 +83,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             for (int i = 0; i < props.Count; i++)
                 newList.Add(CreateDesignPropertyDescriptor(props[i]));
 
-            return new PropertyDescriptorCollection((PropertyDescriptor[])newList.ToArray(typeof(PropertyDescriptor)));;
+            return new PropertyDescriptorCollection((PropertyDescriptor[])newList.ToArray(typeof(PropertyDescriptor)));
         }
 
         public virtual PropertyDescriptor CreateDesignPropertyDescriptor(PropertyDescriptor propertyDescriptor) 
