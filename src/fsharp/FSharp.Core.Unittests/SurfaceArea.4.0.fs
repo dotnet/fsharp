@@ -3208,6 +3208,7 @@ Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpO
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Boolean] BoolPattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Byte] BytePattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Char] CharPattern(Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Decimal] DecimalPattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Double] DoublePattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Int16] Int16Pattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] Int32Pattern(Microsoft.FSharp.Quotations.FSharpExpr)

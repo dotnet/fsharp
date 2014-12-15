@@ -2029,7 +2029,19 @@ module DerivedPatterns =
                | _ -> None)
         | _ -> 
             invalidArg "templateParameter" (SR.GetString(SR.QunrecognizedMethodCall))
-               
+
+    let private new_decimal_info = 
+       methodhandleof (fun (low, medium, high, isNegative, scale) -> LanguagePrimitives.IntrinsicFunctions.MakeDecimal low medium high isNegative scale)
+       |> System.Reflection.MethodInfo.GetMethodFromHandle
+       :?> MethodInfo
+
+    [<CompiledName("DecimalPattern")>]
+    let (|Decimal|_|) = function
+        | Call (None, mi, [Int32 low; Int32 medium; Int32 high; Bool isNegative; Byte scale])
+          when mi.Name = new_decimal_info.Name
+               && mi.DeclaringType.FullName = new_decimal_info.DeclaringType.FullName ->
+            Some (LanguagePrimitives.IntrinsicFunctions.MakeDecimal low medium high isNegative scale)
+        | _ -> None
 
     [<CompiledName("MethodWithReflectedDefinitionPattern")>]
     let (|MethodWithReflectedDefinition|_|) (minfo) = 
