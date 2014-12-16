@@ -28,6 +28,7 @@
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
     <SccProvider>SAK</SccProvider>
+    <NoWarn>$(NoWarn);2008</NoWarn>
   </PropertyGroup>
   <Import Project="..\..\fsharp.common.props" />
   <PropertyGroup>
@@ -81,6 +82,9 @@
     <None Include="ProjectTemplates\SilverlightLibrary\SilverlightLibrary.fsproj" />
     <None Include="ProjectTemplates\SilverlightLibrary\Script.fsx" />
   </ItemGroup>
+  <PropertyGroup>
+    <ProjectLanguage>CSharp</ProjectLanguage>
+  </PropertyGroup>
   <Import Project="..\..\fsharp.tools.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

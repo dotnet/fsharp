@@ -14,7 +14,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ProjectGuid>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <NoWarn>$(NoWarn);62;44</NoWarn>
+    <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>

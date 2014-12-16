@@ -8,14 +8,15 @@
     <ProjectLanguage>CSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.ProjectSystem.Base</AssemblyName>
     <UseVsVersion>true</UseVsVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</ProjectGuid>
-    <NoWarn>1570,1572,1573,1574,1587,1589,1591,1711,3001,3002,3003,3005,3008,3009,3021,3024,472</NoWarn>
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS;STAMP_OSS_VERSION</DefineConstants>
     <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>

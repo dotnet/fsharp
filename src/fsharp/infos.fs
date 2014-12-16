@@ -2511,6 +2511,11 @@ module AttributeChecking =
     /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
     /// provided attributes.
     let TryBindMethInfoAttribute g m (AttribInfo(atref,_) as attribSpec) minfo f1 f2 f3 = 
+#if EXTENSIONTYPING
+#else
+        // to prevent unused parameter warning
+        ignore f3
+#endif
         BindMethInfoAttributes m minfo 
             (fun ilAttribs -> TryDecodeILAttribute g atref (Some(atref.Scope)) ilAttribs |> Option.bind f1)
             (fun fsAttribs -> TryFindFSharpAttribute g attribSpec fsAttribs |> Option.bind f2)

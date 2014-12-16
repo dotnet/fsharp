@@ -78,7 +78,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Creates new Project Configuartion objects based on the configuration name.
         /// </summary>
-        /// <param name="configName">The name of the configuration</param>
+        /// <param name="canonicalName">The name of the configuration</param>
         /// <returns>An instance of a ProjectConfig object.</returns>
         internal ProjectConfig GetProjectConfiguration(ConfigCanonicalName canonicalName)
         {

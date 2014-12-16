@@ -591,7 +591,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Initialize 'resolvedInfo' by having MSBuild resolve the assembly in the context of the current project
         /// </summary>
         /// <param name="assemblyInclude">Either a full path to a file on disk, or a simple name or fusion name</param>
-        /// <param name="isAlreadyInProjectFile">Pass true for this parameter, as well as the evaluated include for the other parameter, if you are trying to discover the MSBuild resolution of an existing ProjectElement</param>
         private void AddToProjectFileAndTryResolve(string assemblyInclude)
         {
             Action<string> Trace = (s) => FSharpTrace.PrintLine("ProjectSystemReferenceResolution", () => "ResolveAssemblyReferenceCore: " + s);

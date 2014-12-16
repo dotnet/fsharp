@@ -28,6 +28,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     internal class SolutionListenerForProjectEvents : SolutionListener, IProjectEvents
     {
         #region events
+        /// <summary>
         /// Event raised just after the project file opened.
         /// </summary>
         public event EventHandler<AfterProjectFileOpenedEventArgs> AfterProjectFileOpened;
@@ -90,7 +91,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Raises the before  project file closed event.
         /// </summary>
-        /// <param name="added">true if the project was removed from the solution before the solution was closed. false if the project was removed from the solution while the solution was being closed.</param>
+        /// <param name="removed">true if the project was removed from the solution before the solution was closed. false if the project was removed from the solution while the solution was being closed.</param>
         private void RaiseBeforeProjectFileClosed(bool removed)
         {
             // Save event in temporary variable to avoid race condition.

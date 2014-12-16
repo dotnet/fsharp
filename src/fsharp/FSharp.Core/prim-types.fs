@@ -398,7 +398,7 @@ namespace Microsoft.FSharp.Core
             member inline this.GetProperty(name) = this.GetRuntimeProperty(name)
             member inline this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
             member inline this.GetCustomAttributes(attrTy : Type, inherits : bool) : obj[] = 
-                unboxPrim<_> (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, false).ToArray()))
+                unboxPrim<_> (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits).ToArray()))
 
     open PrimReflectionAdapters
 

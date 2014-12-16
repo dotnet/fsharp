@@ -355,7 +355,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Determines if a node can accept drop opertaion.
         /// </summary>
-        /// <param name="itemid">The id of the node.</param>
+        /// <param name="itemId">The id of the node.</param>
         /// <returns>true if the node acceots drag operation.</returns>
         public /*protected internal, but public for FSharp.Project.dll*/ virtual bool CanTargetNodeAcceptDrop(uint itemId)
         {
@@ -521,12 +521,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Recursive method that walk a hierarchy and add items it find to our project.
-        /// Note that this is meant as an helper to the Copy&Paste/Drag&Drop functionality.
+        /// Note that this is meant as an helper to the Copy&amp;Paste/Drag&amp;Drop functionality.
         /// </summary>
         /// <param name="sourceHierarchy">Hierarchy to walk</param>
         /// <param name="itemId">Item ID where to start walking the hierarchy</param>
         /// <param name="targetNode">Node to start adding to</param>
-        /// <param name="addSibblings">Typically false on first call and true after that</param>
+        /// <param name="addSiblings">Typically false on first call and true after that</param>
         public /*protected, but public for FSharp.Project.dll*/ virtual void WalkSourceProjectAndAdd(IVsHierarchy sourceHierarchy, uint itemId, HierarchyNode targetNode, bool addSiblings)
         {
             // Before we start the walk, add the current node
@@ -722,7 +722,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // prevents bogus messages from the shell from being displayed
                     if (dropDataType != DropDataType.Shell)
                     {
-                        throw e;
+                        throw;
                     }
                 }
                 finally

@@ -470,18 +470,7 @@ type Entity =
 
     member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
         let nm = x.LogicalName
-#if EXTENSIONTYPING
-        if x.IsProvidedErasedTycon then 
-            let nm,args = PrettyNaming.demangleProvidedTypeName nm
-            if withStaticParameters && args.Length > 0 then 
-                nm + "<" + String.concat "," (Array.map snd args) + ">"
-            else
-                nm
-        else
-#else
-        if false then nm 
-        else
-#endif
+        let getName () =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
@@ -490,6 +479,20 @@ type Entity =
                     nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
                 else
                     nm
+
+#if EXTENSIONTYPING
+        if x.IsProvidedErasedTycon then 
+            let nm,args = PrettyNaming.demangleProvidedTypeName nm
+            if withStaticParameters && args.Length > 0 then 
+                nm + "<" + String.concat "," (Array.map snd args) + ">"
+            else
+                nm
+        else
+            getName ()
+#else
+        ignore withStaticParameters
+        getName ()
+#endif
 
 
     /// The code location where the module, namespace or type is defined.

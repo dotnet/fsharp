@@ -18,7 +18,7 @@
         <AssemblyName>FSharp.VS.FSI</AssemblyName>
         <UseVsVersion>true</UseVsVersion>
         <TargetType>LIBRARY</TargetType>
-        <NoWarn>44;47;75</NoWarn>
+        <NoWarn>$(NoWarn);47;75</NoWarn>
         <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     </PropertyGroup>
     <ItemGroup>
@@ -60,7 +60,6 @@
         <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
         <Reference Include="Microsoft.VisualStudio.TextManager.Interop.10.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
-        <Reference Include ="Microsoft.VisualStudio.CommonIDE, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
         <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
         <Reference Include="Microsoft.VisualStudio.CoreUtility" />
         <Reference Include="Microsoft.VisualStudio.Text.Data" />

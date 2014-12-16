@@ -38,7 +38,7 @@ module PrimReflectionAdapters =
         member this.GetProperties() = this.GetRuntimeProperties() |> Array.ofSeq
         member this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
         member this.GetCustomAttributes(attrTy : Type, inherits : bool) : obj[] = 
-            unbox (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, false).ToArray()))
+            unbox (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits).ToArray()))
             
     type System.Reflection.MemberInfo with
         member this.ReflectedType = this.DeclaringType

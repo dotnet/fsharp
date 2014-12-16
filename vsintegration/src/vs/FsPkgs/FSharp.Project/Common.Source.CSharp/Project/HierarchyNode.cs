@@ -1382,7 +1382,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Shows the specified context menu at a specified location.
         /// </summary>
         /// <param name="menuId">The context menu ID.</param>
-        /// <param name="groupGuid">The GUID of the menu group.</param>
+        /// <param name="menuGroup">The GUID of the menu group.</param>
         /// <param name="points">The location at which to show the menu.</param>
         public /*protected, but public for FSharp.Project.dll*/ virtual int ShowContextMenu(int menuId, Guid menuGroup, POINTS points)
         {
@@ -2294,7 +2294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public /*protected internal, but public for FSharp.Project.dll*/ virtual bool AllowPasteCommand()
         {
-            return false; ;
+            return false;
         }
 
         /// <summary>

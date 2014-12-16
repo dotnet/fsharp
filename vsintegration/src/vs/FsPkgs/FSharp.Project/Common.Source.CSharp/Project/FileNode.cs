@@ -205,7 +205,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Constructor for the FileNode
         /// </summary>
         /// <param name="root">Root of the hierarchy</param>
-        /// <param name="e">Associated project element</param>
+        /// <param name="element">Associated project element</param>
         internal FileNode(ProjectNode root, ProjectElement element, uint? hierarchyId = null)
             : base(root, element, hierarchyId)
         {
@@ -261,7 +261,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="label">The new name.</param>
         /// <returns>An errorcode for failure or S_OK.</returns>
-        /// <exception cref="InvalidOperationException" if the file cannot be validated>
+        /// <exception cref="InvalidOperationException">if the file cannot be validated</exception>
         /// <devremark> 
         /// We are going to throw instaed of showing messageboxes, since this method is called from various places where a dialog box does not make sense.
         /// For example the FileNodeProperties are also calling this method. That should not show directly a messagebox.
@@ -453,7 +453,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Called by the drag&drop implementation to ask the node
+        /// Called by the drag&amp;drop implementation to ask the node
         /// which is being dragged/droped over which nodes should
         /// process the operation.
         /// This allows for dragging to a node that cannot contain
@@ -596,7 +596,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             int returnCode = VSConstants.S_OK;
-            newFilePath.Trim();
+            newFilePath = newFilePath.Trim();
 
             //Identify if Path or FileName are the same for old and new file
             string newDirectoryName = Path.GetDirectoryName(newFilePath);
@@ -873,7 +873,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Rename all childnodes
         /// </summary>
-        /// <param name="newFileNode">The newly added Parent node.</param>
+        /// <param name="parentNode">The newly added Parent node.</param>
         public /*protected, but public for FSharp.Project.dll*/ virtual void RenameChildNodes(FileNode parentNode)
         {
             foreach (HierarchyNode child in GetChildNodes())

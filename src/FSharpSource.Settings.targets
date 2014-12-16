@@ -10,9 +10,14 @@
     <LkgVersion>4.0.30319.1</LkgVersion>
     <FsLexUnicode>true</FsLexUnicode>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
+    <DebugSymbols>true</DebugSymbols>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
-    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <!-- Standard interpretations of Debug and Release configurations -->

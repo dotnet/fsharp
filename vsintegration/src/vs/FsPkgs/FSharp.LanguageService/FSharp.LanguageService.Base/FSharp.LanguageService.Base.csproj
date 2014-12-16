@@ -18,7 +18,7 @@
     <AssemblyName>FSharp.LanguageService.Base</AssemblyName>
     <TargetType>LIBRARY</TargetType>
     <UseVsVersion>true</UseVsVersion>
-    <NoWarn>3001,3002,3003</NoWarn>
+    <NoWarn>$(NoWarn);3001,3002,3003</NoWarn>
     <DefineConstants>$(DefineConstants);UITHREAD_FOR_LANGUAGESERVICE</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>

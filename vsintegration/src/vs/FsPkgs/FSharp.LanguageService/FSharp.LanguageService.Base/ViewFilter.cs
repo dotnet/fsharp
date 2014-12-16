@@ -102,7 +102,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.textViewEvents = new NativeMethods.ConnectionPointCookie(view, this, typeof(IVsTextViewEvents));
             if (this.service != null) {
                 IVsExpansionManager emgr = this.service.Site.GetService(typeof(SVsExpansionManager)) as IVsExpansionManager;
-                if (mgr != null) {
+                if (emgr != null) {
                     int fBound;
                     emgr.GetSnippetShortCutKeybindingState(out fBound);
                     this.snippetBound = fBound == 0 ? false : true;
@@ -1008,6 +1008,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         {
             var uiManager = this.service.Site.GetService(typeof(SOleComponentUIManager)) as IOleComponentUIManager;
 
+            if (uiManager == null)
+                NativeHelpers.RaiseComError(NativeMethods.E_FAIL);
+
             int dialogResult;
             var clsidNull = Guid.Empty;
 
@@ -1166,8 +1169,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.textTipWindow = (IVsTextTipWindow)pkg.CreateInstance(ref clsid, ref riid, t);
             if (this.textTipWindow == null)
                 NativeHelpers.RaiseComError(NativeMethods.E_FAIL);
-
-            NativeMethods.ThrowOnFailure(textTipWindow.SetTextTipData(this));
+            else
+                NativeMethods.ThrowOnFailure(textTipWindow.SetTextTipData(this));
         }
 
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.Close"]/*' />

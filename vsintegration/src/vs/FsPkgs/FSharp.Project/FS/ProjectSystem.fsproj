@@ -19,7 +19,7 @@
     <AssemblyName>FSharp.ProjectSystem.FSharp</AssemblyName>
     <GenerateInterfaceFile>FSharp.ProjectSystem.FSharp.fsi</GenerateInterfaceFile>
     <TargetType>LIBRARY</TargetType>
-    <NoWarn>44;52;75;62</NoWarn>
+    <NoWarn>$(NoWarn);52;75;62</NoWarn>
     <UseVsVersion>true</UseVsVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
     <VSCTDefinitions>FX_ATLEAST_45</VSCTDefinitions> 
@@ -69,7 +69,6 @@
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
-    <Reference Include ="Microsoft.VisualStudio.CommonIDE, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>true</SpecificVersion>

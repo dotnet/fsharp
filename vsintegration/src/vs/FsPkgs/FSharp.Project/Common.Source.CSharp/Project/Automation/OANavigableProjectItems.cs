@@ -241,6 +241,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             if (this.items == null)
             {
                 yield return null;
+                yield break;
             }
 
             int count = items.Count;

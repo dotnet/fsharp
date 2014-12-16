@@ -119,6 +119,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             if (this.properties == null)
             {
                 yield return null;
+                yield break;
             }
 
             if (this.properties.Count == 0)
