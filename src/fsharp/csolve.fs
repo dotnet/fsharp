@@ -226,6 +226,7 @@ let rec isIntegerTy g ty =
     
 let isStringTy g ty = typeEquiv g g.string_ty ty 
 let isCharTy g ty = typeEquiv g g.char_ty ty 
+let isBoolTy g ty = typeEquiv g g.bool_ty ty 
 
 /// float or float32 or float<_> or float32<_> 
 let isFpTy g ty =
@@ -240,6 +241,7 @@ let IsNonDecimalNumericOrIntegralEnumType g ty = isIntegerOrIntegerEnumTy g ty |
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
 let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
 let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
+let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let GetMeasureOfType g ty =
@@ -259,6 +261,7 @@ type TraitConstraintSolution =
 
 let BakedInTraitConstraintNames = 
     [ "op_Division" ; "op_Multiply"; "op_Addition" 
+      "op_Equality" ; "op_Inequality"; "op_GreaterThan" ; "op_LessThan"; "op_LessThanOrEqual"; "op_GreaterThanOrEqual"
       "op_Subtraction"; "op_Modulus"; 
       "get_Zero"; "get_One";
       "DivideByInt";"get_Item"; "set_Item";
@@ -977,6 +980,14 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
+      | _,_,false,("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ),[argty1;argty2] 
+          when // Ignore any explicit overloads from any basic integral types
+               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
+                (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
+                 || (IsRelationalType g argty2 && (permitWeakResolution || not (isTyparTy g argty1))))) ->
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty g.bool_ty ++ (fun () -> 
+          ResultD TTraitBuiltIn))
 
       // We pretend for uniformity that the numeric types have a static property called Zero and One 
       // As with constants, only zero is polymorphic in its units

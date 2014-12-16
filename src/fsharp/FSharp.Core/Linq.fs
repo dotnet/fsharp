@@ -233,6 +233,13 @@ module LeafExpressionConverter =
     let (|LessEqQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x <= y))
     let (|NotEqQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x <> y))
 
+    let (|StaticEqualsQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(=) x y))
+    let (|StaticGreaterQ|_|)   = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>) x y))
+    let (|StaticGreaterEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>=) x y))
+    let (|StaticLessQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<) x y))
+    let (|StaticLessEqQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<=) x y))
+    let (|StaticNotEqQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<>) x y))
+
     let (|NullableEqualsQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?=  ) x y))
     let (|NullableNotEqQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?<> ) x y))
     let (|NullableGreaterQ|_|)   = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?>  ) x y))
@@ -486,6 +493,13 @@ module LeafExpressionConverter =
             | LessQ      (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.LessThan           
             | LessEqQ    (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.LessThanOrEqual    
             | NotQ       (_, _, [x1])   -> Expression.Not(ConvExprToLinqInContext env x1)                                   |> asExpr
+
+            | StaticEqualsQ    (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.Equal              
+            | StaticNotEqQ     (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.NotEqual           
+            | StaticGreaterQ   (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.GreaterThan        
+            | StaticGreaterEqQ (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.GreaterThanOrEqual 
+            | StaticLessQ      (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.LessThan           
+            | StaticLessEqQ    (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.LessThanOrEqual    
 
             | NullableEqualsQ            (_, _,[x1;x2]) -> transBinOp env false x1 x2 true Expression.Equal              
             | NullableNotEqQ             (_, _,[x1;x2]) -> transBinOp env false x1 x2 true Expression.NotEqual           

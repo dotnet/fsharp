@@ -956,13 +956,8 @@ namespace Microsoft.FSharp.Core
                    | null,null -> 0
                    | null,_ -> -1
                    | _,null -> 1
-#if INVARIANT_CULTURE_STRING_COMPARISON
-                   // Use invariant culture comparison for strings
-                   | (:? string as x),(:? string as y) -> System.String.Compare(x, y, false, CultureInfo.InvariantCulture)
-#else
                    // Use Ordinal comparison for strings
                    | (:? string as x),(:? string as y) -> System.String.CompareOrdinal(x, y)
-#endif
                    // Permit structural comparison on arrays
                    | (:? System.Array as arr1),_ -> 
                        match arr1,yobj with 
@@ -1216,15 +1211,9 @@ namespace Microsoft.FSharp.Core
                  when 'T : float32 = if (# "clt" x y : bool #) then (-1) else if (# "cgt" x y : bool #) then 1 else if (# "ceq" x y : bool #) then 0 else GenericComparisonWithComparerIntrinsic comp x y
                  when 'T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
                  when 'T : string = 
-#if INVARIANT_CULTURE_STRING_COMPARISON
-                     // NOTE: we don't have to null check here because System.String.Compare
-                     // gives reliable results on null values.
-                     System.String.Compare((# "" x : string #) ,(# "" y : string #), false, CultureInfo.InvariantCulture)
-#else
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
-#endif
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
 
@@ -1292,15 +1281,9 @@ namespace Microsoft.FSharp.Core
                  when 'T : float32 = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                  when 'T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
                  when 'T : string = 
-#if INVARIANT_CULTURE_STRING_COMPARISON
-                     // NOTE: we don't have to null check here because System.String.Compare
-                     // gives reliable results on null values.
-                     System.String.Compare((# "" x : string #) ,(# "" y : string #), false, CultureInfo.InvariantCulture)
-#else
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
                      System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
-#endif
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
             /// Generic less-than with static optimizations for some well-known cases.
@@ -4499,6 +4482,180 @@ namespace Microsoft.FSharp.Core
              when ^T : byte       = (# "conv.u2" x  : char #)
 
         
+        module NonStructuralComparison = 
+            /// Static less-than with static optimizations for some well-known cases.
+            let inline (<) (x:^T) (y:^U) = 
+                ((^T or ^U): (static member (<) : ^T * ^U -> bool) (x,y))
+                when ^T : bool   = (# "clt" x y : bool #)
+                when ^T : sbyte  = (# "clt" x y : bool #)
+                when ^T : int16  = (# "clt" x y : bool #)
+                when ^T : int32  = (# "clt" x y : bool #)
+                when ^T : int64  = (# "clt" x y : bool #)
+                when ^T : byte   = (# "clt.un" x y : bool #)
+                when ^T : uint16 = (# "clt.un" x y : bool #)
+                when ^T : uint32 = (# "clt.un" x y : bool #)
+                when ^T : uint64 = (# "clt.un" x y : bool #)
+                when ^T : unativeint = (# "clt.un" x y : bool #)
+                when ^T : nativeint  = (# "clt" x y : bool #)
+                when ^T : float  = (# "clt" x y : bool #) 
+                when ^T : float32= (# "clt" x y : bool #) 
+                when ^T : char   = (# "clt" x y : bool #)
+                when ^T : decimal     = System.Decimal.op_LessThan ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+
+            /// Static greater-than with static optimizations for some well-known cases.
+            let inline (>) (x:^T) (y:^U) = 
+                ((^T or ^U): (static member (>) : ^T * ^U -> bool) (x,y))
+                when 'T : bool       = (# "cgt" x y : bool #)
+                when 'T : sbyte      = (# "cgt" x y : bool #)
+                when 'T : int16      = (# "cgt" x y : bool #)
+                when 'T : int32      = (# "cgt" x y : bool #)
+                when 'T : int64      = (# "cgt" x y : bool #)
+                when 'T : nativeint  = (# "cgt" x y : bool #)
+                when 'T : byte       = (# "cgt.un" x y : bool #)
+                when 'T : uint16     = (# "cgt.un" x y : bool #)
+                when 'T : uint32     = (# "cgt.un" x y : bool #)
+                when 'T : uint64     = (# "cgt.un" x y : bool #)
+                when 'T : unativeint = (# "cgt.un" x y : bool #)
+                when 'T : float      = (# "cgt" x y : bool #) 
+                when 'T : float32    = (# "cgt" x y : bool #) 
+                when 'T : char       = (# "cgt" x y : bool #)
+                when 'T : decimal     = System.Decimal.op_GreaterThan ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+
+            /// Static less-than-or-equal with static optimizations for some well-known cases.
+            let inline (<=) (x:^T) (y:^U) = 
+                ((^T or ^U): (static member (<=) : ^T * ^U -> bool) (x,y))
+                when 'T : bool       = not (# "cgt" x y : bool #)
+                when 'T : sbyte      = not (# "cgt" x y : bool #)
+                when 'T : int16      = not (# "cgt" x y : bool #)
+                when 'T : int32      = not (# "cgt" x y : bool #)
+                when 'T : int64      = not (# "cgt" x y : bool #)
+                when 'T : nativeint  = not (# "cgt" x y : bool #)
+                when 'T : byte       = not (# "cgt.un" x y : bool #)
+                when 'T : uint16     = not (# "cgt.un" x y : bool #)
+                when 'T : uint32     = not (# "cgt.un" x y : bool #)
+                when 'T : uint64     = not (# "cgt.un" x y : bool #)
+                when 'T : unativeint = not (# "cgt.un" x y : bool #)
+                when 'T : float      = not (# "cgt.un" x y : bool #) 
+                when 'T : float32    = not (# "cgt.un" x y : bool #) 
+                when 'T : char       = not (# "cgt" x y : bool #)
+                when 'T : decimal     = System.Decimal.op_LessThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = not (# "cgt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+
+            /// Static greater-than-or-equal with static optimizations for some well-known cases.
+            let inline (>=) (x:^T) (y:^U) = 
+                ((^T or ^U): (static member (>=) : ^T * ^U -> bool) (x,y))
+                when 'T : bool       = not (# "clt" x y : bool #)
+                when 'T : sbyte      = not (# "clt" x y : bool #)
+                when 'T : int16      = not (# "clt" x y : bool #)
+                when 'T : int32      = not (# "clt" x y : bool #)
+                when 'T : int64      = not (# "clt" x y : bool #)
+                when 'T : nativeint  = not (# "clt" x y : bool #)
+                when 'T : byte       = not (# "clt.un" x y : bool #)
+                when 'T : uint16     = not (# "clt.un" x y : bool #)
+                when 'T : uint32     = not (# "clt.un" x y : bool #)
+                when 'T : uint64     = not (# "clt.un" x y : bool #)
+                when 'T : unativeint = not (# "clt.un" x y : bool #)
+                when 'T : float      = not (# "clt.un" x y : bool #) 
+                when 'T : float32    = not (# "clt.un" x y : bool #)
+                when 'T : char       = not (# "clt" x y : bool #)
+                when 'T : decimal     = System.Decimal.op_GreaterThanOrEqual ((# "" x:decimal #), (# "" y:decimal #))
+                when ^T : string     = not (# "clt" (System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))) 0 : bool #)             
+
+
+            /// Static greater-than-or-equal with static optimizations for some well-known cases.
+            let inline (=) (x:^T) (y:^T) = 
+                (^T : (static member (=) : ^T * ^T -> bool) (x,y))
+                when ^T : bool    = (# "ceq" x y : bool #)
+                when ^T : sbyte   = (# "ceq" x y : bool #)
+                when ^T : int16   = (# "ceq" x y : bool #)
+                when ^T : int32   = (# "ceq" x y : bool #)
+                when ^T : int64   = (# "ceq" x y : bool #)
+                when ^T : byte    = (# "ceq" x y : bool #)
+                when ^T : uint16  = (# "ceq" x y : bool #)
+                when ^T : uint32  = (# "ceq" x y : bool #)
+                when ^T : uint64  = (# "ceq" x y : bool #)
+                when ^T : float   = (# "ceq" x y : bool #)
+                when ^T : float32 = (# "ceq" x y : bool #)
+                when ^T : char    = (# "ceq" x y : bool #)
+                when ^T : nativeint  = (# "ceq" x y : bool #)
+                when ^T : unativeint  = (# "ceq" x y : bool #)
+                when ^T : string  = System.String.Equals((# "" x : string #),(# "" y : string #))
+                when ^T : decimal     = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+
+            let inline (<>) (x:^T) (y:^T) = 
+                (^T : (static member (<>) : ^T * ^T -> bool) (x,y))
+                when ^T : bool    = not (# "ceq" x y : bool #)
+                when ^T : sbyte   = not (# "ceq" x y : bool #)
+                when ^T : int16   = not (# "ceq" x y : bool #)
+                when ^T : int32   = not (# "ceq" x y : bool #)
+                when ^T : int64   = not (# "ceq" x y : bool #)
+                when ^T : byte    = not (# "ceq" x y : bool #)
+                when ^T : uint16  = not (# "ceq" x y : bool #)
+                when ^T : uint32  = not (# "ceq" x y : bool #)
+                when ^T : uint64  = not (# "ceq" x y : bool #)
+                when ^T : float   = not (# "ceq" x y : bool #)
+                when ^T : float32 = not (# "ceq" x y : bool #)
+                when ^T : char    = not (# "ceq" x y : bool #)
+                when ^T : nativeint  = not (# "ceq" x y : bool #)
+                when ^T : unativeint  = not (# "ceq" x y : bool #)
+                when ^T : string  = not (System.String.Equals((# "" x : string #),(# "" y : string #)))
+                when ^T : decimal     = System.Decimal.op_Inequality((# "" x:decimal #), (# "" y:decimal #))
+
+
+            [<CompiledName("Compare")>]
+            let inline compare (x:^T) (y:^T) : int = 
+                 (if x < y then -1 elif x > y then 1 else 0)
+                 when ^T : bool   = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : sbyte  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : int16  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : int32  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : int64  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : nativeint  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : byte   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when ^T : uint16 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when ^T : uint32 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when ^T : uint64 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when ^T : unativeint = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when ^T : float  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : float32 = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                 when ^T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when ^T : string = 
+                     // NOTE: we don't have to null check here because System.String.CompareOrdinal
+                     // gives reliable results on null values.
+                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                 when ^T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+
+            [<CompiledName("Max")>]
+            let inline max (x:^T) y = 
+                (if x < y then y else x)
+                when ^T : float         = (System.Math.Max : float * float -> float)(retype<_,float> x, retype<_,float> y)
+                when ^T : float32       = (System.Math.Max : float32 * float32 -> float32)(retype<_,float32> x, retype<_,float32> y)
+
+            [<CompiledName("Min")>]
+            let inline min (x: ^T) y = 
+                (if x < y then x else y)
+                when ^T : float         = (System.Math.Min : float * float -> float)(retype<_,float> x, retype<_,float> y)
+                when ^T : float32       = (System.Math.Min : float32 * float32 -> float32)(retype<_,float32> x, retype<_,float32> y)
+
+            [<CompiledName("Hash")>]
+            let inline hash (x:'T) = 
+                x.GetHashCode()
+                when 'T : bool   = (# "" x : int #)
+                when 'T : int32  = (# "" x : int #)
+                when 'T : byte   = (# "" x : int #)
+                when 'T : uint32 = (# "" x : int #)
+                when 'T : char = HashCompare.HashChar (# "" x : char #)
+                when 'T : sbyte = HashCompare.HashSByte (# "" x : sbyte #)
+                when 'T : int16 = HashCompare.HashInt16 (# "" x : int16 #)
+                when 'T : int64 = HashCompare.HashInt64 (# "" x : int64 #)
+                when 'T : uint64 = HashCompare.HashUInt64 (# "" x : uint64 #)
+                when 'T : nativeint = HashCompare.HashIntPtr (# "" x : nativeint #)
+                when 'T : unativeint = HashCompare.HashUIntPtr (# "" x : unativeint #)
+                when 'T : uint16 = (# "" x : int #)                    
+                when 'T : string = HashCompare.HashString  (# "" x : string #)
+
         module Attributes = 
             open System.Runtime.CompilerServices
 
