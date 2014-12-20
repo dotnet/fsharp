@@ -1090,7 +1090,7 @@ type ArrayModule2() =
             try
                 config.InputArray
                 |> Array.windowed config.WindowSize
-                |> (fun actual -> Assert.AreEqual(config.ExpectedArray,actual))
+                |> (fun actual -> Assert.IsTrue(config.ExpectedArray = actual))
             with
             | _ when Option.isNone config.Exception -> Assert.Fail()
             | e when e.GetType() = (Option.get config.Exception) -> ()
@@ -1168,9 +1168,9 @@ type ArrayModule2() =
                 if windowSize <= 0 then
                     CheckThrowsArgumentException (fun () -> Array.windowed windowSize [|1..arraySize|] |> ignore)
                 elif arraySize < windowSize then
-                    Assert.AreEqual([| |], Array.windowed windowSize [|1..arraySize|])
+                    Assert.IsTrue([||] = Array.windowed windowSize [|1..arraySize|])
                 else
-                    Assert.AreEqual(expectedArrays.[arraySize, windowSize], Array.windowed windowSize [|1..arraySize|])
+                    Assert.IsTrue(expectedArrays.[arraySize, windowSize] = Array.windowed windowSize [|1..arraySize|])
 
         ()
 

@@ -64,17 +64,17 @@ type SeqModule2() =
         
     [<Test>]
     member this.Tl() =
-        // integer seq  
-        let resultInt = Seq.tail <| seq { 1..10 }        
-        Assert.AreEqual(seq { 2..10 }, resultInt)
+        // integer seq
+        let resultInt = Seq.tail <| seq { 1..10 }
+        VerifySeqsEqual (seq { 2..10 }) resultInt
         
-        // string seq    
+        // string seq
         let resultStr = Seq.tail <| seq { yield "a"; yield "b"; yield "c"; yield "d" }      
-        Assert.AreEqual(seq { yield "b";  yield "c" ; yield "d" }, resultStr)
+        VerifySeqsEqual (seq { yield "b";  yield "c" ; yield "d" }) resultStr
         
-        // 1-element seq    
+        // 1-element seq
         let resultStr2 = Seq.tail <| seq { yield "a" }      
-        Assert.AreEqual(Seq.empty, resultStr2)
+        VerifySeqsEqual Seq.empty resultStr2
 
         CheckThrowsArgumentNullException(fun () -> Seq.tail null |> ignore)
         CheckThrowsArgumentException(fun () -> Seq.tail Seq.empty |> Seq.iter (fun _ -> failwith "Should not be reached"))

@@ -223,7 +223,7 @@ type ListModule02() =
 
         // empty List
         let resultEpt,resultEptAcc = List.mapFold funcInt 100 []
-        Assert.AreEqual([], resultEpt)
+        Assert.AreEqual(([] : int list), resultEpt)
         Assert.AreEqual(100, resultEptAcc)
 
         ()
@@ -249,7 +249,7 @@ type ListModule02() =
 
         // empty List
         let resultEpt,resultEptAcc = List.mapFoldBack funcInt [] 100
-        Assert.AreEqual([], resultEpt)
+        Assert.AreEqual(([] : int list),  resultEpt)
         Assert.AreEqual(100, resultEptAcc)
 
         ()
@@ -681,7 +681,7 @@ type ListModule02() =
 
         // empty list
         let resultEpt = List.sortWith intComparer []
-        Assert.AreEqual([], resultEpt)
+        Assert.AreEqual(([] : int list), resultEpt)
 
         ()
 
@@ -821,7 +821,7 @@ type ListModule02() =
         // integer list
         Assert.AreEqual([1..3], List.truncate 3 [1..5])
         Assert.AreEqual([1..5], List.truncate 10 [1..5])
-        Assert.AreEqual([], List.truncate 0 [1..5])
+        Assert.AreEqual(([] : int list), List.truncate 0 [1..5])
 
         // string list
         Assert.AreEqual(["str1";"str2"], List.truncate 2 ["str1";"str2";"str3"])
@@ -1044,7 +1044,7 @@ type ListModule02() =
                 if windowSize <= 0 then
                     CheckThrowsArgumentException (fun () -> List.windowed windowSize [1..arraySize] |> ignore)
                 elif arraySize < windowSize then
-                    Assert.AreEqual([], List.windowed windowSize [1..arraySize])
+                    Assert.AreEqual(([] : int[] list), List.windowed windowSize [1..arraySize])
                 else
                     Assert.AreEqual(expectedLists.[arraySize, windowSize], List.windowed windowSize [1..arraySize])
 

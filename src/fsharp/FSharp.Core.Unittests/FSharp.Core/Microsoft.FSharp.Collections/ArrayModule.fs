@@ -425,7 +425,7 @@ type ArrayModule() =
     [<Test>]
     member this.countBy() =
         // countBy should work on empty array
-        Assert.AreEqual([],Array.countBy (fun _ -> failwith "should not be executed") [||])
+        Assert.AreEqual([||], Array.countBy (fun _ -> failwith "should not be executed") [||])
 
         // countBy should not work on null
         CheckThrowsArgumentNullException(fun () -> Array.countBy (fun _ -> failwith "should not be executed") null |> ignore)
@@ -1487,8 +1487,8 @@ type ArrayModule() =
     member this.Singleton() =
         Assert.AreEqual([|null|],Array.singleton null)
         Assert.AreEqual([|"1"|],Array.singleton "1")
-        Assert.AreEqual([|[]|],Array.singleton [])
-        Assert.AreEqual([|[||]|],Array.singleton [||])
+        Assert.AreEqual([|[]|], Array.singleton [])
+        Assert.IsTrue([|[||]|] = Array.singleton [||])
 
 #if FX_NO_TPL_PARALLEL
 #else
