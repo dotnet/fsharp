@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="VWDExpressDeployTemplates..5f79f0a2-a505-490c-aa36-0dfb4b6f5489" Version="3.2" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
+    <Identity Id="VWDExpressDeployTemplates..5f79f0a2-a505-490c-aa36-0dfb4b6f5489" Version="4.0.0" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools Templates</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio Express for Web</Description>
   </Metadata>
