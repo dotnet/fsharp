@@ -21,6 +21,7 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.QuotationPickler
 open Microsoft.FSharp.Core.Printf
+open Microsoft.FSharp.Compiler.Rational
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -2919,6 +2920,9 @@ and MeasureExpr =
 
     /// The unit of measure '1', e.g. float = float<1>
     | MeasureOne
+
+    /// Raising a measure to a rational power 
+    | MeasureRationalPower of MeasureExpr * Rational
 
 and 
     [<NoEquality; NoComparison>]

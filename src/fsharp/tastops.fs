@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
@@ -64,7 +65,6 @@ type ValMap<'T>(imap: StampMap<'T>) =
     static member Empty = ValMap<'T> Map.empty
     member m.IsEmpty = imap.IsEmpty
     static member OfList vs = (vs, ValMap<'T>.Empty) ||> List.foldBack (fun (x,y) acc -> acc.Add x y) 
-
 
 //--------------------------------------------------------------------------
 // renamings
@@ -190,6 +190,7 @@ and remapMeasureAux tyenv unt =
         | Some tcr ->  MeasureCon tcr
         | None -> unt
     | MeasureProd(u1,u2) -> MeasureProd(remapMeasureAux tyenv u1, remapMeasureAux tyenv u2)
+    | MeasureRationalPower(u,q) -> MeasureRationalPower(remapMeasureAux tyenv u, q)
     | MeasureInv u -> MeasureInv(remapMeasureAux tyenv u)
     | MeasureVar tp as unt -> 
       match tp.Solution with
@@ -388,31 +389,33 @@ let stripUnitEqnsFromMeasure m = stripUnitEqnsFromMeasureAux false m
 // Basic unit stuff
 //---------------------------------------------------------------------------
 
-
 /// What is the contribution of unit-of-measure constant ucref to unit-of-measure expression measure? 
 let rec MeasureConExponent g abbrev ucref unt =
     match (if abbrev then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
-    | MeasureCon ucref' -> if tyconRefEq g ucref' ucref then 1 else 0
-    | MeasureInv unt' -> -(MeasureConExponent g abbrev ucref unt')
-    | MeasureProd(unt1,unt2) -> MeasureConExponent g abbrev ucref unt1 + MeasureConExponent g abbrev ucref unt2
-    | _ -> 0
+    | MeasureCon ucref' -> if tyconRefEq g ucref' ucref then OneRational else ZeroRational
+    | MeasureInv unt' -> NegRational(MeasureConExponent g abbrev ucref unt')
+    | MeasureProd(unt1,unt2) -> AddRational(MeasureConExponent g abbrev ucref unt1) (MeasureConExponent g abbrev ucref unt2)
+    | MeasureRationalPower(unt',q) -> MulRational (MeasureConExponent g abbrev ucref unt') q
+    | _ -> ZeroRational
 
 /// What is the contribution of unit-of-measure constant ucref to unit-of-measure expression measure
 /// after remapping tycons? 
 let rec MeasureConExponentAfterRemapping g r ucref unt =
     match stripUnitEqnsFromMeasure unt with
-    | MeasureCon ucref' -> if tyconRefEq g (r ucref') ucref then 1 else 0
-    | MeasureInv unt' -> -(MeasureConExponentAfterRemapping g r ucref unt')
-    | MeasureProd(unt1,unt2) -> MeasureConExponentAfterRemapping g r ucref unt1 + MeasureConExponentAfterRemapping g r ucref unt2
-    | _ -> 0
+    | MeasureCon ucref' -> if tyconRefEq g (r ucref') ucref then OneRational else ZeroRational
+    | MeasureInv unt' -> NegRational(MeasureConExponentAfterRemapping g r ucref unt')
+    | MeasureProd(unt1,unt2) -> AddRational(MeasureConExponentAfterRemapping g r ucref unt1) (MeasureConExponentAfterRemapping g r ucref unt2)
+    | MeasureRationalPower(unt',q) -> MulRational (MeasureConExponentAfterRemapping g r ucref unt') q
+    | _ -> ZeroRational
 
 /// What is the contribution of unit-of-measure variable tp to unit-of-measure expression unt? 
 let rec MeasureVarExponent tp unt =
     match stripUnitEqnsFromMeasure unt with
-    | MeasureVar tp' -> if typarEq tp tp' then 1 else 0
-    | MeasureInv unt' -> -(MeasureVarExponent tp unt')
-    | MeasureProd(unt1,unt2) -> MeasureVarExponent tp unt1 + MeasureVarExponent tp unt2
-    | _ -> 0
+    | MeasureVar tp' -> if typarEq tp tp' then OneRational else ZeroRational
+    | MeasureInv unt' -> NegRational(MeasureVarExponent tp unt')
+    | MeasureProd(unt1,unt2) -> AddRational(MeasureVarExponent tp unt1) (MeasureVarExponent tp unt2)
+    | MeasureRationalPower(unt',q) -> MulRational (MeasureVarExponent tp unt') q
+    | _ -> ZeroRational
 
 /// List the *literal* occurrences of unit variables in a unit expression, without repeats  
 let ListMeasureVarOccs unt =
@@ -420,6 +423,7 @@ let ListMeasureVarOccs unt =
         match stripUnitEqnsFromMeasure unt with
           MeasureVar tp -> if List.exists (typarEq tp) acc then acc else tp::acc
         | MeasureProd(unt1,unt2) -> gather (gather acc unt1) unt2
+        | MeasureRationalPower(unt',_) -> gather acc unt'
         | MeasureInv unt' -> gather acc unt'
         | _ -> acc   
     gather [] unt
@@ -429,9 +433,10 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
           MeasureVar tp -> if List.exists (fun (tp', _) -> typarEq tp tp') acc then acc 
-                           else let e = MeasureVarExponent tp untexpr in if e=0 then acc else (tp,e)::acc
+                           else let e = MeasureVarExponent tp untexpr in if e = ZeroRational then acc else (tp,e)::acc
         | MeasureProd(unt1,unt2) -> gather (gather acc unt1) unt2
         | MeasureInv unt' -> gather acc unt'
+        | MeasureRationalPower(unt',_) -> gather acc unt'
         | _ -> acc   
     gather [] untexpr
 
@@ -440,9 +445,10 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
     let rec gather acc unt =  
         match (if eraseAbbrevs then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
         | MeasureCon c -> if List.exists (fun (c', _) -> tyconRefEq g c c') acc then acc 
-                          else let e = MeasureConExponent g eraseAbbrevs c untexpr in if e=0 then acc else (c,e)::acc
+                          else let e = MeasureConExponent g eraseAbbrevs c untexpr in if e = ZeroRational then acc else (c,e)::acc
         | MeasureProd(unt1,unt2) -> gather (gather acc unt1) unt2
         | MeasureInv unt' -> gather acc unt'
+        | MeasureRationalPower(unt',_) -> gather acc unt'
         | _ -> acc  
     gather [] untexpr
 
@@ -453,17 +459,17 @@ let ListMeasureConOccsAfterRemapping g r unt =
         match (stripUnitEqnsFromMeasure unt) with
         | MeasureCon c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c::acc
         | MeasureProd(unt1,unt2) -> gather (gather acc unt1) unt2
+        | MeasureRationalPower(unt',_) -> gather acc unt'
         | MeasureInv unt' -> gather acc unt'
         | _ -> acc
    
     gather [] unt
 
 /// Construct a measure expression representing the n'th power of a measure
-let rec MeasurePower u n = 
+let MeasurePower u n = 
     if n=0 then MeasureOne
     elif n=1 then u
-    elif n<0 then MeasureInv (MeasurePower u (-n))
-    else MeasureProd (u, MeasurePower u (n-1))
+    else MeasureRationalPower (u, intToRational n)
 
 let MeasureProdOpt m1 m2 =
   match m1, m2 with
@@ -486,7 +492,7 @@ let destUnitParMeasure g unt =
     let vs = ListMeasureVarOccsWithNonZeroExponents unt
     let cs = ListMeasureConOccsWithNonZeroExponents g true unt
     match vs, cs with
-    | [(v,1)], [] -> v
+    | [(v,e)], [] when e = OneRational -> v
     | _, _ -> failwith "destUnitParMeasure: not a unit-of-measure parameter"
 
 let isUnitParMeasure g unt =
@@ -494,7 +500,7 @@ let isUnitParMeasure g unt =
     let cs = ListMeasureConOccsWithNonZeroExponents g true unt
  
     match vs, cs with
-    | [(_,1)], [] -> true
+    | [(_,e)], [] when e = OneRational -> true
     | _,   _ -> false
 
 let normalizeMeasure g ms =
@@ -502,8 +508,8 @@ let normalizeMeasure g ms =
     let cs = ListMeasureConOccsWithNonZeroExponents g false ms
     match vs, cs with
     | [],[] -> MeasureOne
-    | [(v,1)], [] -> MeasureVar v
-    | vs, cs -> List.foldBack (fun (v,e) -> fun m -> MeasureProd (MeasurePower (MeasureVar v) e, m)) vs (List.foldBack (fun (c,e) -> fun m -> MeasureProd (MeasurePower (MeasureCon c) e, m)) cs MeasureOne)
+    | [(v,e)], [] when e = OneRational -> MeasureVar v
+    | vs, cs -> List.foldBack (fun (v,e) -> fun m -> MeasureProd (MeasureRationalPower (MeasureVar v, e), m)) vs (List.foldBack (fun (c,e) -> fun m -> MeasureProd (MeasureRationalPower (MeasureCon c, e), m)) cs MeasureOne)
  
 let tryNormalizeMeasureInType g ty =
     match ty with
@@ -520,6 +526,7 @@ let rec sizeMeasure g ms =
   | MeasureVar _ -> 1
   | MeasureCon _ -> 1
   | MeasureProd (ms1,ms2) -> sizeMeasure g ms1 + sizeMeasure g ms2
+  | MeasureRationalPower (ms,_) -> sizeMeasure g ms
   | MeasureInv ms -> sizeMeasure g ms
   | MeasureOne -> 1
 
@@ -2848,16 +2855,18 @@ module DebugPrint = begin
           (match !global_g with
            | None -> wordL "<no global g>"
            | Some g -> 
-             let sortVars (vs:(Typar * int) list) = vs |> List.sortBy (fun (v,_) -> v.DisplayName) 
-             let sortCons (cs:(TyconRef * int) list) = cs |> List.sortBy (fun (c,_) -> c.DisplayName) 
-             let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents         unt |> sortVars |> List.partition (fun (_,e) -> e<0)
-             let negcs,poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_,e) -> e<0)
+             let sortVars (vs:(Typar * Rational) list) = vs |> List.sortBy (fun (v,_) -> v.DisplayName) 
+             let sortCons (cs:(TyconRef * Rational) list) = cs |> List.sortBy (fun (c,_) -> c.DisplayName) 
+             let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents         unt |> sortVars |> List.partition (fun (_,e) -> SignRational e < 0)
+             let negcs,poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
              let unparL (uv:Typar) = wordL ("'" ^  uv.DisplayName)
              let unconL tc = layoutTyconRef tc
-             let prefix = spaceListL  (List.map (fun (v,e) -> if e=1  then unparL v else unparL v -- wordL (sprintf "^ %d" e)) posvs @
-                                       List.map (fun (c,e) -> if e=1  then unconL c else unconL c -- wordL (sprintf "^ %d" e)) poscs)
-             let postfix = spaceListL (List.map (fun (v,e) -> if e= -1 then unparL v else unparL v -- wordL (sprintf "^ %d" (-e))) negvs @
-                                       List.map (fun (c,e) -> if e= -1 then unconL c else unconL c -- wordL (sprintf "^ %d" (-e))) negcs)
+             let rationalL e = wordL (RationalToString e)
+             let measureToPowerL x e = if e = OneRational then x else x -- wordL "^" -- rationalL e
+             let prefix = spaceListL  (List.map (fun (v,e) -> measureToPowerL (unparL v) e) posvs @
+                                       List.map (fun (c,e) -> measureToPowerL (unconL c) e) poscs)
+             let postfix = spaceListL (List.map (fun (v,e) -> measureToPowerL (unparL v) (NegRational e)) negvs @
+                                       List.map (fun (c,e) -> measureToPowerL (unconL c) (NegRational e)) negcs)
              match (negvs,negcs) with 
              | [],[] -> prefix 
              | _ -> prefix ^^ sepL "/" ^^ postfix) ^^

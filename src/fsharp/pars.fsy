@@ -2650,6 +2650,38 @@ rawConstant:
   | stringOrKeywordString { SynConst.String ($1,lhs parseState) } 
   | BYTEARRAY { SynConst.Bytes ($1,lhs parseState) }
 
+rationalConstant:
+  | INT32 INFIX_STAR_DIV_MOD_OP INT32
+    { if $2 <> "/" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure());
+      if fst $3 = 0 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIllegalDenominatorForMeasureExponent());
+      if (snd $1) || (snd $3) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState));
+      SynRationalConst.Rational(fst $1, fst $3, lhs parseState) }
+
+  | MINUS INT32 INFIX_STAR_DIV_MOD_OP INT32 
+    { if $3 <> "/" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure());
+      if fst $4 = 0 then reportParseErrorAt (rhs parseState 4) (FSComp.SR.parsIllegalDenominatorForMeasureExponent());
+      if (snd $2) || (snd $4) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState));
+      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, fst $4, lhs parseState)) }
+
+  | INT32 { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState));
+            SynRationalConst.Integer(fst $1) }
+
+  | MINUS INT32 { if snd $2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState));
+                  SynRationalConst.Negate(SynRationalConst.Integer(fst $2)) }
+
+atomicUnsignedRationalConstant:
+  | INT32 { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState));
+            SynRationalConst.Integer(fst $1) }
+
+  | LPAREN rationalConstant rparen
+    { $2 }
+
+atomicRationalConstant:
+  | atomicUnsignedRationalConstant { $1 }
+
+  | MINUS atomicUnsignedRationalConstant
+    { SynRationalConst.Negate($2) }
+
 constant: 
   | rawConstant { $1 }
   | rawConstant HIGH_PRECEDENCE_TYAPP measureTypeArg { SynConst.Measure($1, $3) }
@@ -4228,10 +4260,10 @@ appTypeCon:
     { SynType.Var($1, lhs parseState) }
 
 appTypeConPower:
-  | appTypeCon INFIX_AT_HAT_OP INT32
+  | appTypeCon INFIX_AT_HAT_OP atomicRationalConstant
     { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
-      if $2 = "^-" then SynType.MeasurePower($1, -(fst $3), lhs parseState)
-      else SynType.MeasurePower($1, fst $3, lhs parseState)  }
+      if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
+      else SynType.MeasurePower($1, $3, lhs parseState)  }
 
   | appTypeCon 
     { $1 }
@@ -4296,14 +4328,10 @@ powerType:
   | atomType
     { $1 }
 
-  | atomType INFIX_AT_HAT_OP INT32
+  | atomType INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
-       if $2 = "^-" then SynType.MeasurePower($1, - (fst $3), lhs parseState)
-       else SynType.MeasurePower($1, fst $3, lhs parseState) }
-
-  | atomType INFIX_AT_HAT_OP MINUS INT32
-     { if $2 <> "^" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
-       SynType.MeasurePower($1, - (fst $4), lhs parseState) }
+       if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
+       else SynType.MeasurePower($1, $3, lhs parseState) }
 
 /* Like appType but gives a deprecation error when a non-atomic type is used */
 appTypeNonAtomicDeprecated:
@@ -4343,16 +4371,11 @@ powerTypeNonAtomicDeprecated:
   | atomType
     { $1 }
 
-  | atomType INFIX_AT_HAT_OP INT32
+  | atomType INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
        deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
-       if $2 = "^-" then SynType.MeasurePower($1, - (fst $3), lhs parseState)
-       else SynType.MeasurePower($1, fst $3, lhs parseState) }
-
-  | atomType INFIX_AT_HAT_OP MINUS INT32
-     { if $2 <> "^" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedInfixOperator());
-       deprecatedWithError (FSComp.SR.parsNonAtomicType()) (lhs parseState);
-       SynType.MeasurePower($1, - (fst $4), lhs parseState) }
+       if $2 = "^-" then SynType.MeasurePower($1, SynRationalConst.Negate($3), lhs parseState)
+       else SynType.MeasurePower($1, $3, lhs parseState) }
 
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -4514,14 +4537,10 @@ measureTypePower:
   | measureTypeAtom 
       { $1 }
 
-  | measureTypeAtom INFIX_AT_HAT_OP INT32
+  | measureTypeAtom INFIX_AT_HAT_OP atomicRationalConstant
      { if $2 <> "^" && $2 <> "^-" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure());
-       if $2 = "^-" then SynMeasure.Power($1, - (fst $3), lhs parseState)
-       else SynMeasure.Power($1, fst $3, lhs parseState) }
-
-  | measureTypeAtom INFIX_AT_HAT_OP MINUS INT32
-     { if $2 <> "^" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure());
-       SynMeasure.Power($1, - (fst $4), lhs parseState) }
+       if $2 = "^-" then SynMeasure.Power($1, SynRationalConst.Negate($3), lhs parseState)
+       else SynMeasure.Power($1, $3, lhs parseState) }
 
   | INT32
      { if fst $1 <> 1 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedIntegerLiteralForUnitOfMeasure());

@@ -16,6 +16,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Lib.Bits
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -1394,6 +1395,8 @@ let u_trait st =
     TTrait (a,b,c,d,e,ref f)
 
 #if INCLUDE_METADATA_WRITER
+let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
+
 let rec p_measure_expr unt st =
     let unt = stripUnitEqnsAux false unt 
     match unt with 
@@ -1402,7 +1405,11 @@ let rec p_measure_expr unt st =
     | MeasureProd(x1,x2) -> p_byte 2 st; p_measure_expr x1 st; p_measure_expr x2 st
     | MeasureVar(v)      -> p_byte 3 st; p_tpref v st
     | MeasureOne         -> p_byte 4 st
+    | MeasureRationalPower(x,q) -> p_byte 5 st; p_measure_expr x st; p_rational q st
 #endif
+
+let u_rational st =
+  let a,b = u_tup2 u_int32 u_int32 st in DivRational (intToRational a) (intToRational b)
 
 let rec u_measure_expr st =
     let tag = u_byte st
@@ -1412,6 +1419,7 @@ let rec u_measure_expr st =
     | 2 -> let a,b = u_tup2 u_measure_expr u_measure_expr st in MeasureProd (a,b)
     | 3 -> let a = u_tpref st in MeasureVar a
     | 4 -> MeasureOne
+    | 5 -> let a = u_measure_expr st in let b = u_rational st in MeasureRationalPower (a,b)
     | _ -> ufailwith st "u_measure_expr"
 
 #if INCLUDE_METADATA_WRITER

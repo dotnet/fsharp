@@ -475,6 +475,7 @@ parsMultiArgumentGenericTypeFormDeprecated,"The syntax '(typ,...,typ) ident' is 
 622,parsMismatchedQuotationName,"Mismatched quotation operator name, beginning with '%s'"
 623,parsActivePatternCaseMustBeginWithUpperCase,"Active pattern case identifiers must begin with an uppercase letter"
 624,parsActivePatternCaseContainsPipe,"The '|' character is not permitted in active pattern case identifiers"
+625,parsIllegalDenominatorForMeasureExponent,"Denominator must not be 0 in unit-of-measure exponent"
 parsNoEqualShouldFollowNamespace,"No '=' symbol should follow a 'namespace' declaration"
 parsSyntaxModuleStructEndDeprecated,"The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'"
 parsSyntaxModuleSigEndDeprecated,"The syntax 'module ... : sig .. end' is not used in F# code. Consider using 'module ... = begin .. end'"

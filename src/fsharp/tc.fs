@@ -16,6 +16,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
@@ -755,6 +756,13 @@ type AfterTcOverloadResolution =
         |   AfterTcOverloadResolution.ReplaceWithOverrideAndSendToSink(_,_,IfOverloadResolutionFails f) -> f()
 
 
+/// Typecheck rational constant terms in units-of-measure exponents
+let rec TcSynRationalConst c =
+  match c with
+  | SynRationalConst.Integer i -> intToRational i
+  | SynRationalConst.Negate c' -> NegRational (TcSynRationalConst c')
+  | SynRationalConst.Rational(p,q,_) -> DivRational (intToRational p) (intToRational q)
+
 /// Typecheck constant terms in expressions and patterns
 let TcConst cenv ty m env c =
     let rec tcMeasure ms =
@@ -767,7 +775,7 @@ let TcConst cenv ty m env c =
             | TyparKind.Type -> error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m))
             | TyparKind.Measure -> MeasureCon tcref
 
-        | SynMeasure.Power(ms, exponent, _) -> MeasurePower (tcMeasure ms) exponent
+        | SynMeasure.Power(ms, exponent, _) -> MeasureRationalPower (tcMeasure ms, TcSynRationalConst exponent)
         | SynMeasure.Product(ms1,ms2,_) -> MeasureProd(tcMeasure ms1, tcMeasure ms2)     
         | SynMeasure.Divide(ms1, ((SynMeasure.Seq (_::(_::_), _)) as ms2), m) -> 
             warning(Error(FSComp.SR.tcImplicitMeasureFollowingSlash(),m))
@@ -4229,7 +4237,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
             NewErrorType (), tpenv
         | _ ->          
             let ms,tpenv = TcMeasure cenv newOk checkCxs occ env tpenv typ m
-            TType_measure (Tastops.MeasurePower ms exponent), tpenv
+            TType_measure (MeasureRationalPower (ms, TcSynRationalConst exponent)), tpenv
 
     | SynType.MeasureDivide(typ1, typ2, m) -> 
         match optKind with

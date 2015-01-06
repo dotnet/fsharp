@@ -16,6 +16,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
@@ -814,14 +815,16 @@ module private PrintTypes =
     and private layoutMeasure denv unt =
         let sortVars vs = vs |> List.sortBy (fun (v:Typar,_) -> v.DisplayName) 
         let sortCons cs = cs |> List.sortBy (fun (c:TyconRef,_) -> c.DisplayName) 
-        let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents              unt |> sortVars |> List.partition (fun (_,e) -> e<0)
-        let negcs,poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_,e) -> e<0)
+        let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents              unt |> sortVars |> List.partition (fun (_,e) -> SignRational e < 0)
+        let negcs,poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
         let unparL uv = layoutTyparRef denv uv
         let unconL tc = layoutTyconRef denv tc
-        let prefix = spaceListL  (List.map (fun (v,e) -> if e=1  then unparL v else unparL v -- wordL (sprintf "^ %d" e)) posvs @
-                                  List.map (fun (c,e) -> if e=1  then unconL c else unconL c -- wordL (sprintf "^ %d" e)) poscs)
-        let postfix = spaceListL (List.map (fun (v,e) -> if e= -1 then unparL v else unparL v -- wordL (sprintf "^ %d" (-e))) negvs @
-                                  List.map (fun (c,e) -> if e= -1 then unconL c else unconL c -- wordL (sprintf "^ %d" (-e))) negcs)
+        let rationalL e = wordL (RationalToString e)
+        let measureToPowerL x e = if e = OneRational then x else x -- wordL "^" -- rationalL e
+        let prefix = spaceListL  (List.map (fun (v,e) -> measureToPowerL (unparL v) e) posvs @
+                                  List.map (fun (c,e) -> measureToPowerL (unconL c) e) poscs)
+        let postfix = spaceListL (List.map (fun (v,e) -> measureToPowerL (unparL v) (NegRational e)) negvs @
+                                  List.map (fun (c,e) -> measureToPowerL (unconL c) (NegRational e)) negcs)
         match (negvs,negcs) with 
         | [],[] -> (match posvs,poscs with [],[] -> wordL "1" | _ -> prefix)
         | _ -> prefix ^^ sepL "/" ^^ (if List.length negvs + List.length negcs > 1 then sepL "(" ^^ postfix ^^ sepL ")" else postfix)

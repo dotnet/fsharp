@@ -11,6 +11,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
@@ -532,12 +533,13 @@ val getErasedTypes            : TcGlobals -> TType -> TType list
 //-------------------------------------------------------------------------
 // Unit operations
 //------------------------------------------------------------------------- 
+
 val MeasurePower : MeasureExpr -> int -> MeasureExpr
-val ListMeasureVarOccsWithNonZeroExponents : MeasureExpr -> (Typar * int) list
-val ListMeasureConOccsWithNonZeroExponents : TcGlobals -> bool -> MeasureExpr -> (TyconRef * int) list
+val ListMeasureVarOccsWithNonZeroExponents : MeasureExpr -> (Typar * Rational) list
+val ListMeasureConOccsWithNonZeroExponents : TcGlobals -> bool -> MeasureExpr -> (TyconRef * Rational) list
 val ProdMeasures : MeasureExpr list -> MeasureExpr
-val MeasureVarExponent : Typar -> MeasureExpr -> int
-val MeasureConExponent : TcGlobals -> bool -> TyconRef -> MeasureExpr -> int
+val MeasureVarExponent : Typar -> MeasureExpr -> Rational
+val MeasureConExponent : TcGlobals -> bool -> TyconRef -> MeasureExpr -> Rational
 
 //-------------------------------------------------------------------------
 // Members 
