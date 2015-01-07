@@ -1,0 +1,5 @@
+// compile fsi.res by running Windows SDK tool rc.exe like so
+// > rc.exe /i "C:\Program Files (x86)\MSBuild\12.0\Bin" /r fsi.rc
+// (can replace msbuild path with any path containing default.win32manifest)
+1 ICON "fsi.ico"
+1 24   "default.win32manifest"
