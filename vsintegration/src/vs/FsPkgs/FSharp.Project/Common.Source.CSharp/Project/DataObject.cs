@@ -428,7 +428,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         }
                         finally
                         {
-                                if (data != null)
+                                if (data != IntPtr.Zero)
                                 {
                                         UnsafeNativeMethods.GlobalUnLock(data);
                                 }
