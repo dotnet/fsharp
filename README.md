@@ -24,7 +24,7 @@ Quickstart guides for build and test can be found [here](https://github.com/Micr
 
 ###Contributing
 
-Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Contributing).
+Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
 
 If you would like to contribute to the F# ecosystem more generally, please see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
