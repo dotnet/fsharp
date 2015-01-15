@@ -109,6 +109,8 @@ Conformance02			Conformance\DeclarationElements\ModuleAbbreviations
 Conformance02			Conformance\DeclarationElements\ObjectConstructors
 Conformance02			Conformance\DeclarationElements\P-invokeDeclarations
 
+Conformance02.2			Conformance\DeclarationElements\MemberDefinitions\NamedArguments
+
 Conformance03			Conformance\Expressions\ApplicationExpressions\Assertion
 Conformance03			Conformance\Expressions\ApplicationExpressions\BasicApplication
 Conformance03			Conformance\Expressions\ApplicationExpressions\ObjectConstruction

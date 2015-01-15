@@ -206,6 +206,9 @@ val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutio
 /// Get all the available properties of a type (both intrinsic and extension)
 val internal AllPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list
 
+/// Get all the available properties of a type (only extension)
+val internal ExtensionPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain  -> range -> TType -> PropInfo list
+
 /// Get the available methods of a type (both declared and inherited)
 val internal AllMethInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> MethInfo list
 
