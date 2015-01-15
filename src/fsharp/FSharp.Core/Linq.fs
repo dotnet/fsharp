@@ -77,6 +77,13 @@ module NullableOperators =
 module Nullable =
 
         open System
+
+        [<CompiledName("ToUInt8")>]
+        let inline uint8 (x:Nullable< ^T >) = if x.HasValue then Nullable(byte x.Value) else Nullable()
+        
+        [<CompiledName("ToInt8")>]
+        let inline int8 (x:Nullable< ^T >) = if x.HasValue then Nullable(sbyte x.Value) else Nullable()
+        
         [<CompiledName("ToByte")>]
         let inline byte (x:Nullable< ^T >) = if x.HasValue then Nullable(byte x.Value) else Nullable()
         
@@ -307,11 +314,13 @@ module LeafExpressionConverter =
     let (|ConvFloatQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> float x))
     let (|ConvFloat32Q|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> float32 x))
     let (|ConvSByteQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> sbyte x))
+    let (|ConvInt8Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> sbyte x))
     let (|ConvInt16Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int16 x))
     let (|ConvInt32Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int32 x))
     let (|ConvIntQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int x))
     let (|ConvInt64Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int64 x))
     let (|ConvByteQ|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> byte x))
+    let (|ConvUInt8Q|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> byte x))
     let (|ConvUInt16Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> uint16 x))
     let (|ConvUInt32Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> uint32 x))
     let (|ConvUInt64Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> uint64 x))
@@ -321,11 +330,13 @@ module LeafExpressionConverter =
     let (|ConvNullableFloatQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.float x))
     let (|ConvNullableFloat32Q|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.float32 x))
     let (|ConvNullableSByteQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.sbyte x))
+    let (|ConvNullableInt8Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int8 x))
     let (|ConvNullableInt16Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int16 x))
     let (|ConvNullableInt32Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int32 x))
     let (|ConvNullableIntQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int x))
     let (|ConvNullableInt64Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int64 x))
     let (|ConvNullableByteQ|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.byte x))
+    let (|ConvNullableUInt8Q|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint8 x))
     let (|ConvNullableUInt16Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint16 x))
     let (|ConvNullableUInt32Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint32 x))
     let (|ConvNullableUInt64Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint64 x))
@@ -338,10 +349,12 @@ module LeafExpressionConverter =
     let (|TypeTestGeneric|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric x))
     let (|CheckedConvCharQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.char x))
     let (|CheckedConvSByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.sbyte x))
+    let (|CheckedConvInt8Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.sbyte x))
     let (|CheckedConvInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.int16 x))
     let (|CheckedConvInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.int32 x))
     let (|CheckedConvInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.int64 x))
     let (|CheckedConvByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.byte x))
+    let (|CheckedConvUInt8Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.byte x))
     let (|CheckedConvUInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint16 x))
     let (|CheckedConvUInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint32 x))
     let (|CheckedConvUInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint64 x))
@@ -571,11 +584,13 @@ module LeafExpressionConverter =
             | ConvNullableFloatQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float>>) |> asExpr
             | ConvNullableFloat32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float32>>) |> asExpr
             | ConvNullableSByteQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<sbyte>>) |> asExpr
+            | ConvNullableInt8Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<sbyte>>) |> asExpr
             | ConvNullableInt16Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int16>>) |> asExpr
             | ConvNullableInt32Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int32>>) |> asExpr
             | ConvNullableIntQ     (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int32>>) |> asExpr
             | ConvNullableInt64Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int64>>) |> asExpr
             | ConvNullableByteQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<byte>>) |> asExpr
+            | ConvNullableUInt8Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<byte>>) |> asExpr
             | ConvNullableUInt16Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint16>>) |> asExpr
             | ConvNullableUInt32Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint32>>) |> asExpr
             | ConvNullableUInt64Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint64>>) |> asExpr
@@ -588,21 +603,25 @@ module LeafExpressionConverter =
             | ConvFloatQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float>) |> asExpr
             | ConvFloat32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float32>) |> asExpr
             | ConvSByteQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
+            | ConvInt8Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
             | ConvInt16Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int16>) |> asExpr
             | ConvInt32Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
             | ConvIntQ     (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
             | ConvInt64Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int64>) |> asExpr
             | ConvByteQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
+            | ConvUInt8Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
             | ConvUInt16Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint16>) |> asExpr
             | ConvUInt32Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint32>) |> asExpr
             | ConvUInt64Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint64>) |> asExpr
 
             | CheckedConvCharQ (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<char>) |> asExpr
             | CheckedConvSByteQ (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
+            | CheckedConvInt8Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
             | CheckedConvInt16Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int16>) |> asExpr
             | CheckedConvInt32Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
             | CheckedConvInt64Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int64>) |> asExpr
             | CheckedConvByteQ (_, _, [x1])   -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
+            | CheckedConvUInt8Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
             | CheckedConvUInt16Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint16>) |> asExpr
             | CheckedConvUInt32Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint32>) |> asExpr
             | CheckedConvUInt64Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint64>) |> asExpr

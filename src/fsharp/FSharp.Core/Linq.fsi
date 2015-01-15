@@ -101,6 +101,14 @@ namespace Microsoft.FSharp.Linq
         [<CompiledName("ToByte")>]
         val inline byte       : value:Nullable< ^T > -> Nullable<byte>       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int        
         
+        /// <summary>Converts the argument to byte. This is a direct conversion for all 
+        /// primitive numeric types. The operation requires an appropriate
+        /// static conversion method on the input type.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The converted byte</returns>
+        [<CompiledName("ToUInt8")>]
+        val inline uint8       : value:Nullable< ^T > -> Nullable<uint8>       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int        
+        
         /// <summary>Converts the argument to signed byte. This is a direct conversion for all 
         /// primitive numeric types. The operation requires an appropriate
         /// static conversion method on the input type.</summary>
@@ -108,6 +116,15 @@ namespace Microsoft.FSharp.Linq
         /// <returns>The converted sbyte</returns>
         [<CompiledName("ToSByte")>]
         val inline sbyte      : value:Nullable< ^T > -> Nullable<sbyte>      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
+        
+        
+        /// <summary>Converts the argument to signed byte. This is a direct conversion for all 
+        /// primitive numeric types. The operation requires an appropriate
+        /// static conversion method on the input type.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The converted sbyte</returns>
+        [<CompiledName("ToInt8")>]
+        val inline int8      : value:Nullable< ^T > -> Nullable<int8>      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
         
         /// <summary>Converts the argument to signed 16-bit integer. This is a direct conversion for all 
         /// primitive numeric types. The operation requires an appropriate
