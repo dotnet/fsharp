@@ -307,6 +307,18 @@
     <Compile Include="..\augment.fs">
       <Link>augment.fs</Link>
     </Compile>
+    <Compile Include="..\outcome.fsi">
+      <Link>outcome.fsi</Link>
+    </Compile>
+    <Compile Include="..\outcome.fs">
+      <Link>outcome.fs</Link>
+    </Compile>
+	  <Compile Include="..\nameres.fsi">
+		  <Link>nameres.fsi</Link>
+	  </Compile>
+	  <Compile Include="..\nameres.fs">
+      <Link>nameres.fs</Link>
+    </Compile>
     <Compile Include="..\typrelns.fs">
       <Link>typrelns.fs</Link>
     </Compile>
@@ -315,12 +327,6 @@
     </Compile>
     <Compile Include="..\patcompile.fs">
       <Link>patcompile.fs</Link>
-    </Compile>
-    <Compile Include="..\outcome.fsi">
-      <Link>outcome.fsi</Link>
-    </Compile>
-    <Compile Include="..\outcome.fs">
-      <Link>outcome.fs</Link>
     </Compile>
 	  <Compile Include="..\csolve.fsi">
 		  <Link>csolve.fsi</Link>
@@ -333,12 +339,6 @@
     </Compile>
     <Compile Include="..\formats.fs">
       <Link>formats.fs</Link>
-    </Compile>
-	  <Compile Include="..\nameres.fsi">
-		  <Link>nameres.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\nameres.fs">
-      <Link>nameres.fs</Link>
     </Compile>
     <Compile Include="..\unsolved.fs">
       <Link>unsolved.fs</Link>
