@@ -261,6 +261,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
 #endif
 
 
+    /// <summary>
+    /// Represents a namespace provided by a type provider component.
+    /// </summary>
     type IProvidedNamespace =
         /// Namespace name the provider injects types into.
         abstract NamespaceName : string
@@ -282,6 +285,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <returns></returns>
         abstract ResolveTypeName : typeName: string -> Type
 
+    /// <summary>
+    /// Represents an instantiation of a type provider component.
+    /// </summary>
     type ITypeProvider =
         inherit System.IDisposable
 
@@ -330,5 +336,26 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract GetMemberCustomAttributesData : assembly:System.Reflection.MemberInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
         abstract GetParameterCustomAttributesData : assembly:System.Reflection.ParameterInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
 #endif
+
+    /// Represents additional, optional information for a type provider component
+    type ITypeProvider2 =
+
+        /// <summary>
+        /// Get the static parameters for a provided method. 
+        /// </summary>
+        /// <param name="methodWithoutArguments">A method returned by GetMethod on a provided type</param>
+        /// <returns>The static parameters of the provided method, if any</returns>
+
+        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
+
+        /// <summary>
+        /// Apply static arguments to a provided method that accepts static arguments. 
+        /// </summary>
+        /// <remarks>The provider must return a provided method with the given mangled name.</remarks>
+        /// <param name="methodWithoutArguments">the provided method definition which has static parameters</param>
+        /// <param name="methodNameWithArguments">the full name of the method that must be returned, including encoded representations of static parameters</param>
+        /// <param name="staticArguments">the values of the static parameters, indexed by name</param>
+        /// <returns>The provided method definition corresponding to the given static parameter values</returns>
+        abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
 
 #endif

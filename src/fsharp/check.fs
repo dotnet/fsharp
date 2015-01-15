@@ -261,19 +261,16 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
         let cantBeFree v = 
            // First, if v is a syntactic argument, then it can be free since it was passed in. 
            // The following can not be free: 
-           //   a) "Local" mutables, being mutables such that: 
-           //         i)  the mutable has no arity (since arity implies top-level storage, top level mutables...) 
-           //             Note: "this" arguments to instance members on mutable structs are mutable arguments. 
-           //   b) BaseVal can never escape. 
-           //   c) Byref typed values can never escape. 
+           //   a) BaseVal can never escape. 
+           //   b) Byref typed values can never escape. 
+           // Note that: Local mutables can be free, as they will be boxed later.
 
            // These checks must correspond to the tests governing the error messages below. 
            let passedIn = ListSet.contains valEq v syntacticArgs 
            if passedIn then
                false
            else
-               (v.IsMutable && v.ValReprInfo.IsNone) ||
-               (v.BaseOrThisInfo = BaseVal  && not passedIn) ||
+               (v.BaseOrThisInfo = BaseVal) ||
                (isByrefLikeTy cenv.g v.Type)
 
         let frees = freeInExpr CollectLocals body
@@ -288,8 +285,6 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
                 // As such, partial applications involving byref arguments could lead to closures containing byrefs. 
                 // For safety, such functions are assumed to have no known arity, and so can not accept byrefs. 
                 errorR(Error(FSComp.SR.chkByrefUsedInInvalidWay(v.DisplayName), m))
-            elif v.IsMutable then 
-                errorR(Error(FSComp.SR.chkMutableUsedInInvalidWay(v.DisplayName), m))
             elif v.BaseOrThisInfo = BaseVal then
                 errorR(Error(FSComp.SR.chkBaseUsedInInvalidWay(), m))
             else
@@ -905,14 +900,7 @@ and CheckAttribs cenv env (attribs: Attribs) =
         |> Seq.map fst 
         |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref,m) -> 
-                let allowMultiple = 
-                    Infos.AttributeChecking.TryBindTyconRefAttribute cenv.g m cenv.g.attrib_AttributeUsageAttribute tcref 
-                             (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple",_,_,ILAttribElem.Bool res) -> Some res | _ -> None))
-                             (fun (Attrib(_,_,_,named,_,_,_)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple",_,_,AttribBoolArg(res) ) -> Some res | _ -> None))
-                             (fun _ -> None)
-                
-                (allowMultiple <> Some(true)))
+        |> List.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some(true))
     if cenv.reportErrors then 
        for (tcref,m) in duplicates do
           errorR(Error(FSComp.SR.chkAttrHasAllowMultiFalse(tcref.DisplayName), m))
@@ -1391,7 +1379,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some(true) then
                    let ty' = generalizedTyconRef (mkLocalTyconRef tycon)
-                   if not (TypeHasDefaultValue cenv.g ty') then 
+                   if not (TypeHasDefaultValue cenv.g m ty') then 
                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m));
             )
         match tycon.TypeAbbrev with                          (* And type abbreviations *)

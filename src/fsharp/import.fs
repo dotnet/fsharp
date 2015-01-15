@@ -2,6 +2,8 @@
 
 module internal Microsoft.FSharp.Compiler.Import
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open System.Reflection
 open System.Collections.Generic
 open Internal.Utilities

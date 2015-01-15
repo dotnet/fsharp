@@ -39,7 +39,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Returns the dirty state of the document.
         /// </summary>
         /// <exception cref="InvalidOperationException">Is thrown if the project is closed or it the service provider attached to the project is invalid.</exception>
-        /// <exception cref="ComException">Is thrown if the dirty state cannot be retrived.</exception>
+        /// <exception cref="COMException">Is thrown if the dirty state cannot be retrived.</exception>
         public override bool IsDirty
         {
             get
@@ -144,7 +144,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Opens the file item in the specified view.
         /// </summary>
-        /// <param name="ViewKind">Specifies the view kind in which to open the item (file)</param>
+        /// <param name="viewKind">Specifies the view kind in which to open the item (file)</param>
         /// <returns>Window object</returns>
         public override EnvDTE.Window Open(string viewKind)
         {
@@ -253,7 +253,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Gets a value indicating whether the project item is open in a particular view type. 
         /// </summary>
-        /// <param name="viewKind">A Constants.vsViewKind* indicating the type of view to check./param>
+        /// <param name="viewKind">A Constants.vsViewKind* indicating the type of view to check.</param>
         /// <returns>A Boolean value indicating true if the project is open in the given view type; false if not. </returns>
         public override bool get_IsOpen(string viewKind)
         {

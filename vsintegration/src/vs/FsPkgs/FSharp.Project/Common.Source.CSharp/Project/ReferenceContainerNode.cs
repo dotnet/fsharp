@@ -372,6 +372,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     }
                     // pick property values from the first item - they should be the same for all elements in the grouping
                     var first = grouping.First();
+                    var groupedFiles = grouping.Select(x => x.file).ToArray();
+
                     var versonText = string.Format(
                         "{0}.{1}.{2}.{3}",
                         version.Major,
@@ -380,7 +382,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         version.Revision != -1 ? version.Revision : 0
                         );
 
-                    var node = new GroupingReferenceNode(ProjectMgr, first.referenceGroupingDisplayName, first.referenceGrouping, Path.GetDirectoryName(first.file), versonText);
+                    var node = new GroupingReferenceNode(ProjectMgr, first.referenceGroupingDisplayName, first.referenceGrouping, Path.GetDirectoryName(first.file), versonText, groupedFiles);
                     AddChild(node);
                 }
             }

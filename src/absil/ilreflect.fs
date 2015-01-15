@@ -601,7 +601,14 @@ let convFieldInit x =
 // This is gross. TypeBuilderInstantiation should really be a public type, since we
 // have to use alternative means for various Method/Field/Constructor lookups.  However since 
 // it isn't we resort to this technique...
-let TypeBuilderInstantiationT = Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation" )
+let TypeBuilderInstantiationT = 
+    let ty = 
+        if runningOnMono then 
+            Type.GetType("System.Reflection.MonoGenericClass")
+        else
+            Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+    assert (not (isNull ty))
+    ty
 
 let typeIsNotQueryable (typ : Type) =
     (typ :? TypeBuilder) || ((typ.GetType()).Equals(TypeBuilderInstantiationT))

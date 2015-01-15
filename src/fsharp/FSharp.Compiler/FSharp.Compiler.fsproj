@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -11,7 +11,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;COMPILER;INCLUDE_METADATA_READER;INCLUDE_METADATA_WRITER;EXTENSIBLE_DUMPER;TYPE_PROVIDER_SECURITY;$(DefineConstants)</DefineConstants>
-    <NoWarn>$(NoWarn);44;62;9</NoWarn>
+    <NoWarn>$(NoWarn);62;9</NoWarn>
     <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
@@ -134,6 +134,12 @@
     </Compile>
     <Compile Include="..\TraceCall.fs">
       <Link>Utilities\TraceCall.fs</Link>
+    </Compile>
+    <Compile Include="..\rational.fsi">
+      <Link>ErrorLogging\rational.fsi</Link>
+    </Compile>
+    <Compile Include="..\rational.fs">
+      <Link>ErrorLogging\rational.fs</Link>
     </Compile>
     <Compile Include="..\range.fsi">
       <Link>ErrorLogging\range.fsi</Link>
@@ -410,6 +416,9 @@
     <Compile Include="..\lowertop.fs">
       <Link>Optimize\lowertop.fs</Link>
     </Compile>
+    <Compile Include="..\autobox.fs">
+      <Link>Optimize\autobox.fs</Link>
+    </Compile>
     <Compile Include="..\ilxgen.fsi">
       <Link>CodeGen\ilxgen.fsi</Link>
     </Compile>
@@ -485,7 +494,7 @@
     <Compile Include="..\vs\service.fs">
       <Link>Service\service.fs</Link>
     </Compile>
-<!--
+    <!--
     <Compile Include="..\vs\SimpleServices.fs">
       <Link>SimpleServices.fs</Link>
     </Compile>
@@ -498,16 +507,17 @@
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Runtime.Remoting" />    
+    <Reference Include="System.Runtime.Remoting" />
     <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Utilities.v12.0" />
     <Reference Include="Microsoft.Build.Tasks.v12.0" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>

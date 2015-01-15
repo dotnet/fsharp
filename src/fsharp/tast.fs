@@ -21,6 +21,7 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.QuotationPickler
 open Microsoft.FSharp.Core.Printf
+open Microsoft.FSharp.Compiler.Rational
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -470,18 +471,7 @@ type Entity =
 
     member x.GetDisplayName(withStaticParameters, withUnderscoreTypars) = 
         let nm = x.LogicalName
-#if EXTENSIONTYPING
-        if x.IsProvidedErasedTycon then 
-            let nm,args = PrettyNaming.demangleProvidedTypeName nm
-            if withStaticParameters && args.Length > 0 then 
-                nm + "<" + String.concat "," (Array.map snd args) + ">"
-            else
-                nm
-        else
-#else
-        if false then nm 
-        else
-#endif
+        let getName () =
             match x.TyparsNoRange with 
             | [] -> nm
             | tps -> 
@@ -490,6 +480,20 @@ type Entity =
                     nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
                 else
                     nm
+
+#if EXTENSIONTYPING
+        if x.IsProvidedErasedTycon then 
+            let nm,args = PrettyNaming.demangleProvidedTypeName nm
+            if withStaticParameters && args.Length > 0 then 
+                nm + "<" + String.concat "," (Array.map snd args) + ">"
+            else
+                nm
+        else
+            getName ()
+#else
+        ignore withStaticParameters
+        getName ()
+#endif
 
 
     /// The code location where the module, namespace or type is defined.
@@ -2917,6 +2921,9 @@ and MeasureExpr =
     /// The unit of measure '1', e.g. float = float<1>
     | MeasureOne
 
+    /// Raising a measure to a rational power 
+    | MeasureRationalPower of MeasureExpr * Rational
+
 and 
     [<NoEquality; NoComparison>]
     CcuData = 
@@ -4128,7 +4135,8 @@ let accessSubstPaths (newPath,oldPath) (TAccess paths) =
 let compPathOfCcu (ccu:CcuThunk) = CompPath(ccu.ILScopeRef,[]) 
 let taccessPublic = TAccess []
 let taccessPrivate accessPath = TAccess [accessPath]
-let taccessInternal = TAccess [CompPath(ILScopeRef.Local,[])]
+let compPathInternal = CompPath(ILScopeRef.Local,[])
+let taccessInternal = TAccess [compPathInternal]
 let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
 
 //---------------------------------------------------------------------------

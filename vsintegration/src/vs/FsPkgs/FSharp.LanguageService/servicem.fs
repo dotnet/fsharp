@@ -1854,10 +1854,11 @@ and [<Guid(FSharpConstants.languageServiceGuidString)>]
             VSConstants.S_OK
 
         override x.GetColorableItem(index, item: IVsColorableItem byref) =
-                if (index < 1) then 
-                    raise (Error.ArgumentOutOfRange "index")
-                item <- colorableItems.[index - 1]
-                VSConstants.S_OK
+                if (index < 1) || (index > colorableItems.Length) then 
+                    VSConstants.E_INVALIDARG
+                else
+                    item <- colorableItems.[index - 1]
+                    VSConstants.S_OK
 
     /// Respond to changes to documents in the Running Document Table.
     interface IVsRunningDocTableEvents with

@@ -111,6 +111,15 @@ module BasicErasedProvidedTypeTest =
         [| 3;6 |]
 
 
+    check "cwkeonwe09a13355 - null attrib can't be used"
+        (null: FSharp.HelloWorld.HelloWorldType.NestedType) // should NOT  give a type error - this explicitly has AllowNullLiteralAttribute(true), so a null literal is allowed
+        null
+
+    // should NOT give a type error - this doesn't have any attributes, and a null literal is allowed by default
+    check "cwkeonwe09a13355 - null attrib"
+        (null : FSharp.HelloWorld.HelloWorldSubType) 
+        null
+
     check "cwkeonwe09a13355"
         (FSharp.HelloWorld.HelloWorldType.ReturnsEmptyNewArray())
         [| |]
@@ -707,6 +716,56 @@ module Char =
     check "vlkrrevpojvr1"
         FSharp.HelloWorld.HelloWorldTypeWithStaticCharParameter<'A'>.StaticProperty1
         "You got a static property"
+
+    check "vlkrrevpojvr2"
+        (FSharp.HelloWorld.HelloWorldType().HelloWorldInstanceMethodWithStaticCharParameter<'\001'>('a'))
+        'a'
+
+    let hw = FSharp.HelloWorld.HelloWorldType()
+    check "vlkrrevpojvr2"
+        (hw.HelloWorldInstanceMethodWithStaticCharParameter<'\001'>('a'))
+        'a'
+
+    check "vlkrrevpojvr2b"
+        (hw.HelloWorldInstanceMethodWithStaticDecimalParameter<1M>(10M))
+        10M
+
+    check "vlkrrevpojvr2c"
+        (hw.HelloWorldInstanceMethodWithStaticBoolParameter<true>(true))
+        true
+
+    // Check a static method
+    check "vlkrrevpojvr2d"
+        (FSharp.HelloWorld.HelloWorldType.HelloWorldStaticMethodWithStaticUInt32Parameter<1u>(10u))
+        10u
+
+    // Check another static method
+    check "vlkrrevpojvr2e"
+        (FSharp.HelloWorld.HelloWorldType.HelloWorldStaticMethodWithStaticUInt64Parameter<1UL>(10UL))
+        10UL
+
+    // Check an enum type
+    check "vlkrrevpojvr2f"
+        (hw.HelloWorldInstanceMethodWithStaticDayOfWeekParameter<System.DayOfWeek.Monday>(System.DayOfWeek.Tuesday))
+        System.DayOfWeek.Tuesday
+
+
+    check "vlkrrevpojvr3"
+        (FSharp.HelloWorld.HelloWorldTypeWithStaticCharParameter<'A'>().HelloWorldInstanceMethodWithStaticCharParameter<'\001'>('a'))
+        'a'
+
+    let x = new FSharp.HelloWorld.HelloWorldTypeWithStaticCharParameter<'A'>()
+    check "vlkrrevpojvr2s"
+        (x.HelloWorldInstanceMethodWithStaticInt16Parameter<1s>(10s))
+        10s
+
+    check "vlkrrevpojvr2L"
+        (x.HelloWorldInstanceMethodWithStaticInt64Parameter<1L>(10L))
+        10L
+
+    check "vlkrrevpojvr2Lb"
+        (x.HelloWorldInstanceMethodWithStaticInt64Parameter<2L>(10L,10L))
+        10L
 
 module String = 
     check "vlkrrevpojvr1"

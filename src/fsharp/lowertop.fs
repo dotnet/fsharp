@@ -56,6 +56,7 @@ let InterceptExpr g cont expr =
 /// optimizer in opt.fs
 let LowerImplFile g ass = 
     RewriteImplFile { PreIntercept = Some(InterceptExpr g);
+                      PreInterceptBinding=None
                       PostTransform= (fun _ -> None);
                       IsUnderQuotations=false } ass
 

@@ -800,6 +800,22 @@ type MethInfo =
         | FSMeth(_,_,vref,_) when x.IsExtensionMember -> vref.TopValActualParent
         | _ -> tcrefOfAppTy x.TcGlobals x.EnclosingType 
 
+    /// Get the information about provided static parameters, if any 
+    member x.ProvidedStaticParameterInfo = 
+        match x with
+        | ILMeth _ -> None
+        | FSMeth _  -> None
+#if EXTENSIONTYPING
+        | ProvidedMeth (_, mb, _, m) -> 
+            let staticParams = mb.PApplyWithProvider((fun (mb,provider) -> mb.GetStaticParametersForMethod(provider)), range=m) 
+            let staticParams = staticParams.PApplyArray(id, "GetStaticParameters", m)
+            match staticParams with 
+            | [| |] -> None
+            | _ -> Some (mb,staticParams)
+#endif
+        | DefaultStructCtor _ -> None
+
+
     /// Get the extension method priority of the method, if it has one.
     member x.ExtensionMemberPriorityOption = 
         match x with
@@ -2480,29 +2496,6 @@ exception ObsoleteError of string * range
 /// formats.
 module AttributeChecking = 
 
-    /// Analyze three cases for attributes declared on type definitions: IL-declared attributes, F#-declared attributes and
-    /// provided attributes.
-    //
-    // This is used for AttributeUsageAttribute, DefaultMemberAttribute and ConditionalAttribute (on attribute types)
-    let TryBindTyconRefAttribute g m (AttribInfo (atref,_) as args) (tcref:TyconRef) f1 f2 f3 = 
-        ignore m; ignore f3
-        match metadataOfTycon tcref.Deref with 
-#if EXTENSIONTYPING
-        | ProvidedTypeMetadata info -> 
-            let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)),m)
-            match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)),m) with
-            | Some args -> f3 args
-            | None -> None
-#endif
-        | ILTypeMetadata (_,tdef) -> 
-            match TryDecodeILAttribute g atref (Some(atref.Scope)) tdef.CustomAttrs with 
-            | Some attr -> f1 attr
-            | _ -> None
-        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            match TryFindFSharpAttribute g args tcref.Attribs with 
-            | Some attr -> f2 attr
-            | _ -> None
-
     /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
     /// provided attributes.
     let BindMethInfoAttributes m minfo f1 f2 f3 = 
@@ -2518,6 +2511,11 @@ module AttributeChecking =
     /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
     /// provided attributes.
     let TryBindMethInfoAttribute g m (AttribInfo(atref,_) as attribSpec) minfo f1 f2 f3 = 
+#if EXTENSIONTYPING
+#else
+        // to prevent unused parameter warning
+        ignore f3
+#endif
         BindMethInfoAttributes m minfo 
             (fun ilAttribs -> TryDecodeILAttribute g atref (Some(atref.Scope)) ilAttribs |> Option.bind f1)
             (fun fsAttribs -> TryFindFSharpAttribute g attribSpec fsAttribs |> Option.bind f2)
@@ -2537,7 +2535,7 @@ module AttributeChecking =
         TryBindMethInfoAttribute g m attribSpec minfo 
                      (function ([ILAttribElem.String (Some msg) ],_) -> Some msg | _ -> None) 
                      (function (Attrib(_,_,[ AttribStringArg msg ],_,_,_,_)) -> Some msg | _ -> None)
-                     (function [ Some ((:? string as msg) : obj) ] -> Some msg | _ -> None)
+                     (function ([ Some ((:? string as msg) : obj) ],_) -> Some msg | _ -> None)
 
     /// Check if a method has a specific attribute.
     let MethInfoHasAttribute g m attribSpec minfo  =
@@ -2547,22 +2545,6 @@ module AttributeChecking =
                      (fun _ -> Some ())
           |> Option.isSome
 
-    /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
-    ///
-    /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
-    let TryFindTyconRefStringAttribute g m attribSpec tcref  =
-        TryBindTyconRefAttribute g m attribSpec tcref 
-                 (function ([ILAttribElem.String (Some(msg)) ],_) -> Some msg | _ -> None)
-                 (function (Attrib(_,_,[ AttribStringArg(msg) ],_,_,_,_))  -> Some msg | _ -> None)
-                 (function [ Some ((:? string as msg) : obj) ] -> Some msg | _ -> None)
-
-    /// Check if a type definition has a specific attribute
-    let TyconRefHasAttribute g m attribSpec tcref  =
-        TryBindTyconRefAttribute g m attribSpec tcref 
-                     (fun _ -> Some ()) 
-                     (fun _ -> Some ())
-                     (fun _ -> Some ())
-          |> Option.isSome
 
 
     /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
@@ -2636,13 +2618,13 @@ module AttributeChecking =
     let private CheckProvidedAttributes g m (provAttribs: Tainted<IProvidedCustomAttributeProvider>)  = 
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
         match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), tref.FullName)),m) with
-        | Some [ Some (:? string as msg) ] -> WarnD(ObsoleteWarning(msg,m))
-        | Some [ Some (:? string as msg); Some (:?bool as isError) ]  ->
+        | Some ([ Some (:? string as msg) ], _) -> WarnD(ObsoleteWarning(msg,m))
+        | Some ([ Some (:? string as msg); Some (:?bool as isError) ], _)  ->
             if isError then 
                 ErrorD (ObsoleteError(msg,m))
             else 
                 WarnD (ObsoleteWarning(msg,m))
-        | Some [ None ] -> 
+        | Some ([ None ], _) -> 
             WarnD(ObsoleteWarning("",m))
         | Some _ -> 
             WarnD(ObsoleteWarning("",m))

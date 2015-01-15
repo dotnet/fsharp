@@ -11,8 +11,6 @@ neg21.fs(14,19,14,23): typecheck error FS0001: The type 'float32' does not match
 
 neg21.fs(14,17,14,18): typecheck error FS0043: The type 'float32' does not match the type 'float<'u>'
 
-neg21.fs(15,16,15,22): typecheck error FS0001: The unit of measure 'm' does not match the unit of measure ''u ^ 2'
-
 neg21.fs(17,26,17,34): typecheck error FS0001: Type mismatch. Expecting a
     float<s ^ 3>    
 but given a

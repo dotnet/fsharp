@@ -1069,12 +1069,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         string VSLangProj.ProjectProperties.ActiveFileSharePath
         {
-            get { throw new NotImplementedException(); } /// E_NOTIMPL
+            get { throw new NotImplementedException(); } // E_NOTIMPL
         }
 
         VSLangProj.prjWebAccessMethod VSLangProj.ProjectProperties.ActiveWebAccessMethod
         {
-            get { throw new NotImplementedException(); } /// E_NOTIMPL
+            get { throw new NotImplementedException(); } // E_NOTIMPL
         }
 
 

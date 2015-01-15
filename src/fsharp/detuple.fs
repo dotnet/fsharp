@@ -927,6 +927,7 @@ let postTransformExpr (penv:penv) expr =
 
 let passImplFile penv ass = 
     ass |> RewriteImplFile {PreIntercept =None (* Some (preInterceptExpr penv) *);
+                            PreInterceptBinding=None
                             PostTransform= postTransformExpr penv (* (fun _ -> None)  *);
                             IsUnderQuotations=false } 
 

@@ -626,8 +626,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual int GetExpansionFunction(MSXML.IXMLDOMNode xmlFunctionNode, string fieldName, out IVsExpansionFunction func) {
 
             XmlDocument doc = new XmlDocument();
-            doc.LoadXml(xmlFunctionNode.xml);
-            func = GetExpansionFunction(doc.DocumentElement, fieldName);
+            doc.XmlResolver = null;
+            using(StringReader stream = new StringReader(xmlFunctionNode.xml))
+            using (XmlReader reader = XmlReader.Create(stream, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
+            {
+                doc.Load(reader);
+                func = GetExpansionFunction(doc.DocumentElement, fieldName);
+            }
             return NativeMethods.S_OK;
         }
 

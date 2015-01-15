@@ -33,6 +33,7 @@ Core02		fsharp\core\hiding
 Core03		fsharp\core\innerpoly
 Core03		fsharp\core\int32
 Core03		fsharp\core\internalsvisible
+Core03		fsharp\core\interop
 Core03		fsharp\core\lazy
 Core03		fsharp\core\letrec
 Core03		fsharp\core\libtest
@@ -76,6 +77,7 @@ Core07		fsharp\core\syntax
 Core07		fsharp\core\tlr
 Core07		fsharp\core\topinit
 Core07		fsharp\core\unicode
+Core07		fsharp\core\unitsOfMeasure
 Core07		fsharp\core\verify
 
 # these take a long time, isolate in their own tags
@@ -142,6 +144,7 @@ Samples07		..\testsprivate\fsharp\samples\XBoxLiveLogViewer
 Samples07		..\testsprivate\fsharp\samples\XNA\WindowsXNAGame
 Samples07		..\testsprivate\fsharp\samples\XNA\XBox360Game
 
+TypeProviders01		fsharp\typeProviders\helloWorld
 TypeProviders01		..\testsprivate\fsharp\typeProviders\builtin\DbmlFile
 TypeProviders01		fsharp\typeProviders\builtin\EdmxFile
 TypeProviders01		fsharp\typeProviders\builtin\ODataService
@@ -150,7 +153,6 @@ TypeProviders01		fsharp\typeProviders\builtin\SqlEntityConnection
 TypeProviders01		fsharp\typeProviders\builtin\WsdlService
 TypeProviders01		fsharp\typeProviders\diamondAssembly
 TypeProviders01		fsharp\typeProviders\globalNamespace
-TypeProviders01		fsharp\typeProviders\helloWorld
 TypeProviders01		fsharp\typeProviders\helloWorldCSharp
 TypeProviders01		fsharp\typeProviders\negTests
 TypeProviders01		fsharp\typeProviders\splitAssembly
@@ -179,3 +181,4 @@ Misc02		fsharp\tools\eval
 Misc02		..\testsprivate\fsharp\tools\queries
 Misc02		fsharp\typecheck\misc
 Misc02		fsharp\typecheck\sigs
+Misc02		fsharp\typecheck\full-rank-arrays

@@ -3,6 +3,7 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 
 #nowarn "49"
+#nowarn "44" // This construct is deprecated. please use List.item
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
 #nowarn "346" // The struct, record or union type 'IlxExtensionType' has an explicit implementation of 'Object.Equals'. ...
 
@@ -44,6 +45,15 @@ let notlazy v = Lazy.CreateFromValue v
 /// is already evaluated then immediately apply the function.  
 let lazyMap f (x:Lazy<_>) =  
       if x.IsValueCreated then notlazy (f (x.Force())) else lazy (f (x.Force()))
+
+type PrimaryAssembly = 
+    | Mscorlib
+    | DotNetCore   
+
+    member this.Name = 
+        match this with
+        | Mscorlib -> "mscorlib"
+        | DotNetCore -> "System.Runtime"
 
 // -------------------------------------------------------------------- 
 // Utilities: type names
@@ -188,15 +198,15 @@ let b3 n =  ((n >>> 24) &&& 0xFF)
 module SHA1 = 
     let inline (>>>&)  (x:int) (y:int)  = int32 (uint32 x >>> y)
     let f(t,b,c,d) = 
-        if t < 20 then (b &&& c) ||| ((~~~b) &&& d) else
-        if t < 40 then b ^^^ c ^^^ d else
-        if t < 60 then (b &&& c) ||| (b &&& d) ||| (c &&& d) else
-        b ^^^ c ^^^ d
+        if t < 20 then (b &&& c) ||| ((~~~b) &&& d)
+        elif t < 40 then b ^^^ c ^^^ d
+        elif t < 60 then (b &&& c) ||| (b &&& d) ||| (c &&& d)
+        else b ^^^ c ^^^ d
 
-    let k0to19 = 0x5A827999
-    let k20to39 = 0x6ED9EBA1
-    let k40to59 = 0x8F1BBCDC
-    let k60to79 = 0xCA62C1D6
+    let [<Literal>] k0to19 = 0x5A827999
+    let [<Literal>] k20to39 = 0x6ED9EBA1
+    let [<Literal>] k40to59 = 0x8F1BBCDC
+    let [<Literal>] k60to79 = 0xCA62C1D6
 
     let k t = 
         if t < 20 then k0to19 
@@ -213,7 +223,7 @@ module SHA1 =
 
     let rot_left32 x n =  (x <<< n) ||| (x >>>& (32-n))
 
-    let sha_eof sha = sha.eof
+    let inline sha_eof sha = sha.eof
 
     (* padding and length (in bits!) recorded at end *)
     let sha_after_eof sha  = 
@@ -250,43 +260,41 @@ module SHA1 =
         let res = (b0 <<< 24) ||| (b1 <<< 16) ||| (b2 <<< 8) ||| b3
         res
 
-
     let sha1_hash sha = 
-        let h0 = ref 0x67452301
-        let h1 = ref 0xEFCDAB89
-        let h2 = ref 0x98BADCFE
-        let h3 = ref 0x10325476
-        let h4 = ref 0xC3D2E1F0
-        let a = ref 0
-        let b = ref 0
-        let c = ref 0
-        let d = ref 0
-        let e = ref 0
+        let mutable h0 = 0x67452301
+        let mutable h1 = 0xEFCDAB89
+        let mutable h2 = 0x98BADCFE
+        let mutable h3 = 0x10325476
+        let mutable h4 = 0xC3D2E1F0
+        let mutable a = 0
+        let mutable b = 0
+        let mutable c = 0
+        let mutable d = 0
+        let mutable e = 0
         let w = Array.create 80 0x00
         while (not (sha_eof sha)) do
-          for i = 0 to 15 do
-            w.[i] <- sha_read32 sha
-          for t = 16 to 79 do
-            w.[t] <- rot_left32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1;
-          a := !h0; 
-          b := !h1; 
-          c := !h2; 
-          d := !h3; 
-          e := !h4;
-          for t = 0 to 79 do
-            let temp =  (rot_left32 !a 5) + f(t,!b,!c,!d) + !e + w.[t] + k(t)
-            e := !d; 
-            d := !c; 
-            c :=  rot_left32 !b 30; 
-            b := !a; 
-            a := temp;
-          h0 := !h0 + !a; 
-          h1 := !h1 + !b; 
-          h2 := !h2 + !c;  
-          h3 := !h3 + !d; 
-          h4 := !h4 + !e
-        done;
-        (!h0,!h1,!h2,!h3,!h4)
+            for i = 0 to 15 do
+                w.[i] <- sha_read32 sha
+            for t = 16 to 79 do
+                w.[t] <- rot_left32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1
+            a <- h0 
+            b <- h1
+            c <- h2
+            d <- h3
+            e <- h4
+            for t = 0 to 79 do
+                let temp = (rot_left32 a 5) + f(t,b,c,d) + e + w.[t] + k(t)
+                e <- d
+                d <- c
+                c <- rot_left32 b 30
+                b <- a
+                a <- temp
+            h0 <- h0 + a
+            h1 <- h1 + b
+            h2 <- h2 + c
+            h3 <- h3 + d
+            h4 <- h4 + e
+        h0,h1,h2,h3,h4
 
     let sha1HashBytes s = 
         let (_h0,_h1,_h2,h3,h4) = sha1_hash { stream = SHABytes s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
@@ -2847,41 +2855,43 @@ let typ_is_boxed = function ILType.Boxed _ -> true | _ -> false
 let typ_is_value = function ILType.Value _ -> true | _ -> false
 
 
-let tspec_is_primaryAssembly ilg (tspec:ILTypeSpec) n = 
+let tspec_is_primaryAssembly (tspec:ILTypeSpec) n = 
   let tref = tspec.TypeRef
   let scoref = tref.Scope
   (tref.Name = n) &&
   match scoref with
-  | ILScopeRef.Assembly n -> n.Name = ilg.primaryAssemblyName
+  | ILScopeRef.Assembly n -> 
+      n.Name = PrimaryAssembly.Mscorlib.Name || 
+      n.Name = PrimaryAssembly.DotNetCore.Name
   | ILScopeRef.Module _ -> false
   | ILScopeRef.Local -> true
 
-let typ_is_boxed_mscorlib_typ ilg (ty:ILType) n = 
-  typ_is_boxed ty && tspec_is_primaryAssembly ilg ty.TypeSpec n
+let typ_is_boxed_mscorlib_typ (ty:ILType) n = 
+  typ_is_boxed ty && tspec_is_primaryAssembly ty.TypeSpec n
 
-let typ_is_value_mscorlib_typ ilg (ty:ILType) n = 
-  typ_is_value ty && tspec_is_primaryAssembly ilg ty.TypeSpec n
+let typ_is_value_mscorlib_typ (ty:ILType) n = 
+  typ_is_value ty && tspec_is_primaryAssembly ty.TypeSpec n
       
-let isILObjectTy            ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_Object
-let isILStringTy            ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_String
-let typ_is_AsyncCallback     ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_AsyncCallback
-let isILTypedReferenceTy    ilg ty = typ_is_value_mscorlib_typ ilg ty tname_TypedReference
-let typ_is_IAsyncResult ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_IAsyncResult
-let typ_is_IComparable  ilg ty = typ_is_boxed_mscorlib_typ ilg ty tname_IComparable
-let isILSByteTy        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_SByte
-let isILByteTy         ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Byte
-let isILInt16Ty        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Int16
-let isILUInt16Ty       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UInt16
-let isILInt32Ty        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Int32
-let isILUInt32Ty       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UInt32
-let isILInt64Ty        ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Int64
-let isILUInt64Ty       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UInt64
-let isILIntPtrTy       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_IntPtr
-let isILUIntPtrTy      ilg ty = typ_is_value_mscorlib_typ ilg ty tname_UIntPtr
-let isILBoolTy         ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Bool
-let isILCharTy         ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Char
-let isILSingleTy       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Single
-let isILDoubleTy       ilg ty = typ_is_value_mscorlib_typ ilg ty tname_Double
+let isILObjectTy            ty = typ_is_boxed_mscorlib_typ ty tname_Object
+let isILStringTy            ty = typ_is_boxed_mscorlib_typ ty tname_String
+let typ_is_AsyncCallback     ty = typ_is_boxed_mscorlib_typ ty tname_AsyncCallback
+let isILTypedReferenceTy    ty = typ_is_value_mscorlib_typ ty tname_TypedReference
+let typ_is_IAsyncResult ty = typ_is_boxed_mscorlib_typ ty tname_IAsyncResult
+let typ_is_IComparable  ty = typ_is_boxed_mscorlib_typ ty tname_IComparable
+let isILSByteTy        ty = typ_is_value_mscorlib_typ ty tname_SByte
+let isILByteTy         ty = typ_is_value_mscorlib_typ ty tname_Byte
+let isILInt16Ty        ty = typ_is_value_mscorlib_typ ty tname_Int16
+let isILUInt16Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt16
+let isILInt32Ty        ty = typ_is_value_mscorlib_typ ty tname_Int32
+let isILUInt32Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt32
+let isILInt64Ty        ty = typ_is_value_mscorlib_typ ty tname_Int64
+let isILUInt64Ty       ty = typ_is_value_mscorlib_typ ty tname_UInt64
+let isILIntPtrTy       ty = typ_is_value_mscorlib_typ ty tname_IntPtr
+let isILUIntPtrTy      ty = typ_is_value_mscorlib_typ ty tname_UIntPtr
+let isILBoolTy         ty = typ_is_value_mscorlib_typ ty tname_Bool
+let isILCharTy         ty = typ_is_value_mscorlib_typ ty tname_Char
+let isILSingleTy       ty = typ_is_value_mscorlib_typ ty tname_Single
+let isILDoubleTy       ty = typ_is_value_mscorlib_typ ty tname_Double
 
 // -------------------------------------------------------------------- 
 // Rescoping

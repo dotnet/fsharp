@@ -250,7 +250,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<Literal>]
         let AddReferenceAssemblyPageDialogNoItemsText = "AddReferenceAssemblyPageDialogNoItemsText";
         [<Literal>]
-        let FSharpCoreVersionIsNotCompatibleWithDev11 = "FSharpCoreVersionIsNotCompatibleWithDev11";
+        let FSharpCoreVersionIsNotLegacyCompatible = "FSharpCoreVersionIsNotLegacyCompatible";
 
 
         let thisAssembly = typeof<DummyTypeInThisAssembly>.Assembly 

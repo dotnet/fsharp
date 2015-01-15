@@ -315,7 +315,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             catch (System.Exception e)
             {
                 CCITracing.Trace(e);
-                throw e;
+                throw;
             }
         }
         /// <summary>
@@ -353,7 +353,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             catch (System.Exception e)
             {
                 CCITracing.Trace(e);
-                throw e;
+                throw;
             }
         }
 

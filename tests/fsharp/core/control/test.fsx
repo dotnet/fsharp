@@ -144,42 +144,42 @@ module BasicTests =
                     })) 
         2
 
-    check "32o8f43kt" (let x = ref 0 
+    check "32o8f43kt" (let mutable x = 0 
                        Async.RunSynchronously 
                            (async {  try 
                                         return ()
                                      finally 
-                                        x := 10
+                                        x <- 10
                                   });
-                       !x) 10
+                       x) 10
 
-    check "32o8f43kt" (let x = ref 0 
+    check "32o8f43kt" (let mutable x = 0 
                        (try 
                            Async.RunSynchronously 
                                (async {  try 
                                             do failwith ""
                                          finally 
-                                            x := 10
+                                            x <- 10
                                       })
                         with Failure _ -> ());
-                       !x) 10
+                       x) 10
 
 
-    check "32o8f43kt" (let x = ref 0 
+    check "32o8f43kt" (let mutable x = 0 
                        (try 
                            Async.RunSynchronously 
                                (async {  try 
                                            try 
                                               do failwith ""
                                            finally 
-                                              x := !x + 1
+                                              x <- x + 1
                                          finally 
-                                            x := !x + 1
+                                            x <- x + 1
                                       })
                         with Failure _ -> ());
-                       !x) 2
+                       x) 2
 
-    check "32o8f43kt" (let x = ref 0 
+    check "32o8f43kt" (let mutable x = 0 
                        (try 
                            Async.RunSynchronously 
                                (async {  try 
@@ -187,12 +187,12 @@ module BasicTests =
                                               return ()
                                            finally 
                                               do failwith ""
-                                              x := !x + 1
+                                              x <- x + 1
                                          finally 
-                                            x := !x + 1
+                                            x <- x + 1
                                       })
                         with Failure _ -> ());
-                       !x) 1
+                       x) 1
 
     check "32o8f43ky" (try Async.RunSynchronously
                              (async {  try 
@@ -319,10 +319,10 @@ module StartChildTrampoliningCheck =
                                 return 27 
                             })
                 let! result = a
-                let x = ref result
+                let mutable x = result
                 for i in 1..biggerThanTrampoliningLimit do
-                    x := !x + 1
-                return !x
+                    x <- x + 1
+                return x
             }
     check "ft6we56sgfw"
         (a |> Async.RunSynchronously)
@@ -360,18 +360,18 @@ module StartChildOutsideOfAsync =
    
 
 check "32o8f43kaI: Spawn" 
-    (let result = ref 0
+    (let mutable result = 0
      Async.Start(async { do printfn "hello 1"
                          do! Async.Sleep(30) 
-                         do result := 1 });
-     while !result = 0 do 
+                         do result <- 1 });
+     while result = 0 do 
          printf "."
 #if NetCore
          Task.Delay(10).Wait()
 #else
          System.Threading.Thread.Sleep(10)
 #endif
-     !result) 1
+     result) 1
 
 
 module FromBeginEndTests = 
@@ -388,20 +388,20 @@ module FromBeginEndTests =
                      name
                      (try 
                          Async.RunSynchronously 
-                             (async { let completed = ref completeSynchronously
-                                      let result = ref 0
+                             (async { let mutable completed = completeSynchronously
+                                      let mutable result = 0
                                       let ev = new System.Threading.ManualResetEvent(completeSynchronously)
                                       let iar = 
                                           { new System.IAsyncResult with
-                                                member x.IsCompleted = !completed
+                                                member x.IsCompleted = completed
                                                 member x.CompletedSynchronously = completeSynchronously
                                                 member x.AsyncWaitHandle = ev :> System.Threading.WaitHandle
                                                 member x.AsyncState = null }
                                       let savedCallback = ref (None : System.AsyncCallback option)
                                       let complete(r) = 
-                                          result := r
+                                          result <- r
                                           if completeSynchronously then 
-                                              completed := true 
+                                              completed <- true 
                                               if (!savedCallback).IsNone then failwith "expected a callback (loc cwowen903)"
                                               (!savedCallback).Value.Invoke iar
                                           else 
@@ -412,7 +412,7 @@ module FromBeginEndTests =
                                               System.Threading.ThreadPool.QueueUserWorkItem(fun _ -> 
                                                    System.Threading.Thread.Sleep sleep
 #endif
-                                                   completed := true 
+                                                   completed <- true 
                                                    ev.Set() |> ignore
                                                    if (!savedCallback).IsNone then failwith "expected a callback (loc cwowen903)"
                                                    (!savedCallback).Value.Invoke iar) |> ignore
@@ -432,7 +432,7 @@ module FromBeginEndTests =
                                           savedCallback := Some callback
                                           complete(expectedResult+x1+x2+x3)
                                           iar
-                                      let endAction(iar:System.IAsyncResult) = !result
+                                      let endAction(iar:System.IAsyncResult) = result
                                       let cancelAction = 
                                           if useCancelAction then 
                                               Some(fun () ->  complete(expectedResult))
@@ -490,7 +490,7 @@ module AwaitEventTests =
                      (try 
                          Async.RunSynchronously 
                              (async { let ev = new Event<_>()
-                                      let over = ref false
+                                      let mutable over = false
                                       let complete(r) = 
                                           if completeSynchronously then 
                                               ev.Trigger(r)
@@ -516,7 +516,7 @@ module AwaitEventTests =
                                            |> Async.StartChild
                                       let! res = Async.AwaitEvent(ev.Publish)
                                       for i in 1..biggerThanTrampoliningLimit do ()
-                                      over := true 
+                                      over <- true 
                                       return res })
                       with e -> 
                          printfn "ERROR: %A" e
@@ -686,22 +686,22 @@ module AsBeginEndTests =
         check
            (sprintf "cvew0-9rn8")
            (let req = AsyncRequest( async { return 2087 } ) 
-            let called = ref 0
-            let iar = req.BeginAsync(System.AsyncCallback(fun _ -> called := 10),null)
+            let mutable called = 0
+            let iar = req.BeginAsync(System.AsyncCallback(fun _ -> called <- 10),null)
             iar.AsyncWaitHandle.WaitOne(100,true) |> ignore
             let v = req.EndAsync(iar)
-            v + !called)
+            v + called)
            2097
 
         check
            (sprintf "cvew0-9rn9")
            (let req = AsyncRequest( async { return 2087 } ) 
-            let called = ref 0
-            let iar = req.BeginAsync(System.AsyncCallback(fun iar -> called := req.EndAsync(iar)),null)
+            let mutable called = 0
+            let iar = req.BeginAsync(System.AsyncCallback(fun iar -> called <- req.EndAsync(iar)),null)
             while not iar.IsCompleted do
                  iar.AsyncWaitHandle.WaitOne(100,true) |> ignore
             
-            !called)
+            called)
            2087
 
 
@@ -772,13 +772,13 @@ check "32o8f43ka2: Cancel a For loop"
 
 module OnCancelTests = 
     check "32o8f43ka1: No cancellation" 
-        (let count = ref 0
-         let res = ref 0
+        (let mutable count = 0
+         let mutable res = 0
          let asyncGroup = new System.Threading.CancellationTokenSource ()
-         Async.Start(async { use! holder = Async.OnCancel (fun msg -> printfn "got cancellation...."; incr res) 
-                             do incr count
+         Async.Start(async { use! holder = Async.OnCancel (fun msg -> printfn "got cancellation...."; res <- (res + 1)) 
+                             do count <- (count + 1)
                              return () }, asyncGroup.Token);
-         while !count = 0 do 
+         while count = 0 do 
              do printfn "waiting to enter cancellation section"
 #if NetCore
              Task.Delay(10).Wait()
@@ -786,7 +786,7 @@ module OnCancelTests =
              System.Threading.Thread.Sleep(10)
 #endif
         
-         !res) 0
+         res) 0
 
 
 #if Portable
@@ -915,26 +915,26 @@ module SyncContextReturnTests =
                     // THIS IS ONE CHECK
                     checkOn name fakeCtxt
                     
-                    let completed = ref completeSynchronously
-                    let result = ref 0
+                    let mutable completed = completeSynchronously
+                    let mutable result = 0
                     let ev = new System.Threading.ManualResetEvent(completeSynchronously)
                     let iar = 
                         { new System.IAsyncResult with
-                              member x.IsCompleted = !completed
+                              member x.IsCompleted = completed
                               member x.CompletedSynchronously = completeSynchronously
                               member x.AsyncWaitHandle = ev :> System.Threading.WaitHandle
                               member x.AsyncState = null }
                     let savedCallback = ref (None : System.AsyncCallback option)
                     let complete(r) = 
-                        result := r
+                        result <- r
                         if completeSynchronously then 
-                            completed := true 
+                            completed <- true 
                             if (!savedCallback).IsNone then failwith "expected a callback (loc cwowen903)"
                             (!savedCallback).Value.Invoke iar
                         else 
                             System.Threading.ThreadPool.QueueUserWorkItem(fun _ -> 
                                  System.Threading.Thread.Sleep sleep
-                                 completed := true 
+                                 completed <- true 
                                  ev.Set() |> ignore
                                  if (!savedCallback).IsNone then failwith "expected a callback (loc cwowen903)"
                                  (!savedCallback).Value.Invoke iar) |> ignore
@@ -954,7 +954,7 @@ module SyncContextReturnTests =
                         savedCallback := Some callback
                         complete(expectedResult+x1+x2+x3)
                         iar
-                    let endAction(iar:System.IAsyncResult) = !result
+                    let endAction(iar:System.IAsyncResult) = result
                     let cancelAction = 
                         if useCancelAction then 
                             Some(fun () ->  complete(expectedResult))
@@ -2003,7 +2003,49 @@ module ExceptionInAsyncParallelOrHowToInvokeContinuationTwice =
 
     check "ExceptionInAsyncParallelOrHowToInvokeContinuationTwice" (Seq.init 30 (ignore >> test) |> Seq.forall id) true
     
+#if FX_NO_EXCEPTIONDISPATCHINFO
+#else
 
+// [Asyncs] Better stack traces for Async
+module BetterStacksTest1 = 
+
+    let FunctionRaisingException() = 
+       async { do failwith "" }
+
+    let f2() = 
+       async { for i in 0 .. 10 do 
+                 do! FunctionRaisingException() }
+
+
+    let v = 
+        try 
+            f2() |> Async.StartImmediate 
+            ""
+        with e -> e.StackTrace
+
+    //printfn "STACK 1\n------------------------------------\n%s\n----------------------------------" v
+
+    test "BetterStacks1" (v.Contains("FunctionRaisingException"))
+
+module BetterStacksTest2 = 
+
+    let FunctionRaisingException() = 
+       async { do failwith "" }
+
+    let f2() = 
+       Async.FromContinuations(fun (cont, econt, ccont) -> Async.StartWithContinuations(FunctionRaisingException(), cont, econt, ccont))
+
+    let v = 
+        try 
+            f2() |> Async.StartImmediate 
+            ""
+        with e -> e.StackTrace
+
+    //printfn "STACK #2\n------------------------------------\n%s\n----------------------------------" v
+
+    test "BetterStacks2" (v.Contains("FunctionRaisingException"))
+
+#endif
 
 // [Asyncs] Cancellation inside Async.AwaitWaitHandle may release source WaitHandle
 module Bug391710 =

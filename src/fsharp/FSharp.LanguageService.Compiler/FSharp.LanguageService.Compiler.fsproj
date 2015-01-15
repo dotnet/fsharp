@@ -21,7 +21,7 @@
     <DefineConstants>NO_PDB_READER;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_PDB_WRITER;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
-    <NoWarn>$(NoWarn);62;44;9;75</NoWarn>
+    <NoWarn>$(NoWarn);62;9;75</NoWarn>
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
@@ -196,6 +196,12 @@
     </Compile>
     <Compile Include="..\range.fs">
       <Link>range.fs</Link>
+    </Compile>
+    <Compile Include="..\rational.fsi">
+      <Link>rational.fsi</Link>
+    </Compile>
+    <Compile Include="..\rational.fs">
+      <Link>rational.fs</Link>
     </Compile>
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogger.fs</Link>
@@ -450,6 +456,7 @@
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Runtime.Remoting" />    

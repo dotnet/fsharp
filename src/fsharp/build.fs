@@ -390,7 +390,8 @@ let warningOn err level specificWarnOn =
     List.mem n specificWarnOn ||
     // Some specific warnings are never on by default, i.e. unused variable warnings
     match n with 
-    | 1182 -> false 
+    | 1182 -> false // chkUnusedValue - off by default
+    | 3180 -> false // abImplicitHeapAllocation - off by default
     | _ -> level >= GetWarningLevel err 
 
 let SplitRelatedErrors(err:PhasedError) = 
@@ -1802,59 +1803,47 @@ type NetCoreSystemRuntimeTraits(primaryAssembly) =
         member this.MarshalByRefObjectScopeRef      = None
         member this.ArgIteratorTypeScopeRef         = None
 
-type PrimaryAssembly = 
-    | Mscorlib
-    | NamedMscorlib of string
-    | DotNetCore   
+let getSystemRuntimeInitializer (primaryAssembly: PrimaryAssembly) (mkReference : string -> AssemblyReference) : ISystemRuntimeCcuInitializer = 
+    let name = primaryAssembly.Name
+    let primaryAssemblyReference = mkReference name
 
-    member this.Name = 
-        match this with
-        | Mscorlib -> "mscorlib"
-        | DotNetCore -> "System.Runtime"
-        | NamedMscorlib name -> name
+    match primaryAssembly with
+    | Mscorlib ->
+        {
+            new ISystemRuntimeCcuInitializer with
+                member this.BeginLoadingSystemRuntime(resolver, noData) = 
+                    let mscorlibRef = resolver primaryAssemblyReference
+                    let traits = (IL.mkMscorlibBasedTraits mscorlibRef.FSharpViewOfMetadata.ILScopeRef)
+                    (mkILGlobals traits (Some name) noData), box mscorlibRef
+                member this.EndLoadingSystemRuntime(state, _resolver) = 
+                    unbox state
+        }
 
-    member this.GetSystemRuntimeInitializer(mkReference : string -> AssemblyReference) : ISystemRuntimeCcuInitializer = 
-        let name = this.Name
-        let primaryAssemblyReference = mkReference name
-
-        match this with
-        | Mscorlib 
-        | NamedMscorlib _->
-            {
-                new ISystemRuntimeCcuInitializer with
-                    member this.BeginLoadingSystemRuntime(resolver, noData) = 
-                        let mscorlibRef = resolver primaryAssemblyReference
-                        let traits = (IL.mkMscorlibBasedTraits mscorlibRef.FSharpViewOfMetadata.ILScopeRef)
-                        (mkILGlobals traits (Some name) noData), box mscorlibRef
-                    member this.EndLoadingSystemRuntime(state, _resolver) = 
-                        unbox state
-            }
-
-        | DotNetCore ->
-            let systemReflectionRef = mkReference "System.Reflection"
-            let systemDiagnosticsDebugRef = mkReference "System.Diagnostics.Debug"
-            let systemLinqExpressionsRef = mkReference "System.Linq.Expressions"
-            let systemCollectionsRef = mkReference "System.Collections"
-            let systemRuntimeInteropServicesRef = mkReference "System.Runtime.InteropServices"
-            {
-                new ISystemRuntimeCcuInitializer with
-                    member this.BeginLoadingSystemRuntime(resolver, noData) = 
-                        let primaryAssembly = resolver primaryAssemblyReference
-                        let traits = new NetCoreSystemRuntimeTraits(primaryAssembly.FSharpViewOfMetadata.ILScopeRef)
-                        mkILGlobals traits (Some name) noData, box (primaryAssembly, traits)
-                    member this.EndLoadingSystemRuntime(state, resolver) = 
-                        let (primaryAssembly : ImportedAssembly, traits : NetCoreSystemRuntimeTraits) = unbox state
-                        // finish initialization of SystemRuntimeTraits
-                        traits.FixupImportedAssemblies
-                            (
-                                systemReflectionRef             = resolver CcuLoadFailureAction.RaiseError systemReflectionRef,
-                                systemDiagnosticsDebugRef       = resolver CcuLoadFailureAction.RaiseError systemDiagnosticsDebugRef,
-                                systemRuntimeInteropServicesRef = resolver CcuLoadFailureAction.ReturnNone systemRuntimeInteropServicesRef,
-                                systemLinqExpressionsRef        = resolver CcuLoadFailureAction.RaiseError systemLinqExpressionsRef,
-                                systemCollectionsRef            = resolver CcuLoadFailureAction.RaiseError systemCollectionsRef
-                            )
-                        primaryAssembly
-            }
+    | DotNetCore ->
+        let systemReflectionRef = mkReference "System.Reflection"
+        let systemDiagnosticsDebugRef = mkReference "System.Diagnostics.Debug"
+        let systemLinqExpressionsRef = mkReference "System.Linq.Expressions"
+        let systemCollectionsRef = mkReference "System.Collections"
+        let systemRuntimeInteropServicesRef = mkReference "System.Runtime.InteropServices"
+        {
+            new ISystemRuntimeCcuInitializer with
+                member this.BeginLoadingSystemRuntime(resolver, noData) = 
+                    let primaryAssembly = resolver primaryAssemblyReference
+                    let traits = new NetCoreSystemRuntimeTraits(primaryAssembly.FSharpViewOfMetadata.ILScopeRef)
+                    mkILGlobals traits (Some name) noData, box (primaryAssembly, traits)
+                member this.EndLoadingSystemRuntime(state, resolver) = 
+                    let (primaryAssembly : ImportedAssembly, traits : NetCoreSystemRuntimeTraits) = unbox state
+                    // finish initialization of SystemRuntimeTraits
+                    traits.FixupImportedAssemblies
+                        (
+                            systemReflectionRef             = resolver CcuLoadFailureAction.RaiseError systemReflectionRef,
+                            systemDiagnosticsDebugRef       = resolver CcuLoadFailureAction.RaiseError systemDiagnosticsDebugRef,
+                            systemRuntimeInteropServicesRef = resolver CcuLoadFailureAction.ReturnNone systemRuntimeInteropServicesRef,
+                            systemLinqExpressionsRef        = resolver CcuLoadFailureAction.RaiseError systemLinqExpressionsRef,
+                            systemCollectionsRef            = resolver CcuLoadFailureAction.RaiseError systemCollectionsRef
+                        )
+                    primaryAssembly
+        }
 
 
 type TcConfigBuilder =
@@ -2400,7 +2389,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
             AssemblyReference(range0, GetFSharpCoreReferenceUsedByCompiler()), None
         | _ -> res
-    let primaryAssemblyCcuInitializer = data.primaryAssembly.GetSystemRuntimeInitializer(computeKnownDllReference >> fst)
+    let primaryAssemblyCcuInitializer = getSystemRuntimeInitializer data.primaryAssembly (computeKnownDllReference >> fst)
 
     // If either mscorlib.dll/System.Runtime.dll or fsharp.core.dll are explicitly specified then we require the --noframework flag.
     // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
@@ -2453,8 +2442,10 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     // the versions mismatch, however they are allowed to mismatch in one case:
                     if primaryAssemblyIsSilverlight  && mscorlibMajorVersion=5   // SL5
                         && (match explicitFscoreVersionToCheckOpt with 
-                            | Some(v1,v2,v3,_) -> v1=2us && v2=3us && v3=5us  // we build SL5 against portable FSCore 2.3.5.0
-                            | None -> true) // the 'None' code path happens after explicit FSCore was already checked, from now on SL5 path is always excepted
+                            | Some(2us,3us,5us,_) // silverlight is supported for FSharp.Core 2.3.5.x and 3.47.x.y 
+                            | Some(3us,47us,_,_) 
+                            | None -> true        // the 'None' code path happens after explicit FSCore was already checked, from now on SL5 path is always excepted
+                            | _ -> false) 
                     then
                         ()
                     else
@@ -3962,6 +3953,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let phase2 () = 
 #if EXTENSIONTYPING
             ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
+#else
+            // to prevent unused parameter warning
+            ignore tpApprovals
+            ignore displayPSTypeProviderSecurityDialogBlockingUI
 #endif
             [ResolvedImportedAssembly(ccuinfo)]
         phase2
@@ -4088,6 +4083,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 #if EXTENSIONTYPING
                      ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (tpApprovals, displayPSTypeProviderSecurityDialogBlockingUI, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
 #else
+                     // to prevent unused parameter warning
+                     ignore tpApprovals
+                     ignore displayPSTypeProviderSecurityDialogBlockingUI
+
                      ()
 #endif
                 data,ccuinfo,phase2)

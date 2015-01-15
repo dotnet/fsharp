@@ -39,6 +39,7 @@ open Microsoft.FSharp.Compiler
 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
@@ -226,6 +227,7 @@ let rec isIntegerTy g ty =
     
 let isStringTy g ty = typeEquiv g g.string_ty ty 
 let isCharTy g ty = typeEquiv g g.char_ty ty 
+let isBoolTy g ty = typeEquiv g g.bool_ty ty 
 
 /// float or float32 or float<_> or float32<_> 
 let isFpTy g ty =
@@ -240,6 +242,7 @@ let IsNonDecimalNumericOrIntegralEnumType g ty = isIntegerOrIntegerEnumTy g ty |
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
 let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
 let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
+let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let GetMeasureOfType g ty =
@@ -259,6 +262,7 @@ type TraitConstraintSolution =
 
 let BakedInTraitConstraintNames = 
     [ "op_Division" ; "op_Multiply"; "op_Addition" 
+      "op_Equality" ; "op_Inequality"; "op_GreaterThan" ; "op_LessThan"; "op_LessThanOrEqual"; "op_GreaterThanOrEqual"
       "op_Subtraction"; "op_Modulus"; 
       "get_Zero"; "get_One";
       "DivideByInt";"get_Item"; "set_Item";
@@ -355,20 +359,20 @@ let PreferUnifyTypar (v1:Typar) (v2:Typar) =
 
 
 
-/// Ensure that vs is ordered so that an element with minimum sized exponent
-/// is at the head of the list. Also, if possible, this element should have rigidity TyparRigidity.Flexible 
-let FindMinimumMeasureExponent vs =
-    let rec findmin vs = 
+/// Reorder a list of (variable,exponent) pairs so that a variable that is Preferred
+/// is at the head of the list, if possible
+let FindPreferredTypar vs =
+    let rec find vs = 
         match vs with
         | [] -> vs
         | (v:Typar,e)::vs ->
-           match findmin vs with
+           match find vs with
             | [] -> [(v,e)]
-            | (v',e')::vs' ->
-                if abs e < abs e' || (abs e = abs e' && PreferUnifyTypar v v')
+            | (v',e')::vs' -> 
+                if PreferUnifyTypar v v'
                 then (v, e) :: vs
                 else (v',e') :: (v,e) :: vs' 
-    findmin vs
+    find    vs
   
 let SubstMeasure (r:Typar) ms = 
     if r.Rigidity = TyparRigidity.Rigid then error(InternalError("SubstMeasure: rigid",r.Range)); 
@@ -444,88 +448,53 @@ let SubstMeasureWarnIfRigid (csenv:ConstraintSolverEnv) trace (v:Typar) ms =
         WarnD(Error(FSComp.SR.csCodeLessGeneric(),v.Range))
       else CompleteD)
 
-/// The division operator in Caml/F# rounds towards zero. For our purposes,
-/// we want to round towards negative infinity. 
-let DivRoundDown x y = 
-    let signx=if x<0 then -1 else 1
-    let signy=if y<0 then -1 else 1
-  
-    if signx=signy then x / y
-    else (x-y+signy) / y
-
 /// Imperatively unify the unit-of-measure expression ms against 1.
-/// This is a gcd-like algorithm that proceeds as follows:
-/// 1. Express ms in the form 'u1^x1 * ... * 'un^xn * c1^y1 * ... * cm^ym
-///    where 'u1,...,'un are non-rigid measure variables, c1,...,cm are measure identifiers or rigid measure variables,
-///    x1,...,xn and y1,...,yn are non-zero exponents with |x1| <= |xi| for all i.
-/// 2. (a) If m=n=0 then we're done (we're unifying 1 against 1)
-///    (b) If m=0 but n<>0 then fail (we're unifying a variable-free expression against 1)
-///    (c) If xi is divisible by |x1| for all i, and yj is divisible by |x1| for all j, then 
-///        immediately solve the constraint with the substitution 
-///          'u1 := 'u2^(-x2/x1) * ... * 'un^(-xn/x1) * c1^(-y1/x1) * ... * cm^(-ym/x1)
-///    (d) Otherwise, if m=1, fail (example: unifying 'u^2 * kg^3)
-///    (e) Otherwise, make the substitution
-///          'u1 := 'u * 'u2^(-x2/x1) * ... * 'un^(-xn/x1) * c1^(-y1/x1) * ... * cm^(-ym/x1)
-///        where 'u is a fresh measure variable, and iterate.
-
-let rec UnifyMeasureWithOne (csenv:ConstraintSolverEnv) trace ms = 
+/// There are three cases
+/// - ms is (equivalent to) 1
+/// - ms contains no non-rigid unit variables, and so cannot be unified with 1
+/// - ms has the form v^e * ms' for some non-rigid variable v, non-zero exponent e, and measure expression ms'
+///   the most general unifier is then simply v := ms' ^ -(1/e)
+let UnifyMeasureWithOne (csenv:ConstraintSolverEnv) trace ms = 
+    // Gather the rigid and non-rigid unit variables in this measure expression together with their exponents
     let (rigidVars,nonRigidVars) = (ListMeasureVarOccsWithNonZeroExponents ms) |> List.partition (fun (v,_) -> v.Rigidity = TyparRigidity.Rigid) 
-    let expandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g true ms
-    let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
-    match FindMinimumMeasureExponent nonRigidVars, rigidVars, expandedCons, unexpandedCons with
-    | [], [], [], _ -> CompleteD
-    | [], _, _, _ -> localAbortD
-    | (v,e)::vs, rigidVars, _, _ -> 
-      // don't break up abbreviations if we can help it!
-      if unexpandedCons |> List.forall (fun (_,e') -> e' % e = 0) && (vs@rigidVars) |> List.forall (fun (_,e') -> e' % e = 0) 
-      then 
-        let newms = ProdMeasures (List.map (fun (c,e') -> MeasurePower (MeasureCon c) (- (DivRoundDown e' e))) unexpandedCons 
-                                @ List.map (fun (v,e') -> MeasurePower (MeasureVar v) (- (DivRoundDown e' e))) (vs @ rigidVars))
-        SubstMeasureWarnIfRigid csenv trace v newms
-      else
-        let newms = ProdMeasures (List.map (fun (c,e') -> MeasurePower (MeasureCon c) (- (DivRoundDown e' e))) expandedCons 
-                              @ List.map (fun (v,e') -> MeasurePower (MeasureVar v) (- (DivRoundDown e' e))) (vs @ rigidVars))
-        if expandedCons |> List.forall (fun (_,e') -> e' % e = 0) && (vs@rigidVars) |> List.forall (fun (_,e') -> e' % e = 0) 
-        then SubstMeasureWarnIfRigid csenv trace v newms
-        elif isNil vs 
-        then localAbortD
-        else
-          // New variable v' must inherit WarnIfNotRigid from v
-          let v' = NewAnonTypar (TyparKind.Measure,v.Range,v.Rigidity,v.StaticReq,v.DynamicReq)
-          SubstMeasure v (MeasureProd(MeasureVar v', newms));
-          UnifyMeasureWithOne csenv trace ms
 
+    // If there is at least one non-rigid variable v with exponent e, then we can unify 
+    match FindPreferredTypar nonRigidVars with
+    | (v,e)::vs ->
+      let unexpandedCons = ListMeasureConOccsWithNonZeroExponents csenv.g false ms
+      let newms = ProdMeasures (List.map (fun (c,e') -> MeasureRationalPower (MeasureCon c, NegRational (DivRational e' e))) unexpandedCons 
+                              @ List.map (fun (v,e') -> MeasureRationalPower (MeasureVar v, NegRational (DivRational e' e))) (vs @ rigidVars))
+
+      SubstMeasureWarnIfRigid csenv trace v newms
+
+    // Otherwise we require ms to be 1
+    | [] ->
+      if measureEquiv csenv.g ms MeasureOne then CompleteD else localAbortD
+    
 /// Imperatively unify unit-of-measure expression ms1 against ms2
 let UnifyMeasures (csenv:ConstraintSolverEnv) trace ms1 ms2 = 
     UnifyMeasureWithOne csenv trace (MeasureProd(ms1,MeasureInv ms2))
-
 
 /// Simplify a unit-of-measure expression ms that forms part of a type scheme. 
 /// We make substitutions for vars, which are the (remaining) bound variables
 ///   in the scheme that we wish to simplify. 
 let SimplifyMeasure g vars ms =
     let rec simp vars = 
-        match FindMinimumMeasureExponent (List.filter (fun (_,e) -> e<>0) (List.map (fun v -> (v, MeasureVarExponent v ms)) vars)) with
+        match FindPreferredTypar (List.filter (fun (_,e) -> SignRational e<>0) (List.map (fun v -> (v, MeasureVarExponent v ms)) vars)) with
         | [] -> 
           (vars, None)
 
         | (v,e)::vs -> 
-            if e < 0 then
-                let v' = NewAnonTypar (TyparKind.Measure,v.Range,TyparRigidity.Flexible,v.StaticReq,v.DynamicReq)
-                let vars' = v' :: ListSet.remove typarEq v vars 
-                SubstMeasure v (MeasureInv (MeasureVar v'));
-                simp vars'
-            else 
-                let newv = if v.IsCompilerGenerated then NewAnonTypar (TyparKind.Measure,v.Range,TyparRigidity.Flexible,v.StaticReq,v.DynamicReq)
-                                                    else NewNamedInferenceMeasureVar (v.Range,TyparRigidity.Flexible,v.StaticReq,v.Id)
-                let remainingvars = ListSet.remove typarEq v vars
-                let newms = (ProdMeasures (List.map (fun (c,e') -> MeasurePower (MeasureCon c) (- (DivRoundDown e' e))) (ListMeasureConOccsWithNonZeroExponents g false ms)
-                                            @ List.map (fun (v',e') -> if typarEq v v' then MeasureVar newv else MeasurePower (MeasureVar v') (- (DivRoundDown e' e))) (ListMeasureVarOccsWithNonZeroExponents ms)));
-                SubstMeasure v newms;
-                match vs with 
-                | [] -> (remainingvars, Some newv) 
-                | _ -> simp (newv::remainingvars)
-   
+          let newvar = if v.IsCompilerGenerated then NewAnonTypar (TyparKind.Measure,v.Range,TyparRigidity.Flexible,v.StaticReq,v.DynamicReq)
+                                                else NewNamedInferenceMeasureVar (v.Range,TyparRigidity.Flexible,v.StaticReq,v.Id)
+          let remainingvars = ListSet.remove typarEq v vars
+          let newvarExpr = if SignRational e < 0 then MeasureInv (MeasureVar newvar) else MeasureVar newvar
+          let newms = (ProdMeasures (List.map (fun (c,e') -> MeasureRationalPower (MeasureCon c, NegRational (DivRational e' e))) (ListMeasureConOccsWithNonZeroExponents g false ms)
+                                   @ List.map (fun (v',e') -> if typarEq v v' then newvarExpr else MeasureRationalPower (MeasureVar v', NegRational (DivRational e' e))) (ListMeasureVarOccsWithNonZeroExponents ms)));
+          SubstMeasure v newms;
+          match vs with 
+          | [] -> (remainingvars, Some newvar) 
+          | _ -> simp (newvar::remainingvars)
     simp vars
 
 // Normalize a type ty that forms part of a unit-of-measure-polymorphic type scheme. 
@@ -567,16 +536,46 @@ let rec SimplifyMeasuresInConstraints g param cs =
         let param' = SimplifyMeasuresInConstraint g param c
         SimplifyMeasuresInConstraints g param' cs
 
+let rec GetMeasureVarGcdInType v ty =
+    match stripTyparEqns ty with 
+    | TType_ucase(_,l)
+    | TType_app (_,l) 
+    | TType_tuple l -> GetMeasureVarGcdInTypes v l
 
+    | TType_fun (d,r) -> GcdRational (GetMeasureVarGcdInType v d) (GetMeasureVarGcdInType v r)
+    | TType_var _   -> ZeroRational
+    | TType_forall (_,tau) -> GetMeasureVarGcdInType v tau
+    | TType_measure unt -> MeasureVarExponent v unt
+
+and GetMeasureVarGcdInTypes v tys =
+    match tys with
+    | [] ->  ZeroRational
+    | ty::tys -> GcdRational (GetMeasureVarGcdInType v ty) (GetMeasureVarGcdInTypes v tys)
   
-// We normalize unit-of-measure-polymorphic type schemes as described in Kennedy's thesis. There  
+// Normalize the exponents on generalizable variables in a type
+// by dividing them by their "rational gcd". For example, the type
+// float<'u^(2/3)> -> float<'u^(4/3)> would be normalized to produce
+// float<'u> -> float<'u^2> by dividing the exponents by 2/3.
+let NormalizeExponentsInTypeScheme uvars ty =
+  uvars |> List.map (fun v ->
+    let expGcd = AbsRational (GetMeasureVarGcdInType v ty)
+    if expGcd = OneRational || expGcd = ZeroRational
+    then v 
+     else
+      let v' = NewAnonTypar (TyparKind.Measure,v.Range,TyparRigidity.Flexible,v.StaticReq,v.DynamicReq)
+      SubstMeasure v (MeasureRationalPower (MeasureVar v', DivRational OneRational expGcd))
+      v')
+    
+  
+// We normalize unit-of-measure-polymorphic type schemes. There  
 // are three reasons for doing this:
 //   (1) to present concise and consistent type schemes to the programmer
 //   (2) so that we can compute equivalence of type schemes in signature matching
 //   (3) in order to produce a list of type parameters ordered as they appear in the (normalized) scheme.
 //
-// Representing the normal form as a matrix, with a row for each variable,
-// and a column for each unit-of-measure expression in the "skeleton" of the type. Entries are integer exponents.
+// Representing the normal form as a matrix, with a row for each variable or base unit,
+// and a column for each unit-of-measure expression in the "skeleton" of the type. 
+// Entries for generalizable variables are integers; other rows may contain non-integer exponents.
 //  
 // ( 0...0  a1  as1    b1  bs1    c1  cs1    ...)
 // ( 0...0  0   0...0  b2  bs2    c2  cs2    ...)
@@ -590,7 +589,10 @@ let rec SimplifyMeasuresInConstraints g param cs =
 //
 // The corner entries a1, b2, c3 are all positive. Entries lying above them (b1, c1, c2, etc) are
 // non-negative and smaller than the corresponding corner entry. Entries as1, bs1, bs2, etc are arbitrary.
-// This is known as a *reduced row echelon* matrix or Hermite matrix.   
+//
+// Essentially this is the *reduced row echelon* matrix from linear algebra, with adjustment to ensure that
+// exponents are integers where possible (in the reduced row echelon form, a1, b2, etc. would be 1, possibly
+// forcing other entries to be non-integers).
 let SimplifyMeasuresInTypeScheme g resultFirst (generalizable:Typar list) ty constraints =
     // Only bother if we're generalizing over at least one unit-of-measure variable 
     let uvars, vars = 
@@ -599,9 +601,9 @@ let SimplifyMeasuresInTypeScheme g resultFirst (generalizable:Typar list) ty con
     match uvars with
     | [] -> generalizable
     | _::_ ->
-    let (untouched, generalized) = SimplifyMeasuresInType g resultFirst (SimplifyMeasuresInConstraints g (uvars, []) constraints) ty
-   
-    vars @ List.rev generalized @ untouched
+    let (_, generalized) = SimplifyMeasuresInType g resultFirst (SimplifyMeasuresInConstraints g (uvars, []) constraints) ty
+    let generalized' = NormalizeExponentsInTypeScheme generalized ty 
+    vars @ List.rev generalized'
 
 let freshMeasure () = MeasureVar (NewInferenceMeasurePar ())
 
@@ -977,6 +979,14 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
+      | _,_,false,("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ),[argty1;argty2] 
+          when // Ignore any explicit overloads from any basic integral types
+               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
+                (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
+                 || (IsRelationalType g argty2 && (permitWeakResolution || not (isTyparTy g argty1))))) ->
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty g.bool_ty ++ (fun () -> 
+          ResultD TTraitBuiltIn))
 
       // We pretend for uniformity that the numeric types have a static property called Zero and One 
       // As with constants, only zero is polymorphic in its units
@@ -1258,6 +1268,11 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
 
 /// Convert a MethInfo into the data we save in the TAST
 and MemberConstraintSolutionOfMethInfo css m minfo minst = 
+#if EXTENSIONTYPING
+#else
+    // to prevent unused parameter warning
+    ignore css
+#endif
     match minfo with 
     | ILMeth(_,ilMeth,_) ->
        let mref = IL.mkRefToILMethod (ilMeth.DeclaringTyconRef.CompiledRepresentationForNamedType,ilMeth.RawMetadata)
@@ -1585,7 +1600,7 @@ and SolveTypSupportsNull (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     if isTyparTy g ty then 
         AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.SupportsNull(m))
     elif 
-        TypeSatisfiesNullConstraint g ty then CompleteD
+        TypeSatisfiesNullConstraint g m ty then CompleteD
     else 
         match ty with 
         | NullableTy g _ ->
@@ -1737,12 +1752,8 @@ and SolveTypChoice (csenv:ConstraintSolverEnv) ndeep m2 trace ty tys =
     let m = csenv.m
     let denv = csenv.DisplayEnv
     if isTyparTy g ty then AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.SimpleChoice(tys,m)) else 
-    match stripTyEqns g ty with
-    | TType_app (tc2,[ms]) when tc2.IsMeasureableReprTycon ->
-        SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ms (TType_measure MeasureOne) 
-    | _ ->
-        if List.exists (typeEquiv g ty) tys then CompleteD
-        else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))),m,m2))
+    if List.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
+    else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))),m,m2))
 
 
 and SolveTypIsReferenceType (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
@@ -1761,7 +1772,7 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
     let ty = stripTyEqnsAndMeasureEqns g typ
     if isTyparTy g ty then 
         AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.RequiresDefaultConstructor(m))
-    elif isStructTy g ty && TypeHasDefaultValue g ty then 
+    elif isStructTy g ty && TypeHasDefaultValue g m ty then 
         CompleteD
     elif
         GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 

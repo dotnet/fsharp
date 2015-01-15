@@ -16,8 +16,24 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module List = 
 
+        let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
         [<CompiledName("Length")>]
         let length (list: 'T list) = list.Length
+        
+        [<CompiledName("Last")>]
+        let rec last (list : 'T list) =
+            match list with
+            | [x] -> x
+            | _ :: tail -> last tail
+            | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
+
+        [<CompiledName("TryLast")>]
+        let rec tryLast (list: 'T list) =
+            match list with
+            | [x] -> Some x
+            | _ :: tail -> tryLast tail
+            | [] -> None
 
         [<CompiledName("Reverse")>]
         let rev list = Microsoft.FSharp.Primitives.Basics.List.rev list
@@ -25,14 +41,59 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
+        [<CompiledName("CountBy")>]
+        let countBy projection (list:'T list) =
+            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,int>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+            let rec loop srcList  =
+                match srcList with
+                | [] -> ()
+                | h::t ->
+                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection h)
+                    let mutable prev = 0
+                    if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
+                    loop t
+            loop list
+            let mutable result = []
+            for group in dict do
+                result <- (group.Key.Value, group.Value) :: result
+            result |> rev
+
         [<CompiledName("Map")>]
         let map f list = Microsoft.FSharp.Primitives.Basics.List.map f list
 
         [<CompiledName("MapIndexed")>]
         let mapi f list = Microsoft.FSharp.Primitives.Basics.List.mapi f list
 
+        [<CompiledName("Indexed")>]
+        let indexed list = Microsoft.FSharp.Primitives.Basics.List.indexed list
+
+        [<CompiledName("MapFold")>]
+        let mapFold<'T,'State,'Result> (f:'State -> 'T -> 'Result * 'State) acc list =
+            Microsoft.FSharp.Primitives.Basics.List.mapFold f acc list
+
+        [<CompiledName("MapFoldBack")>]
+        let mapFoldBack<'T,'State,'Result> (f:'T -> 'State -> 'Result * 'State) list acc =
+            match list with
+            | [] -> [], acc
+            | [h] -> let h',s' = f h acc in [h'], s'
+            | _ ->
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+                let rec loop res list =
+                    match list, res with
+                    | [], _ -> res
+                    | h::t, (list', acc') ->
+                        let h',s' = f.Invoke(h,acc')
+                        loop (h'::list', s') t
+                loop ([], acc) (rev list)
+
         [<CompiledName("Iterate")>]
         let iter f list = Microsoft.FSharp.Primitives.Basics.List.iter f list
+        
+        [<CompiledName("Distinct")>]
+        let distinct (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctWithComparer HashIdentity.Structural<'T> list
+
+        [<CompiledName("DistinctBy")>]
+        let distinctBy keyf (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.distinctByWithComparer HashIdentity.Structural<_> keyf list
 
         [<CompiledName("OfArray")>]
         let ofArray (array:'T array) = Microsoft.FSharp.Primitives.Basics.List.ofArray array
@@ -46,6 +107,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Head")>]
         let head list = match list with (x:: _) -> x | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
+        [<CompiledName("TryHead")>]
+        let tryHead list = match list with (x:: _) -> Some x | [] -> None
+
         [<CompiledName("Tail")>]
         let tail list = match list with (_ :: t) -> t | [] -> invalidArg "list" (SR.GetString(SR.inputListWasEmpty))
 
@@ -55,13 +119,24 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Append")>]
         let append list1 list2 = list1 @ list2
 
-        [<CompiledName("Get")>]
-        let rec nth list index = 
-            match list with 
-            | h::t when index >= 0 -> 
-                if index = 0 then h else nth t (index - 1)
-            | _ ->  
+        [<CompiledName("Item")>]
+        let rec item index list =
+            match list with
+            | h::t when index >= 0 ->
+                if index = 0 then h else item (index - 1) t
+            | _ ->
                 invalidArg "index" (SR.GetString(SR.indexOutOfBounds))
+
+        [<CompiledName("TryItem")>]
+        let rec tryItem index list =
+            match list with
+            | h::t when index >= 0 ->
+                if index = 0 then Some h else tryItem (index - 1) t
+            | _ ->
+                None
+
+        [<CompiledName("Get")>]
+        let nth list index = item index list
 
         let rec chooseAllAcc f xs acc =
             match xs with 
@@ -73,6 +148,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Choose")>]
         let choose f xs = chooseAllAcc f xs []
+    
+        [<CompiledName("SplitAt")>]
+        let splitAt index (list:'T list) = Microsoft.FSharp.Primitives.Basics.List.splitAt index list
+
+        [<CompiledName("Take")>]
+        let take count (list : 'T list) = Microsoft.FSharp.Primitives.Basics.List.take count list
+
+        [<CompiledName("TakeWhile")>]
+        let takeWhile p (list: 'T list) = Microsoft.FSharp.Primitives.Basics.List.takeWhile p list
 
         [<CompiledName("IterateIndexed")>]
         let iteri f list = Microsoft.FSharp.Primitives.Basics.List.iteri f list
@@ -145,6 +229,13 @@ namespace Microsoft.FSharp.Collections
                     | h::t -> loop (f.Invoke(s,h)) t
                 loop s list
 
+        [<CompiledName("Pairwise")>]
+        let pairwise (list: 'T list) =
+            let array = List.toArray list
+            if array.Length < 2 then [] else
+            List.init (array.Length-1) (fun i -> array.[i],array.[i+1])
+        
+
         [<CompiledName("Reduce")>]
         let reduce f list = 
             match list with 
@@ -159,6 +250,9 @@ namespace Microsoft.FSharp.Collections
                 | [] -> rev acc
                 | (h::t) -> let s = f.Invoke(s,h) in loop s t (s :: acc)
             loop s list [s]
+
+        [<CompiledName("Singleton")>]
+        let inline singleton value = [value]
 
         [<CompiledName("Fold2")>]
         let fold2<'T1,'T2,'State> f (acc:'State) (list1:list<'T1>) (list2:list<'T2>) = 
@@ -269,6 +363,14 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Exists")>]
         let exists f list1 = Microsoft.FSharp.Primitives.Basics.List.exists f list1
+        
+        [<CompiledName("Contains")>]
+        let inline contains e list1 =
+            let rec contains e xs1 =
+                match xs1 with
+                | [] -> false
+                | (h1::t1) -> e = h1 || contains e t1
+            contains e list1
 
         let rec exists2aux (f:OptimizedClosures.FSharpFunc<_,_,_>) list1 list2 = 
             match list1,list2 with 
@@ -285,10 +387,16 @@ namespace Microsoft.FSharp.Collections
                 exists2aux f list1 list2
 
         [<CompiledName("Find")>]
-        let rec find f list = match list with [] -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  | h::t -> if f h then h else find f t
+        let rec find f list = match list with [] -> indexNotFound()  | h::t -> if f h then h else find f t
 
         [<CompiledName("TryFind")>]
         let rec tryFind f list = match list with [] -> None | h::t -> if f h then Some h else tryFind f t
+
+        [<CompiledName("FindBack")>]
+        let findBack f list = list |> toArray |> Array.findBack f
+
+        [<CompiledName("TryFindBack")>]
+        let tryFindBack f list = list |> toArray |> Array.tryFindBack f
 
         [<CompiledName("TryPick")>]
         let rec tryPick f list = 
@@ -302,7 +410,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Pick")>]
         let rec pick f list = 
             match list with 
-            | [] -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+            | [] -> indexNotFound()
             | h::t -> 
                 match f h with 
                 | None -> pick f t 
@@ -310,6 +418,34 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Filter")>]
         let filter f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
+
+        [<CompiledName("Where")>]
+        let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
+
+        [<CompiledName("GroupBy")>]
+        let groupBy keyf (list: 'T list) =
+            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,ResizeArray<'T>>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+
+            // Build the groupings
+            let rec loop list =
+                match list with
+                | v :: t -> 
+                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf v)
+                    let ok,prev = dict.TryGetValue(key)
+                    if ok then
+                        prev.Add(v)
+                    else 
+                        let prev = new ResizeArray<'T>(1)
+                        dict.[key] <- prev
+                        prev.Add(v)
+                    loop t
+                | _ -> ()
+            loop list
+
+            // Return the list-of-lists.
+            dict
+            |> Seq.map (fun group -> (group.Key.Value, Seq.toList group.Value))
+            |> Seq.toList
 
         [<CompiledName("Partition")>]
         let partition p x = Microsoft.FSharp.Primitives.Basics.List.partition p x
@@ -320,14 +456,39 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Unzip3")>]
         let unzip3 x = Microsoft.FSharp.Primitives.Basics.List.unzip3 x
 
+        [<CompiledName("Windowed")>]
+        let windowed n x = Microsoft.FSharp.Primitives.Basics.List.windowed n x
+
         [<CompiledName("Zip")>]
         let zip x1 x2 =  Microsoft.FSharp.Primitives.Basics.List.zip x1 x2
 
         [<CompiledName("Zip3")>]
         let zip3 x1 x2 x3 =  Microsoft.FSharp.Primitives.Basics.List.zip3 x1 x2 x3
 
+        [<CompiledName("Skip")>]
+        let skip count list =
+            if count <= 0 then list else
+            let rec loop i lst =
+                match lst with
+                | _ when i = 0 -> lst
+                | _::t -> loop (i-1) t
+                | [] -> invalidArg "count" (SR.GetString(SR.outOfRange))
+            loop count list
+
+        [<CompiledName("SkipWhile")>]
+        let rec skipWhile p xs =
+            match xs with
+            | head :: tail when p head -> skipWhile p tail
+            | _ -> xs
+
         [<CompiledName("SortWith")>]
-        let sortWith cmp xs = Microsoft.FSharp.Primitives.Basics.List.sortWith cmp xs
+        let sortWith cmp xs =
+            match xs with
+            | [] | [_] -> xs
+            | _ ->
+                let array = List.toArray xs
+                Microsoft.FSharp.Primitives.Basics.Array.stableSortInPlaceWith cmp array
+                List.ofArray array
 
         [<CompiledName("SortBy")>]
         let sortBy f xs =
@@ -347,6 +508,16 @@ namespace Microsoft.FSharp.Collections
                 Microsoft.FSharp.Primitives.Basics.Array.stableSortInPlace array
                 List.ofArray array
 
+        [<CompiledName("SortByDescending")>]
+        let inline sortByDescending f xs =
+            let inline compareDescending a b = compare (f b) (f a)
+            sortWith compareDescending xs
+
+        [<CompiledName("SortDescending")>]
+        let inline sortDescending xs =
+            let inline compareDescending a b = compare b a
+            sortWith compareDescending xs
+
         [<CompiledName("OfSeq")>]
         let ofSeq source = Seq.toList source
 
@@ -355,7 +526,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("FindIndex")>]
         let findIndex f list = 
-            let rec loop n = function[] -> raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  | h::t -> if f h then n else loop (n+1) t
+            let rec loop n = function[] -> indexNotFound()  | h::t -> if f h then n else loop (n+1) t
             loop 0 list
 
         [<CompiledName("TryFindIndex")>]
@@ -363,6 +534,12 @@ namespace Microsoft.FSharp.Collections
             let rec loop n = function[] -> None | h::t -> if f h then Some n else loop (n+1) t
             loop 0 list
         
+        [<CompiledName("FindIndexBack")>]
+        let findIndexBack f list = list |> toArray |> Array.findIndexBack f
+
+        [<CompiledName("TryFindIndexBack")>]
+        let tryFindIndexBack f list = list |> toArray |> Array.tryFindIndexBack f
+
         [<CompiledName("Sum")>]
         let inline sum          (list:list<_>) = Seq.sum list
 
@@ -390,6 +567,31 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Collect")>]
         let collect f list = Microsoft.FSharp.Primitives.Basics.List.collect f list
 
+        [<CompiledName("CompareWith")>]
+        let inline compareWith (comparer:'T -> 'T -> int) (list1: 'T list) (list2: 'T list) =
+            let rec loop list1 list2 =
+                 match list1, list2 with
+                 | head1 :: tail1, head2 :: tail2 ->
+                       let c = comparer head1 head2
+                       if c = 0 then loop tail1 tail2 else c
+                 | [], [] -> 0
+                 | _, [] -> 1
+                 | [], _ -> -1
+
+            loop list1 list2
+
         [<CompiledName("Permute")>]
         let permute indexMap list = list |> toArray |> Array.permute indexMap |> ofArray
 
+        [<CompiledName("ExactlyOne")>]
+        let exactlyOne (source : list<_>) =
+            match source with
+            | [x] -> x
+            | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString            
+            | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
+
+        [<CompiledName("Truncate")>]
+        let truncate count list = Microsoft.FSharp.Primitives.Basics.List.truncate count list
+
+        [<CompiledName("Unfold")>]
+        let unfold<'T,'State> (f:'State -> ('T*'State) option) (s:'State) = Microsoft.FSharp.Primitives.Basics.List.unfold f s

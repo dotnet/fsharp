@@ -86,6 +86,33 @@ module LeafExpressionEvaluationTests =
 
     let _ = 1
     checkEval "2ver9ewve" (<@ () @>) ()
+    check "2ver9ewvr1" (Eval <@ (fun x -> NonStructuralComparison.(>) x 1) @> 3) true
+    check "2ver9ewvr1" (Eval <@ (fun x -> NonStructuralComparison.(>) x 4) @> 3) false
+    check "2ver9ewvr1" (Eval <@ (fun x -> NonStructuralComparison.(>) x 3) @> 3) false
+
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<) x 1) @> 3) false
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<) x 3) @> 3) false
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<) x 4) @> 3) true
+
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(>=) x 1) @> 3) true
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(>=) x 3) @> 3) true
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(>=) x 4) @> 3) false
+
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<=) x 1) @> 3) false
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<=) x 3) @> 3) true
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<=) x 4) @> 3) true
+
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(=) x 3) @> 3) true
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(=) x 4) @> 3) false
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(=) x 1) @> 3) false
+
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<>) x 4) @> 3) true
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<>) x 3) @> 3) false
+    check "2ver9ewvr2" (Eval <@ (fun x -> NonStructuralComparison.(<>) x 1) @> 3) true
+
+    check "2ver9ewvr" (Eval <@ (fun x -> x + 1) @> (3)) 4
+    check "2ver9ewvr" (Eval <@ (fun x -> x + 1) @> (3)) 4
+    check "2ver9ewvr" (Eval <@ (fun x -> x + 1) @> (3)) 4
     check "2ver9ewvr" (Eval <@ (fun x -> x + 1) @> (3)) 4
     check "2ver9ewvt" (Eval <@ (fun (x,y) -> x + 1) @> (3,4)) 4
     check "2ver9ewvy" (Eval <@ (fun (x1,x2,x3) -> x1 + x2 + x3) @> (3,4,5)) (3+4+5)

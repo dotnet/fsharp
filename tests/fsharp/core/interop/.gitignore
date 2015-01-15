@@ -1,0 +1,7 @@
+FSharp.Core.*
+PCL.dll
+PCL.pdb
+User.exe
+User.exe.config
+User.pdb
+build.ok

@@ -627,6 +627,11 @@ module DerivedPatterns =
     /// <returns>uint64 option</returns>
     [<CompiledName("UInt64Pattern")>]
     val (|UInt64|_|)        : input:Expr -> uint64 option 
+    /// <summary>An active pattern to recognize constant decimal expressions</summary>
+    /// <param name="input">The input expression to match against.</param>
+    /// <returns>decimal option</returns>
+    [<CompiledName("DecimalPattern")>]
+    val (|Decimal|_|)        : input:Expr -> decimal option 
     /// <summary>A parameterized active pattern to recognize calls to a specified function or method.
     /// The returned elements are the optional target object (present if the target is an 
     /// instance method), the generic type instantation (non-empty if the target is a generic

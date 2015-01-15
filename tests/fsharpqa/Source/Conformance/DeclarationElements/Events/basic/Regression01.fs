@@ -32,14 +32,14 @@ let test() =
 
     // Hook up event handler, so when the event fires
     // m_eventFlag is set to whatever the param was.
-    let m_eventFlag1 = ref None
-    let eventHandler1 = new Handler<Action> (fun (_ : obj)  (arg : Action) -> m_eventFlag1 := Some(arg))
+    let mutable m_eventFlag1 = None
+    let eventHandler1 = new Handler<Action> (fun (_ : obj)  (arg : Action) -> m_eventFlag1 <- Some(arg))
     pinkSqueekyToy.Squeek.Publish.AddHandler(eventHandler1)
 
     // Poke the toy, which should cause it to squeek
-    m_eventFlag1 := None
+    m_eventFlag1 <- None
     pinkSqueekyToy.ApplyAction(Poke)
-    if !m_eventFlag1 <> Some(Poke) then exit 1
+    if m_eventFlag1 <> Some(Poke) then exit 1
 
     // Now add another event handler
     let m_eventFlag2 = ref None
@@ -48,31 +48,31 @@ let test() =
 
     // Now squeeze the toy, verifying that both event handlers
     // were called.
-    m_eventFlag1 := None
+    m_eventFlag1 <- None
     m_eventFlag2 := None
 
     pinkSqueekyToy.ApplyAction(Squeeze)
-    if !m_eventFlag1 <> Some(Squeeze) then exit 1
+    if m_eventFlag1 <> Some(Squeeze) then exit 1
     if !m_eventFlag2 <> Some(Squeeze) then exit 1
      
     // Remove one of the event handlers
     pinkSqueekyToy.Squeek.Publish.RemoveHandler(eventHandler1)
-    m_eventFlag1 := None
+    m_eventFlag1 <- None
     m_eventFlag2 := None
 
     // Event handler 1 should not have fired.
     pinkSqueekyToy.ApplyAction(Squeeze)
-    if !m_eventFlag1 <> None then exit 1
+    if m_eventFlag1 <> None then exit 1
     if !m_eventFlag2 <> Some(Squeeze) then exit 1
 
     // Remove the last event handler
     pinkSqueekyToy.Squeek.Publish.RemoveHandler(eventHandler2)
-    m_eventFlag1 := None
+    m_eventFlag1 <- None
     m_eventFlag2 := None
 
     // Event handler 1 should not have fired.
     pinkSqueekyToy.ApplyAction(Squeeze)
-    if !m_eventFlag1 <> None then exit 1
+    if m_eventFlag1 <> None then exit 1
     if !m_eventFlag2 <> None then exit 1
 
 // Run our test

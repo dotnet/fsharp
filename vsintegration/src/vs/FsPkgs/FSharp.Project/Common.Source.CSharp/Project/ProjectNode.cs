@@ -770,6 +770,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public bool CanUseTargetFSharpCoreReference { get; set; }
 
+        /// <summary>
+        /// Easy access to the collection of visible, user-defined project items
+        /// </summary>
+        public IEnumerable<Build.Evaluation.ProjectItem> VisibleItems
+        {
+            get { return MSBuildProject.GetStaticAndVisibleItemsInOrder(this.buildProject); }
+        }
+
         #region overridden properties
         public override int MenuCommandId
         {
@@ -2841,7 +2849,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Walks the subpaths of a project relative path and checks if the folder nodes hierarchy is already there, if not creates it.
         /// </summary>
-        /// <param name="strPath">Path of the folder, can be relative to project or absolute</param>
+        /// <param name="path">Path of the folder, can be relative to project or absolute</param>
         public virtual HierarchyNode CreateFolderNodes(string path)
         {
             if (String.IsNullOrEmpty(path))
@@ -3715,13 +3723,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Saves the project file on a new name.
         /// </summary>
         /// <param name="newFileName">The new name of the project file.</param>
-        /// <param name="saveCopy">if <c>true</c> - then SaveAs operation is performed on the copy of of current project file</param>
+        /// <param name="saveCopyAs">if <c>true</c> - then SaveAs operation is performed on the copy of of current project file</param>
         /// <returns>Success value or an error code.</returns>
         public /*protected, but public for FSharp.Project.dll*/ virtual int SaveAs(string newFileName, bool saveCopyAs)
         {
             Debug.Assert(!String.IsNullOrEmpty(newFileName), "Cannot save project file for an empty or null file name");
 
-            newFileName.Trim();
+            newFileName = newFileName.Trim();
 
             string errorMessage = String.Empty;
 
@@ -4120,7 +4128,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// This does not get persisted and is used to evaluate msbuild conditions
         /// which are based on the $(Configuration) property.
         /// </summary>
-        /// <param name="config">Configuration name</param>
+        /// <param name="configCanonicalName">Configuration name</param>
         internal virtual void SetConfiguration(ConfigCanonicalName configCanonicalName)
         {
             if (string.IsNullOrEmpty(configCanonicalName.ConfigName) || string.IsNullOrEmpty(configCanonicalName.MSBuildPlatform))
@@ -4522,7 +4530,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Get output assembly for a specific configuration name
         /// </summary>
-        /// <param name="config">Name of configuration</param>
+        /// <param name="configCanonicalName">Name of configuration</param>
         /// <returns>Name of output assembly</returns>
         internal string GetOutputAssembly(ConfigCanonicalName configCanonicalName)
         {
@@ -4821,7 +4829,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Initialize an object with an XML fragment.
         /// </summary>
-        /// <param name="iPersistXMLFragment">Object that support being initialized with an XML fragment</param>
+        /// <param name="persistXmlFragment">Object that support being initialized with an XML fragment</param>
         /// <param name="configName">Name of the configuration being initialized, null if it is the project</param>
         public /*protected internal, but public for FSharp.Project.dll*/ void LoadXmlFragment(IPersistXMLFragment persistXmlFragment, string configName)
         {
@@ -4829,12 +4837,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Retrieve the xml fragments from MSBuild
                 xmlFragments = new XmlDocument();
+                xmlFragments.XmlResolver = null;
                 var ext = GetProjectExtensions();
                 string fragments = ext != null ? ext[ProjectFileConstants.VisualStudio] : null; 
                 if (!String.IsNullOrEmpty(fragments))
                 {
                     fragments = String.Format(CultureInfo.InvariantCulture, "<root>{0}</root>", fragments);
-                    xmlFragments.LoadXml(fragments);
+                    using(StringReader stream = new StringReader(fragments))
+                    using (XmlReader reader = XmlReader.Create(stream, new XmlReaderSettings() { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
+                    {
+                        xmlFragments.Load(reader);
+                    }
                 }
             }
 
@@ -6740,7 +6753,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         internal int AddReferenceCouldNotBeAddedErrorMessage(string pathToReference)
         {
-            string errorMessage = SR.GetString(SR.ErrorReferenceCouldNotBeAdded, new string[] { pathToReference });
+            string errorMessage = SR.GetString(SR.ErrorReferenceCouldNotBeAdded, pathToReference);
             throw new InvalidOperationException(errorMessage);
         }
 

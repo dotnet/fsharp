@@ -829,72 +829,72 @@ module TestSideEffectOrderForLambdasIntroducedBySubsumption1 =
     let vA = A()
     let vB = B()
 
-    let x = ref 0
+    let mutable x = 0
 
     let f (a:A) = 
-        x := 1
+        x <- 1
         fun (b:A,c:A) ->
-            x := 2
+            x <- 2
             fun (c:int) ->
-                x := 3
+                x <- 3
                 99
 
     module Test1 = 
 
-        check "nckew9" !x 0
+        check "nckew9" x 0
         let f1  :      A * A -> int -> int = f   vA
-        check "nckew9" !x 1
+        check "nckew9" x 1
         let f1b :               int -> int = f1  (vA,vA)  // no precomputation here when T is class type
-        check "nckew9" !x 2
+        check "nckew9" x 2
         let f1c :                      int = f1b 3       // no precomputation here when T is class type
-        check "nckew9" !x 3
+        check "nckew9" x 3
 
 
     module Test2 = 
-        x := 0
-        check "nckew9" !x 0
+        x <- 0
+        check "nckew9" x 0
         let f2  :      A * A -> int -> int = f  vB
-        check "nckew9" !x 1
+        check "nckew9" x 1
         let f2b :               int -> int = f2 (vB,vB)  // no precomputation here when T is class type
-        check "nckew9" !x 2
+        check "nckew9" x 2
         let f1c :                      int = f2b 3       // no precomputation here when T is class type
-        check "nckew9" !x 3
+        check "nckew9" x 3
 
     module Test3 = 
-        x := 0
-        check "nckew9" !x 0
+        x <- 0
+        check "nckew9" x 0
         let f2  :      A * A -> int -> int = f  vB
-        check "nckew9" !x 1
+        check "nckew9" x 1
         let f2b :               int -> int = f2 (vA,vB)  // no precomputation here when T is class type
-        check "nckew9" !x 2
+        check "nckew9" x 2
         let f1c :                      int = f2b 3       // no precomputation here when T is class type
-        check "nckew9" !x 3
+        check "nckew9" x 3
 
 
     module Test4 = 
         let TEST (f:A -> A * A -> int -> int) = 
-            x := 0
-            check "nckew9" !x 0
+            x <- 0
+            check "nckew9" x 0
             let f2  :      A * A -> int -> int = f  vB
-            check "nckew9" !x 1
+            check "nckew9" x 1
             let f2b :               int -> int = f2 (vA,vB)  // no precomputation here when T is class type
-            check "nckew9" !x 2
+            check "nckew9" x 2
             let f1c :                      int = f2b 3       // no precomputation here when T is class type
-            check "nckew9" !x 3
+            check "nckew9" x 3
 
         TEST f
         
 
     module Test5 = 
         let TEST (f:A -> A * B -> int -> int) = 
-            x := 0
-            check "nckew9" !x 0
+            x <- 0
+            check "nckew9" x 0
             let f2  :      A * B -> int -> int = f  vB
-            check "nckew9" !x 1
+            check "nckew9" x 1
             let f2b :               int -> int = f2 (vA,vB)  // no precomputation here when T is class type
-            check "nckew9" !x 2
+            check "nckew9" x 2
             let f1c :                      int = f2b 3       // no precomputation here when T is class type
-            check "nckew9" !x 3
+            check "nckew9" x 3
 
         TEST f    
 

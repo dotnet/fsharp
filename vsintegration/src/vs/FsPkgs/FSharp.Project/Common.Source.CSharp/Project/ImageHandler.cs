@@ -42,7 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             if (null == list)
             {
-                throw new ArgumentNullException("imageList");
+                throw new ArgumentNullException("list");
             }
             imageList = list;
         }

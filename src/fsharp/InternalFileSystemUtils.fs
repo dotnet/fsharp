@@ -24,25 +24,14 @@ open System.IO
 open System.Diagnostics
 
 type internal File() =
-    static member SafeExists filename =
-        Debug.Assert(Path.IsPathRooted(filename), sprintf "SafeExists: '%s' is not absolute" filename)
-        System.IO.File.Exists(filename)
-    static member SafeNewFileStream(filename:string,mode:FileMode,access:FileAccess,share:FileShare) = 
-        new FileStream(filename,mode,access,share) 
+    static member SafeExists filename = FileSystem.SafeExists filename
+    //static member SafeNewFileStream(filename:string,mode:FileMode,access:FileAccess,share:FileShare) = 
+    //    FileSystem new FileStream(filename,mode,access,share) 
 
 type internal Path() =
-    /// Take in a Windows filename with an absolute path, and return the same filename
-    /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt) 
-    /// and '..' portions
-    static member SafeGetFullPath filename =
-        Debug.Assert(Path.IsPathRooted(filename), sprintf "SafeGetFullPath: '%s' is not absolute" filename)
-        System.IO.Path.GetFullPath(filename)
 
     static member IsInvalidDirectory(path:string) = 
         path=null || path.IndexOfAny(Path.GetInvalidPathChars()) <> -1
-
-    static member IsInvalidFilename(filename:string) = 
-        String.IsNullOrEmpty(filename) || filename.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
     static member IsInvalidPath(path:string) = 
         if String.IsNullOrEmpty(path) then true

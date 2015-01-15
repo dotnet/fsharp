@@ -1604,12 +1604,16 @@ We really need to rewrite some code paths here to use the real parse tree rather
         | :? NoParamInfo -> ()
 
     [<Test>]
-    member public this.``LocationOfParams.TypeProviders.BasicWithinExpr``() =        
-        this.TestParameterInfoLocationOfParams("""
-            let f() =
-                let r = id( ^N1.T^^< "fo$o"^, ParamIgnored=42 ^> )
-                r    """, 
-            additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+    member public this.``LocationOfParams.TypeProviders.BasicWithinExpr``() =
+        try
+            this.TestParameterInfoLocationOfParams("""
+                let f() =
+                    let r = id( ^N1.T^^< "fo$o"^, ParamIgnored=42 ^> )
+                    r    """, 
+                additionalReferenceAssemblies = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            failwith "unexpected param info for invalid use of constructorless type"
+        with
+        | :? NoParamInfo -> ()
 
     [<Test>]
     member public this.``LocationOfParams.TypeProviders.BasicWithinExpr.DoesNotInterfereWithOuterFunction``() =        

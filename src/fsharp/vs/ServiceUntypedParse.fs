@@ -571,8 +571,8 @@ module internal UntypedParseInfoImpl =
                                 | Some e -> Some(e.Range.End, posGeq lidwd.Range.Start pos)
                             match dots |> List.mapi (fun i x -> i,x) |> List.rev |> List.tryFind (fun (_,m) -> posGt pos m.Start) with
                             | None -> resultIfLeftOfLongId
-                            | Some(n,_) -> Some((List.nth lid n).idRange.End, (List.length lid = n+1)    // foo.$
-                                                                              || (posGeq (List.nth lid (n+1)).idRange.Start pos))  // foo.$bar
+                            | Some(n,_) -> Some((List.item n lid).idRange.End, (List.length lid = n+1)    // foo.$
+                                                                              || (posGeq (List.item (n+1) lid).idRange.Start pos))  // foo.$bar
                         match expr with
                         | SynExpr.LongIdent(_isOptional, lidwd, _altNameRefCell, _m) ->
                             traverseLidOrElse None lidwd

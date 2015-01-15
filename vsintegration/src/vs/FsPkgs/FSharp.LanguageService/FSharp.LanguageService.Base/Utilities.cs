@@ -432,9 +432,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 vt = (ushort)value;
             }
         }
-        short reserved1;
-        short reserved2;
-        short reserved3;
 
         private long value;
 
@@ -564,7 +561,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// interop if we get a badly formed BSTR</summary>
         internal static string GetFileExtension(string moniker)
         {
-            string ext = Path.GetExtension(moniker);
+            string ext = Path.GetExtension(moniker) ?? string.Empty;
             ext = ext.Trim();
             int i = 0;
             for (i = ext.Length - 1; i >= 0; i--)

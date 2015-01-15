@@ -298,6 +298,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract GetTypes : unit -> Type[] 
         abstract ResolveTypeName : typeName: string -> Type
 
+
     type ITypeProvider =
         inherit System.IDisposable
         abstract GetNamespaces : unit -> IProvidedNamespace[] 
@@ -313,5 +314,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract GetMemberCustomAttributesData : assembly:System.Reflection.MemberInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
         abstract GetParameterCustomAttributesData : assembly:System.Reflection.ParameterInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
 #endif
+
+    type ITypeProvider2 =
+        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
+        abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
 
 #endif

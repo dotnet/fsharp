@@ -150,12 +150,12 @@ module CheckSqlConnectionTypeProvider =
                 if isSQLExpressInstalled then
                     @"AttachDBFileName = '|DataDirectory|\" + northwind + "';Server='.\SQLEXPRESS';User Instance=true;Integrated Security=SSPI"
                 else
-                    "AttachDBFileName = '|DataDirectory|\\" + northwind + "';Server='(localdb)\\v11.0'"
+                    "AttachDBFileName = '|DataDirectory|\\" + northwind + "';Server='(localdb)\\MSSQLLocalDB'"
             else
                 if isSQLExpressInstalled then
                     @"AttachDBFileName = '" + System.IO.Path.Combine(__SOURCE_DIRECTORY__, northwindFile) + "';Server='.\SQLEXPRESS';User Instance=true;Integrated Security=SSPI"
                 else
-                    "AttachDBFileName = '" + System.IO.Path.Combine(__SOURCE_DIRECTORY__, northwindFile) + "';Server='(localdb)\\v11.0'"
+                    "AttachDBFileName = '" + System.IO.Path.Combine(__SOURCE_DIRECTORY__, northwindFile) + "';Server='(localdb)\\MSSQLLocalDB'"
 
         match connectionStringName with 
         | None -> ()

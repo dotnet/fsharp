@@ -71,12 +71,11 @@ let reportFailure s =
 #else
 let argv = System.Environment.GetCommandLineArgs() 
 let SetCulture() = 
-  if argv.Length > 2 && argv.[1] = "--culture" then  begin
+  if argv.Length > 2 && argv.[1] = "--culture" then  
     let cultureString = argv.[2] in 
     let culture = new System.Globalization.CultureInfo(cultureString) in 
     stdout.WriteLine ("Running under culture "+culture.ToString()+"...");
     System.Threading.Thread.CurrentThread.CurrentCulture <-  culture
-  end 
   
 do SetCulture()    
 #endif
@@ -700,12 +699,12 @@ let _ = printString "hash is interesting (intarray 1): "; if hash [| 3; 4 |] = h
 (* the whole function, which is very unlikely. *)
 let genericHash x =
   stdout.WriteLine "genericHash - hopefully not inlined\n";
-  let r = ref 0 in 
-  for i = 1 to 100 do r := !r + 1; done;
-  for i = 1 to 100 do r := !r + 1; done;
-  for i = 1 to 100 do r := !r + 1; done;
-  for i = 1 to 100 do r := !r + 1; done;
-  (!r - 400) + hash x
+  let mutable r = 0 in 
+  for i = 1 to 100 do r <- r + 1; done;
+  for i = 1 to 100 do r <- r + 1; done;
+  for i = 1 to 100 do r <- r + 1; done;
+  for i = 1 to 100 do r <- r + 1; done;
+  (r - 400) + hash x
 
 
 type T = T of int * int
@@ -818,7 +817,7 @@ let _ = printString "type specific hash matches generic hash (9): "; if getObjec
 !* check we can resolve overlapping constructor names using type names
  *--------------------------------------------------------------------------- *)
 
-module OverlappingCOnstructorNames = begin
+module OverlappingCOnstructorNames = 
 
   type XY = X | Y
   type YZ = Y | Z
@@ -841,13 +840,6 @@ module OverlappingCOnstructorNames = begin
     match yz with 
     | YZ.Y -> "X"
     | YZ.Z -> "Y"
-
-end
-
-
-(*---------------------------------------------------------------------------
-!* hashing of large terms that contain back pointers (are infinite)
- *--------------------------------------------------------------------------- *)
 
 
 (*---------------------------------------------------------------------------
@@ -1383,17 +1375,17 @@ let _ = test "List.tryFindIndex" (List.tryFindIndex (fun x -> x = 4) [0..10] = S
 let _ = test "List.tryfind_index_b" (List.tryFindIndex (fun x -> x = 42) [0..10] = None)
 
 
-let c = ref -1
-do List.iter (fun x -> incr c; test "List.iter" (x = !c)) [0..100]
-let _ = test "List.iter" (!c = 100)
+let mutable c = -1
+do List.iter (fun x -> c <- (c + 1); test "List.iter" (x = c)) [0..100]
+let _ = test "List.iter" (c = 100)
 
 let _ = test "List.map" ([1..100] |> List.map ((+) 1) = [2..101])
 
 let _ = test "List.mapi" ([0..100] |> List.mapi (+) = [0..+2..200])
 
-do c := -1
-do List.iteri (fun i x -> incr c; test "List.iteri" (x = !c && i = !c)) [0..100]
-let _ = test "List.iteri" (!c = 100)
+do c <- -1
+do List.iteri (fun i x -> c <- (c+1); test "List.iteri" (x = c && i = c)) [0..100]
+let _ = test "List.iteri" (c = 100)
 
 let _ = test "List.exists" ([1..100] |> List.exists ((=) 50))
 
@@ -1417,9 +1409,9 @@ let _ = test "List.tryFind" ([1..100] |> List.tryFind (fun x -> x > 50) = Some 5
 
 let _ = test "List.tryFind b" ([1..100] |> List.tryFind (fun x -> x > 180) = None)
 
-do c := -1
-do List.iter2 (fun x y -> incr c; test "List.iter2" (!c = x && !c = y)) [0..100] [0..100]
-let _ = test "List.iter2" (!c = 100)
+do c <- -1
+do List.iter2 (fun x y -> c <- c + 1; test "List.iter2" (c = x && c = y)) [0..100] [0..100]
+let _ = test "List.iter2" (c = 100)
 
 let _ = test "List.map2" (List.map2 (+) [0..100] [0..100] = [0..+2..200])
 
@@ -1444,7 +1436,7 @@ let _ = test "List.rev d" (List.rev [1; 2] = [2; 1])
 
 
 
-module MinMaxAverageSum = begin
+module MinMaxAverageSum = 
         do test "ceijoe9cewz" (Seq.sum [] = 0)
         do test "ceijoe9cewx" (Seq.sum [1;2;3] = 6)
         do test "ceijoe9cewv" (Seq.sum [0.0;1.0] = 1.0)
@@ -1506,10 +1498,10 @@ module MinMaxAverageSum = begin
 
         do test "ceijoe9ceww" (List.max [1.0M;2.0M;3.0M] = 3.0M)
         do test "ceijoe9cewe" (List.max [3.0M;2.0M;1.0M] = 3.0M)
-end
 
 
-module Pow = begin
+
+module Pow = 
         do test "cnod90km1" (pown 2.0 -3 = 0.125)
         do test "cnod90km2" (pown 2.0 -2 = 0.25)
         do test "cnod90km3" (pown 2.0 -1 = 0.5)
@@ -1615,9 +1607,9 @@ module Pow = begin
                    test "cnod90kmbb1a" (pown (byte baseIdx) 2 = (byte baseIdx) * (byte baseIdx));
                )
            done
-end
 
-module TakeUntilSkipWhile = begin
+
+module TakeUntilSkipWhile = 
 
     do test "oewvjrrovvr1" ([ ] |> Seq.takeWhile (fun x -> x <= 5) |> Seq.toList = [ ])
     do test "oewvjrrovvr2" ([ 1 ] |> Seq.takeWhile (fun x -> x <= 5) |> Seq.toList = [ 1 ])
@@ -1631,7 +1623,6 @@ module TakeUntilSkipWhile = begin
     do test "oewvjrrovvr9" ([ 1;2;3;4;5;6;7 ] |> Seq.skipWhile (fun x -> x <= 5) |> Seq.toList = [ 6;7 ])
     do test "oewvjrrovvra" ([ 1;2;3;4;5;6;5;4;3;2;1 ] |> Seq.skipWhile (fun x -> x <= 5) |> Seq.toList = [ 6;5;4;3;2;1 ])
 
-end
 
 
 (*---------------------------------------------------------------------------
@@ -1674,14 +1665,14 @@ let _ = pri4a(test4())
 
 let listtest1 () = 
   let pri2 s l = printString s; printString ": "; List.iter printInt l; printNewLine () in 
-  let r = ref [] in 
+  let mutable r = [] in 
   for i = 1 to 100 do
-    r := i :: !r;
+    r <- i :: r;
     for j = 1 to 100 do
-      let _ = List.rev !r  in ()
+      let _ = List.rev r  in ()
     done;
   done;
-  pri2 "list: " !r
+  pri2 "list: " r
 
 let _ = listtest1()
 
@@ -2087,19 +2078,19 @@ let sort_test cmp ans =
 let _ = sort_test compare [0;1;2;3;4;5]
 let _ = sort_test (fun x y -> -(compare x y)) [5;4;3;2;1;0]
 *)
-module StrangeOperatorTest = begin
-  let (&&&) x y = x^y
-  let (<<<) (x:string) (y:string) = x ^y^x
+module StrangeOperatorTest = 
+    let (&&&) x y = x^y
+    let (<<<) (x:string) (y:string) = x ^y^x
 
-  let e1 = ("0" &&& ("1" <<< "2"))
-  let e2= (("0" &&& "1") <<< "2") 
-  let e3= ("0" &&& "1" <<< "2") 
+    let e1 = ("0" &&& ("1" <<< "2"))
+    let e2= (("0" &&& "1") <<< "2") 
+    let e3= ("0" &&& "1" <<< "2") 
 
-  let _ = if (e1 <> e2) then stderr.WriteLine "Control Passed" else stderr.WriteLine "Control Failed"
-  let _ = if (e1 = e3) then (stderr.WriteLine "Parsed to Right!  Wrong!" ; reportFailure "parsing")
-  let _ = if (e2 = e3) then stderr.WriteLine "Parsed to Left - correct!" 
+    let _ = if (e1 <> e2) then stderr.WriteLine "Control Passed" else stderr.WriteLine "Control Failed"
+    let _ = if (e1 = e3) then (stderr.WriteLine "Parsed to Right!  Wrong!" ; reportFailure "parsing")
+    let _ = if (e2 = e3) then stderr.WriteLine "Parsed to Left - correct!" 
 
-end
+
 
 //let _ = if (3 then do ignore(4)) = 3 then stderr.WriteLine "OK!" else (stderr.WriteLine "Wrong!" ; reportFailure "unlabelled test")
 //let _ = let x = ref 1 in if (!x then do x := !x + 1) = 1 then stderr.WriteLine "OK!" else (stderr.WriteLine "Wrong!" ; reportFailure "unlabelled test")
@@ -2212,9 +2203,9 @@ do test2398985()
 
 let test2398986() = 
   let l = Array.ofList [1;2;3] in
-  let res = ref 2 in 
-  for i in Array.toSeq l do res := !res + i done;
-  check "test2398986: Array.toSeq" 8 !res
+  let mutable res = 2 in 
+  for i in Array.toSeq l do res <- res + i done;
+  check "test2398986: Array.toSeq" 8 res
 
 do test2398986()
 
@@ -2331,12 +2322,11 @@ do check "type test double" 1.0 (match box(1.0) with | :? System.Int32 -> 3.14 |
 !* type syntax
  *--------------------------------------------------------------------------- *)
 
-module TypeSyntax = begin
- let x1  = [Map.add 1 (Map.add 1 1 Map.empty) Map.empty]
- let x2 : Map<'a,'b> list  = [Map.empty]
- let x3 : Map<'a,'b> list  = []
+module TypeSyntax = 
+    let x1  = [Map.add 1 (Map.add 1 1 Map.empty) Map.empty]
+    let x2 : Map<'a,'b> list  = [Map.empty]
+    let x3 : Map<'a,'b> list  = []
 
-end
 
 module IEnumerableTests = begin
 
@@ -2506,11 +2496,11 @@ end
 
 module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
    
-   let numActiveEnumerators = ref 0
+   let mutable numActiveEnumerators = 0
    
    let countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd (seq: seq<'a>) =
        let enumerator() = 
-                 numActiveEnumerators := !numActiveEnumerators + 1;
+                 numActiveEnumerators <- numActiveEnumerators + 1;
                  let disposed = ref false in
                  let endReached = ref false in
                  let ie = seq.GetEnumerator() in
@@ -2522,7 +2512,7 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
                       member x.Dispose() = 
                           test "rvlrve2" !endReached;
                           test "rvlrve4" (not !disposed);
-                          numActiveEnumerators := !numActiveEnumerators - 1;
+                          numActiveEnumerators <- numActiveEnumerators - 1;
                           disposed := true;
                           ie.Dispose() 
                    interface System.Collections.IEnumerator with 
@@ -2549,7 +2539,7 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
                  let disposed = ref false in
                  let endReached = ref false in
                  let ie = seq.GetEnumerator() in
-                 numActiveEnumerators := !numActiveEnumerators + 1;
+                 numActiveEnumerators <- numActiveEnumerators + 1;
                  { new System.Collections.Generic.IEnumerator<'a> with 
                       member x.Current =
                           test "qrvlrve0" (not !endReached);
@@ -2557,7 +2547,7 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
                           ie.Current
                       member x.Dispose() = 
                           test "qrvlrve4" (not !disposed);
-                          numActiveEnumerators := !numActiveEnumerators - 1;
+                          numActiveEnumerators <- numActiveEnumerators - 1;
                           disposed := true;
                           ie.Dispose() 
                    interface System.Collections.IEnumerator with 
@@ -2581,221 +2571,221 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
 
    // This one gave a stack overflow when we weren't tail-calling on 64-bit
    do check "Seq.filter-length" ({ 1 .. 1000000 } |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.filter (fun n -> n <> 1) |> Seq.length) 999999
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.filter-length" ({ 1 .. 1000000 } |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.filter (fun n -> n = 1) |> Seq.length) 1
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.filter-length" ({ 1 .. 1000000 } |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.filter (fun n -> n % 2 = 0) |> Seq.length) 500000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
     
    do check "IEnumerableTest.empty-length" (Seq.length (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd Seq.empty)) 0
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.length-of-array" (Seq.length (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [| 1;2;3 |])) 3
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.head-of-array" (Seq.head (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |])) 1
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.take-0-of-array" (Seq.take 0 (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |]) |> Seq.toList) []
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.take-1-of-array" (Seq.take 1 (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |]) |> Seq.toList) [1]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.take-3-of-array" (Seq.take 3 (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |]) |> Seq.toList) [1;2;3]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.nonempty-true" (Seq.isEmpty (countEnumeratorsAndCheckedDisposedAtMostOnce [| 1;2;3 |])) false
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.nonempty-false" (Seq.isEmpty (countEnumeratorsAndCheckedDisposedAtMostOnce [| |])) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.fold" (Seq.fold (+) 0 (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [| 1;2;3 |])   ) 6
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.unfold" (Seq.unfold (fun _ -> None) 1 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.unfold" (Seq.unfold (fun x -> if x = 1 then Some("a",2) else  None) 1 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a" |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.exists ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| |])) false
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.exists ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "a" |])) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.exists ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "1"; "a" |])) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
 
    do check "IEnumerableTest.exists" (Seq.forall ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| |])) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.forall ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "a" |])) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.exists" (Seq.forall ((=) "a") (countEnumeratorsAndCheckedDisposedAtMostOnce [| "1"; "a" |])) false
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "IEnumerableTest.map on finite" ([| "a" |] |> Seq.map (fun x -> x.Length) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| 1 |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.filter on finite" ([| "a";"ab";"a" |] |> Seq.filter (fun x -> x.Length = 1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a";"a" |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.choose on finite" ([| "a";"ab";"a" |] |> Seq.choose (fun x -> if x.Length = 1 then Some(x^"a") else None) |> Seq.toArray) [| "aa";"aa" |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.pick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.pick (fun x -> if x.Length = 1 then Some(x^"a") else None)) "aa"
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.tryPick on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 1 then Some(x^"a") else None)) (Some "aa")
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.tryPick on finite (failing)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryPick (fun x -> if x.Length = 6 then Some(x^"a") else None)) None
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.find on finite (succeeding)" ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.find (fun x -> x.Length = 1)) "a"
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.find on finite (failing)" (try Some ([| "a";"ab";"a" |] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.find (fun x -> x.Length = 6)) with :? System.Collections.Generic.KeyNotFoundException -> None) None
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.map_with_type (string up to obj,finite)" ([| "a" |] |> Seq.cast |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| ("a" :> obj) |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.map_with_type (obj down to string, finite)" ([| ("a" :> obj) |] |> Seq.cast |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a" |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.append, finite, finite" (Seq.append [| "a" |] [| "b" |]  |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| "a"; "b" |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
 
 
    do check "IEnumerableTest.concat, finite" (Seq.concat [| [| "a" |]; [| |]; [| "b";"c" |] |]  |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [ "a";"b";"c" ]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.init_infinite, then take" (Seq.take 2 (countEnumeratorsAndCheckedDisposedAtMostOnce (Seq.initInfinite (fun i -> i+1))) |> Seq.toList) [ 1;2 ]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, empty" (Seq.init 0 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [|  |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, small" (Seq.init 1 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray) [| 1 |]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, large" (Seq.init 100000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray |> Array.length) 100000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_array, very large" (Seq.init 1000000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toArray |> Array.length) 1000000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, empty" (Seq.init 0 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [  ]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, small" (Seq.init 1 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [ 1 ]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, large" (Seq.init 100000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList |> List.length) 100000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, large" (Seq.init 1000000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList |> List.length) 1000000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "IEnumerableTest.to_list, large" (Seq.init 1000000 (fun i -> i+1) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.length) 1000000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "List.unzip, large" (Seq.init 1000000 (fun i -> (i,i+1)) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.unzip |> fst |> List.length) 1000000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    let dup x = x,x
    let uncurry f (x,y) = f x y
     
    do check "List.zip, large" (Seq.init 1000000 (fun i -> (i,i+1)) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> dup |> uncurry List.zip |> List.length) 1000000
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
     
 (*
     // Currently disabled, since IStructuralEquatable.Equals will cause this to stack overflow around 140000 elements
     do check "List.sort, large" ((Seq.init 140000 (fun i -> 139999 - i) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.sort) = 
                                  (Seq.init 140000 (fun i -> i) |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> List.ofSeq |> List.sort))   true
-    do check "<dispoal>" !numActiveEnumerators 0
+    do check "<dispoal>" numActiveEnumerators 0
 *)
     
    do check "Seq.singleton" (Seq.singleton 42 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.length) 1
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.singleton" (Seq.singleton 42 |> countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd |> Seq.toList) [42]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.truncate" (Seq.truncate 20 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100]) |> Seq.toList) [1..20]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.truncate" (Seq.truncate 1 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100]) |> Seq.toList) [1]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.truncate" (Seq.truncate 0 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100]) |> Seq.toList) []
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.scan" (Seq.scan (+) 0 (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [|1..5|]) |> Seq.toArray) [|0; 1; 3; 6; 10; 15|]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    //do check "Seq.scan1" (Seq.scan1 (+) (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [|1..5|]) |> Seq.toArray) [|3; 6; 10; 15|]
-   //do check "<dispoal>" !numActiveEnumerators 0
+   //do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.exists2" (Seq.exists2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1; 2; 3; 4; 5; 6|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|2; 3; 4; 5; 6; 6|])) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.exists2" (Seq.exists2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1; 2; 3; 4; 5; 6|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|2; 3; 4; 5; 6; 7|])) false
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.forall2" (Seq.forall2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1..10|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1..10|])) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.forall2" (Seq.forall2 (=) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1;2;3;4;5|]) (countEnumeratorsAndCheckedDisposedAtMostOnce [|1;2;3;0;5|])) false
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
 
 
    do check "Seq.tryFind" ([|1..100|] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryFind (fun x -> x > 50)) (Some 51)
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.tryFind" ([|1..100|] |> countEnumeratorsAndCheckedDisposedAtMostOnce |> Seq.tryFind (fun x -> x > 180)) None
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
 
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]) (countEnumeratorsAndCheckedDisposedAtMostOnce [2;1])) -1
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce [2;1]) (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]))  1
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]) (countEnumeratorsAndCheckedDisposedAtMostOnce [1;2]))  0
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.compareWith" (Seq.compareWith compare (countEnumeratorsAndCheckedDisposedAtMostOnce []) (countEnumeratorsAndCheckedDisposedAtMostOnce    [1;2])) -1
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.collect" (Seq.collect (fun i -> [i*10 .. i*10+9]) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..9]) |> Seq.toList) [0..99]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    let c = ref -1
    do Seq.iter2 (fun x y -> incr c; test "Seq.iter2" (!c = x && !c = y)) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10]) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10])
    do check "Seq.iter2" !c 10
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.zip"
          (Seq.zip [1..10] (countEnumeratorsAndCheckedDisposedAtMostOnce [2..11]) |> Seq.toList) [for i in 1..10 -> i, i+1]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
 
    do check "Seq.zip3"
          (Seq.zip3 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..10]) (countEnumeratorsAndCheckedDisposedAtMostOnce [2..11]) (countEnumeratorsAndCheckedDisposedAtMostOnce [3..12]) |> Seq.toList) [for i in 1..10 -> i, i+1, i+2]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do c := -1
    do Seq.iteri (fun n x -> incr c; test "Seq.iter2" (!c = n && !c+1 = x)) (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1..11])
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.iter2" !c 10
 
    do check "Seq.pairwise" (Seq.pairwise (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 19 -> i, i+1]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.windowed 1" (Seq.windowed 1 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 20 -> [|i|]]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.windowed 2" (Seq.windowed 2 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 19 -> [|i; i+1|]]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.windowed 3" (Seq.windowed 3 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 18 -> [|i; i+1; i+2|]]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.windowed 4" (Seq.windowed 4 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 17 -> [|i; i+1; i+2; i+3|]]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    let group = Seq.groupBy (fun x -> x % 5) (countEnumeratorsAndCheckedDisposedAtMostOnce [1..100])
    do for n, s in group do
         check "Seq.groupBy" (Seq.forall (fun x -> x % 5 = n) s) true;
-        check "<dispoal>" !numActiveEnumerators 0
+        check "<dispoal>" numActiveEnumerators 0
       done
 
    let sorted = Seq.sortBy abs (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [2; 4; 3; -5; 2; -4; -8; 0; 5; 2])
    do check "Seq.sortBy" (Seq.pairwise sorted |> Seq.forall (fun (x, y) -> abs x <= abs y)) true
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    let counts = Seq.countBy id (countEnumeratorsAndCheckedDisposedAtMostOnce [for i in 1..10 do yield! [10..-1..i] done ])
    do check "Seq.countBy" (counts |> Seq.toList) [for i in 10..-1..1 -> i, i]
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.sum" (Seq.sum (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1..100])) (100*101/2)
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.sumBy" (Seq.sumBy float [1..100]) (100.*101./2.)
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.average" (Seq.average (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1.; 2.; 3.])) 2.
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.averageBy" (Seq.averageBy float (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [0..100])) 50.
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.min" (Seq.min (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1; 4; 2; 5; 8; 4; 0; 3])) 0
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.max" (Seq.max (countEnumeratorsAndCheckedDisposedAtMostOnce [1; 4; 2; 5; 8; 4; 0; 3])) 8
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    #if Portable
    #else // strings don't have enumerators in portable
    do check "Seq.minBy" (Seq.minBy int (countEnumeratorsAndCheckedDisposedAtMostOnce "this is a test")) ' '
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.maxBy" (Seq.maxBy int (countEnumeratorsAndCheckedDisposedAtMostOnce "this is a test")) 't'
-   do check "<dispoal>" !numActiveEnumerators 0
+   do check "<dispoal>" numActiveEnumerators 0
    #endif
 
 end
@@ -2855,52 +2845,101 @@ let nan2 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else
 
 do printf "checking floating point relational operators\n"
 let _ = check "d3wiojd30a" ((Double.NaN > Double.NaN)) false
-let _ = check "d3wiojd30a" (if (Double.NaN > Double.NaN) then "a" else "b") "b"
-let _ = check "d3wiojd30b" ((Double.NaN >= Double.NaN)) false
-let _ = check "d3wiojd30b" (if (Double.NaN >= Double.NaN) then "a" else "b") "b"
-let _ = check "d3wiojd30c" ((Double.NaN < Double.NaN)) false
-let _ = check "d3wiojd30c" (if (Double.NaN < Double.NaN) then "a" else "b") "b"
-let _ = check "d3wiojd30d" ((Double.NaN <= Double.NaN)) false
-let _ = check "d3wiojd30d" (if (Double.NaN <= Double.NaN) then "a" else "b") "b"
-let _ = check "d3wiojd30e" ((Double.NaN = Double.NaN)) false
-let _ = check "d3wiojd30e" (if (Double.NaN = Double.NaN) then "a" else "b") "b"
-let _ = check "d3wiojd30q" ((Double.NaN <> Double.NaN)) true
-let _ = check "d3wiojd30w" ((Double.NaN > 1.0)) false
-let _ = check "d3wiojd30e" ((Double.NaN >= 1.0)) false
-let _ = check "d3wiojd30r" ((Double.NaN < 1.0)) false
-let _ = check "d3wiojd30t" ((Double.NaN <= 1.0)) false
-let _ = check "d3wiojd30y" ((Double.NaN = 1.0)) false
-let _ = check "d3wiojd30u" ((Double.NaN <> 1.0)) true
-let _ = check "d3wiojd30i" ((1.0 > Double.NaN)) false
-let _ = check "d3wiojd30o" ((1.0 >= Double.NaN)) false
-let _ = check "d3wiojd30p" ((1.0 < Double.NaN)) false
-let _ = check "d3wiojd30a" ((1.0 <= Double.NaN)) false
-let _ = check "d3wiojd30s" ((1.0 = Double.NaN)) false
-let _ = check "d3wiojd30d" ((1.0 <> Double.NaN)) true
-let _ = check "d3wiojd30a" ((nan1 > Double.NaN)) false
-let _ = check "d3wiojd30b" ((nan1 >= nan2)) false
-let _ = check "d3wiojd30c" ((nan1 < nan2)) false
-let _ = check "d3wiojd30d" ((nan1 <= nan2)) false
-let _ = check "d3wiojd30e" ((nan1 = nan2)) false
-let _ = check "d3wiojd30q" ((nan1 <> nan2)) true
-let _ = check "d3wiojd30w" ((nan1 > 1.0)) false
-let _ = check "d3wiojd30e" ((nan1 >= 1.0)) false
-let _ = check "d3wiojd30r" ((nan1 < 1.0)) false
-let _ = check "d3wiojd30t" ((nan1 <= 1.0)) false
-let _ = check "d3wiojd30y" ((nan1 = 1.0)) false
-let _ = check "d3wiojd30u" ((nan1 <> 1.0)) true
-let _ = check "d3wiojd30i" ((1.0 > nan2)) false
-let _ = check "d3wiojd30o" ((1.0 >= nan2)) false
-let _ = check "d3wiojd30p" ((1.0 < nan2)) false
-let _ = check "d3wiojd30a" ((1.0 <= nan2)) false
-let _ = check "d3wiojd30s" ((1.0 = nan2)) false
-let _ = check "d3wiojd30d" ((1.0 <> nan2)) true
-let _ = check "d3wiojd30f" ((Double.NegativeInfinity = Double.NegativeInfinity)) true
-let _ = check "d3wiojd30g" ((Double.NegativeInfinity < Double.PositiveInfinity)) true
-let _ = check "d3wiojd30h" ((Double.NegativeInfinity > Double.PositiveInfinity)) false
-let _ = check "d3wiojd30j" ((Double.NegativeInfinity <= Double.NegativeInfinity)) true
+check "d3wiojd30a" (if (Double.NaN > Double.NaN) then "a" else "b") "b"
+check "d3wiojd30b" ((Double.NaN >= Double.NaN)) false
+check "d3wiojd30b" (if (Double.NaN >= Double.NaN) then "a" else "b") "b"
+check "d3wiojd30c" ((Double.NaN < Double.NaN)) false
+check "d3wiojd30c" (if (Double.NaN < Double.NaN) then "a" else "b") "b"
+check "d3wiojd30d" ((Double.NaN <= Double.NaN)) false
+check "d3wiojd30d" (if (Double.NaN <= Double.NaN) then "a" else "b") "b"
+check "d3wiojd30e" ((Double.NaN = Double.NaN)) false
+check "d3wiojd30e" (if (Double.NaN = Double.NaN) then "a" else "b") "b"
+check "d3wiojd30q" ((Double.NaN <> Double.NaN)) true
+check "d3wiojd30w" ((Double.NaN > 1.0)) false
+check "d3wiojd30e" ((Double.NaN >= 1.0)) false
+check "d3wiojd30r" ((Double.NaN < 1.0)) false
+check "d3wiojd30t" ((Double.NaN <= 1.0)) false
+check "d3wiojd30y" ((Double.NaN = 1.0)) false
+check "d3wiojd30u" ((Double.NaN <> 1.0)) true
+check "d3wiojd30i" ((1.0 > Double.NaN)) false
+check "d3wiojd30o" ((1.0 >= Double.NaN)) false
+check "d3wiojd30p" ((1.0 < Double.NaN)) false
+check "d3wiojd30a" ((1.0 <= Double.NaN)) false
+check "d3wiojd30s" ((1.0 = Double.NaN)) false
+check "d3wiojd30d" ((1.0 <> Double.NaN)) true
+check "d3wiojd30a" ((nan1 > Double.NaN)) false
+check "d3wiojd30b" ((nan1 >= nan2)) false
+check "d3wiojd30c" ((nan1 < nan2)) false
+check "d3wiojd30d" ((nan1 <= nan2)) false
+check "d3wiojd30e" ((nan1 = nan2)) false
+check "d3wiojd30q" ((nan1 <> nan2)) true
+check "d3wiojd30w" ((nan1 > 1.0)) false
+check "d3wiojd30e" ((nan1 >= 1.0)) false
+check "d3wiojd30r" ((nan1 < 1.0)) false
+check "d3wiojd30t" ((nan1 <= 1.0)) false
+check "d3wiojd30y" ((nan1 = 1.0)) false
+check "d3wiojd30u" ((nan1 <> 1.0)) true
+check "d3wiojd30i" ((1.0 > nan2)) false
+check "d3wiojd30o" ((1.0 >= nan2)) false
+check "d3wiojd30p" ((1.0 < nan2)) false
+check "d3wiojd30a" ((1.0 <= nan2)) false
+check "d3wiojd30s" ((1.0 = nan2)) false
+check "d3wiojd30d" ((1.0 <> nan2)) true
+check "d3wiojd30f" ((Double.NegativeInfinity = Double.NegativeInfinity)) true
+check "d3wiojd30g" ((Double.NegativeInfinity < Double.PositiveInfinity)) true
+check "d3wiojd30h" ((Double.NegativeInfinity > Double.PositiveInfinity)) false
+check "d3wiojd30j" ((Double.NegativeInfinity <= Double.NegativeInfinity)) true
 
-module FloatingPointStructured = begin
+module SameTestsUsingNonStructuralComparison1 = 
+    open NonStructuralComparison
+
+    check "d3wiojd30a" (if (Double.NaN > Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30b" ((Double.NaN >= Double.NaN)) false
+    check "d3wiojd30b" (if (Double.NaN >= Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30c" ((Double.NaN < Double.NaN)) false
+    check "d3wiojd30c" (if (Double.NaN < Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30d" ((Double.NaN <= Double.NaN)) false
+    check "d3wiojd30d" (if (Double.NaN <= Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30e" ((Double.NaN = Double.NaN)) false
+    check "d3wiojd30e" (if (Double.NaN = Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30q" ((Double.NaN <> Double.NaN)) true
+    check "d3wiojd30w" ((Double.NaN > 1.0)) false
+    check "d3wiojd30e" ((Double.NaN >= 1.0)) false
+    check "d3wiojd30r" ((Double.NaN < 1.0)) false
+    check "d3wiojd30t" ((Double.NaN <= 1.0)) false
+    check "d3wiojd30y" ((Double.NaN = 1.0)) false
+    check "d3wiojd30u" ((Double.NaN <> 1.0)) true
+    check "d3wiojd30i" ((1.0 > Double.NaN)) false
+    check "d3wiojd30o" ((1.0 >= Double.NaN)) false
+    check "d3wiojd30p" ((1.0 < Double.NaN)) false
+    check "d3wiojd30a" ((1.0 <= Double.NaN)) false
+    check "d3wiojd30s" ((1.0 = Double.NaN)) false
+    check "d3wiojd30d" ((1.0 <> Double.NaN)) true
+    check "d3wiojd30a" ((nan1 > Double.NaN)) false
+    check "d3wiojd30b" ((nan1 >= nan2)) false
+    check "d3wiojd30c" ((nan1 < nan2)) false
+    check "d3wiojd30d" ((nan1 <= nan2)) false
+    check "d3wiojd30e" ((nan1 = nan2)) false
+    check "d3wiojd30q" ((nan1 <> nan2)) true
+    check "d3wiojd30w" ((nan1 > 1.0)) false
+    check "d3wiojd30e" ((nan1 >= 1.0)) false
+    check "d3wiojd30r" ((nan1 < 1.0)) false
+    check "d3wiojd30t" ((nan1 <= 1.0)) false
+    check "d3wiojd30y" ((nan1 = 1.0)) false
+    check "d3wiojd30u" ((nan1 <> 1.0)) true
+    check "d3wiojd30i" ((1.0 > nan2)) false
+    check "d3wiojd30o" ((1.0 >= nan2)) false
+    check "d3wiojd30p" ((1.0 < nan2)) false
+    check "d3wiojd30a" ((1.0 <= nan2)) false
+    check "d3wiojd30s" ((1.0 = nan2)) false
+    check "d3wiojd30d" ((1.0 <> nan2)) true
+    check "d3wiojd30f" ((Double.NegativeInfinity = Double.NegativeInfinity)) true
+    check "d3wiojd30g" ((Double.NegativeInfinity < Double.PositiveInfinity)) true
+    check "d3wiojd30h" ((Double.NegativeInfinity > Double.PositiveInfinity)) false
+    check "d3wiojd30j" ((Double.NegativeInfinity <= Double.NegativeInfinity)) true
+
+
+module FloatingPointStructured = 
     type www = W of float
 
     do printf "checking floating point relational operators on structured data\n"
@@ -2930,9 +2969,9 @@ module FloatingPointStructured = begin
     let _ = check "d3wiojd31c" ((W Double.NegativeInfinity < W Double.PositiveInfinity)) true
     let _ = check "d3wiojd3xx" ((W Double.NegativeInfinity > W Double.PositiveInfinity)) false
     let _ = check "d3wiojd31z" ((W Double.NegativeInfinity <= W Double.NegativeInfinity)) true
-end
 
-module FloatingPointStructuredPoly = begin
+
+module FloatingPointStructuredPoly = 
     type 'a www = W of 'a
 
     do printf "checking floating point relational operators on polymorphic structured data\n"
@@ -2960,9 +2999,9 @@ module FloatingPointStructuredPoly = begin
     let _ = check "d3wiojd32z" ((W Double.NegativeInfinity < W Double.PositiveInfinity)) true
     let _ = check "d3wiojd32x" ((W Double.NegativeInfinity > W Double.PositiveInfinity)) false
     let _ = check "d3wiojd32c" ((W Double.NegativeInfinity <= W Double.NegativeInfinity)) true
-end
 
-module MoreStructuralEqHashCompareNaNChecks = begin
+
+module MoreStructuralEqHashCompareNaNChecks = 
     let test398275413() =
         let floats = [1.0; 0.0; System.Double.NaN; System.Double.NegativeInfinity; System.Double.PositiveInfinity; nan] in
         for x in floats do
@@ -3199,7 +3238,7 @@ module MoreStructuralEqHashCompareNaNChecks = begin
         
     let _ = test398275416()    
     
-end
+
 
 // This test tests basic behavior of IEquatable<T> and IComparable<T> augmentations     
 module GenericComparisonAndEquality = begin
@@ -3384,9 +3423,9 @@ module Seq =
     let generate openf compute closef = 
         seq { let r = openf() 
               try 
-                let x = ref None
-                while (x := compute r; (!x).IsSome) do
-                    yield (!x).Value
+                let mutable x = None
+                while (x <- compute r; x.IsSome) do
+                    yield x.Value
               finally
                  closef r }
 
@@ -3482,7 +3521,7 @@ do printf "Test c27mog7keh2\n"; stdout.Flush();  let f x    = if x%2 =0 then Som
 do printf "Test c2e8,h2\n"; stdout.Flush();  let f z x  = (z+1) * x % 1397    in verify(List.fold f 2 xxs = Seq.fold f 2 xie)
 do printfn "seq reduce"; if Seq.reduce (fun x y -> x/y) [5*4*3*2; 4;3;2;1] = 5 then stdout.WriteLine "YES" else  reportFailure "basic test Q"
 
-do printf "Test c2grgeh2\n"; stdout.Flush();  verify(List.nth xxs 3 = Seq.nth 3 xie)  (* err: args wrong way around for List.nth *)
+do printf "Test c2grgeh2\n"; stdout.Flush();  verify(List.item 3 xxs = Seq.item 3 xie)
 
 
 (*---------------------------------------------------------------------------
@@ -4268,6 +4307,188 @@ do check "cenonoiwc" (int64 4UL) 4L
 do check "cenonoiwc" (uint64 4UL) 4UL
 do check "cenonoiwc" (match null with null -> 2 | _ -> 1) 2
 
+module SameTestsUsingNonStructuralComparison2 =
+    open NonStructuralComparison
+
+    do check "ffcenonoiwe1" (3 > 1) true
+    do check "ffcenonoiwe2" (3y > 1y) true
+    do check "ffcenonoiwe3" (3uy > 1uy) true
+    do check "ffcenonoiwe4" (3s > 1s) true
+    do check "ffcenonoiwe5" (3us > 1us) true
+    do check "ffcenonoiwe6" (3 > 1) true
+    do check "ffcenonoiwe7" (3u > 1u) true
+    do check "ffcenonoiwe8" (3L > 1L) true
+    do check "ffcenonoiwe9" (3UL > 1UL) true
+    do check "ffcenonoiwe9" (3.14 > 3.1) true
+    do check "ffcenonoiwe9" (3.14f > 3.1f) true
+    do check "ffcenonoiwe9" ("bbb" > "aaa") true
+    do check "ffcenonoiwe9" ("bbb" > "bbb") false
+    do check "ffcenonoiwe9" ("aaa" > "bbb") false
+    do check "ffcenonoiwe9" ('b' > 'a') true
+    do check "ffcenonoiwe9" ('a' > 'b') false
+    do check "ffcenonoiwe9" ('b' > 'b') false
+
+    do check "ffcenonoiwea" (3 >= 3) true
+    do check "ffcenonoiwes" (3y >= 3y) true
+    do check "ffcenonoiwed" (3uy >= 3uy) true
+    do check "ffcenonoiwef" (3s >= 3s) true
+    do check "ffcenonoiweg" (3us >= 3us) true
+    do check "ffcenonoiweh" (3 >= 3) true
+    do check "ffcenonoiwej" (3u >= 3u) true
+    do check "ffcenonoiwek" (3L >= 3L) true
+    do check "ffcenonoiwel" (3UL >= 3UL) true
+    do check "ffcenonoiwem" (3.14 >= 3.1) true
+    do check "ffcenonoiwen" (3.14f >= 3.1f) true
+    do check "ffcenonoiwen" (3.14M >= 3.1M) true
+    do check "ffcenonoiwe91r" ("bbb" >= "aaa") true
+    do check "ffcenonoiwe92r" ("bbb" >= "bbb") true
+    do check "ffcenonoiwe93r" ("aaa" >= "bbb") false
+    do check "ffcenonoiwe94r" ('b' >= 'a') true
+    do check "ffcenonoiwe95r" ('a' >= 'b') false
+    do check "ffcenonoiwe96r" ('b' >= 'b') true
+
+
+    do check "ffcenonoiwd1" (3 < 1) false
+    do check "ffcenonoiwd2" (3y < 1y) false
+    do check "ffcenonoiwd3" (3uy < 1uy) false
+    do check "ffcenonoiwd4" (3s < 1s) false
+    do check "ffcenonoiwd5" (3us < 1us) false
+    do check "ffcenonoiwd6" (3 < 1) false
+    do check "ffcenonoiwd7" (3u < 1u) false
+    do check "ffcenonoiwd8" (3L < 1L) false
+    do check "ffcenonoiwd9" (3UL < 1UL) false
+    do check "ffcenonoiwd9" (3.14 < 1.0) false
+    do check "ffcenonoiwd9" (3.14f < 1.0f) false
+    do check "ffcenonoiwd9" (3.14M < 1.0M) false
+    do check "ffcenonoiwe91a" ("bbb" < "aaa") false
+    do check "ffcenonoiwe92a" ("bbb" < "bbb") false
+    do check "ffcenonoiwe93a" ("aaa" < "bbb") true
+    do check "ffcenonoiwe94a" ('b' < 'a') false
+    do check "ffcenonoiwe95a" ('a' < 'b') true
+    do check "ffcenonoiwe96a" ('b' < 'b') false
+
+
+    do check "ffcenonoiwdq" (3 <= 1) false
+    do check "ffcenonoiwdw" (3y <= 1y) false
+    do check "ffcenonoiwde" (3uy <= 1uy) false
+    do check "ffcenonoiwdr" (3s <= 1s) false
+    do check "ffcenonoiwdt" (3us <= 1us) false
+    do check "ffcenonoiwdy" (3 <= 1) false
+    do check "ffcenonoiwdu" (3u <= 1u) false
+    do check "ffcenonoiwdi" (3L <= 1L) false
+    do check "ffcenonoiwdo" (3UL <= 1UL) false
+    do check "ffcenonoiwdg" (3.14 <= 1.0) false
+    do check "ffcenonoiwdt" (3.14f <= 1.0f) false
+    do check "ffcenonoiwdt" (3.14M <= 1.0M) false
+    do check "ffcenonoiwe91q" ("bbb" <= "aaa") false
+    do check "ffcenonoiwe92q" ("bbb" <= "bbb") true
+    do check "ffcenonoiwe93q" ("aaa" <= "bbb") true
+    do check "ffcenonoiwe94q" ('b' <= 'a') false
+    do check "ffcenonoiwe95q" ('a' <= 'b') true
+    do check "ffcenonoiwe96q" ('b' <= 'b') true
+
+
+    do check "ffcenonoiwda" (3 <= 3) true
+    do check "ffcenonoiwds" (3y <= 3y) true
+    do check "ffcenonoiwdd" (3uy <= 3uy) true
+    do check "ffcenonoiwdf" (3s <= 3s) true
+    do check "ffcenonoiwdg" (3us <= 3us) true
+    do check "ffcenonoiwdh" (3 <= 3) true
+    do check "ffcenonoiwdj" (3u <= 3u) true
+    do check "ffcenonoiwdk" (3L <= 3L) true
+    do check "ffcenonoiwdl" (3UL <= 3UL) true
+    do check "ffcenonoiwdo" (3.14 <= 3.14) true
+    do check "ffcenonoiwdp" (3.14f <= 3.14f) true
+    do check "ffcenonoiwdp" (3.14M <= 3.14M) true
+
+
+module NonStructuralComparisonOverDateTime =
+    open NonStructuralComparison
+    let now = System.DateTime.Now
+    let tom = now.AddDays 1.0
+    do check "ffcenonoiwe90" (now = tom) false
+    do check "ffcenonoiwe9q" (now <> tom) true
+    do check "ffcenonoiwe91" (now < tom) true
+    do check "ffcenonoiwe92" (now <= now) true
+    do check "ffcenonoiwe93" (now <= tom) true
+    do check "ffcenonoiwe94" (tom > now) true
+    do check "ffcenonoiwe95" (now >= now) true
+    do check "ffcenonoiwe96" (tom >= now) true
+    do check "ffcenonoiwe97" (compare now now) 0
+    do check "ffcenonoiwe98" (compare now tom) -1
+    do check "ffcenonoiwe99" (compare tom now) 1
+    do check "ffcenonoiwe9a" (max tom tom) tom
+    do check "ffcenonoiwe9b" (max tom now) tom
+    do check "ffcenonoiwe9c" (max now tom) tom
+    do check "ffcenonoiwe9d" (min tom tom) tom
+    do check "ffcenonoiwe9e" (min tom now) now
+    do check "ffcenonoiwe9f" (min now tom) now
+
+    do check "ffcenonoiwe97a1" (ComparisonIdentity.NonStructural.Compare (1, 1)) 0
+    do check "ffcenonoiwe98b2" (ComparisonIdentity.NonStructural.Compare (0, 1)) -1
+    do check "ffcenonoiwe99c3" (ComparisonIdentity.NonStructural.Compare (1, 0)) 1
+
+    do check "ffcenonoiwe97a4" (ComparisonIdentity.NonStructural.Compare (now, now)) 0
+    do check "ffcenonoiwe98b5" (ComparisonIdentity.NonStructural.Compare (now, tom)) -1
+    do check "ffcenonoiwe99c6" (ComparisonIdentity.NonStructural.Compare (tom, now)) 1
+
+    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.Equals (now, now)) true
+    do check "ffcenonoiwe98b8" (HashIdentity.NonStructural.Equals (now, tom)) false
+    do check "ffcenonoiwe99c9" (HashIdentity.NonStructural.Equals (tom, now)) false
+
+    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode now) (hash now)
+    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode tom) (hash tom)
+    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode 11) (hash 11)
+    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode 11L) (hash 11L)
+    do check "ffcenonoiwe97a7" (HashIdentity.NonStructural.GetHashCode 11UL) (hash 11UL)
+
+    do check "ffcenonoiwe97aa" (HashIdentity.NonStructural.Equals (1, 1)) true
+    do check "ffcenonoiwe98bb" (HashIdentity.NonStructural.Equals (1, 0)) false
+    do check "ffcenonoiwe99cc" (HashIdentity.NonStructural.Equals (0, 1)) false
+
+
+module NonStructuralComparisonOverTimeSpan =
+    open NonStructuralComparison
+    let now = System.TimeSpan.Zero
+    let tom = System.TimeSpan.FromDays 1.0
+    do check "tscenonoiwe90" (now = tom) false
+    do check "tscenonoiwe9q" (now <> tom) true
+    do check "tscenonoiwe91" (now < tom) true
+    do check "tscenonoiwe92" (now <= now) true
+    do check "tscenonoiwe93" (now <= tom) true
+    do check "tscenonoiwe94" (tom > now) true
+    do check "tscenonoiwe95" (now >= now) true
+    do check "tscenonoiwe96" (tom >= now) true
+    do check "tscenonoiwe97" (compare now now) 0
+    do check "tscenonoiwe98" (compare now tom) -1
+    do check "tscenonoiwe99" (compare tom now) 1
+    do check "tscenonoiwe9a" (max tom tom) tom
+    do check "tscenonoiwe9b" (max tom now) tom
+    do check "tscenonoiwe9c" (max now tom) tom
+    do check "tscenonoiwe9d" (min tom tom) tom
+    do check "tscenonoiwe9e" (min tom now) now
+    do check "tscenonoiwe9f" (min now tom) now
+
+
+// Check you can use the operators without opening the module by naming them
+module NonStructuralComparisonOverTimeSpanDirect =
+    let now = System.TimeSpan.Zero
+    let tom = System.TimeSpan.FromDays 1.0
+    do check "tscenonoiwe90" (NonStructuralComparison.(=) now tom) false
+    do check "tscenonoiwe9q" (NonStructuralComparison.(<>) now tom) true
+    do check "tscenonoiwe91" (NonStructuralComparison.(<) now tom) true
+    do check "tscenonoiwe92" (NonStructuralComparison.(<=) now now) true
+    do check "tscenonoiwe94" (NonStructuralComparison.(>) tom now) true
+    do check "tscenonoiwe95" (NonStructuralComparison.(>=) now now) true
+    do check "tscenonoiwe97" (NonStructuralComparison.compare now now) 0
+    do check "tscenonoiwe9a" (NonStructuralComparison.max tom now) tom
+    do check "tscenonoiwe9e" (NonStructuralComparison.min tom now) now
+
+    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash now) (Operators.hash now)
+    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash tom) (Operators.hash tom)
+    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash 11) (Operators.hash 11)
+    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash 11L) (Operators.hash 11L)
+    do check "ffcenonoiwe97a7" (NonStructuralComparison.hash 11UL) (Operators.hash 11UL)
 
 (*---------------------------------------------------------------------------
 !* Bug 1029: Support conversion functions named after C# type names? e.g. uint for uint32
@@ -4468,7 +4689,7 @@ do check "bug5995.Enum.B" (string ToStringEnum.B) "B"
 
 module Check1178 = begin
   do printf "\n\nTest 1178: check finite/infinite sequences have lazy (f i) for each i\n\n"  
-  (* Test cases for Seq.nth. *)
+  (* Test cases for Seq.item. *)
   let counter = ref 0
   let reset r = r := 0
   let fails f = try f() |> ignore;false with _ -> true
@@ -4476,16 +4697,16 @@ module Check1178 = begin
   
   (* Bug 1178: Check Seq.init only computes f on the items requested *)
   let initial_100 = Seq.init 100 (fun i -> incr counter; i)
-  do reset counter; claim(Seq.nth 0  initial_100=0);  claim(!counter = 1)
-  do reset counter; claim(Seq.nth 50 initial_100=50); claim(!counter = 1)
-  do reset counter; claim(fails (fun () -> Seq.nth 100 initial_100));   claim(!counter = 0)
-  do reset counter; claim(fails (fun () -> Seq.nth (-10) initial_100)); claim(!counter = 0)
+  do reset counter; claim(Seq.item 0  initial_100=0);  claim(!counter = 1)
+  do reset counter; claim(Seq.item 50 initial_100=50); claim(!counter = 1)
+  do reset counter; claim(fails (fun () -> Seq.item 100 initial_100));   claim(!counter = 0)
+  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_100)); claim(!counter = 0)
 
   let initial_w = Seq.initInfinite (fun i -> incr counter; i)
-  do reset counter; claim(Seq.nth 0  initial_w=0);  claim(!counter = 1)
-  do reset counter; claim(Seq.nth 50 initial_w=50); claim(!counter = 1)
-  do reset counter; claim(fails (fun () -> Seq.nth (-10) initial_w)); claim(!counter = 0)
-  do reset counter; claim(fails (fun () -> Seq.nth (-1) initial_w)); claim(!counter = 0)
+  do reset counter; claim(Seq.item 0  initial_w=0);  claim(!counter = 1)
+  do reset counter; claim(Seq.item 50 initial_w=50); claim(!counter = 1)
+  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_w)); claim(!counter = 0)
+  do reset counter; claim(fails (fun () -> Seq.item (-1) initial_w)); claim(!counter = 0)
 
   (* Check *)
   let on p f x y = f (p x) (p y)

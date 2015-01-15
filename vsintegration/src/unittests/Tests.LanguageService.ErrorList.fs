@@ -468,7 +468,7 @@ but here has type
         // dummy Type Provider exposes a parametric type (N1.T) that takes 2 static params (string * int) 
         // but here as you can see it's give (string)
         let fileContent = """type foo = N1.T< const "Hello World">"""
-        let expectedStr = "The static parameter 'ParamIgnored' of the provided type 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."
+        let expectedStr = "The static parameter 'ParamIgnored' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])

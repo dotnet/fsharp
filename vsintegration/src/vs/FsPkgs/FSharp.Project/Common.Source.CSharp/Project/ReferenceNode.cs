@@ -272,8 +272,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Validates that a reference can be added.
         /// </summary>
-        /// <param name="errorHandler">A CannotAddReferenceErrorMessage delegate to show the error message.</param>
-        /// <returns>true if the reference can be added.</returns>
+        /// <returns>Success if the reference can be added.</returns>
         internal /*protected, but public for FSharp.Project.dll*/ virtual AddReferenceCheckResult CheckIfCanAddReference()
         {
             // When this method is called this refererence has not yet been added to the hierarchy, only instantiated.

@@ -21,6 +21,6 @@ using System.Runtime.CompilerServices;
 /* F# additions: end */
 
 #if STAMP_OSS_VERSION
-[assembly:AssemblyVersion("12.0.0.9055")]       // The assembly version for THE OSS BUILD
-[assembly:AssemblyFileVersion("12.0.0.9055")]
+[assembly:AssemblyVersion("14.0.0.9055")]       // The assembly version for THE OSS BUILD
+[assembly:AssemblyFileVersion("14.0.0.9055")]
 #endif

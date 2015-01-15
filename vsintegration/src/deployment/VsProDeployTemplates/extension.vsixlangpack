@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VsixLanguagePack Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema-lp/2010">
+  <LocalizedName _locID="VsProDeployName">Visual F# Tools Templates</LocalizedName>
+  <LocalizedDescription _locID="VsProDeployDescription">Deploy Visual F# Tools templates to Visual Studio</LocalizedDescription>
+</VsixLanguagePack>

@@ -58,6 +58,32 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get { return targetName; }
         }
+
+        /// <summary>
+        /// Easy access to the canonical name of the group.
+        /// </summary>
+        internal string CanonicalName
+        {
+            get
+            {
+                string canonicalName;
+                ErrorHandler.ThrowOnFailure(get_CanonicalName(out canonicalName));
+                return canonicalName;
+            }
+        }
+
+        /// <summary>
+        /// Easy access to outputs
+        /// </summary>
+        internal Output[] Outputs
+        {
+            get
+            {
+                Refresh();
+                return outputs.ToArray();
+            }
+        }
+ 
         #endregion
 
         #region ctors

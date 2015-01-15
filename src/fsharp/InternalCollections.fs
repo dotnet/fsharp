@@ -7,11 +7,15 @@ open System.Collections.Generic
 #nowarn "44" // This construct is deprecated. This F# library function has been renamed. Use 'isSome' instead
 
 [<StructuralEquality; NoComparison>]
-type internal ValueStrength<'T> =
+type internal ValueStrength<'T when 'T : not struct> =
    | Strong of 'T
+#if FX_NO_GENERIC_WEAKREFERENCE
    | Weak of WeakReference
+#else
+   | Weak of WeakReference<'T>
+#endif
 
-type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDiscard : ('TValue -> unit), ?keepMax: int) =
+type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:int, areSame, ?onStrongDiscard : ('TValue -> unit), ?keepMax: int) =
     /// The list of items stored. Youngest is at the end of the list.
     /// The choice of order is somewhat aribtrary. If the other way then adding
     /// items would be O(1) and removing O(N).
@@ -69,10 +73,15 @@ type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDisc
             match value with
             | Strong(value) -> yield (key,value)
             | Weak(weakReference) ->
+#if FX_NO_GENERIC_WEAKREFERENCE
                 match weakReference.Target with 
                 | null -> assert onStrongDiscard.IsNone; ()
                 | value -> yield key,(value:?>'TValue) ]
-
+#else
+                match weakReference.TryGetTarget () with
+                | false, _ -> assert onStrongDiscard.IsNone; ()
+                | true, value -> yield key, value ]
+#endif
         
     let AssignWithStrength(newdata,discard1) = 
         let actualLength = List.length newdata
@@ -87,7 +96,11 @@ type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDisc
                 let handle = 
                     if n<weakThreshhold then 
                         assert onStrongDiscard.IsNone; // it disappeared, we can't dispose 
+#if FX_NO_GENERIC_WEAKREFERENCE
                         Weak(WeakReference(v)) 
+#else
+                        Weak(WeakReference<_>(v)) 
+#endif
                     else 
                         Strong(v)
                 k,handle )
@@ -136,7 +149,7 @@ type internal AgedLookup<'TKey,'TValue>(keepStrongly:int, areSame, ?onStrongDisc
 
         
 
-type internal MruCache<'TKey,'TValue>(keepStrongly,compute, areSame, ?isStillValid : 'TKey*'TValue->bool, ?areSameForSubsumption, ?logComputedNewValue, ?logUsedCachedValue, ?onStrongDiscard, ?keepMax) =
+type internal MruCache<'TKey,'TValue when 'TValue : not struct>(keepStrongly,compute, areSame, ?isStillValid : 'TKey*'TValue->bool, ?areSameForSubsumption, ?logComputedNewValue, ?logUsedCachedValue, ?onStrongDiscard, ?keepMax) =
         
     /// Default behavior of areSameForSubsumption function is areSame
     let areSameForSubsumption = defaultArg areSameForSubsumption areSame

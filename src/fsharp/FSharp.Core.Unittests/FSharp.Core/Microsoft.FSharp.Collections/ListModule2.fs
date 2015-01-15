@@ -3,6 +3,7 @@
 // Various tests for the:
 // Microsoft.FSharp.Collections.List module
 
+#nowarn "44" // This construct is deprecated. please use List.item
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
 open System
@@ -16,6 +17,14 @@ Make sure each method works on:
 * String List (reference type)
 * Empty List (0 elements)
 *)
+
+type ListWindowedTestInput<'t> =
+    {
+        InputList : 't list
+        WindowSize : int
+        ExpectedList : 't[] list
+        Exception : Type option
+    }
 
 [<TestFixture>]
 type ListModule02() =
@@ -176,6 +185,76 @@ type ListModule02() =
         ()
 
     [<Test>]
+    member this.Indexed() =
+        // integer List
+        Assert.AreEqual([(0,10);(1,12);(2,14);(3,16);(4,18);(5,20)], List.indexed [10..2..20])
+        Assert.AreEqual([(0,10)], List.indexed [10])
+
+        // string List
+        let resultStr = List.indexed ["a";"b";"c";"d"]
+        Assert.AreEqual([(0,"a");(1,"b");(2,"c");(3,"d")], resultStr)
+
+        // empty List
+        let emptyList:string list = []
+        let resultEpt = List.indexed emptyList
+        Assert.AreEqual(List.empty<int*string>, resultEpt)
+
+        ()
+
+    [<Test>]
+    member this.MapFold() =
+        // integer List
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = List.mapFold funcInt 100 [ 1..10 ]
+        Assert.AreEqual([1;20;3;40;5;60;7;80;9;100], resultInt)
+        Assert.AreEqual(105, resultIntAcc)
+
+        // integer List single item
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = List.mapFold funcInt 100 [ 2 ]
+        Assert.AreEqual([20], resultInt)
+        Assert.AreEqual(101, resultIntAcc)
+
+        // string List
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = List.mapFold funcStr "" ["";"BB";"C";""]
+        Assert.AreEqual(["empty";"bb";"c";"empty"], resultStr)
+        Assert.AreEqual("BBC", resultStrAcc)
+
+        // empty List
+        let resultEpt,resultEptAcc = List.mapFold funcInt 100 []
+        Assert.AreEqual(([] : int list), resultEpt)
+        Assert.AreEqual(100, resultEptAcc)
+
+        ()
+
+    [<Test>]
+    member this.MapFoldBack() =
+        // integer List
+        let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
+        let resultInt,resultIntAcc = List.mapFoldBack funcInt [ 1..10 ] 100
+        Assert.AreEqual([1;2;3;4;5;6;7;80;90;100], resultInt)
+        Assert.AreEqual(106, resultIntAcc)
+
+        // integer List single item
+        let resultInt,resultIntAcc = List.mapFoldBack funcInt [1] 100
+        Assert.AreEqual([10], resultInt)
+        Assert.AreEqual(102, resultIntAcc)
+
+        // string List
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = List.mapFoldBack funcStr ["";"BB";"C";""] ""
+        Assert.AreEqual(["empty";"bb";"c";"empty"], resultStr)
+        Assert.AreEqual("CBB", resultStrAcc)
+
+        // empty List
+        let resultEpt,resultEptAcc = List.mapFoldBack funcInt [] 100
+        Assert.AreEqual(([] : int list),  resultEpt)
+        Assert.AreEqual(100, resultEptAcc)
+
+        ()
+
+    [<Test>]
     member this.Max() = 
         // integer List 
         let resultInt = List.max  [2..2..20]        
@@ -254,7 +333,28 @@ type ListModule02() =
         CheckThrowsArgumentException ( fun() -> List.nth List.empty 1)
 
         ()
-        
+
+    [<Test>]
+    member this.Item() =
+        // integer List
+        let resultInt = List.item 3 [3;7;9;4;8;1;1;2]
+        Assert.AreEqual(4, resultInt)
+
+        // string List
+        let resultStr = List.item 3 ["a";"b";"c";"d"]
+        Assert.AreEqual("d", resultStr)
+
+        // empty List
+        CheckThrowsArgumentException (fun() -> List.item 1 List.empty)
+
+        // Negative index
+        for i = -1 downto -10 do
+           CheckThrowsArgumentException (fun () -> List.item i [3;7;9;4;8;1;1;2] |> ignore)
+
+        // Out of range
+        for i = 8 to 16 do
+           CheckThrowsArgumentException (fun () -> List.item i [3;7;9;4;8;1;1;2] |> ignore)
+
 
     [<Test>]
     member this.Of_Array() =
@@ -405,6 +505,58 @@ type ListModule02() =
         () 
 
     [<Test>]
+    member this.Skip() =
+        // integer List
+        let resultInt = List.skip 2 [1..10]
+        Assert.AreEqual([3..10], resultInt)
+        
+        let resultInt2 = List.skip 0 [1..10]
+        Assert.AreEqual([1..10], resultInt2)
+        
+        let resultInt3 = List.skip -1 [1..10]
+        Assert.AreEqual([1..10], resultInt3)
+
+        // string List
+        let resultStr = List.skip 2 ["str1";"str2";"str3";"str4"]
+        Assert.AreEqual(["str3";"str4"], resultStr)
+
+        // empty List
+        let resultEpt = List.skip 0 []
+        Assert.AreEqual([], resultEpt)
+
+        // exceptions
+        CheckThrowsArgumentException(fun () -> List.skip 1 [] |> ignore)
+        CheckThrowsArgumentException(fun () -> List.skip 4 [1; 2; 3] |> ignore)
+
+    [<Test>]
+    member this.SkipWhile() =
+        // integer list
+        let funcInt x = (x < 4)
+        let intList = [1..10]
+        let resultInt = List.skipWhile funcInt intList
+        if resultInt <> [4..10] then Assert.Fail()
+
+        // string list
+        let funcStr (s:string) = s.Length < 8
+        let strList = [ "Lists"; "are";  "commonly" ; "list" ]
+        let resultStr = List.skipWhile funcStr strList
+        if resultStr <> [ "commonly" ; "list" ] then Assert.Fail()
+
+        // empty list
+        let resultEmpt = List.skipWhile (fun _ -> failwith "unexpected error") []
+        if resultEmpt <> [] then Assert.Fail()
+
+        // skip all
+        let resultAll = List.skipWhile (fun _ -> true) intList
+        if resultAll <> [] then Assert.Fail()
+
+        // skip none
+        let resultNone = List.skipWhile (fun _ -> false) intList
+        if resultNone <> intList then Assert.Fail()
+
+        ()
+
+    [<Test>]
     member this.Sort() =
         // integer List  
         let intArr = [3;5;7;2;4;8]
@@ -420,6 +572,11 @@ type ListModule02() =
         let emptyArr : int list = [ ]
         let resultEpt = List.sort emptyArr        
         Assert.AreEqual(List.empty<int>, resultEpt)
+
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sort tupArr         
+        Assert.AreEqual([(1,"a");(1,"b");(1,"d");(1,"x");(2,"a");(2,"b");(2,"x")], resultTup)
         
         ()    
 
@@ -439,8 +596,94 @@ type ListModule02() =
         let emptyArr:int list = [ ]
         let resultEpt = List.sortBy int emptyArr        
         Assert.AreEqual(List.empty<int>, resultEpt)
+
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sortBy snd tupArr         
+        Assert.AreEqual([(2,"a");(1,"a");(1,"b");(2,"b");(1,"d");(2,"x");(1,"x")], resultTup)
         
+        ()
+        
+    [<Test>]
+    member this.SortDescending() =
+        // integer List
+        let minInt,maxInt = System.Int32.MinValue,System.Int32.MaxValue
+        let intArr = [3;5;7;2;4;8;0;-1;1;minInt;maxInt]
+        let resultInt = List.sortDescending intArr          
+        Assert.AreEqual(resultInt , [maxInt;8;7;5;4;3;2;1;0;-1;minInt])
+        
+        // string List
+        let strArr = ["Z";"a";"d";"Y";"c";"b";"X"]   
+        let resultStr = List.sortDescending strArr         
+        Assert.AreEqual(["d"; "c"; "b"; "a"; "Z"; "Y"; "X"], resultStr)
+        
+        // empty List
+        let emptyArr : int list = [ ]
+        let resultEpt = List.sortDescending emptyArr        
+        Assert.AreEqual(List.empty<int>, resultEpt)
+
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sortDescending tupArr         
+        Assert.AreEqual([(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")], resultTup)
+        
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = List.sortDescending floatArr
+        let expectedFloat = [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        Assert.AreEqual(expectedFloat, resultFloat)
+
+        () 
+        
+    [<Test>]
+    member this.SortByDescending() =
+        // integer List  
+        let intArr = [3;5;7;2;4;8]
+        let resultInt = List.sortByDescending int intArr          
+        Assert.AreEqual([8;7;5;4;3;2], resultInt)
+        
+        // string List
+        let strArr = [".."; "..."; "."; "...."]    
+        let resultStr = List.sortByDescending (fun (x:string) -> x.Length)  strArr 
+        Assert.AreEqual(["...."; "..."; ".."; "."], resultStr)
+        
+        // empty List
+        let emptyArr:int list = [ ]
+        let resultEpt = List.sortByDescending int emptyArr        
+        Assert.AreEqual(List.empty<int>, resultEpt)
+        
+        // tuple List
+        let tupArr = [(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")]   
+        let resultTup = List.sortByDescending snd tupArr         
+        Assert.AreEqual( [(2,"x");(1,"x");(1,"d");(1,"b");(2,"b");(2,"a");(1,"a")] , resultTup)
+
+        // float Seq
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [0.0; 0.5; 2.0; 1.5; 1.0; minFloat;maxFloat;epsilon;-epsilon]
+        let resultFloat = List.sortByDescending id floatArr
+        let expectedFloat = [maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; ]
+        Assert.AreEqual(expectedFloat, resultFloat)
+
         ()  
+  
+    [<Test>]
+    member this.SortWith() =
+
+        // integer list
+        let intComparer a b = compare (a%3) (b%3)
+        let resultInt = List.sortWith intComparer [0..10]
+        Assert.AreEqual([0;3;6;9;1;4;7;10;2;5;8], resultInt)
+
+        // string list
+        let resultStr = List.sortWith compare ["str1";"str3";"str2";"str4"]
+        Assert.AreEqual(["str1";"str2";"str3";"str4"], resultStr)
+
+        // empty list
+        let resultEpt = List.sortWith intComparer []
+        Assert.AreEqual(([] : int list), resultEpt)
+
+        ()
 
     [<Test>]
     member this.Sum() =
@@ -574,6 +817,25 @@ type ListModule02() =
         ()   
 
     [<Test>]
+    member this.Truncate() =
+        // integer list
+        Assert.AreEqual([1..3], List.truncate 3 [1..5])
+        Assert.AreEqual([1..5], List.truncate 10 [1..5])
+        Assert.AreEqual(([] : int list), List.truncate 0 [1..5])
+
+        // string list
+        Assert.AreEqual(["str1";"str2"], List.truncate 2 ["str1";"str2";"str3"])
+
+        // empty list
+        Assert.AreEqual([], List.truncate 0 [])
+        Assert.AreEqual([], List.truncate 1 [])
+
+        // negative count
+        CheckThrowsArgumentException(fun() -> List.truncate -1 [1..5] |> ignore)
+
+        ()
+
+    [<Test>]
     member this.TryFind() =
         // integer List  
         let resultInt = [1..10] |> List.tryFind (fun x -> x%7 = 0)          
@@ -594,6 +856,29 @@ type ListModule02() =
         ()
         
     [<Test>]
+    member this.TryFindBack() =
+        // integer List
+        Assert.AreEqual(Some 20, [1..20] |> List.tryFindBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 15, [1..19] |> List.tryFindBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 5, [5..9] |> List.tryFindBack (fun x -> x%5 = 0))
+
+        // string List
+        let resultStr = ["a";"b";"cc";"dd"] |> List.tryFindBack (fun (x:string) -> x.Length > 1)
+        Assert.AreEqual(Some "dd", resultStr)
+
+        // empty List
+        Assert.AreEqual(None, [] |> List.tryFindBack  (fun _ -> true))
+
+        // not found
+        Assert.AreEqual(None, [1..20] |> List.tryFindBack  (fun _ -> false))
+
+        // Head satisfy
+        let resultHead = [7 .. -1 .. 1] |> List.tryFindBack (fun x -> x % 7 = 0)
+        Assert.AreEqual(Some 7, resultHead)
+
+        ()
+
+    [<Test>]
     member this.TryFindIndex() =
         // integer List  
         let resultInt = [1..10] |> List.tryFindIndex (fun x -> x%7 = 0)          
@@ -606,6 +891,42 @@ type ListModule02() =
         // empty List     
         let resultEpt = [] |> List.tryFindIndex  (fun x -> x%7 = 0)          
         Assert.AreEqual(None, resultEpt)
+        ()
+
+    [<Test>]
+    member this.TryFindIndexBack() =
+        // integer List
+        Assert.AreEqual(Some 19, [1..20] |> List.tryFindIndexBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 14, [1..19] |> List.tryFindIndexBack (fun x -> x%5 = 0))
+        Assert.AreEqual(Some 0, [5..9] |> List.tryFindIndexBack (fun x -> x%5 = 0))
+
+        // string List
+        let resultStr = ["a";"b";"cc";"dd"] |> List.tryFindIndexBack (fun (x:string) -> x.Length > 1)
+        Assert.AreEqual(Some 3, resultStr)
+
+        // empty List
+        Assert.AreEqual(None, [] |> List.tryFindIndexBack (fun _ -> true))
+
+        // not found
+        Assert.AreEqual(None, [1..20] |> List.tryFindIndexBack (fun _ -> false))
+
+        ()
+
+    [<Test>]
+    member this.Unfold() =
+        // integer Seq
+        let resultInt = List.unfold (fun x -> if x < 20 then Some (x+1,x*2) else None) 1
+        Assert.AreEqual([2;3;5;9;17], resultInt)
+
+        // string Seq
+        let resultStr = List.unfold (fun (x:string) -> if x.Contains("unfold") then Some("a","b") else None) "unfold"
+        Assert.AreEqual(["a"], resultStr)
+
+        // empty seq
+        //let resultEpt = List.unfold (fun _ -> Option<string>.None) 1
+        let resultEpt = List.unfold (fun _ -> None) 1
+        Assert.AreEqual([], resultEpt)
+
         ()
 
     [<Test>]
@@ -646,6 +967,90 @@ type ListModule02() =
         ()
 
     [<Test>]
+    member this.Windowed() =
+        let testWindowed config =
+            try
+                config.InputList
+                |> List.windowed config.WindowSize
+                |> (fun actual -> Assert.AreEqual(config.ExpectedList,actual))
+            with
+            | _ when Option.isNone config.Exception -> Assert.Fail()
+            | e when e.GetType() = (Option.get config.Exception) -> ()
+            | _ -> Assert.Fail()
+
+        {
+          InputList = [1..10]
+          WindowSize = 1
+          ExpectedList =  [ for i in 1..10 do yield [| i |] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 5
+          ExpectedList =  [ for i in 1..6 do yield [| i; i+1; i+2; i+3; i+4 |] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 10
+          ExpectedList =  [ yield [| 1 .. 10 |] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 25
+          ExpectedList = []
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = ["str1";"str2";"str3";"str4"]
+          WindowSize = 2
+          ExpectedList =  [ [|"str1";"str2"|]; [|"str2";"str3"|]; [|"str3";"str4"|] ]
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = []
+          WindowSize = 2
+          ExpectedList = []
+          Exception = None
+        } |> testWindowed
+        {
+          InputList = [1..10]
+          WindowSize = 0
+          ExpectedList =  []
+          Exception = Some typeof<ArgumentException>
+        } |> testWindowed
+
+        // expectedLists indexed by arraySize,windowSize
+        let expectedLists = Array2D.zeroCreate 6 6
+        expectedLists.[1,1] <- [ [|1|] ]
+        expectedLists.[2,1] <- [ [|1|]; [|2|] ]
+        expectedLists.[2,2] <- [ [|1; 2|] ]
+        expectedLists.[3,1] <- [ [|1|]; [|2|]; [|3|] ]
+        expectedLists.[3,2] <- [ [|1; 2|]; [|2; 3|] ]
+        expectedLists.[3,3] <- [ [|1; 2; 3|] ]
+        expectedLists.[4,1] <- [ [|1|]; [|2|]; [|3|]; [|4|] ]
+        expectedLists.[4,2] <- [ [|1; 2|]; [|2; 3|]; [|3; 4|] ]
+        expectedLists.[4,3] <- [ [|1; 2; 3|]; [|2; 3; 4|] ]
+        expectedLists.[4,4] <- [ [|1; 2; 3; 4|] ]
+        expectedLists.[5,1] <- [ [|1|]; [|2|]; [|3|]; [|4|]; [|5|] ]
+        expectedLists.[5,2] <- [ [|1; 2|]; [|2; 3|]; [|3; 4|]; [|4; 5|] ]
+        expectedLists.[5,3] <- [ [|1; 2; 3|]; [|2; 3; 4|]; [|3; 4; 5|] ]
+        expectedLists.[5,4] <- [ [|1; 2; 3; 4|]; [|2; 3; 4; 5|] ]
+        expectedLists.[5,5] <- [ [|1; 2; 3; 4; 5|] ]
+
+        for arraySize = 0 to 5 do
+            for windowSize = -1 to 5 do
+                if windowSize <= 0 then
+                    CheckThrowsArgumentException (fun () -> List.windowed windowSize [1..arraySize] |> ignore)
+                elif arraySize < windowSize then
+                    Assert.AreEqual(([] : int[] list), List.windowed windowSize [1..arraySize])
+                else
+                    Assert.AreEqual(expectedLists.[arraySize, windowSize], List.windowed windowSize [1..arraySize])
+
+        ()
+
+    [<Test>]
     member this.Zip() =
         // integer List  
         let resultInt =  List.zip [1..3] [2..2..6]         
@@ -678,3 +1083,25 @@ type ListModule02() =
         Assert.AreEqual(empTriple, resultEpt)
        
         ()            
+
+    [<Test>]
+    member this.tryItem() =
+        // integer List
+        let resultInt = List.tryItem 4 [3;7;9;4;8;1;1;2]
+        Assert.AreEqual(Some(8), resultInt)
+
+        // string List
+        let resultStr = List.tryItem 2 ["a";"b";"c";"d"]
+        Assert.AreEqual(Some("c"), resultStr)
+
+        // empty List
+        let resultEmpty = List.tryItem 0 List.empty
+        Assert.AreEqual(None, resultEmpty)
+
+        // Negative index
+        let resultNegativeIndex = List.tryItem -1 [3;1;6;2]
+        Assert.AreEqual(None, resultNegativeIndex)
+
+        // Index equals to length
+        let resultIndexGreater = List.tryItem 4 [3;1;6;2]
+        Assert.AreEqual(None, resultIndexGreater)

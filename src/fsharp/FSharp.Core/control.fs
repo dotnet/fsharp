@@ -308,11 +308,6 @@ namespace Microsoft.FSharp.Control
 #else
     open System.Threading
     open System.Threading.Tasks
-    
-    //[<assembly:System.Runtime.CompilerServices.TypeForwardedTo(typeof<System.Threading.CancellationTokenRegistration>)>]
-    //[<assembly:System.Runtime.CompilerServices.TypeForwardedTo(typeof<System.Threading.CancellationToken>)>]
-    //[<assembly:System.Runtime.CompilerServices.TypeForwardedTo(typeof<System.Threading.CancellationTokenSource>)>]
-    //do ()    
 #endif
 
 #if FX_NO_OPERATION_CANCELLED
@@ -322,6 +317,15 @@ namespace Microsoft.FSharp.Control
 #endif
 
     
+#if FX_NO_EXCEPTIONDISPATCHINFO
+    [<AllowNullLiteral>]
+    type ExceptionDispatchInfo(exn: System.Exception) =
+        static member Capture(exn) = ExceptionDispatchInfo(exn)
+        member __.Throw() = raise exn; ()
+        member __.SourceException = exn
+#else
+    open System.Runtime.ExceptionServices
+#endif
 
 
     /// We use our own internal implementation of queues to avoid a dependency on System.dll
@@ -389,7 +393,7 @@ namespace Microsoft.FSharp.Control
 
 
     type cont<'T> = ('T -> FakeUnitValue)
-    type econt = (exn -> FakeUnitValue)
+    type econt = (ExceptionDispatchInfo -> FakeUnitValue)
     type ccont = (OperationCanceledException -> FakeUnitValue)
 
 
@@ -399,7 +403,7 @@ namespace Microsoft.FSharp.Control
 
     [<AllowNullLiteral>]
     type Trampoline() = 
-    
+
         [<Literal>]
         static let bindLimitBeforeHijack = 300 
 #if FX_NO_THREAD_STATIC
@@ -415,11 +419,12 @@ namespace Microsoft.FSharp.Control
 #else
             Trampoline.thisThreadHasTrampoline
 #endif
+        
         let mutable cont = None
         let mutable bindCount = 0
         
         static let unfake FakeUnit = ()
-        
+
         // Install a trampolineStack if none exists
         member this.ExecuteAction (firstAction : unit -> FakeUnitValue) =
             let rec loop action = 
@@ -442,6 +447,7 @@ namespace Microsoft.FSharp.Control
                 loop firstAction
             finally
 #if FX_NO_THREAD_STATIC
+                ()
 #else
                 if thisIsTopTrampoline then
                     Trampoline.thisThreadHasTrampoline <- false
@@ -592,12 +598,12 @@ namespace Microsoft.FSharp.Control
         let ignoreFake _ = FakeUnit
 
 
-        let defaultCancellationTokenSource = ref (new CancellationTokenSource())
+        let mutable defaultCancellationTokenSource = new CancellationTokenSource()
 
         [<NoEquality; NoComparison>]
         type Result<'T>  =
         |   Ok of 'T
-        |   Error of exn
+        |   Error of ExceptionDispatchInfo
         |   Canceled of OperationCanceledException
 
         let inline hijack (trampolineHolder:TrampolineHolder) res (cont : 'T -> FakeUnitValue) : FakeUnitValue =
@@ -605,39 +611,71 @@ namespace Microsoft.FSharp.Control
                 trampolineHolder.Trampoline.Set(fun () -> cont res)
                 FakeUnit
             else
+                // NOTE: this must be a tailcall
                 cont res
+
+#if FX_NO_CONDITIONAL_WEAK_TABLE
+#else
+        /// Global mutable state used to associate Exception
+        let associationTable = System.Runtime.CompilerServices.ConditionalWeakTable<exn, ExceptionDispatchInfo>()
+#endif
+
+        type ExceptionDispatchInfo with 
+
+            member edi.GetAssociatedSourceException() = 
+               let exn = edi.SourceException
+#if FX_NO_CONDITIONAL_WEAK_TABLE
+#else
+               // Try to store the entry in the association table to allow us to recover it later.
+               try lock associationTable (fun () -> associationTable.Add(exn, edi)) with _ -> ()
+#endif
+               exn
+
+            // Capture, but prefer the saved information if available
+            static member inline RestoreOrCapture(exn) = 
+#if FX_NO_CONDITIONAL_WEAK_TABLE
+#else
+                match lock associationTable (fun () -> associationTable.TryGetValue(exn)) with 
+                | true, edi -> edi
+                | _ ->
+#endif
+                    ExceptionDispatchInfo.Capture(exn)
+
+            member inline edi.ThrowAny() = 
+                edi.Throw()
+                Unchecked.defaultof<'T> // Note, this line should not be reached, but gives a generic return type
 
         // Apply f to x and call either the continuation or exception continuation depending what happens
         let inline protect (trampolineHolder:TrampolineHolder) econt f x (cont : 'T -> FakeUnitValue) : FakeUnitValue =
             // This is deliberately written in a allocation-free style, except when the trampoline is taken
             let mutable res = Unchecked.defaultof<_>
-            let mutable exn = null
+            let mutable edi = null
+
             try 
                 res <- f x
-            with 
-                // Note: using a :? catch keeps FxCop happy
-                | :? System.Exception as e -> 
-                    exn <- e
-            match exn with 
+            with exn -> 
+                edi <- ExceptionDispatchInfo.RestoreOrCapture(exn)
+
+            match edi with 
             | null -> 
                 // NOTE: this must be a tailcall
                 hijack trampolineHolder res cont
-            | exn -> 
+            | _ -> 
                 // NOTE: this must be a tailcall
-                hijack trampolineHolder exn econt
+                hijack trampolineHolder edi econt
 
         // Apply f to x and call either the continuation or exception continuation depending what happens
         let inline protectNoHijack econt f x (cont : 'T -> FakeUnitValue) : FakeUnitValue =
             // This is deliberately written in a allocation-free style
             let mutable res = Unchecked.defaultof<_>
-            let mutable exn = null
+            let mutable edi = null
+
             try 
                 res <- f x
-            with 
-                // Note: using a :? catch keeps FxCop happy
-                | :? System.Exception as e -> 
-                    exn <- e
-            match exn with 
+            with exn -> 
+                edi <- ExceptionDispatchInfo.RestoreOrCapture(exn)
+
+            match edi with 
             | null -> 
                 // NOTE: this must be a tailcall
                 cont res
@@ -651,7 +689,7 @@ namespace Microsoft.FSharp.Control
         let commit res =
             match res with
             | Ok res -> res
-            | Error exn -> raise exn
+            | Error edi -> edi.ThrowAny()
             | Canceled exn -> raise exn
 
         // Reify exceptional results as exceptionsJIT 64 doesn't always take tailcalls correctly
@@ -727,10 +765,17 @@ namespace Microsoft.FSharp.Control
 
         //----------------------------------
         // PRIMITIVE ASYNC CONSTRUCTORS
+
+        // Use this to recover ExceptionDispatchInfo when outside the "with" part of a try/with block.
+        // This indicates all the places where we lose a stack trace.
+        //
+        // Stack trace losses come when interoperating with other code that only provide us with an exception value,
+        // notably .NET 4.x tasks and user exceptions passed to the exception continuation in Async.FromContinuations.
+        let MayLoseStackTrace exn = ExceptionDispatchInfo.RestoreOrCapture(exn)
         
         // Call the exception continuation
-        let errorT args exn = 
-            args.aux.econt exn
+        let errorT args edi = 
+            args.aux.econt edi
 
         // Call the cancellation continuation
         let cancelT (args:AsyncParams<_>) =
@@ -745,8 +790,11 @@ namespace Microsoft.FSharp.Control
             if args.aux.token.IsCancellationRequested then
                 cancelT args
             else
-                try f args
-                with exn -> errorT args exn
+                try 
+                    f args
+                with exn -> 
+                    let edi = ExceptionDispatchInfo.RestoreOrCapture(exn)
+                    errorT args edi
 
         // When run, ensures that any exceptions raised by the immediate execution of "f" are
         // sent to the exception continuation.
@@ -833,18 +881,16 @@ namespace Microsoft.FSharp.Control
 
         // Re-route the exception continuation to call to catchFunction. If catchFunction or the new process fail
         // then call the original exception continuation with the failure.
-        let tryWithA catchFunction p =
+        let tryWithDispatchInfoA catchFunction p =
             unprotectedPrimitive (fun args ->
                 if args.aux.token.IsCancellationRequested then
                     cancelT args
                 else 
-                    let econt exn = invokeA (callA catchFunction exn) args
+                    let econt (edi: ExceptionDispatchInfo) = invokeA (callA catchFunction edi) args
                     invokeA p { args with aux = { args.aux with econt = econt } })
 
-        /// Send the given exception using the exception continuation
-        let raiseA exn = 
-            unprotectedPrimitive (fun args -> 
-                errorT args (exn :> Exception))
+        let tryWithExnA catchFunction computation = 
+            computation |> tryWithDispatchInfoA (fun edi -> catchFunction (edi.GetAssociatedSourceException()))
 
         /// Call the finallyFunction if the computation results in a cancellation
         let whenCancelledA (finallyFunction : OperationCanceledException -> unit) p =
@@ -855,7 +901,7 @@ namespace Microsoft.FSharp.Control
         let getCancellationToken()  =
             unprotectedPrimitive (fun ({ aux = aux } as args) -> args.cont aux.token)
         
-        let gettrampolineHolder() =
+        let getTrampolineHolder() =
             unprotectedPrimitive (fun ({ aux = aux } as args) -> args.cont aux.trampolineHolder)
 
         /// Return a unit result
@@ -903,7 +949,7 @@ namespace Microsoft.FSharp.Control
         member b.For(e, prog)           = forA e prog
         member b.Combine(p1, p2)        = sequentialA p1 p2
         member b.TryFinally(p, cf)      = tryFinallyA cf p
-        member b.TryWith(p, cf)         = tryWithA cf p
+        member b.TryWith(p, cf)         = tryWithExnA cf p
 
     module AsyncImpl = 
         let async = AsyncBuilder()
@@ -1193,11 +1239,9 @@ namespace Microsoft.FSharp.Control
             use resultCell = new ResultCell<Result<_>>()
             queueAsync 
                     token                        
-                    
                     (fun res -> resultCell.RegisterResult(Ok(res),reuseThread=true))
-                    (fun exn -> resultCell.RegisterResult(Error(exn),reuseThread=true))
+                    (fun edi -> resultCell.RegisterResult(Error(edi),reuseThread=true))
                     (fun exn -> resultCell.RegisterResult(Canceled(exn),reuseThread=true))
-                    
                     computation 
                 |> unfake
 
@@ -1221,7 +1265,7 @@ namespace Microsoft.FSharp.Control
             queueAsync 
                   token
                   (fun () -> FakeUnit)   // nothing to do on success
-                  (fun e -> raise e)   // raise exception in child
+                  (fun edi -> edi.ThrowAny())   // raise exception in child
                   (fun _ -> FakeUnit)    // ignore cancellation in child
                   computation
                |> unfake
@@ -1264,10 +1308,9 @@ namespace Microsoft.FSharp.Control
                         do 
                             disposeReg()
                             tcs.TrySetResult(result) |> ignore
-                    with
-                    |   e -> 
-                            disposeReg()
-                            tcs.TrySetException(e) |> ignore
+                    with exn -> 
+                        disposeReg()
+                        tcs.TrySetException(exn) |> ignore
                 }
             Start(token, a)
             task
@@ -1302,46 +1345,49 @@ namespace Microsoft.FSharp.Control
                         else
                             aux.trampolineHolder.Protect (fun () -> cont x ) |> unfake
                     try 
-                        f (once args.cont, once aux.econt, once aux.ccont)
+                        f (once args.cont, (fun exn -> once aux.econt (MayLoseStackTrace(exn))), once aux.ccont)
                     with exn -> 
                         if not(latch.Enter()) then invalidOp(SR.GetString(SR.controlContinuationInvokedMultipleTimes))
-                        aux.econt exn |> unfake
+                        let edi = ExceptionDispatchInfo.RestoreOrCapture(exn)
+                        aux.econt edi |> unfake
+
                     underCurrentThreadStack := false
+
                     match !contToTailCall with
                     | Some k -> k()
                     | _ -> FakeUnit
                     )
                 
-        static member DefaultCancellationToken = (!defaultCancellationTokenSource).Token
+        static member DefaultCancellationToken = defaultCancellationTokenSource.Token
 
         static member CancelDefaultToken() =
-            let cts = !defaultCancellationTokenSource
+            let cts = defaultCancellationTokenSource
             // set new CancellationTokenSource before calling Cancel - otherwise if Cancel throws token will stay unchanged
-            defaultCancellationTokenSource := new CancellationTokenSource()
+            defaultCancellationTokenSource <- new CancellationTokenSource()
             // we do not dispose the old default CTS - let GC collect it
             cts.Cancel()
             // we do not dispose the old default CTS - let GC collect it
             
         static member Catch (p: Async<'T>) =
             unprotectedPrimitive  (fun ({ aux = aux } as args) ->
-                startA aux.token aux.trampolineHolder (Choice1Of2 >> args.cont) (Choice2Of2 >> args.cont) aux.ccont p)
+                startA aux.token aux.trampolineHolder (Choice1Of2 >> args.cont) (fun edi -> args.cont (Choice2Of2 (edi.GetAssociatedSourceException()))) aux.ccont p)
 
         static member RunSynchronously (p: Async<'T>,?timeout,?cancellationToken:CancellationToken) =
             let timeout,token =
                 match cancellationToken with
-                |   None -> timeout,(!defaultCancellationTokenSource).Token
+                |   None -> timeout,defaultCancellationTokenSource.Token
                 |   Some token when not token.CanBeCanceled -> timeout, token
                 |   Some token -> None, token
             CancellationTokenOps.RunSynchronously(token, p, timeout)
 
         static member Start (computation, ?cancellationToken) =
-            let token = defaultArg cancellationToken (!defaultCancellationTokenSource).Token
+            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
             CancellationTokenOps.Start (token, computation)
 
 #if FX_NO_TASK
 #else
         static member StartAsTask (computation,?taskCreationOptions,?cancellationToken)=
-            let token = defaultArg cancellationToken (!defaultCancellationTokenSource).Token        
+            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token        
             CancellationTokenOps.StartAsTask(token,computation,taskCreationOptions)
         
         static member StartChildAsTask (computation,?taskCreationOptions) =
@@ -1353,8 +1399,12 @@ namespace Microsoft.FSharp.Control
         static member Parallel (l: seq<Async<'T>>) =
             unprotectedPrimitive (fun args ->
                 let tasks,result = 
-                    try Seq.toArray l, None   // manually protect eval of seq
-                    with exn -> null, Some(errorT args exn)
+                    try 
+                        Seq.toArray l, None   // manually protect eval of seq
+                    with exn -> 
+                        let edi = ExceptionDispatchInfo.RestoreOrCapture(exn)
+                        null, Some(errorT args edi)
+
                 match result with
                 | Some r -> r
                 | None ->
@@ -1406,7 +1456,7 @@ namespace Microsoft.FSharp.Control
                                 // on success, record the result
                                 (fun res -> recordSuccess i res)
                                 // on exception...
-                                (fun exn -> recordFailure (Choice1Of2 exn))
+                                (fun edi -> recordFailure (Choice1Of2 edi))
                                 // on cancellation...
                                 (fun cexn -> recordFailure (Choice2Of2 cexn))
                                 p
@@ -1418,26 +1468,30 @@ namespace Microsoft.FSharp.Control
     // Contains helpers that will attach continuation to the given task.
     // Should be invoked as a part of protectedPrimitive(withResync) call
     module TaskHelpers = 
-        let continueWith (task : Task<'T>, ({ aux = aux } as args)) = 
+        let continueWith (task : Task<'T>, args) = 
+
             let continuation (completedTask : Task<_>) : unit =
-                aux.trampolineHolder.Protect((fun () ->
+                args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        aux.ccont (new OperationCanceledException())
+                        args.aux.ccont (new OperationCanceledException())
                     elif completedTask.IsFaulted then
-                        aux.econt (upcast completedTask.Exception)
+                        args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
                         args.cont completedTask.Result)) |> unfake
+
             task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.None) |> ignore |> fake
 
-        let continueWithUnit (task : Task, ({ aux = aux } as args)) = 
+        let continueWithUnit (task : Task, args) = 
+
             let continuation (completedTask : Task) : unit =
-                aux.trampolineHolder.Protect((fun () ->
+                args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        aux.ccont (new OperationCanceledException())
+                        args.aux.ccont (new OperationCanceledException())
                     elif completedTask.IsFaulted then
-                        aux.econt (upcast completedTask.Exception)
+                        args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
                         args.cont ())) |> unfake
+
             task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.None) |> ignore |> fake
 #endif
 
@@ -1463,23 +1517,34 @@ namespace Microsoft.FSharp.Control
 
     type Async with
 
-        static member StartWithContinuations(a:Async<'T>,cont,econt,ccont,?cancellationToken) : unit =
-            let token = defaultArg cancellationToken (!defaultCancellationTokenSource).Token
-            CancellationTokenOps.StartWithContinuations(token, a,cont,econt,ccont)
+        /// StartWithContinuations, except the exception continuation is given an ExceptionDispatchInfo
+        static member StartWithContinuationsUsingDispatchInfo(computation:Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken) : unit =
+            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            CancellationTokenOps.StartWithContinuations(token, computation, continuation, exceptionContinuation, cancellationContinuation)
 
-        static member StartImmediate(a:Async<unit>,?cancellationToken) : unit =
-            Async.StartWithContinuations(a,id,raise,ignore,?cancellationToken=cancellationToken)
+        static member StartWithContinuations(computation:Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken) : unit =
+            Async.StartWithContinuationsUsingDispatchInfo(computation, continuation, (fun edi -> exceptionContinuation (edi.GetAssociatedSourceException())), cancellationContinuation, ?cancellationToken=cancellationToken)
+
+        static member StartImmediate(computation:Async<unit>, ?cancellationToken) : unit =
+            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            CancellationTokenOps.StartWithContinuations(token, computation, id, (fun edi -> edi.ThrowAny()), ignore)
 
 #if FSHARP_CORE_NETCORE_PORTABLE
         static member Sleep(dueTime : int) : Async<unit> = 
             // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the Delay task
             unprotectedPrimitiveWithResync ( fun ({ aux = aux} as args) ->
-                let mutable the_exn = null
-                let task = try Task.Delay(dueTime, aux.token)
-                           with e -> the_exn <- e; null
-                match the_exn with
+                let mutable edi = null
+
+                let task = 
+                    try 
+                        Task.Delay(dueTime, aux.token)
+                    with exn -> 
+                        edi <- ExceptionDispatchInfo.RestoreOrCapture(exn)
+                        null
+
+                match edi with
                 | null -> TaskHelpers.continueWithUnit(task, args)
-                | e -> aux.econt e
+                | _ -> aux.econt edi
             )
 #else
         static member Sleep(dueTime) : Async<unit> =
@@ -1498,7 +1563,7 @@ namespace Microsoft.FSharp.Control
                                 aux.trampolineHolder.Protect(fun () -> savedCCont(new OperationCanceledException())) |> unfake
                             ),
                         null)
-                let mutable the_exn = null
+                let mutable edi = null
                 try
                     timer := new Timer((fun _ ->
                                         if latch.Enter() then
@@ -1517,13 +1582,15 @@ namespace Microsoft.FSharp.Control
                                             // Now we're done, so call the continuation
                                             aux.trampolineHolder.Protect (fun () -> savedCont()) |> unfake),
                                      null, dueTime=dueTime, period = -1) |> Some
-                with
-                    exn -> if latch.Enter() then the_exn <- exn // post exception to econt only if we successfully enter the latch (no other continuations were called)
-                match the_exn with 
+                with exn -> 
+                    if latch.Enter() then 
+                        edi <- ExceptionDispatchInfo.RestoreOrCapture(exn) // post exception to econt only if we successfully enter the latch (no other continuations were called)
+
+                match edi with 
                 | null -> 
                     FakeUnit
-                | exn -> 
-                    aux.econt exn
+                | _ -> 
+                    aux.econt edi
                 )
 #endif
         
@@ -1578,14 +1645,14 @@ namespace Microsoft.FSharp.Control
                         if millisecondsTimeout <> Timeout.Infinite then 
                             Async.StartWithContinuations
                                 (
-                                    a = (Async.Sleep millisecondsTimeout),
-                                    cont = (fun () -> 
+                                    computation = (Async.Sleep millisecondsTimeout),
+                                    continuation = (fun () -> 
                                         if latch.Enter() then 
                                             registration.Dispose()
                                             aux.trampolineHolder.Protect(fun () ->  scont false)
                                             |> unfake),
-                                    econt = ignore, // we do not expect exceptions here
-                                    ccont = cancel,
+                                    exceptionContinuation = ignore, // we do not expect exceptions here
+                                    cancellationContinuation = cancel,
                                     cancellationToken = aux.token
                                 )
                         FakeUnit
@@ -1718,8 +1785,15 @@ namespace Microsoft.FSharp.Control
                                             registration.Dispose()
                                     |   None -> 
                                             once.Do(fun () -> registration.Dispose())
+
                                     // Run the endAction and collect its result.
-                                    let res = try Ok(endAction iar) with e -> Error(e)
+                                    let res = 
+                                        try 
+                                            Ok(endAction iar) 
+                                        with exn -> 
+                                            let edi = ExceptionDispatchInfo.RestoreOrCapture(exn)
+                                            Error edi
+
                                     // Register the result. This may race with a cancellation result, but
                                     // ResultCell allows a race and throws away whichever comes last.
                                     resultCell.RegisterResult(res,reuseThread=true) |> unfake
@@ -1771,7 +1845,7 @@ namespace Microsoft.FSharp.Control
          member s.GetResult() = 
              match result.TryWaitForResultSynchronously (-1) with 
              | Some (Ok v) -> v
-             | Some (Error err) -> raise err
+             | Some (Error edi) -> edi.ThrowAny()
              | Some (Canceled err) -> raise err
              | None -> failwith "unreachable"
 
@@ -1914,9 +1988,8 @@ namespace Microsoft.FSharp.Control
                        innerCTS.Token
                        // since innerCTS is not ever Disposed, can call reg.Dispose() without a safety Latch
                        (fun res -> ctsRef := null; reg.Dispose(); resultCell.RegisterResult (Ok res, reuseThread=true))   
-                       (fun err -> ctsRef := null; reg.Dispose(); resultCell.RegisterResult (Error err,reuseThread=true))   
+                       (fun edi -> ctsRef := null; reg.Dispose(); resultCell.RegisterResult (Error edi,reuseThread=true))   
                        (fun err -> ctsRef := null; reg.Dispose(); resultCell.RegisterResult (Canceled err,reuseThread=true))    
-                       
                        computation
                      |> unfake
                                                
@@ -1960,6 +2033,11 @@ namespace Microsoft.FSharp.Control
         static member AwaitTask (task:Task<'T>) : Async<'T> = 
             protectedPrimitiveWithResync (fun args -> 
                 TaskHelpers.continueWith(task, args)
+                )
+
+        static member AwaitTask (task:Task) : Async<unit> = 
+            protectedPrimitiveWithResync (fun args -> 
+                TaskHelpers.continueWithUnit(task, args)
                 )
 #endif
 
@@ -2032,18 +2110,20 @@ namespace Microsoft.FSharp.Control
             [<CompiledName("AsyncGetResponse")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member req.AsyncGetResponse() : Async<System.Net.WebResponse>= 
                 
-                async { let canceled = ref false // WebException with Status = WebExceptionStatus.RequestCanceled  can be raised in other situations except cancellation, use flag to filter out false positives
-                        try 
-                            // Note that we specify req.Abort as the cancelAction. If successful, this will cause 
-                            // a WebExceptionStatus.RequestCanceled to be raised from the web request.
-                           return! Async.FromBeginEnd(beginAction=req.BeginGetResponse, 
-                                                      endAction = req.EndGetResponse, 
-                                                      cancelAction = fun() -> canceled := true; req.Abort())
-                        with 
-                           | :? System.Net.WebException as webExn 
-                                   when webExn.Status = System.Net.WebExceptionStatus.RequestCanceled && !canceled -> 
+                let canceled = ref false // WebException with Status = WebExceptionStatus.RequestCanceled  can be raised in other situations except cancellation, use flag to filter out false positives
 
-                               return! Async.ReifyResult(Result.Canceled (OperationCanceledException webExn.Message)) }
+                // Use tryWithDispatchInfoA to allow propagation of ExceptionDispatchInfo
+                Async.FromBeginEnd(beginAction=req.BeginGetResponse, 
+                                   endAction = req.EndGetResponse, 
+                                   cancelAction = fun() -> canceled := true; req.Abort())
+                |> tryWithDispatchInfoA (fun edi ->
+                    match edi.SourceException with 
+                    | :? System.Net.WebException as webExn 
+                            when webExn.Status = System.Net.WebExceptionStatus.RequestCanceled && !canceled -> 
+
+                        Async.ReifyResult(Result.Canceled (OperationCanceledException webExn.Message))
+                    | _ -> 
+                        edi.ThrowAny())
 
 #endif
      
@@ -2051,29 +2131,56 @@ namespace Microsoft.FSharp.Control
 #else
         
         type System.Net.WebClient with
-            [<CompiledName("AsyncDownloadString")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            member this.AsyncDownloadString (address:Uri) : Async<string> =
+            member inline private this.Download(event: IEvent<'T, _>, handler: _ -> 'T, start, result) =
                 let downloadAsync =
                     Async.FromContinuations (fun (cont, econt, ccont) ->
-                                let userToken = new obj()
-                                let rec handler = 
-                                        System.Net.DownloadStringCompletedEventHandler (fun _ args ->
-                                            if userToken = args.UserState then
-                                                this.DownloadStringCompleted.RemoveHandler(handler)
-                                                if args.Cancelled then
-                                                    ccont (new OperationCanceledException()) 
-                                                elif args.Error <> null then
-                                                    econt args.Error
-                                                else
-                                                    cont args.Result)
-                                this.DownloadStringCompleted.AddHandler(handler)
-                                this.DownloadStringAsync(address, userToken)
-                            )
+                        let userToken = new obj()
+                        let rec delegate' (_: obj) (args : #ComponentModel.AsyncCompletedEventArgs) =
+                            // ensure we handle the completed event from correct download call
+                            if userToken = args.UserState then
+                                event.RemoveHandler handle
+                                if args.Cancelled then
+                                    ccont (new OperationCanceledException())
+                                elif args.Error <> null then
+                                    econt args.Error
+                                else
+                                    cont (result args)
+                        and handle = handler delegate'
+                        event.AddHandler handle
+                        start userToken
+                    )
 
-                async { 
+                async {
                     use! _holder = Async.OnCancel(fun _ -> this.CancelAsync())
                     return! downloadAsync
                  }
+
+            [<CompiledName("AsyncDownloadString")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
+            member this.AsyncDownloadString (address:Uri) : Async<string> =
+                this.Download(
+                    event   = this.DownloadStringCompleted,
+                    handler = (fun action    -> Net.DownloadStringCompletedEventHandler(action)),
+                    start   = (fun userToken -> this.DownloadStringAsync(address, userToken)),
+                    result  = (fun args      -> args.Result)
+                )
+
+            [<CompiledName("AsyncDownloadData")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
+            member this.AsyncDownloadData (address:Uri) : Async<byte[]> =
+                this.Download(
+                    event   = this.DownloadDataCompleted,
+                    handler = (fun action    -> Net.DownloadDataCompletedEventHandler(action)),
+                    start   = (fun userToken -> this.DownloadDataAsync(address, userToken)),
+                    result  = (fun args      -> args.Result)
+                )
+
+            [<CompiledName("AsyncDownloadFile")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
+            member this.AsyncDownloadFile (address:Uri, fileName:string) : Async<unit> =
+                this.Download(
+                    event   = this.DownloadFileCompleted,
+                    handler = (fun action    -> ComponentModel.AsyncCompletedEventHandler(action)),
+                    start   = (fun userToken -> this.DownloadFileAsync(address, fileName, userToken)),
+                    result  = (fun _         -> ())
+                )
 #endif
 
 
@@ -2085,9 +2192,9 @@ namespace Microsoft.FSharp.Control
                 let c = new ResultCell<_>()
                 let! ct = Async.CancellationToken
                 let start a f =
-                    Async.StartWithContinuations(a, 
+                    Async.StartWithContinuationsUsingDispatchInfo(a, 
                         (fun res -> c.RegisterResult(f res |> Result.Ok, reuseThread=false) |> unfake),
-                        (fun e -> c.RegisterResult(e |> Result.Error, reuseThread=false) |> unfake),
+                        (fun edi -> c.RegisterResult(edi |> Result.Error, reuseThread=false) |> unfake),
                         (fun oce -> c.RegisterResult(oce |> Result.Canceled, reuseThread=false) |> unfake),
                         cancellationToken = ct
                         )
@@ -2101,9 +2208,12 @@ namespace Microsoft.FSharp.Control
                 unprotectedPrimitive(fun _ -> FakeUnit) // "block" forever
             else
                 let c = new ResultCell<_>()
-                Async.StartWithContinuations(Async.Sleep(msec),
-                    (fun () -> c.RegisterResult((), reuseThread = false) |> unfake),
-                    (fun _ -> ()), (fun _ -> ()), cancellationToken = cancellationToken)
+                Async.StartWithContinuations(
+                    computation=Async.Sleep(msec),
+                    continuation=(fun () -> c.RegisterResult((), reuseThread = false) |> unfake),
+                    exceptionContinuation=ignore, 
+                    cancellationContinuation=ignore, 
+                    cancellationToken = cancellationToken)
                 c.AwaitResult
 
     [<Sealed>]
@@ -2360,11 +2470,14 @@ namespace Microsoft.FSharp.Control
             else
                 started <- true
 
-                // Protect the execution and send errors to the event
-                let p = async { try 
-                                    do! initial x 
-                                with err -> 
-                                    errorEvent.Trigger err }
+                // Protect the execution and send errors to the event.
+                // Note that exception stack traces are lost in this design - in an extended design
+                // the event could propagate an ExceptionDispatchInfo instead of an Exception.
+                let p = 
+                    async { try 
+                                do! initial x 
+                            with exn -> 
+                                errorEvent.Trigger exn }
 
                 Async.Start(computation=p, cancellationToken=cancellationToken)
 

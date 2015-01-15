@@ -264,7 +264,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Creates a CALPOLESTR from a list of strings 
         /// It is the responsability of the caller to release this memory.
         /// </summary>
-        /// <param name="guids"></param>
+        /// <param name="strings"></param>
         /// <returns>A CALPOLESTR that was created from the the list of strings.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CALPOLESTR")]
         public static CALPOLESTR CreateCALPOLESTR(IList<string> strings)
@@ -299,7 +299,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Creates a CADWORD from a list of tagVsSccFilesFlags. Memory is allocated for the elems. 
         /// It is the responsability of the caller to release this memory.
         /// </summary>
-        /// <param name="guids"></param>
+        /// <param name="flags"></param>
         /// <returns>A CADWORD created from the list of tagVsSccFilesFlags.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CADWORD")]
         public static CADWORD CreateCADWORD(IList<tagVsSccFilesFlags> flags)
@@ -572,8 +572,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return false;
         }
 
-        /// Cehcks if a file name is valid.
-        /// </devdoc>
+        /// Checks if a file name is valid.
         /// <param name="fileName">The name of the file</param>
         /// <returns>True if the file is valid.</returns>
         public static bool IsFileNameInvalid(string fileName)
@@ -597,7 +596,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Helper method to call a converter explicitely to convert to an enum type
         /// </summary>
         /// <typeparam name="T">THe enum to convert to</typeparam>
-        /// <typeparam name="V">The converter that will be created</typeparam>
         /// <param name="value">The enum value to be converted to</param>
         /// <param name="typeToConvert">The type to convert</param>
         /// <param name="culture">The culture to use to read the localized strings</param>
@@ -687,7 +685,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             if (buildEngine == null)
             {
-                throw new ArgumentNullException("engine");
+                throw new ArgumentNullException("buildEngine");
             }
 
             if (String.IsNullOrEmpty(fullProjectPath))
@@ -712,7 +710,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Loads a project file for the file. If the build project exists and it was loaded with a different file then it is unloaded first. 
         /// </summary>
-        /// <param name="engine">The build engine to use to create a build project.</param>
+        /// <param name="buildEngine">The build engine to use to create a build project.</param>
         /// <param name="fullProjectPath">The full path of the project.</param>
         /// <param name="exitingBuildProject">An Existing build project that will be reloaded.</param>
         /// <returns>A loaded msbuild project.</returns>
@@ -902,6 +900,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return fullPath;
         }
 
+        /// <summary>
+        /// Attempts a call to CanonicalizeFileName, but returns the input unchanged if that method throws
+        /// </summary>
+        /// <param name="anyFileName">File name to canonicalize</param>
+        /// <returns>Canonicalized file name if possible, otherwise returns input unchanged</returns>
+        public static string CanonicalizeFileNameNoThrow(string anyFileName)
+        {
+            try
+            {
+                return CanonicalizeFileName(anyFileName);
+            }
+            catch { }
+
+            return anyFileName;
+        }
 
         /// <summary>
         /// Determines if a file is a template.

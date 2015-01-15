@@ -94,6 +94,12 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Bind")>]
         val bind: binder:('T -> 'U option) -> option:'T option -> 'U option
 
+        /// <summary><c>filter f inp</c> evaluates to <c>match inp with None -> None | Some x -> if f x then Some x else None</c>.</summary>
+        /// <param name="predicate">A function that evaluates whether the value contained in the option should remain, or be filtered out.</param>
+        /// <param name="option">The input option.</param>
+        /// <returns>The input if the predicate evaluates to true; otherwise, None.</returns>
+        [<CompiledName("Filter")>]
+        val filter: predicate:('T -> bool) -> option:'T option -> 'T option
 
         /// <summary>Convert the option to an array of length 0 or 1.</summary>
         /// <param name="option">The input option.</param>
@@ -108,3 +114,26 @@ namespace Microsoft.FSharp.Core
         val toList: option:'T option -> 'T list
 
 
+        /// <summary>Convert the option to a Nullable value.</summary>
+        /// <param name="option">The input option.</param>
+        /// <returns>The result value.</returns>
+        [<CompiledName("ToNullable")>]
+        val toNullable: option:'T option -> Nullable<'T>
+
+        /// <summary>Convert a Nullable value to an option.</summary>
+        /// <param name="value">The input nullable value.</param>
+        /// <returns>The result option.</returns>
+        [<CompiledName("OfNullable")>]
+        val ofNullable: value:Nullable<'T> -> 'T option 
+
+        /// <summary>Convert a potentially null value to an option.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The result option.</returns>
+        [<CompiledName("OfObj")>]
+        val ofObj: value: 'T -> 'T option  when 'T : null
+
+        /// <summary>Convert an option to a potentially null value.</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The result value, which is null if the input was None.</returns>
+        [<CompiledName("ToObj")>]
+        val toObj: value: 'T option -> 'T when 'T : null

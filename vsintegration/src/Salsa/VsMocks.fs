@@ -64,7 +64,7 @@ module internal VsMocks =
 
     type VsFileChangeEx() = 
         let fileToEvents = new Dictionary<string,IVsFileChangeEvents list>()
-        let Canonicalize (filename:string) = Internal.Utilities.FileSystem.Path.SafeGetFullPath(filename)
+        let Canonicalize (filename:string) = System.IO.Path.GetFullPath(filename)
         
         member c.AddedFile(file) =
 //            printfn "VsMocks.VsFileChangeEx: Added file %s " file
@@ -834,7 +834,7 @@ module internal VsMocks =
     // IVsTextView ---------------------------------------------------------------------------------------------------------        
     let createTextView() : IVsTextView = Vs.DelegateTextView(Vs.MakeTextView())
     let setFileText (filename:string) (tv:IVsTextView) (lines:string array) (recolorizeLines:int->int->unit) (getColorStateAtStartOfLine:int->int) = 
-        let filename = Internal.Utilities.FileSystem.Path.SafeGetFullPath(filename)
+        let filename = System.IO.Path.GetFullPath(filename)
         let inner = getInner tv
         let lineCount = lines.Length
         let getLineCount() = Some(ok, lines.Length)
@@ -1635,7 +1635,7 @@ module internal VsActual =
     open Microsoft.VisualStudio.Text
 
     let vsInstallDir =
-        let key = @"SOFTWARE\Microsoft\VisualStudio\12.0"
+        let key = @"SOFTWARE\Microsoft\VisualStudio\14.0"
         let hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32)
         let rkey = hklm.OpenSubKey(key)
         rkey.GetValue("InstallDir") :?> string

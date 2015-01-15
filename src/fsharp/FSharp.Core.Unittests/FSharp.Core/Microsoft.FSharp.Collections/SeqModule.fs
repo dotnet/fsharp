@@ -106,6 +106,16 @@ type SeqModule() =
         VerifySeqsEqual expectedResultNull appendNullSeq
          
         ()
+
+    [<Test>]
+    member this.replicate() =
+        // replicate should create multiple copies of the given value
+        Assert.IsTrue(Seq.isEmpty <| Seq.replicate 0 null)
+        Assert.IsTrue(Seq.isEmpty <| Seq.replicate 0 1)
+        Assert.AreEqual(null, Seq.head <| Seq.replicate 1 null)
+        Assert.AreEqual(["1";"1"],Seq.replicate 2 "1" |> Seq.toList)
+
+        CheckThrowsArgumentException (fun () ->  Seq.replicate -1 null |> ignore)
         
         
     [<Test>]
@@ -600,6 +610,33 @@ type SeqModule() =
         ()
     
     [<Test>]
+    member this.FindBack() =
+        // integer Seq
+        let funcInt x = x % 5 = 0
+        Assert.AreEqual(20, Seq.findBack funcInt <| seq { 1..20 })
+        Assert.AreEqual(15, Seq.findBack funcInt <| seq { 1..19 })
+        Assert.AreEqual(5, Seq.findBack funcInt <| seq { 5..9 })
+
+        // string Seq
+        let funcStr (s:string) = s.Contains("Expected")
+        let strSeq = seq [ "Not Expected"; "Expected Content"]
+        let findStr = Seq.findBack funcStr strSeq
+        Assert.AreEqual("Expected Content", findStr)
+
+        // Empty Seq
+        let emptySeq = Seq.empty
+        CheckThrowsKeyNotFoundException(fun () -> Seq.findBack funcInt emptySeq |> ignore)
+
+        // Not found
+        let emptySeq = Seq.empty
+        CheckThrowsKeyNotFoundException(fun () -> seq { 1..20 } |> Seq.findBack (fun _ -> false) |> ignore)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.findBack funcInt nullSeq |> ignore)
+        ()
+
+    [<Test>]
     member this.FindIndex() =
         
         // integer Seq
@@ -614,6 +651,52 @@ type SeqModule() =
         CheckThrowsArgumentNullException(fun() -> Seq.findIndex (fun i -> true) null |> ignore)
         ()
     
+    [<Test>]
+    member this.Permute() =
+        let mapIndex i = (i + 1) % 4
+
+        // integer seq
+        let intSeq = seq { 1..4 }
+        let resultInt = Seq.permute mapIndex intSeq
+        VerifySeqsEqual (seq [4;1;2;3]) resultInt
+
+        // string seq
+        let resultStr = Seq.permute mapIndex [|"Lists"; "are";  "commonly"; "list" |]
+        VerifySeqsEqual (seq ["list"; "Lists"; "are";  "commonly" ]) resultStr
+
+        // empty seq
+        let resultEpt = Seq.permute mapIndex [||]
+        VerifySeqsEqual Seq.empty resultEpt
+
+        // null seq
+        let nullSeq = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Seq.permute mapIndex nullSeq |> ignore)
+
+        // argument exceptions
+        CheckThrowsArgumentException (fun () -> Seq.permute (fun _ -> 10) [0..9] |> Seq.iter ignore)
+        CheckThrowsArgumentException (fun () -> Seq.permute (fun _ -> 0) [0..9] |> Seq.iter ignore)
+        ()
+
+    [<Test>]
+    member this.FindIndexBack() =
+        // integer Seq
+        let digits = seq { 1..100 }
+        let idx = digits |> Seq.findIndexBack (fun i -> i.ToString().Length = 1)
+        Assert.AreEqual(idx, 8)
+
+        // string Seq
+        let funcStr (s:string) = s.Contains("Expected")
+        let strSeq = seq [ "Not Expected"; "Expected Content" ]
+        let findStr = Seq.findIndexBack funcStr strSeq
+        Assert.AreEqual(1, findStr)
+
+        // empty Seq
+        CheckThrowsKeyNotFoundException(fun () -> Seq.findIndexBack (fun i -> true) Seq.empty |> ignore)
+
+        // null Seq
+        CheckThrowsArgumentNullException(fun() -> Seq.findIndexBack (fun i -> true) null |> ignore)
+        ()
+
     [<Test>]
     member this.Pick() =
     
@@ -657,7 +740,116 @@ type SeqModule() =
         
         CheckThrowsArgumentNullException (fun () -> Seq.fold funcInt 1 nullSeq |> ignore) 
         () 
+
+
+
+    [<Test>]
+    member this.Fold2() =
+        Assert.AreEqual([(3,5); (2,3); (1,1)],Seq.fold2 (fun acc x y -> (x,y)::acc) [] (seq [ 1..3 ])  (seq [1..2..6]))
+
+        // integer List  
+        let funcInt x y z = x + y + z
+        let resultInt = Seq.fold2 funcInt 9 (seq [ 1..10 ]) (seq [1..2..20])
+        Assert.AreEqual(164, resultInt)
         
+        // string List        
+        let funcStr x y z = x + y + z        
+        let resultStr = Seq.fold2 funcStr "*" ["a"; "b";  "c" ; "d" ] ["A"; "B";  "C" ; "D" ]        
+        Assert.AreEqual("*aAbBcCdD", resultStr)
+        
+        // empty List
+        let emptyArr:int list = [ ]
+        let resultEpt = Seq.fold2 funcInt 5 emptyArr emptyArr        
+        Assert.AreEqual(5, resultEpt)
+
+        Assert.AreEqual(0,Seq.fold2 funcInt 0 Seq.empty (seq [1]))
+        Assert.AreEqual(-1,Seq.fold2 funcInt -1 (seq [1]) Seq.empty)
+            
+        Assert.AreEqual(2,Seq.fold2 funcInt 0 (seq [1;2]) (seq [1]))
+        Assert.AreEqual(4,Seq.fold2 funcInt 0 (seq [1]) (seq [3;6]))
+
+        // null Seq
+        let nullSeq:seq<'a> = null     
+        
+        CheckThrowsArgumentNullException (fun () -> Seq.fold2 funcInt 0 nullSeq (seq [1])  |> ignore) 
+        CheckThrowsArgumentNullException (fun () -> Seq.fold2 funcInt 0 (seq [1]) nullSeq |> ignore) 
+        ()
+        
+    [<Test>]
+    member this.FoldBack() =
+        // int Seq
+        let funcInt x y = x-y
+        let IntSeq = seq { 1..4 }
+        let foldInt = Seq.foldBack funcInt IntSeq 6
+        Assert.AreEqual((1-(2-(3-(4-6)))), foldInt)
+
+        // string Seq
+        let funcStr (x:string) (y:string) = y.Remove(0,x.Length)
+        let strSeq = seq [ "A"; "B"; "C"; "D" ]
+        let foldStr = Seq.foldBack  funcStr strSeq "ABCDE"
+        Assert.AreEqual("E", foldStr)
+        
+        // single element
+        let funcStr2 elem acc = sprintf "%s%s" elem acc
+        let strSeq2 = seq [ "A" ]
+        let foldStr2 = Seq.foldBack funcStr2 strSeq2 "X"
+        Assert.AreEqual("AX", foldStr2)
+
+        // Empty Seq
+        let emptySeq = Seq.empty
+        let foldEmpty = Seq.foldBack funcInt emptySeq 1
+        Assert.AreEqual(1, foldEmpty)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.foldBack funcInt nullSeq 1 |> ignore)
+
+        // Validate that foldBack with the cons operator and the empty list returns a copy of the sequence
+        let cons x y = x :: y
+        let identityFoldr = Seq.foldBack cons IntSeq []
+        Assert.AreEqual([1;2;3;4], identityFoldr)
+
+        ()
+
+    [<Test>]
+    member this.foldBack2() =
+        // int Seq
+        let funcInt x y z = x + y + z
+        let intSeq = seq { 1..10 }
+        let resultInt = Seq.foldBack2 funcInt intSeq (seq { 1..2..20 }) 9
+        Assert.AreEqual(164, resultInt)
+
+        // string Seq
+        let funcStr = sprintf "%s%s%s"
+        let strSeq = seq [ "A"; "B"; "C"; "D" ]
+        let resultStr = Seq.foldBack2  funcStr strSeq (seq [ "a"; "b"; "c"; "d"]) "*"
+        Assert.AreEqual("AaBbCcDd*", resultStr)
+
+        // single element
+        let strSeqSingle = seq [ "X" ]
+        Assert.AreEqual("XAZ", Seq.foldBack2 funcStr strSeqSingle strSeq "Z")
+        Assert.AreEqual("AXZ", Seq.foldBack2 funcStr strSeq strSeqSingle "Z")
+        Assert.AreEqual("XYZ", Seq.foldBack2 funcStr strSeqSingle (seq [ "Y" ]) "Z")
+
+        // empty Seq
+        let emptySeq = Seq.empty
+        Assert.AreEqual(1, Seq.foldBack2 funcInt emptySeq emptySeq 1)
+        Assert.AreEqual(1, Seq.foldBack2 funcInt emptySeq intSeq 1)
+        Assert.AreEqual(1, Seq.foldBack2 funcInt intSeq emptySeq 1)
+
+        // infinite Seq
+        let infiniteSeq = Seq.initInfinite (fun i -> 2 * i + 1)
+        Assert.AreEqual(164, Seq.foldBack2 funcInt intSeq infiniteSeq 9)
+        Assert.AreEqual(164, Seq.foldBack2 funcInt infiniteSeq intSeq 9)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.foldBack2 funcInt nullSeq intSeq 1 |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Seq.foldBack2 funcInt intSeq nullSeq 1 |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Seq.foldBack2 funcInt nullSeq nullSeq 1 |> ignore)
+
+        ()
+
     [<Test>]
     member this.ForAll() =
 
@@ -797,3 +989,30 @@ type SeqModule() =
         let l = f 3 |> Seq.toList
         Assert.AreEqual([6;7;8], l)
 
+    [<Test>]
+    member this.Contains() =
+
+        // Integer Seq
+        let intSeq = seq { 0..9 }
+
+        let ifContainsInt = Seq.contains 5 intSeq
+
+        Assert.IsTrue(ifContainsInt)
+
+        // String Seq
+        let strSeq = seq ["key"; "blank key"]
+
+        let ifContainsStr = Seq.contains "key" strSeq
+
+        Assert.IsTrue(ifContainsStr)
+
+        // Empty Seq
+        let emptySeq = Seq.empty
+        let ifContainsEmpty = Seq.contains 5 emptySeq
+
+        Assert.IsFalse(ifContainsEmpty)
+
+        // null Seq
+        let nullSeq:seq<'a> = null
+
+        CheckThrowsArgumentNullException (fun () -> Seq.contains 5 nullSeq |> ignore)

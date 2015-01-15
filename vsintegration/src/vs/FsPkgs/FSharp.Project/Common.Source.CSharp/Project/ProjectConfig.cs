@@ -1429,6 +1429,209 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         public string Platform { get { return this.configCanonicalName.Platform; } }
+
+        private static bool IsPossibleOutputGroup(string groupName)
+        {
+            return groupName != "SourceFiles";
+        }
+
+        private static DateTime? TryGetLastWriteTimeUtc(string path, OutputWindowLogger logger)
+        {
+            Exception exn = null;
+
+            try
+            {
+                if (File.Exists(path))
+                    return File.GetLastWriteTimeUtc(path);
+            }
+            catch (Exception ex)
+            {
+                exn = ex;
+            }
+
+            if (exn != null)
+            {
+                logger.WriteLine("Failed to access {0}: {1}", path, exn.Message);
+                logger.WriteLine(exn.ToString());
+            }
+
+            return null;
+        }
+
+        internal bool GetUTDCheckInputs(ref HashSet<string> inputs)
+        {
+            // the project file itself
+            inputs.Add(Utilities.CanonicalizeFileNameNoThrow(this.project.BuildProject.FullPath));
+
+            var projDir = this.project.BuildProject.DirectoryPath;
+
+            // well-known types of input items
+            var itemTypes = new string[] { "Compile", "Content", "Resource", "EmbeddedResource" };
+            foreach (var itemType in itemTypes)
+            {
+                foreach (var item in this.project.BuildProject.GetItems(itemType))
+                {
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow(Path.Combine(projDir, item.EvaluatedInclude)));
+                }
+            }
+
+            // other well-known inputs exposed as properties
+            var properties = new string[] { "Win32Manifest", "Win32Resource", "AssemblyOriginatorKeyFile", "KeyOriginatorFile", "ApplicationIcon", "VersionFile" };
+            foreach (var prop in properties)
+            {
+                var propVal = this.project.BuildProject.GetPropertyValue(prop);
+                if (!String.IsNullOrWhiteSpace(propVal))
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow(Path.Combine(projDir, propVal)));
+            }
+
+            // other well-known special files that were otherwise missed
+            var specialFiles = this.project.InteropSafeIVsHierarchy as IVsProjectSpecialFiles;
+            if (specialFiles == null)
+                return false;
+
+            for (int fileId = (int)__PSFFILEID5.PSFFILEID_FIRST5; fileId <= (int)__PSFFILEID.PSFFILEID_LAST; fileId++)
+            {
+                uint itemId;
+                string fileName;
+                if (ErrorHandler.Succeeded(specialFiles.GetFile(fileId, (uint)__PSFFLAGS.PSFF_FullPath, out itemId, out fileName))
+                    && itemId != (uint)VSConstants.VSITEMID.Nil)
+                {
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow(fileName));
+                }
+            }
+
+            // assembly and project references
+            foreach (var reference in this.project.GetReferenceContainer().EnumReferences())
+            {
+                if (reference is AssemblyReferenceNode)
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow(reference.Url));
+                else if (reference is ProjectReferenceNode)
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow((reference as ProjectReferenceNode).ReferencedProjectOutputPath));
+                else if (reference is ComReferenceNode)
+                    inputs.Add(Utilities.CanonicalizeFileNameNoThrow((reference as ComReferenceNode).InstalledFilePath));
+                else if (reference is GroupingReferenceNode)
+                {
+                    foreach (var groupedRef in ((GroupingReferenceNode)reference).GroupedItems)
+                    {
+                        inputs.Add(Utilities.CanonicalizeFileNameNoThrow(groupedRef));
+                    }
+                }
+                else
+                {
+                    // some reference type we don't know about
+                    System.Diagnostics.Debug.Assert(false, "Unexpected reference type", "{0}", reference);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        internal bool GetUTDCheckOutputs(ref HashSet<string> outputs, HashSet<string> inputs)
+        {
+            // Output groups give us the paths to the following outputs
+            //   result EXE or DLL in "obj" dir
+            //   PDB file in "obj" dir (if project is configured to create this)
+            //   XML doc file in "bin" dir (if project is configured to create this)
+            foreach (var output in OutputGroups
+                                    .Where(g => IsPossibleOutputGroup(g.CanonicalName))
+                                    .SelectMany(x => x.Outputs)
+                                    .Select(o => Utilities.CanonicalizeFileNameNoThrow(o.CanonicalName))
+                                    .Where((path) => !inputs.Contains(path)))  // some "outputs" are really inputs (e.g. app.config files)
+            {
+                outputs.Add(output);
+            }
+
+            // final binplace of built assembly
+            var outputAssembly = this.project.GetOutputAssembly(this.ConfigCanonicalName);
+            outputs.Add(Utilities.CanonicalizeFileNameNoThrow(outputAssembly));
+
+            // final PDB path
+            if (this.DebugSymbols &&
+                (outputAssembly.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || outputAssembly.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)))
+            {
+                var pdbPath = outputAssembly.Remove(outputAssembly.Length - 4) + ".pdb";
+                outputs.Add(Utilities.CanonicalizeFileNameNoThrow(pdbPath));
+            }
+
+            return true;
+        }
+
+        // there is a well-known property users can specify that signals for UTD check to be disabled
+        internal bool IsFastUpToDateCheckEnabled()
+        {
+            var fastUTDPropVal = this.project.BuildProject.GetPropertyValue("DisableFastUpToDateCheck");
+            if (String.IsNullOrWhiteSpace(fastUTDPropVal))
+                return true;
+            if (String.Equals(fastUTDPropVal, "true", StringComparison.OrdinalIgnoreCase))
+                return false;
+            return true;
+        }
+
+        internal bool IsUpToDate(OutputWindowLogger logger, bool testing)
+        {
+            logger.WriteLine("Checking whether {0} needs to be rebuilt:", ProjectMgr.Caption);
+
+            // in batch build it is possible that config is out of sync.
+            // in this case, don't assume we are up to date
+            ConfigCanonicalName activeConfig = default(ConfigCanonicalName);
+            if(!Utilities.TryGetActiveConfigurationAndPlatform(ServiceProvider.GlobalProvider, this.project, out activeConfig) ||
+                activeConfig != this.ConfigCanonicalName)
+            {
+                logger.WriteLine("Not up to date: active confic does not match project config. Active: {0} Project: {1}", activeConfig, this.ConfigCanonicalName);
+                if (!testing)
+                    return false;
+            }
+
+            var inputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!GetUTDCheckInputs(ref inputs))
+                return false;
+
+            var outputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!GetUTDCheckOutputs(ref outputs, inputs))
+                return false;
+
+            // determine the oldest output timestamp
+            DateTime stalestOutputTime = DateTime.MaxValue.ToUniversalTime();
+            foreach (var output in outputs)
+            {
+                var timeStamp = TryGetLastWriteTimeUtc(output, logger);
+                if (!timeStamp.HasValue)
+                {
+                    logger.WriteLine("Declaring project NOT up to date, can't find expected output {0}", output);
+                    return false;
+                }
+
+                logger.WriteLine("   Output: {0} {1}", timeStamp.Value.ToLocalTime(), output);
+
+                if (stalestOutputTime > timeStamp.Value)
+                    stalestOutputTime = timeStamp.Value;
+            }
+
+            // determine the newest input timestamp
+            DateTime freshestInputTime = DateTime.MinValue.ToUniversalTime();
+            foreach (var input in inputs)
+            {
+                var timeStamp = TryGetLastWriteTimeUtc(input, logger);
+                if (!timeStamp.HasValue)
+                {
+                    logger.WriteLine("Declaring project NOT up to date, can't find expected input {0}", input);
+                    return false;
+                }
+
+                logger.WriteLine("   Input: {0} {1}", timeStamp.Value.ToLocalTime(), input);
+
+                if (freshestInputTime < timeStamp.Value)
+                    freshestInputTime = timeStamp.Value;
+            }
+
+            logger.WriteLine("Freshest input: {0}", freshestInputTime.ToLocalTime());
+            logger.WriteLine("Stalest output: {0}", stalestOutputTime.ToLocalTime());
+            logger.WriteLine("Up to date: {0}", freshestInputTime <= stalestOutputTime);
+
+            // if all outputs are younger than all inuts, we are up to date
+            return freshestInputTime <= stalestOutputTime;
+        }
     }
 
     internal class ClassLibraryCannotBeStartedDirectlyException : COMException 
@@ -1455,7 +1658,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
 
 #if FX_ATLEAST_45
-        private static string RegistryRoot = @"SOFTWARE\Microsoft\VisualStudio\12.0\";
+        private static string RegistryRoot = @"SOFTWARE\Microsoft\VisualStudio\14.0\";
         private static bool? isMultiThreadedBuildEnabled = null;
         internal static bool IsMultiThreadedBuildEnabled() 
         {
@@ -1577,10 +1780,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             CCITracing.TraceCall();
             config.PrepareBuild(false);
+
+            int utdSupported = config.IsFastUpToDateCheckEnabled() ? 1 : 0;
+
             if (supported != null && supported.Length > 0)
-                supported[0] = 0; // TODO:
+                supported[0] = utdSupported;
             if (ready != null && ready.Length > 0)
-                ready[0] = (IsInProgress()) ? 0 : 1;
+                ready[0] = utdSupported;
             return VSConstants.S_OK;
         }
 
@@ -1619,8 +1825,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int StartUpToDateCheck(IVsOutputWindowPane pane, uint options)
         {
             CCITracing.TraceCall();
-
-            return VSConstants.E_NOTIMPL;
+            
+            return config.IsUpToDate(OutputWindowLogger.CreateUpToDateCheckLogger(pane), false) ? VSConstants.S_OK : VSConstants.E_FAIL;
         }
 
         public virtual int Stop(int fsync)

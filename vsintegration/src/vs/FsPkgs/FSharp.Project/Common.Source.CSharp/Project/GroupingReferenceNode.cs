@@ -35,14 +35,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public string Identity { get; private set; }
         public string ResolutionPath { get; private set; }
         public string Version { get; private set; }
+        public string[] GroupedItems { get; private set; }
 
-        public GroupingReferenceNode(ProjectNode project, string name, string identity, string resolutionPath, string version) 
+        public GroupingReferenceNode(ProjectNode project, string name, string identity, string resolutionPath, string version, string[] groupedItems) 
             : base(project)
         {
             Name = name;
             Identity = identity;
             ResolutionPath = resolutionPath;
             Version = version;
+            GroupedItems = groupedItems;
         }
 
         public override string Caption

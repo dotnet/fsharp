@@ -179,6 +179,12 @@
     <Compile Include="..\range.fs">
       <Link>range.fs</Link>
     </Compile>
+    <Compile Include="..\rational.fsi">
+      <Link>rational.fsi</Link>
+    </Compile>
+    <Compile Include="..\rational.fs">
+      <Link>rational.fs</Link>
+    </Compile>
     <Compile Include="..\ErrorLogger.fs">
 		  <Link>ErrorLogger.fs</Link>
 	</Compile>
@@ -357,6 +363,9 @@
     </Compile>
     <Compile Include="..\opt.fsi">
       <Link>opt.fsi</Link>
+    </Compile>
+    <Compile Include="..\autobox.fs">
+      <Link>autobox.fs</Link>
     </Compile>
     <Compile Include="..\opt.fs">
       <Link>opt.fs</Link>

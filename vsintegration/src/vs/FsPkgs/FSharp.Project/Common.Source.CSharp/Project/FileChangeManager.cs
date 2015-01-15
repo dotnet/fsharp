@@ -94,7 +94,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Overloaded ctor.
         /// </summary>
-        /// <param name="nodeParam">An instance of a project item.</param>
         /*internal, but public for FSharp.Project.dll*/ public FileChangeManager(IServiceProvider serviceProvider)
         {
             #region input validation

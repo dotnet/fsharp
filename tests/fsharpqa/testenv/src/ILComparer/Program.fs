@@ -19,7 +19,7 @@ let main (argv : string array) =
     let f1 = File2List fn1
     let f2 = File2List fn2
 
-    let i = ref 0
+    let mutable i = 0
     let compare (f1:string list) (f2:string list) =
         try
             List.forall2 (fun (a:string) (b:string) ->
@@ -47,11 +47,11 @@ let main (argv : string array) =
                 let aa = Regex.Replace(aa, @"^\s+", "")
                 let bb = Regex.Replace(bb, @"^\s+", "")
 
-                i := !i + 1
+                i <- i + 1
                 if ((if Regex.IsMatch(aa, @"^[ \t]*//") then "//" else aa) = (if Regex.IsMatch(bb, @"^[ \t]*//") then "//" else bb)) then
                     true
                 else
-                    printfn "Files differ at line %d:" !i
+                    printfn "Files differ at line %d:" i
                     printfn "\t>> %s" a
                     printfn "\t<< %s" b
                     false

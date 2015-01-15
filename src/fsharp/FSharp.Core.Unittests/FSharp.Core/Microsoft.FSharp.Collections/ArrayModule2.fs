@@ -18,6 +18,14 @@ Make sure each method works on:
 * Null    array (null)
 *)
 
+type ArrayWindowedTestInput<'t> =
+    {
+        InputArray : 't[]
+        WindowSize : int
+        ExpectedArray : 't[][]
+        Exception : Type option
+    }
+
 [<TestFixture>]
 type ArrayModule2() =
 
@@ -39,6 +47,28 @@ type ArrayModule2() =
         let nullArr = null:string[]      
         CheckThrowsNullRefException (fun () -> Array.length  nullArr  |> ignore)  
         
+        ()
+
+    [<Test>]
+    member this.Indexed() =
+        // integer array
+        let resultInt = Array.indexed [|10..2..20|]
+        Assert.AreEqual([|(0,10);(1,12);(2,14);(3,16);(4,18);(5,20)|], resultInt)
+
+        // string array
+        let funcStr (x:int) (y:string) =  x+ y.Length
+        let resultStr = Array.indexed [| "Lists"; "Are"; "Commonly"; "List" |]
+        Assert.AreEqual([| (0,"Lists");(1,"Are");(2,"Commonly");(3,"List") |], resultStr)
+
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEpt = Array.indexed emptyArr
+        Assert.AreEqual([| |], resultEpt)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.indexed nullArr |> ignore)
+
         ()
 
     [<Test>]
@@ -92,6 +122,88 @@ type ArrayModule2() =
         // len1 <> len2
         CheckThrowsArgumentException(fun () -> Array.map2 funcInt [|1..10|] [|2..20|] |> ignore)
         
+        ()
+
+    [<Test>]
+    member this.Map3() =
+        // Integer array
+        let funcInt a b c = (a + b) * c
+        let resultInt = Array.map3 funcInt [| 1..8 |] [| 2..9 |] [| 3..10 |]
+        if resultInt <> [| 9; 20; 35; 54; 77; 104; 135; 170 |] then Assert.Fail()
+
+        // First array is shorter
+        CheckThrowsArgumentException (fun () -> Array.map3 funcInt [| 1..2 |] [| 2..9 |] [| 3..10 |] |> ignore)
+        // Second array is shorter
+        CheckThrowsArgumentException (fun () -> Array.map3 funcInt [| 1..8 |] [| 2..6 |] [| 3..10 |] |> ignore)
+        // Third array is shorter
+        CheckThrowsArgumentException (fun () -> Array.map3 funcInt [| 1..8 |] [| 2..9 |] [| 3..6 |] |> ignore)
+        
+        // String array
+        let funcStr a b c = a + b + c
+        let resultStr = Array.map3 funcStr [| "A";"B";"C";"D" |] [| "a";"b";"c";"d" |] [| "1";"2";"3";"4" |]
+        if resultStr <> [| "Aa1";"Bb2";"Cc3";"Dd4" |] then Assert.Fail()
+
+        // Empty array
+        let resultEmpty = Array.map3 funcStr [||] [||] [||]
+        if resultEmpty <> [||] then Assert.Fail()
+
+        // Null array
+        let nullArray = null : int[]
+        let nonNullArray = [|1|]
+        CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nullArray nonNullArray nonNullArray |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nonNullArray nullArray nonNullArray |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nonNullArray nonNullArray nullArray |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.MapFold() =
+        // integer array
+        let funcInt acc x = if x % 2 = 0 then 10*x, acc + 1 else x, acc
+        let resultInt,resultIntAcc = Array.mapFold funcInt 100 [| 1..10 |]
+        if resultInt <> [| 1;20;3;40;5;60;7;80;9;100 |] then Assert.Fail()
+        Assert.AreEqual(105, resultIntAcc)
+
+        // string array
+        let funcStr acc (x:string) = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Array.mapFold funcStr "" [| "";"BB";"C";"" |]
+        if resultStr <> [| "empty";"bb";"c";"empty" |] then Assert.Fail()
+        Assert.AreEqual("BBC", resultStrAcc)
+
+        // empty array
+        let resultEpt,resultEptAcc = Array.mapFold funcInt 100 [| |]
+        if resultEpt <> [| |] then Assert.Fail()
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.mapFold funcStr "" nullArr |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.MapFoldBack() =
+        // integer array
+        let funcInt x acc = if acc < 105 then 10*x, acc + 2 else x, acc
+        let resultInt,resultIntAcc = Array.mapFoldBack funcInt [| 1..10 |] 100
+        if resultInt <> [| 1;2;3;4;5;6;7;80;90;100 |] then Assert.Fail()
+        Assert.AreEqual(106, resultIntAcc)
+
+        // string array
+        let funcStr (x:string) acc = match x.Length with 0 -> "empty", acc | _ -> x.ToLower(), sprintf "%s%s" acc x
+        let resultStr,resultStrAcc = Array.mapFoldBack funcStr [| "";"BB";"C";"" |] ""
+        if resultStr <> [| "empty";"bb";"c";"empty" |] then Assert.Fail()
+        Assert.AreEqual("CBB", resultStrAcc)
+
+        // empty array
+        let resultEpt,resultEptAcc = Array.mapFoldBack funcInt [| |] 100
+        if resultEpt <> [| |] then Assert.Fail()
+        Assert.AreEqual(100, resultEptAcc)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.mapFoldBack funcStr nullArr "" |> ignore)
+
         ()
 
     [<Test>]
@@ -414,6 +526,63 @@ type ArrayModule2() =
         ()
 
     [<Test>]
+    member this.Skip() =
+        // integer array
+        let resultInt = Array.skip 2 [|1..10|]
+        if resultInt <> [|3..10|] then Assert.Fail()
+        
+        let resultInt2 = Array.skip 0 [|1..10|]
+        if resultInt2 <> [|1..10|] then Assert.Fail()
+        
+        let resultInt3 = Array.skip -5 [|1..10|]
+        if resultInt3 <> [|1..10|] then Assert.Fail()
+
+        // string List
+        let resultStr = Array.skip 2 [|"str1";"str2";"str3";"str4"|]
+        if resultStr <> [|"str3";"str4"|] then Assert.Fail()
+
+        // empty List
+        let resultEpt = Array.skip 0 [||]
+        if resultEpt <> [||] then Assert.Fail()
+
+        // exceptions
+        CheckThrowsArgumentNullException (fun () -> Array.skip 0 (null:string[]) |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.skip -3 (null:string[]) |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.skip 1 [||] |> ignore)
+        CheckThrowsArgumentException (fun () -> Array.skip 4 [|1; 2; 3|] |> ignore)
+
+    [<Test>]
+    member this.SkipWhile() =
+        // integer array
+        let funcInt x = (x < 4)
+        let intArr = [|1..10|]
+        let resultInt = Array.skipWhile funcInt intArr
+        if resultInt <> [|4..10|] then Assert.Fail()
+
+        // string array
+        let funcStr (s:string) = s.Length < 8
+        let strArr = [| "Lists"; "are";  "commonly" ; "list" |]
+        let resultStr = Array.skipWhile funcStr strArr
+        if resultStr <> [| "commonly" ; "list" |] then Assert.Fail()
+
+        // empty array
+        let resultEmpt = Array.skipWhile (fun _ -> failwith "unexpected error") [| |]
+        if resultEmpt <> [| |] then Assert.Fail()
+
+        // null array
+        CheckThrowsArgumentNullException (fun () -> Array.skipWhile (fun _ -> failwith "unexpected error") null |> ignore)
+
+        // skip all
+        let resultAll = Array.skipWhile (fun _ -> true) intArr
+        if resultAll <> [| |] then Assert.Fail()
+
+        // skip none
+        let resultNone = Array.skipWhile (fun _ -> false) intArr
+        if resultNone <> intArr then Assert.Fail()
+
+        ()
+
+    [<Test>]
     member this.Set() =
         // integer array  
         let intArr = [|10;9;8;7|]
@@ -500,8 +669,83 @@ type ArrayModule2() =
         if len2Arr <> [|3;8|] then Assert.Fail()  
         Assert.AreEqual([|3;8|],len2Arr)  
         
-        ()  
+        () 
+        
+    [<Test>]
+    member this.SortDescending() =
+        // integer array  
+        let intArr = [|3;5;7;2;4;8|]
+        let resultInt = Array.sortDescending intArr  
+        Assert.AreEqual([|8;7;5;4;3;2|], resultInt)
+        
+        // string Array
+        let strArr = [|"Z";"a";"d"; ""; "Y"; null; "c";"b";"X"|]   
+        let resultStr = Array.sortDescending strArr         
+        Assert.AreEqual([|"d"; "c"; "b"; "a"; "Z"; "Y"; "X"; ""; null|], resultStr)
+        
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEmpty = Array.sortDescending emptyArr
+        if resultEmpty <> [||] then Assert.Fail()
+        
+        // tuple array
+        let tupArr = [|(2,"a");(1,"d");(1,"b");(1,"a");(2,"x");(2,"b");(1,"x")|]   
+        let resultTup = Array.sortDescending tupArr         
+        Assert.AreEqual([|(2,"x");(2,"b");(2,"a");(1,"x");(1,"d");(1,"b");(1,"a")|], resultTup)
 
+        // date array
+        let dateArr = [|DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2015,1,1);DateTime(2013,12,31);DateTime(2014,1,1)|]   
+        let resultDate = Array.sortDescending dateArr         
+        Assert.AreEqual([|DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2015,1,1);DateTime(2013,12,31);DateTime(2014,1,1)|], dateArr)
+        Assert.AreEqual([|DateTime(2015,1,1);DateTime(2014,12,31);DateTime(2014,1,1);DateTime(2014,1,1);DateTime(2013,12,31)|], resultDate)
+
+        // float array
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
+        let resultFloat = Array.sortDescending floatArr
+        Assert.AreEqual([| maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; |], resultFloat)
+
+        () 
+        
+    [<Test>]
+    member this.SortByDescending() =
+        // integer array  
+        let intArr = [|3;5;7;2;4;8|]
+        let resultInt = Array.sortByDescending int intArr           
+        Assert.AreEqual([|3;5;7;2;4;8|], intArr)
+        Assert.AreEqual([|8;7;5;4;3;2|], resultInt)
+                
+        // string array
+        let strArr = [|".."; ""; "..."; "."; "...."|]    
+        let resultStr = Array.sortByDescending (fun (x:string) -> x.Length)  strArr 
+        Assert.AreEqual([|".."; ""; "..."; "."; "...."|], strArr)
+        Assert.AreEqual([|"....";"...";"..";"."; ""|], resultStr)
+        
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEmpty = Array.sortByDescending int emptyArr        
+        if resultEmpty <> [||] then Assert.Fail()    
+        
+        // tuple array
+        let tupArr = [|(2,"a");(1,"d");(1,"b");(2,"x")|]
+        let sndTup = Array.sortByDescending snd tupArr         
+        Assert.AreEqual( [|(2,"a");(1,"d");(1,"b");(2,"x")|] , tupArr)
+        Assert.AreEqual( [|(2,"x");(1,"d");(1,"b");(2,"a")|] , sndTup)
+        
+        // date array
+        let dateArr = [|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|]
+        let resultDate = Array.sortByDescending (fun (d:DateTime) -> d.Month) dateArr         
+        Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,2,1);DateTime(2015,1,1);DateTime(2014,3,1)|], dateArr)
+        Assert.AreEqual([|DateTime(2013,12,31);DateTime(2014,3,1);DateTime(2014,2,1);DateTime(2015,1,1)|], resultDate)
+
+        // float array
+        let minFloat,maxFloat,epsilon = System.Double.MinValue,System.Double.MaxValue,System.Double.Epsilon
+        let floatArr = [| 0.0; 0.5; 2.0; 1.5; 1.0; minFloat; maxFloat; epsilon; -epsilon |]
+        let resultFloat = Array.sortByDescending id floatArr
+        Assert.AreEqual([| maxFloat; 2.0; 1.5; 1.0; 0.5; epsilon; 0.0; -epsilon; minFloat; |], resultFloat)
+
+        ()  
+         
     [<Test>]
     member this.Sub() =
         // integer array  
@@ -619,6 +863,25 @@ type ArrayModule2() =
         ()
 
     [<Test>]
+    member this.Tl() =
+        // integer array  
+        let resultInt = Array.tail [|1..10|]        
+        Assert.AreEqual([|2..10|], resultInt)
+        
+        // string array    
+        let resultStr = Array.tail [| "a"; "b"; "c"; "d" |]        
+        Assert.AreEqual([| "b";  "c" ; "d" |], resultStr)
+        
+        // 1-element array    
+        let resultStr2 = Array.tail [| "a" |]        
+        Assert.AreEqual([| |], resultStr2)
+
+        CheckThrowsArgumentException(fun () -> Array.tail [||] |> ignore)
+
+        CheckThrowsArgumentNullException(fun () -> Array.tail null |> ignore)
+        ()
+
+    [<Test>]
     member this.To_List() =
         // integer array  
         let resultInt = Array.toList [|1..10|]
@@ -659,6 +922,28 @@ type ArrayModule2() =
         ()   
 
     [<Test>]
+    member this.Truncate() =
+        // integer array
+        Assert.AreEqual([|1..3|], Array.truncate 3 [|1..5|])
+        Assert.AreEqual([|1..5|], Array.truncate 10 [|1..5|])
+        Assert.AreEqual([| |], Array.truncate 0 [|1..5|])
+
+        // string array
+        Assert.AreEqual([|"str1";"str2"|], Array.truncate 2 [|"str1";"str2";"str3"|])
+
+        // empty array
+        Assert.AreEqual([| |], Array.truncate 0 [| |])
+        Assert.AreEqual([| |], Array.truncate 1 [| |])
+
+        // null array
+        CheckThrowsArgumentNullException(fun() -> Array.truncate 1 null |> ignore)
+
+        // negative count
+        CheckThrowsArgumentException(fun() -> Array.truncate -1 [|1..5|] |> ignore)
+
+        ()
+
+    [<Test>]
     member this.TryFind() =
         // integer array  
         let resultInt = [|1..10|] |> Array.tryFind (fun x -> x%7 = 0)  
@@ -678,7 +963,30 @@ type ArrayModule2() =
         
         ()
         
-        
+    [<Test>]
+    member this.TryFindBack() =
+        // integer array
+        let funcInt x = x%5 = 0
+        Assert.AreEqual(Some 20, [| 1..20 |] |> Array.tryFindBack funcInt)
+        Assert.AreEqual(Some 15, [| 1..19 |] |> Array.tryFindBack funcInt)
+        Assert.AreEqual(Some 5, [| 5..9 |] |> Array.tryFindBack funcInt)
+
+        // string array
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFindBack (fun (x:string) -> x.Length > 4)
+        Assert.AreEqual(Some "commonly", resultStr)
+
+        // empty array
+        Assert.AreEqual(None, [| |] |> Array.tryFindBack (fun _ -> failwith "error"))
+
+        // not found
+        Assert.AreEqual(None, [| 1..20 |] |> Array.tryFindBack (fun _ -> false))
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.tryFindBack (fun _ -> failwith "error") nullArr |> ignore)
+
+        ()
+
     [<Test>]
     member this.TryFindIndex() =
         // integer array  
@@ -697,6 +1005,46 @@ type ArrayModule2() =
         let nullArr = null:string[]      
         CheckThrowsArgumentNullException (fun () -> Array.tryFindIndex (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
+        ()
+
+    [<Test>]
+    member this.TryFindIndexBack() =
+        // integer array
+        let funcInt x = x%5 = 0
+        Assert.AreEqual(Some 19, [| 1..20 |] |> Array.tryFindIndexBack funcInt)
+        Assert.AreEqual(Some 14, [| 1..19 |] |> Array.tryFindIndexBack funcInt)
+        Assert.AreEqual(Some 0, [| 5..9 |] |> Array.tryFindIndexBack funcInt)
+
+        // string array
+        let resultStr = [|"Lists"; "are";  "commonly" ; "list" |] |> Array.tryFindIndexBack (fun (x:string) -> x.Length > 4)
+        Assert.AreEqual(Some 2, resultStr)
+
+        // empty array
+        Assert.AreEqual(None, [| |] |> Array.tryFindIndexBack (fun _ -> true))
+
+        // not found
+        Assert.AreEqual(None, [| 1..20 |] |> Array.tryFindIndexBack (fun _ -> false))
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.tryFindIndexBack (fun (x:string) -> x.Length > 4) nullArr |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.Unfold() =
+        // integer Seq
+        let resultInt = Array.unfold (fun x -> if x < 20 then Some (x+1,x*2) else None) 1
+        Assert.AreEqual([|2;3;5;9;17|], resultInt)
+
+        // string Seq
+        let resultStr = Array.unfold (fun (x:string) -> if x.Contains("unfold") then Some("a","b") else None) "unfold"
+        Assert.AreEqual([|"a"|], resultStr)
+
+        // empty seq
+        let resultEpt = Array.unfold (fun _ -> None) 1
+        Assert.AreEqual([| |], resultEpt)
+
         ()
 
     [<Test>]
@@ -734,6 +1082,96 @@ type ArrayModule2() =
 
         // null array
         
+        ()
+
+    [<Test>]
+    member this.Windowed() =
+        let testWindowed config =
+            try
+                config.InputArray
+                |> Array.windowed config.WindowSize
+                |> (fun actual -> Assert.IsTrue(config.ExpectedArray = actual))
+            with
+            | _ when Option.isNone config.Exception -> Assert.Fail()
+            | e when e.GetType() = (Option.get config.Exception) -> ()
+            | _ -> Assert.Fail()
+
+        {
+          InputArray = [|1..10|]
+          WindowSize = 1
+          ExpectedArray =  [| for i in 1..10 do yield [| i |] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 5
+          ExpectedArray =  [| for i in 1..6 do yield [| i; i+1; i+2; i+3; i+4 |] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 10
+          ExpectedArray =  [| yield [| 1 .. 10 |] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 25
+          ExpectedArray = [| |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [|"str1";"str2";"str3";"str4"|]
+          WindowSize = 2
+          ExpectedArray =  [| [|"str1";"str2"|]; [|"str2";"str3"|]; [|"str3";"str4"|] |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = [| |]
+          WindowSize = 2
+          ExpectedArray = [| |]
+          Exception = None
+        } |> testWindowed
+        {
+          InputArray = null
+          WindowSize = 2
+          ExpectedArray = [| |]
+          Exception = Some typeof<ArgumentNullException>
+        } |> testWindowed
+        {
+          InputArray = [|1..10|]
+          WindowSize = 0
+          ExpectedArray =  [| |]
+          Exception = Some typeof<ArgumentException>
+        } |> testWindowed
+
+        // expectedArrays indexed by arraySize,windowSize
+        let expectedArrays = Array2D.zeroCreate 6 6
+        expectedArrays.[1,1] <- [| [|1|] |]
+        expectedArrays.[2,1] <- [| [|1|]; [|2|] |]
+        expectedArrays.[2,2] <- [| [|1; 2|] |]
+        expectedArrays.[3,1] <- [| [|1|]; [|2|]; [|3|] |]
+        expectedArrays.[3,2] <- [| [|1; 2|]; [|2; 3|] |]
+        expectedArrays.[3,3] <- [| [|1; 2; 3|] |]
+        expectedArrays.[4,1] <- [| [|1|]; [|2|]; [|3|]; [|4|] |]
+        expectedArrays.[4,2] <- [| [|1; 2|]; [|2; 3|]; [|3; 4|] |]
+        expectedArrays.[4,3] <- [| [|1; 2; 3|]; [|2; 3; 4|] |]
+        expectedArrays.[4,4] <- [| [|1; 2; 3; 4|] |]
+        expectedArrays.[5,1] <- [| [|1|]; [|2|]; [|3|]; [|4|]; [|5|] |]
+        expectedArrays.[5,2] <- [| [|1; 2|]; [|2; 3|]; [|3; 4|]; [|4; 5|] |]
+        expectedArrays.[5,3] <- [| [|1; 2; 3|]; [|2; 3; 4|]; [|3; 4; 5|] |]
+        expectedArrays.[5,4] <- [| [|1; 2; 3; 4|]; [|2; 3; 4; 5|] |]
+        expectedArrays.[5,5] <- [| [|1; 2; 3; 4; 5|] |]
+
+        for arraySize = 0 to 5 do
+            for windowSize = -1 to 5 do
+                if windowSize <= 0 then
+                    CheckThrowsArgumentException (fun () -> Array.windowed windowSize [|1..arraySize|] |> ignore)
+                elif arraySize < windowSize then
+                    Assert.IsTrue([||] = Array.windowed windowSize [|1..arraySize|])
+                else
+                    Assert.IsTrue(expectedArrays.[arraySize, windowSize] = Array.windowed windowSize [|1..arraySize|])
+
         ()
 
     [<Test>]
@@ -809,3 +1247,57 @@ type ArrayModule2() =
         CheckThrowsArgumentException(fun () -> Array.zip3 [|1..10|] [|1..10|] [|2..20|] |> ignore)
         
         ()
+
+    [<Test>]
+    member this.Item() =
+        // integer array
+        let resultInt = Array.item 3 [|1..8|]
+        Assert.AreEqual(4, resultInt)
+
+        // string array
+        let resultStr = Array.item 2 [|"Arrays"; "are"; "commonly"; "array" |]
+        Assert.AreEqual("commonly", resultStr)
+
+        // empty array
+        CheckThrowsIndexOutRangException(fun () -> Array.item 0 ([| |] : decimal[]) |> ignore)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsNullRefException (fun () -> Array.item 0 nullArr |> ignore)
+
+        // Negative index
+        for i = -1 downto -10 do
+           CheckThrowsIndexOutRangException (fun () -> Array.item i [|1..8|] |> ignore)
+
+        // Out of range
+        for i = 11 to 20 do
+           CheckThrowsIndexOutRangException (fun () -> Array.item i [|1..8|] |> ignore)
+
+    [<Test>]
+    member this.tryItem() =
+        // integer array
+        let intArr = [| 3;4;7;8;10 |]
+        let resultInt = Array.tryItem 3 intArr
+        Assert.AreEqual(Some(8), resultInt)
+
+        // string array
+        let strArr = [| "Lists"; "are"; "commonly"; "list" |]
+        let resultStr = Array.tryItem 1 strArr
+        Assert.AreEqual(Some("are"), resultStr)
+
+        // empty array
+        let emptyArr:int[] = [| |]
+        let resultEmpty = Array.tryItem 1 emptyArr
+        Assert.AreEqual(None, resultEmpty)
+
+        // null array
+        let nullArr = null:string[]
+        CheckThrowsArgumentNullException (fun () -> Array.tryItem 0 nullArr |> ignore)
+
+        // Negative index
+        let resultNegativeIndex = Array.tryItem -1 [| 3;1;6;2 |]
+        Assert.AreEqual(None, resultNegativeIndex)
+
+        // Index greater than length
+        let resultIndexGreater = Array.tryItem 14 [| 3;1;6;2 |]
+        Assert.AreEqual(None, resultIndexGreater)

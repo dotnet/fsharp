@@ -1188,28 +1188,27 @@ and GetTypeAsTypeSpecIdx cenv env ty =
     FindOrAddRow cenv TableNames.TypeSpec (GetTypeAsTypeSpecRow cenv env ty)
 
 and EmitType cenv env bb ty =
-    let ilg = cenv.ilg
     match ty with 
   // REVIEW: what are these doing here? 
     | ILType.Value tspec when tspec.Name = "System.String" ->   bb.EmitByte et_STRING 
     | ILType.Value tspec when tspec.Name = "System.Object" ->   bb.EmitByte et_OBJECT 
-    | typ when isILSByteTy ilg typ ->   bb.EmitByte et_I1 
-    | typ when isILInt16Ty ilg typ ->   bb.EmitByte et_I2 
-    | typ when isILInt32Ty ilg typ ->    bb.EmitByte et_I4 
-    | typ when isILInt64Ty ilg typ ->     bb.EmitByte et_I8 
-    | typ when isILByteTy ilg typ ->     bb.EmitByte et_U1 
-    | typ when isILUInt16Ty ilg typ ->     bb.EmitByte et_U2 
-    | typ when isILUInt32Ty ilg typ ->     bb.EmitByte et_U4 
-    | typ when isILUInt64Ty ilg typ ->     bb.EmitByte et_U8 
-    | typ when isILDoubleTy ilg typ ->     bb.EmitByte et_R8 
-    | typ when isILSingleTy ilg typ ->     bb.EmitByte et_R4 
-    | typ when isILBoolTy ilg typ ->     bb.EmitByte et_BOOLEAN 
-    | typ when isILCharTy ilg typ ->     bb.EmitByte et_CHAR 
-    | typ when isILStringTy ilg typ ->     bb.EmitByte et_STRING 
-    | typ when isILObjectTy ilg typ ->     bb.EmitByte et_OBJECT 
-    | typ when isILIntPtrTy ilg typ ->     bb.EmitByte et_I 
-    | typ when isILUIntPtrTy ilg typ ->     bb.EmitByte et_U 
-    | typ when isILTypedReferenceTy ilg typ ->     bb.EmitByte et_TYPEDBYREF 
+    | typ when isILSByteTy typ ->   bb.EmitByte et_I1 
+    | typ when isILInt16Ty typ ->   bb.EmitByte et_I2 
+    | typ when isILInt32Ty typ ->    bb.EmitByte et_I4 
+    | typ when isILInt64Ty typ ->     bb.EmitByte et_I8 
+    | typ when isILByteTy typ ->     bb.EmitByte et_U1 
+    | typ when isILUInt16Ty typ ->     bb.EmitByte et_U2 
+    | typ when isILUInt32Ty typ ->     bb.EmitByte et_U4 
+    | typ when isILUInt64Ty typ ->     bb.EmitByte et_U8 
+    | typ when isILDoubleTy typ ->     bb.EmitByte et_R8 
+    | typ when isILSingleTy typ ->     bb.EmitByte et_R4 
+    | typ when isILBoolTy typ ->     bb.EmitByte et_BOOLEAN 
+    | typ when isILCharTy typ ->     bb.EmitByte et_CHAR 
+    | typ when isILStringTy typ ->     bb.EmitByte et_STRING 
+    | typ when isILObjectTy typ ->     bb.EmitByte et_OBJECT 
+    | typ when isILIntPtrTy typ ->     bb.EmitByte et_I 
+    | typ when isILUIntPtrTy typ ->     bb.EmitByte et_U 
+    | typ when isILTypedReferenceTy typ ->     bb.EmitByte et_TYPEDBYREF 
 
     | ILType.Boxed tspec ->  EmitTypeSpec cenv env bb (et_CLASS,tspec)
     | ILType.Value tspec ->  EmitTypeSpec cenv env bb (et_VALUETYPE,tspec)

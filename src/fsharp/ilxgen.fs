@@ -6,6 +6,8 @@
 
 module internal Microsoft.FSharp.Compiler.Ilxgen
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open System.IO
 open System.Collections.Generic
 open Internal.Utilities
@@ -2774,9 +2776,12 @@ and GenArgsAndIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
 
 /// Generate an indirect call, converting to an ILX callfunc instruction
 and GenIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
-
+    
     // Fold in the new types into the environment as we generate the formal types. 
     let ilxClosureApps = 
+        // keep only non-erased type arguments when computing indirect call
+        let tyargs = DropErasedTyargs tyargs 
+
         let typars,formalFuncTyp = tryDestForallTy cenv.g functy
 
         let feenv = eenv.tyenv.Add typars
@@ -3953,7 +3958,7 @@ and GetIlxClosureInfo cenv m isLocalTypeFunc  selfv eenvouter expr =
         let rec getCallStructure tvacc vacc (e,ety) = 
             match e with 
             | Expr.TyLambda(_,tvs,body,_m,bty) -> 
-                getCallStructure (tvs :: tvacc) vacc (body,bty)
+                getCallStructure ((DropErasedTypars tvs) :: tvacc) vacc (body,bty)
             | Expr.Lambda (_,_,_,vs,body,_,bty) when not isLocalTypeFunc -> 
                 // Transform a lambda taking untupled arguments into one 
                 // taking only a single tupled argument if necessary.  REVIEW: do this earlier 

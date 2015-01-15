@@ -11,6 +11,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
@@ -533,12 +534,13 @@ val getErasedTypes            : TcGlobals -> TType -> TType list
 //-------------------------------------------------------------------------
 // Unit operations
 //------------------------------------------------------------------------- 
+
 val MeasurePower : MeasureExpr -> int -> MeasureExpr
-val ListMeasureVarOccsWithNonZeroExponents : MeasureExpr -> (Typar * int) list
-val ListMeasureConOccsWithNonZeroExponents : TcGlobals -> bool -> MeasureExpr -> (TyconRef * int) list
+val ListMeasureVarOccsWithNonZeroExponents : MeasureExpr -> (Typar * Rational) list
+val ListMeasureConOccsWithNonZeroExponents : TcGlobals -> bool -> MeasureExpr -> (TyconRef * Rational) list
 val ProdMeasures : MeasureExpr list -> MeasureExpr
-val MeasureVarExponent : Typar -> MeasureExpr -> int
-val MeasureConExponent : TcGlobals -> bool -> TyconRef -> MeasureExpr -> int
+val MeasureVarExponent : Typar -> MeasureExpr -> Rational
+val MeasureConExponent : TcGlobals -> bool -> TyconRef -> MeasureExpr -> Rational
 
 //-------------------------------------------------------------------------
 // Members 
@@ -1000,13 +1002,13 @@ val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
 
 val CompileAsEvent : TcGlobals -> Attribs -> bool
 
-val TypeNullIsExtraValue : TcGlobals -> TType -> bool
+val TypeNullIsExtraValue : TcGlobals -> range -> TType -> bool
 val TypeNullIsTrueValue : TcGlobals -> TType -> bool
-val TypeNullNotLiked : TcGlobals -> TType -> bool
+val TypeNullNotLiked : TcGlobals -> range -> TType -> bool
 val TypeNullNever : TcGlobals -> TType -> bool
 
-val TypeSatisfiesNullConstraint : TcGlobals -> TType -> bool
-val TypeHasDefaultValue : TcGlobals -> TType -> bool
+val TypeSatisfiesNullConstraint : TcGlobals -> range -> TType -> bool
+val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
@@ -1113,7 +1115,7 @@ val mkCallGetGenericEREqualityComparer : TcGlobals -> range -> Expr
 val mkCallGetGenericPEREqualityComparer : TcGlobals -> range -> Expr
 
 val mkCallUnboxFast  : TcGlobals -> range -> TType -> Expr -> Expr
-val canUseUnboxFast  : TcGlobals -> TType -> bool
+val canUseUnboxFast  : TcGlobals -> range -> TType -> bool
 
 val mkCallDispose     : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallSeq         : TcGlobals -> range -> TType -> Expr -> Expr
@@ -1196,6 +1198,20 @@ val TryFindFSharpAttributeOpt      : TcGlobals -> Env.BuiltinAttribInfo option -
 val TryFindFSharpBoolAttribute     : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> bool option
 val TryFindFSharpStringAttribute   : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> string option
 val TryFindFSharpInt32Attribute    : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> int32 option
+
+/// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
+///
+/// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
+val TryFindTyconRefStringAttribute : TcGlobals -> range -> Env.BuiltinAttribInfo -> TyconRef -> string option
+
+/// Try to find a specific attribute on a type definition, where the attribute accepts a bool argument.
+val TryFindTyconRefBoolAttribute : TcGlobals -> range -> Env.BuiltinAttribInfo -> TyconRef -> bool option
+
+/// Try to find a specific attribute on a type definition
+val TyconRefHasAttribute : TcGlobals -> range -> Env.BuiltinAttribInfo -> TyconRef -> bool
+
+/// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
+val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool option
 
 #if EXTENSIONTYPING
 /// returns Some(assemblyName) for success
@@ -1307,6 +1323,7 @@ val doesActivePatternHaveFreeTypars : Env.TcGlobals -> ValRef -> bool
 type ExprRewritingEnv = 
     {PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option;
      PostTransform: Expr -> Expr option;
+     PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option;
      IsUnderQuotations: bool }    
 
 val RewriteExpr : ExprRewritingEnv -> Expr -> Expr

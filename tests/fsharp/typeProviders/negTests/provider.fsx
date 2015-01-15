@@ -22,6 +22,12 @@ type public Runtime() =
 module Utils = 
     let doEvil() = failwith "deliberate error for testing purposes"
 
+    let mkAllowNullLiteralValueAttributeData(value: bool) = 
+        { new CustomAttributeData() with 
+                member __.Constructor =  typeof<Microsoft.FSharp.Core.AllowNullLiteralAttribute>.GetConstructors().[0]
+                member __.ConstructorArguments = upcast [| CustomAttributeTypedArgument(typeof<bool>, value)  |]
+                member __.NamedArguments = upcast [| |] }
+
 [<TypeProvider>]
 type public GoodProviderForNegativeTypeTests1() =
     let modul = typeof<GoodProviderForNegativeTypeTests1>.Assembly.GetModules().[0]
@@ -307,7 +313,8 @@ type public GoodProviderForNegativeStaticParameterTypeTests() =
 
         and theType = 
             let container = TypeContainer.Namespace(modul, rootNamespace)
-            TypeBuilder.CreateSimpleType(container,"HelloWorldType",members=allMembers)
+            TypeBuilder.CreateSimpleType(container,"HelloWorldType",members=allMembers,
+                                         getCustomAttributes=(fun () -> [| mkAllowNullLiteralValueAttributeData(false) |]))
 
         theType
 

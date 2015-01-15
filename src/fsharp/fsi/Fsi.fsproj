@@ -14,13 +14,14 @@
     <PlatformTarget>x86</PlatformTarget>
     <ProjectGuid>{d0e98c0d-490b-4c61-9329-0862f6e87645}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <NoWarn>$(NoWarn);62;44</NoWarn>
+    <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsi</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v3.5</TargetFrameworkVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <Win32Resource>fsi.res</Win32Resource>
   </PropertyGroup>
   <ItemGroup>
     <FsSrGen Include="FSIstrings.txt">

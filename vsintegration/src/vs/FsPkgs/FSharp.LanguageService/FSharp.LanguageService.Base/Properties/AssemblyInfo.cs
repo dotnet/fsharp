@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -35,5 +36,7 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly:AssemblyVersion("12.0.0.9055")]       // The assembly version for THE OSS BUILD
-[assembly:AssemblyFileVersion("12.0.0.9055")]
+[assembly:AssemblyVersion("14.0.0.9055")]       // The assembly version for THE OSS BUILD
+[assembly:AssemblyFileVersion("14.0.0.9055")]
+
+[assembly: CLSCompliant(true)]

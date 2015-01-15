@@ -23,7 +23,7 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;Portable</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;Portable;FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Debug\PortableLibrary1.XML</DocumentationFile>
   </PropertyGroup>

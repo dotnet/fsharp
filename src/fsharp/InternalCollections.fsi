@@ -5,7 +5,7 @@ namespace Internal.Utilities.Collections
   /// Simple aging lookup table. When a member is accessed it's
   /// moved to the top of the list and when there are too many elements
   /// the least-recently-accessed element falls of the end.
-  type internal AgedLookup<'TKey,'TValue> = 
+  type internal AgedLookup<'TKey,'TValue when 'TValue : not struct> = 
     new : keepStrongly:int
             * areSame:('TKey * 'TKey -> bool) 
             * ?onStrongDiscard : ('TValue -> unit) // this may only be set if keepTotal=keepStrongly, i.e. not weak entries
@@ -32,7 +32,7 @@ namespace Internal.Utilities.Collections
   /// This cache may age-out results that have been Set by the caller.
   /// Because of this, the caller must be able to tolerate values 
   /// that aren't what was originally passed to the Set function.         
-  type internal MruCache<'TKey,'TValue> =
+  type internal MruCache<'TKey,'TValue when 'TValue : not struct> =
     new : keepStrongly:int 
             * compute:('TKey -> 'TValue) 
             * areSame:('TKey * 'TKey -> bool) 

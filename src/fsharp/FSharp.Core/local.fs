@@ -30,6 +30,49 @@ module internal List =
     let inline setFreshConsTail cons t = cons.(::).1 <- t
     let inline freshConsNoTail h = h :: (# "ldnull" : 'T list #)
 
+    let rec distinctToFreshConsTail cons (hashSet:HashSet<_>) list = 
+        match list with
+        | [] -> setFreshConsTail cons []
+        | (x::rest) ->
+            if hashSet.Add(x) then
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                distinctToFreshConsTail cons2 hashSet rest
+            else
+                distinctToFreshConsTail cons hashSet rest
+
+    let distinctWithComparer (comparer: System.Collections.Generic.IEqualityComparer<'T>) (list:'T list) =       
+        match list with
+        | [] -> []
+        | [h] -> [h]
+        | (x::rest) ->
+            let hashSet =  System.Collections.Generic.HashSet<'T>(comparer)
+            hashSet.Add(x) |> ignore
+            let cons = freshConsNoTail x
+            distinctToFreshConsTail cons hashSet rest
+            cons
+
+    let rec distinctByToFreshConsTail cons (hashSet:HashSet<_>) keyf list = 
+        match list with
+        | [] -> setFreshConsTail cons []
+        | (x::rest) ->
+            if hashSet.Add(keyf x) then
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                distinctByToFreshConsTail cons2 hashSet keyf rest
+            else
+                distinctByToFreshConsTail cons hashSet keyf rest
+
+    let distinctByWithComparer (comparer: System.Collections.Generic.IEqualityComparer<'Key>) (keyf:'T -> 'Key) (list:'T list) =       
+        match list with
+        | [] -> []
+        | [h] -> [h]
+        | (x::rest) ->
+            let hashSet = System.Collections.Generic.HashSet<'Key>(comparer)
+            hashSet.Add(keyf x) |> ignore
+            let cons = freshConsNoTail x
+            distinctByToFreshConsTail cons hashSet keyf rest
+            cons
 
     let rec mapToFreshConsTail cons f x = 
         match x with
@@ -87,6 +130,48 @@ module internal List =
             map2ToFreshConsTail cons f t1 t2
             cons
         | _ -> invalidArg "xs2" (SR.GetString(SR.listsHadDifferentLengths))
+
+    let rec indexedToFreshConsTail cons xs i =
+        match xs with
+        | [] ->
+            setFreshConsTail cons [];
+        | (h::t) ->
+            let cons2 = freshConsNoTail (i,h)
+            setFreshConsTail cons cons2;
+            indexedToFreshConsTail cons2 t (i+1)
+
+    let indexed xs =
+        match xs with
+        | [] -> []
+        | [h] -> [(0,h)]
+        | (h::t) ->
+            let cons = freshConsNoTail (0,h)
+            indexedToFreshConsTail cons t 1
+            cons
+
+    let rec mapFoldToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<'State, 'T, 'U * 'State>) acc xs =
+        match xs with
+        | [] ->
+            setFreshConsTail cons [];
+            acc
+        | (h::t) ->
+            let x',s' = f.Invoke(acc,h)
+            let cons2 = freshConsNoTail x'
+            setFreshConsTail cons cons2;
+            mapFoldToFreshConsTail cons2 f s' t
+
+    let mapFold f acc xs =
+        match xs with
+        | [] -> [], acc
+        | [h] ->
+            let x',s' = f acc h
+            [x'],s'
+        | (h::t) ->
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let x',s' = f.Invoke(acc,h)
+            let cons = freshConsNoTail x'
+            let s' = mapFoldToFreshConsTail cons f s' t
+            cons, s'
 
     let rec forall f xs1 = 
         match xs1 with 
@@ -189,18 +274,44 @@ module internal List =
             concatToFreshConsTail res t1 tt2;
             res
 
-    let seqToList (e : IEnumerable<'T>) = 
-        match e with 
+    let toArray (l:'T list) =
+        let len = l.Length
+        let res = arrayZeroCreate len
+        let rec loop i l =
+            match l with
+            | [] -> ()
+            | h::t ->
+                res.[i] <- h
+                loop (i+1) t
+        loop 0 l
+        res
+
+    let ofArray (arr:'T[]) =
+        let len = arr.Length
+        let mutable res = ([]: 'T list)
+        for i = len - 1 downto 0 do
+            res <- arr.[i] :: res
+        res
+
+    let inline ofSeq (e : IEnumerable<'T>) =
+        match e with
         | :? list<'T> as l -> l
-        | _ -> 
+        | :? ('T[]) as arr -> ofArray arr
+        | _ ->
             use ie = e.GetEnumerator()
-            let mutable res = [] 
-            while ie.MoveNext() do
-                res <- ie.Current :: res
-            rev res
+            if not (ie.MoveNext()) then []
+            else
+                let res = freshConsNoTail ie.Current
+                let mutable cons = res
+                while ie.MoveNext() do
+                    let cons2 = freshConsNoTail ie.Current
+                    setFreshConsTail cons cons2
+                    cons <- cons2
+                setFreshConsTail cons []
+                res
 
     let concat (l : seq<_>) = 
-        match seqToList l with 
+        match ofSeq l with
         | [] -> []
         | [h] -> h
         | [h1;h2] -> h1 @ h2
@@ -223,7 +334,48 @@ module internal List =
             initToFreshConsTail res 1 count f
             res
 
-     
+    let rec takeFreshConsTail cons n l =
+        if n = 0 then setFreshConsTail cons [] else
+        match l with
+        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x::xs ->
+            let cons2 = freshConsNoTail x
+            setFreshConsTail cons cons2
+            takeFreshConsTail cons2 (n - 1) xs
+ 
+    let take n l =
+        if n < 0 then invalidArg "count" InputMustBeNonNegativeString
+        if n = 0 then [] else 
+        match l with
+        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x::xs ->
+            let cons = freshConsNoTail x
+            takeFreshConsTail cons (n - 1) xs
+            cons
+
+    let rec splitAtFreshConsTail cons index l =
+        if index = 0 then
+            setFreshConsTail cons []
+            l
+        else
+        match l with
+        | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x :: xs ->
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                splitAtFreshConsTail cons2 (index - 1) xs
+ 
+    let splitAt index l =
+        if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))            
+        if index = 0 then [], l else
+        match l with
+        | []  -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | [_] -> if index = 1 then l, [] else raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+        | x::xs ->
+            if index = 1 then [x], xs else
+            let cons = freshConsNoTail x
+            let tail = splitAtFreshConsTail cons (index - 1) xs
+            cons, tail    
       
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -279,7 +431,44 @@ module internal List =
             if p h 
             then cons, (partitionToFreshConsTailLeft cons p t)
             else (partitionToFreshConsTailRight cons p t), cons
+
+    let rec truncateToFreshConsTail cons count list =
+        if count = 0 then setFreshConsTail cons [] else
+        match list with
+        | [] -> setFreshConsTail cons []
+        | h::t ->
+            let cons2 = freshConsNoTail h
+            setFreshConsTail cons cons2;
+            truncateToFreshConsTail cons2 (count-1) t
+
+    let truncate count list =
+        if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+        match list with
+        | [] -> list
+        | _ :: ([] as nil) -> if count > 0 then list else nil
+        | h::t ->
+            if count = 0 then []
+            else
+                let cons = freshConsNoTail h
+                truncateToFreshConsTail cons (count-1) t
+                cons
            
+    let rec unfoldToFreshConsTail cons f s =
+        match f s with
+        | None -> setFreshConsTail cons []
+        | Some (x,s') ->
+            let cons2 = freshConsNoTail x
+            setFreshConsTail cons cons2
+            unfoldToFreshConsTail cons2 f s'
+
+    let unfold (f:'State -> ('T * 'State) option) (s:'State) =
+        match f s with
+        | None -> []
+        | Some (x,s') ->
+            let cons = freshConsNoTail x
+            unfoldToFreshConsTail cons f s'
+            cons
+
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
     let rec unzipToFreshConsTail cons1a cons1b x = 
@@ -336,6 +525,39 @@ module internal List =
             unzip3ToFreshConsTail res1a res1b res1c t; 
             res1a,res1b,res1c
 
+    let rec windowedToFreshConsTail cons windowSize i l (arr:'T[]) =
+        match l with
+        | [] -> setFreshConsTail cons []
+        | h::t ->
+            arr.[i] <- h
+            let i = (i+1) % windowSize
+            let result = arrayZeroCreate windowSize : 'T[]
+            System.Array.Copy(arr, i, result, 0, windowSize - i)
+            System.Array.Copy(arr, 0, result, windowSize - i, i)
+            let cons2 = freshConsNoTail result
+            setFreshConsTail cons cons2
+            windowedToFreshConsTail cons2 windowSize i t arr
+
+    let windowed windowSize list =
+        if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
+        match list with
+        | [] -> []
+        | _ ->
+            let arr = arrayZeroCreate windowSize
+            let rec loop i r l =
+                match l with
+                | [] -> if r = 0 && i = windowSize then [arr.Clone() :?> 'T[]] else []
+                | h::t ->
+                    arr.[i] <- h
+                    if r = 0 then
+                        let cons = freshConsNoTail (arr.Clone() :?> 'T[])
+                        windowedToFreshConsTail cons windowSize 0 t arr
+                        cons
+                    else
+                        loop (i+1) (r-1) t
+
+            loop 0 (windowSize - 1) list
+
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
     let rec zipToFreshConsTail cons xs1 xs2 = 
@@ -387,85 +609,27 @@ module internal List =
         | _ -> 
             invalidArg "xs1" (SR.GetString(SR.listsHadDifferentLengths))
 
-    let toArray (l:'T list) =
-        let len = l.Length 
-        let res = arrayZeroCreate len 
-        let rec loop i l = 
-            match l with 
-            | [] -> ()
-            | h::t -> 
-                res.[i] <- h
-                loop (i+1) t
-        loop 0 l
-        res
+    let rec takeWhileFreshConsTail cons p l =
+        match l with
+        | [] -> setFreshConsTail cons []
+        | x::xs ->
+            if p x then
+                let cons2 = freshConsNoTail x
+                setFreshConsTail cons cons2
+                takeWhileFreshConsTail cons2 p xs
+            else
+                setFreshConsTail cons []
 
-    let ofArray (arr:'T[]) =
-        let len = arr.Length
-        let mutable res = ([]: 'T list) 
-        for i = len - 1 downto 0 do 
-            res <- arr.[i] :: res
-        res
+    let takeWhile p (l: 'T list) =
+        match l with
+        | [] -> l
+        | x :: ([] as nil) -> if p x then l else nil
+        | x::xs ->
+            if not (p x) then [] else
+            let cons = freshConsNoTail x
+            takeWhileFreshConsTail cons p xs
+            cons
 
-    // NOTE: This implementation is now only used for List.sortWith. We should change that to use the stable sort via arrays
-    // below, and remove this implementation.
-    module StableSortImplementation =
-        // Internal copy of stable sort
-        let rec revAppend xs1 xs2 = 
-            match xs1 with 
-            | [] -> xs2
-            | h::t -> revAppend t (h::xs2)
-        let half x = x >>> 1 
-
-        let rec merge cmp a b acc = 
-            match a,b with 
-            | [], a | a,[] -> revAppend acc a
-            | x::a', y::b' -> if cmp x y > 0 then merge cmp a  b' (y::acc) else merge cmp a' b  (x::acc)
-
-        let sort2 cmp x y = 
-            if cmp x y > 0 then [y;x] else [x;y]
-
-        let sort3 cmp x y z = 
-            let cxy = cmp x y
-            let cyz = cmp y z
-            if cxy > 0 && cyz < 0 then 
-                if cmp x z > 0 then [y;z;x] else [y;x;z]
-            elif cxy < 0 && cyz > 0 then 
-                if cmp x z > 0 then [z;x;y] else [x;z;y]
-            elif cxy > 0 then 
-                if cyz > 0 then  [z;y;x]
-                else [y;z;x]
-            else 
-                if cyz > 0 then [z;x;y]
-                else [x;y;z] 
-
-        let trivial a = match a with [] | [_] -> true | _ -> false
-            
-        (* tail recursive using a ref *)
-
-        let rec stableSortInner cmp la ar =
-          if la < 4 then (* sort two || three new entries *)
-            match !ar with 
-             | x::y::b -> 
-                  if la = 2 then ( ar := b; sort2 cmp x y )
-                  else begin
-                    match b with 
-                    | z::c -> ( ar := c; sort3 cmp x y z )
-                    | _ -> failwith "never" 
-                  end
-             | _ -> failwith "never"
-          else (* divide *)
-            let lb = half la
-            let sb = stableSortInner cmp lb ar
-            let sc = stableSortInner cmp (la - lb) ar
-            merge cmp sb sc []
-
-        let stableSort cmp (a: 'T list) = 
-            if trivial a then a else
-            let ar = ref a
-            stableSortInner cmp a.Length ar
-        
-    let sortWith cmp a = StableSortImplementation.stableSort cmp a
-    
 module internal Array = 
 
     open System
@@ -511,7 +675,7 @@ module internal Array =
             qs(start, last)
             
     type System.Array with
-        static member Sort<'Key,'Value when 'Key : comparison>(keys : 'Key[], values : 'Value[], comparer : IComparer<'Key>) =
+        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], comparer : IComparer<'Key>) =
             let valuesExist = 
                 match values with
                 | null -> false
@@ -519,9 +683,8 @@ module internal Array =
             match keys,values with
             | null,_ -> raise (ArgumentNullException())
             | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
-            | _,_ ->
-            let comparer = match comparer with null -> LanguagePrimitives.FastGenericComparer<'Key> | _ -> comparer
-            qsort(keys, values, 0, keys.Length-1, comparer)
+            | _,_ -> qsort(keys, values, 0, keys.Length-1, comparer)
+
         static member Sort<'Key,'Value  when 'Key : comparison>(keys : 'Key[], values : 'Value[]) =
             let valuesExist = 
                 match values with
@@ -530,23 +693,21 @@ module internal Array =
             match keys,values with
             | null,_ -> raise (ArgumentNullException())
             | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
-            | _,_ ->   
-            qsort(keys,values,0,keys.Length-1,LanguagePrimitives.FastGenericComparer<'Key>)
-(*
-        static member Sort<'Key,'Value when 'Key : comparison>(keys : 'Key[], values : 'Value[], start : int, last : int) =
+            | _,_ -> qsort(keys,values,0,keys.Length-1,LanguagePrimitives.FastGenericComparer<'Key>)
+
+        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], start : int, length : int, comparer : IComparer<'Key>) =
             match keys with
             | null -> raise (ArgumentNullException())
-            | _ ->        
-            qsort(keys,values,start,last,LanguagePrimitives.FastGenericComparer<'Key>)
-*)
-        static member Sort<'Key,'Value when 'Key : comparison>(keys : 'Key[], values : 'Value[], start : int, length : int, comparer : IComparer<'Key>) =
-            match keys with
-            | null -> raise (ArgumentNullException())
-            | _ ->        
-            let comparer = match comparer with null -> LanguagePrimitives.FastGenericComparer<'Key> | _ -> comparer
-            qsort(keys,values,start,start+length-1,comparer)
+            | _ -> qsort(keys,values,start,start+length-1,comparer)
 #else
 #endif
+
+    let inline fastComparerForArraySort<'t when 't : comparison> () =
+#if FX_NO_ARRAY_KEY_SORT
+        LanguagePrimitives.FastGenericComparer<'t>
+#else
+        LanguagePrimitives.FastGenericComparerCanBeNull<'t>
+#endif        
 
     // The input parameter should be checked by callers if necessary
     let inline zeroCreateUnchecked (count:int) = 
@@ -558,6 +719,36 @@ module internal Array =
         for i = 0 to count - 1 do 
             arr.[i] <- f i
         arr
+
+    let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
+    let findBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then indexNotFound()
+            elif f array.[i] then array.[i]
+            else loop (i - 1)
+        loop (array.Length - 1)
+
+    let tryFindBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then None
+            elif f array.[i] then Some array.[i]
+            else loop (i - 1)
+        loop (array.Length - 1)
+
+    let findIndexBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then indexNotFound()
+            elif f array.[i] then i
+            else loop (i - 1)
+        loop (array.Length - 1)
+
+    let tryFindIndexBack f (array: _[]) =
+        let rec loop i =
+            if i < 0 then None
+            elif f array.[i] then Some i
+            else loop (i - 1)
+        loop (array.Length - 1)
 
     let permute indexMap (arr : _[]) = 
         let res  = zeroCreateUnchecked arr.Length
@@ -571,6 +762,41 @@ module internal Array =
             if inv.[i] <> 1uy then invalidArg "indexMap" (SR.GetString(SR.notAPermutation))
         res
 
+    let mapFold f acc (array : _[]) =
+        match array.Length with
+        | 0 -> [| |], acc
+        | len ->
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable acc = acc
+            let res = zeroCreateUnchecked len
+            for i = 0 to len - 1 do
+                let h',s' = f.Invoke(acc,array.[i])
+                res.[i] <- h'
+                acc <- s'
+            res, acc
+
+    let mapFoldBack f (array : _[]) acc =
+        match array.Length with
+        | 0 -> [| |], acc
+        | len ->
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let mutable acc = acc
+            let res = zeroCreateUnchecked len
+            for i = len - 1 downto 0 do
+                let h',s' = f.Invoke(array.[i],acc)
+                res.[i] <- h'
+                acc <- s'
+            res, acc
+
+    let scanSubRight f (array : _[]) start fin initState =
+        let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+        let mutable state = initState
+        let res = zeroCreateUnchecked (fin-start+2)
+        res.[fin - start + 1] <- state
+        for i = fin downto start do
+            state <- f.Invoke(array.[i], state);
+            res.[i - start] <- state
+        res
 
     let unstableSortInPlaceBy (f: 'T -> 'U) (array : array<'T>) =
         let len = array.Length 
@@ -579,31 +805,27 @@ module internal Array =
             let keys = zeroCreateUnchecked array.Length
             for i = 0 to array.Length - 1 do 
                 keys.[i] <- f array.[i]
-            System.Array.Sort<_,_>(keys, array, LanguagePrimitives.FastGenericComparerCanBeNull<_>)
-
+            System.Array.Sort<_,_>(keys, array, fastComparerForArraySort())
 
     let unstableSortInPlace (array : array<'T>) = 
         let len = array.Length 
         if len < 2 then () 
-        else System.Array.Sort<_>(array, LanguagePrimitives.FastGenericComparerCanBeNull<_>)
+        else System.Array.Sort<_>(array, fastComparerForArraySort())
 
-    let stableSortWithKeys (array:array<'T>) (keys:array<'Key>)  =
+    let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
         // 'places' is an array or integers storing the permutation performed by the sort
         let places = zeroCreateUnchecked array.Length 
         for i = 0 to array.Length - 1 do 
             places.[i] <- i 
-
-        let cFast = LanguagePrimitives.FastGenericComparerCanBeNull<'Key>
-        System.Array.Sort<_,_>(keys, places, cFast) 
+        System.Array.Sort<_,_>(keys, places, cFast)
         // 'array2' is a copy of the original values
         let array2 = (array.Clone() :?> array<'T>)
-
-        // 'c' is a comparer for the keys
-        let c = LanguagePrimitives.FastGenericComparer<'Key>
 
         // Walk through any chunks where the keys are equal
         let mutable i = 0
         let len = array.Length
+        let intCompare = fastComparerForArraySort<int>()
+            
         while i <  len do 
             let mutable j = i
             let ki = keys.[i]
@@ -612,9 +834,14 @@ module internal Array =
             // Copy the values into the result array and re-sort the chunk if needed by the original place indexes
             for n = i to j - 1 do
                array.[n] <- array2.[places.[n]]
-            if j - i >= 2 then 
-                System.Array.Sort<_,_>(places, array, i, j-i, null) 
+            if j - i >= 2 then
+                System.Array.Sort<_,_>(places, array, i, j-i, intCompare)
             i <- j
+
+    let stableSortWithKeys (array:array<'T>) (keys:array<'Key>) =
+        let cFast = fastComparerForArraySort()
+        let c = LanguagePrimitives.FastGenericComparer<'Key>
+        stableSortWithKeysAndComparer cFast c array keys
 
     let stableSortInPlaceBy (f: 'T -> 'U) (array : array<'T>) =
         let len = array.Length 
@@ -635,8 +862,25 @@ module internal Array =
             | null -> 
                 // An optimization for the cases where the keys and values coincide and do not have identity, e.g. are integers
                 // In this case an unstable sort is just as good as a stable sort (and faster)
-                System.Array.Sort<_,_>(array, null) 
+                System.Array.Sort<_,_>(array, null)
             | _ -> 
                 // 'keys' is an array storing the projected keys
                 let keys = (array.Clone() :?> array<'T>)
                 stableSortWithKeys array keys
+
+    let stableSortInPlaceWith (comparer:'T -> 'T -> int) (array : array<'T>) =
+        let len = array.Length
+        if len > 1 then
+            let keys = (array.Clone() :?> array<'T>)
+            let comparer = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(comparer)
+            let c = { new IComparer<'T> with member __.Compare(x,y) = comparer.Invoke(x,y) }
+            stableSortWithKeysAndComparer c c array keys
+
+    let inline subUnchecked startIndex count (array : 'T[]) =
+        let res = zeroCreateUnchecked count : 'T[]
+        if count < 64 then
+            for i = 0 to count - 1 do
+                res.[i] <- array.[startIndex+i]
+        else
+            Array.Copy(array, startIndex, res, 0, count)
+        res

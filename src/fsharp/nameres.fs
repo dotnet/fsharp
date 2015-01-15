@@ -671,13 +671,13 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
     let nenv = 
         (nenv,modrefs) ||> List.fold (fun nenv modref ->  
             if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = Some true then
-                AddModuleOrNamespaceContentsToNameEnv g amap ad m nenv modref 
+                AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref 
             else
                 nenv)
     nenv
 
 /// Add the contents of a module or namespace to the name resolution environment
-and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain) m nenv (modref:ModuleOrNamespaceRef) = 
+and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain) m root nenv (modref:ModuleOrNamespaceRef) = 
      let pri = NextExtensionMethodPriority()
      let mty = modref.ModuleOrNamespaceType
      let tycons = mty.TypeAndExceptionDefinitions 
@@ -695,7 +695,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
              else None)
          |> FlatList.toArray
      let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
-     let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m false ad 
+     let nenv = (nenv,MakeNestedModuleRefs modref) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
      nenv
 
 /// Add a set of modules or namespaces to the name resolution environment
@@ -706,8 +706,8 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
 //    open M1
 // 
 // The list contains [M1b; M1a]
-and AddModulesAndNamespacesContentsToNameEnv g amap ad m nenv modrefs = 
-   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceContentsToNameEnv g amap ad m acc modref)
+and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs = 
+   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceContentsToNameEnv g amap ad m root acc modref)
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad nenv (modref:EntityRef) =  
@@ -961,7 +961,7 @@ let AddEntityForProvidedType (amap: Import.ImportMap, modref: ModuleOrNamespaceR
 
 /// Given a provided type or provided namespace, resolve the type name using the type provider API.
 /// If necessary, incorporate the provided type or namespace into the entity.
-let ResolveProvidedTypeNameInEntity (amap, m, typeName, staticResInfo: TypeNameResolutionStaticArgsInfo, modref: ModuleOrNamespaceRef) = 
+let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespaceRef) = 
     match modref.TypeReprInfo with
     | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) ->
         match modref.Deref.PublicPath with
@@ -980,14 +980,15 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, staticResInfo: TypeNameR
     | TProvidedTypeExtensionPoint info ->
         let sty = info.ProvidedType
         let resolutionEnvironment = info.ResolutionEnvironment
-        if staticResInfo.NumStaticArgs > 0 then 
-            error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(),m))
             
         if resolutionEnvironment.showResolutionMessages then
             dprintfn "resolving name '%s' in TProvidedTypeExtensionPoint '%s'" typeName (sty.PUntaint((fun sty -> sty.FullName), m))
 
         match sty.PApply((fun sty -> sty.GetNestedType(typeName)), m) with
-        | Tainted.Null -> []
+        | Tainted.Null -> 
+            //if staticResInfo.NumStaticArgs > 0 then 
+            //    error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(),m))
+            []
         | nestedSty -> 
             [AddEntityForProvidedType (amap, modref, resolutionEnvironment, nestedSty, m) ]
     | _ -> []
@@ -1009,7 +1010,7 @@ let LookupTypeNameInEntityMaybeHaveArity (amap, m, nm, staticResInfo:TypeNameRes
 #if EXTENSIONTYPING
     let tcrefs =
         match tcrefs with 
-        | [] -> ResolveProvidedTypeNameInEntity (amap, m, nm, staticResInfo, modref)
+        | [] -> ResolveProvidedTypeNameInEntity (amap, m, nm, modref)
         | _ -> tcrefs
 #else
     amap |> ignore

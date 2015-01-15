@@ -499,7 +499,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Constructs a new event args.
         /// </summary>
-        /// <param name="fileName">The hierarchy that has changed its configuration.</param>
+        /// <param name="hierarchy">The hierarchy that has changed its configuration.</param>
         /*internal, but public for FSharp.Project.dll*/ public ActiveConfigurationChangedEventArgs(IVsHierarchy hierarchy)
         {
             this.hierarchy = hierarchy;
