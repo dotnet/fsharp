@@ -210,7 +210,7 @@ astDeprecatedIndexerNotation,"This indexer notation has been removed from the F#
 # augment.fs errors
 # -----------------------------------------------------------------------------
 376,augNoRefEqualsOnStruct,"The 'ReferenceEquality' attribute cannot be used on structs. Consider using the 'StructuralEquality' attribute instead, or implement an override for 'System.Object.Equals(obj)'."
-377,augInvalidAttrs,"This type uses an invalid mix of the attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison' attributes"
+377,augInvalidAttrs,"This type uses an invalid mix of the attributes 'NoEquality', 'ReferenceEquality', 'StructuralEquality', 'NoComparison' and 'StructuralComparison'"
 378,augNoEqualityNeedsNoComparison,"The 'NoEquality' attribute must be used in conjunction with the 'NoComparison' attribute"
 379,augStructCompNeedsStructEquality,"The 'StructuralComparison' attribute must be used in conjunction with the 'StructuralEquality' attribute"
 380,augStructEqNeedsNoCompOrStructComp,"The 'StructuralEquality' attribute must be used in conjunction with the 'NoComparison' or 'StructuralComparison' attributes"
