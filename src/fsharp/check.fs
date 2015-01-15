@@ -492,7 +492,7 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
           let interfaces = 
               [ //yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes typ
                 for (ty,_) in iimpls do
-                    yield ty ]
+                    yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
               |> List.filter (isInterfaceTy cenv.g)
           CheckMultipleInterfaceInstantiations cenv interfaces m
 
