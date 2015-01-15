@@ -384,10 +384,10 @@
     <value>A blank XML file</value>
   </data>
   <data name="5034" xml:space="preserve">
-    <value>Portable Library (.NET 4.0+, Windows 8, Silverlight 5)</value>
+    <value>Portable Library (.NET 4.0+, Windows 8, Silverlight 5, Xamarin)</value>
   </data>
   <data name="5035" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.0+, Windows Store and Silverlight 5.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.0+, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</value>
   </data>
   <data name="5036" xml:space="preserve">
     <value>Data</value>
@@ -420,22 +420,22 @@
     <value>A project item for consuming a Web Service using WsdlService type provider.</value>
   </data>
   <data name="5047" xml:space="preserve">
-    <value>Portable Library (.NET 4.5, Windows Store)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Xamarin)</value>
   </data>
   <data name="5048" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5 and Windows Store.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 7</value>
   </data>
   <data name="5049" xml:space="preserve">
-    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin)</value>
   </data>
   <data name="5050" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store and Windows Phone 8 Silverlight.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8 Silverlight, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 78</value>
   </data>
   <data name="5051" xml:space="preserve">
-    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin)</value>
   </data>
   <data name="5052" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1 and Windows Phone Silverlight 8.</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</value>
   </data>
   <data name="6000" xml:space="preserve">
     <value>F# Tools</value>
