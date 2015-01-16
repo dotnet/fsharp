@@ -79,58 +79,64 @@ module Nullable =
         open System
 
         [<CompiledName("ToUInt8")>]
-        let inline uint8 (x:Nullable< ^T >) = if x.HasValue then Nullable(byte x.Value) else Nullable()
+        let inline uint8 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
         
         [<CompiledName("ToInt8")>]
-        let inline int8 (x:Nullable< ^T >) = if x.HasValue then Nullable(sbyte x.Value) else Nullable()
+        let inline int8 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
         
         [<CompiledName("ToByte")>]
-        let inline byte (x:Nullable< ^T >) = if x.HasValue then Nullable(byte x.Value) else Nullable()
+        let inline byte (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
         
         [<CompiledName("ToSByte")>]
-        let inline sbyte (x:Nullable< ^T >) = if x.HasValue then Nullable(sbyte x.Value) else Nullable()
+        let inline sbyte (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
         
         [<CompiledName("ToInt16")>]
-        let inline int16 (x:Nullable< ^T >) = if x.HasValue then Nullable(int16 x.Value) else Nullable()
+        let inline int16 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.int16 x.Value) else Nullable()
         
         [<CompiledName("ToUInt16")>]
-        let inline uint16 (x:Nullable< ^T >) = if x.HasValue then Nullable(uint16 x.Value) else Nullable()
+        let inline uint16 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.uint16 x.Value) else Nullable()
         
         [<CompiledName("ToInt")>]
-        let inline int (x:Nullable< ^T >) = if x.HasValue then Nullable(int x.Value) else Nullable()
+        let inline int (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.int x.Value) else Nullable()
         
         [<CompiledName("ToEnum")>]
-        let inline enum (x:Nullable< int32 >) = if x.HasValue then Nullable(enum x.Value) else Nullable()
+        let inline enum (x:Nullable< int32 >) = if x.HasValue then Nullable(Operators.enum x.Value) else Nullable()
 
         [<CompiledName("ToInt32")>]
-        let inline int32 (x:Nullable<_>) = if x.HasValue then Nullable(int32 x.Value) else Nullable()
+        let inline int32 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int32 x.Value) else Nullable()
 
         [<CompiledName("ToUInt32")>]
-        let inline uint32 (x:Nullable<_>) = if x.HasValue then Nullable(uint32 x.Value) else Nullable()
+        let inline uint32 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.uint32 x.Value) else Nullable()
 
         [<CompiledName("ToInt64")>]
-        let inline int64 (x:Nullable<_>) = if x.HasValue then Nullable(int64 x.Value) else Nullable()
+        let inline int64 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int64 x.Value) else Nullable()
 
         [<CompiledName("ToUInt64")>]
-        let inline uint64 (x:Nullable<_>) = if x.HasValue then Nullable(uint64 x.Value) else Nullable()
+        let inline uint64 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.uint64 x.Value) else Nullable()
+
+        [<CompiledName("ToFloat32")>]
+        let inline float32 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float32 x.Value) else Nullable()
+
+        [<CompiledName("ToFloat")>]
+        let inline float (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float x.Value) else Nullable()
 
         [<CompiledName("ToSingle")>]
-        let inline float32 (x:Nullable<_>) = if x.HasValue then Nullable(float32 x.Value) else Nullable()
+        let inline single (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float32 x.Value) else Nullable()
 
         [<CompiledName("ToDouble")>]
-        let inline float (x:Nullable<_>) = if x.HasValue then Nullable(float x.Value) else Nullable()
+        let inline double (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float x.Value) else Nullable()
 
         [<CompiledName("ToIntPtr")>]
-        let inline nativeint (x:Nullable<_>) = if x.HasValue then Nullable(nativeint x.Value) else Nullable()
+        let inline nativeint (x:Nullable<_>) = if x.HasValue then Nullable(Operators.nativeint x.Value) else Nullable()
 
         [<CompiledName("ToUIntPtr")>]
-        let inline unativeint (x:Nullable<_>) = if x.HasValue then Nullable(unativeint x.Value) else Nullable()
+        let inline unativeint (x:Nullable<_>) = if x.HasValue then Nullable(Operators.unativeint x.Value) else Nullable()
         
         [<CompiledName("ToDecimal")>]
-        let inline decimal (x:Nullable<_>) = if x.HasValue then Nullable(decimal x.Value) else Nullable()
+        let inline decimal (x:Nullable<_>) = if x.HasValue then Nullable(Operators.decimal x.Value) else Nullable()
 
         [<CompiledName("ToChar")>]
-        let inline char (x:Nullable<_>) = if x.HasValue then Nullable(char x.Value) else Nullable()
+        let inline char (x:Nullable<_>) = if x.HasValue then Nullable(Operators.char x.Value) else Nullable()
 
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
@@ -214,8 +220,7 @@ module LeafExpressionConverter =
 
     let NullableConstructor   = typedefof<Nullable<int>>.GetConstructors().[0]
 
-    let (|SpecificCallToMethod|_|) (mhandle: System.RuntimeMethodHandle) = 
-        let minfo = (System.Reflection.MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
+    let SpecificCallToMethodInfo (minfo: System.Reflection.MethodInfo) =
         let isg1 = minfo.IsGenericMethod 
         let gmd = if isg1 then minfo.GetGenericMethodDefinition() else null
         (fun tm -> 
@@ -232,137 +237,149 @@ module LeafExpressionConverter =
                 Some(obj,(minfo2.GetGenericArguments() |> Array.toList),args)
             | _ -> None)
 
-    let (|GenericEqualityQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> LanguagePrimitives.GenericEquality x y))
-    let (|EqualsQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x = y))
-    let (|GreaterQ|_|)   = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x > y))
-    let (|GreaterEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x >= y))
-    let (|LessQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x <  y))
-    let (|LessEqQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x <= y))
-    let (|NotEqQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x <> y))
 
-    let (|StaticEqualsQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(=) x y))
-    let (|StaticGreaterQ|_|)   = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>) x y))
-    let (|StaticGreaterEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>=) x y))
-    let (|StaticLessQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<) x y))
-    let (|StaticLessEqQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<=) x y))
-    let (|StaticNotEqQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<>) x y))
+    let SpecificCallToMethod (mhandle: System.RuntimeMethodHandle) = 
+        let minfo = (System.Reflection.MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
+        SpecificCallToMethodInfo minfo
 
-    let (|NullableEqualsQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?=  ) x y))
-    let (|NullableNotEqQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?<> ) x y))
-    let (|NullableGreaterQ|_|)   = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?>  ) x y))
-    let (|NullableGreaterEqQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?>= ) x y))
-    let (|NullableLessQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?<  ) x y))
-    let (|NullableLessEqQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?<= ) x y))
+    let (|GenericEqualityQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> LanguagePrimitives.GenericEquality x y))
+    let (|EqualsQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> x = y))
+    let (|GreaterQ|_|)   = SpecificCallToMethod (methodhandleof (fun (x,y) -> x > y))
+    let (|GreaterEqQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> x >= y))
+    let (|LessQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x,y) -> x <  y))
+    let (|LessEqQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> x <= y))
+    let (|NotEqQ|_|)     = SpecificCallToMethod (methodhandleof (fun (x,y) -> x <> y))
 
-    let (|NullableEqualsNullableQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?=?  ) x y))
-    let (|NullableNotEqNullableQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?<>? ) x y))
-    let (|NullableGreaterNullableQ|_|)   = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?>?  ) x y))
-    let (|NullableGreaterEqNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?>=? ) x y))
-    let (|NullableLessNullableQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?<?  ) x y))
-    let (|NullableLessEqNullableQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?<=? ) x y))
+    let (|StaticEqualsQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(=) x y))
+    let (|StaticGreaterQ|_|)   = SpecificCallToMethod (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>) x y))
+    let (|StaticGreaterEqQ|_|) = SpecificCallToMethod (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(>=) x y))
+    let (|StaticLessQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<) x y))
+    let (|StaticLessEqQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<=) x y))
+    let (|StaticNotEqQ|_|)     = SpecificCallToMethod (methodhandleof (fun (x:int,y:int) -> NonStructuralComparison.(<>) x y))
 
-    let (|EqualsNullableQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( =?  ) x y))
-    let (|NotEqNullableQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( <>? ) x y))
-    let (|GreaterNullableQ|_|)   = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( >?  ) x y))
-    let (|GreaterEqNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( >=? ) x y))
-    let (|LessNullableQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( <?  ) x y))
-    let (|LessEqNullableQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( <=? ) x y))
+    let (|NullableEqualsQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?=  ) x y))
+    let (|NullableNotEqQ|_|)     = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?<> ) x y))
+    let (|NullableGreaterQ|_|)   = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?>  ) x y))
+    let (|NullableGreaterEqQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?>= ) x y))
+    let (|NullableLessQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?<  ) x y))
+    let (|NullableLessEqQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?<= ) x y))
 
-    let (|MakeDecimalQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (a1,a2,a3,a4,a5) -> LanguagePrimitives.IntrinsicFunctions.MakeDecimal a1 a2 a3 a4 a5))
+    let (|NullableEqualsNullableQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?=?  ) x y))
+    let (|NullableNotEqNullableQ|_|)     = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?<>? ) x y))
+    let (|NullableGreaterNullableQ|_|)   = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?>?  ) x y))
+    let (|NullableGreaterEqNullableQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?>=? ) x y))
+    let (|NullableLessNullableQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?<?  ) x y))
+    let (|NullableLessEqNullableQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?<=? ) x y))
+
+    let (|EqualsNullableQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( =?  ) x y))
+    let (|NotEqNullableQ|_|)     = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( <>? ) x y))
+    let (|GreaterNullableQ|_|)   = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( >?  ) x y))
+    let (|GreaterEqNullableQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( >=? ) x y))
+    let (|LessNullableQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( <?  ) x y))
+    let (|LessEqNullableQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( <=? ) x y))
+
+    let (|MakeDecimalQ|_|)    = SpecificCallToMethod (methodhandleof (fun (a1,a2,a3,a4,a5) -> LanguagePrimitives.IntrinsicFunctions.MakeDecimal a1 a2 a3 a4 a5))
 
 
-    let (|NullablePlusQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?+ ) x y))
-    let (|NullablePlusNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?+? ) x y))
-    let (|PlusNullableQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( +? ) x y))
+    let (|NullablePlusQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?+ ) x y))
+    let (|NullablePlusNullableQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?+? ) x y))
+    let (|PlusNullableQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( +? ) x y))
 
-    let (|NullableMinusQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?- ) x y))
-    let (|NullableMinusNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?-? ) x y))
-    let (|MinusNullableQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( -? ) x y))
+    let (|NullableMinusQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?- ) x y))
+    let (|NullableMinusNullableQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?-? ) x y))
+    let (|MinusNullableQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( -? ) x y))
 
-    let (|NullableMultiplyQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?* ) x y))
-    let (|NullableMultiplyNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?*? ) x y))
-    let (|MultiplyNullableQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( *? ) x y))
+    let (|NullableMultiplyQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?* ) x y))
+    let (|NullableMultiplyNullableQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?*? ) x y))
+    let (|MultiplyNullableQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( *? ) x y))
 
-    let (|NullableDivideQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?/ ) x y))
-    let (|NullableDivideNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?/? ) x y))
-    let (|DivideNullableQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( /? ) x y))
+    let (|NullableDivideQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?/ ) x y))
+    let (|NullableDivideNullableQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?/? ) x y))
+    let (|DivideNullableQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( /? ) x y))
 
-    let (|NullableModuloQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?% ) x y))
-    let (|NullableModuloNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( ?%? ) x y))
-    let (|ModuloNullableQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> NullableOperators.( %? ) x y))
+    let (|NullableModuloQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?% ) x y))
+    let (|NullableModuloNullableQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( ?%? ) x y))
+    let (|ModuloNullableQ|_|)         = SpecificCallToMethod (methodhandleof (fun (x,y) -> NullableOperators.( %? ) x y))
 
-    let (|NotQ|_|)             =  (|SpecificCallToMethod|_|) (methodhandleof (fun x -> not x))
-    let (|NegQ|_|)             = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int) -> -x))
-    let (|PlusQ|_|)            = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x + y))
-    let (|DivideQ|_|)          = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x / y)) 
-    let (|MinusQ|_|)           = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x - y))
-    let (|MultiplyQ|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x * y))
-    let (|ModuloQ|_|)          = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x % y))
-    let (|ShiftLeftQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x <<< y))
-    let (|ShiftRightQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x >>> y))
-    let (|BitwiseAndQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x &&& y))
-    let (|BitwiseOrQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x ||| y))
-    let (|BitwiseXorQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x ^^^ y))
-    let (|BitwiseNotQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> ~~~ x))
-    let (|CheckedNeg|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.( ~-) x))
-    let (|CheckedPlusQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> Checked.( + ) x y))
-    let (|CheckedMinusQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> Checked.( - ) x y))
-    let (|CheckedMultiplyQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> Checked.( * ) x y))
+    let (|NotQ|_|)             =  SpecificCallToMethod (methodhandleof (fun x -> not x))
+    let (|NegQ|_|)             = SpecificCallToMethod (methodhandleof (fun (x:int) -> -x))
+    let (|PlusQ|_|)            = SpecificCallToMethod (methodhandleof (fun (x,y) -> x + y))
+    let (|DivideQ|_|)          = SpecificCallToMethod (methodhandleof (fun (x,y) -> x / y)) 
+    let (|MinusQ|_|)           = SpecificCallToMethod (methodhandleof (fun (x,y) -> x - y))
+    let (|MultiplyQ|_|)        = SpecificCallToMethod (methodhandleof (fun (x,y) -> x * y))
+    let (|ModuloQ|_|)          = SpecificCallToMethod (methodhandleof (fun (x,y) -> x % y))
+    let (|ShiftLeftQ|_|)       = SpecificCallToMethod (methodhandleof (fun (x,y) -> x <<< y))
+    let (|ShiftRightQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x,y) -> x >>> y))
+    let (|BitwiseAndQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x,y) -> x &&& y))
+    let (|BitwiseOrQ|_|)       = SpecificCallToMethod (methodhandleof (fun (x,y) -> x ||| y))
+    let (|BitwiseXorQ|_|)      = SpecificCallToMethod (methodhandleof (fun (x,y) -> x ^^^ y))
+    let (|BitwiseNotQ|_|)      = SpecificCallToMethod (methodhandleof (fun x -> ~~~ x))
+    let (|CheckedNeg|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Checked.( ~-) x))
+    let (|CheckedPlusQ|_|)     = SpecificCallToMethod (methodhandleof (fun (x,y) -> Checked.( + ) x y))
+    let (|CheckedMinusQ|_|)    = SpecificCallToMethod (methodhandleof (fun (x,y) -> Checked.( - ) x y))
+    let (|CheckedMultiplyQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> Checked.( * ) x y))
 
-    let (|ConvCharQ|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> char x))
-    let (|ConvDecimalQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> decimal x))
-    let (|ConvFloatQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> float x))
-    let (|ConvFloat32Q|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> float32 x))
-    let (|ConvSByteQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> sbyte x))
-    let (|ConvInt8Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> sbyte x))
-    let (|ConvInt16Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int16 x))
-    let (|ConvInt32Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int32 x))
-    let (|ConvIntQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int x))
-    let (|ConvInt64Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> int64 x))
-    let (|ConvByteQ|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> byte x))
-    let (|ConvUInt8Q|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> byte x))
-    let (|ConvUInt16Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> uint16 x))
-    let (|ConvUInt32Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> uint32 x))
-    let (|ConvUInt64Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> uint64 x))
+    let (|ConvCharQ|_|)        = SpecificCallToMethod (methodhandleof (fun x -> Operators.char x))
+    let (|ConvDecimalQ|_|)     = SpecificCallToMethod (methodhandleof (fun x -> Operators.decimal x))
+    let (|ConvFloatQ|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Operators.float x))
+    let (|ConvFloat32Q|_|)     = SpecificCallToMethod (methodhandleof (fun x -> Operators.float32 x))
+    let (|ConvSByteQ|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Operators.sbyte x))
 
-    let (|ConvNullableCharQ|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.char x))
-    let (|ConvNullableDecimalQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.decimal x))
-    let (|ConvNullableFloatQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.float x))
-    let (|ConvNullableFloat32Q|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.float32 x))
-    let (|ConvNullableSByteQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.sbyte x))
-    let (|ConvNullableInt8Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int8 x))
-    let (|ConvNullableInt16Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int16 x))
-    let (|ConvNullableInt32Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int32 x))
-    let (|ConvNullableIntQ|_|)         = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int x))
-    let (|ConvNullableInt64Q|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.int64 x))
-    let (|ConvNullableByteQ|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.byte x))
-    let (|ConvNullableUInt8Q|_|)        = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint8 x))
-    let (|ConvNullableUInt16Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint16 x))
-    let (|ConvNullableUInt32Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint32 x))
-    let (|ConvNullableUInt64Q|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.uint64 x))
+
+    let (|ConvInt16Q|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Operators.int16 x))
+    let (|ConvInt32Q|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Operators.int32 x))
+    let (|ConvIntQ|_|)         = SpecificCallToMethod (methodhandleof (fun x -> Operators.int x))
+    let (|ConvInt64Q|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Operators.int64 x))
+    let (|ConvByteQ|_|)        = SpecificCallToMethod (methodhandleof (fun x -> Operators.byte x))
+    let (|ConvUInt16Q|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Operators.uint16 x))
+    let (|ConvUInt32Q|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Operators.uint32 x))
+    let (|ConvUInt64Q|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Operators.uint64 x))
+
+    let (|ConvInt8Q|_|)        = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToSByte"))
+    let (|ConvUInt8Q|_|)       = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToByte"))
+    let (|ConvDoubleQ|_|)      = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToDouble"))
+    let (|ConvSingleQ|_|)      = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators").GetMethod("ToSingle"))
+
+    let (|ConvNullableCharQ|_|)        = SpecificCallToMethod (methodhandleof (fun x -> Nullable.char x))
+    let (|ConvNullableDecimalQ|_|)     = SpecificCallToMethod (methodhandleof (fun x -> Nullable.decimal x))
+    let (|ConvNullableFloatQ|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Nullable.float x))
+    let (|ConvNullableDoubleQ|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Nullable.double x))
+    let (|ConvNullableFloat32Q|_|)     = SpecificCallToMethod (methodhandleof (fun x -> Nullable.float32 x))
+    let (|ConvNullableSingleQ|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Nullable.single x))
+    let (|ConvNullableSByteQ|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Nullable.sbyte x))
+    let (|ConvNullableInt8Q|_|)        = SpecificCallToMethod (methodhandleof (fun x -> Nullable.int8 x))
+    let (|ConvNullableInt16Q|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Nullable.int16 x))
+    let (|ConvNullableInt32Q|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Nullable.int32 x))
+    let (|ConvNullableIntQ|_|)         = SpecificCallToMethod (methodhandleof (fun x -> Nullable.int x))
+    let (|ConvNullableInt64Q|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Nullable.int64 x))
+    let (|ConvNullableByteQ|_|)        = SpecificCallToMethod (methodhandleof (fun x -> Nullable.byte x))
+    let (|ConvNullableUInt8Q|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Nullable.uint8 x))
+    let (|ConvNullableUInt16Q|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Nullable.uint16 x))
+    let (|ConvNullableUInt32Q|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Nullable.uint32 x))
+    let (|ConvNullableUInt64Q|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Nullable.uint64 x))
     // LINQ expressions can't do native integer operations, so we don't convert these
-    //let (|ConvNullableIntPtrQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.nativeint x))
-    //let (|ConvNullableUIntPtrQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Nullable.unativeint x))
+    //let (|ConvNullableIntPtrQ|_|)       = SpecificCallToMethod (methodhandleof (fun x -> Nullable.nativeint x))
+    //let (|ConvNullableUIntPtrQ|_|)      = SpecificCallToMethod (methodhandleof (fun x -> Nullable.unativeint x))
 
 
-    let (|UnboxGeneric|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> LanguagePrimitives.IntrinsicFunctions.UnboxGeneric x))
-    let (|TypeTestGeneric|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric x))
-    let (|CheckedConvCharQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.char x))
-    let (|CheckedConvSByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.sbyte x))
-    let (|CheckedConvInt8Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.sbyte x))
-    let (|CheckedConvInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.int16 x))
-    let (|CheckedConvInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.int32 x))
-    let (|CheckedConvInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.int64 x))
-    let (|CheckedConvByteQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.byte x))
-    let (|CheckedConvUInt8Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.byte x))
-    let (|CheckedConvUInt16Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint16 x))
-    let (|CheckedConvUInt32Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint32 x))
-    let (|CheckedConvUInt64Q|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.uint64 x))
-    let (|ImplicitExpressionConversionHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> ImplicitExpressionConversionHelper x))
-    let (|MemberInitializationHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> MemberInitializationHelper x))
-    let (|NewAnonymousObjectHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> NewAnonymousObjectHelper x))
-    let (|ArrayLookupQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> LanguagePrimitives.IntrinsicFunctions.GetArray x y))
-    //let (|ArrayAssignQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun -> LanguagePrimitives.IntrinsicFunctions.SetArray : int[] -> int -> int -> unit))
+    let (|UnboxGeneric|_|) = SpecificCallToMethod (methodhandleof (fun x -> LanguagePrimitives.IntrinsicFunctions.UnboxGeneric x))
+    let (|TypeTestGeneric|_|) = SpecificCallToMethod (methodhandleof (fun x -> LanguagePrimitives.IntrinsicFunctions.TypeTestGeneric x))
+    let (|CheckedConvCharQ|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.char x))
+    let (|CheckedConvSByteQ|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.sbyte x))
+    let (|CheckedConvInt8Q|_|) = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked").GetMethod("ToSByte"))
+    let (|CheckedConvUInt8Q|_|) = SpecificCallToMethodInfo (typeof<ConvEnv>.Assembly.GetType("Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked").GetMethod("ToByte"))
+    let (|CheckedConvInt16Q|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.int16 x))
+    let (|CheckedConvInt32Q|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.int32 x))
+    let (|CheckedConvInt64Q|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.int64 x))
+    let (|CheckedConvByteQ|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.byte x))
+    let (|CheckedConvUInt16Q|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.uint16 x))
+    let (|CheckedConvUInt32Q|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.uint32 x))
+    let (|CheckedConvUInt64Q|_|) = SpecificCallToMethod (methodhandleof (fun x -> Checked.uint64 x))
+    let (|ImplicitExpressionConversionHelperQ|_|) = SpecificCallToMethod (methodhandleof (fun x -> ImplicitExpressionConversionHelper x))
+    let (|MemberInitializationHelperQ|_|) = SpecificCallToMethod (methodhandleof (fun x -> MemberInitializationHelper x))
+    let (|NewAnonymousObjectHelperQ|_|) = SpecificCallToMethod (methodhandleof (fun x -> NewAnonymousObjectHelper x))
+    let (|ArrayLookupQ|_|) = SpecificCallToMethod (methodhandleof (fun (x,y) -> LanguagePrimitives.IntrinsicFunctions.GetArray x y))
+    //let (|ArrayAssignQ|_|) = SpecificCallToMethod (methodhandleof (fun -> LanguagePrimitives.IntrinsicFunctions.SetArray : int[] -> int -> int -> unit))
     //let (|ArrayTypeQ|_|) (ty:System.Type) = if ty.IsArray && ty.GetArrayRank() = 1 then Some(ty.GetElementType()) else None
     let substHelperMeth = 
         methodhandleof (fun (x:Expr,y:Var[],z:obj[]) -> SubstHelper<obj> (x,y,z)) 
@@ -582,15 +599,17 @@ module LeafExpressionConverter =
             | ConvNullableCharQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<char>>) |> asExpr
             | ConvNullableDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<decimal>>) |> asExpr
             | ConvNullableFloatQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float>>) |> asExpr
+            | ConvNullableDoubleQ  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<double>>) |> asExpr
             | ConvNullableFloat32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float32>>) |> asExpr
+            | ConvNullableSingleQ  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<float32>>) |> asExpr
             | ConvNullableSByteQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<sbyte>>) |> asExpr
-            | ConvNullableInt8Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<sbyte>>) |> asExpr
+            | ConvNullableInt8Q    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<sbyte>>) |> asExpr
             | ConvNullableInt16Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int16>>) |> asExpr
             | ConvNullableInt32Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int32>>) |> asExpr
             | ConvNullableIntQ     (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int32>>) |> asExpr
             | ConvNullableInt64Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<int64>>) |> asExpr
             | ConvNullableByteQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<byte>>) |> asExpr
-            | ConvNullableUInt8Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<byte>>) |> asExpr
+            | ConvNullableUInt8Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<byte>>) |> asExpr
             | ConvNullableUInt16Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint16>>) |> asExpr
             | ConvNullableUInt32Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint32>>) |> asExpr
             | ConvNullableUInt64Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<Nullable<uint64>>) |> asExpr
@@ -601,26 +620,28 @@ module LeafExpressionConverter =
             | ConvCharQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<char>) |> asExpr
             | ConvDecimalQ (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<decimal>) |> asExpr
             | ConvFloatQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float>) |> asExpr
+            | ConvDoubleQ  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<double>) |> asExpr
             | ConvFloat32Q (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float32>) |> asExpr
+            | ConvSingleQ  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<float32>) |> asExpr
             | ConvSByteQ   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
-            | ConvInt8Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
+            | ConvInt8Q    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
             | ConvInt16Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int16>) |> asExpr
             | ConvInt32Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
             | ConvIntQ     (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
             | ConvInt64Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<int64>) |> asExpr
             | ConvByteQ    (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
-            | ConvUInt8Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
+            | ConvUInt8Q   (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
             | ConvUInt16Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint16>) |> asExpr
             | ConvUInt32Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint32>) |> asExpr
             | ConvUInt64Q  (_, _, [x1]) -> Expression.Convert(ConvExprToLinqInContext env x1, typeof<uint64>) |> asExpr
 
-            | CheckedConvCharQ (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<char>) |> asExpr
+            | CheckedConvCharQ  (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<char>) |> asExpr
             | CheckedConvSByteQ (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
-            | CheckedConvInt8Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
+            | CheckedConvInt8Q  (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<sbyte>) |> asExpr
             | CheckedConvInt16Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int16>) |> asExpr
             | CheckedConvInt32Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int32>) |> asExpr
             | CheckedConvInt64Q (_, _, [x1])  -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<int64>) |> asExpr
-            | CheckedConvByteQ (_, _, [x1])   -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
+            | CheckedConvByteQ  (_, _, [x1])   -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
             | CheckedConvUInt8Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<byte>) |> asExpr
             | CheckedConvUInt16Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint16>) |> asExpr
             | CheckedConvUInt32Q (_, _, [x1]) -> Expression.ConvertChecked(ConvExprToLinqInContext env x1, typeof<uint32>) |> asExpr

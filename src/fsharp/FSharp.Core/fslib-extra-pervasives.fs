@@ -160,10 +160,10 @@ module ExtraTopLevelOperators =
     [<CompiledName("ToDouble")>]
     let inline double x = float x
 
-    [<CompiledName("ToUInt8")>]
+    [<CompiledName("ToByte")>]
     let inline uint8 x = byte x
 
-    [<CompiledName("ToInt8")>]
+    [<CompiledName("ToSByte")>]
     let inline int8 x = sbyte x
 
     module Checked = 
