@@ -25,6 +25,7 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
+open Microsoft.FSharp.Compiler.Nameres
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -1630,6 +1631,7 @@ let MakeCalledArgs amap m (minfo:MethInfo) minst =
 /// and returns a CalledMeth object for further analysis.
 type CalledMeth<'T>
       (infoReader:InfoReader,
+       nameEnv: Microsoft.FSharp.Compiler.Nameres.NameResolutionEnv option,
        isCheckingAttributeCall, 
        freshenMethInfo,// a function to help generate fresh type variables the property setters methods in generic classes 
        m, 
@@ -1641,7 +1643,8 @@ type CalledMeth<'T>
        callerObjArgTys: TType list,   // the types of the actual object argument, if any 
        curriedCallerArgs: (CallerArg<'T> list * CallerNamedArg<'T> list) list,     // the data about any arguments supplied by the caller 
        allowParamArgs:bool,       // do we allow the use of a param args method in its "expanded" form?
-       allowOutAndOptArgs: bool)  // do we allow the use of the transformation that converts out arguments as tuple returns?
+       allowOutAndOptArgs: bool,  // do we allow the use of the transformation that converts out arguments as tuple returns?
+       tyargsOpt : TType option) // method parameters
     =
     let g = infoReader.g
     let methodRetTy = minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
@@ -1726,15 +1729,31 @@ type CalledMeth<'T>
                         let pminst = freshenMethInfo m pminfo
                         Choice1Of2(AssignedItemSetter(id,AssignedPropSetter(pinfo,pminfo, pminst), e))
                     | _ ->
-                        match infoReader.GetILFieldInfosOfType(Some(nm),ad,m,returnedObjTy) with
-                        | finfo :: _ -> 
-                            Choice1Of2(AssignedItemSetter(id,AssignedILFieldSetter(finfo), e))
-                        | _ ->              
-                          match infoReader.TryFindRecdOrClassFieldInfoOfType(nm,m,returnedObjTy) with
-                          | Some rfinfo -> 
-                              Choice1Of2(AssignedItemSetter(id,AssignedRecdFieldSetter(rfinfo), e))
-                          | None -> 
-                              Choice2Of2(arg))
+                        let epinfos = 
+                            match nameEnv with  
+                            | Some(ne) ->  ExtensionPropInfosOfTypeInScope infoReader ne (Some(nm), ad) m returnedObjTy
+                            | _ -> []
+                        match epinfos with 
+                        | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
+                            let pminfo = pinfo.SetterMethod
+                            let pminst = match minfo with
+                                         | MethInfo.FSMeth(_,TType.TType_app(_,types),_,_) -> types
+                                         | _ -> freshenMethInfo m pminfo
+
+                            let pminst = match tyargsOpt with
+                                          | Some(TType.TType_app(_, types)) -> types
+                                          | _ -> pminst
+                            Choice1Of2(AssignedItemSetter(id,AssignedPropSetter(pinfo,pminfo, pminst), e))
+                        |  _ ->    
+                            match infoReader.GetILFieldInfosOfType(Some(nm),ad,m,returnedObjTy) with
+                            | finfo :: _ -> 
+                                Choice1Of2(AssignedItemSetter(id,AssignedILFieldSetter(finfo), e))
+                            | _ ->              
+                              match infoReader.TryFindRecdOrClassFieldInfoOfType(nm,m,returnedObjTy) with
+                              | Some rfinfo -> 
+                                  Choice1Of2(AssignedItemSetter(id,AssignedRecdFieldSetter(rfinfo), e))
+                              | None -> 
+                                  Choice2Of2(arg))
 
             let names = namedCallerArgs |> List.map (fun (CallerNamedArg(nm,_)) -> nm.idText) 
 
