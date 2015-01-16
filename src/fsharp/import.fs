@@ -519,7 +519,7 @@ let ImportILAssembly(amap:(unit -> ImportMap),m,auxModuleLoader,sref,sourceDir,f
         let mty = ImportILAssemblyTypeDefs(amap,m,auxModuleLoader,aref,ilModule)
         let ccuData = 
           { IsFSharp=false;
-            UsesQuotations=false;
+            UsesFSharp20PlusQuotations=false;
 #if EXTENSIONTYPING
             InvalidateEvent=invalidateCcu;
             IsProviderGenerated = false;

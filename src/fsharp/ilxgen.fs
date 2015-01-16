@@ -752,13 +752,6 @@ let StorageForVal m v eenv =
     let v = 
         try eenv.valsInScope.[v]
         with :? KeyNotFoundException ->
-          (* REVIEW: The  binary will probably still be written under these error conditions.
-           *         That is useful when debugging the compiler, but not in Retail mode.
-           *         Fail with an internal error if Retail? *)
-          (* // Diagnostics for bug://4046
-           * let vals = eenv.valsInScope.Contents |> Zmap.toList
-           * vals |> List.iter (printf "v,s = %A\n")          
-           *)
           assert false
           errorR(Error(FSComp.SR.ilUndefinedValue(showL(vspecAtBindL v)),m)); 
           notlazy (Arg 668(* random value for post-hoc diagnostic analysis on generated tree *) )
@@ -2580,10 +2573,10 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                   let localMethodHandle,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("handle",m),runtimeMethodHandleTy) scopeMarks       
                   
                   // push args
-                  GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenvinner m vref.NumObjArgs curriedArgInfos nowArgs;
+                  GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenvinner m vref.NumObjArgs curriedArgInfos nowArgs
                   
                   if isSuperInit || isSelfInit then 
-                      CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] ;  
+                      CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] 
                     
                   // set up indirect call
                   // push the method's enclosing type on the top of the stack
@@ -3268,33 +3261,49 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
 //-------------------------------------------------------------------------- 
 
 and GenQuotation cenv cgbuf eenv (ast,conv,m,ety) sequel =
-    let argTypes,argExprs, astSpec = 
+
+    let referencedTypeDefs, spliceTypes, spliceArgExprs, astSpec = 
         match !conv with  
         | Some res -> res
         | None -> 
             try 
-                QuotationTranslator.ConvExprPublic 
-                    (cenv.g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No) 
-                    QuotationTranslator.QuotationTranslationEnv.Empty ast 
+                let qscope = QuotationTranslator.QuotationGenerationScope.Create (cenv.g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.No)
+                let astSpec = QuotationTranslator.ConvExprPublic qscope QuotationTranslator.QuotationTranslationEnv.Empty ast 
+                let referencedTypeDefs, spliceTypes, spliceArgExprs = qscope.Close()
+                referencedTypeDefs, List.map fst spliceTypes, List.map fst spliceArgExprs, astSpec
             with 
                 QuotationTranslator.InvalidQuotedTerm e -> error(e)
-    let astPickledBytes = QuotationPickler.pickle astSpec
+
+    let astSerializedBytes = QuotationPickler.pickle astSpec
 
     let someTypeInModuleExpr =  mkTypeOfExpr cenv m eenv.someTypeInThisAssembly
     let rawTy = mkRawQuotedExprTy cenv.g                          
-    let mkList ty els = List.foldBack (mkCons cenv.g ty) els (mkNil cenv.g m ty)
-    let typeExprs = List.map (GenType cenv.amap m cenv.g eenv.tyenv >> (mkTypeOfExpr cenv m)) argTypes 
-    let typesExpr = mkList cenv.g.system_Type_typ typeExprs 
-    let argsExpr = mkList rawTy argExprs 
-    let bytesExpr = Expr.Op(TOp.Bytes(astPickledBytes),[],[],m)
-    let unpickledExpr = mkCallUnpickleQuotation cenv.g m someTypeInModuleExpr typesExpr argsExpr bytesExpr
+    let spliceTypeExprs = List.map (GenType cenv.amap m cenv.g eenv.tyenv >> (mkTypeOfExpr cenv m)) spliceTypes 
+
+    let bytesExpr = Expr.Op(TOp.Bytes(astSerializedBytes),[],[],m)
+
+    let deserializeExpr = 
+        match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g with
+        | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
+            let referencedTypeDefExprs =  List.map (mkILNonGenericBoxedTy >> mkTypeOfExpr cenv m) referencedTypeDefs
+            let referencedTypeDefsExpr = mkArray (cenv.g.system_Type_typ, referencedTypeDefExprs, m) 
+            let spliceTypesExpr = mkArray (cenv.g.system_Type_typ, spliceTypeExprs, m)
+            let spliceArgsExpr = mkArray (rawTy, spliceArgExprs, m)
+            mkCallDeserializeQuotationFSharp40Plus cenv.g m someTypeInModuleExpr referencedTypeDefsExpr spliceTypesExpr spliceArgsExpr bytesExpr
+
+        | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
+            let mkList ty els = List.foldBack (mkCons cenv.g ty) els (mkNil cenv.g m ty)
+            let spliceTypesExpr = mkList cenv.g.system_Type_typ spliceTypeExprs 
+            let spliceArgsExpr = mkList rawTy spliceArgExprs 
+            mkCallDeserializeQuotationFSharp20Plus cenv.g m someTypeInModuleExpr spliceTypesExpr spliceArgsExpr bytesExpr
+
     let afterCastExpr = 
         // Detect a typed quotation and insert the cast if needed. The cast should not fail but does
         // unfortunately involve a "typeOf" computation over a quotation tree.
         if tyconRefEq cenv.g (tcrefOfAppTy cenv.g ety) cenv.g.expr_tcr then 
-            mkCallCastQuotation cenv.g m (List.head (argsOfAppTy cenv.g ety)) unpickledExpr
+            mkCallCastQuotation cenv.g m (List.head (argsOfAppTy cenv.g ety)) deserializeExpr
         else
-            unpickledExpr
+            deserializeExpr
     GenExpr cenv cgbuf eenv SPSuppress afterCastExpr sequel
 
 //--------------------------------------------------------------------------
@@ -6795,9 +6804,6 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
 
         let ilTypeName = tref.Name
         let ilMethodDefsForComparison = 
-            (*if isSome exnc.TypeContents.tcaug_compare 
-            then [ GenCompareOverride cenv mgbuf eenv m cenv.g.exn_ty (ilThisTy,cenv.g.ilg.typ_Exception) ] 
-            else*)
             []
         
         let interfaces =  exnc.ImmediateInterfaceTypesOfFSharpTycon |> List.map (GenType cenv.amap m cenv.g eenv.tyenv) 
@@ -6845,7 +6851,7 @@ type IlxGenResults =
     { ilTypeDefs: ILTypeDef list;
       ilAssemAttrs : ILAttribute list;
       ilNetModuleAttrs: ILAttribute list;
-      quotationResourceBytes: byte[] list }
+      quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 
 let GenerateCode (cenv, eenv, TAssembly fileImpls, assemAttribs, moduleAttribs) =
@@ -6867,11 +6873,12 @@ let GenerateCode (cenv, eenv, TAssembly fileImpls, assemAttribs, moduleAttribs) 
     let tdefs,reflectedDefinitions = mgbuf.Close()
 
     // Generate the quotations
-    let quotationResourceBytes = 
+    let quotationResourceInfo = 
         match reflectedDefinitions with 
         | [] -> []
         | _ -> 
-            let defnsResource = 
+            let qscope = QuotationTranslator.QuotationGenerationScope.Create (cenv.g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes)
+            let defns = 
               reflectedDefinitions |> List.choose (fun ((methName, v),e) -> 
                     try 
                       let ety = tyOfExpr cenv.g e
@@ -6880,24 +6887,41 @@ let GenerateCode (cenv, eenv, TAssembly fileImpls, assemAttribs, moduleAttribs) 
                         | Expr.TyLambda (_,tps,b,_,_) -> tps,b,applyForallTy cenv.g ety (List.map mkTyparTy tps)
                         | _ -> [],e,ety
                       let env = QuotationTranslator.QuotationTranslationEnv.Empty.BindTypars tps
-                      let freeTypes,argExprs, astExpr = QuotationTranslator.ConvExprPublic (cenv.g, cenv.amap, cenv.viewCcu, QuotationTranslator.IsReflectedDefinition.Yes) env taue
-                      let m = e.Range
-                      if nonNil freeTypes then error(InternalError("A free type variable was detected in a reflected definition",m));
-                      if nonNil argExprs then error(Error(FSComp.SR.ilReflectedDefinitionsCannotUseSliceOperator(),m));
-                      let mbaseR = QuotationTranslator.ConvMethodBase (cenv.g,cenv.amap,cenv.viewCcu) env (methName, v)
+                      let astExpr = QuotationTranslator.ConvExprPublic qscope env taue
+                      let mbaseR = QuotationTranslator.ConvMethodBase qscope env (methName, v)
                       
                       Some(mbaseR,astExpr) 
                     with 
                     | QuotationTranslator.InvalidQuotedTerm e -> warning(e); None)
-              |> QuotationPickler.PickleDefns
-            [ defnsResource ]
+
+            let referencedTypeDefs, freeTypes, spliceArgExprs = qscope.Close()
+
+            for (_freeType, m) in freeTypes do 
+                error(InternalError("A free type variable was detected in a reflected definition",m));
+
+            for (_spliceArgExpr, m) in spliceArgExprs do 
+                error(Error(FSComp.SR.ilReflectedDefinitionsCannotUseSliceOperator(),m))
+
+            let defnsResourceBytes = defns |> QuotationPickler.PickleDefns
+
+(*
+            let ilFieldName = CompilerGeneratedName ("field" + string(newUnique()))
+            let ilFieldTy = mkILArr1DTy cenv.g.ilg.typ_Type
+            let ilFieldDef = mkILStaticField (ilFieldName,ilFieldTy, None, None, ILMemberAccess.Assembly)
+            let ilFieldDef = { ilFieldDef with CustomAttrs = mkILCustomAttrs [ cenv.g.ilg.mkDebuggerBrowsableNeverAttribute() ] }
+            let fspec = mkILFieldSpecInTy (mkILTyForCompLoc (CompLocForPrivateImplementationDetails env.cloc),ilFieldName, ilFieldTy)
+            CountStaticFieldDef();
+            cgbuf.mgbuf.AddFieldDef(fspec.EnclosingTypeRef,ilFieldDef); 
+*)
+
+            [ (referencedTypeDefs, defnsResourceBytes) ]
 
     let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
 
-    { ilTypeDefs= tdefs;
-      ilAssemAttrs = ilAssemAttrs;
-      ilNetModuleAttrs = ilNetModuleAttrs;
-      quotationResourceBytes = quotationResourceBytes }
+    { ilTypeDefs= tdefs
+      ilAssemAttrs = ilAssemAttrs
+      ilNetModuleAttrs = ilNetModuleAttrs
+      quotationResourceInfo = quotationResourceInfo }
     
 
 //-------------------------------------------------------------------------

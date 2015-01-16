@@ -1135,8 +1135,9 @@ module Patterns =
         [<NoEquality; NoComparison>]
         type InputState = 
           { is: ByteStream; 
-            istrings: string array;
-            localAssembly: System.Reflection.Assembly  }
+            istrings: string[];
+            localAssembly: System.Reflection.Assembly 
+            referencedTypeDefs: Type[] }
 
         let u_byte_as_int st = st.is.ReadByte() 
 
@@ -1203,18 +1204,20 @@ module Patterns =
             | n -> failwith ("u_list: found number " + string n)
         let u_list f st = u_list_aux f [] st
          
-        let unpickle_obj localAssembly u phase2bytes =
+        let unpickleObj localAssembly referencedTypeDefs u phase2bytes =
             let phase2data = 
                 let st2 = 
-                   { is = new ByteStream(phase2bytes,0,phase2bytes.Length); 
-                     istrings = [| |];
-                     localAssembly=localAssembly }
+                   { is = new ByteStream(phase2bytes,0,phase2bytes.Length)
+                     istrings = [| |]
+                     localAssembly=localAssembly
+                     referencedTypeDefs=referencedTypeDefs  }
                 u_tup2 (u_list prim_u_string) u_bytes st2 
             let stringTab,phase1bytes = phase2data 
             let st1 = 
-               { is = new ByteStream(phase1bytes,0,phase1bytes.Length); 
-                 istrings = Array.ofList stringTab;
-                   localAssembly=localAssembly } 
+               { is = new ByteStream(phase1bytes,0,phase1bytes.Length)
+                 istrings = Array.ofList stringTab
+                 localAssembly=localAssembly
+                 referencedTypeDefs=referencedTypeDefs  } 
             let res = u st1 
             res 
 
@@ -1243,8 +1246,8 @@ module Patterns =
     let decodeNamedTy tc tsR = mkNamedType(tc,tsR)
 
     let mscorlib = typeof<System.Int32>.Assembly
-    let u_assref st = 
-        let a = u_string st 
+    let u_assref st = u_string st 
+    let decodeAssemblyRef st a =
         if a = "" then mscorlib
         elif a = "." then st.localAssembly 
         else 
@@ -1258,14 +1261,21 @@ module Patterns =
         
     let u_NamedType st = 
         let a,b = u_tup2 u_string u_assref st 
-        mkNamedTycon (a,b)
+        let mutable idx = 0
+        // From FSharp.Core for F# 4.0+ (4.4.0.0+), referenced type definitions can be integer indexes into a table of type definitions provided on quotation 
+        // deserialization, avoiding the need for System.Reflection.Assembly.Load
+        if System.Int32.TryParse(a, &idx) && b = ""  then
+            st.referencedTypeDefs.[idx]
+        else 
+            let assref = decodeAssemblyRef st b
+            mkNamedTycon (a,assref)
 
     let u_tyconstSpec st = 
       let tag = u_byte_as_int st 
       match tag with 
-      | 1 -> u_unit             st |> (fun () -> decodeFunTy) 
+      | 1 -> u_unit      st |> (fun () -> decodeFunTy) 
       | 2 -> u_NamedType st |> decodeNamedTy 
-      | 3 -> u_int              st |> decodeArrayTy
+      | 3 -> u_int       st |> decodeArrayTy
       | _ -> failwith "u_tyconstSpec" 
 
     let appL fs env = List.map (fun f -> f env) fs
@@ -1284,17 +1294,26 @@ module Patterns =
     
     [<NoEquality; NoComparison>]
     type BindingEnv = 
-        { vars : Map<int,Var>; 
-          varn: int; 
+        { /// Mapping from variable index to Var object for the variable
+          vars : Map<int,Var>
+          /// The number of indexes in the mapping
+          varn: int
+          /// The active type instantiation for generic type parameters
           typeInst : int -> Type }
 
     let addVar env v = 
         { env with vars = env.vars.Add(env.varn,v); varn=env.varn+1 }
 
-    let envClosed (types:Type[])  =
-        { vars = Map.empty; 
-          varn = 0;
-          typeInst = fun (n:int) -> types.[n] }
+    let mkTyparSubst (tyargs:Type[]) =
+        let n = tyargs.Length 
+        fun idx -> 
+          if idx < n then tyargs.[idx]
+          else raise <| System.InvalidOperationException (SR.GetString(SR.QtypeArgumentOutOfRange))
+
+    let envClosed (spliceTypes:Type[])  =
+        { vars = Map.empty;
+          varn = 0
+          typeInst = mkTyparSubst spliceTypes }
 
     type Bindable<'T> = BindingEnv -> 'T
     
@@ -1328,15 +1347,19 @@ module Patterns =
         | 6 -> let a = u_dtype st
                (fun env -> mkVar(Var.Global("this", a env.typeInst)))
         | _ -> failwith "u_Expr"
+
     and u_VarDecl st = 
         let s,b,mut = u_tup3 u_string u_dtype u_bool st 
         (fun env -> new Var(s, b env.typeInst, mut))
+
     and u_VarRef st = 
         let i = u_int st 
         (fun env -> env.vars.[i])
+
     and u_RecdField st = 
         let ty,nm = u_tup2 u_NamedType u_string st  
         (fun tyargs -> getRecordProperty(mkNamedType(ty,tyargs),nm)) 
+
     and u_UnionCaseInfo st = 
         let ty,nm = u_tup2 u_NamedType u_string st  
         (fun tyargs -> getUnionCaseInfo(mkNamedType(ty,tyargs),nm)) 
@@ -1449,9 +1472,11 @@ module Patterns =
     let u_ReflectedDefinition = u_tup2 u_MethodBase u_Expr
     let u_ReflectedDefinitions = u_list u_ReflectedDefinition
 
-    let unpickleExpr (localType : System.Type) = unpickle_obj localType.Assembly u_Expr 
+    let unpickleExpr (localType: Type) referencedTypes bytes = 
+        unpickleObj localType.Assembly referencedTypes u_Expr bytes
 
-    let unpickleReflectedDefns (localAssembly : System.Reflection.Assembly) = unpickle_obj localAssembly u_ReflectedDefinitions
+    let unpickleReflectedDefns localAssembly referencedTypes bytes = 
+        unpickleObj localAssembly referencedTypes u_ReflectedDefinitions bytes
 
     //--------------------------------------------------------------------------
     // General utilities that will eventually be folded into 
@@ -1487,12 +1512,6 @@ module Patterns =
             res <-  f (match res with Some a -> a | _ -> failwith "internal error") e.Current;
         res      
     
-    let mkTyparSubst (tyargs:Type[]) =
-        let n = tyargs.Length 
-        fun idx -> 
-          if idx < n then tyargs.[idx]
-          else raise <| System.InvalidOperationException (SR.GetString(SR.QtypeArgumentOutOfRange))
-
     [<NoEquality; NoComparison>]
     exception Clash of Var
 
@@ -1676,26 +1695,23 @@ module Patterns =
 
     let reflectedDefinitionTable = new Dictionary<ReflectedDefinitionTableKey,ReflectedDefinitionTableEntry>(10,HashIdentity.Structural)
 
-    let registerReflectedDefinitions (assem: Assembly, rn, bytes: byte[]) =
-        let defns = unpickleReflectedDefns assem  bytes 
-        defns |> List.iter (fun (minfo,e) -> 
-            //printfn "minfo = %A, handle = %A, token = %A" minfo minfo.Module.ModuleHandle minfo.MetadataToken
+    let registerReflectedDefinitions (assem, resourceName, bytes, referencedTypes) =
+        let defns = unpickleReflectedDefns assem referencedTypes bytes 
+        defns |> List.iter (fun (minfo,exprBuilder) -> 
             let key = ReflectedDefinitionTableKey.GetKey minfo
             lock reflectedDefinitionTable (fun () -> 
-                //printfn "Adding %A, hc = %d" key (key.GetHashCode());
-                reflectedDefinitionTable.Add(key,Entry(e))));
-        //System.Console.WriteLine("Added {0} resource {1}", assem.FullName, rn);
-        decodedTopResources.Add((assem,rn),0)
+                reflectedDefinitionTable.Add(key,Entry(exprBuilder))))
+        decodedTopResources.Add((assem,resourceName),0)
 
-    let resolveMethodBase (methodBase: MethodBase, tyargs: Type []) =
+    let tryGetReflectedDefinition (methodBase: MethodBase, tyargs: Type []) =
         checkNonNull "methodBase" methodBase
         let data = 
-            let assem = methodBase.DeclaringType.Assembly
-            let key = ReflectedDefinitionTableKey.GetKey methodBase
-            //printfn "Looking for %A, hc = %d, hc2 = %d" key (key.GetHashCode()) (assem.GetHashCode());
-            let ok,res = lock reflectedDefinitionTable (fun () -> reflectedDefinitionTable.TryGetValue(key))
-            if ok then Some(res) else
-            //System.Console.WriteLine("Loading {0}", td.Assembly);
+          let assem = methodBase.DeclaringType.Assembly
+          let key = ReflectedDefinitionTableKey.GetKey methodBase
+          let ok,res = lock reflectedDefinitionTable (fun () -> reflectedDefinitionTable.TryGetValue(key))
+
+          if ok then Some res else
+
             let qdataResources = 
                 // dynamic assemblies don't support the GetManifestResourceNames 
                 match assem with 
@@ -1704,15 +1720,31 @@ module Patterns =
                 | :? System.Reflection.Emit.AssemblyBuilder -> []
 #endif
                 | _ -> 
-                    (try assem.GetManifestResourceNames()  
-                     // This raises NotSupportedException for dynamic assemblies
-                     with :? NotSupportedException -> [| |])
-                    |> Array.toList 
-                    |> List.filter (fun rn -> 
-                          //System.Console.WriteLine("Considering resource {0}", rn);
-                          rn.StartsWith(ReflectedDefinitionsResourceNameBase,StringComparison.Ordinal) &&
-                          not (decodedTopResources.ContainsKey((assem,rn)))) 
-                    |> List.map (fun rn -> rn,unpickleReflectedDefns assem (readToEnd (assem.GetManifestResourceStream(rn)))) 
+                    let resources = 
+                        // This raises NotSupportedException for dynamic assemblies
+                        try assem.GetManifestResourceNames()  
+                        with :? NotSupportedException -> [| |]
+                    [ for resourceName in resources do
+                          if resourceName.StartsWith(ReflectedDefinitionsResourceNameBase,StringComparison.Ordinal) &&
+                             not (decodedTopResources.ContainsKey((assem,resourceName))) then 
+
+                            let cmaAttribForResource = 
+#if FX_RESHAPED_REFLECTION
+                                CustomAttributeExtensions.GetCustomAttributes(assem, typeof<CompilationMappingAttribute>) |> Seq.toArray
+#else
+                                assem.GetCustomAttributes(typeof<CompilationMappingAttribute>, false)
+#endif
+                                |> (function null -> [| |] | x -> x)
+                                |> Array.tryPick (fun ca -> 
+                                     match ca with 
+                                     | :? CompilationMappingAttribute as cma when cma.ResourceName = resourceName -> Some cma 
+                                     | _ -> None) 
+                            let resourceBytes = readToEnd (assem.GetManifestResourceStream(resourceName))
+                            let referencedTypes = 
+                                match cmaAttribForResource with 
+                                | None -> [| |]
+                                | Some cma -> cma.TypeDefinitions
+                            yield (resourceName,unpickleReflectedDefns assem referencedTypes resourceBytes) ]
                 
             // ok, add to the table
             let ok,res = 
@@ -1720,15 +1752,15 @@ module Patterns =
                      // check another thread didn't get in first
                      if not (reflectedDefinitionTable.ContainsKey(key)) then
                          qdataResources 
-                         |> List.iter (fun (rn,defns) ->
-                             defns |> List.iter (fun (methodBase,e) -> 
-                                reflectedDefinitionTable.[ReflectedDefinitionTableKey.GetKey methodBase] <- Entry(e));
-                             decodedTopResources.Add((assem,rn),0))
+                         |> List.iter (fun (resourceName,defns) ->
+                             defns |> List.iter (fun (methodBase,exprBuilder) -> 
+                                reflectedDefinitionTable.[ReflectedDefinitionTableKey.GetKey methodBase] <- Entry(exprBuilder));
+                             decodedTopResources.Add((assem,resourceName),0))
                      // we know it's in the table now, if it's ever going to be there
                      reflectedDefinitionTable.TryGetValue(key) 
                 );
 
-            if ok then Some(res) else None
+            if ok then Some res else None
 
         match data with 
         | Some (Entry(exprBuilder)) -> 
@@ -1739,10 +1771,10 @@ module Patterns =
                  | _ -> 0)
             if (expectedNumTypars <> tyargs.Length) then 
                 invalidArg "tyargs" (SR.GetString3(SR.QwrongNumOfTypeArgs, methodBase.Name, expectedNumTypars.ToString(), tyargs.Length.ToString()));
-            Some(exprBuilder {typeInst = mkTyparSubst tyargs; vars=Map.empty; varn=0})
+            Some(exprBuilder (envClosed tyargs))
         | None -> None
 
-    let resolveMethodBaseInstantiated (methodBase:MethodBase) = 
+    let tryGetReflectedDefinitionInstantiated (methodBase:MethodBase) = 
         checkNonNull "methodBase" methodBase
         match methodBase with 
         | :? MethodInfo as minfo -> 
@@ -1750,16 +1782,16 @@ module Patterns =
                    Array.append
                        (getGenericArguments minfo.DeclaringType)
                        (if minfo.IsGenericMethod then minfo.GetGenericArguments() else [| |])
-               resolveMethodBase (methodBase, tyargs)
+               tryGetReflectedDefinition (methodBase, tyargs)
         | :? ConstructorInfo as cinfo -> 
                let tyargs = getGenericArguments cinfo.DeclaringType
-               resolveMethodBase (methodBase, tyargs)
+               tryGetReflectedDefinition (methodBase, tyargs)
         | _ -> 
-               resolveMethodBase (methodBase, [| |])
+               tryGetReflectedDefinition (methodBase, [| |])
 
-    let deserialize (localAssembly, types, splices, bytes) : Expr = 
-        let expr = unpickleExpr localAssembly bytes (envClosed  (Array.ofList types))
-        fillHolesInRawExpr (Array.ofList splices) expr
+    let deserialize (localAssembly, referencedTypeDefs, spliceTypes, spliceExprs, bytes) : Expr = 
+        let expr = unpickleExpr localAssembly referencedTypeDefs bytes (envClosed spliceTypes)
+        fillHolesInRawExpr spliceExprs expr
         
   
     let cast (expr: Expr) : Expr<'T> = 
@@ -1803,8 +1835,6 @@ type Expr with
 
     static member ForIntegerRangeLoop (v, start:Expr, finish:Expr, body:Expr) = 
         mkForLoop(v, start, finish, body)
-    //static member Range: Expr * Expr -> Expr 
-    //static member RangeStep: Expr * Expr * Expr -> Expr 
 
     static member FieldGet (fieldInfo:FieldInfo) = 
         checkNonNull "fieldInfo" fieldInfo
@@ -1906,21 +1936,31 @@ type Expr with
     static member WhileLoop (e1:Expr, e2:Expr) = 
         mkWhileLoop (e1, e2)
 
-    //static member IsInlinedMethodInfo(minfo:MethodInfo) = false
     static member TryGetReflectedDefinition(methodBase:MethodBase) = 
         checkNonNull "methodBase" methodBase
-        resolveMethodBaseInstantiated(methodBase)
+        tryGetReflectedDefinitionInstantiated(methodBase)
 
     static member Cast(expr:Expr) = cast expr
 
     static member Deserialize(qualifyingType:Type, spliceTypes, spliceExprs, bytes: byte[]) = 
         checkNonNull "qualifyingType" qualifyingType
         checkNonNull "bytes" bytes
-        deserialize (qualifyingType, spliceTypes, spliceExprs, bytes)
+        deserialize (qualifyingType, [| |], Array.ofList spliceTypes, Array.ofList spliceExprs, bytes)
 
-    static member RegisterReflectedDefinitions(assembly:Assembly, nm, bytes) = 
+    static member Deserialize40(qualifyingType:Type, referencedTypeDefs, spliceTypes, spliceExprs, bytes: byte[]) = 
+        checkNonNull "spliceExprs" spliceExprs
+        checkNonNull "spliceTypes" spliceTypes
+        checkNonNull "referencedTypeDefs" referencedTypeDefs
+        checkNonNull "qualifyingType" qualifyingType
+        checkNonNull "bytes" bytes
+        deserialize (qualifyingType, referencedTypeDefs, spliceTypes, spliceExprs, bytes)
+
+    static member RegisterReflectedDefinitions(assembly, resourceName, bytes) = 
+        Expr.RegisterReflectedDefinitions(assembly, resourceName, bytes, [| |]) 
+
+    static member RegisterReflectedDefinitions(assembly, resourceName, bytes, referencedTypeDefs) = 
         checkNonNull "assembly" assembly
-        registerReflectedDefinitions(assembly, nm, bytes)
+        registerReflectedDefinitions(assembly, resourceName, bytes, referencedTypeDefs)
 
     static member GlobalVar<'T>(name) : Expr<'T> = 
         checkNonNull "name" name

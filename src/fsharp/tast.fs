@@ -2957,8 +2957,8 @@ and
       ImportProvidedType : Tainted<ProvidedType> -> TType 
       
 #endif
-      /// Indicates that this DLL uses quotation literals somewhere. This is used to implement a restriction on static linking
-      mutable UsesQuotations : bool
+      /// Indicates that this DLL uses pre-F#-4.0 quotation literals somewhere. This is used to implement a restriction on static linking
+      mutable UsesFSharp20PlusQuotations : bool
       
       /// A handle to the full specification of the contents of the module contained in this ccu
       // NOTE: may contain transient state during typechecking 
@@ -3018,10 +3018,10 @@ and CcuThunk =
             let path = System.String.Join(".", requiringPath)
             raise(UnresolvedPathReferenceNoRange(ccu.name,path))
             
-    /// Indicates that this DLL uses quotation literals somewhere. This is used to implement a restriction on static linking
-    member ccu.UsesQuotations 
-        with get() = ccu.Deref.UsesQuotations 
-        and set v = ccu.Deref.UsesQuotations <- v
+    /// Indicates that this DLL uses F# 2.0+ quotation literals somewhere. This is used to implement a restriction on static linking.
+    member ccu.UsesFSharp20PlusQuotations 
+        with get() = ccu.Deref.UsesFSharp20PlusQuotations 
+        and set v = ccu.Deref.UsesFSharp20PlusQuotations <- v
     member ccu.AssemblyName        = ccu.name
     /// Holds the data indicating how this assembly/module is referenced from the code being compiled. 
     member ccu.ILScopeRef          = ccu.Deref.ILScopeRef
@@ -3365,10 +3365,10 @@ and
     /// A few of intrinsics (TOp_try, TOp.While, TOp.For) expect arguments kept in a normal form involving lambdas 
     | Op of TOp * TypeInst * Exprs * range
 
-    // Expr.Quote(quotedExpr, savedPickledAstInfoOption, isFromQueryExpression, fullRange, quotedType)
+    // Expr.Quote(quotedExpr, (referencedTypes, spliceTypes, spliceExprs, data) option ref, isFromQueryExpression, fullRange, quotedType)
     //
     // Indicates the expression is a quoted expression tree. 
-    | Quote of Expr * (TTypes * Exprs * ExprData) option ref * bool * range * TType  
+    | Quote of Expr * (ILTypeRef list * TTypes * Exprs * ExprData) option ref * bool * range * TType  
     
     /// Typechecking residue: Indicates a free choice of typars that arises due to 
     /// minimization of polymorphism at let-rec bindings.  These are 

@@ -9,3 +9,9 @@ module Test =
 
     let bar() = 
         sprintf "%A" (run())
+
+type C() = 
+
+  [<ReflectedDefinition>]
+  static member F x = (C(), System.DateTime.Now)
+

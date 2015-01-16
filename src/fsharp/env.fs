@@ -521,7 +521,8 @@ type public TcGlobals =
       array2D_get_info           : IntrinsicValRef;
       array3D_get_info           : IntrinsicValRef;
       array4D_get_info           : IntrinsicValRef;
-      unpickle_quoted_info       : IntrinsicValRef;
+      deserialize_quoted_FSharp_20_plus_info       : IntrinsicValRef;
+      deserialize_quoted_FSharp_40_plus_info    : IntrinsicValRef;
       cast_quotation_info        : IntrinsicValRef;
       lift_value_info            : IntrinsicValRef;
       query_source_as_enum_info  : IntrinsicValRef;
@@ -943,8 +944,9 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let splice_raw_expr_info       = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_SpliceUntyped"                     ,None                 ,None                          ,[vara],     ([[mkRawQuotedExprTy]], varaTy))
   let new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          ,None                 ,None                          ,[],         ([[int_ty]; [int_ty]; [int_ty]; [bool_ty]; [byte_ty]], decimal_ty))
   let array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             ,None                 ,None                          ,[vara],     ([[mkArrayType 1 varaTy]; [int_ty]], varaTy))
-  let array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               ,None                 ,Some "Length"                 ,[vara],     ([[mkArrayType 1 varaTy]], varaTy))
-  let unpickle_quoted_info       = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Deserialize"                          ,Some "Expr"          ,None                          ,[],          ([[system_Type_typ ;mkListTy system_Type_typ ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 byte_ty]], mkRawQuotedExprTy ))
+  let array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               ,None                 ,Some "Length"                 ,[vara],     ([[mkArrayType 1 varaTy]], int_ty))
+  let deserialize_quoted_FSharp_20_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize"                          ,Some "Expr"          ,None                          ,[],          ([[system_Type_typ ;mkListTy system_Type_typ ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 byte_ty]], mkRawQuotedExprTy ))
+  let deserialize_quoted_FSharp_40_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize40"                        ,Some "Expr"          ,None                          ,[],          ([[system_Type_typ ;mkArrayType 1 system_Type_typ; mkArrayType 1 system_Type_typ; mkArrayType 1 mkRawQuotedExprTy; mkArrayType 1 byte_ty]], mkRawQuotedExprTy ))
   let cast_quotation_info        = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Cast"                                 ,Some "Expr"          ,None                          ,[vara],      ([[mkRawQuotedExprTy]], mkQuotedExprTy varaTy))
   let lift_value_info            = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Value"                                ,Some "Expr"          ,None                          ,[vara],      ([[varaTy]], mkRawQuotedExprTy))
   let query_value_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "query"                                ,None                 ,None                          ,[],      ([], mkQueryBuilderTy) )
@@ -1404,7 +1406,8 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     array2D_get_info             = array2D_get_info;
     array3D_get_info             = array3D_get_info;
     array4D_get_info             = array4D_get_info;
-    unpickle_quoted_info       = unpickle_quoted_info;
+    deserialize_quoted_FSharp_20_plus_info       = deserialize_quoted_FSharp_20_plus_info;
+    deserialize_quoted_FSharp_40_plus_info    = deserialize_quoted_FSharp_40_plus_info;
     cast_quotation_info        = cast_quotation_info;
     lift_value_info            = lift_value_info;
     query_source_as_enum_info            = query_source_as_enum_info;

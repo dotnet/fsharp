@@ -47,7 +47,7 @@ type public IlxGenResults =
       /// The generated IL/ILX .NET module attributes
       ilNetModuleAttrs       : ILAttribute list
       /// The generated IL/ILX resources associated with F# quotations
-      quotationResourceBytes : byte[]  list }
+      quotationResourceInfo : (ILTypeRef list * byte[])  list }
 
   
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"

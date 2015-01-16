@@ -1170,9 +1170,9 @@ module Pass4_RewriteAssembly =
 
         // all others - below - rewrite structurally - so boiler plate code after this point... 
         | Expr.Const _ -> z,expr (* constant wrt Val *)
-        | Expr.Quote (a,{contents=Some(argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
+        | Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
             let z,argExprs = List.foldMap (TransExpr penv) z argExprs
-            z,Expr.Quote(a,{contents=Some(argTypes,argExprs,data)},isFromQueryExpression,m,ty)
+            z,Expr.Quote(a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty)
         | Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty) -> 
             z,Expr.Quote(a,{contents=None},isFromQueryExpression,m,ty)
         | Expr.Op (c,tyargs,args,m) -> 

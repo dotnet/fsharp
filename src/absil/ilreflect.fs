@@ -323,7 +323,7 @@ type cenv =
 // []              ,name -> name
 // [ns]            ,name -> ns+name
 // [ns;typeA;typeB],name -> ns+typeA+typeB+name
-let getTRefType (cenv:cenv) (tref:ILTypeRef) = 
+let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) = 
 
     // If an inner nested type's name contains a space, the proper encoding is "\+" on both sides - otherwise,
     // we use "+"
@@ -355,11 +355,11 @@ let getTRefType (cenv:cenv) (tref:ILTypeRef) =
                 let asmName    = convAssemblyRef asmref
                 FileSystem.AssemblyLoad(asmName)
         let typT       = assembly.GetType(qualifiedName)
-        typT |> nonNull "GetTRefType" 
+        typT |> nonNull "convTypeRefAux" 
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
         let typT = Type.GetType(qualifiedName,true) 
-        typT |> nonNull "GetTRefType" 
+        typT |> nonNull "convTypeRefAux" 
 
 
 
@@ -425,11 +425,11 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
 #endif
         emEnv
 
-let envGetTypT cenv emEnv preferCreated (tref:ILTypeRef) = 
+let convTypeRef cenv emEnv preferCreated (tref:ILTypeRef) = 
     match Zmap.tryFind tref emEnv.emTypMap with
-    | Some (_typT,_typB,_typeDef,Some createdTyp) when preferCreated -> createdTyp |> nonNull "envGetTypT: null create type table?"
-    | Some (typT,_typB,_typeDef,_)                                  -> typT       |> nonNull "envGetTypT: null type table?"
-    | None                                                        -> getTRefType cenv tref 
+    | Some (_typT,_typB,_typeDef,Some createdTyp) when preferCreated -> createdTyp |> nonNull "convTypeRef: null create type table?"
+    | Some (typT,_typB,_typeDef,_)                                  -> typT       |> nonNull "convTypeRef: null type table?"
+    | None                                                        -> convTypeRefAux cenv tref 
 
 let envBindConsRef emEnv (mref:ILMethodRef) consB = 
     {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
@@ -512,7 +512,7 @@ let convCallConv (Callconv (hasThis,basic)) =
 //----------------------------------------------------------------------------
 
 let rec convTypeSpec cenv emEnv preferCreated (tspec:ILTypeSpec) =
-    let typT   = envGetTypT cenv emEnv preferCreated tspec.TypeRef 
+    let typT   = convTypeRef cenv emEnv preferCreated tspec.TypeRef 
     let tyargs = ILList.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
     match ILList.isEmpty tyargs,typT.IsGenericType with
     | _   ,true  -> typT.MakeGenericType(ILList.toArray tyargs)   |> nonNull "convTypeSpec: generic" 
@@ -565,12 +565,20 @@ and convTypeAux cenv emEnv preferCreated typ =
 /// Uses TypeBuilder/TypeBuilderInstantiation for emitted types
 let convType cenv emEnv typ = convTypeAux cenv emEnv false typ
 
+// Used for ldtoken
+let convTypeOrTypeDef cenv emEnv typ = 
+    match typ with
+    // represents an uninstantiated "TypeDef" or "TypeRef"
+    | ILType.Boxed tspec when tspec.GenericArgs.IsEmpty -> convTypeRef cenv emEnv false tspec.TypeRef 
+    | _ -> convType cenv emEnv typ
+
 let convTypes cenv emEnv (typs:ILTypes) = ILList.map (convType cenv emEnv) typs
 
 let convTypesToArray cenv emEnv (typs:ILTypes) = convTypes cenv emEnv typs |> ILList.toArray 
 
 /// Uses the .CreateType() for emitted type (if available)
 let convCreatedType cenv emEnv typ = convTypeAux cenv emEnv true typ 
+let convCreatedTypeRef cenv emEnv typ = convTypeRef cenv emEnv true typ 
   
 
 //----------------------------------------------------------------------------
@@ -1050,7 +1058,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
     | I_ldstr     s                  -> ilG.EmitAndLog(OpCodes.Ldstr    ,s)
     | I_isinst    typ                -> ilG.EmitAndLog(OpCodes.Isinst   ,convType cenv emEnv  typ)
     | I_castclass typ                -> ilG.EmitAndLog(OpCodes.Castclass,convType cenv emEnv  typ)
-    | I_ldtoken (ILToken.ILType typ)     -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convType cenv emEnv  typ)
+    | I_ldtoken (ILToken.ILType typ)     -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convTypeOrTypeDef cenv emEnv typ)
     | I_ldtoken (ILToken.ILMethod mspec) -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convMethodSpec cenv emEnv mspec)
     | I_ldtoken (ILToken.ILField fspec)  -> ilG.EmitAndLog(OpCodes.Ldtoken  ,convFieldSpec cenv emEnv fspec)
     | I_ldvirtftn mspec              -> ilG.EmitAndLog(OpCodes.Ldvirtftn,convMethodSpec cenv emEnv mspec)
@@ -2006,7 +2014,7 @@ let emitModuleFragment (ilg, emEnv, asmB : AssemblyBuilder, modB : ModuleBuilder
 // The emEnv stores (typT:Type) for each tref.
 // Once the emitted type is created this typT is updated to ensure it is the Type proper.
 // So Type lookup will return the proper Type not TypeBuilder.
-let LookupTypeRef   emEnv tref = Zmap.tryFind tref emEnv.emTypMap   |> Option.map (function (_typ,_,_,Some createdTyp) -> createdTyp | (typ,_,_,None) -> typ)
+let LookupTypeRef   cenv emEnv tref = convCreatedTypeRef cenv emEnv tref
 let LookupType      cenv emEnv typ  = convCreatedType cenv emEnv typ
 
 // Lookups of ILFieldRef and MethodRef may require a similar non-Builder-fixup post Type-creation.

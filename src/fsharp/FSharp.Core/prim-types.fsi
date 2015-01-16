@@ -547,6 +547,15 @@ namespace Microsoft.FSharp.Core
         /// <returns>CompilationMappingAttribute</returns>
         new : sourceConstructFlags:SourceConstructFlags * variantNumber : int * sequenceNumber : int -> CompilationMappingAttribute
 
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <param name="typeDefinitions">Indicates the type definitions needed to resolve the source construct.</param>
+        /// <returns>CompilationMappingAttribute</returns>
+        new : resourceName:string * typeDefinitions:System.Type[] -> CompilationMappingAttribute
+        /// <summary>Indicates the resource the source construct relates to</summary>
+        member ResourceName : string
+        /// <summary>Indicates the type definitions needed to resolve the source construct</summary>
+        member TypeDefinitions : System.Type[]
+
     /// <summary>This attribute is inserted automatically by the F# compiler to tag 
     /// methods which are given the 'CompiledName' attribute. It is not intended 
     /// for use from user code.</summary>
