@@ -30,6 +30,11 @@ echo TestD
     @if ERRORLEVEL 1 goto Error
     if NOT EXIST test.ok goto SetError
 
+    if exist test.ok (del /f /q test.ok)
+    %CLIX% module2-staticlink.exe
+    @if ERRORLEVEL 1 goto Error
+    if NOT EXIST test.ok goto SetError
+
 :Ok
 echo Ran fsharp %~f0 ok.
 endlocal

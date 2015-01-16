@@ -20,7 +20,10 @@ open Microsoft.FSharp.Compiler.Lib
 let mkRLinear mk (vs,body) = List.foldBack (fun v acc -> mk (v,acc)) vs body 
 
 type TypeVarData = { tvName: string; }
-type NamedTypeData = { tcName: string; tcAssembly:  string }
+
+type NamedTypeData = 
+    | Idx of int
+    | Named of (* tcName: *) string *  (* tcAssembly:  *) string 
 
 type TypeCombOp = 
     | ArrayTyOp  of int (* rank *) 
@@ -187,7 +190,7 @@ let isAttributedExpression e = match e with AttrExpr(_, _) -> true | _ -> false
 // compatible with those read by Microsoft.FSharp.Quotations
 //--------------------------------------------------------------------------- 
 
-let pickledDefinitionsResourceNameBase = "ReflectedDefinitions"
+let SerializedReflectedDefinitionsResourceNameBase = "ReflectedDefinitions"
 
 let freshVar (n, ty, mut) = { vText=n; vType=ty; vMutable=mut }
 
@@ -309,7 +312,10 @@ open SimplePickle
 
 let p_assref x st = p_string x st
 
-let p_NamedType x st = p_tup2 p_string p_assref (x.tcName, x.tcAssembly) st
+let p_NamedType x st = 
+    match x with 
+    | Idx n -> p_tup2 p_string p_assref (string n, "") st
+    | Named (nm,ass) -> p_tup2 p_string p_assref (nm, ass) st
 
 let p_tycon x st = 
     match x with

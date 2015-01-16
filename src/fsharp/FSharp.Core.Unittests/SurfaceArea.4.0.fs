@@ -3262,6 +3262,7 @@ Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr C
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Coerce(Microsoft.FSharp.Quotations.FSharpExpr, System.Type)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr DefaultValue(System.Type)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Deserialize(System.Type, Microsoft.FSharp.Collections.FSharpList`1[System.Type], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr], Byte[])
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Deserialize40(System.Type, System.Type[], System.Type[], Microsoft.FSharp.Quotations.FSharpExpr[], Byte[])
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr FieldGet(Microsoft.FSharp.Quotations.FSharpExpr, System.Reflection.FieldInfo)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr FieldGet(System.Reflection.FieldInfo)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr FieldSet(Microsoft.FSharp.Quotations.FSharpExpr, System.Reflection.FieldInfo, Microsoft.FSharp.Quotations.FSharpExpr)

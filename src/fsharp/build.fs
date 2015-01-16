@@ -3355,7 +3355,7 @@ let IsSignatureDataResource         (r: ILResource) = String.hasPrefix r.Name FS
 let IsOptimizationDataResource      (r: ILResource) = String.hasPrefix r.Name FSharpOptimizationDataResourceName
 let GetSignatureDataResourceName    (r: ILResource) = String.dropPrefix (String.dropPrefix r.Name FSharpSignatureDataResourceName) "."
 let GetOptimizationDataResourceName (r: ILResource) = String.dropPrefix (String.dropPrefix r.Name FSharpOptimizationDataResourceName) "."
-let IsReflectedDefinitionsResource  (r: ILResource) = String.hasPrefix r.Name QuotationPickler.pickledDefinitionsResourceNameBase
+let IsReflectedDefinitionsResource  (r: ILResource) = String.hasPrefix r.Name QuotationPickler.SerializedReflectedDefinitionsResourceNameBase
 
 type ILResource with 
     /// Get a function to read the bytes from a resource local to an assembly
@@ -3400,7 +3400,7 @@ let WriteSignatureData (tcConfig:TcConfig,tcGlobals,exportRemapping,ccu:CcuThunk
     PickleToResource file tcGlobals ccu (FSharpSignatureDataResourceName+"."+ccu.AssemblyName) pickleModuleInfo 
         { mspec=mspec; 
           compileTimeWorkingDir=tcConfig.implicitIncludeDir;
-          usesQuotations = ccu.UsesQuotations }
+          usesQuotations = ccu.UsesFSharp20PlusQuotations }
 #endif // NO_COMPILER_BACKEND
 
 let GetOptimizationData (file, ilScopeRef, ilModule, byteReader) = 
@@ -3609,7 +3609,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             tcImports.RegisterDll(dllinfo);
             let ccuData = 
               { IsFSharp=false;
-                UsesQuotations=false;
+                UsesFSharp20PlusQuotations=false;
                 InvalidateEvent=(new Event<_>()).Publish;
                 IsProviderGenerated = true
                 QualifiedName= Some (assembly.PUntaint((fun a -> a.FullName), m));
@@ -4053,7 +4053,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                                               IsProviderGenerated = false
                                               ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
 #endif
-                                              UsesQuotations = minfo.usesQuotations
+                                              UsesFSharp20PlusQuotations = minfo.usesQuotations
                                               MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                                               TypeForwarders = match ilModule.Manifest with | Some manifest -> ImportILAssemblyTypeForwarders(tcImports.GetImportMap,m,manifest.ExportedTypes) | None -> Map.empty })
 
@@ -4886,7 +4886,7 @@ let TypecheckInitialState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImpo
     let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType Namespace)
     let ccu = 
       CcuThunk.Create(ccuName,{IsFSharp=true
-                               UsesQuotations=false
+                               UsesFSharp20PlusQuotations=false
 #if EXTENSIONTYPING
                                InvalidateEvent=(new Event<_>()).Publish
                                IsProviderGenerated = false

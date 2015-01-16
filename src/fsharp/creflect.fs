@@ -18,41 +18,63 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Env
 open Microsoft.FSharp.Compiler.Typrelns
 open Microsoft.FSharp.Compiler.Range
+open System.Collections.Generic
 
 module QP = Microsoft.FSharp.Compiler.QuotationPickler
 
 
 let verboseCReflect = condition "VERBOSE_CREFLECT"
 
-let mscorlibName = ""
-let mkVoidTy = QP.mkILNamedTy({ tcName = "System.Void"; tcAssembly=mscorlibName},[])
 
 [<RequireQualifiedAccess>]
 type IsReflectedDefinition =
 |   Yes
 |   No
 
-type cenv = 
+[<RequireQualifiedAccess>]
+type QuotationSerializationFormat =
+/// Indicates that type references are emitted as integer indexes into a supplied table
+|   FSharp_40_Plus
+|   FSharp_20_Plus
+
+type QuotationGenerationScope = 
     { g: Env.TcGlobals; 
       amap: Import.ImportMap;
       scope: CcuThunk; 
+      // Accumulate the references to type definitions
+      referencedTypeDefs: ResizeArray<ILTypeRef>
+      referencedTypeDefsTable: Dictionary<ILTypeRef, int>
       // Accumulate the type splices (i.e. captured type parameters) into here
-      typeSplices: ResizeArray<Tast.Typar> ;
+      typeSplices: ResizeArray<Tast.Typar * range>
       // Accumulate the expression splices into here
-      exprSplices: ResizeArray<Expr> 
+      exprSplices: ResizeArray<Expr * range> 
       isReflectedDefinition : IsReflectedDefinition
+      quotationFormat : QuotationSerializationFormat
       mutable emitDebugInfoInQuotations : bool }
 
+    static member Create (g, amap, scope, isReflectedDefinition) = 
+        { g = g
+          scope=scope
+          amap=amap
+          referencedTypeDefs = new ResizeArray<_>() 
+          referencedTypeDefsTable = new Dictionary<_,_>() 
+          typeSplices = new ResizeArray<_>() 
+          exprSplices = new ResizeArray<_>() 
+          isReflectedDefinition = isReflectedDefinition      
+          quotationFormat = QuotationGenerationScope.ComputeQuotationFormat g
+          emitDebugInfoInQuotations = g.emitDebugInfoInQuotations } 
 
+    member cenv.Close() = 
+        cenv.referencedTypeDefs |> ResizeArray.toList, 
+        cenv.typeSplices |> ResizeArray.toList |> List.map (fun (ty,m) -> mkTyparTy ty, m), 
+        cenv.exprSplices |> ResizeArray.toList
 
-let mk_cenv (g,amap,scope,isReflectedDefinition) = 
-    { g = g
-      scope=scope
-      amap=amap
-      typeSplices = new ResizeArray<_>() 
-      exprSplices = new ResizeArray<_>() 
-      isReflectedDefinition = isReflectedDefinition      
-      emitDebugInfoInQuotations = g.emitDebugInfoInQuotations } 
+    static member ComputeQuotationFormat g = 
+        let deserializeExValRef = ValRefForIntrinsic g.deserialize_quoted_FSharp_40_plus_info 
+        if deserializeExValRef.TryDeref.IsSome  then 
+            QuotationSerializationFormat.FSharp_40_Plus
+        else 
+            QuotationSerializationFormat.FSharp_20_Plus
 
 type QuotationTranslationEnv = 
     { //Map from Val to binding index
@@ -203,7 +225,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         match (freeInExpr CollectTyparsAndLocalsNoCaching x0).FreeLocals |> Seq.tryPick (fun v -> if env.vs.ContainsVal v then Some(v) else None) with 
         | Some v -> errorR(Error(FSComp.SR.crefBoundVarUsedInSplice(v.DisplayName), v.Range))
         | None -> ()
-        cenv.exprSplices.Add(x0);
+        cenv.exprSplices.Add((x0, m));
         let hole = QP.mkHole(ConvType cenv env m ty,idx)
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg))
 
@@ -422,7 +444,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ILAsm([ I_stfld(_,_,fspec) | I_stsfld (_,fspec) ],_),enclTypeArgs,args  -> 
             let tyargsR = ConvTypes cenv env m enclTypeArgs
-            let parentTyconR = ConvILTypeRef cenv m fspec.EnclosingTypeRef
+            let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.EnclosingTypeRef
             let argsR = ConvLValueArgs cenv env args
             QP.mkFieldSet( (parentTyconR, fspec.Name),tyargsR, argsR)
 
@@ -527,7 +549,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             | _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainDescendingForLoops(), m))
 
         | TOp.ILCall(_,_,_,isNewObj,valUseFlags,isProp,_,ilMethRef,enclTypeArgs,methTypeArgs,_tys),[],callArgs -> 
-             let parentTyconR = ConvILTypeRef cenv m ilMethRef.EnclosingTypeRef
+             let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.EnclosingTypeRef
              let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
              let methArgTypesR = List.map (ConvILType cenv env m) (ILList.toList ilMethRef.ArgTypes)
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
@@ -565,7 +587,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
 and ConvLdfld  cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
     let tyargsR = ConvTypes cenv env m enclTypeArgs
-    let parentTyconR = ConvILTypeRef cenv m fspec.EnclosingTypeRef
+    let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.EnclosingTypeRef
     let argsR = ConvLValueArgs cenv env args
     QP.mkFieldGet( (parentTyconR, fspec.Name),tyargsR, argsR)
 
@@ -706,7 +728,7 @@ and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
               // References to local values are embedded by value
               if not holeOk then wfail(Error(FSComp.SR.crefNoSetOfHole(),m))
               let idx = cenv.exprSplices.Count 
-              cenv.exprSplices.Add(mkCallLiftValue cenv.g m vty (exprForValRef m vref));
+              cenv.exprSplices.Add((mkCallLiftValue cenv.g m vty (exprForValRef m vref), m));
               QP.mkHole(ConvType cenv env m vty,idx)
         | Parent _ -> 
               ConvModuleValueApp cenv env m vref tyargs []
@@ -732,15 +754,15 @@ and ConvVal cenv env (v:Val) =
     let tyR = ConvType cenv env v.Range v.Type
     QP.freshVar (v.CompiledName, tyR, v.IsMutable)
 
-and ConvTyparRef cenv env _m (tp:Typar) = 
+and ConvTyparRef cenv env m (tp:Typar) = 
     match env.tyvs.TryFind tp.Stamp  with
     | Some x -> x
     | None -> 
-        match ResizeArray.tryFindIndex (typarEq tp) cenv.typeSplices with
+        match ResizeArray.tryFindIndex (fun (tp2,_m) -> typarEq tp tp2) cenv.typeSplices with
         | Some idx -> idx
         | None  ->
             let idx = cenv.typeSplices.Count 
-            cenv.typeSplices.Add(tp);
+            cenv.typeSplices.Add((tp, m));
             idx
 
 and FilterMeasureTyargs tys = 
@@ -863,39 +885,58 @@ and ConvDecisionTree cenv env tgs typR x =
           | Some(bindR),env -> QP.mkLet(bindR,ConvDecisionTree cenv env tgs typR rest)
 
 
-
-// REVIEW: quotation references to items in the assembly being generated 
-// are persisted as assembly-qualified-name strings. However this means 
-// they are not correctly re-adjusted when later static-linking the assembly. We could consider persisting these references 
-// by creating fake IL metadata (e.g. fields) that refer to the relevant assemblies, which then 
-// get fixed-up automatically by IL metadata rewriting. When we know which assemblies
-// we are static linking ahead of time (as in the type provider case), then we can generate the correct references here 
-and ConvILTypeRef cenv m (tr:ILTypeRef) = 
-    cenv |> ignore; m |> ignore 
-    let assref = 
+// Check if this is an provider-generated assembly that will be statically linked
+and IsILTypeRefStaticLinkLocal cenv m (tr:ILTypeRef) =
+        ignore cenv; ignore m
         match tr.Scope with 
-        // Check if this is a local assembly
-        | ILScopeRef.Local -> "."
 #if EXTENSIONTYPING
-        // Check if this is an provider-generated assembly that will be statically linked
         | ILScopeRef.Assembly aref 
             when not cenv.g.isInteractive &&
                  aref.Name <> cenv.g.sysCcu.AssemblyName && // optimization to avoid this check in the common case
                  (match cenv.amap.assemblyLoader.LoadAssembly (m,aref) with 
                   | ResolvedCcu ccu -> ccu.IsProviderGenerated
                   | UnresolvedCcu _ -> false) 
-            -> "."
+            -> true
 #endif
-        | _ -> tr.Scope.QualifiedName 
+        | _ -> false
 
-    {tcName = tr.BasicQualifiedName; tcAssembly = assref}
+// Adjust for static linking information, then convert
+and ConvILTypeRefUnadjusted cenv m (tr:ILTypeRef) = 
+    let trefAdjusted = 
+        if IsILTypeRefStaticLinkLocal cenv m tr then 
+            ILTypeRef.Create(ILScopeRef.Local, tr.Enclosing, tr.Name) 
+        else tr
+    ConvILTypeRef cenv trefAdjusted
   
+and ConvILTypeRef cenv (tr:ILTypeRef) = 
+    match cenv.quotationFormat with
+    | QuotationSerializationFormat.FSharp_40_Plus ->
+        let idx = 
+            match cenv.referencedTypeDefsTable.TryGetValue tr with
+            | true, idx -> idx
+            | _ -> 
+                let idx = cenv.referencedTypeDefs.Count
+                cenv.referencedTypeDefs.Add tr
+                cenv.referencedTypeDefsTable.[tr] <- idx
+                idx
+        QP.Idx idx
+ 
+    | QuotationSerializationFormat.FSharp_20_Plus ->
+        let assref = 
+            match tr.Scope with 
+            | ILScopeRef.Local -> "."
+            | _ -> tr.Scope.QualifiedName 
+
+        QP.Named(tr.BasicQualifiedName, assref)
+  
+and ConvVoidType cenv m = QP.mkILNamedTy(ConvTyconRef cenv cenv.g.system_Void_tcref m, [])
+
 and ConvILType cenv env m ty = 
     match ty with 
-    | ILType.Boxed tspec | ILType.Value tspec -> QP.mkILNamedTy(ConvILTypeRef cenv m tspec.TypeRef, List.map (ConvILType cenv env m) (ILList.toList tspec.GenericArgs))
+    | ILType.Boxed tspec | ILType.Value tspec -> QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tspec.TypeRef, List.map (ConvILType cenv env m) (ILList.toList tspec.GenericArgs))
     | ILType.Array (shape,ty) -> QP.mkArrayTy(shape.Rank,ConvILType cenv env m ty)
     | ILType.TypeVar idx -> QP.mkVarTy(int idx)
-    | ILType.Void -> mkVoidTy
+    | ILType.Void -> ConvVoidType cenv m
     | ILType.Ptr _ 
     | ILType.Byref _ 
     | ILType.Modified _ 
@@ -919,9 +960,7 @@ and ConvTyconRef cenv (tcref:TyconRef) m =
     | TProvidedTypeExtensionPoint info when not cenv.g.isInteractive && not info.IsErased -> 
         // Note, generated types are (currently) non-generic
         let tref = ExtensionTyping.GetILTypeRefOfProvidedType (info.ProvidedType, m)
-        // Reference to provided types are compiled as if they are local references
-        // We use the name "." as a special marker for the "local" assembly - see below 
-        { tcName= tref.BasicQualifiedName; tcAssembly="." }
+        ConvILTypeRef cenv tref
     | _ -> 
 #endif
     let repr = tcref.CompiledRepresentation
@@ -929,29 +968,18 @@ and ConvTyconRef cenv (tcref:TyconRef) m =
     | CompiledTypeRepr.ILAsmOpen asm -> 
         match asm with 
         | ILType.Boxed tspec | ILType.Value tspec -> 
-            ConvILTypeRef cenv m tspec.TypeRef
-//        | ILType.Byref _-> 
-//            wfail(Error(FSComp.SR.crefQuotationsCantContainByrefTypes(),m))
+            ConvILTypeRef cenv tspec.TypeRef
         | _ -> 
             wfail(Error(FSComp.SR.crefQuotationsCantContainThisType(),m))
     | CompiledTypeRepr.ILAsmNamed (tref,_boxity,_) -> 
-        if tcref.IsLocalRef 
-#if EXTENSIONTYPING
-           && not (cenv.g.isInteractive && tcref.IsProvidedGeneratedTycon)  
-#endif
-           then 
-            // We use the name "." as a special marker for the "local" assembly 
-            { tcName= tref.BasicQualifiedName; tcAssembly="." }
-        else 
-            ConvILTypeRef cenv m tref
+        ConvILTypeRefUnadjusted cenv m tref
 
 and ConvReturnType cenv envinner m retTy =
     match retTy with 
-    | None -> mkVoidTy 
+    | None -> ConvVoidType cenv m
     | Some ty -> ConvType cenv envinner m ty
 
-let ConvExprPublic (g,amap,scope,isReflectedDefintion) env (e) = 
-    let cenv = mk_cenv (g,amap,scope,isReflectedDefintion)  
+let ConvExprPublic cenv env e = 
     let astExpr = 
         let astExpr = ConvExpr cenv env e
         // always emit debug info for the top level expression
@@ -959,12 +987,9 @@ let ConvExprPublic (g,amap,scope,isReflectedDefintion) env (e) =
         // EmitDebugInfoIfNecessary will check if astExpr is already augmented with debug info and won't wrap it twice
         EmitDebugInfoIfNecessary cenv env e.Range astExpr
 
-    cenv.typeSplices |> ResizeArray.toList |> List.map mkTyparTy, 
-    cenv.exprSplices |> ResizeArray.toList, 
     astExpr
 
-let ConvMethodBase (g,amap,scope) env (methName, v:Val) = 
-    let cenv = mk_cenv (g,amap,scope,IsReflectedDefinition.Yes)
+let ConvMethodBase cenv env (methName, v:Val) = 
     let m = v.Range 
     let parentTyconR = ConvTyconRef cenv v.TopValActualParent m 
 

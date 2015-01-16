@@ -1141,7 +1141,8 @@ val mkCallSubtractionOperator                : TcGlobals -> range -> TType -> Ex
 val mkCallGenericEqualityWithComparerOuter   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 val mkCallGenericHashWithComparerOuter       : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 
-val mkCallUnpickleQuotation  : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallDeserializeQuotationFSharp20Plus  : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallDeserializeQuotationFSharp40Plus : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 val mkCallCastQuotation      : TcGlobals -> range -> TType -> Expr -> Expr 
 val mkCallLiftValue          : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallSeqCollect         : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr
@@ -1169,6 +1170,8 @@ val mkCallQuoteToLinqLambdaExpression : TcGlobals -> range -> TType -> Expr -> E
 
 val mkCallGetQuerySourceAsEnumerable : TcGlobals -> range -> TType -> TType -> Expr -> Expr
 val mkCallNewQuerySource : TcGlobals -> range -> TType -> TType -> Expr -> Expr
+
+val mkArray : TType * Exprs * range -> Expr
 
 //-------------------------------------------------------------------------
 // operations primarily associated with the optimization to fix
@@ -1226,6 +1229,7 @@ val IsMatchingSignatureDataVersionAttr : IL.ILGlobals -> ILVersionInfo -> ILAttr
 val mkCompilationMappingAttr                         : TcGlobals -> int -> ILAttribute
 val mkCompilationMappingAttrWithSeqNum               : TcGlobals -> int -> int -> ILAttribute
 val mkCompilationMappingAttrWithVariantNumAndSeqNum  : TcGlobals -> int -> int -> int             -> ILAttribute
+val mkCompilationMappingAttrForQuotationResource     : TcGlobals -> string * ILTypeRef list -> ILAttribute
 val mkCompilationArgumentCountsAttr                  : TcGlobals -> int list -> ILAttribute
 val mkCompilationSourceNameAttr                      : TcGlobals -> string -> ILAttribute
 val mkSignatureDataVersionAttr                       : TcGlobals -> ILVersionInfo -> ILAttribute

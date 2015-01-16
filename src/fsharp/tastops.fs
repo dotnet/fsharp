@@ -4064,7 +4064,7 @@ and accFreeInExprNonLinear opts x acc =
     | Expr.Const _ -> acc
     | Expr.Val (lvr,flags,_) ->  
         accFreeInValFlags opts flags (accFreeValRef opts lvr acc)
-    | Expr.Quote (ast,{contents=Some(argTypes,argExprs,_data)},_,_,ty) ->  
+    | Expr.Quote (ast,{contents=Some(_,argTypes,argExprs,_data)},_,_,ty) ->  
         accFreeInExpr opts ast 
             (accFreeInExprs opts argExprs
                (accFreeVarsInTys opts argTypes
@@ -4527,10 +4527,10 @@ and remapExpr g (compgen:ValCopyFlag) (tmenv:Remap) x =
         let vf' = remapValFlags tmenv vf
         if vr === vr' && vf === vf' then x 
         else Expr.Val (vr',vf',m)
-    | Expr.Quote (a,{contents=Some(argTypes,argExprs,data)},isFromQueryExpression,m,ty) ->  
+    | Expr.Quote (a,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) ->  
         // fix value of compgen for both original expression and pickled AST
         let compgen = fixValCopyFlagForQuotations compgen
-        Expr.Quote (remapExpr g compgen tmenv a,{contents=Some(remapTypesAux tmenv argTypes,remapExprs g compgen tmenv  argExprs,data)},isFromQueryExpression,m,remapType tmenv ty)
+        Expr.Quote (remapExpr g compgen tmenv a,{contents=Some(typeDefs,remapTypesAux tmenv argTypes,remapExprs g compgen tmenv  argExprs,data)},isFromQueryExpression,m,remapType tmenv ty)
     | Expr.Quote (a,{contents=None},isFromQueryExpression,m,ty) ->  
         Expr.Quote (remapExpr g (fixValCopyFlagForQuotations compgen) tmenv a,{contents=None},isFromQueryExpression,m,remapType tmenv ty)
     | Expr.Obj (_,typ,basev,basecall,overrides,iimpls,m) -> 
@@ -5481,6 +5481,8 @@ let mkRecdFieldSet g (e,fref:RecdFieldRef,tinst,e2,m) =
     let wrap,e' = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false DefinitelyMutates e None m
     wrap (mkRecdFieldSetViaExprAddr(e',fref,tinst,e2,m))
 
+let mkArray (argty, args, m) = Expr.Op(TOp.Array, [argty],args,m)
+
 //---------------------------------------------------------------------------
 // Compute fixups for letrec's.
 //
@@ -5628,7 +5630,7 @@ let mkFolders (folders : _ ExprFolder) =
                 let z = dtreeF z dtree
                 let z = Array.fold targetF z targets
                 z
-            | Expr.Quote(_e,{contents=Some(_argTypes,argExprs,_)},_,_,_)  -> exprsF z argExprs
+            | Expr.Quote(_e,{contents=Some(_typeDefs,_argTypes,argExprs,_)},_,_,_)  -> exprsF z argExprs
             | Expr.Quote(_e,{contents=None},_,_m,_) -> z
             | Expr.Obj (_n,_typ,_basev,basecall,overrides,iimpls,_m)    -> 
                 let z = exprF z basecall
@@ -5993,9 +5995,13 @@ let mkCallSeqSingleton g m ty1 arg1 =
 let mkCallSeqEmpty g m ty1 = 
     mkApps g (typedExprForIntrinsic g m g.seq_empty_info, [[ty1]], [ ],  m) 
                  
-let mkCallUnpickleQuotation g m e1 e2 e3 e4 = 
+let mkCallDeserializeQuotationFSharp20Plus g m e1 e2 e3 e4 = 
     let args = [ e1; e2; e3; e4 ]
-    mkApps g (typedExprForIntrinsic g m g.unpickle_quoted_info, [], [ mkTupledNoTypes g m args ],  m)
+    mkApps g (typedExprForIntrinsic g m g.deserialize_quoted_FSharp_20_plus_info, [], [ mkTupledNoTypes g m args ],  m)
+
+let mkCallDeserializeQuotationFSharp40Plus g m e1 e2 e3 e4 e5 = 
+    let args = [ e1; e2; e3; e4; e5 ]
+    mkApps g (typedExprForIntrinsic g m g.deserialize_quoted_FSharp_40_plus_info, [], [ mkTupledNoTypes g m args ],  m)
 
 let mkCallCastQuotation g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.cast_quotation_info, [[ty]], [ e1 ],  m)
@@ -6092,6 +6098,12 @@ let mkCompilationArgumentCountsAttr g nums =
 let mkCompilationSourceNameAttr g n = 
     mkILCustomAttribute g.ilg (tref_CompilationSourceNameAttr g, [  g.ilg.typ_String ],
                                [ILAttribElem.String(Some n)],
+                               [])
+
+let mkCompilationMappingAttrForQuotationResource g (nm, tys: ILTypeRef list) = 
+    mkILCustomAttribute g.ilg (tref_CompilationMappingAttr g, 
+                               [ g.ilg.typ_String; mkILArr1DTy g.ilg.typ_Type ],
+                               [ ILAttribElem.String (Some nm); ILAttribElem.Array (g.ilg.typ_Type, [ for ty in tys -> ILAttribElem.TypeRef (Some ty) ]) ],
                                [])
 
 #if EXTENSIONTYPING
@@ -7249,8 +7261,8 @@ and rewriteExprStructure env expr =
       if f0 === f0' && args === args' then expr
       else Expr.App(f0',f0ty,tyargs,args',m)
 
-  | Expr.Quote(ast,{contents=Some(argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
-      Expr.Quote((if env.IsUnderQuotations then RewriteExpr env ast else ast),{contents=Some(argTypes,rewriteExprs env argExprs,data)},isFromQueryExpression,m,ty)
+  | Expr.Quote(ast,{contents=Some(typeDefs,argTypes,argExprs,data)},isFromQueryExpression,m,ty) -> 
+      Expr.Quote((if env.IsUnderQuotations then RewriteExpr env ast else ast),{contents=Some(typeDefs,argTypes,rewriteExprs env argExprs,data)},isFromQueryExpression,m,ty)
   | Expr.Quote(ast,{contents=None},isFromQueryExpression,m,ty) -> 
       Expr.Quote((if env.IsUnderQuotations then RewriteExpr env ast else ast),{contents=None},isFromQueryExpression,m,ty)
 

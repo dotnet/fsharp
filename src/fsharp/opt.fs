@@ -1680,7 +1680,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
     | Expr.Const (c,m,ty) -> OptimizeConst cenv env expr (c,m,ty)
     | Expr.Val (v,_vFlags,m) -> OptimizeVal cenv env expr (v,m)
     | Expr.Quote(ast,splices,isFromQueryExpression,m,ty) -> 
-          let splices = ref (splices.Value |> Option.map (map2Of3 (List.map (OptimizeExpr cenv env >> fst))))
+          let splices = ref (splices.Value |> Option.map (map3Of4 (List.map (OptimizeExpr cenv env >> fst))))
           Expr.Quote(ast,splices,isFromQueryExpression,m,ty),
           { TotalSize = 10;
             FunctionSize = 1;

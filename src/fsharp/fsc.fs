@@ -1090,8 +1090,24 @@ module MainModuleBuilder =
             mkILSimpleModule assemblyName (fsharpModuleName tcConfig.target assemblyName) (tcConfig.target = Dll || tcConfig.target = Module) tcConfig.subsystemVersion tcConfig.useHighEntropyVA ilTypeDefs hashAlg locale flags (mkILExportedTypes exportedTypesList) metadataVersion
 
         let disableJitOptimizations = not (tcConfig.optSettings.jitOpt())
+                       
+        let tcVersion = tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
+                  
+        let reflectedDefinitionAttrs, reflectedDefinitionResources = 
+            codegenResults.quotationResourceInfo 
+            |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) -> 
+                let reflectedDefinitionResourceName = QuotationPickler.SerializedReflectedDefinitionsResourceNameBase+"-"+assemblyName+"-"+string(newUnique())+"-"+string(hash reflectedDefinitionBytes)
+                let reflectedDefinitionAttr = mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs)
+                let reflectedDefinitionResource = 
+                  { Name=reflectedDefinitionResourceName;
+                    Location = ILResourceLocation.Local (fun () -> reflectedDefinitionBytes);
+                    Access= ILResourceAccess.Public;
+                    CustomAttrs = emptyILCustomAttrs }
+                reflectedDefinitionAttr, reflectedDefinitionResource) 
+            |> List.unzip
+
         let manifestAttrs = 
-             mkILCustomAttrs 
+            mkILCustomAttrs
                  [ if not tcConfig.internConstantStrings then 
                        yield mkILCustomAttribute tcGlobals.ilg
                                  (mkILTyRef (tcGlobals.ilg.traits.ScopeRef, "System.Runtime.CompilerServices.CompilationRelaxationsAttribute"),
@@ -1099,9 +1115,10 @@ module MainModuleBuilder =
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs
                    if Option.isSome pdbfile then 
-                       yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) ]
-                       
-        let tcVersion = tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
+                       yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
+                   yield! reflectedDefinitionAttrs ]
+
+        // Make the manifest of the assembly
         let manifest = 
              if tcConfig.target = Module then None else
              let man = mainModule.ManifestOfAssembly
@@ -1109,18 +1126,11 @@ module MainModuleBuilder =
                  match assemVerFromAttrib with 
                  | None -> tcVersion
                  | Some v -> v
-             Some { man with Version= Some(ver);
+             Some { man with Version= Some ver;
                              CustomAttrs = manifestAttrs;
                              DisableJitOptimizations=disableJitOptimizations;
                              JitTracking= tcConfig.jitTracking;
                              SecurityDecls=secDecls } 
-                  
-        let quotDataResources = 
-                codegenResults.quotationResourceBytes |> List.map (fun bytes -> 
-                    { Name=QuotationPickler.pickledDefinitionsResourceNameBase+string(newUnique());
-                      Location = ILResourceLocation.Local (fun () -> bytes);
-                      Access= ILResourceAccess.Public;
-                      CustomAttrs = emptyILCustomAttrs }) 
 
         let resources = 
           mkILResources 
@@ -1157,7 +1167,7 @@ module MainModuleBuilder =
                          Access=pub; 
                          CustomAttrs=emptyILCustomAttrs }
                
-              yield! quotDataResources
+              yield! reflectedDefinitionResources
               yield! intfDataResources
               yield! optDataResources
               for ri in tcConfig.linkResources do 
@@ -1293,7 +1303,11 @@ module MainModuleBuilder =
               Is32Bit=(match tcConfig.platform with Some X86 -> true | _ -> false);
               Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false);          
               Is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(),rangeCmdArgs))) else tcConfig.prefer32Bit;
-              CustomAttrs= mkILCustomAttrs ((if tcConfig.target = Module then iattrs else []) @ codegenResults.ilNetModuleAttrs);
+              CustomAttrs= 
+                  mkILCustomAttrs 
+                      [ if tcConfig.target = Module then 
+                           yield! iattrs 
+                        yield! codegenResults.ilNetModuleAttrs ];
               NativeResources=nativeResources;
               Manifest = manifest }
 
@@ -1308,11 +1322,11 @@ module StaticLinker =
             ilxMainModule,(fun x -> x) 
         else
 
-            // Check no dependent assemblies use quotations
-            let dependentCcuUsingQuotations = dependentILModules |> List.tryPick (function (Some ccu,_) when ccu.UsesQuotations -> Some ccu | _ -> None)
-            match dependentCcuUsingQuotations with
-            | Some ccu -> error(Error(FSComp.SR.fscQuotationLiteralsStaticLinking(ccu.AssemblyName),rangeStartup));
-            | None -> ()
+            // Check no dependent assemblies use quotations   
+            let dependentCcuUsingQuotations = dependentILModules |> List.tryPick (function (Some ccu,_) when ccu.UsesFSharp20PlusQuotations -> Some ccu | _ -> None)   
+            match dependentCcuUsingQuotations with   
+            | Some ccu -> error(Error(FSComp.SR.fscQuotationLiteralsStaticLinking(ccu.AssemblyName),rangeStartup));   
+            | None -> ()  
                 
             // Check we're not static linking a .EXE
             if dependentILModules |> List.exists (fun (_,x) -> not x.IsDLL)  then 
@@ -1332,6 +1346,15 @@ module StaticLinker =
             // A rewriter which rewrites scope references to things in dependent assemblies to be local references 
             let rewriteExternalRefsToLocalRefs x = 
                 if assems.Contains (getNameOfScopeRef x) then ILScopeRef.Local else x
+
+            let savedManifestAttrs = 
+                [ for (_,depILModule) in dependentILModules do 
+                    match depILModule.Manifest with 
+                    | Some m -> 
+                        for ca in m.CustomAttrs.AsList do
+                           if ca.Method.MethodRef.EnclosingTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
+                               yield ca
+                    | _ -> () ]
 
             let savedResources = 
                 let allResources = [ for (ccu,m) in dependentILModules do for r in m.Resources.AsList do yield (ccu, r) ]
@@ -1353,18 +1376,16 @@ module StaticLinker =
                     [ for (ccu,r) in intfDataResources do 
                           if GenerateInterfaceData tcConfig && not (isProvided ccu) then 
                               yield r ]
+
                 let optDataResources,others = others |> List.partition (snd >> IsOptimizationDataResource)
                 let optDataResources = 
                     [ for (ccu,r) in optDataResources do 
                           if GenerateOptimizationData tcConfig && not (isProvided ccu) then 
                               yield r ]
-                let reflectedDefinitionResources,others = others |> List.partition (snd >> IsReflectedDefinitionsResource)
-                let reflectedDefinitionResources = reflectedDefinitionResources |> List.mapi (fun i (_,r) -> {r with Name = QuotationPickler.pickledDefinitionsResourceNameBase+string (i+1)})
 
-                let otherResources = others |> List.map snd
-                if verbose then dprintf "#intfDataResources = %d, #optDataResources = %d, #reflectedDefinitionResources = %d\n" intfDataResources.Length optDataResources.Length reflectedDefinitionResources.Length;
+                let otherResources = others |> List.map snd 
 
-                let result = intfDataResources@optDataResources@reflectedDefinitionResources@otherResources
+                let result = intfDataResources@optDataResources@otherResources
                 result
 
             let moduls = ilxMainModule :: (List.map snd dependentILModules)
@@ -1379,6 +1400,7 @@ module StaticLinker =
                 moduls 
                 |> List.map (fun m -> m.TypeDefs.AsList |> List.partition (fun td -> isTypeNameForGlobalFunctions td.Name)) 
                 |> List.unzip
+
             let topTypeDef = 
                 let topTypeDefs = List.concat topTypeDefs
                 mkILTypeDefForGlobalFunctions ilGlobals
@@ -1387,7 +1409,7 @@ module StaticLinker =
 
             let ilxMainModule = 
                 { ilxMainModule with 
-                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrs = mkILCustomAttrs m.CustomAttrs.AsList });
+                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrs = mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs) });
                     CustomAttrs = mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsList ];
                     TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs);
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList);
@@ -2000,13 +2022,13 @@ let main2(Args(tcConfig,tcImports,frameworkTcImports : TcImports,tcGlobals,error
     abortOnError(errorLogger,tcConfig,exiter)
         
     ReportTime tcConfig ("Encoding OptData");
-    let generatedOptData = EncodeOptimizationData(tcGlobals,tcConfig,outfile,exportRemapping,(generatedCcu,optimizationData))
+    let optDataResources = EncodeOptimizationData(tcGlobals,tcConfig,outfile,exportRemapping,(generatedCcu,optimizationData))
 
     let sigDataResources, _optimizationData = 
         if tcConfig.useSignatureDataFile then 
             let bytes = [| yield! BinaryGenerationUtilities.i32 0x7846ce27
-                           yield! BinaryGenerationUtilities.i32 (sigDataResources.Length + generatedOptData.Length)
-                           for r in (sigDataResources @ generatedOptData) do 
+                           yield! BinaryGenerationUtilities.i32 (sigDataResources.Length + optDataResources.Length)
+                           for r in (sigDataResources @ optDataResources) do 
                                match r.Location with 
                                |  ILResourceLocation.Local f -> 
                                    let bytes = f() 
@@ -2018,19 +2040,19 @@ let main2(Args(tcConfig,tcImports,frameworkTcImports : TcImports,tcGlobals,error
             File.WriteAllBytes(sigDataFileName,bytes)
             [], []
         else
-            sigDataResources, generatedOptData
+            sigDataResources, optDataResources
     
     // Pass on only the minimimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), generatedOptData,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
+    Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
 
-let main2b(Args(tcConfig:TcConfig,tcImports,tcGlobals,errorLogger,generatedCcu:CcuThunk,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName,idata,generatedOptData,assemVerFromAttrib,signingInfo,metadataVersion,exiter:Exiter)) = 
+let main2b(Args(tcConfig:TcConfig,tcImports,tcGlobals,errorLogger,generatedCcu:CcuThunk,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName,idata,optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter:Exiter)) = 
   
     // Compute a static linker. 
     let ilGlobals = tcGlobals.ilg
-    if tcConfig.standalone && generatedCcu.UsesQuotations then 
-        error(Error(FSComp.SR.fscQuotationLiteralsStaticLinking0(),rangeStartup));
+    if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then    
+        error(Error(FSComp.SR.fscQuotationLiteralsStaticLinking0(),rangeStartup));  
     let staticLinker = StaticLinker.StaticLink (tcConfig,tcImports,ilGlobals)
 
     ReportTime tcConfig "TAST -> ILX";
@@ -2050,7 +2072,7 @@ let main2b(Args(tcConfig:TcConfig,tcImports,tcGlobals,errorLogger,generatedCcu:C
     let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
 
 
-    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,outfile,topAttrs,idata,generatedOptData,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
+    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
 #if DEBUG
     // Print code before bailing out from the compiler due to errors 
     // in the backend of the compiler.  The partially-generated 

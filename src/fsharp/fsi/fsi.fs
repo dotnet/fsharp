@@ -189,10 +189,11 @@ type internal FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWrit
 
     /// Get the evaluation context used when inverting the storage mapping of the ILRuntimeWriter.
     member __.GetEvaluationContext emEnv = 
+        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath }
         { LookupFieldRef = ILRuntimeWriter.LookupFieldRef emEnv >> Option.get
           LookupMethodRef = ILRuntimeWriter.LookupMethodRef emEnv >> Option.get
-          LookupTypeRef = ILRuntimeWriter.LookupTypeRef emEnv >> Option.get
-          LookupType = ILRuntimeWriter.LookupType { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath } emEnv }
+          LookupTypeRef = ILRuntimeWriter.LookupTypeRef cenv emEnv 
+          LookupType = ILRuntimeWriter.LookupType cenv emEnv }
 
     /// Generate a layout for an actual F# value, where we know the value has the given static type.
     member __.PrintValue (printMode, opts:FormatOptions, x:obj, ty:System.Type) = 
@@ -862,8 +863,12 @@ type internal FsiDynamicCompiler
         // Explicitly register the resources with the QuotationPickler module 
         // We would save them as resources into the dynamic assembly but there is missing 
         // functionality System.Reflection for dynamic modules that means they can't be read back out 
-        for bytes in codegenResults.quotationResourceBytes do 
-            Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, fragName, bytes);
+        let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolvePath=resolvePath }
+        for (referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do 
+            let referencedTypes = 
+                [| for tref in referencedTypeDefs do 
+                      yield ILRuntimeWriter.LookupTypeRef cenv emEnv tref  |]
+            Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, fragName, bytes, referencedTypes);
             
 
         ReportTime tcConfig "Run Bindings";
