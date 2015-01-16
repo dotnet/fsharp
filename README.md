@@ -1,3 +1,6 @@
+[![Issue Stats](http://issuestats.com/github/Microsoft/visualfsharp/badge/pr)](http://issuestats.com/github/microsoft/visualfsharp)
+[![Issue Stats](http://issuestats.com/github/Microsoft/visualfsharp/badge/issue)](http://issuestats.com/github/microsoft/visualfsharp)
+
 #Visual F# Tools
 
 ###Contributing to the F# Language, Library, and Tools
