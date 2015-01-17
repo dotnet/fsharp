@@ -8146,6 +8146,9 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         | DelayedSet(e2,mStmt) :: otherDelayed ->
             if nonNil otherDelayed then error(Error(FSComp.SR.tcInvalidAssignment(),mStmt))
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
+            vref.Deref.SetHasBeenReferenced() 
+            CheckValAccessible m env.eAccessRights vref
+            CheckValAttributes cenv.g vref m  |> CommitOperationResult
             let vty = vref.Type
             let vty2 = 
                 if isByrefTy cenv.g vty then 
