@@ -672,42 +672,44 @@ let _ = eventually { use x = null in return 1 }
 //---------------------------------------------------------------------------
 // generate unique stamps
 //---------------------------------------------------------------------------
+[<Sealed>]
+type UniqueStampGenerator<'T when 'T : equality>(?initialCapacity) =
+    let encodeTab =
+        let initialCapacity = match initialCapacity with None -> 10 | Some c -> c
+        Dictionary<'T,int>(initialCapacity, HashIdentity.Structural)
 
-type UniqueStampGenerator<'T when 'T : equality>() = 
-    let encodeTab = new Dictionary<'T,int>(HashIdentity.Structural)
-    let mutable nItems = 0
-    let encode str = 
-        if encodeTab.ContainsKey(str)
-        then
-            encodeTab.[str]
-        else
-            let idx = nItems
-            encodeTab.[str] <- idx
-            nItems <- nItems + 1
-            idx
-    member this.Encode(str)  = encode str
+    member __.Encode(str) =
+        lock encodeTab <| fun () ->
+            let mutable strIdx = Unchecked.defaultof<_>
+            if encodeTab.TryGetValue (str, &strIdx) then strIdx
+            else
+                let idx = encodeTab.Count
+                encodeTab.Add (str, idx)
+                idx
 
 //---------------------------------------------------------------------------
 // memoize tables (all entries cached, never collected)
 //---------------------------------------------------------------------------
-    
-type MemoizationTable<'T,'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) = 
-    
-    let table = new System.Collections.Generic.Dictionary<'T,'U>(keyComparer) 
-    member t.Apply(x) = 
-        if (match canMemoize with None -> true | Some f -> f x) then 
-            let mutable res = Unchecked.defaultof<'U>
-            let ok = table.TryGetValue(x,&res)
-            if ok then res 
-            else
-                lock table (fun () -> 
-                    let mutable res = Unchecked.defaultof<'U> 
-                    let ok = table.TryGetValue(x,&res)
-                    if ok then res 
+[<Sealed>]
+type MemoizationTable<'T,'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize, ?initialCapacity) =
+    let table =
+        let initialCapacity = match initialCapacity with None -> 100 | Some c -> c
+        System.Collections.Generic.Dictionary<'T, Lazy<'U>>(initialCapacity, keyComparer)
+    member __.Apply (x) =
+        if (match canMemoize with None -> true | Some f -> f x) then
+            let memoizedValue =
+                lock table <| fun () ->
+                    let mutable res = Unchecked.defaultof<Lazy<'U>>
+                    if table.TryGetValue (x, &res) then res
                     else
-                        let res = compute x
-                        table.[x] <- res;
-                        res)
+                        let lazyRes = lazy (compute x)
+                        table.Add (x, lazyRes)
+                        lazyRes
+
+            // Force evaluation of the computation for this value if it hasn't already been evaluated.
+            // Storing lazily-evaluated results in the table allows the computation to run outside
+            // of the table lock, so multiple results can be evaluated concurrently.
+            memoizedValue.Force ()
         else compute x
 
 
@@ -722,7 +724,7 @@ type LazyWithContextFailure(exn:exn) =
 /// on forcing back to at least one sensible user location
 [<DefaultAugmentation(false)>]
 [<NoEquality; NoComparison>]
-type LazyWithContext<'T,'ctxt> = 
+type LazyWithContext<'T,'ctxt> =
     { /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
       mutable value : 'T
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
@@ -745,11 +747,13 @@ type LazyWithContext<'T,'ctxt> =
         | null -> x.value 
         | _ -> 
             // Enter the lock in case another thread is in the process of evaluting the result
-            System.Threading.Monitor.Enter(x);
+            let mutable lockTaken = false
+            System.Threading.Monitor.Enter(x, &lockTaken);
             try 
                 x.UnsynchronizedForce(ctxt)
             finally
-                System.Threading.Monitor.Exit(x)
+                if lockTaken then
+                    System.Threading.Monitor.Exit(x)
 
     member x.UnsynchronizedForce(ctxt) = 
         match x.funcOrException with 
@@ -776,15 +780,11 @@ type LazyWithContext<'T,'ctxt> =
 // Intern tables to save space.
 // -------------------------------------------------------------------- 
 
-module Tables = 
-    let memoize f = 
-        let t = new Dictionary<_,_>(1000, HashIdentity.Structural)
-        fun x -> 
-            let mutable res = Unchecked.defaultof<_>
-            if t.TryGetValue(x, &res) then 
-                res 
-            else
-                res <- f x; t.[x] <- res;  res
+module Tables =
+    let memoize f =
+        let memoTable = MemoizationTable(f, HashIdentity.Structural, initialCapacity = 1000)
+        fun x ->
+            memoTable.Apply x
 
 //-------------------------------------------------------------------------
 // Library: Name maps
