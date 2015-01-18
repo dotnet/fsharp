@@ -70,7 +70,7 @@ let mkLdfldMethodDef (ilMethName,reprAccess,isStatic,ilTy,ilFieldName,ilPropType
    ilMethodDef |> AddSpecialNameFlag
 
 let ChooseParamNames fieldNamesAndTypes = 
-    let takenFieldNames = fieldNamesAndTypes |> List.map p23 |> Set.ofList
+    let takenFieldNames = fieldNamesAndTypes |> Seq.map p23 |> Set.ofSeq
 
     fieldNamesAndTypes
     |> List.map (fun (ilPropName,ilFieldName,ilPropType) -> 
@@ -5409,7 +5409,9 @@ and GenPInvokeMethod (nm,dll,namedArgs) =
         CharBestFit=if (decoder.FindBool "BestFitMapping" false) then PInvokeCharBestFit.Enabled else PInvokeCharBestFit.UseAssembly }
       
 
-and GenBindings cenv cgbuf eenv binds = FlatList.iter (GenBind cenv cgbuf eenv) binds
+and GenBindings cenv cgbuf eenv binds =
+    for b in binds do
+        GenBind cenv cgbuf eenv b
 
 //-------------------------------------------------------------------------
 // Generate locals and other storage of values
@@ -5548,8 +5550,9 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (typ,ilTy) storage storeSequel =
         CG.EmitInstrs cgbuf (pop 0) (Push [ilTy]) [ mkLdarg0; mkNormalLdfld ilField ]
         CommitGetStorageSequel cenv cgbuf eenv m typ localCloInfo storeSequel
 
-and GenGetLocalVals cenv cgbuf eenvouter m fvs = 
-    List.iter (fun v -> GenGetLocalVal cenv cgbuf eenvouter m v None) fvs;
+and GenGetLocalVals cenv cgbuf eenvouter m fvs =
+    for v in fvs do
+        GenGetLocalVal cenv cgbuf eenvouter m v None
 
 and GenGetLocalVal cenv cgbuf eenv m (vspec:Val) fetchSequel =
     GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal m vspec eenv) fetchSequel
@@ -5605,8 +5608,8 @@ and AllocStorageForBinds cenv cgbuf scopeMarks eenv binds =
     let reps, eenv = FlatList.mapFold (AllocValForBind cenv cgbuf scopeMarks) eenv binds 
 
     // Phase 2 - run the cloinfo generators for NamedLocalClosure values against the environment recording the 
-    // representation choices. 
-    reps |> FlatList.iter (fun reprOpt -> 
+    // representation choices.
+    for reprOpt in reps do
        match reprOpt with 
        | Some repr -> 
            match repr with 
@@ -5616,7 +5619,7 @@ and AllocStorageForBinds cenv cgbuf scopeMarks eenv binds =
                | NamedLocalIlxClosureInfoGenerator f -> g := NamedLocalIlxClosureInfoGenerated (f eenv) 
                | NamedLocalIlxClosureInfoGenerated _ -> ()
            | _ -> ()
-       | _ -> ());
+       | _ -> ()
 
     eenv
    
@@ -5662,8 +5665,9 @@ and AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v eenv =
 and EmitSaveStack cenv cgbuf eenv m scopeMarks =
     let savedStack = (cgbuf.GetCurrentStack())
     let savedStackLocals,eenvinner = List.mapFold (fun eenv ty -> AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("spill",m), ty) scopeMarks) eenv savedStack
-    List.iter (EmitSetLocal cgbuf) savedStackLocals;
-    cgbuf.AssertEmptyStack();
+    for ssl in savedStackLocals do
+        EmitSetLocal cgbuf ssl
+    cgbuf.AssertEmptyStack()
     (savedStack,savedStackLocals),eenvinner (* need to return, it marks locals "live" *)
 
 /// Restore the stack and load the result 
@@ -5836,18 +5840,20 @@ and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x   =
             AddBindingsForModuleDef allocVal eenv.cloc eenv def
         GenModuleDef cenv cgbuf qname lazyInitInfo eenv def)
 
-and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv  mdefs = 
-    mdefs |> List.iter (GenModuleDef cenv cgbuf qname lazyInitInfo eenv) 
+and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv  mdefs =
+    for mdef in mdefs do
+        GenModuleDef cenv cgbuf qname lazyInitInfo eenv mdef
     
 and GenModuleDef cenv (cgbuf:CodeGenBuffer) qname lazyInitInfo eenv  x = 
     match x with 
-    | TMDefRec(tycons,binds,mbinds,m) -> 
-        tycons |> List.iter (fun tc -> 
-            if tc.IsExceptionDecl 
+    | TMDefRec(tycons,binds,mbinds,m) ->
+        for tc in tycons do
+            if tc.IsExceptionDecl
             then GenExnDef cenv cgbuf.mgbuf eenv m tc 
-            else GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc) ;
-        GenLetRecBinds cenv cgbuf eenv (binds,m);
-        mbinds |> List.iter (GenModuleBinding cenv cgbuf qname lazyInitInfo eenv) 
+            else GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc
+        GenLetRecBinds cenv cgbuf eenv (binds,m)
+        for mbind in mbinds do
+            GenModuleBinding cenv cgbuf qname lazyInitInfo eenv mbind
 
     | TMDefLet(bind,_) -> 
         GenBindings cenv cgbuf eenv (FlatList.one bind)
