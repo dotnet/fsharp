@@ -166,6 +166,27 @@ type QuickInfoTests() =
             )
     
     [<Test>]
+    member public this.``QuickInfo.HiddenMember``() =
+        // Tooltips showed hidden members - #50
+        let source = """
+            open System.ComponentModel
+
+            type TypeU = { Element : string }
+                with
+                  [<EditorBrowsableAttribute(EditorBrowsableState.Never)>] 
+                  [<CompilerMessageAttribute("This method is intended for use in generated code only.", 10001, IsHidden=true, IsError=false)>] 
+                  member x._Print = x.Element.ToString() 
+
+            let u = { Element = "abc" }
+            """
+        this.CheckTooltip(
+            code = source,
+            marker = "ypeU =",
+            atStart = true,
+            f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsFalse(text.Contains "member _Print"))
+            )
+    
+    [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
         let source = """
             type A() =
