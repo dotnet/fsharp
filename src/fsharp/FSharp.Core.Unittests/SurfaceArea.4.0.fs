@@ -837,11 +837,16 @@ Microsoft.FSharp.Core.CompilationMappingAttribute: Microsoft.FSharp.Core.SourceC
 Microsoft.FSharp.Core.CompilationMappingAttribute: Microsoft.FSharp.Core.SourceConstructFlags get_SourceConstructFlags()
 Microsoft.FSharp.Core.CompilationMappingAttribute: System.Object TypeId
 Microsoft.FSharp.Core.CompilationMappingAttribute: System.Object get_TypeId()
+Microsoft.FSharp.Core.CompilationMappingAttribute: System.String ResourceName
 Microsoft.FSharp.Core.CompilationMappingAttribute: System.String ToString()
+Microsoft.FSharp.Core.CompilationMappingAttribute: System.String get_ResourceName()
 Microsoft.FSharp.Core.CompilationMappingAttribute: System.Type GetType()
+Microsoft.FSharp.Core.CompilationMappingAttribute: System.Type[] TypeDefinitions
+Microsoft.FSharp.Core.CompilationMappingAttribute: System.Type[] get_TypeDefinitions()
 Microsoft.FSharp.Core.CompilationMappingAttribute: Void .ctor(Microsoft.FSharp.Core.SourceConstructFlags)
 Microsoft.FSharp.Core.CompilationMappingAttribute: Void .ctor(Microsoft.FSharp.Core.SourceConstructFlags, Int32)
 Microsoft.FSharp.Core.CompilationMappingAttribute: Void .ctor(Microsoft.FSharp.Core.SourceConstructFlags, Int32, Int32)
+Microsoft.FSharp.Core.CompilationMappingAttribute: Void .ctor(System.String, System.Type[])
 Microsoft.FSharp.Core.CompilationRepresentationAttribute: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.CompilationRepresentationAttribute: Boolean IsDefaultAttribute()
 Microsoft.FSharp.Core.CompilationRepresentationAttribute: Boolean Match(System.Object)
