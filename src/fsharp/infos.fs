@@ -215,7 +215,7 @@ let ExistsInEntireHierarchyOfType f g amap m allowMultiIntfInst typ =
 
 /// Search for one element where a function returns a 'Some' result, following interfaces
 let SearchEntireHierarchyOfType f g amap m typ = 
-    FoldHierarchyOfTypeAux true AllowMultiIntfInstantiations.No
+    FoldHierarchyOfTypeAux true AllowMultiIntfInstantiations.Yes
         (fun ty acc -> 
             match acc with 
             | None -> if f ty then Some(ty) else None 
@@ -243,11 +243,11 @@ let HasHeadType g tcref ty2 =
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
 let ExistsSameHeadTypeInHierarchy g amap m typeToSearchFrom typeToLookFor = 
-    ExistsInEntireHierarchyOfType (HaveSameHeadType g typeToLookFor)  g amap m AllowMultiIntfInstantiations.No typeToSearchFrom
+    ExistsInEntireHierarchyOfType (HaveSameHeadType g typeToLookFor)  g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
   
 /// Check if a type exists somewhere in the hierarchy which has the given head type.
 let ExistsHeadTypeInEntireHierarchy g amap m typeToSearchFrom tcrefToLookFor = 
-    ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) g amap m AllowMultiIntfInstantiations.No typeToSearchFrom
+    ExistsInEntireHierarchyOfType (HasHeadType g tcrefToLookFor) g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
   
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
@@ -3127,13 +3127,13 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ :: acc) g amap m allowMultiIntfInst typ []
 
     let GetIntrinsicILFieldInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
+        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
 
     let GetIntrinsicEventInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
+        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicEventsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
 
     let GetIntrinsicRecdOrClassFieldInfosUncached ((optFilter,ad),m,typ) =
-        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.No typ []
+        FoldPrimaryHierarchyOfType (fun typ acc -> GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ @ acc) g amap m AllowMultiIntfInstantiations.Yes typ []
     
     let GetEntireTypeHierachyUncached (allowMultiIntfInst,m,typ) =
         FoldEntireHierarchyOfType (fun typ acc -> typ :: acc) g amap m allowMultiIntfInst typ  [] 
@@ -3164,7 +3164,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                 | _ -> failwith "Unexpected multiple fields with the same name" // Because an explicit name (i.e., nm) was supplied, there will be only one element at most.
              | _ -> acc)
           g amap m 
-          AllowMultiIntfInstantiations.No
+          AllowMultiIntfInstantiations.Yes
           typ
           None
 
@@ -3506,12 +3506,12 @@ let TryFindIntrinsicNamedItemOfType (infoReader:InfoReader) (nm,ad) findFlag m t
 ///     -- getting the Dispose method when resolving the 'use' construct 
 ///     -- getting the various methods used to desugar the computation expression syntax 
 let TryFindIntrinsicMethInfo infoReader m ad nm ty = 
-    GetIntrinsicMethInfosOfType infoReader (Some nm,ad,AllowMultiIntfInstantiations.No) IgnoreOverrides m ty 
+    GetIntrinsicMethInfosOfType infoReader (Some nm,ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides m ty 
 
 /// Try to find a particular named property on a type. Only used to ensure that local 'let' definitions and property names
 /// are distinct, a somewhat adhoc check in tc.fs.
 let TryFindPropInfo infoReader m ad nm ty = 
-    GetIntrinsicPropInfosOfType infoReader (Some nm,ad,AllowMultiIntfInstantiations.No) IgnoreOverrides m ty 
+    GetIntrinsicPropInfosOfType infoReader (Some nm,ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides m ty 
 
 //-------------------------------------------------------------------------
 // Helpers related to delegates and events
@@ -3528,7 +3528,7 @@ let GetSigOfFunctionForDelegate (infoReader:InfoReader) delty m ad =
     let g = infoReader.g
     let amap = infoReader.amap
     let invokeMethInfo = 
-        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke",ad,AllowMultiIntfInstantiations.No) IgnoreOverrides m delty with 
+        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke",ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides m delty with 
         | [h] -> h
         | [] -> error(Error(FSComp.SR.noInvokeMethodsFound (),m))
         | h :: _ -> warning(InternalError(FSComp.SR.moreThanOneInvokeMethodFound (),m)); h

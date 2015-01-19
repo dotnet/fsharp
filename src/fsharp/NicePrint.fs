@@ -1390,8 +1390,7 @@ module private TastDefinitionPrinting =
                 GetImmediateInterfacesOfType g amap m ty |> List.map (fun ity -> wordL (if isInterfaceTy g ty then "inherit" else "interface") --- layoutType denv ity)
 
         let props = 
-            //GetImmediateIntrinsicPropInfosOfType  (None,ad) g amap m ty 
-            GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.No)  PreferOverrides m ty 
+            GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.Yes)  PreferOverrides m ty 
 
         let events = 
             infoReader.GetEventInfosOfType(None,ad,m,ty) 

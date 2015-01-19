@@ -1,7 +1,7 @@
 // #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
 // Verify error when trying to implement the same generic
 // interface twice
-//<Expects status="error" span="(11,6)" id="FS0443">This type implements or inherits the same interface at different generic instantiations 'IFoo<int64>' and 'IFoo<string>'\. This is not permitted in this version of F#</Expects>
+//<Expects status="error" span="(11,6)" id="FS0443">This type implements the same interface at different generic instantiations 'IFoo<int64>' and 'IFoo<string>'\. This is not permitted in this version of F#</Expects>
 
 type IFoo<'a> =
     interface

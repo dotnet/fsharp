@@ -121,7 +121,7 @@ let IsSecurityAttribute g amap (casmap : Dictionary<Stamp,bool>) (Attrib(tcref,_
            if casmap.ContainsKey(tcs) then
              casmap.[tcs]
            else
-             let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.No (mkAppTy tcref [])
+             let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
              casmap.[tcs] <- exists
              exists
         | _ -> false  
@@ -5639,7 +5639,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
               cenv.g 
               cenv.amap 
               mWholeExpr 
-              AllowMultiIntfInstantiations.No
+              AllowMultiIntfInstantiations.Yes
               e1ty
               None
         | _ -> Some "GetSlice"
@@ -14225,7 +14225,7 @@ module EstablishTypeDefinitionCores = begin
             // validate ConditionalAttribute, should it be applied (it's only valid on a type if the type is an attribute type)
             match attrs |> List.tryFind (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute) with
             | Some _ ->
-                if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv cenv.g t (mkAppTy cenv.g.tcref_System_Attribute [])) cenv.g cenv.amap m AllowMultiIntfInstantiations.No thisTy) then
+                if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv cenv.g t (mkAppTy cenv.g.tcref_System_Attribute [])) cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(),m))
             | _ -> ()         
                    

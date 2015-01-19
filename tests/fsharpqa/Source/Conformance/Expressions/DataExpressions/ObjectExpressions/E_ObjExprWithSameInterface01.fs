@@ -1,6 +1,6 @@
 // #Regression #Conformance #DataExpressions #ObjectConstructors 
 // This was Dev10:854519 and Dev11:5525. The fix was to make this a compile error to avoid a runtime exception.
-//<Expects status="error" span="(13,5-16,31)" id="FS0443">This type implements or inherits the same interface at different generic instantiations 'IQueue<'T>' and 'IQueue<obj>'\. This is not permitted in this version of F#\.$</Expects>
+//<Expects status="error" span="(13,5-16,31)" id="FS0443">This type implements the same interface at different generic instantiations 'IQueue<'T>' and 'IQueue<obj>'\. This is not permitted in this version of F#\.$</Expects>
 
 type IQueue<'a> =
     abstract Addd: 'a -> IQueue<'a>

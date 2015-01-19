@@ -490,9 +490,10 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
           CheckInterfaceImpls cenv env basev iimpls;
           CheckTypePermitByrefs cenv m typ
           let interfaces = 
-              [ yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes typ
+              [ if isInterfaceTy cenv.g typ then 
+                    yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes typ
                 for (ty,_) in iimpls do
-                    yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty ]
+                    yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
               |> List.filter (isInterfaceTy cenv.g)
           CheckMultipleInterfaceInstantiations cenv interfaces m
 
@@ -1367,6 +1368,11 @@ let CheckEntityDefn cenv env (tycon:Entity) =
  
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 
+            let typ = generalizedTyconRef (mkLocalTyconRef tycon)
+            let immediateInterfaces = GetImmediateInterfacesOfType cenv.g cenv.amap m typ
+            let interfaces = 
+              [ for ty in immediateInterfaces do
+                    yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
             CheckMultipleInterfaceInstantiations cenv interfaces m
         
         // Check struct fields. We check these late because we have to have first checked that the structs are
