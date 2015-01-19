@@ -290,7 +290,7 @@ chkUnionCaseDefaultAugmentation,"default augmentation of the union case"
 441,chkDuplicatePropertyWithSuffix,"Duplicate property. The property '%s' has the same name and signature as another property in this type once tuples, functions, units of measure and/or provided types are erased."
 442,chkDuplicateMethodInheritedType,"Duplicate method. The abstract method '%s' has the same name and signature as an abstract method in an inherited type."
 442,chkDuplicateMethodInheritedTypeWithSuffix,"Duplicate method. The abstract method '%s' has the same name and signature as an abstract method in an inherited type once tuples, functions, units of measure and/or provided types are erased."
-443,chkMultipleGenericInterfaceInstantiations,"This type implements or inherits the same interface at different generic instantiations '%s' and '%s'. This is not permitted in this version of F#."
+443,chkMultipleGenericInterfaceInstantiations,"This type implements the same interface at different generic instantiations '%s' and '%s'. This is not permitted in this version of F#."
 444,chkValueWithDefaultValueMustHaveDefaultValue,"The type of a field using the 'DefaultValue' attribute must admit default initialization, i.e. have 'null' as a proper value or be a struct type whose fields all admit default initialization. You can use 'DefaultValue(false)' to disable this check"
 445,chkNoByrefInTypeAbbrev,"The type abbreviation contains byrefs. This is not permitted by F#."
 # -----------------------------------------------------------------------------
