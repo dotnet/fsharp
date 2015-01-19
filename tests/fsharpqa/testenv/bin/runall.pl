@@ -3866,7 +3866,7 @@ sub launch_compiler_host
                            "$dirName\\HostedCompilerServer.exe",
                            "HostedCompilerServer.exe $compilerServerPort",
                            0,
-                           CREATE_NEW_CONSOLE,
+                           CREATE_NO_WINDOW,
                            ".")|| die "Error starting compiler server";
                            
     $ENV{HOSTED_COMPILER_PORT} = $compilerServerPort;
