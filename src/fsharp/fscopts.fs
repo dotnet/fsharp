@@ -312,7 +312,9 @@ let codeGenerationFlags (tcConfigB : TcConfigBuilder) =
                            
         CompilerOption("crossoptimize", tagNone, OptionSwitch (crossOptimizeSwitch tcConfigB), None,
                            Some (FSComp.SR.optsCrossoptimize()));
-        
+
+        CompilerOption("exnfilters", tagNone, OptionSwitch (fun switch -> tcConfigB.generateFilterBlocks <- (switch = On)), None,
+                           Some (FSComp.SR.optsExceptionFilters()));
     ]
  
 
@@ -559,8 +561,6 @@ let deprecatedFlagsFsc tcConfigB =
     CompilerOption("no-cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None);
     CompilerOption("no-string-interning", tagNone, OptionUnit (fun () -> tcConfigB.internConstantStrings <- false), Some(DeprecatedCommandLineOptionNoDescription("--no-string-interning", rangeCmdArgs)), None);
     CompilerOption("statistics", tagNone, OptionUnit (fun () -> tcConfigB.stats <- true), Some(DeprecatedCommandLineOptionNoDescription("--statistics", rangeCmdArgs)), None);
-    CompilerOption("generate-filter-blocks", tagNone, OptionUnit (fun () -> tcConfigB.generateFilterBlocks <- true), Some(DeprecatedCommandLineOptionNoDescription("--generate-filter-blocks", rangeCmdArgs)), None); 
-    //CompilerOption("no-generate-filter-blocks", tagNone, OptionUnit (fun () -> tcConfigB.generateFilterBlocks <- false), Some(DeprecatedCommandLineOptionNoDescription("--generate-filter-blocks", rangeCmdArgs)), None); 
     CompilerOption("max-errors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), Some(DeprecatedCommandLineOptionSuggestAlternative("--max-errors", "--maxerrors", rangeCmdArgs)),None);
     CompilerOption("debug-file", tagNone, OptionString (fun s -> tcConfigB.debugSymbolFile <- Some s), Some(DeprecatedCommandLineOptionSuggestAlternative("--debug-file", "--pdb", rangeCmdArgs)), None);
     CompilerOption("no-debug-file", tagNone,  OptionUnit (fun () -> tcConfigB.debuginfo <- false), Some(DeprecatedCommandLineOptionSuggestAlternative("--no-debug-file", "--debug-", rangeCmdArgs)), None);
