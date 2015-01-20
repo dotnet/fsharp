@@ -1411,15 +1411,41 @@ let u_trait st =
 #if INCLUDE_METADATA_WRITER
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 
-let rec p_measure_expr unt st =
-    let unt = stripUnitEqnsAux false unt 
-    match unt with 
-    | MeasureCon tcref   -> p_byte 0 st; p_tcref "measure" tcref st
-    | MeasureInv x       -> p_byte 1 st; p_measure_expr x st
-    | MeasureProd(x1,x2) -> p_byte 2 st; p_measure_expr x1 st; p_measure_expr x2 st
-    | MeasureVar(v)      -> p_byte 3 st; p_tpref v st
-    | MeasureOne         -> p_byte 4 st
-    | MeasureRationalPower(x,q) -> p_byte 5 st; p_measure_expr x st; p_rational q st
+let p_measurecon tcref st = p_byte 0 st; p_tcref "measure" tcref st
+let p_measurevar v st = p_byte 3 st; p_tpref v st
+
+let p_measure_varcon unt st =
+     match unt with 
+     | MeasureCon tcref   -> p_measurecon tcref st
+     | MeasureVar v       -> p_measurevar v st
+     | _                  -> pfailwith st ("p_measure_varcon: expected measure variable or constructor")
+
+let rec p_measure_intpower unt n st =
+  match n with
+  | 0 -> p_byte 4 st
+  | 1 -> p_measure_varcon unt st
+  | _ -> p_byte 2 st; p_measure_varcon unt st; p_measure_intpower unt (n-1) st
+
+let rec p_measure_power unt q st =
+  let s = SignRational q in 
+  if s = 0 then p_byte 4 st
+  else if s < 0 then p_byte 1 st; p_measure_power unt (NegRational q) st
+  else if GetDenominator q = 1 then p_measure_intpower unt (GetNumerator q) st 
+  else p_byte 5 st; p_measure_varcon unt st; p_rational q st
+
+
+let rec p_normalized_measure unt st =
+     let unt = stripUnitEqnsAux false unt 
+     match unt with 
+     | MeasureCon tcref   -> p_measurecon tcref st
+     | MeasureInv x       -> p_byte 1 st; p_normalized_measure x st
+     | MeasureProd(x1,x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
+     | MeasureVar v       -> p_measurevar v st
+     | MeasureOne         -> p_byte 4 st
+     | MeasureRationalPower(x,q) -> p_measure_power x q st
+
+let p_measure_expr unt st = p_normalized_measure (normalizeMeasure st.oglobals unt) st
+
 #endif
 
 let u_rational st =
