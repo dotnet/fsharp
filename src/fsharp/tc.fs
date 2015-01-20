@@ -607,14 +607,15 @@ let BuildRootModuleExpr enclosingNamespacePath cpath mexpr =
         ||> List.foldBack (fun id (cpath, mexpr) -> (parentCompPath cpath, wrapModuleOrNamespaceExprInNamespace id (parentCompPath cpath) mexpr))
         |> snd
 
-let ImplicitlyOpenOwnNamespace tcSink g amap scopem (enclosingNamespacePath: Ident list) env = 
+let ImplicitlyOpenOwnNamespace tcSink (g:TcGlobals) amap scopem (enclosingNamespacePath: Ident list) env = 
     if isNil enclosingNamespacePath then 
         env
     else
-        // Skip "FSI_0002" prefixes when determining the path to open implicitly
+        // For F# interactive, skip "FSI_0002" prefixes when determining the path to open implicitly
         let enclosingNamespacePathToOpen = 
             match enclosingNamespacePath with 
-            | p::rest when  p.idText.StartsWith(FsiDynamicModulePrefix,System.StringComparison.Ordinal) && 
+            | p::rest when  g.isInteractive &&
+                            p.idText.StartsWith(FsiDynamicModulePrefix,System.StringComparison.Ordinal) && 
                             p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit &&
                             rest.Length > 0 -> rest
             | rest -> rest
