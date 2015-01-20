@@ -23,6 +23,7 @@
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=optimize                       kind=OptionSwitch</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=tailcalls                      kind=OptionSwitch</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=crossoptimize                  kind=OptionSwitch</Expects>
+//<Expects status="success">section='- CODE GENERATION -      ' ! option=exnfilters                     kind=OptionSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionIntListSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warn                           kind=OptionInt</Expects>
@@ -116,7 +117,6 @@
 //<Expects status="success">section='NoSection                ' ! option=no-cross-optimize              kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-string-interning            kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=statistics                     kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=generate-filter-blocks         kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=max-errors                     kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=debug-file                     kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-debug-file                  kind=OptionUnit</Expects>
