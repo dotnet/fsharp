@@ -43,7 +43,7 @@ All code submissions should be submitted with regression test cases, and will be
 - Partial, incomplete, or poorly-tested contributions will not be accepted.
 - Contributions may be put on hold according to stability, testing, and design-coherence requirements.
 
-#### Mimimum Bar for Code Cleanp Pull Requests
+#### Mimimum Bar for Code Cleanup Pull Requests
 
 In addition to the above, "Code Cleanup" pull requests have the following minimum requirements:
 
@@ -56,7 +56,7 @@ In addition to the above, "Code Cleanup" pull requests have the following minimu
 Performance improvement checkins have the following minimum requirements (in addition to the above)
 
 - Performance tests and figures must be given, either in the PR or in the notes associated with the PR.  PRs without performance figures will be closed with a polite request to please add them.
-- The PR must show a reliable, substantive performance improvement tha justifies the complexity introduced (if any).  For the compiler, performance improvements of ~1% are of interest.  For the core library, it will depend on the routine in question. For the Visual F# tools, reactivity of the user interface will be of more interest than raw CPU performance.
+- The PR must show a reliable, substantive performance improvement that justifies the complexity introduced.  For the compiler, performance improvements of ~1% are of interest.  For the core library, it will depend on the routine in question. For the Visual F# tools, reactivity of the user interface will be of more interest than raw CPU performance.
 
 #### Mimimum Bar for Bug Fix Pull Requests
 
