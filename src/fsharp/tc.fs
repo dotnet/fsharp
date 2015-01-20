@@ -4538,7 +4538,14 @@ and TcTypeOrMeasureAndRecover optKind cenv newOk checkCxs occ env tpenv ty   =
     try TcTypeOrMeasure optKind cenv newOk checkCxs occ env tpenv ty 
     with e -> 
         errorRecovery e ty.Range 
-        (if newOk <> NoNewTypars then NewErrorType () else cenv.g.obj_ty),tpenv 
+        let rty = 
+            match optKind, newOk with 
+            | Some TyparKind.Measure, NoNewTypars -> TType_measure MeasureOne
+            | Some TyparKind.Measure, _ -> TType_measure (NewErrorMeasure ())
+            | _, NoNewTypars -> cenv.g.obj_ty
+            | _ -> NewErrorType () 
+        rty,tpenv 
+
 
 and TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty   =
     TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkCxs occ env tpenv ty
