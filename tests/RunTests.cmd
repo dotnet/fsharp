@@ -39,6 +39,10 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
+if /I "%2" == "compilerunit" (
+   set compilerunitsuffix=net40
+   goto :COMPILERUNIT
+)
 if /I "%2" == "coreunit" (
    set coreunitsuffix=net40
    goto :COREUNIT
@@ -175,6 +179,22 @@ if errorlevel 1 (
 )
 echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
      nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+
+goto :EOF
+
+:COMPILERUNIT
+
+set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
+set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
+set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
+
+where.exe nunit-console.exe > NUL 2> NUL
+if errorlevel 1 (
+  echo Error: nunit-console.exe is not in the PATH
+  exit /b 1
+)
+echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
 
 goto :EOF
 

@@ -985,7 +985,35 @@ let z = __LINE__(*Test3*)
         check "(*If*)" TokenType.Comment
         check "(*Else*)" TokenType.Comment
         check "(*Endif*)" TokenType.Comment
-        
+
+    /// FEATURE: Preprocessor extended grammar basic check.
+    /// FEATURE:  More extensive grammar test is done in compiler unit tests
+    [<Test>]
+    member public this.``Preprocessor.ExtendedIfGrammar.Basic01``() =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents = """
+                #if UNDEFINED || !UNDEFINED // Extended #if
+                let x = "activeCode"
+                #else
+                let x = "inactiveCode"
+                #endif
+                """,
+            marker = "activeCode",
+            tokenType = TokenType.String)
+
+    [<Test>]
+    member public this.``Preprocessor.ExtendedIfGrammar.Basic02``() =
+        this.VerifyColorizerAtStartOfMarker(
+            fileContents = """
+                #if UNDEFINED || !UNDEFINED // Extended #if
+                let x = "activeCode"
+                #else
+                let x = "inactiveCode"
+                #endif
+                """,
+            marker = "inactiveCode",
+            tokenType = TokenType.InactiveCode)
+
     /// #else / #endif in multiline strings is ignored
     [<Test>]
     member public this.``Preprocessor.DirectivesInString``() =
@@ -1040,7 +1068,7 @@ let z = __LINE__(*Test3*)
                                      "#endif"]
         let (_, _, file) = this.CreateSingleFileProject(code)
         MoveCursorToStartOfMarker(file, "!!COMPILED")
-        AssertEqual(TokenType.Operator, GetTokenTypeAtCursor(file))
+        AssertEqual(TokenType.Identifier, GetTokenTypeAtCursor(file))
 
 
     // This was an off-by-one bug in the replacement Colorizer
