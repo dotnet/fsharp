@@ -60,7 +60,7 @@ namespace System.Numerics
             |  0, -1 -> BigNatModule.isZero y.V
             |  1, 0 -> BigNatModule.isZero x.V
             | -1, 0 -> BigNatModule.isZero x.V
-            | _ -> invalidArg "x" "signs should be +/- 1 or 0"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1 or 0"
 
         static member op_Inequality (x:BigInteger, y:BigInteger) = not (BigInteger.op_Equality(x,y)) // CA2226: OperatorsShouldHaveSymmetricalOverloads
                 
@@ -79,7 +79,7 @@ namespace System.Numerics
             |  0,-1 -> false
             |  1, 0 -> false
             | -1, 0 -> not (BigNatModule.isZero x.V)
-            | _ -> invalidArg "x" "signs should be +/- 1 or 0"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1 or 0"
                 
         static member op_GreaterThan (x:BigInteger, y:BigInteger) = // Follow lt by +/- symmetry 
             match x.SignInt,y.SignInt with
@@ -92,7 +92,7 @@ namespace System.Numerics
             |  0,-1 -> not (BigNatModule.isZero y.V)
             |  1, 0 -> not (BigNatModule.isZero x.V)
             | -1, 0 -> false
-            | _ -> invalidArg "x" "signs should be +/- 1 or 0"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1 or 0"
 
         static member internal compare(n,nn) = if BigInteger.op_LessThan(n,nn) then -1 elif BigInteger.op_Equality(n,nn) then 0 else 1
         
@@ -116,7 +116,7 @@ namespace System.Numerics
             member this.CompareTo(obj:obj) = 
                 match obj with 
                 | :? BigInteger as that -> BigInteger.compare(this,that)
-                | _ -> invalidArg "obj" "the objects are not comparable"
+                | _ -> invalidArg (nameof obj) "the objects are not comparable"
 
         override this.Equals(obj) = 
             match obj with 
@@ -175,7 +175,7 @@ namespace System.Numerics
             | -1,-1 -> -(BigInteger.addnn(x.V,y.V))          // -1.xv + -1.yv = -(xv + yv) 
             |  1,-1 -> BigInteger.subnn (x.V,y.V)                //  1.xv + -1.yv =  (xv - yv) 
             | -1, 1 -> BigInteger.subnn(y.V,x.V)                // -1.xv +  1.yv =  (yv - xv) 
-            | _ -> invalidArg "x" "signs should be +/- 1"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1"
                 
         static member (-) (x:BigInteger,y:BigInteger) =
             if y.IsZero then x else
@@ -185,7 +185,7 @@ namespace System.Numerics
             | -1,-1 -> BigInteger.subnn(y.V,x.V)                // -1.xv - -1.yv =  (yv - xv) 
             |  1,-1 -> BigInteger.addnn(x.V,y.V)                //  1.xv - -1.yv =  (xv + yv) 
             | -1, 1 -> -(BigInteger.addnn(x.V,y.V))          // -1.xv -  1.yv = -(xv + yv) 
-            | _ -> invalidArg "x" "signs should be +/- 1"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1"
                 
         static member ( * ) (x:BigInteger,y:BigInteger) =
             if x.IsZero then x
@@ -210,7 +210,7 @@ namespace System.Numerics
             | -1,-1 -> rem <- BigInteger.negn r ; BigInteger.posn d     // -1.xv =  1.d.(-1.yv) + (-1.r) 
             |  1,-1 -> rem <- BigInteger.posn r ; BigInteger.negn d     //  1.xv = -1.d.(-1.yv) + ( 1.r) 
             | -1, 1 -> rem <- BigInteger.negn r ; BigInteger.negn d     // -1.xv = -1.d.( 1.yv) + (-1.r) 
-            | _ -> invalidArg "x" "signs should be +/- 1"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1"
                 
         static member (/) (x:BigInteger,y:BigInteger) = 
             let mutable rem = new BigInteger(0) 
@@ -247,7 +247,7 @@ namespace System.Numerics
             | -1, 0 -> true
             |  0, 1 -> true
             |  0,-1 -> BigNatModule.isZero y.V
-            | _ -> invalidArg "x" "signs should be +/- 1 or 0"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1 or 0"
                 
         static member op_GreaterThanOrEqual (x:BigInteger,y:BigInteger) = // Follow lte by +/- symmetry 
             match x.SignInt,y.SignInt with
@@ -260,7 +260,7 @@ namespace System.Numerics
             | -1, 0 -> BigNatModule.isZero x.V
             |  0, 1 -> BigNatModule.isZero y.V
             |  0,-1 -> true
-            | _ -> invalidArg "x" "signs should be +/- 1 or 0"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1 or 0"
                 
         static member Pow (x:BigInteger,y:int32) =
             if y < 0 then raise (new System.ArgumentOutOfRangeException("y", (SR.GetString(SR.inputMustBeNonNegative))))
@@ -302,10 +302,10 @@ namespace System.Numerics
             |  1 ->    BigNatModule.toFloat x.V                     // float (1.xv)  =   float (xv) 
             | -1 -> - (BigNatModule.toFloat x.V)                    // float (-1.xv) = - float (xv) 
             |  0 -> 0.
-            | _ -> invalidArg "x" "signs should be +/- 1 or 0"
+            | _ -> invalidArg (nameof x) "signs should be +/- 1 or 0"
              
         static member Parse(text:string) =
-            if text = null then raise (new ArgumentNullException("text"))
+            if text = null then raise (new ArgumentNullException(nameof(text)))
             let text = text.Trim()
             let len = text.Length 
             if len = 0 then raise (new System.FormatException(SR.GetString(SR.badFormatString)))
@@ -319,7 +319,7 @@ namespace System.Numerics
         member internal x.IsSmall = x.IsZero || BigNatModule.isSmall (x.V)
    
         static member Factorial (x:BigInteger) =
-            if x.IsNegative then invalidArg "x" (SR.GetString(SR.inputMustBeNonNegative))
+            if x.IsNegative then invalidArg (nameof x) (SR.GetString(SR.inputMustBeNonNegative))
             if x.IsPositive then BigInteger.posn (BigNatModule.factorial x.V)
             else BigInteger.One 
 

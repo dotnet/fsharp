@@ -7,3 +7,4 @@ open Microsoft.FSharp.Compiler
 
 val testFlagMemberBody : bool ref
 val CheckTopImpl : Env.TcGlobals * Import.ImportMap * bool * Infos.InfoReader * Tast.CompilationPath list * Tast.CcuThunk * Tastops.DisplayEnv * Tast.ModuleOrNamespaceExprWithSig * Tast.Attribs * bool -> bool
+val extractNameOf : Microsoft.FSharp.Compiler.Tast.Expr list -> string option

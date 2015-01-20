@@ -104,6 +104,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
+    <Compile Include="NameOfTests.fs" />
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
     <Compile Include="SurfaceArea.4.0.fs" Condition="'$(TargetFramework)' == 'net40'"/>
   </ItemGroup>

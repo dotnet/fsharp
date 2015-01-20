@@ -2068,7 +2068,7 @@ module DerivedPatterns =
                    Some(obj,(minfo2.GetGenericArguments() |> Array.toList),args)
                | _ -> None)
         | _ -> 
-            invalidArg "templateParameter" (SR.GetString(SR.QunrecognizedMethodCall))
+            invalidArg (nameof templateParameter) (SR.GetString(SR.QunrecognizedMethodCall))
 
     let private new_decimal_info = 
        methodhandleof (fun (low, medium, high, isNegative, scale) -> LanguagePrimitives.IntrinsicFunctions.MakeDecimal low medium high isNegative scale)

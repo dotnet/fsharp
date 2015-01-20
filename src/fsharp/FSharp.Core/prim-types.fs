@@ -4721,6 +4721,9 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
 
+        [<CompiledName("NameOf")>]
+        let inline nameof (_: 'T) : string = raise (Exception "may not call directly, should always be optimized away")
+
         [<CompiledName("MethodHandleOf")>]
         let methodhandleof (_call: ('T -> 'TResult)) : System.RuntimeMethodHandle = raise (Exception "may not call directly, should always be optimized away")
 
