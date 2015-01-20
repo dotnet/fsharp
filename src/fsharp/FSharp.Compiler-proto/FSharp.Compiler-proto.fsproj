@@ -22,6 +22,16 @@
       <Link>FSComp.txt</Link>
     </FsSrGen>
     <EmbeddedResource Include="..\FSStrings.resx" />
+    <FsLex Include="..\pplex.fsl">
+      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>pplex.fsl</Link>
+    </FsLex>
+    <FsYacc Include="..\pppars.fsy">
+      <Module>Microsoft.FSharp.Compiler.PPParser</Module>
+      <Open>Microsoft.FSharp.Compiler</Open>
+      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>pppars.fsy</Link>
+    </FsYacc>
     <FsLex Include="..\lex.fsl">
       <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>lex.fsl</Link>
@@ -250,6 +260,7 @@
 	  <Compile Include="..\ast.fs">
 		  <Link>ast.fs</Link>
 	  </Compile>
+    <Compile Include="pppars.fs" />
 	  <Compile Include="pars.fs" />
 	  <Compile Include="..\lexhelp.fsi">
 		  <Link>lexhelp.fsi</Link>
@@ -257,6 +268,7 @@
 	  <Compile Include="..\lexhelp.fs">
 		  <Link>lexhelp.fs</Link>
 	  </Compile>
+    <Compile Include="pplex.fs" />
 	  <Compile Include="lex.fs" />
 	  <Compile Include="..\sreflect.fsi">
 		  <Link>sreflect.fsi</Link>
