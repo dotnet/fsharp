@@ -179,6 +179,6 @@ Misc02		fsharp\regression\tuple-bug-1
 Misc02		fsharp\tools\bundle
 Misc02		fsharp\tools\eval
 Misc02		..\testsprivate\fsharp\tools\queries
-Misc02		fsharp\typecheck\misc
-Misc02		fsharp\typecheck\sigs
-Misc02		fsharp\typecheck\full-rank-arrays
+Misc02,TypeChecker		fsharp\typecheck\misc
+Misc02,TypeChecker		fsharp\typecheck\sigs
+Misc02,TypeChecker		fsharp\typecheck\full-rank-arrays
