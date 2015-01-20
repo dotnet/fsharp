@@ -39,8 +39,33 @@ All code submissions should be submitted with regression test cases, and will be
 
 - We expect contributors to be actively involved in quality assurance.
 - We expect contributors to be actively involved in quality assurance.
+- We expect contributors to be actively involved in quality assurance.
 - Partial, incomplete, or poorly-tested contributions will not be accepted.
 - Contributions may be put on hold according to stability, testing, and design-coherence requirements.
+
+#### Mimimum Bar for Code Cleanp Pull Requests
+
+In addition to the above, "Code Cleanup" pull requests have the following minimum requirements:
+
+- There must be no chance of a behavioural change, performance degradation or regression under any reasonable reading of the code in the context of the codebase as a whole.  
+- Code cleanup should generally be made separate to other checkins where possible, or the parts that are cleanup should be labelled as such.
+- Code cleanup is much more likely to be accepted towards the start of a release cycle. 
+
+#### Mimimum Bar for Performance Improvement Pull Requests
+
+Performance improvement checkins have the following minimum requirements (in addition to the above)
+
+- Performance tests and figures must be given, either in the PR or in the notes associated with the PR.  PRs without performance figures will be closed with a polite request to please add them.
+- The PR must show a reliable, substantive performance improvement tha justifies the complexity introduced (if any).  For the compiler, performance improvements of ~1% are of interest.  For the core library, it will depend on the routine in question. For the Visual F# tools, reactivity of the user interface will be of more interest than raw CPU performance.
+
+#### Mimimum Bar for Bug Fix Pull Requests
+
+Bug fix PRs have the following minimum requirements
+
+- There must be a separate tracking bug entry in the public GitHub issues. A link should be given in the PR. PRs without a matching bug link will be closed with a polite request to please add it.
+- The code changes must be reasonably minimal and as low-churn, non-intrusive as possible. Cleanup should be done in separate PRs where possible (see above), and fixes should be as small as possible.
+- Thorough test cases must be included in the PR (unless tests already exist for a failing case). PRs without matching tests will be closed with a polite request to please add the tests.  However, if you need help adding tests, please note this in the description of the change and people will guide you through where to add the tests.
+
 
 ###Language Evolution
 
