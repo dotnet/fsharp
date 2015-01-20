@@ -855,16 +855,12 @@ type X() =
         this.TestSquiggle true [ "#if"; "#endif" ] "if" "#if directive should be immediately followed by an identifier"
 
     [<Test>]
-    member public this.``Squiggles.HashIfWrongExpr``() =
-        this.TestSquiggle true [ "#if !IDENT"; "#endif" ] "if" "#if directive should be immediately followed by an identifier"
-
-    [<Test>]
     member public this.``Squiggles.HashIfWithMultilineComment``() =
         this.TestSquiggle true [ "#if IDENT (* aaa *)"; "#endif" ] "(* aaa" "Expected single line comment or end of line"
 
     [<Test>]
     member public this.``Squiggles.HashIfWithUnexpected``() =
-        this.TestSquiggle true [ "#if IDENT whatever"; "#endif" ] "whatever" "Expected single line comment or end of line"
+        this.TestSquiggle true [ "#if IDENT whatever"; "#endif" ] "whatever" "Incomplete preprocessor expression"
 
      // FEATURE: Touching a depended-upon file will cause a intellisense to update in the currently edited file.
     [<Test>]

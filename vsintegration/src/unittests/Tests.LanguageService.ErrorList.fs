@@ -580,14 +580,6 @@ but here has type
         VerifyErrorListContainedExpectedStr("nonexistent",project)
 
     [<Test>]
-    member public this.``ErrorReporting.WrongPreprocessorIf``() =  
-        let fileContent = """
-            #light
-            #if !!!!COMPILED
-            #endif"""
-        this.VerifyErrorListContainedExpectedString(fileContent,"#if")
-
-    [<Test>]
     member public this.``BackgroundComplier``() = 
         this.VerifyErrorListCountAtOpenProject(
             fileContents = """

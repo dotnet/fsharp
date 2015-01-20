@@ -247,6 +247,16 @@
     <Compile Include="..\..\ilx\cu_erase.fs">
       <Link>ILXErase\cu_erase.fs</Link>
     </Compile>
+    <FsLex Include="..\pplex.fsl">
+      <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>ParserAndUntypedAST\pplex.fsl</Link>
+    </FsLex>
+    <FsYacc Include="..\pppars.fsy">
+      <Module>Microsoft.FSharp.Compiler.PPParser</Module>
+      <Open>Microsoft.FSharp.Compiler</Open>
+      <OtherFlags>--internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>ParserAndUntypedAST\pppars.fsy</Link>
+    </FsYacc>
     <FsLex Include="..\lex.fsl">
       <OtherFlags>--lexlib Internal.Utilities.Text.Lexing</OtherFlags>
       <Link>ParserAndUntypedAST\lex.fsl</Link>
@@ -272,6 +282,9 @@
     <Compile Include="..\ast.fs">
       <Link>ParserAndUntypedAST\ast.fs</Link>
     </Compile>
+    <Compile Include="pppars.fs">
+      <Link>ParserAndUntypedAST\pppars.fs</Link>
+    </Compile>
     <Compile Include="pars.fs">
       <Link>ParserAndUntypedAST\pars.fs</Link>
     </Compile>
@@ -280,6 +293,9 @@
     </Compile>
     <Compile Include="..\lexhelp.fs">
       <Link>ParserAndUntypedAST\lexhelp.fs</Link>
+    </Compile>
+    <Compile Include="pplex.fs">
+      <Link>ParserAndUntypedAST\pplex.fs</Link>
     </Compile>
     <Compile Include="lex.fs">
       <Link>ParserAndUntypedAST\lex.fs</Link>
