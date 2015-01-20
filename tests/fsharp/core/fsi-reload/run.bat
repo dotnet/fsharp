@@ -17,11 +17,11 @@ call %~d0%~p0..\..\..\config.bat
   "%FSI%" %fsi_flags%  --maxerrors:1 load2.fsx
   if NOT EXIST test.ok goto SetError
 
-  REM Check we can alo compile, for sanity's sake
+  REM Check we can also compile, for sanity's sake
   "%FSC%" load1.fsx
   @if ERRORLEVEL 1 goto Error
 
-  REM Check we can alo compile, for sanity's sake
+  REM Check we can also compile, for sanity's sake
   "%FSC%" load2.fsx
   @if ERRORLEVEL 1 goto Error
 
