@@ -9,6 +9,23 @@ call %~d0%~p0..\..\..\config.bat
   "%FSI%" %fsi_flags%  --maxerrors:1 < test1.ml
   if NOT EXIST test.ok goto SetError
 
+  if exist test.ok (del /f /q test.ok)
+  "%FSI%" %fsi_flags%  --maxerrors:1 load1.fsx
+  if NOT EXIST test.ok goto SetError
+
+  if exist test.ok (del /f /q test.ok)
+  "%FSI%" %fsi_flags%  --maxerrors:1 load2.fsx
+  if NOT EXIST test.ok goto SetError
+
+  REM Check we can alo compile, for sanity's sake
+  "%FSC%" load1.fsx
+  @if ERRORLEVEL 1 goto Error
+
+  REM Check we can alo compile, for sanity's sake
+  "%FSC%" load2.fsx
+  @if ERRORLEVEL 1 goto Error
+
+
 :Ok
 echo Ran fsharp %~f0 ok.
 endlocal

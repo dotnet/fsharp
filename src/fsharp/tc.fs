@@ -607,12 +607,20 @@ let BuildRootModuleExpr enclosingNamespacePath cpath mexpr =
         ||> List.foldBack (fun id (cpath, mexpr) -> (parentCompPath cpath, wrapModuleOrNamespaceExprInNamespace id (parentCompPath cpath) mexpr))
         |> snd
 
-let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env = 
+let ImplicitlyOpenOwnNamespace tcSink g amap scopem (enclosingNamespacePath: Ident list) env = 
     if isNil enclosingNamespacePath then 
         env
     else
+        // Skip "FSI_0002" prefixes when determining the path to open implicitly
+        let enclosingNamespacePathToOpen = 
+            match enclosingNamespacePath with 
+            | p::rest when  p.idText.StartsWith(FsiDynamicModulePrefix,System.StringComparison.Ordinal) && 
+                            p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit &&
+                            rest.Length > 0 -> rest
+            | rest -> rest
+
         let ad = env.eAccessRights
-        match ResolveLongIndentAsModuleOrNamespace amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePath with 
+        match ResolveLongIndentAsModuleOrNamespace amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
         | Result modrefs -> OpenModulesOrNamespaces tcSink g amap scopem false env (List.map p23 modrefs)
         | Exception _ ->  env
 
@@ -913,8 +921,8 @@ let ComputeLogicalName (id:Ident) memberFlags =
         | (".ctor" | ".cctor") as r ->  errorR(Error(FSComp.SR.tcInvalidMemberNameCtor(),id.idRange)); r
         | r -> r
     | MemberKind.PropertyGetSet ->  error(InternalError(FSComp.SR.tcMemberKindPropertyGetSetNotExpected(),id.idRange))
-    | MemberKind.PropertyGet ->  "get_"^id.idText
-    | MemberKind.PropertySet ->  "set_"^id.idText 
+    | MemberKind.PropertyGet ->  "get_" + id.idText
+    | MemberKind.PropertySet ->  "set_" + id.idText 
 
 /// ValMemberInfoTransient(memberInfo,logicalName,compiledName)
 type ValMemberInfoTransient = ValMemberInfoTransient of ValMemberInfo * string * string 
@@ -945,7 +953,7 @@ let MakeMemberDataAndMangledNameForMemberVal(g,tcref,isExtrinsic,attrs,optImplSl
     let compiledName = 
         if isExtrinsic then 
              let tname = tcref.LogicalName
-             let text = tname^"."^logicalName
+             let text = tname + "." + logicalName
              let text = if memberFlags.MemberKind <> MemberKind.Constructor && memberFlags.MemberKind <> MemberKind.ClassConstructor && not memberFlags.IsInstance then text^".Static" else text
              let text = if memberFlags.IsOverrideOrExplicitImpl then text^".Override" else text
              text
@@ -4040,8 +4048,8 @@ and TcValSpec cenv env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv 
                          thisTy --> (delTy --> cenv.g.unit_ty)
                        else 
                          (delTy --> cenv.g.unit_ty)
-                    yield reallyGenerateOneMember(ident("add_"^id.idText,id.idRange),valSynInfo,ty,memberFlags)
-                    yield reallyGenerateOneMember(ident("remove_"^id.idText,id.idRange),valSynInfo,ty,memberFlags) ]
+                    yield reallyGenerateOneMember(ident("add_" + id.idText,id.idRange),valSynInfo,ty,memberFlags)
+                    yield reallyGenerateOneMember(ident("remove_" + id.idText,id.idRange),valSynInfo,ty,memberFlags) ]
                 
               
             
@@ -4628,7 +4636,7 @@ and TcSimplePats cenv optArgsOK  checkCxs ty env (tpenv,names,takenNames:Set<_>)
         // This is a little awkward since it would be nice if this was
         // uniform with the process where we give names to other (more complex)
         // patterns used in argument position, e.g. "let f (D(x)) = ..."
-        let id = ident("unitVar"^string takenNames.Count,m)
+        let id = ident("unitVar" + string takenNames.Count,m)
         UnifyTypes cenv env m ty cenv.g.unit_ty
         let _,names,takenNames = TcPatBindingName cenv env id ty false None None (ValInline.Optional,permitInferTypars,noArgOrRetAttribs,false,None,true) (names,takenNames)
         [id.idText],(tpenv,names,takenNames)
@@ -6248,7 +6256,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
 
     | SynConst.UserNum (s,suffix) -> 
         let expr = 
-            let modName = ("NumericLiteral"^suffix)
+            let modName = ("NumericLiteral" + suffix)
             let ad = env.eAccessRights
             match ResolveLongIndentAsModuleOrNamespace cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName,m)] with 
             | Result []
@@ -7973,7 +7981,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                     // This is where the constructor expects arguments but is not applied to arguments, hence build a lambda 
                     nargtys, 
                     (fun () -> 
-                        let vs,args = argtys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg"^string i) ty) |> List.unzip
+                        let vs,args = argtys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
                         let constrApp = mkConstrApp mItem args
                         let lam = mkMultiLambda mItem vs (constrApp, tyOfExpr cenv.g constrApp)
                         lam)
@@ -8113,7 +8121,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
         let argTys = argTypars |> List.map mkTyparTy 
         let retTy = mkTyparTy retTypar
 
-        let vs,ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg"^string i) ty) |> List.unzip
+        let vs,ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
 
         let memberFlags = StaticMemberFlags MemberKind.Member
         let logicalCompiledName = ComputeLogicalName id memberFlags
@@ -13203,7 +13211,7 @@ module TcExceptionDeclarations = begin
         let args = match args with (UnionCaseFields args) -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(),m))
         let ad = env.eAccessRights
         
-        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent tpenv ("Data"^string i) fdef) args
+        let args' = List.mapi (fun i fdef -> TcRecdUnionAndEnumDeclarations.TcAnonFieldDecl cenv env parent tpenv ("Data" + string i) fdef) args
         TcRecdUnionAndEnumDeclarations.ValidateFieldNames(args, args')
         if not (String.isUpper id.idText) then errorR(NotUpperCaseConstructor(m))
         let vis,cpath = ComputeAccessAndCompPath env None m vis parent
@@ -15004,12 +15012,14 @@ let rec TcSignatureElement cenv parent endm (env: TcEnv) e : Eventually<TcEnv> =
                  CheckNamespaceModuleOrTypeName cenv.g id
 
             let enclosingNamespacePath = if isModule then fst (List.frontAndBack longId) else longId
+
             let defs = 
                 if isModule then 
                     [SynModuleSigDecl.NestedModule(ComponentInfo(attribs,[], [],[snd(List.frontAndBack longId)],xml,false,vis,m),defs,m)] 
                 else 
                     defs
             let envinner = LocateEnv cenv.topCcu env enclosingNamespacePath
+
             let envinner = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envinner
             
             let! envAtEnd = TcSignatureElements cenv ParentNone m.EndRange envinner xml defs
@@ -15223,7 +15233,7 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
 
       | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId,isModule,defs,xml,attribs,vis,m)) ->
 
-          if !progress then dprintn ("Typecheck implementation "^textOfLid longId)
+          if !progress then dprintn ("Typecheck implementation " + textOfLid longId)
           let endm = m.EndRange
 
           do for id in longId do 
