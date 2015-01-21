@@ -590,6 +590,7 @@ type DisplayEnv =
       suppressNestedTypes: bool;
       maxMembers : int option;
       showObsoleteMembers: bool; 
+      showHiddenMembers: bool; 
       showTyparBinding: bool;
       showImperativeTyparAnnotations: bool;
       suppressInlineKeyword:bool;

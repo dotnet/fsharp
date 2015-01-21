@@ -2650,14 +2650,16 @@ module AttributeChecking =
          | _ -> false)
 
     /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
+    let CheckFSharpAttributesForObsolete g attribs = 
+        nonNil attribs && (HasFSharpAttribute g g.attrib_SystemObsolete attribs)
+
+    /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
     /// Also check the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
     /// items to be suppressed from intellisense.
     let CheckFSharpAttributesForUnseen g attribs _m = 
-        nonNil attribs && 
-        (let isObsolete = isSome (TryFindFSharpAttribute g g.attrib_SystemObsolete attribs) 
-         let isHidden = CheckFSharpAttributesForHidden g attribs
-         isObsolete || isHidden
-        )
+        nonNil attribs &&         
+        (CheckFSharpAttributesForObsolete g attribs ||
+         CheckFSharpAttributesForHidden g attribs)
       
 #if EXTENSIONTYPING
     /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.

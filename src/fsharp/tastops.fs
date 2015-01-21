@@ -2354,6 +2354,7 @@ type DisplayEnv =
       suppressNestedTypes: bool;
       maxMembers : int option;
       showObsoleteMembers: bool; 
+      showHiddenMembers: bool; 
       showTyparBinding: bool; 
       showImperativeTyparAnnotations: bool;
       suppressInlineKeyword: bool;
@@ -2384,7 +2385,8 @@ type DisplayEnv =
         shortTypeNames=false;
         suppressNestedTypes=false;
         maxMembers=None;
-        showObsoleteMembers=true;
+        showObsoleteMembers=false;
+        showHiddenMembers=false;
         showTyparBinding = false;
         showImperativeTyparAnnotations=false;
         suppressInlineKeyword=false;
