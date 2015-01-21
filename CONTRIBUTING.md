@@ -27,6 +27,36 @@ We initially solicit contributions for
 
 New features are welcome, but be aware that Visual F# is a high-quality programming language with high-quality tools, and we wish to keep it that way. Before embarking on an extensive feature implementation, make a proposal in a GitHub issue or on the [F# Language UserVoice](https://fslang.uservoice.com/) so the community can review and comment on it. 
 
+### Issues
+
+When submitting issues, please use the following guidelines
+
+- Suggestions for the F# Language and Core library should be added and reviewed at the [F# Language User Voice](https://fslang.uservoice.com/).
+
+- Suggestions for the Visual F# Tools should be added and reviewed at the [Visual Studio F# Tools  User Voice](https://visualstudio.uservoice.com/forums/121579-visual-studio/category/30935-languages-f-tools).
+
+- New Bug Reports should always give accurate, clear steps for reproducing the bug, and all relevant details about versions, platform, etc.  We suggest the following template:
+
+    Title: <a short, clear title>
+    
+    Description: <a description of the problem>
+    
+    Repro Steps: <step by step description>
+    
+    Expected: <what is expected>
+    
+    Actual: <what you really get>
+    
+    Severity: a description on how bad it is and why - is it blocking?
+    
+    Version: Language, compiler, library, platform version
+    
+    Link: Give a link to a ZIP, log files or other files if needed
+    
+    Likely Cause: Link to the place in the code where things are likely going wrong, if possible
+    
+    Workaround: List any known workarounds
+
 ###CLA
 
 Contributors are required to sign a [Contribution License Agreement](https://cla.msopentech.com/) (CLA) before any pull requests will be considered. After submitting a request via the provided form, electronically sign the CLA when you receive the email containing the link to the document. This only needs to be done once for each Microsoft OSS project you contribute to.
@@ -65,7 +95,6 @@ Bug fix PRs have the following minimum requirements
 - There must be a separate tracking bug entry in the public GitHub issues. A link should be given in the PR. PRs without a matching bug link will be closed with a polite request to please add it.
 - The code changes must be reasonably minimal and as low-churn, non-intrusive as possible. Cleanup should be done in separate PRs where possible (see above), and fixes should be as small as possible.
 - Thorough test cases must be included in the PR (unless tests already exist for a failing case). PRs without matching tests will be closed with a polite request to please add the tests.  However, if you need help adding tests, please note this in the description of the change and people will guide you through where to add the tests.
-
 
 ###Language Evolution
 
