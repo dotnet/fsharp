@@ -79,6 +79,9 @@ src/fsharp/FSharp.LanguageService.Compiler/pppars.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fsi
 tests/fsharp/typecheck/sigs/*.dll
 tests/fsharp/typecheck/sigs/*.exe
+tests/fsharp/typeProviders/builtin/SqlDataConnection/DataDirectory/
+tests/fsharp/typeProviders/builtin/SqlDataConnection/ExampleResolutionFolder/
+tests/fsharp/typeProviders/builtin/SqlEntityConnection/DataDirectory/
 vsintegration/src/unittests/Unittests.fsi
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.pdb
