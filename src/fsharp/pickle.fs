@@ -1438,8 +1438,7 @@ let p_measure_intpower unt n st =
 // Pickle a rational power of a unit-of-measure variable or constructor
 let rec p_measure_power unt q st =
   if q = ZeroRational then p_measure_one st
-  else
-  if GetDenominator q = 1 
+  elif GetDenominator q = 1 
   then p_measure_intpower unt (GetNumerator q) st 
   else p_byte 5 st; p_measure_varcon unt st; p_rational q st
 
@@ -1449,11 +1448,11 @@ let rec p_measure_power unt q st =
 let rec p_normalized_measure unt st =
      let unt = stripUnitEqnsAux false unt 
      match unt with 
-     | MeasureCon tcref   -> p_measurecon tcref st
+     | MeasureCon tcref   -> p_measure_con tcref st
      | MeasureInv x       -> p_byte 1 st; p_normalized_measure x st
      | MeasureProd(x1,x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
-     | MeasureVar v       -> p_measurevar v st
-     | MeasureOne         -> p_measure_one
+     | MeasureVar v       -> p_measure_var v st
+     | MeasureOne         -> p_measure_one st
      | MeasureRationalPower(x,q) -> p_measure_power x q st
 
 // By normalizing the unit-of-measure and treating integer powers as a special case, 
