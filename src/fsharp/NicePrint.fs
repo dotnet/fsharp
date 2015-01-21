@@ -1505,6 +1505,7 @@ module private TastDefinitionPrinting =
                                       not (isInterfaceTy denv.g oty)
                                   | [] -> true)
               |> List.filter (fun v -> denv.showObsoleteMembers || not (HasFSharpAttribute denv.g denv.g.attrib_SystemObsolete v.Attribs))
+              |> List.filter (fun v -> not (Infos.AttributeChecking.CheckFSharpAttributesForHidden denv.g v.Attribs))
           // sort 
           let sortKey (v:ValRef) = (not v.IsConstructor,    // constructors before others 
                                     v.Id.idText,            // sort by name 
