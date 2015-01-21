@@ -53,7 +53,7 @@ When submitting issues, please use the following guidelines
     
     Link: Give a link to a ZIP, log files or other files if needed
     
-    Likely Cause: Link to the place in the code where things are likely goinng wrong, if possible
+    Likely Cause: Link to the place in the code where things are likely going wrong, if possible
     
     Workaround: List any known workarounds
     
