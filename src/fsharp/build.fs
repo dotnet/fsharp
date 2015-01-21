@@ -5027,17 +5027,26 @@ let TypecheckOneInputEventually
         
                 // Only add it to the environment if it didn't have a signature 
                 let m = qualNameOfFile.Range
+
+                // Add the implementation as to the implementation env
                 let tcImplEnv = Tc.AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
+
+                // Add the implementation as to the signature env (unless it had an explicit signature)
                 let tcSigEnv = 
                     if hadSig then tcState.tcsTcSigEnv 
                     else Tc.AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
                 
-                // Open the prefixPath for fsi.exe 
+                // Open the prefixPath for fsi.exe (tcImplEnv)
                 let tcImplEnv = 
                     match prefixPathOpt with 
-                    | None -> tcImplEnv 
-                    | Some prefixPath -> 
-                        TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
+                    | Some prefixPath -> TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
+                    | _ -> tcImplEnv 
+
+                // Open the prefixPath for fsi.exe (tcSigEnv)
+                let tcSigEnv = 
+                    match prefixPathOpt with 
+                    | Some prefixPath when not hadSig -> TcOpenDecl tcSink tcGlobals amap m m tcSigEnv prefixPath
+                    | _ -> tcSigEnv 
 
                 let allImplementedSigModulTyp = combineModuleOrNamespaceTypeList [] m [implFileSigType; allImplementedSigModulTyp]
 
@@ -5050,7 +5059,7 @@ let TypecheckOneInputEventually
                 if verbose then  dprintf "done TypecheckOneInputEventually...\n"
 
                 let topSigsAndImpls = RootSigsAndImpls(rootSigs,rootImpls,allSigModulTyp,allImplementedSigModulTyp)
-                let res = (topAttrs,[implFile], tcEnvAtEnd, tcSigEnv, tcImplEnv,topSigsAndImpls,ccuType)
+                let res = (topAttrs,[implFile], tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType)
                 return res }
      
       return (tcEnvAtEnd,topAttrs,mimpls),
