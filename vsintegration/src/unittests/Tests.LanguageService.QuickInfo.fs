@@ -185,6 +185,25 @@ type QuickInfoTests() =
             atStart = true,
             f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsFalse(text.Contains "member _Print"))
             )
+
+    [<Test>]
+    member public this.``QuickInfo.ObsoleteMember``() =
+        // Tooltips showed obsolete members - #50
+        let source = """
+            type TypeU = { Element : string }
+                with
+                    [<System.ObsoleteAttribute("This is replaced with Print2")>]
+                    member x.Print1 = x.Element.ToString() 
+                    member x.Print2 = x.Element.ToString() 
+
+            let u = { Element = "abc" }
+            """
+        this.CheckTooltip(
+            code = source,
+            marker = "ypeU =",
+            atStart = true,
+            f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsFalse(text.Contains "member Print1"))
+            )
     
     [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
