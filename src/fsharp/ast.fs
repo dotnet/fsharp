@@ -51,7 +51,7 @@ type XmlDocCollector() =
         lazy (savedLines.ToArray() |> Array.sortWith (fun (_,p1) (_,p2) -> posCompare p1 p2))
 
     let check() = 
-        assert (not savedLinesAsArray.IsValueCreated && "can't add more XmlDoc elements to XmlDocCOllector after extracting first XmlDoc from the overall results" <> "")
+        assert (not savedLinesAsArray.IsValueCreated && "can't add more XmlDoc elements to XmlDocCollector after extracting first XmlDoc from the overall results" <> "")
 
     member x.AddGrabPoint(pos) = 
         check()
