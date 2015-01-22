@@ -26,7 +26,7 @@ module internal XmlDocumentation =
                     "<root>" + xml + "</root>"
             else xml
 
-    /// Provide Xml Documentatation             
+    /// Provide Xml Documentation             
     type Provider(xmlIndexService:IVsXMLMemberIndexService) = 
         /// Index of assembly name to xml member index.
         let mutable xmlCache = new AgedLookup<string,IVsXMLMemberIndex>(10,areSame=(fun (x,y) -> x = y))

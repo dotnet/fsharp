@@ -2660,22 +2660,29 @@ module AttributeChecking =
         let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
         isSome (TryDecodeILAttribute g tref (Some(tref.Scope)) cattrs)
 
+    /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
+    /// items to be suppressed from intellisense.
+    let CheckFSharpAttributesForHidden g attribs = 
+        nonNil attribs &&         
+        (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
+         | Some(Attrib(_,_,[AttribStringArg _; AttribInt32Arg messageNumber],
+                     ExtractAttribNamedArg "IsHidden" (AttribBoolArg v),_,_,_)) -> 
+             // Message number 62 is for "ML Compatibility". Items labelled with this are visible in intellisense
+             // when mlCompatibility is set.
+             v && not (messageNumber = 62 && g.mlCompatibility)
+         | _ -> false)
+
+    /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
+    let CheckFSharpAttributesForObsolete g attribs = 
+        nonNil attribs && (HasFSharpAttribute g g.attrib_SystemObsolete attribs)
+
     /// Indicate if a list of F# attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
     /// Also check the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
     /// items to be suppressed from intellisense.
     let CheckFSharpAttributesForUnseen g attribs _m = 
-        nonNil attribs && 
-        (let isObsolete = isSome (TryFindFSharpAttribute g g.attrib_SystemObsolete attribs) 
-         let isHidden = 
-             (match TryFindFSharpAttribute g g.attrib_CompilerMessageAttribute attribs with
-              | Some(Attrib(_,_,[AttribStringArg _; AttribInt32Arg messageNumber],
-                            ExtractAttribNamedArg "IsHidden" (AttribBoolArg v),_,_,_)) -> 
-                  // Message number 62 is for "ML Compatibility". Items labelled with this are visible in intellisense
-                  // when mlCompatibility is set.
-                  v && not (messageNumber = 62 && g.mlCompatibility)
-              | _ -> false)
-         isObsolete || isHidden
-        )
+        nonNil attribs &&         
+        (CheckFSharpAttributesForObsolete g attribs ||
+         CheckFSharpAttributesForHidden g attribs)
       
 #if EXTENSIONTYPING
     /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
