@@ -541,6 +541,8 @@ val ListMeasureConOccsWithNonZeroExponents : TcGlobals -> bool -> MeasureExpr ->
 val ProdMeasures : MeasureExpr list -> MeasureExpr
 val MeasureVarExponent : Typar -> MeasureExpr -> Rational
 val MeasureConExponent : TcGlobals -> bool -> TyconRef -> MeasureExpr -> Rational
+val normalizeMeasure : TcGlobals -> MeasureExpr -> MeasureExpr
+
 
 //-------------------------------------------------------------------------
 // Members 
