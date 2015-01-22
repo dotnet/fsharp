@@ -1635,10 +1635,25 @@ module internal VsActual =
     open Microsoft.VisualStudio.Text
 
     let vsInstallDir =
-        let key = @"SOFTWARE\Microsoft\VisualStudio\14.0"
-        let hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32)
-        let rkey = hklm.OpenSubKey(key)
-        rkey.GetValue("InstallDir") :?> string
+        let findVSInstallDirInRegistry version =        
+            let key = sprintf @"SOFTWARE\Microsoft\VisualStudio\%s" version
+            let hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32)
+            let rkey = hklm.OpenSubKey(key)
+            rkey.GetValue("InstallDir") :?> string
+
+        let isGood path = 
+            String.IsNullOrEmpty path |> not &&
+              System.IO.Directory.Exists path
+
+        let v1 = findVSInstallDirInRegistry "14.0"
+        if isGood v1 then v1 else
+        let v2 = findVSInstallDirInRegistry "12.0"
+        if isGood v2 then v2 else
+        let v3 = findVSInstallDirInRegistry "11.0"
+        if isGood v3 then v3 else
+        let v4 = findVSInstallDirInRegistry "10.0"
+        if isGood v4 then v4 else
+        failwith "could not detect Visual Studio installation path in registry."
 
     let CreateEditorCatalog() =
         let root = vsInstallDir + @"\CommonExtensions\Microsoft\Editor"
