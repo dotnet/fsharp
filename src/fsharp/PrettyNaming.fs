@@ -387,7 +387,7 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
 
     let MangledGlobalName = "`global`"
     
-    let IllegalCharactersInTypeAndNamespaceNames = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`'  |]
+    let IllegalCharactersInTypeAndNamespaceNames = [| '.'; ','; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`'  |]
 
     let IsActivePatternName (nm:string) =
         (nm.IndexOf '|' = 0) &&
