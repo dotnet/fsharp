@@ -1240,8 +1240,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if minfo.NumArgs.Length > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, _, ty)) -> 
-                    isParamArrayArg || isOutArg || optArgInfo.IsOptional || isByrefTy cenv.g ty)) then 
+                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, _, reflArgInfo, ty)) -> 
+                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || isByrefTy cenv.g ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
         for pinfo in immediateProps do

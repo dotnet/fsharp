@@ -66,7 +66,7 @@ Core06		fsharp\core\queriesOverIQueryable
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToEntities
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToSql
 Core06		fsharp\core\queriesOverOData
-Core06		fsharp\core\quotes
+Core06,CoreQuotes		fsharp\core\quotes
 Core06		fsharp\core\quotesDebugInfo
 Core06		fsharp\core\quotesInMultipleModules
 Core07		fsharp\core\reflect

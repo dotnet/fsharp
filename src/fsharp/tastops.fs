@@ -2540,11 +2540,14 @@ let (|AttribInt16Arg|_|) = function AttribExpr(_,Expr.Const (Const.Int16(n),_,_)
 let (|AttribBoolArg|_|) = function AttribExpr(_,Expr.Const (Const.Bool(n),_,_)) -> Some(n) | _ -> None
 let (|AttribStringArg|_|) = function AttribExpr(_,Expr.Const (Const.String(n),_,_)) -> Some(n) | _ -> None
 
-let TryFindFSharpBoolAttribute g nm attrs = 
+let TryFindFSharpBoolAttributeWithDefault dflt g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
-    | Some(Attrib(_,_,[ ],_,_,_,_)) -> Some(true)
+    | Some(Attrib(_,_,[ ],_,_,_,_)) -> Some(dflt)
     | Some(Attrib(_,_,[ AttribBoolArg(b) ],_,_,_,_)) -> Some(b)
     | _ -> None
+
+let TryFindFSharpBoolAttribute g nm attrs = TryFindFSharpBoolAttributeWithDefault true g nm attrs
+let TryFindFSharpBoolAttributeAssumeFalse g nm attrs = TryFindFSharpBoolAttributeWithDefault false g nm attrs
 
 let TryFindFSharpInt32Attribute g nm attrs = 
     match TryFindFSharpAttribute g nm attrs with
@@ -5063,6 +5066,9 @@ let ComputeFieldName tycon f =
 // Helpers for building code contained in the initial environment
 //------------------------------------------------------------------------- 
 
+let isQuotedExprTy g ty =  match ty with AppTy g (tcref,_) -> tyconRefEq g tcref g.expr_tcr | _ -> false
+let destQuotedExprTy g ty =  match ty with AppTy g (_,[ty]) -> ty | _ -> failwith "destQuotedExprTy"
+
 let mkQuotedExprTy g ty =  TType_app(g.expr_tcr,[ty])
 let mkRawQuotedExprTy g =  TType_app(g.raw_expr_tcr,[])
 
@@ -6009,8 +6015,27 @@ let mkCallDeserializeQuotationFSharp40Plus g m e1 e2 e3 e4 e5 =
 let mkCallCastQuotation g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.cast_quotation_info, [[ty]], [ e1 ],  m)
 
-let mkCallLiftValue g m ty e1 = 
-    mkApps g (typedExprForIntrinsic g m g.lift_value_info , [[ty]], [ e1],  m)
+let mkCallLiftValueWithName g m ty nm e1 = 
+    let vref = ValRefForIntrinsic g.lift_value_with_name_info 
+    // Use "Expr.ValueWithName" if it exists in FSharp.Core
+    match vref.TryDeref with
+    | Some _ ->
+        mkApps g (typedExprForIntrinsic g m g.lift_value_with_name_info , [[ty]], [mkTupledNoTypes g m [e1; mkString g m nm]],  m)
+    | None ->
+        mkApps g (typedExprForIntrinsic g m g.lift_value_info , [[ty]], [e1],  m)
+
+let mkCallLiftValueWithDefn g m qty e1 = 
+    assert isQuotedExprTy g qty
+    let ty = destQuotedExprTy g qty
+    let vref = ValRefForIntrinsic g.lift_value_with_defn_info 
+    // Use "Expr.WithValue" if it exists in FSharp.Core
+    match vref.TryDeref with
+    | Some _ ->
+        let copyOfExpr = copyExpr g ValCopyFlag.CloneAll e1
+        let quoteOfCopyOfExpr = Expr.Quote(copyOfExpr, ref None, false, m, qty)
+        mkApps g (typedExprForIntrinsic g m g.lift_value_with_defn_info , [[ty]], [mkTupledNoTypes g m [e1; quoteOfCopyOfExpr]],  m)
+    | None ->
+        Expr.Quote(e1, ref None, false, m, qty)
 
 let mkCallCheckThis g m ty e1 = 
     mkApps g (typedExprForIntrinsic g m g.check_this_info, [[ty]], [e1],  m)

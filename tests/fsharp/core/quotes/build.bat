@@ -22,6 +22,13 @@ rem fsc.exe building
     "%PEVERIFY%" test.exe 
     @if ERRORLEVEL 1 goto Error
 
+   "%FSC%" %fsc_flags% -o:test-with-debug-data.exe --quotations-debug+ -r cslib.dll -g test.fsx
+    @if ERRORLEVEL 1 goto Error
+
+    "%PEVERIFY%" test-with-debug-data.exe 
+    @if ERRORLEVEL 1 goto Error
+
+
     "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -r cslib.dll -g test.fsx
     @if ERRORLEVEL 1 goto Error
 
