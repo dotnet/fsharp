@@ -1409,17 +1409,60 @@ let u_trait st =
     TTrait (a,b,c,d,e,ref f)
 
 #if INCLUDE_METADATA_WRITER
+
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 
-let rec p_measure_expr unt st =
-    let unt = stripUnitEqnsAux false unt 
-    match unt with 
-    | MeasureCon tcref   -> p_byte 0 st; p_tcref "measure" tcref st
-    | MeasureInv x       -> p_byte 1 st; p_measure_expr x st
-    | MeasureProd(x1,x2) -> p_byte 2 st; p_measure_expr x1 st; p_measure_expr x2 st
-    | MeasureVar(v)      -> p_byte 3 st; p_tpref v st
-    | MeasureOne         -> p_byte 4 st
-    | MeasureRationalPower(x,q) -> p_byte 5 st; p_measure_expr x st; p_rational q st
+let p_measure_con tcref st = p_byte 0 st; p_tcref "measure" tcref st
+let p_measure_var v st = p_byte 3 st; p_tpref v st
+let p_measure_one = p_byte 4
+
+// Pickle a unit-of-measure variable or constructor
+let p_measure_varcon unt st =
+     match unt with 
+     | MeasureCon tcref   -> p_measure_con tcref st
+     | MeasureVar v       -> p_measure_var v st
+     | _                  -> pfailwith st ("p_measure_varcon: expected measure variable or constructor")
+
+// Pickle a positive integer power of a unit-of-measure variable or constructor
+let rec p_measure_pospower unt n st =
+  if n = 1 
+  then p_measure_varcon unt st
+  else p_byte 2 st; p_measure_varcon unt st; p_measure_pospower unt (n-1) st
+
+// Pickle a non-zero integer power of a unit-of-measure variable or constructor
+let p_measure_intpower unt n st =
+  if n < 0
+  then p_byte 1 st; p_measure_pospower unt (-n) st
+  else p_measure_pospower unt n st
+
+// Pickle a rational power of a unit-of-measure variable or constructor
+let rec p_measure_power unt q st =
+  if q = ZeroRational then p_measure_one st
+  elif GetDenominator q = 1 
+  then p_measure_intpower unt (GetNumerator q) st 
+  else p_byte 5 st; p_measure_varcon unt st; p_rational q st
+
+// Pickle a normalized unit-of-measure expression
+// Normalized means of the form cv1 ^ q1 * ... * cvn ^ qn 
+// where q1, ..., qn are non-zero, and cv1, ..., cvn are distinct unit-of-measure variables or constructors
+let rec p_normalized_measure unt st =
+     let unt = stripUnitEqnsAux false unt 
+     match unt with 
+     | MeasureCon tcref   -> p_measure_con tcref st
+     | MeasureInv x       -> p_byte 1 st; p_normalized_measure x st
+     | MeasureProd(x1,x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
+     | MeasureVar v       -> p_measure_var v st
+     | MeasureOne         -> p_measure_one st
+     | MeasureRationalPower(x,q) -> p_measure_power x q st
+
+// By normalizing the unit-of-measure and treating integer powers as a special case, 
+// we ensure that the pickle format for rational powers of units (byte 5 followed by 
+// numerator and denominator) is used only when absolutely necessary, maintaining 
+// compatibility of formats with versions prior to F# 4.0.
+//
+// See https://github.com/Microsoft/visualfsharp/issues/69
+let p_measure_expr unt st = p_normalized_measure (normalizeMeasure st.oglobals unt) st
+
 #endif
 
 let u_rational st =
