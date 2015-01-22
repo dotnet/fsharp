@@ -1504,7 +1504,8 @@ module private TastDefinitionPrinting =
                                       // Don't print individual methods forming interface implementations - these are currently never exported 
                                       not (isInterfaceTy denv.g oty)
                                   | [] -> true)
-              |> List.filter (fun v -> denv.showObsoleteMembers || not (HasFSharpAttribute denv.g denv.g.attrib_SystemObsolete v.Attribs))
+              |> List.filter (fun v -> denv.showObsoleteMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForObsolete denv.g v.Attribs))
+              |> List.filter (fun v -> denv.showHiddenMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForHidden denv.g v.Attribs))
           // sort 
           let sortKey (v:ValRef) = (not v.IsConstructor,    // constructors before others 
                                     v.Id.idText,            // sort by name 
