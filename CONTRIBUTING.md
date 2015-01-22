@@ -78,7 +78,8 @@ All code submissions should be submitted with regression test cases, and will be
 In addition to the above, "Code Cleanup" pull requests have the following minimum requirements:
 
 - There must be no chance of a behavioural change, performance degradation or regression under any reasonable reading of the code in the context of the codebase as a whole.  
-- Code cleanup should generally be made separate to other checkins where possible, or the parts that are cleanup should be labelled as such.
+
+- Code cleanup which is unrelated to a bug fix or feature should generally be made separate to other checkins where possible. 
 - Code cleanup is much more likely to be accepted towards the start of a release cycle. 
 
 #### Mimimum Bar for Performance Improvement Pull Requests
@@ -86,6 +87,7 @@ In addition to the above, "Code Cleanup" pull requests have the following minimu
 Performance improvement checkins have the following minimum requirements (in addition to the above)
 
 - Performance tests and figures must be given, either in the PR or in the notes associated with the PR.  PRs without performance figures will be closed with a polite request to please add them.
+
 - The PR must show a reliable, substantive performance improvement that justifies the complexity introduced.  For the compiler, performance improvements of ~1% are of interest.  For the core library, it will depend on the routine in question. For the Visual F# tools, reactivity of the user interface will be of more interest than raw CPU performance.
 
 #### Mimimum Bar for Bug Fix Pull Requests
@@ -93,8 +95,22 @@ Performance improvement checkins have the following minimum requirements (in add
 Bug fix PRs have the following minimum requirements
 
 - There must be a separate tracking bug entry in the public GitHub issues. A link should be given in the PR. PRs without a matching bug link will be closed with a polite request to please add it.
-- The code changes must be reasonably minimal and as low-churn, non-intrusive as possible. Cleanup should be done in separate PRs where possible (see above), and fixes should be as small as possible.
+
+- The code changes must be reasonably minimal and as low-churn, non-intrusive as possible. Unrelated cleanup should be done in separate PRs (see above), and fixes should be as small as possible. Code cleanup that is part of making a clear and accurate fix is acceptable as part of a bug fix, but care should be taken that it doesn't obscure the fix itself. For example, renaming identifiers to be clearer in a way that would have avoided the original bug is acceptable, but care must still be taken that the actual fix is still apparent and reviewable in the overall diff for the fix.
+
 - Thorough test cases must be included in the PR (unless tests already exist for a failing case). PRs without matching tests will be closed with a polite request to please add the tests.  However, if you need help adding tests, please note this in the description of the change and people will guide you through where to add the tests.
+
+#### Mimimum Bar for Feature Pull Requests
+
+Feature PRs have the following minimum requirements:
+
+- For F# Language and Library features, include a link to the [F# Language User Voice](http://fslang.uservoice.com) 
+
+- For Visual F# Tools features, incldue a link to the [Visual F# Tools User Voice](https://visualstudio.uservoice.com/forums/121579-visual-studio/category/30935-languages-f-tools) entry for the feature.
+
+- For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/src/fsharp/FSharp.Core.Unittests).
+
+- For F# Language and Library features, you will be asked to submit a speclet for the feature to the [F# Language Design](https://github.com/fsharp/FSharpLangDesign/) GitHub repository of speclets.  In some cases you will only need to do this after your feature is accepted, but for more complex features you may be asked to do this during the review of the feature.  
 
 ###Language Evolution
 
