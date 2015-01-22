@@ -138,13 +138,21 @@ namespace Microsoft.FSharp.Core
     /// <summary>Adding this attribute to the let-binding for the definition of a top-level 
     /// value makes the quotation expression that implements the value available
     /// for use at runtime.</summary>
-    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Parameter ||| AttributeTargets.Method ||| AttributeTargets.Property ||| AttributeTargets.Constructor,AllowMultiple=false)>]  
     [<Sealed>]
     type ReflectedDefinitionAttribute =
         inherit System.Attribute
         /// <summary>Creates an instance of the attribute</summary>
         /// <returns>ReflectedDefinitionAttribute</returns>
         new : unit -> ReflectedDefinitionAttribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <param name="includeValue">Indicates whether to include the evaluated value of the definition as the outer node of the quotation</param>
+        /// <returns>ReflectedDefinitionAttribute</returns>
+        new : includeValue:bool -> ReflectedDefinitionAttribute
+
+        /// <summary>The value of the attribute, indicating whether to include the evaluated value of the definition as the outer node of the quotation</summary>
+        member IncludeValue: bool
 
     /// <summary>This attribute is used to indicate a generic container type satisfies the F# 'equality' 
     /// constraint only if a generic argument also satisfies this constraint. For example, adding 

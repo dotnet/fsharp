@@ -190,16 +190,28 @@ and
     | ForIntegerRangeLoopOp 
     | WhileLoopOp 
     // Arbitrary spliced values - not serialized
-    | ValueOp of obj * Type
+    | ValueOp of obj * Type * string option
+    | WithValueOp of obj * Type 
     | DefaultValueOp of Type
     
 and [<CompiledName("FSharpExpr")>]
     Expr(term:Tree,attribs:Expr list) =
     member x.Tree = term
     member x.CustomAttributes = attribs 
-    override x.Equals(obj:obj) =
-        match obj with 
-        | :? Expr as yt -> x.Tree = yt.Tree
+
+    override x.Equals(yobj) = 
+        match yobj with 
+        | :? Expr as y -> 
+            let rec eq t1 t2 = 
+                match t1, t2 with 
+                // We special-case ValueOp to ensure that ValueWithName = Value
+                | CombTerm(ValueOp(v1,ty1,_),[]),CombTerm(ValueOp(v2,ty2,_),[]) -> (v1 = v2) && (ty1 = ty2)
+                | CombTerm(c1, es1), CombTerm(c2,es2) -> c1 = c2 && es1.Length = es2.Length && (es1 = es2)
+                | VarTerm v1, VarTerm v2 -> (v1 = v2)
+                | LambdaTerm (v1,e1), LambdaTerm(v2,e2) -> (v1 = v2) && (e1 = e2)
+                | HoleTerm (ty1,n1), HoleTerm(ty2,n2) -> (ty1 = ty2) && (n1 = n2)
+                | _ -> false
+            eq x.Tree y.Tree
         | _ -> false
 
     override x.GetHashCode() = 
@@ -246,7 +258,9 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(UnionCaseTestOp(unionCase),args)   -> combL "UnionCaseTest" (exprs args@ [ucaseL unionCase])
         | CombTerm(NewTupleOp _,args)            -> combL "NewTuple" (exprs args)
         | CombTerm(TupleGetOp (_,i),[arg])         -> combL "TupleGet" ([expr arg] @ [objL i])
-        | CombTerm(ValueOp(v,_),[])               -> combL "Value" [objL v]
+        | CombTerm(ValueOp(v,_,Some nm),[])               -> combL "ValueWithName" [objL v; wordL nm]
+        | CombTerm(ValueOp(v,_,None),[])               -> combL "Value" [objL v]
+        | CombTerm(WithValueOp(v,_),[defn])               -> combL "WithValue" [objL v; expr defn]
         | CombTerm(InstanceMethodCallOp(minfo),obj::args) -> combL "Call"     [someL obj; minfoL minfo; listL (exprs args)]
         | CombTerm(StaticMethodCallOp(minfo),args)        -> combL "Call"     [noneL;     minfoL minfo; listL (exprs args)]
         | CombTerm(InstancePropGetOp(pinfo),(obj::args))  -> combL "PropertyGet"  [someL obj; pinfoL pinfo; listL (exprs args)]
@@ -412,10 +426,16 @@ module Patterns =
     let (|VarSet|_|    )    = function E(CombTerm(VarSetOp,[E(VarTerm(v)); e])) -> Some(v,e) | _ -> None
 
     [<CompiledName("ValuePattern")>]
-    let (|Value|_|)         = function E(CombTerm(ValueOp (v,ty),_)) -> Some(v,ty) | _ -> None
+    let (|Value|_|)         = function E(CombTerm(ValueOp (v,ty,_),_)) -> Some(v,ty) | _ -> None
 
     [<CompiledName("ValueObjPattern")>]
-    let (|ValueObj|_|)      = function E(CombTerm(ValueOp (v,_),_)) -> Some(v) | _ -> None
+    let (|ValueObj|_|)      = function E(CombTerm(ValueOp (v,_,_),_)) -> Some(v) | _ -> None
+
+    [<CompiledName("ValueWithNamePattern")>]
+    let (|ValueWithName|_|) = function E(CombTerm(ValueOp (v,ty,Some nm),_)) -> Some(v,ty,nm) | _ -> None
+
+    [<CompiledName("WithValuePattern")>]
+    let (|WithValue|_|) = function E(CombTerm(WithValueOp (v,ty),[e])) -> Some(v,ty,e) | _ -> None
 
     [<CompiledName("AddressOfPattern")>]
     let (|AddressOf|_|)       = function Comb1(AddressOfOp,e) -> Some(e) | _ -> None
@@ -535,7 +555,8 @@ module Patterns =
             | NewRecordOp ty,_         -> ty
             | NewUnionCaseOp unionCase,_   -> unionCase.DeclaringType
             | UnionCaseTestOp _,_ -> typeof<Boolean>
-            | ValueOp (_, ty),_  -> ty
+            | ValueOp (_, ty, _),_  -> ty
+            | WithValueOp (_, ty),_  -> ty
             | TupleGetOp (ty,i),_ -> FSharpType.GetTupleElements(ty).[i] 
             | NewTupleOp ty,_      -> ty
             | StaticPropGetOp prop,_    -> prop.PropertyType
@@ -637,11 +658,13 @@ module Patterns =
     let mkVar v       = E(VarTerm v )
     let mkQuote(a)    = E(CombTerm(QuoteOp,[(a:>Expr)] ))
           
-    let mkValue (v,ty) = mkFE0 (ValueOp(v,ty))
+    let mkValue (v,ty) = mkFE0 (ValueOp(v,ty,None))
+    let mkValueWithName (v,ty,nm) = mkFE0 (ValueOp(v,ty,Some nm))
+    let mkValueWithDefn (v,ty,defn) = mkFE1 (WithValueOp(v,ty)) defn
     let mkValueG (v:'T) = mkValue(box v, typeof<'T>)
     let mkLiftedValueOpG (v, ty: System.Type) = 
         let obj = if ty.IsEnum then System.Enum.ToObject(ty, box v) else box v
-        ValueOp(obj, ty)
+        ValueOp(obj, ty, None)
     let mkUnit       () = mkValue(null, typeof<unit>)
     let mkAddressOf     v = mkFE1 AddressOfOp v
     let mkSequential  (e1,e2) = mkFE2 SequentialOp (e1,e2) 
@@ -653,7 +676,7 @@ module Patterns =
     let mkTryFinally(e1,e2) = mkFE2 TryFinallyOp (e1,e2)
     
     let mkCoerce      (ty,x) = mkFE1 (CoerceOp ty) x
-    let mkNull        (ty)   = mkFE0 (ValueOp(null,ty))
+    let mkNull        (ty)   = mkFE0 (ValueOp(null,ty,None))
     
     let mkApplication v = checkAppliedLambda v; mkFE2 AppOp v 
 
@@ -1457,7 +1480,7 @@ module Patterns =
             | 37 -> u_tup2 u_NamedType u_string st |> (fun (a,b) tyargs -> let finfo = bindField(a,b,tyargs) in if finfo.IsStatic then StaticFieldGetOp(finfo) else InstanceFieldGetOp(finfo))
             | 38 -> u_void           st |> (fun () NoTyArgs -> LetRecCombOp)
             | 39 -> u_void           st |> (fun () NoTyArgs -> AppOp)
-            | 40 -> u_void           st |> (fun () (OneTyArg(ty)) -> ValueOp(null,ty))
+            | 40 -> u_void           st |> (fun () (OneTyArg(ty)) -> ValueOp(null,ty,None))
             | 41 -> u_void           st |> (fun () (OneTyArg(ty)) -> DefaultValueOp(ty))
             | 42 -> u_PropInfoData   st |> (fun (a,b,c,d) tyargs -> let pinfo = bindProp(a,b,c,d,tyargs) in if pinfoIsStatic pinfo then StaticPropSetOp(pinfo) else InstancePropSetOp(pinfo))
             | 43 -> u_tup2 u_NamedType u_string st |> (fun (a,b) tyargs -> let finfo = bindField(a,b,tyargs) in if finfo.IsStatic then StaticFieldSetOp(finfo) else InstanceFieldSetOp(finfo))
@@ -1927,6 +1950,24 @@ type Expr with
         checkNonNull "expressionType" expressionType
         mkValue(obj, expressionType)
 
+    static member ValueWithName (v:'T, name:string) = 
+        checkNonNull "name" name
+        mkValueWithName (box v, typeof<'T>, name)
+
+    static member ValueWithName(obj: obj, expressionType: Type, name:string) = 
+        checkNonNull "expressionType" expressionType
+        checkNonNull "name" name
+        mkValueWithName(obj, expressionType, name)
+
+    static member WithValue (v:'T, definition: Expr<'T>) = 
+        let raw = mkValueWithDefn(box v, typeof<'T>, definition)
+        new Expr<'T>(raw.Tree,raw.CustomAttributes)
+
+    static member WithValue(obj: obj, expressionType: Type, definition: Expr) = 
+        checkNonNull "expressionType" expressionType
+        mkValueWithDefn (obj, expressionType, definition)
+
+
     static member Var(v) = 
         mkVar(v)
 
@@ -1997,7 +2038,7 @@ module DerivedPatterns =
     [<CompiledName("UInt64Pattern")>]
     let (|UInt64|_|)        = function ValueObj(:? uint64 as v) -> Some(v) | _ -> None
     [<CompiledName("UnitPattern")>]
-    let (|Unit|_|)          = function Comb0(ValueOp(_,ty)) when ty = typeof<unit> -> Some() | _ -> None
+    let (|Unit|_|)          = function Comb0(ValueOp(_,ty,None)) when ty = typeof<unit> -> Some() | _ -> None
 
     /// (fun (x,y) -> z) is represented as 'fun p -> let x = p#0 let y = p#1' etc.
     /// This reverses this encoding.
@@ -2138,7 +2179,9 @@ module ExprShape =
             | TryFinallyOp,[e1;e2]     -> mkTryFinally(e1,e2)
             | TryWithOp,[e1;Lambda(v1,e2);Lambda(v2,e3)]     -> mkTryWith(e1,v1,e2,v2,e3)
             | QuoteOp,[e1]     -> mkQuote(e1)
-            | ValueOp(v,ty),[]  -> mkValue(v,ty)
+            | ValueOp(v,ty,None),[]  -> mkValue(v,ty)
+            | ValueOp(v,ty,Some nm),[]  -> mkValueWithName(v,ty,nm)
+            | WithValueOp(v,ty),[e]  -> mkValueWithDefn(v,ty,e)
             | _ -> raise <| System.InvalidOperationException (SR.GetString(SR.QillFormedAppOrLet))          
 
 

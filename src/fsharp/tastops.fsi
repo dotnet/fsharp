@@ -1098,6 +1098,8 @@ val destInt32 : Expr -> int32 option
 // Primitives associated with quotations
 //------------------------------------------------------------------------- 
  
+val isQuotedExprTy : TcGlobals -> TType -> bool
+val destQuotedExprTy : TcGlobals -> TType -> TType
 val mkQuotedExprTy : TcGlobals -> TType -> TType
 val mkRawQuotedExprTy : TcGlobals -> TType
 val mspec_Type_GetTypeFromHandle : ILGlobals ->  ILMethodSpec
@@ -1146,7 +1148,8 @@ val mkCallGenericHashWithComparerOuter       : TcGlobals -> range -> TType -> Ex
 val mkCallDeserializeQuotationFSharp20Plus  : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 val mkCallDeserializeQuotationFSharp40Plus : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 val mkCallCastQuotation      : TcGlobals -> range -> TType -> Expr -> Expr 
-val mkCallLiftValue          : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallLiftValueWithName          : TcGlobals -> range -> TType -> string -> Expr -> Expr
+val mkCallLiftValueWithDefn          : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallSeqCollect         : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr
 val mkCallSeqUsing           : TcGlobals -> range -> TType  -> TType -> Expr -> Expr -> Expr
 val mkCallSeqDelay           : TcGlobals -> range -> TType  -> Expr -> Expr
@@ -1200,6 +1203,7 @@ val HasFSharpAttributeOpt          : TcGlobals -> Env.BuiltinAttribInfo option -
 val TryFindFSharpAttribute         : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> Attrib option
 val TryFindFSharpAttributeOpt      : TcGlobals -> Env.BuiltinAttribInfo option -> Attribs -> Attrib option
 val TryFindFSharpBoolAttribute     : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> bool option
+val TryFindFSharpBoolAttributeAssumeFalse : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> bool option
 val TryFindFSharpStringAttribute   : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> string option
 val TryFindFSharpInt32Attribute    : TcGlobals -> Env.BuiltinAttribInfo -> Attribs -> int32 option
 

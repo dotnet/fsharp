@@ -1499,11 +1499,18 @@ type CalledArg =
       IsParamArray : bool
       OptArgInfo : OptionalArgInfo
       IsOutArg: bool
+      ReflArgInfo: ReflectedArgInfo
       NameOpt: string option
       CalledArgumentType : TType }
 
-let CalledArg(pos,isParamArray,optArgInfo,isOutArg,nameOpt,calledArgTy) =
-    { Position=pos; IsParamArray=isParamArray; OptArgInfo =optArgInfo; IsOutArg=isOutArg; NameOpt=nameOpt; CalledArgumentType = calledArgTy}
+let CalledArg(pos,isParamArray,optArgInfo,isOutArg,nameOpt,reflArgInfo,calledArgTy) =
+    { Position=pos
+      IsParamArray=isParamArray
+      OptArgInfo =optArgInfo
+      IsOutArg=isOutArg
+      ReflArgInfo=reflArgInfo
+      NameOpt=nameOpt
+      CalledArgumentType = calledArgTy }
 
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
@@ -1579,6 +1586,7 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
 
             if isDelegateTy g calledArgTy && isFunTy g callerArgTy then 
                 adjustDelegateTy calledArgTy
+
             elif isLinqExpressionTy g calledArgTy && isFunTy g callerArgTy then 
                 let origArgTy = calledArgTy
                 let calledArgTy = destLinqExpressionTy g calledArgTy
@@ -1587,6 +1595,10 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
                 else
                     // BUG 435170: called arg is Expr<'t> where 't is not delegate - such conversion is not legal -> return original type
                     origArgTy
+
+            elif calledArg.ReflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
+                destQuotedExprTy g calledArgTy
+
             else calledArgTy
 
         // Adjust the called argument type to take into account whether the caller's argument is M(?arg=Some(3)) or M(arg=1) 
@@ -1622,8 +1634,14 @@ type CalledMethArgSet<'T> =
 let MakeCalledArgs amap m (minfo:MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
-    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg,isOutArg,optArgInfo,nmOpt,typeOfCalledArg))  -> 
-      { Position=(i,j); IsParamArray=isParamArrayArg; OptArgInfo=optArgInfo; IsOutArg=isOutArg; NameOpt=nmOpt; CalledArgumentType=typeOfCalledArg })
+    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg,isOutArg,optArgInfo,nmOpt,reflArgInfo,typeOfCalledArg))  -> 
+      { Position=(i,j)
+        IsParamArray=isParamArrayArg
+        OptArgInfo=optArgInfo
+        IsOutArg=isOutArg
+        ReflArgInfo=reflArgInfo
+        NameOpt=nmOpt
+        CalledArgumentType=typeOfCalledArg })
 
 /// Represents the syntactic matching between a caller of a method and the called method.
 ///

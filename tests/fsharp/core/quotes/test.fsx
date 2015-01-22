@@ -64,6 +64,7 @@ type S =
     val mutable x : int
 #endif
 
+
 module TypedTest = begin 
 
     let x = <@ 1 @>
@@ -2412,6 +2413,234 @@ module QuotationOfResizeArrayIteration =
                  -> true
          |    _ -> false)
         
+
+
+module TestAutoQuoteAtStaticMethodCalls = 
+    open Microsoft.FSharp.Quotations
+
+    type C() = 
+        static let cleanup (s:string) = s.Replace(" ","").Replace("\n","").Replace("\r","")
+        static member Plot ([<ReflectedDefinition>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        static member PlotTwoArg ([<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (x,y) |> cleanup
+
+        static member PlotThreeArg (w:int, [<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (w,x,y) |> cleanup
+
+        static member PlotParams ([<ReflectedDefinition; System.ParamArray>] x: Expr<int>[]) = 
+            sprintf "%A" x |> cleanup
+
+        static member PlotEval ([<ReflectedDefinition(true)>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+
+    let shouldEqual  id x y = check id y x
+    let x = 1
+    let y = 1
+    let xb = true
+    let yb = true
+    let testItAll() = 
+        let z = 1
+        let zb = true
+
+        C.Plot (xb && yb || zb)  |> shouldEqual "testd109700" "IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))"
+
+        C.Plot (x + y * z) |> shouldEqual "testd109701" "Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])])"
+
+        C.PlotTwoArg (x + y * z, 108) |> shouldEqual "testd109703" "(Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        C.PlotThreeArg (107, x + y * z, 108)|> shouldEqual "testd109704" "(107,Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        C.PlotParams (1, 2) |> shouldEqual "testd109708" "[|Value(1);Value(2)|]"
+
+        C.PlotParams (x + y) |> shouldEqual "testd109709" "[|Call(None,op_Addition,[PropertyGet(None,x,[]),PropertyGet(None,y,[])])|]"
+
+        C.Plot (fun (x,y,z) -> xb && yb || zb) |> shouldEqual "testd10970F" "Lambda(tupledArg,Let(x,TupleGet(tupledArg,0),Let(y,TupleGet(tupledArg,1),Let(z,TupleGet(tupledArg,2),IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))))))"
+
+        C.Plot (fun x -> x) |> shouldEqual "testd109710" "Lambda(x,x)"
+
+        C.Plot (fun x -> x, x+1)  |> shouldEqual "testd109711" "Lambda(x,NewTuple(x,Call(None,op_Addition,[x,Value(1)])))"
+
+        C.PlotEval (xb && yb || zb) |> shouldEqual "testd109712" "WithValue(true,IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb)))"
+
+    testItAll()
+
+module TestAutoQuoteAtInstanceMethodCalls = 
+    open Microsoft.FSharp.Quotations
+    open System.Runtime.CompilerServices
+
+
+    type C() = 
+        let cleanup (s:string) = s.Replace(" ","").Replace("\n","").Replace("\r","")
+        member __.Plot ([<ReflectedDefinition>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        member __.PlotTwoArg ([<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (x,y) |> cleanup
+
+        member __.PlotThreeArg (w:int, [<ReflectedDefinition>] x: Expr<'T>, y : int) = 
+            sprintf "%A" (w,x,y) |> cleanup
+
+        member __.PlotParams ([<ReflectedDefinition; System.ParamArray>] x: Expr<int>[]) = 
+            sprintf "%A" x |> cleanup
+
+        member __.Item ([<ReflectedDefinition>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        member __.PlotEval ([<ReflectedDefinition(true)>] x: Expr<'T>) = 
+            sprintf "%A" x |> cleanup
+
+        override __.ToString() = "C"
+
+    [<Extension>]
+    module CSharpStyleExtensionMember = 
+        let cleanup (s:string) = s.Replace(" ","").Replace("\n","").Replace("\r","")
+        [<Extension>]
+        type CExtMem() = 
+            [<Extension>]
+            static member PlotCSharpStyleExtMem (this: C, [<ReflectedDefinition>] x: Expr<'T>) = 
+                sprintf "%A" x |> cleanup
+
+            // Adding 'ReflectedDefinition' to an argument that doesn't have type Expr<'T> is ignored (no error or warning is given at declaration or use)
+            [<Extension>]
+            static member PlotCSharpStyleExtMemNoExpr (this: C, [<ReflectedDefinition>] x: 'T) = 
+                sprintf "%A" x |> cleanup
+
+            // Adding 'ReflectedDefinition' to the 'this' argument of a C#-style extension member is ignored. 
+            //
+            //[<Extension>]
+            //static member PlotCSharpStyleExtMemWithReflectedThis ([<ReflectedDefinition>] this: Expr<C>, [<ReflectedDefinition>] x: Expr<'T>) = 
+            //    sprintf "%A" (this, x) |> cleanup
+            [<Extension>]
+            static member PlotCSharpStyleExtMemWithIgnoredReflectedThis ([<ReflectedDefinition>] this: C, [<ReflectedDefinition>] x: Expr<'T>) = 
+                sprintf "%A" (this, x) |> cleanup
+
+    open CSharpStyleExtensionMember
+    let shouldEqual  id x y = check id y x
+    let x = 1
+    let y = 1
+    let xb = true
+    let yb = true
+    let testItAll() = 
+        let z = 1
+        let zb = true
+        let c = C()
+
+        c.Plot (xb && yb || zb)  |> shouldEqual "testd109700" "IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))"
+
+        c.Plot (x + y * z) |> shouldEqual "testd109701" "Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])])"
+
+        c.[x + y * z] |> shouldEqual "testd109701" "Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])])"
+
+        c.PlotTwoArg (x + y * z, 108) |> shouldEqual "testd109703" "(Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        c.PlotThreeArg (107, x + y * z, 108)|> shouldEqual "testd109704" "(107,Call(None,op_Addition,[PropertyGet(None,x,[]),Call(None,op_Multiply,[PropertyGet(None,y,[]),ValueWithName(1,z)])]),108)"
+
+        c.PlotParams (1, 2) |> shouldEqual "testd109708" "[|Value(1);Value(2)|]"
+
+        c.PlotParams (x + y) |> shouldEqual "testd109709" "[|Call(None,op_Addition,[PropertyGet(None,x,[]),PropertyGet(None,y,[])])|]"
+
+        c.Plot (fun (x,y,z) -> xb && yb || zb) |> shouldEqual "testd10970F" "Lambda(tupledArg,Let(x,TupleGet(tupledArg,0),Let(y,TupleGet(tupledArg,1),Let(z,TupleGet(tupledArg,2),IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))))))"
+
+        c.Plot (fun x -> x) |> shouldEqual "testd109710" "Lambda(x,x)"
+
+        c.Plot (fun x -> x, x+1)  |> shouldEqual "testd109711" "Lambda(x,NewTuple(x,Call(None,op_Addition,[x,Value(1)])))"
+
+        c.PlotEval (xb && yb || zb) |> shouldEqual "testd109712" "WithValue(true,IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb)))"
+
+        c.PlotCSharpStyleExtMem (xb && yb || zb)  |> shouldEqual "testd109713" "IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb))"
+
+        c.PlotCSharpStyleExtMemNoExpr (xb && yb || zb)  |> shouldEqual "testdoqhwm" "true"
+
+        c.PlotCSharpStyleExtMemWithIgnoredReflectedThis (xb && yb || zb)  |> shouldEqual "testd109714" "(C,IfThenElse(IfThenElse(PropertyGet(None,xb,[]),PropertyGet(None,yb,[]),Value(false)),Value(true),ValueWithName(true,zb)))"
+
+    testItAll()
+
+module TestsForUsingReflectedDefinitionArgumentsAsFirstClassValues = 
+    open Microsoft.FSharp.Quotations
+    open System.Linq.Expressions
+    open System
+
+    type FirstClassTests() = 
+        static member PlotExpr ([<ReflectedDefinition>] x: Expr<'T>) = x.ToString()
+        static member PlotExprOverloadedByType ([<ReflectedDefinition>] x: Expr<int>) = x.ToString()
+        static member PlotExprOverloadedByType ([<ReflectedDefinition>] x: Expr<string>) = x.ToString()
+        static member PlotExprOverloadedByShape (x:int) = x.ToString()
+        static member PlotExprOverloadedByShape ([<ReflectedDefinition>] x: Expr<int>) = x.ToString()
+        static member PlotLinq (x: Expression<Func<int,'T>>) =  x.ToString()
+        static member PlotLinqOverloadedByType (x: Expression<Func<int,'T>>) =  x.ToString()
+        static member PlotLinqOverloadedByType (x: Expression<Func<string,'T>>) =  x.ToString()
+        static member PlotLinqOverloadedByShape (x: Func<int,'T>) =  x.ToString()
+        static member PlotLinqOverloadedByShape (x: Expression<Func<int,'T>>) =  x.ToString()
+
+    // Most of the following tests are just checking that overloads are resolved correctly
+    let runAll() = 
+
+        // Check we can define a function that calls the overloads
+        let callLinqWithoutAutoConv (ef: Expression<Func<int,int>>) = FirstClassTests.PlotLinq ef     
+        let callLinqWithAutoConv (f: int -> int) = FirstClassTests.PlotLinq (fun x -> f x)     // needs eta-expansion
+        let callLinqOverloadedByTypeWithoutAutoConvInt (ef: Expression<Func<int,int>>) = FirstClassTests.PlotLinqOverloadedByType ef     
+        let callLinqOverloadedByTypeWithoutAutoConvString (ef: Expression<Func<string,int>>) = FirstClassTests.PlotLinqOverloadedByType ef     
+        let callLinqOverloadedByTypeWithAutoConvInt (f: int -> int) = FirstClassTests.PlotLinqOverloadedByType (fun x -> f x)   
+        let callLinqOverloadedByTypeWithAutoConvString (f: string -> int) = FirstClassTests.PlotLinqOverloadedByType (fun x -> f x)   
+        let callLinqOverloadedByShapeWithoutAutoConv (ef: Expression<Func<int,int>>) = FirstClassTests.PlotLinqOverloadedByShape ef     
+        let callExprWithoutAutoConv (ef: Expr<int>) = FirstClassTests.PlotExpr <@ %ef @>
+        let callExprWithAutoConv (ef: int) = FirstClassTests.PlotExpr ef     
+        let callExprOverloadedWithoutAutoConvA (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByType <@ %ef @>
+        let callExprOverloadedWithoutAutoConvB (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByType ef
+        let callExprOverloadedWithAutoConv (ef: int) = FirstClassTests.PlotExprOverloadedByType ef     
+        let callExprOverloadedByShapeWithoutAutoConvA (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByShape <@ %ef @>
+        let callExprOverloadedByShapeWithoutAutoConvB (ef: Expr<int>) = FirstClassTests.PlotExprOverloadedByShape ef
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let callLinqOverloadedByShapeWithAutoConv (f: int -> int) = C.PlotLinqOverloadedByShape (fun x -> f x)    // overload not resolved
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let callExprOverloadedByShapeWithAutoConv (ef: int) = C.PlotExprOverloadedByShape ef      // overload not resolved
+
+        // Check type-checking for type-annotated first-class function values
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinq : (int -> int) -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinq : Expression<Func<int,int>> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByType : (int -> int) -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByType : (int -> string) -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByType : Expression<Func<int,int>> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByShape : Expression<Func<int,int>> -> string)    
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotLinqOverloadedByShape : Func<int,int> -> string)     // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExpr : Expr<int> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExpr : int -> string)           // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByType : Expr<int> -> string)     
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByType : int -> string)           // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByType : string -> string)           // auto-quotes implicit var - though not very useful
+        let _unusedFirstClassFunctionValue = (FirstClassTests.PlotExprOverloadedByShape : Expr<int> -> string)     
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: (C.PlotLinqOverloadedByShape : (int -> int) -> string)     // overload not resolved
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: (C.PlotExprOverloadedByShape : int -> string)           // overload not resolved
+
+
+        // Check type-checking for applications
+        let _unusedResultValue = FirstClassTests.PlotExpr 1
+        let _unusedResultValue = FirstClassTests.PlotExpr <@ 1 @>
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType 1
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType <@ 1 @>
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType "a"
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByType <@ "a" @>
+        let _unusedResultValue = FirstClassTests.PlotExprOverloadedByShape <@ 1 @>
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let _unusedResultValue = FirstClassTests.PlotLinqOverloadedByShape (fun x -> x)
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: let _unusedResultValue = FirstClassTests.PlotExprOverloadedByShape 1  // overload not resolved
+
+
+        // Check type-checking for pipelining 
+        let _unusedResultValue = 1 |> FirstClassTests.PlotExpr
+        let _unusedResultValue = <@ 1 @> |> FirstClassTests.PlotExpr
+        let _unusedResultValue = 1 |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = <@ 1 @> |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = "a" |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = <@ "a" @> |> FirstClassTests.PlotExprOverloadedByType
+        let _unusedResultValue = <@ 1 @> |> FirstClassTests.PlotExprOverloadedByShape
+        // EXPECTED OVERLOAD RESOLUTION FAILURE: 1 |> FirstClassTests.PlotExprOverloadedByShape // overload not resolved
+
+        ()
+
+    runAll()
+
+
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
   else (stdout.WriteLine "Test Passed"; 

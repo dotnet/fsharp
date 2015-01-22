@@ -85,9 +85,9 @@ module internal Params =
         let initial = ParamOfRecdField g denv f
         if isGenerated i f then initial
         else
-        { initial with Display = NicePrint.stringOfParamData denv (ParamData(false, false, NotOptional, (Some initial.Name), f.rfield_type)) }
+        { initial with Display = NicePrint.stringOfParamData denv (ParamData(false, false, NotOptional, Some initial.Name, ReflectedArgInfo.None, f.rfield_type)) }
 
-    let ParamOfParamData g denv (ParamData(_isParamArrayArg,_isOutArg,_optArgInfo,nmOpt,pty) as paramData) =
+    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isOutArg, _optArgInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         { Name = match nmOpt with None -> "" | Some pn -> pn
           CanonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty
           Display = NicePrint.stringOfParamData denv paramData
@@ -97,7 +97,7 @@ module internal Params =
     let ParamsOfParamDatas g denv (paramDatas:ParamData list) rty = 
         let paramNames,paramPrefixes,paramTypes = 
             paramDatas 
-            |> List.map (fun (ParamData(isParamArrayArg,_,optArgInfo,nmOpt,pty)) -> 
+            |> List.map (fun (ParamData(isParamArrayArg, _isOutArg, optArgInfo, nmOpt, _reflArgInfo, pty)) -> 
                 let isOptArg = optArgInfo.IsOptional
                 match nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
                 // Layout an optional argument 
@@ -178,7 +178,7 @@ module internal Params =
                     let paramDatas = 
                         argInfo
                         |> List.map ParamNameAndType.FromArgInfo
-                        |> List.map (fun (ParamNameAndType(nm,pty)) -> ParamData(false, false, NotOptional, nm, pty))
+                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, NotOptional, nmOpt, ReflectedArgInfo.None, pty))
                     ParamsOfParamDatas g denv paramDatas returnTy
         | Item.UnionCase(ucr)   -> 
             match ucr.UnionCase.RecdFields with
@@ -208,7 +208,7 @@ module internal Params =
             | None -> 
                 let argNamesAndTys = ItemDescriptionsImpl.ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let _, argTys, _ = PrettyTypes.PrettifyTypesN g (argNamesAndTys |> List.map (fun (ParamNameAndType(_,ty)) -> ty))
-                let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nm,_)) argTy -> ParamData(false,false,NotOptional,nm,argTy))
+                let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, NotOptional, nmOpt, ReflectedArgInfo.None,argTy))
                 let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
                 ParamsOfParamDatas g denv paramDatas rty
             | Some _ -> 
@@ -217,7 +217,7 @@ module internal Params =
         | Item.FakeInterfaceCtor _ -> []
         | Item.DelegateCtor delty -> 
             let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomeFSharpCode
-            ParamsOfParamDatas g denv [ParamData(false,false,NotOptional,None, fty)] delty
+            ParamsOfParamDatas g denv [ParamData(false, false, NotOptional, None, ReflectedArgInfo.None, fty)] delty
 #if EXTENSIONTYPING
         | ItemIsTypeWithStaticArguments g tyconRef ->
             // similar code to TcProvidedTypeAppToStaticConstantArgs 
