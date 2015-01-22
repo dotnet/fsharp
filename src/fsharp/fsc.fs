@@ -548,11 +548,13 @@ let runFromCommandLineToImportingAssemblies(displayPSTypeProviderSecurityDialogB
 // Code from here on down is just used by fsc.exe
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-let BuildInitialDisplayEnvForDocGeneration tcGlobals = 
+let BuildInitialDisplayEnvForSigFileGeneration tcGlobals = 
     let denv = DisplayEnv.Empty tcGlobals
     let denv = 
         { denv with 
            showImperativeTyparAnnotations=true;
+           showHiddenMembers=true;
+           showObsoleteMembers=true;
            showAttributes=true; }
     denv.SetOpenPaths 
         [ FSharpLib.RootPath 
@@ -577,7 +579,7 @@ module InterfaceFileWriter =
             fprintfn os "" 
 
         for (TImplFile(_,_,mexpr,_,_)) in declaredImpls do
-            let denv = BuildInitialDisplayEnvForDocGeneration tcGlobals
+            let denv = BuildInitialDisplayEnvForSigFileGeneration tcGlobals
             writeViaBufferWithEnvironmentNewLines os (fun os s -> Printf.bprintf os "%s\n\n" s)
               (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Layout.squashTo 80 |> Layout.showL)
        
