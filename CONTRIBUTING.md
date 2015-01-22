@@ -106,7 +106,7 @@ Feature PRs have the following minimum requirements:
 
 - For F# Language and Library features, include a link to the [F# Language User Voice](http://fslang.uservoice.com) 
 
-- For Visual F# Tools features, incldue a link to the [Visual F# Tools User Voice](https://visualstudio.uservoice.com/forums/121579-visual-studio/category/30935-languages-f-tools) entry for the feature.
+- For Visual F# Tools features, include a link to the [Visual F# Tools User Voice](https://visualstudio.uservoice.com/forums/121579-visual-studio/category/30935-languages-f-tools) entry for the feature.
 
 - For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/src/fsharp/FSharp.Core.Unittests).
 
