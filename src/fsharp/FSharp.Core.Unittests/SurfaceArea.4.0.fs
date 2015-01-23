@@ -3309,6 +3309,7 @@ Microsoft.FSharp.Quotations.FSharpExpr: System.Type GetType()
 Microsoft.FSharp.Quotations.FSharpExpr: System.Type Type
 Microsoft.FSharp.Quotations.FSharpExpr: System.Type get_Type()
 Microsoft.FSharp.Quotations.FSharpExpr: Void RegisterReflectedDefinitions(System.Reflection.Assembly, System.String, Byte[])
+Microsoft.FSharp.Quotations.FSharpExpr: Void RegisterReflectedDefinitions(System.Reflection.Assembly, System.String, Byte[], System.Type[])
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Int32 GetHashCode()
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr] CustomAttributes

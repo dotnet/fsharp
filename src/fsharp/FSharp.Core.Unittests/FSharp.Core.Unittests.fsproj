@@ -25,12 +25,16 @@
       {CandidateAssemblyFiles};
       {TargetFrameworkDirectory};
       {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
+      C:\Program Files (x86)\NUnit 2.6.3\bin\lib;
     </AssemblySearchPaths>
-    </PropertyGroup>
+    <References_Nunit>true</References_Nunit>
+  </PropertyGroup>
+
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -40,6 +44,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
@@ -48,18 +53,18 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
+
   <ItemGroup>
-    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
-        <SpecificVersion>true</SpecificVersion>
-    </Reference>
     <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
+    <Reference Condition="'$(TargetFramework)' == 'net20'"       Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\net20\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'net40'"       Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\net40\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable7'"   Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable7\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable47'"  Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable47\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable78'"  Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable78\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable259'" Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable259\bin\fsharp.core.dll" />
   </ItemGroup>
-  <ItemGroup Condition="!$(TargetFramework.Contains('portable'))">
+
+  <ItemGroup Condition="!$(TargetFramework.ToLower().Contains('portable'))">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
@@ -67,6 +72,7 @@
     <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' " />
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
+
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
@@ -105,7 +111,11 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
-    <Compile Include="SurfaceArea.4.0.fs" Condition="'$(TargetFramework)' == 'net40'"/>
+    <Compile Include="SurfaceArea.2.0.fs" Condition="'$(TargetFramework)' == 'net20'"/>
+    <Compile Include="SurfaceArea.4.0.fs" Condition="'$(TargetFramework)' != 'net20'"/>
   </ItemGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Nuget.targets" />
+
 </Project>

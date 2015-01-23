@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Condition="'$(References_Nunit)' == 'true'">
+    <NunitFrameworkPath>$(MSBuildThisFileDirectory)..\packages\NUnit.2.6.4\lib\nunit.framework.dll</NunitFrameworkPath>
+    <NunitConsolePath>$(MSBuildThisFileDirectory)..\packages\NUnit.Runners.2.6.4\tools\nunit-console-x86.exe</NunitConsolePath>
+    <NugetRestore>true</NugetRestore>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(NugetRestore)' == 'true'">
+    <BuildDependsOn>
+      RestoreBugetPackages;
+      $(BuildDependsOn);
+    </BuildDependsOn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
+    <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp' and '$(References_Nunit)' == 'true'" >
+      <HintPath>$(NunitFrameworkPath)</HintPath>
+      <Private>True</Private>
+      <SpecificVersion>true</SpecificVersion>
+    </Reference>
+    <Reference Include="NUnitFramework" Condition="('$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp') and '$(References_Nunit)' == 'true'" />
+  </ItemGroup>
+
+  <Target Name="RestoreBugetPackages">
+    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\NuGet.exe restore $(MSBuildThisFileDirectory)..\.nuget\packages.config -PackagesDirectory $(MSBuildThisFileDirectory)..\packages" />
+  </Target>
+  
+</Project>
