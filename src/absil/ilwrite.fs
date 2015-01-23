@@ -142,10 +142,11 @@ let markerForUnicodeBytes (b:byte[]) =
 /// Check that the data held at a fixup is some special magic value, as a sanity check
 /// to ensure the fixup is being placed at a ood lcoation.
 let checkFixup32 (data: byte[]) offset exp = 
-    if data.[offset + 3] <> b3 exp then failwith "fixup sanity check failed";
-    if data.[offset + 2] <> b2 exp then failwith "fixup sanity check failed";
-    if data.[offset + 1] <> b1 exp then failwith "fixup sanity check failed";
-    if data.[offset] <> b0 exp then failwith "fixup sanity check failed"
+    if data.[offset + 3] <> b3 exp ||
+       data.[offset + 2] <> b2 exp ||
+       data.[offset + 1] <> b1 exp ||
+       data.[offset] <> b0 exp then
+       failwith "fixup sanity check failed"
 
 let applyFixup32 (data:byte[]) offset v = 
     data.[offset] <-   b0 v;
@@ -223,17 +224,19 @@ type PdbData =
 
 let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info = 
     (try FileSystem.FileDelete fpdb with _ -> ());
-    let pdbw = ref Unchecked.defaultof<PdbWriter>
     
-    try
-        pdbw := pdbInitialize f fpdb
-    with _ -> error(Error(FSComp.SR.ilwriteErrorCreatingPdb(fpdb), rangeCmdArgs))
+    let pdbw =
+        try
+            pdbInitialize f fpdb
+        with _ ->
+            error(Error(FSComp.SR.ilwriteErrorCreatingPdb(fpdb), rangeCmdArgs))
 
     match info.EntryPoint with 
     | None -> () 
-    | Some x -> pdbSetUserEntryPoint !pdbw x 
+    | Some x -> pdbSetUserEntryPoint pdbw x
 
-    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument !pdbw doc.File)
+    //assert(info.Documents |> Array.forall (fun doc -> System.IO.File.Exists doc.File))
+    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument pdbw doc.File)
     let getDocument i = 
       if i < 0 || i > docs.Length then failwith "getDocument: bad doc number";
       docs.[i]
@@ -254,83 +257,102 @@ let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
     // length of all sequence point marks so they do not go further than 
     // the next sequence point in the source. 
     let spCounts =  info.Methods |> Array.map (fun x -> x.SequencePoints.Length)
-    let allSps = Array.concat (Array.map (fun x -> x.SequencePoints) info.Methods |> Array.toList)
-    let allSps = Array.mapi (fun i sp -> (i,sp)) allSps
+    let allSps =
+      info.Methods
+      |> Array.collect (fun x -> x.SequencePoints)
+      |> Array.mapi (fun i sp ->
+          KeyValuePair(i,sp))
+
     if fixupOverlappingSequencePoints then 
         // sort the sequence points into source order 
-        Array.sortInPlaceWith (fun (_,sp1) (_,sp2) -> SequencePoint.orderBySource sp1 sp2) allSps;
+        Array.sortInPlaceWith (fun (KeyValue(_,sp1)) (KeyValue(_,sp2)) -> SequencePoint.orderBySource sp1 sp2) allSps
         // shorten the ranges of any that overlap with following sequence points 
         // sort the sequence points back into offset order 
         for i = 0 to Array.length allSps - 2 do
-            let n,sp1 = allSps.[i]
-            let _,sp2 = allSps.[i+1]
+            let (KeyValue(n,sp1)) = allSps.[i]
+            let (KeyValue(_,sp2)) = allSps.[i+1]
             if (sp1.Document = sp2.Document) && 
                (sp1.EndLine > sp2.Line || 
                 (sp1.EndLine = sp2.Line &&
                  sp1.EndColumn >= sp2.Column)) then
               let adjustToPrevLine = (sp1.Line < sp2.Line)
-              allSps.[i] <-  n,{sp1 with EndLine = (if adjustToPrevLine then sp2.Line-1 else sp2.Line);
-                                         EndColumn = (if adjustToPrevLine then 80 else sp2.Column); }
-        Array.sortInPlaceBy fst allSps;
+              allSps.[i] <-
+                let sp = {sp1 with EndLine = (if adjustToPrevLine then sp2.Line-1 else sp2.Line);
+                                   EndColumn = (if adjustToPrevLine then 80 else sp2.Column); }
+                KeyValuePair (n, sp)
+        allSps |> Array.sortInPlaceBy (fun kvp -> kvp.Key)
 
+    let mutable spOffset = 0
+    let infoMethods = info.Methods
+    for i = 0 to infoMethods.Length - 1 do
+          let minfo = infoMethods.[i]
 
-    
-    let spOffset = ref 0
-    info.Methods |> Array.iteri (fun i minfo ->
-
-          let sps = Array.sub allSps !spOffset spCounts.[i]
-          spOffset := !spOffset + spCounts.[i];
-          begin match minfo.Range with 
-          | None -> () 
+          let sps = System.ArraySegment (allSps, spOffset, spCounts.[i])
+          //let sps = Array.sub allSps spOffset spCounts.[i]
+          spOffset <- spOffset + spCounts.[i]
+          match minfo.Range with
+          | None -> ()
           | Some (a,b) ->
-              pdbOpenMethod !pdbw minfo.MethToken;
+              pdbOpenMethod pdbw minfo.MethToken
 
-              pdbSetMethodRange !pdbw 
+              pdbSetMethodRange pdbw
                 (getDocument a.Document) a.Line a.Column
                 (getDocument b.Document) b.Line b.Column;
 
               // Partition the sequence points by document 
               let spsets =
-                let res = (Map.empty : Map<int,PdbSequencePoint list ref>)
-                let add res (_,sp) = 
-                  let k = sp.Document
-                  match Map.tryFind k res with
-                      Some xsR -> xsR := sp :: !xsR; res
-                    | None     -> Map.add k (ref [sp]) res
-               
-                let res = Array.fold add res sps
-                let res = Map.toList res  // ordering may not be stable 
-                List.map (fun (_,x) -> Array.ofList !x) res
+                let res =
+                    let add res (KeyValue(_,sp)) =
+                        let k = sp.Document
+                        match Map.tryFind k res with
+                        | Some (xsR : ResizeArray<_>) ->
+                            xsR.Add sp; res
+                        | None ->
+                            let rarr = ResizeArray (100)
+                            rarr.Add sp
+                            Map.add k rarr res
 
-              spsets |> List.iter (fun spset -> 
+                    let res = (Map.empty : Map<int, ResizeArray<PdbSequencePoint>>)
+                    Seq.fold add res sps
+
+                res
+                |> Map.toArray  // ordering may not be stable
+                |> Array.map (fun (_,x) ->
+                    x.ToArray ())
+
+              for spset in spsets do
                   if spset.Length > 0 then 
                     Array.sortInPlaceWith SequencePoint.orderByOffset spset;
+
                     let sps = 
                       spset |> Array.map (fun sp -> 
                            // Ildiag.dprintf "token 0x%08lx has an sp at offset 0x%08x\n" minfo.MethToken sp.Offset; 
                            (sp.Offset, sp.Line, sp.Column,sp.EndLine, sp.EndColumn)) 
+
                   // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here 
                     if sps.Length < 5000 then 
-                      pdbDefineSequencePoints !pdbw (getDocument spset.[0].Document) sps;);
+                      pdbDefineSequencePoints pdbw (getDocument spset.[0].Document) sps
 
               // Write the scopes 
               let rec writePdbScope top sco = 
                   if top || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then 
-                      pdbOpenScope !pdbw sco.StartOffset;
-                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index);
-                      sco.Children |> Array.iter (writePdbScope false);
-                      pdbCloseScope !pdbw sco.EndOffset;
+                      pdbOpenScope pdbw sco.StartOffset
+                      for v in sco.Locals do
+                          pdbDefineLocalVariable pdbw v.Name v.Signature v.Index
+                      for v in sco.Children do
+                          writePdbScope false v
+                      pdbCloseScope pdbw sco.EndOffset
               writePdbScope true minfo.RootScope; 
 
-              pdbCloseMethod !pdbw
-          end);
+              pdbCloseMethod pdbw
+
     reportTime showTimes "PDB: Wrote methods";
-    let res = pdbGetDebugInfo !pdbw
+    let res = pdbGetDebugInfo pdbw
     
     for pdbDoc in docs do
         pdbCloseDocument pdbDoc
 
-    pdbClose !pdbw;
+    pdbClose pdbw
     reportTime showTimes "PDB: Closed";
     res
 
@@ -3439,6 +3461,8 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let strings,userStrings,blobs,guids,tables,entryPointToken,code,requiredStringFixups,data,resources,pdbData,mappings = 
       generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress
 
+    //assert(pdbData.Documents |> Array.forall (fun doc -> System.IO.File.Exists doc.File))
+
     reportTime showTimes "Generated Tables and Code";
     let tableSize (tab: TableName) = tables.[tab.Index].Length
 
@@ -3518,11 +3542,11 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
     let stringAddressTable = 
         let tab = Array.create (strings.Length + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to strings.Length do
-            tab.[i] <- !pos;
+            tab.[i] <- pos;
             let s = strings.[i - 1]
-            pos := !pos + s.Length
+            pos <- pos + s.Length
         tab
 
     let stringAddress n = 
@@ -3531,12 +3555,12 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     
     let userStringAddressTable = 
         let tab = Array.create (Array.length userStrings + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to Array.length userStrings do
-            tab.[i] <- !pos;
+            tab.[i] <- pos;
             let s = userStrings.[i - 1]
             let n = s.Length + 1
-            pos := !pos + n + ByteBuffer.Z32Size n
+            pos <- pos + n + ByteBuffer.Z32Size n
         tab
 
     let userStringAddress n = 
@@ -3545,11 +3569,11 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     
     let blobAddressTable = 
         let tab = Array.create (blobs.Length + 1) 0
-        let pos = ref 1
+        let mutable pos = 1
         for i = 1 to blobs.Length do
-            tab.[i] <- !pos;
+            tab.[i] <- pos
             let blob = blobs.[i - 1]
-            pos := !pos + blob.Length + ByteBuffer.Z32Size blob.Length
+            pos <- pos + blob.Length + ByteBuffer.Z32Size blob.Length
         tab
 
     let blobAddress n = 
@@ -3996,6 +4020,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
             writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul noDebugData next
 
+          //assert(pdbData.Documents |> Array.forall (fun doc -> System.IO.File.Exists doc.File))
+
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
           let _codePaddingChunk,next = chunk codePadding.Length next
@@ -4088,10 +4114,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let next = align alignVirt (relocSectionAddr + relocSectionSize)
 
          // Now we know where the data section lies we can fix up the  
-         // references into the data section from the metadata tables. 
-          begin 
-            requiredDataFixups |> List.iter
-              (fun (metadataOffset32,(dataOffset,kind)) -> 
+         // references into the data section from the metadata tables.
+          for (metadataOffset32,(dataOffset,kind)) in requiredDataFixups do
                 let metadataOffset =  metadataOffset32
                 if metadataOffset < 0 || metadataOffset >= metadata.Length - 4  then failwith "data RVA fixup: fixup located outside metadata";
                 checkFixup32 metadata metadataOffset 0xdeaddddd;
@@ -4105,8 +4129,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                       if res < rawdataChunk.addr then dprintn ("data rva before data section");
                       if res >= rawdataChunk.addr + rawdataChunk.size then dprintn ("data rva after end of data section, dataRva = "+string res+", rawdataChunk.addr = "+string rawdataChunk.addr+", rawdataChunk.size = "+string rawdataChunk.size);
                       res
-                applyFixup32 metadata metadataOffset dataRva);
-          end;
+                applyFixup32 metadata metadataOffset dataRva
           
          // IMAGE TOTAL SIZE 
           let imageEndSectionPhysLoc =  nextPhys
@@ -4371,7 +4394,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           
           // write 0x80 bytes of empty space for encrypted SHA1 hash, written by SN.EXE or call to signing API 
           if signer <> None then 
-            write (Some (textV2P strongnameChunk.addr)) os "strongname" (Array.create strongnameChunk.size 0x0uy);
+            write (Some (textV2P strongnameChunk.addr)) os "strongname" (Array.zeroCreate<byte> strongnameChunk.size);
           
           write (Some (textV2P resourcesChunk.addr)) os "raw resources" [| |];
           writeBytes os resources;
