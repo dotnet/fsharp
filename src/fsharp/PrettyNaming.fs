@@ -464,3 +464,15 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             |> Array.map mangleStaticStringArg
             |> String.concat ","
         typeLogicalName+","+nonDefaultArgsText
+
+
+    let computeMangledNameWithoutDefaultArgValues(nm,staticArgs,defaultArgValues) =
+        let nonDefaultArgs = 
+            (staticArgs,defaultArgValues) 
+            ||> Array.zip 
+            |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
+                let actualArgValue = string staticArg 
+                match defaultArgValue with 
+                | Some v when v = actualArgValue -> None
+                | _ -> Some (defaultArgName, actualArgValue))
+        mangleProvidedTypeName (nm, nonDefaultArgs)
