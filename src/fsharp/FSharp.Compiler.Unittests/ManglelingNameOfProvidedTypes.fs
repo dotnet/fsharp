@@ -27,6 +27,13 @@ type ManglelingNamesOfProvidedTypesWithSingleParameter() =
         Assert.AreEqual("MyNamespace.Test",name)
         Assert.AreEqual([|"Foo","xyz"|],parameters)
 
+    [<Test>]
+    member this.DemangleDefaultValue() = 
+        // If all provided parameters are the default value demangleling fails - see #98
+        let name,parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,"
+        Assert.AreEqual("MyNamespace.Test",name)
+        Assert.AreEqual([||],parameters)
+
 [<TestFixture>]
 type ManglelingNamesOfProvidedTypesWithMultipleParameter() =
 
