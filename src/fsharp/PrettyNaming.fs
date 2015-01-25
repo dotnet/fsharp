@@ -464,7 +464,3 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             |> Array.map mangleStaticStringArg
             |> String.concat ","
         typeLogicalName+","+nonDefaultArgsText
-
-    //let testDemangleStaticStringArg() = 
-    //   for x in [ ""; "\""; "\"\""; "a"; "\\"; "\\\\"; "\\\""; "_"; "\"\"" ] do 
-    //      if demangleStaticStringArg (mangleStaticStringArg x) <> x then printfn "failed for <<%s>>" x
