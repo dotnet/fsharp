@@ -38,7 +38,8 @@ type ArgumentContainer =
 type Item = 
   // These exist in the "eUnqualifiedItems" List.map in the type environment. 
   | Value of  ValRef
-  | UnionCase of UnionCaseInfo
+  // UnionCaseInfo and temporary flag which is used to show a "use case is deprecated" message
+  | UnionCase of UnionCaseInfo * bool 
   | ActivePatternResult of ActivePatternInfo * TType * int  * range
   | ActivePatternCase of ActivePatternElemRef 
   | ExnCase of TyconRef 

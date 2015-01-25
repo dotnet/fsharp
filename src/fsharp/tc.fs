@@ -1876,7 +1876,11 @@ let rec ApplyUnionCaseOrExn (makerForUnionCase,makerForExnTag) m cenv env overal
         let mkf = makerForExnTag(ecref)
         mkf,recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f.Name ]
 
-    | Item.UnionCase ucinfo ->   
+    | Item.UnionCase(ucinfo,showDeprecated) ->   
+        if showDeprecated then
+            let message = sprintf "The union type for union case '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('%s') in the name you are using.'" ucinfo.Name ucinfo.Tycon.DisplayName
+            warning(Deprecated(message,m))
+ 
         let ucref = ucinfo.UnionCaseRef 
         CheckUnionCaseAttributes cenv.g ucref m  |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
@@ -4872,7 +4876,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                         | None -> 
                             let caseName = 
                                 match item with
-                                | Item.UnionCase uci -> uci.Name
+                                | Item.UnionCase(uci,_) -> uci.Name
                                 | Item.ExnCase tcref -> tcref.DisplayName
                                 | _ -> failwith "impossible"
                             error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(caseName, id.idText), id.idRange))
@@ -4881,7 +4885,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                             | null -> 
                                 result.[idx] <- pat
                                 let argContainerOpt = match item with
-                                                      | Item.UnionCase uci -> Some(ArgumentContainer.UnionCase(uci))
+                                                      | Item.UnionCase(uci,_) -> Some(ArgumentContainer.UnionCase(uci))
                                                       | Item.ExnCase tref -> Some(ArgumentContainer.Type(tref))
                                                       | _ -> None
                                 let argItem = Item.ArgName (id, (List.nth argtys idx), argContainerOpt)   
@@ -7871,7 +7875,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                   let ucref = mkChoiceCaseRef cenv.g mItem aparity n
                   let _,_,tinst,_ = infoOfTyconRef mItem ucref.TyconRef
                   let ucinfo = UnionCaseInfo(tinst,ucref)
-                  ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase ucinfo)
+                  ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy (Item.UnionCase(ucinfo,false))
           | _ -> 
               ApplyUnionCaseOrExnTypes mItem cenv env ucaseAppTy item
         let nargtys = List.length argtys
@@ -7927,7 +7931,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                             if box fittedArgs.[i] = null then
                                 fittedArgs.[i] <- arg
                                 let argContainerOpt = match item with
-                                                      | Item.UnionCase uci -> Some(ArgumentContainer.UnionCase(uci))
+                                                      | Item.UnionCase(uci,_) -> Some(ArgumentContainer.UnionCase(uci))
                                                       | Item.ExnCase tref -> Some(ArgumentContainer.Type(tref))
                                                       | _ -> None
                                 let argItem = Item.ArgName (id, (List.nth argtys i), argContainerOpt)   
@@ -7956,7 +7960,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
                             else
                                 let caseName = 
                                     match item with
-                                    | Item.UnionCase uci -> uci.Name
+                                    | Item.UnionCase(uci,_) -> uci.Name
                                     | Item.ExnCase tcref -> tcref.DisplayName
                                     | _ -> failwith "impossible"
                                 error(Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName(caseName, id.idText),  id.idRange))
@@ -14021,9 +14025,9 @@ module EstablishTypeDefinitionCores = begin
                 // Constructors should be visible from IntelliSense, so add fake names for them 
                 for unionCase in unionCases do
                     let info = UnionCaseInfo(thisTyInst,mkUnionCaseRef thisTyconRef unionCase.Id.idText)
-                    let nenv' = AddFakeNameToNameEnv unionCase.Id.idText nenv (Item.UnionCase info) 
+                    let nenv' = AddFakeNameToNameEnv unionCase.Id.idText nenv (Item.UnionCase(info,false)) 
                     // Report to both - as in previous function
-                    let item = Item.UnionCase info
+                    let item = Item.UnionCase(info,false)
                     CallNameResolutionSink cenv.tcSink (unionCase.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
                     CallEnvSink cenv.tcSink (unionCase.Id.idRange, nenv', ad)
             
