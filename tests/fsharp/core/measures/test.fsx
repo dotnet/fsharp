@@ -504,9 +504,12 @@ module MembersTest =
     let s = 2.0f<kg>
     let d = 2.0M<kg>
 
+    let tmpCulture = System.Threading.Thread.CurrentThread.CurrentCulture
+    System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo("en-US")
     test "f" (f.ToString().Equals("2"))
     test "s" (s.ToString().Equals("2"))
     test "d" (d.ToString().Equals("2.0"))
+    System.Threading.Thread.CurrentThread.CurrentCulture <- tmpCulture
 
     let fc = (f :> System.IComparable<float<kg>>).CompareTo(f+f)
     let sc = (s :> System.IComparable<float32<kg>>).CompareTo(s+s)
