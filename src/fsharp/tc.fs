@@ -1878,8 +1878,7 @@ let rec ApplyUnionCaseOrExn (makerForUnionCase,makerForExnTag) m cenv env overal
 
     | Item.UnionCase(ucinfo,showDeprecated) ->   
         if showDeprecated then
-            let message = sprintf "The union type for union case '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('%s') in the name you are using.'" ucinfo.Name ucinfo.Tycon.DisplayName
-            warning(Deprecated(message,m))
+            warning(Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.Name,ucinfo.Tycon.DisplayName) |> snd,m))
  
         let ucref = ucinfo.UnionCaseRef 
         CheckUnionCaseAttributes cenv.g ucref m  |> CommitOperationResult
