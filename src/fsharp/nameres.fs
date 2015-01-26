@@ -135,7 +135,7 @@ type Item =
     /// Represents the resolution of a name to an F# value or function.
     | Value of  ValRef
     /// Represents the resolution of a name to an F# union case.
-    | UnionCase of UnionCaseInfo
+    | UnionCase of UnionCaseInfo * bool
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
     /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
@@ -197,7 +197,7 @@ type Item =
         match d with
         | Item.Value v -> v.DisplayName
         | Item.ActivePatternCase apref -> apref.Name
-        | Item.UnionCase uinfo -> DecompileOpName uinfo.UnionCase.DisplayName
+        | Item.UnionCase(uinfo,_) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
         | Item.NewDef id -> id.idText
@@ -521,7 +521,7 @@ let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfr
 /// Add a set of union cases to the corresponding sub-table of the environment 
 let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list)= 
     (tab, ucrefs) ||> List.fold (fun acc ucref -> 
-        let item = Item.UnionCase (GeneralizeUnionCaseRef ucref)
+        let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
         acc.Add (ucref.CaseName, item))
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
@@ -530,13 +530,13 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :Uni
     | BulkAdd.Yes -> 
         let items = 
             ucrefs |> Array.ofList |> Array.map (fun ucref -> 
-                let item = Item.UnionCase (GeneralizeUnionCaseRef ucref)
+                let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
                 KeyValuePair(ucref.CaseName,item))
         eUnqualifiedItems.AddAndMarkAsCollapsible items
 
     | BulkAdd.No -> 
         (eUnqualifiedItems,ucrefs) ||> List.fold (fun acc ucref -> 
-            let item = Item.UnionCase (GeneralizeUnionCaseRef ucref)
+            let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
             acc.Add (ucref.CaseName, item))
 
 /// Add any implied contents of a type definition to the environment.
@@ -754,7 +754,7 @@ let FreshenUnionCaseRef (ncenv: NameResolver) m (ucref:UnionCaseRef) =
 /// This must be called after fetching unqualified items that may need to be freshened
 let FreshenUnqualifiedItem (ncenv: NameResolver) m res = 
     match res with 
-    | Item.UnionCase (UnionCaseInfo(_,ucref)) -> Item.UnionCase (FreshenUnionCaseRef ncenv m ucref)
+    | Item.UnionCase(UnionCaseInfo(_,ucref),_) -> Item.UnionCase(FreshenUnionCaseRef ncenv m ucref,false)
     | _ -> res
 
 
@@ -1549,7 +1549,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
            // Lookup: datatype constructors take precedence 
            match unionCaseSearch with 
            | Some ucase -> 
-               success(resInfo,Item.UnionCase(ucase),rest)
+               success(resInfo,Item.UnionCase(ucase,false),rest)
            | None -> 
                 match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm,ad) findFlag m typ with
                 | Some (PropertyItem psets) when (match lookupKind with LookupKind.Expr  -> true | _ -> false) -> 
@@ -1652,8 +1652,9 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
         match  TryFindTypeWithUnionCase modref id with
         | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.MkNestedTyconRef tycon) -> 
             let ucref = mkUnionCaseRef (modref.MkNestedTyconRef tycon) id.idText 
+            let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
             let ucinfo = FreshenUnionCaseRef ncenv m ucref
-            success (resInfo,Item.UnionCase ucinfo,rest)
+            success (resInfo,Item.UnionCase(ucinfo,showDeprecated),rest)
         | _ -> 
         match mty.ExceptionDefinitionsByDemangledName.TryFind(id.idText) with
         | Some excon when IsTyconReprAccessible ncenv.amap m ad (modref.MkNestedTyconRef excon) -> 
@@ -1854,8 +1855,9 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
         | Some tycon when IsTyconReprAccessible ncenv.amap m ad (modref.MkNestedTyconRef tycon) -> 
             let tcref = modref.MkNestedTyconRef tycon
             let ucref = mkUnionCaseRef tcref id.idText
+            let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
             let ucinfo = FreshenUnionCaseRef ncenv m ucref
-            success (resInfo,Item.UnionCase ucinfo,rest)
+            success (resInfo,Item.UnionCase(ucinfo,showDeprecated),rest)
         | _ -> 
         match mty.ExceptionDefinitionsByDemangledName.TryFind(id.idText) with
         | Some exnc when IsEntityAccessible ncenv.amap m ad (modref.MkNestedTyconRef exnc) -> 
@@ -2411,7 +2413,7 @@ let IsUnionCaseUnseen ad g amap m (ucref:UnionCaseRef) =
 let ItemIsUnseen ad g amap m item = 
     match item with 
     | Item.Value x -> IsValUnseen ad  g m x
-    | Item.UnionCase x -> IsUnionCaseUnseen ad g amap m x.UnionCaseRef
+    | Item.UnionCase(x,_) -> IsUnionCaseUnseen ad g amap m x.UnionCaseRef
     | Item.ExnCase x -> IsTyconUnseen ad g amap m x
     | _ -> false
 
@@ -2466,7 +2468,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
             let tc,tinst = destAppTy g typ
             tc.UnionCasesAsRefList 
             |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
-            |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref)))
+            |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
         else []
 
     let einfos = 
@@ -2738,7 +2740,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
        @ (UnionCaseRefsInModuleOrNamespace modref 
           |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
           |> List.map GeneralizeUnionCaseRef 
-          |> List.map Item.UnionCase)
+          |> List.map (fun x -> Item.UnionCase(x,false)))
 
          // Collect up the accessible active patterns in the module 
        @ (ActivePatternElemsOfModuleOrNamespace modref 
