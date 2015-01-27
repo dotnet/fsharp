@@ -166,10 +166,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 let initialApprovals = [|
                     for app in approvals do
                         match app with
-                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.Trusted(fileName) ->
+                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(fileName) ->
                             let assemName = Path.GetFileNameWithoutExtension(fileName)
                             yield new TPTOPData(assemName, fileName, IsTrusted=true)
-                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.NotTrusted(fileName) ->
+                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(fileName) ->
                             let assemName = Path.GetFileNameWithoutExtension(fileName)
                             yield new TPTOPData(assemName, fileName, IsTrusted=false)
                     |]
@@ -188,9 +188,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                 backingStore |> Seq.iter (fun a -> 
                                     let app = 
                                         if a.IsTrusted then 
-                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.Trusted(a.FileName)
+                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(a.FileName)
                                         else
-                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.NotTrusted(a.FileName)
+                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(a.FileName)
                                     Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus (Some file) app)
                             )
                             // invalidate any language service caching

@@ -180,7 +180,7 @@ module internal Params =
                         |> List.map ParamNameAndType.FromArgInfo
                         |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, NotOptional, nmOpt, ReflectedArgInfo.None, pty))
                     ParamsOfParamDatas g denv paramDatas returnTy
-        | Item.UnionCase(ucr)   -> 
+        | Item.UnionCase(ucr,_)   -> 
             match ucr.UnionCase.RecdFields with
             | [f] -> [ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
             | fs -> fs |> List.mapi (ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
@@ -294,7 +294,7 @@ type MethodOverloads( name: string, unsortedMethods: Method[] ) =
                         if isFunction g rfinfo.FieldType then [item] else []
                     | Item.Value v -> 
                         if isFunction g v.Type then [item] else []
-                    | Item.UnionCase(ucr) -> 
+                    | Item.UnionCase(ucr,_) -> 
                         if not ucr.UnionCase.IsNullary then [item] else []
                     | Item.ExnCase(ecr) -> 
                         if recdFieldsOfExnDefRef ecr |> nonNil then [item] else []
