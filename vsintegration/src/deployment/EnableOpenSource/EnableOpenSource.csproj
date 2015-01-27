@@ -68,6 +68,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\..\..\..\License.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="EnableOpenSource.pkgdef">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
