@@ -994,9 +994,7 @@ module Query =
             | _ -> None)
 
     let (|CallQueryBuilderRunQueryable|_|)   : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b :QueryBuilder, v) -> b.Run(v)))
-    //  (typeof<QueryBuilder>.Assembly.GetType("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority").GetMethod("RunQueryAsValue").MethodHandle)
     let (|CallQueryBuilderRunValue|_|)       : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<'a>) -> b.Run(v)) : 'a) // type annotations here help overload resolution
-    //  (typeof<QueryBuilder>.Assembly.GetType("Microsoft.FSharp.Linq.QueryRunExtensions.HighPriority").GetMethod("RunQueryAsEnumerable").MethodHandle)
     let (|CallQueryBuilderRunEnumerable|_|)  : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b : QueryBuilder, v : Expr<QuerySource<_, IEnumerable>> ) -> b.Run(v))) // type annotations here help overload resolution
     let (|CallQueryBuilderFor|_|)            : Quotations.Expr -> _ = (|SpecificCallToMethod|_|) (methodhandleof (fun (b:QueryBuilder,source:QuerySource<int,_>,body) -> b.For(source,body)))
     let (|CallQueryBuilderYield|_|)          : Quotations.Expr -> _ = (|SpecificCall1|_|) (methodhandleof (fun (b:QueryBuilder,value) -> b.Yield value))
