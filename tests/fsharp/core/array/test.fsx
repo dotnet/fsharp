@@ -1368,6 +1368,8 @@ module bug872632 =
 
     do check "bug872632" Foo.x.Length 8
 
+    do check "vwllfewlkefwl" (typedefof<list<int>>.IsSealed) true
+
 module manyIndexes =
     open System
     
