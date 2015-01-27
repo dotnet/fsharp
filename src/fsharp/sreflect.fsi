@@ -61,6 +61,7 @@ val mkHole   : TypeData * int -> ExprData
 val mkApp    : ExprData * ExprData -> ExprData 
 val mkLambda : VarData * ExprData -> ExprData 
 val mkQuote  : ExprData -> ExprData 
+val mkQuoteRaw40  : ExprData -> ExprData  // only available for FSharp.Core 4.4.0.0+
 val mkCond   : ExprData * ExprData * ExprData -> ExprData 
 val mkModuleValueApp : NamedTypeData * string * bool * TypeData list * ExprData list list -> ExprData 
 val mkLetRec : (VarData * ExprData) list * ExprData -> ExprData 

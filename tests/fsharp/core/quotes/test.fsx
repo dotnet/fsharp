@@ -1639,7 +1639,10 @@ module QuotationConstructionTests =
     check "vcknwwe099" (Expr.PropertySet(<@@ (new System.Windows.Forms.Form()) @@>, setof <@@ (new System.Windows.Forms.Form()).Text <- "2" @@>, <@@ "3" @@> )) <@@ (new System.Windows.Forms.Form()).Text <- "3" @@>
     #endif
     check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
-    check "vcknwwe0qq" (Expr.Quote(<@@ "1" @@>)) <@@ <@@ "1" @@> @@>
+    check "vcknwwe0qq1" (Expr.QuoteRaw(<@ "1" @>)) <@@ <@@ "1" @@> @@>
+    check "vcknwwe0qq2" (Expr.QuoteRaw(<@@ "1" @@>)) <@@ <@@ "1" @@> @@>
+    check "vcknwwe0qq3" (Expr.QuoteTyped(<@ "1" @>)) <@@ <@ "1" @> @@>
+    check "vcknwwe0qq4" (Expr.QuoteTyped(<@@ "1" @@>)) <@@ <@ "1" @> @@>
     check "vcknwwe0ww" (Expr.Sequential(<@@ () @@>, <@@ 1 @@>)) <@@ (); 1 @@>
     check "vcknwwe0ee" (Expr.TryFinally(<@@ 1 @@>, <@@ () @@>)) <@@ try 1 finally () @@>
     check "vcknwwe0rr" (match Expr.TryWith(<@@ 1 @@>, Var.Global("e1",typeof<exn>), <@@ 1 @@>, Var.Global("e2",typeof<exn>), <@@ 2 @@>) with TryWith(b,v1,ef,v2,eh) -> b = <@@ 1 @@> && eh = <@@ 2 @@> && ef = <@@ 1 @@> && v1 = Var.Global("e1",typeof<exn>) && v2 = Var.Global("e2",typeof<exn>)| _ -> false) true 
@@ -2637,6 +2640,47 @@ module TestsForUsingReflectedDefinitionArgumentsAsFirstClassValues =
         // EXPECTED OVERLOAD RESOLUTION FAILURE: 1 |> FirstClassTests.PlotExprOverloadedByShape // overload not resolved
 
         ()
+
+    runAll()
+
+
+module NestedQuotations = 
+    open Microsoft.FSharp.Quotations
+    open System.Linq.Expressions
+    open System
+
+    let unnested1 = <@ 100 @> 
+    let unnested2 = <@@ 100 @@> 
+    let nested1 = <@@ <@ 100 @> @@>   
+    let nested2 = <@@ <@@ 100 @@> @@> 
+    let nested3 = <@ <@ 100 @> @>     
+    let nested4 = <@ <@@ 100 @@> @>   
+
+    let runAll() = 
+        test "lfhwwlefkhelw-1a" (match nested1 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-1b" (match nested1 with  QuoteTyped _ -> true | _ -> false)
+        test "lfhwwlefkhelw-1c" (match nested1 with  QuoteRaw _ -> false | _ -> true)
+        test "lfhwwlefkhelw-2a" (match nested2 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-2b" (match nested2 with  QuoteTyped _ -> false | _ -> true)
+        test "lfhwwlefkhelw-2c" (match nested2 with  QuoteRaw _ -> true | _ -> false)
+        test "lfhwwlefkhelw-3a" (match nested3 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-3b" (match nested3 with  QuoteTyped _ -> true | _ -> true)
+        test "lfhwwlefkhelw-3c" (match nested3 with  QuoteRaw _ -> false | _ -> true)
+        test "lfhwwlefkhelw-4a" (match nested4 with  Quote _ -> true | _ -> false)
+        test "lfhwwlefkhelw-4b" (match nested4 with  QuoteRaw _ -> true | _ -> false)
+        test "lfhwwlefkhelw-4c" (match nested4 with  QuoteTyped _ -> false | _ -> true)
+        test "clenewjclkw-1" (match Expr.Quote unnested1 with  QuoteTyped _ -> true | _ -> false)
+        test "clenewjclkw-2" (match Expr.QuoteRaw unnested1 with  QuoteRaw _ -> true | _ -> false)
+        test "clenewjclkw-3" (match Expr.Quote unnested2 with  QuoteTyped _ -> true | _ -> false)
+        test "clenewjclkw-4" (match Expr.QuoteRaw unnested2 with  QuoteRaw _ -> true | _ -> false)
+        test "clenewjclkw-5" (unnested1.Type = typeof<int>)
+        test "clenewjclkw-6" (unnested2.Type = typeof<int>)
+        test "clenewjclkw-7" (Expr.Quote(unnested1).Type = typeof<Expr<int>>)
+        test "clenewjclkw-8" (Expr.Quote(unnested2).Type = typeof<Expr<int>>)
+        test "clenewjclkw-9" (Expr.QuoteTyped(unnested1).Type = typeof<Expr<int>>)
+        test "clenewjclkw-10" (Expr.QuoteTyped(unnested2).Type = typeof<Expr<int>>)
+        test "clenewjclkw-11" (Expr.QuoteRaw(unnested1).Type = typeof<Expr>)
+        test "clenewjclkw-12" (Expr.QuoteRaw(unnested2).Type = typeof<Expr>)
 
     runAll()
 
