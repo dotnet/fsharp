@@ -79,25 +79,25 @@ module Nullable =
         open System
 
         [<CompiledName("ToUInt8")>]
-        let inline uint8 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
+        let inline uint8 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
         
         [<CompiledName("ToInt8")>]
-        let inline int8 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
+        let inline int8 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
         
         [<CompiledName("ToByte")>]
-        let inline byte (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
+        let inline byte (x:Nullable<_>) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
         
         [<CompiledName("ToSByte")>]
-        let inline sbyte (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
+        let inline sbyte (x:Nullable<_>) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
         
         [<CompiledName("ToInt16")>]
-        let inline int16 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.int16 x.Value) else Nullable()
+        let inline int16 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int16 x.Value) else Nullable()
         
         [<CompiledName("ToUInt16")>]
-        let inline uint16 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.uint16 x.Value) else Nullable()
+        let inline uint16 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.uint16 x.Value) else Nullable()
         
         [<CompiledName("ToInt")>]
-        let inline int (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.int x.Value) else Nullable()
+        let inline int (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int x.Value) else Nullable()
         
         [<CompiledName("ToEnum")>]
         let inline enum (x:Nullable< int32 >) = if x.HasValue then Nullable(Operators.enum x.Value) else Nullable()
