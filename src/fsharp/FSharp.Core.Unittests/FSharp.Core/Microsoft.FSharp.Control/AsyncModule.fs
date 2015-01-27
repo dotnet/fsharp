@@ -9,6 +9,14 @@ open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
 
+module LeakUtils =
+    // when testing for liveness, the things that we want to observe must always be created in
+    // a nested function call to avoid the GC (possibly) treating them as roots past the last use in the block.
+    // We also need something non trivial to disuade the compiler from inlining in Release builds.
+    type ToRun<'a>(f : unit -> 'a) =
+        member this.Invoke() = f()
+   
+    let run (toRun : ToRun<'a>) = toRun.Invoke()
 
 // ---------------------------------------------------
 
@@ -191,6 +199,41 @@ type AsyncModule() =
 
         for _i = 1 to 50 do test()
 
+
+    [<Test>]
+    member this.``Async.AwaitWaitHandle does not leak memory`` () =
+        // This test checks that AwaitWaitHandle does not leak continuations (described in #131),
+        // We only test the worst case - when the AwaitWaitHandle is already set.
+        use manualResetEvent = new System.Threading.ManualResetEvent(true)
+        
+        let tryToLeak() = 
+            let resource = 
+                LeakUtils.ToRun (fun () ->
+                    let resource = obj()
+                    let work = 
+                        async { 
+                            let! _ = Async.AwaitWaitHandle manualResetEvent
+                            GC.KeepAlive(resource)
+                            return ()
+                        }
+
+                    work |> Async.RunSynchronously |> ignore
+                    WeakReference(resource))
+                  |> LeakUtils.run
+
+            Assert.IsTrue(resource.IsAlive)
+
+            GC.Collect()
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+            GC.WaitForPendingFinalizers()
+            GC.Collect()
+
+            Assert.IsFalse(resource.IsAlive)
+        
+        // The leak hangs on a race condition which is really hard to trigger in F# 3.0, hence the 100000 runs...
+        for _ in 1..100000 do tryToLeak()
+           
     [<Test>]
     member this.``AwaitWaitHandle.DisposedWaitHandle2``() = 
         let wh = new System.Threading.ManualResetEvent(false)
