@@ -4,7 +4,6 @@ namespace Microsoft.FSharp.Primitives.Basics
 
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Core.LanguagePrimitives.ErrorStrings
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.Operators
 open System.Diagnostics.CodeAnalysis                                    
@@ -242,7 +241,7 @@ module internal List =
            
       
     let init count f = 
-        if count < 0 then  invalidArg "count" InputMustBeNonNegativeString
+        if count < 0 then  invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
         if count = 0 then [] 
         else 
             let res = freshConsNoTail (f 0)
@@ -560,7 +559,7 @@ module internal Array =
         (# "newarr !0" type ('T) count : 'T array #)
 
     let inline init (count:int) (f: int -> 'T) = 
-        if count < 0 then invalidArg "count" InputMustBeNonNegativeString
+        if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
         let arr = (zeroCreateUnchecked count : 'T array)  
         for i = 0 to count - 1 do 
             arr.[i] <- f i

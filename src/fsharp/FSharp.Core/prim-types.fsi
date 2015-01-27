@@ -983,22 +983,23 @@ namespace Microsoft.FSharp.Core
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
 
         /// <summary>For internal use only</summary>
-        module (* internal *) ErrorStrings = 
+        [<Sealed>]
+        type (* internal *) ErrorStrings = 
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val InputSequenceEmptyString : string
+            static member InputSequenceEmptyString : string with get
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val InputArrayEmptyString : string
+            static member InputArrayEmptyString : string with get
         
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val AddressOpNotFirstClassString : string
+            static member AddressOpNotFirstClassString : string with get
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val NoNegateMinValueString : string
+            static member NoNegateMinValueString : string with get
                 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val InputMustBeNonNegativeString : string
+            static member InputMustBeNonNegativeString : string with get
                 
 
         //-------------------------------------------------------------------------
