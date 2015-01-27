@@ -1604,29 +1604,34 @@ namespace Microsoft.FSharp.Control
                         Action<obj>(fun _ ->
                             if latch.Enter() then
                                 // if we got here - then we need to unregister RegisteredWaitHandle + trigger cancellation
-                                // entrance to TP callback  is protected by latch - so savedCont will never be called
-                                match !rwh with
-                                | None -> ()
-                                | Some rwh -> rwh.Unregister(null) |> ignore
+                                // entrance to TP callback is protected by latch - so savedCont will never be called
+                                lock rwh (fun () ->
+                                    match !rwh with
+                                    | None -> ()
+                                    | Some rwh -> rwh.Unregister(null) |> ignore)
                                 Async.Start (async { do (aux.ccont (OperationCanceledException()) |> unfake) }))
 
-                    and registration : CancellationTokenRegistration= aux.token.Register(cancelHandler, null)
+                    and registration : CancellationTokenRegistration = aux.token.Register(cancelHandler, null)
                     
                     let savedCont = args.cont
                     try
-                        rwh := Some(ThreadPool.RegisterWaitForSingleObject
-                                      (waitObject=waitHandle,
-                                       callBack=WaitOrTimerCallback(fun _ timeOut ->
-                                                    if latch.Enter() then
-                                                        rwh := None
-                                                        registration.Dispose()
-                                                        aux.trampolineHolder.Protect (fun () -> savedCont (not timeOut)) |> unfake),
-                                       state=null,
-                                       millisecondsTimeOutInterval=millisecondsTimeout,
-                                       executeOnlyOnce=true));
-                        FakeUnit
+                        lock rwh (fun () ->
+                            rwh := Some(ThreadPool.RegisterWaitForSingleObject
+                                          (waitObject=waitHandle,
+                                           callBack=WaitOrTimerCallback(fun _ timeOut ->
+                                                        if latch.Enter() then
+                                                            lock rwh (fun () -> rwh.Value.Value.Unregister(null) |> ignore)
+                                                            rwh := None
+                                                            registration.Dispose()
+                                                            aux.trampolineHolder.Protect (fun () -> savedCont (not timeOut)) |> unfake),
+                                           state=null,
+                                           millisecondsTimeOutInterval=millisecondsTimeout,
+                                           executeOnlyOnce=true));
+                            FakeUnit)
                     with _ -> 
-                        if latch.Enter() then reraise() // reraise exception only if we successfully enter the latch (no other continuations were called)
+                        if latch.Enter() then
+                            registration.Dispose()
+                            reraise() // reraise exception only if we successfully enter the latch (no other continuations were called)
                         else FakeUnit
                     )
 #endif
