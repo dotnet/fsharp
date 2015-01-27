@@ -1593,7 +1593,7 @@ and [<Guid(FSharpConstants.languageServiceGuidString)>]
                 Source.CreateSource(fls, buffer, fls.GetColorizer(buffer), fileChangeEx)                
             ls.Initialize
                (sp,
-                (XmlDocumentation.Provider(sp.XmlService) :> IdealDocumentationProvider),
+                (XmlDocumentation.Provider(sp.XmlService, sp.DTE) :> IdealDocumentationProvider),
                 (preferences :> LanguagePreferences),
                 enableStandaloneFileIntellisense,
                 createSource)
