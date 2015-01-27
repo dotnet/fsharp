@@ -2232,14 +2232,11 @@ and GenFieldStore isStatic cenv cgbuf eenv (rfref:RecdFieldRef,tyargs,m) sequel 
     if fld.IsMutable && not (useGenuineField rfref.Tycon fld) then
         let cconv = if isStatic then ILCallingConv.Static else ILCallingConv.Instance
         let mspec = mkILMethSpecInTy (fspec.EnclosingType, cconv, "set_" + fld.rfield_id.idText, [fspec.FormalType],ILType.Void,[])
-        
         CG.EmitInstr cgbuf (mk_field_pops isStatic 1) Push0 (mkNormalCall mspec)
     else
-        // Within assemblies we do generate some set-field operations 
-        // for immutable fields even when resolving recursive bindings. 
-        // However we do not generate "set" properties for these. 
-        // Hence we just set the field directly in this case. 
-        CG.EmitInstr cgbuf (mk_field_pops isStatic 1) Push0 (if isStatic then mkNormalStsfld fspec else mkNormalStfld fspec); 
+        let vol = if rfref.RecdField.IsVolatile then Volatile else Nonvolatile
+        let instr = if isStatic then I_stsfld (vol, fspec) else I_stfld (ILAlignment.Aligned, vol, fspec)
+        CG.EmitInstr cgbuf (mk_field_pops isStatic 1) Push0 instr; 
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
 
 //--------------------------------------------------------------------------

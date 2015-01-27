@@ -17,7 +17,7 @@ CodeGen01,NoMT				CodeGen\EmittedIL\InequalityComparison
 CodeGen01,NoMT				CodeGen\EmittedIL\ListExpressionStepping
 CodeGen01,NoMT				CodeGen\EmittedIL\MethodImplAttribute
 CodeGen01,NoMT				CodeGen\EmittedIL\Misc
-CodeGen01,NoMT				CodeGen\EmittedIL\Mutation
+CodeGen01,CodeGenMutation,NoMT				CodeGen\EmittedIL\Mutation
 CodeGen01,NoMT				CodeGen\EmittedIL\Operators
 CodeGen01,NoMT				CodeGen\EmittedIL\QueryExpressionStepping
 CodeGen01,NoMT				CodeGen\EmittedIL\SeqExpressionStepping
