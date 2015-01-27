@@ -839,6 +839,14 @@ module LeafExpressionEvaluationTests =
         checkEval "clkedw2" (<@ let x : int option = Some 1 in x.Value @>) 1
         checkEval "clkedw3" (<@ let x : int option = Some 1 in x.ToString() @>) "Some(1)"
 
+    module NestedQuotes = 
+
+        open Microsoft.FSharp.Linq.NullableOperators
+
+        checkEval "feoewjewjlejf1" <@ <@@ 1 @@> @> <@@ 1 @@> 
+        checkEval "feoewjewjlejf2" <@ <@ 1 @> @> <@ 1 @> 
+        checkEval "feoewjewjlejf3" <@ <@@ 1 @@>, <@ 2 @> @> (<@@ 1 @@> , <@ 2 @>)
+
     module Extensions = 
         type System.Object with 
             member x.ExtensionMethod0()  = 3
@@ -1128,6 +1136,7 @@ module LeafExpressionEvaluationTests =
 
         checkText "p2oin209v33x" <@ Nullable 2 ?%? Nullable () @> "(Convert(2) % new Nullable`1())"
         checkText "p2oin209v33x" <@ Nullable 2 ?% 3 @> "(Convert(2) % Convert(3))"
+
 
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 

@@ -378,8 +378,15 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let bR  = ConvExpr cenv (BindVal env v) b 
         QP.mkLambda(vR, bR)
 
-    | Expr.Quote(ast,_,_,_,_) -> 
-        QP.mkQuote(ConvExpr cenv env ast)
+    | Expr.Quote(ast,_,_,_,ety) -> 
+        // F# 2.0-3.1 had a bug with nested 'raw' quotations. F# 4.0 + FSharp.Core 4.4.0.0+ allows us to do the right thing.
+        if cenv.quotationFormat = QuotationSerializationFormat.FSharp_40_Plus  && 
+           // Look for a 'raw' quotation
+           tyconRefEq cenv.g (tcrefOfAppTy cenv.g ety) cenv.g.raw_expr_tcr 
+        then
+            QP.mkQuoteRaw40(ConvExpr cenv env ast)
+        else
+            QP.mkQuote(ConvExpr cenv env ast)
 
     | Expr.TyLambda (_,_,_,m,_) -> 
         wfail(Error(FSComp.SR.crefQuotationsCantContainGenericFunctions(), m))
