@@ -59,7 +59,7 @@ Core05		fsharp\core\pinvoke
 Core05		fsharp\core\printf
 Core05		fsharp\core\printing
 Core05		fsharp\core\queriesCustomQueryOps
-Core06		fsharp\core\queriesLeafExpressionConvert
+Core06,CoreQuotes		fsharp\core\queriesLeafExpressionConvert
 Core06		fsharp\core\queriesNullableOperators
 Core06		fsharp\core\queriesOverIEnumerable
 Core06		fsharp\core\queriesOverIQueryable

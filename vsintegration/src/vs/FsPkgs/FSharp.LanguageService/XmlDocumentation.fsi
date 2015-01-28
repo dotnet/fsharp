@@ -5,12 +5,12 @@ open System
 open System.Text
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
+open EnvDTE
 
 module internal XmlDocumentation = 
     type Provider =
         interface IdealDocumentationProvider
-        new : xmlIndexService:IVsXMLMemberIndexService -> Provider
+        new : xmlIndexService:IVsXMLMemberIndexService * dte: DTE -> Provider
 
     /// Build a data tip text string with xml comments injected.
     val BuildDataTipText :  IdealDocumentationProvider * DataTipText -> string

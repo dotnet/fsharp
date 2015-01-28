@@ -303,5 +303,8 @@ namespace Microsoft.FSharp.Linq.RuntimeHelpers
         /// A runtime helper used to evaluate nested quotation literals.
         val SubstHelper : Expr * Var[] * obj[] -> Expr<'T>
 
+        /// A runtime helper used to evaluate nested quotation literals.
+        val SubstHelperRaw : Expr * Var[] * obj[] -> Expr
+
         val internal (|SpecificCallToMethod|_|) : System.RuntimeMethodHandle -> (Expr -> (Expr option * Type list * Expr list) option)
 #endif
