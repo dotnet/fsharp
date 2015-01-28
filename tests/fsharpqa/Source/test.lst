@@ -210,7 +210,7 @@ Conformance07			Conformance\PatternMatching\DynamicTypeTest
 Conformance07			Conformance\PatternMatching\Expression
 Conformance07			Conformance\PatternMatching\Named
 Conformance07			Conformance\PatternMatching\Null
-Conformance07,Smoke			Conformance\PatternMatching\Record
+Conformance07			Conformance\PatternMatching\Record
 Conformance07			Conformance\PatternMatching\Simple
 Conformance07			Conformance\PatternMatching\SimpleConstant
 
@@ -312,6 +312,6 @@ Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\UnitsOfMeasure
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents
 Misc02,NoMT		..\..\..\testsprivate\fsharpqa\Source\Setup
 Misc02			Stress
-Misc02,Smoke			XmlDoc\Basic
+Misc02			XmlDoc\Basic
 Misc02			XmlDoc\OCamlDoc
 Misc02			XmlDoc\UnitOfMeasure
