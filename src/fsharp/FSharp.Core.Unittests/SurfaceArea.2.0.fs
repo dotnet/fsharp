@@ -3287,6 +3287,5 @@ System.Tuple`8[T1,T2,T3,T4,T5,T6,T7,TRest]: Void .ctor(T1, T2, T3, T4, T5, T6, T
 "
 
             let act = actual.ToString()
-            if expected <> act then
-                printf "%s" act
+            printf "%s" act
             Assert.AreEqual(expected, act)

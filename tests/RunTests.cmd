@@ -187,15 +187,15 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-echo %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-     %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
 set XMLFILE=CoreUnit_%coreunitsuffix%_SurfaceArea_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_SurfaceArea_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_SurfaceArea_Error.log
 
-echo %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.SurfaceArea.dll 
-     %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitplatform%\bin\FSharp.Core.Unittests.SurfaceArea.%coreunitsuffix%.dll 
+echo %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.SurfaceArea.dll 
+     %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitplatform%\bin\FSharp.Core.Unittests.SurfaceArea.%coreunitsuffix%.dll 
 goto :EOF
 
 :COMPILERUNIT
@@ -209,8 +209,8 @@ if errorlevel 1 (
   echo Error: nunit-console.exe is not in the PATH
   exit /b 1
 )
-echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
-     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+echo nunit-console.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+     nunit-console.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
 
 goto :EOF
 
@@ -229,7 +229,7 @@ if errorlevel 1 (
 for /f "tokens=*" %%a in  ('where.exe nunit-console-x86.exe')  do  (set nunitlocation=%%~dpa)
 xcopy /y "%nunitlocation%\lib\*.dll" "%FSCBINPATH%"
 
-echo nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
-     nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+echo nunit-console-x86.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+     nunit-console-x86.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF

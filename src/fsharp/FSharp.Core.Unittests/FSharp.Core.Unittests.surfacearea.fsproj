@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <ProjectGuid>{88e2d422-6852-46e9-b741-83e391dc7973}</ProjectGuid>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
+    <OutputType>Library</OutputType>
+    <AssemblyName>FSharp.Core.Unittests.SurfaceArea.$(TargetFSharpCore)</AssemblyName>
+    <TargetFrameworkVersion Condition=" '$(TargetFramework)' == 'net20' ">v3.5</TargetFrameworkVersion>
+    <Name>SystematicUnitTestsSurfaceArea</Name>
+    <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' ">netcore</TargetProfile>
+    <!-- workaround for msbuild narrowing the assembly search paths when building portable libs -->
+    <AssemblySearchPaths Condition="$(TargetFramework.Contains('portable'))">
+      {CandidateAssemblyFiles};
+      {TargetFrameworkDirectory};
+      {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
+    </AssemblySearchPaths>
+    <References_Nunit>true</References_Nunit>
+    <DefineConstants Condition="'$(TargetFramework)' == 'sl5'">$(DefineConstants);SILVERLIGHT</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'net20'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_net20</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'net40'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_net40</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable7'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable7</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable47'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable47</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable78'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable78</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable259'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable259</DefineConstants>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_$(TargetFSharpCore)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'VSDebug|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\vsrelease\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
+    <Reference Condition="'$(TargetFramework)' == 'net20'"       Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\net20\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'net40'"       Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\net40\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable7'"   Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable7\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable47'"  Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable47\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable78'"  Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable78\bin\fsharp.core.dll" />
+    <Reference Condition="'$(TargetFramework)' == 'portable259'" Include="$(MSBuildProjectDirectory)\..\..\..\$(Configuration)\Portable259\bin\fsharp.core.dll" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!$(TargetFramework.ToLower().Contains('portable'))">
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5'" />
+    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="surfacearea.2.0.fs" Condition="'$(TargetFSharpCore)' == 'net20'" />
+    <Compile Include="surfacearea.4.0.fs" Condition="'$(TargetFSharpCore)' == 'net40'" />
+    <Compile Include="surfacearea.portable7.4.0.fs" Condition="'$(TargetFSharpCore)'   == 'portable7'" />
+    <Compile Include="surfacearea.portable47.4.0.fs" Condition="'$(TargetFSharpCore)'  == 'portable47'" />
+    <Compile Include="surfacearea.portable78.4.0.fs" Condition="'$(TargetFSharpCore)'  == 'portable78'" />
+    <Compile Include="surfacearea.portable259.4.0.fs" Condition="'$(TargetFSharpCore)' == 'portable259'" />
+  </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Nuget.targets" />
+  <Target Name="IncrementalClean" />
+ 
+</Project>
