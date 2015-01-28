@@ -75,13 +75,14 @@ REM @if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd debug' failed && goto
 
 @echo on
 
-tests\RunTests.cmd debug fsharp Smoke
+pushd tests
+RunTests.cmd debug fsharp Smoke
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
 
-tests\RunTests.cmd debug fsharpqa Smoke
+RunTests.cmd debug fsharpqa Smoke
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
 
 set PATH=%PATH%;%~dp0%packages\NUnit.Runners.2.6.3\tools\
-tests\RunTests.cmd debug coreunit
+RunTests.cmd debug coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug coreunit' failed && goto :eof
 
