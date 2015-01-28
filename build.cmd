@@ -1,4 +1,4 @@
-@echo off
+@echo on
 
 :: Check prerequisites
 set _msbuildexe="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
@@ -10,19 +10,46 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe.  Please see h
 set _gacutilexe="%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.1A\bin\NETFX 4.5.1 Tools\gacutil.exe"
 if not exist %_gacutilexe% echo Error: Could not find gacutil.exe.  && goto :eof
 
+.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages
+@if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :eof
+
 ::Build
 %_gacutilexe%  /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
+@if ERRORLEVEL 1 echo Error: gacutil failed && goto :eof
+
 %_msbuildexe% src\fsharp-proto-build.proj
+@if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :eof
 ngen install lib\proto\fsc-proto.exe
-%_msbuildexe% src/fsharp-library-build.proj 
-%_msbuildexe% src/fsharp-compiler-build.proj 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=net20
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78
-%_msbuildexe% src/fsharp-library-unittests-build.proj
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
-src\update.cmd debug -ngen
-tests\BuildTestTools.cmd debug 
+%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true 
+@if ERRORLEVEL 1 echo Error: library debug build failed && goto :eof
+%_msbuildexe% src/fsharp-compiler-build.proj /p:UseNugetPackages=true 
+@if ERRORLEVEL 1 echo Error: compile debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=net20
+@if ERRORLEVEL 1 echo Error: library net20 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
+@if ERRORLEVEL 1 echo Error: library portable47 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
+@if ERRORLEVEL 1 echo Error: library portable7 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
+@if ERRORLEVEL 1 echo Error: library portable78 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true
+@if ERRORLEVEL 1 echo Error: library unittests debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
+@if ERRORLEVEL 1 echo Error: library unittests debug build failed portable47 && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
+@if ERRORLEVEL 1 echo Error: library unittests debug build failed portable7 && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
+@if ERRORLEVEL 1 echo Error: library unittests debug build failed portable78 && goto :eof
+@echo on
+call src\update.cmd debug -ngen
+@echo on
+call tests\BuildTestTools.cmd debug 
+REM @if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd debug' failed && goto :eof
+@echo on
+set PATH=%PATH%;%~dp0%packages\NUnit.Runners.2.6.3\tools\
+tests\RunTests.cmd debug fsharpqa CodeGen01
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa CodeGen01' failed && goto :eof
+tests\RunTests.cmd debug coreunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug coreunit' failed && goto :eof
+tests\RunTests.cmd debug fsharp Core01
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa CodeGen01' failed && goto :eof
