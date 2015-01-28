@@ -884,9 +884,11 @@ type IntConversionsGenerated() =
   member this.``Checked.uint32.MaxValue.To.sbyte`` () =
     CheckThrowsExn<OverflowException> (fun () -> Checked.sbyte UInt32.MaxValue |> ignore)
   
+#if !FSHARP_CORE_2_0
   [<Test>]
   member this.``Checked.uint64.MaxValue.To.sbyte`` () =
     CheckThrowsExn<OverflowException> (fun () -> Checked.sbyte UInt64.MaxValue |> ignore)
+#endif
   
   [<Test>]
   member this.``Checked.uint16.MaxValue.To.int16`` () =
@@ -895,18 +897,22 @@ type IntConversionsGenerated() =
   [<Test>]
   member this.``Checked.uint32.MaxValue.To.int16`` () =
     CheckThrowsExn<OverflowException> (fun () -> Checked.int16 UInt32.MaxValue |> ignore)
-  
+
+#if !FSHARP_CORE_2_0
   [<Test>]
   member this.``Checked.uint64.MaxValue.To.int16`` () =
     CheckThrowsExn<OverflowException> (fun () -> Checked.int16 UInt64.MaxValue |> ignore)
+#endif
   
   [<Test>]
   member this.``Checked.uint32.MaxValue.To.int32`` () =
     CheckThrowsExn<OverflowException> (fun () -> Checked.int32 UInt32.MaxValue |> ignore)
   
+#if !FSHARP_CORE_2_0
   [<Test>]
   member this.``Checked.uint64.MaxValue.To.int32`` () =
     CheckThrowsExn<OverflowException> (fun () -> Checked.int32 UInt64.MaxValue |> ignore)
+#endif
   
   [<Test>]
   member this.``Checked.uint64.MaxValue.To.int64`` () =

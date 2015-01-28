@@ -25,7 +25,6 @@
       {CandidateAssemblyFiles};
       {TargetFrameworkDirectory};
       {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
-      C:\Program Files (x86)\NUnit 2.6.3\bin\lib;
     </AssemblySearchPaths>
     <References_Nunit>true</References_Nunit>
   </PropertyGroup>
@@ -111,8 +110,6 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
-    <Compile Include="SurfaceArea.2.0.fs" Condition="'$(TargetFramework)' == 'net20'"/>
-    <Compile Include="SurfaceArea.4.0.fs" Condition="'$(TargetFramework)' != 'net20'"/>
   </ItemGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

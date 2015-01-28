@@ -44,28 +44,38 @@ if /I "%2" == "compilerunit" (
    set compilerunitsuffix=net40
    goto :COMPILERUNIT
 )
-if /I "%2" == "coreunit20" (
-   set coreunitsuffix=net20
+if /I "%2" == "coreunitportable259" (
+   set coreunitplatform=net40
+   set coreunitsuffix=portable259
    goto :COREUNIT
 )
-if /I "%2" == "coreunit" or "%2" == "coreunit40"(
-   set coreunitsuffix=net40
+if /I "%2" == "coreunitportable78" (
+   set coreunitplatform=net40
+   set coreunitsuffix=portable78
    goto :COREUNIT
 )
 if /I "%2" == "coreunitportable47" (
+   set coreunitplatform=net40
    set coreunitsuffix=portable47
    goto :COREUNIT
 )
 if /I "%2" == "coreunitportable7" (
+   set coreunitplatform=net40
    set coreunitsuffix=portable7
    goto :COREUNIT
 )
-if /I "%2" == "coreunitportable78" (
-   set coreunitsuffix=portable78
+if /I "%2" == "coreunit20" (
+   set coreunitplatform=net20
+   set coreunitsuffix=net20
    goto :COREUNIT
 )
-if /I "%2" == "coreunitportable259" (
-   set coreunitsuffix=portable259
+if /I "%2" == "coreunit40" (
+   set coreunitplatform=net40
+   set coreunitsuffix=net40
+   goto :COREUNIT
+)
+if /I "%2" == "coreunit" (
+   set coreunitsuffix=net40
    goto :COREUNIT
 )
 if /I "%2" == "ideunit" (goto :IDEUNIT)
@@ -74,7 +84,7 @@ if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunit20^|coreunit40^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -177,8 +187,15 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-echo %FSCBINPATH%\..\..\%coreunitsuffix%\bin\nunit-console.exe  /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-%~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+
+set XMLFILE=CoreUnit_%coreunitsuffix%_SurfaceArea_Xml.xml
+set OUTPUTFILE=CoreUnit_%coreunitsuffix%_SurfaceArea_Output.log
+set ERRORFILE=CoreUnit_%coreunitsuffix%_SurfaceArea_Error.log
+
+echo %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.SurfaceArea.dll 
+     %~dp0\..\packages\NUnit.Runners.2.6.4\tools\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitplatform%\bin\FSharp.Core.Unittests.SurfaceArea.%coreunitsuffix%.dll 
 goto :EOF
 
 :COMPILERUNIT

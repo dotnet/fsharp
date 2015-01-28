@@ -710,8 +710,7 @@
                           '$(TargetFramework)' == 'portable259')"/>
     <Error
         Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
-        Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40'"/>
-        
+        Condition="'$(AssemblyName)' != 'FSharp.Core' and !$(AssemblyName.StartsWith('FSharp.Core.Unittests')) and '$(TargetFramework)' != 'net40'"/>
   </Target>
 
   <!-- This build step copies files to the output folder while replacing build variables in the text of
