@@ -2452,8 +2452,17 @@ let ResolveRecordOrClassFieldsOfType (ncenv: NameResolver) m ad typ statics =
     |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
     |> List.map Item.RecdField
 
+[<RequireQualifiedAccess>]
+type ResolveCompletionTargets =
+    | All of (MethInfo -> TType -> bool)
+    | SettablePropertiesAndFields
+    member this.ResolveAll = 
+        match this with
+        | All _ -> true
+        | _ -> false
+
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
-let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad statics typ =
+let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: ResolveCompletionTargets) m ad statics typ =
     let g = ncenv.g
     let amap = ncenv.amap
     
@@ -2462,7 +2471,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
         |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
 
     let ucinfos = 
-        if statics  && isAppTy g typ then 
+        if completionTargets.ResolveAll && statics  && isAppTy g typ then 
             let tc,tinst = destAppTy g typ
             tc.UnionCasesAsRefList 
             |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
@@ -2470,13 +2479,15 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
         else []
 
     let einfos = 
-        ncenv.InfoReader.GetEventInfosOfType(None,ad,m,typ)
-        |> List.filter (fun x -> 
-            IsStandardEventInfo ncenv.InfoReader m ad x &&
-            x.IsStatic = statics)
+        if completionTargets.ResolveAll then
+            ncenv.InfoReader.GetEventInfosOfType(None,ad,m,typ)
+            |> List.filter (fun x -> 
+                IsStandardEventInfo ncenv.InfoReader m ad x &&
+                x.IsStatic = statics)
+        else []
 
     let nestedTypes = 
-        if statics then
+        if completionTargets.ResolveAll && statics then
             typ
             |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) 
         else 
@@ -2494,7 +2505,6 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
             x.IsStatic = statics && 
             IsPropInfoAccessible g amap m ad x)
 
-
     // Exclude get_ and set_ methods accessed by properties 
     let pinfoMethNames = 
       (pinfosIncludingUnseen 
@@ -2506,13 +2516,15 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
        |> List.map (fun pinfo -> pinfo.SetterMethod.LogicalName))
     
     let einfoMethNames = 
-        [ for einfo in einfos do 
-            let delegateType = einfo.GetDelegateType(amap,m)
-            let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
-            // Only events with void return types are suppressed in intellisense.
-            if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
-              yield einfo.GetAddMethod().DisplayName
-              yield einfo.GetRemoveMethod().DisplayName ]
+        if completionTargets.ResolveAll then
+            [ for einfo in einfos do 
+                let delegateType = einfo.GetDelegateType(amap,m)
+                let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
+                // Only events with void return types are suppressed in intellisense.
+                if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
+                  yield einfo.GetAddMethod().DisplayName
+                  yield einfo.GetRemoveMethod().DisplayName ]
+        else []
 
     let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
 
@@ -2521,6 +2533,10 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
         |> List.filter (fun x -> not (PropInfoIsUnseen m x))
 
     let minfoFilter (minfo:MethInfo) = 
+        let isApplicableMeth =
+            match completionTargets with
+            | ResolveCompletionTargets.All isApplicableMeth -> isApplicableMeth
+            | _ -> failwith "internal error: expected completionTargets = ResolveCompletionTargets.All"
         // Only show the Finalize, MemberwiseClose etc. methods on System.Object for values whose static type really is 
         // System.Object. Few of these are typically used from F#.  
         //
@@ -2559,24 +2575,31 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
         result
 
     let pinfoItems = 
+        let pinfos = 
+            match completionTargets with
+            | ResolveCompletionTargets.SettablePropertiesAndFields -> pinfos |> List.filter (fun p -> p.HasSetter)
+            | _ -> pinfos
+
         pinfos
         |> List.map (fun pinfo -> DecodeFSharpEvent [pinfo] ad g ncenv m)
-        |> List.filter (fun pinfo-> match pinfo with
-                                    | Some(Item.Event(einfo)) -> IsStandardEventInfo ncenv.InfoReader m ad einfo
-                                    | _ -> pinfo.IsSome)
+        |> List.filter (fun pinfo->
+            match pinfo with
+            | Some(Item.Event(einfo)) -> completionTargets.ResolveAll && IsStandardEventInfo ncenv.InfoReader m ad einfo
+            | _ -> pinfo.IsSome)
         |> List.map (fun pinfo->pinfo.Value)
 
-    let addersAndRemovers = 
-        pinfoItems 
-        |> List.map (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
-        |> List.concat
-    
     // REVIEW: add a name filter here in the common cases?
     let minfos = 
-        AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ 
-        |> List.filter minfoFilter
-        |> List.filter (fun minfo -> not(addersAndRemovers|>List.exists (fun ar-> ar = minfo.LogicalName)))
+        if completionTargets.ResolveAll then
+            let addersAndRemovers = 
+                pinfoItems 
+                |> List.map (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
+                |> List.concat
 
+            AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ 
+            |> List.filter minfoFilter
+            |> List.filter (fun minfo -> not(addersAndRemovers|>List.exists (fun ar-> ar = minfo.LogicalName)))
+        else []
     // Partition methods into overload sets
     let rec partitionl (l:MethInfo list) acc = 
         match l with
@@ -2584,8 +2607,6 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv isApplicableMeth m ad st
         | h::t -> 
             let nm = h.LogicalName
             partitionl t (NameMultiMap.add nm h acc)
-
-
 
     // Build the results
     ucinfos @
@@ -2884,7 +2905,7 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 let ResolvePartialLongIdent ncenv nenv isApplicableMeth m ad plid allowObsolete = 
-    ResolvePartialLongIdentPrim ncenv nenv isApplicableMeth OpenQualified m ad plid allowObsolete 
+    ResolvePartialLongIdentPrim ncenv nenv (ResolveCompletionTargets.All isApplicableMeth) OpenQualified m ad plid allowObsolete 
 
 // REVIEW: has much in common with ResolvePartialLongIdentInModuleOrNamespace - probably they should be united
 let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameResolver) nenv m ad (modref:ModuleOrNamespaceRef) plid allowObsolete =
