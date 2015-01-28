@@ -166,6 +166,14 @@ module ExtraTopLevelOperators =
     [<CompiledName("ToSByte")>]
     let inline int8 x = sbyte x
 
+    module Checked = 
+
+        [<CompiledName("ToByte")>]
+        let inline uint8 x = Checked.byte x
+
+        [<CompiledName("ToSByte")>]
+        let inline int8 x = Checked.sbyte x
+
 
     #if FX_MINIMAL_REFLECTION // not on Compact Framework 
     #else

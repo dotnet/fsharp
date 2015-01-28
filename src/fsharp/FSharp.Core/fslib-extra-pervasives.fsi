@@ -87,20 +87,36 @@ module ExtraTopLevelOperators =
     /// <remarks>This is a direct conversion for all 
     /// primitive numeric types. For strings, the input is converted using <c>Double.Parse()</c>  with InvariantCulture settings. Otherwise the operation requires and invokes a <c>ToDouble</c> method on the input type.</remarks>
     [<CompiledName("ToDouble")>]
-    val inline double     : value:^T -> float      when ^T : (static member op_Explicit : ^T -> double)     and default ^T : int
+    val inline double     : value:^T -> double      when ^T : (static member op_Explicit : ^T -> double)     and default ^T : int
 
     /// <summary>Converts the argument to byte.</summary>
     /// <remarks>This is a direct conversion for all 
     /// primitive numeric types. For strings, the input is converted using <c>Byte.Parse()</c> on strings and otherwise requires a <c>ToByte</c> method on the input type.</remarks>
     [<CompiledName("ToByte")>]
-    val inline uint8       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> byte)       and default ^T : int        
+    val inline uint8       : value:^T -> uint8       when ^T : (static member op_Explicit : ^T -> uint8)       and default ^T : int        
     
     /// <summary>Converts the argument to signed byte.</summary>
     /// <remarks>This is a direct conversion for all 
     /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  with InvariantCulture settings.
     /// Otherwise the operation requires and invokes a <c>ToSByte</c> method on the input type.</remarks>
     [<CompiledName("ToSByte")>]
-    val inline int8      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> sbyte)      and default ^T : int
+    val inline int8      : value:^T -> int8      when ^T : (static member op_Explicit : ^T -> int8)      and default ^T : int
+    
+
+    module Checked = 
+
+        /// <summary>Converts the argument to byte.</summary>
+        /// <remarks>This is a direct, checked conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>Byte.Parse()</c> on strings and otherwise requires a <c>ToByte</c> method on the input type.</remarks>
+        [<CompiledName("ToByte")>]
+        val inline uint8       : value:^T -> byte       when ^T : (static member op_Explicit : ^T -> uint8)       and default ^T : int        
+    
+        /// <summary>Converts the argument to signed byte.</summary>
+        /// <remarks>This is a direct, checked conversion for all 
+        /// primitive numeric types. For strings, the input is converted using <c>SByte.Parse()</c>  with InvariantCulture settings.
+        /// Otherwise the operation requires and invokes a <c>ToSByte</c> method on the input type.</remarks>
+        [<CompiledName("ToSByte")>]
+        val inline int8      : value:^T -> sbyte      when ^T : (static member op_Explicit : ^T -> int8)      and default ^T : int
     
 
     /// <summary>Builds a read-only lookup table from a sequence of key/value pairs. The key objects are indexed using generic hashing and equality.</summary>

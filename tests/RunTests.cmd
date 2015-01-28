@@ -214,6 +214,22 @@ echo nunit-console.exe /nologo /noshadow /result=%XMLFILE% /output=%OUTPUTFILE% 
 
 goto :EOF
 
+:COMPILERUNIT
+
+set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
+set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
+set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
+
+where.exe nunit-console.exe > NUL 2> NUL
+if errorlevel 1 (
+  echo Error: nunit-console.exe is not in the PATH
+  exit /b 1
+)
+echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+
+goto :EOF
+
 :IDEUNIT
 
 set XMLFILE=IDEUnit_Xml.xml

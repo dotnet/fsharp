@@ -179,7 +179,7 @@ and
     | CoerceOp     of Type
     | NewArrayOp    of Type
     | NewDelegateOp   of Type
-    | QuoteOp 
+    | QuoteOp of bool
     | SequentialOp 
     | AddressOfOp 
     | VarSetOp
@@ -293,7 +293,7 @@ and [<CompiledName("FSharpExpr")>]
         | VarTerm(v)   -> wordL v.Name
         | LambdaTerm(v,b)   -> combL "Lambda" [varL v; expr b]
         | HoleTerm _  -> wordL "_"
-        | CombTerm(QuoteOp,args) -> combL "Quote" (exprs args)
+        | CombTerm(QuoteOp _,args) -> combL "Quote" (exprs args)
         | _ -> failwithf "Unexpected term in layout %A" x.Tree
 
      
@@ -357,6 +357,7 @@ module Patterns =
 
     let mkArrayTy (t:Type) = t.MakeArrayType();
     let mkExprTy (t:Type) = exprTyC.MakeGenericType([| t |])
+    let rawExprTy = typeof<Expr>
 
 
     //--------------------------------------------------------------------------
@@ -381,7 +382,13 @@ module Patterns =
     let (|Lambda|_|)        (E x) = match x with LambdaTerm(a,b)  -> Some (a,b) | _ -> None 
 
     [<CompiledName("QuotePattern")>]
-    let (|Quote|_|)         (E x) = match x with CombTerm(QuoteOp,[a])     -> Some (a)   | _ -> None 
+    let (|Quote|_|)         (E x) = match x with CombTerm(QuoteOp _,[a])     -> Some (a)   | _ -> None 
+
+    [<CompiledName("QuoteRawPattern")>]
+    let (|QuoteRaw|_|)         (E x) = match x with CombTerm(QuoteOp false,[a])     -> Some (a)   | _ -> None 
+
+    [<CompiledName("QuoteTypedPattern")>]
+    let (|QuoteTyped|_|)         (E x) = match x with CombTerm(QuoteOp true,[a])     -> Some (a)   | _ -> None 
 
     [<CompiledName("IfThenElsePattern")>]
     let (|IfThenElse|_|)          = function Comb3(IfThenElseOp,e1,e2,e3) -> Some(e1,e2,e3) | _ -> None
@@ -577,14 +584,15 @@ module Patterns =
             | NewDelegateOp ty,_     -> ty
             | DefaultValueOp ty,_     -> ty
             | TypeTestOp _,_     -> typeof<bool>
-            | QuoteOp,[expr]        -> mkExprTy (typeOf expr)
+            | QuoteOp true,[expr]        -> mkExprTy (typeOf expr)
+            | QuoteOp false,[_]        -> rawExprTy
             | TryFinallyOp,[e1;_]        -> typeOf e1
             | TryWithOp,[e1;_;_]        -> typeOf e1
             | WhileLoopOp,_ 
             | VarSetOp,_
             | AddressSetOp,_ -> typeof<Unit> 
             | AddressOfOp,_ -> raise <| System.InvalidOperationException (SR.GetString(SR.QcannotTakeAddress))
-            | (QuoteOp | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp),_ -> failwith "unreachable"
+            | (QuoteOp _ | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp),_ -> failwith "unreachable"
 
 
     //--------------------------------------------------------------------------
@@ -656,7 +664,7 @@ module Patterns =
   
     // [Correct by definition]
     let mkVar v       = E(VarTerm v )
-    let mkQuote(a)    = E(CombTerm(QuoteOp,[(a:>Expr)] ))
+    let mkQuote(a,isTyped)    = E(CombTerm(QuoteOp isTyped,[(a:>Expr)] ))
           
     let mkValue (v,ty) = mkFE0 (ValueOp(v,ty,None))
     let mkValueWithName (v,ty,nm) = mkFE0 (ValueOp(v,ty,Some nm))
@@ -1363,12 +1371,14 @@ module Patterns =
                let idx = u_int st
                (fun env -> E(HoleTerm(a env.typeInst , idx)))
         | 4 -> let a = u_Expr st
-               (fun env -> mkQuote(a env))
+               (fun env -> mkQuote(a env, true))
         | 5 -> let a = u_Expr st
                let attrs = u_list u_Expr st
                (fun env -> let e = (a env) in EA(e.Tree,(e.CustomAttributes @ List.map (fun attrf -> attrf env) attrs)))
         | 6 -> let a = u_dtype st
                (fun env -> mkVar(Var.Global("this", a env.typeInst)))
+        | 7 -> let a = u_Expr st
+               (fun env -> mkQuote(a env, false))
         | _ -> failwith "u_Expr"
 
     and u_VarDecl st = 
@@ -1922,7 +1932,11 @@ type Expr with
     static member PropertySet (property:PropertyInfo, value:Expr, ?args) = 
         mkStaticPropSet(property, defaultArg args [], value)
 
-    static member Quote (expr:Expr) = mkQuote expr
+    static member Quote (expr:Expr) = mkQuote (expr, true)
+
+    static member QuoteRaw (expr:Expr) = mkQuote (expr, false)
+
+    static member QuoteTyped (expr:Expr) = mkQuote (expr, true)
 
     static member Sequential (e1:Expr, e2:Expr) = 
         mkSequential (e1, e2)
@@ -2178,7 +2192,7 @@ module ExprShape =
             | WhileLoopOp,[e1;e2]     -> mkWhileLoop(e1,e2)
             | TryFinallyOp,[e1;e2]     -> mkTryFinally(e1,e2)
             | TryWithOp,[e1;Lambda(v1,e2);Lambda(v2,e3)]     -> mkTryWith(e1,v1,e2,v2,e3)
-            | QuoteOp,[e1]     -> mkQuote(e1)
+            | QuoteOp flg,[e1]     -> mkQuote(e1,flg)
             | ValueOp(v,ty,None),[]  -> mkValue(v,ty)
             | ValueOp(v,ty,Some nm),[]  -> mkValueWithName(v,ty,nm)
             | WithValueOp(v,ty),[e]  -> mkValueWithDefn(v,ty,e)

@@ -38,7 +38,8 @@ type ArgumentContainer =
 type Item = 
   // These exist in the "eUnqualifiedItems" List.map in the type environment. 
   | Value of  ValRef
-  | UnionCase of UnionCaseInfo
+  // UnionCaseInfo and temporary flag which is used to show a "use case is deprecated" message
+  | UnionCase of UnionCaseInfo * bool 
   | ActivePatternResult of ActivePatternInfo * TType * int  * range
   | ActivePatternCase of ActivePatternElemRef 
   | ExnCase of TyconRef 
@@ -67,6 +68,8 @@ type Item =
   | UnqualifiedType of TyconRef list
   member DisplayName : TcGlobals -> string
 
+/// Represents a record field resolution and the information if the usage is deprecated.
+type FieldResolution = FieldResolution of RecdFieldRef * bool
 
 /// Information about an extension member held in the name resolution environment
 [<Sealed>]
@@ -262,7 +265,7 @@ val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResol
 val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
 
 /// Resolve a long identifier to a field
-val internal ResolveField                           : NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> RecdFieldRef list
+val internal ResolveField                           : NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> FieldResolution list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent                   : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * Ident list
