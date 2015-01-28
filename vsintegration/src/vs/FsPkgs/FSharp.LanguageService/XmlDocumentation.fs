@@ -6,6 +6,9 @@ open System
 open System.Text
 open System.Collections.Generic
 open Internal.Utilities.Collections
+open Microsoft.VisualStudio
+open EnvDTE
+open EnvDTE80
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -27,9 +30,14 @@ module internal XmlDocumentation =
             else xml
 
     /// Provide Xml Documentation             
-    type Provider(xmlIndexService:IVsXMLMemberIndexService) = 
+    type Provider(xmlIndexService:IVsXMLMemberIndexService, dte: DTE) = 
         /// Index of assembly name to xml member index.
         let mutable xmlCache = new AgedLookup<string,IVsXMLMemberIndex>(10,areSame=(fun (x,y) -> x = y))
+        
+        let events = dte.Events :?> Events2
+        let solutionEvents = events.SolutionEvents        
+        do solutionEvents.add_AfterClosing(fun () -> 
+            xmlCache.Clear())
 
         let HasTrailingEndOfLine(sb:StringBuilder) = 
             if sb.Length = 0 then true
@@ -188,7 +196,7 @@ module internal XmlDocumentation =
                 with e-> 
                     Assert.Exception(e)
                     reraise()    
-
+ 
     /// Append an XmlCommnet to the segment.
     let AppendXmlComment(documentationProvider:IdealDocumentationProvider, segment:StringBuilder, xml, showExceptions, showParameters, paramName) =
         match xml with

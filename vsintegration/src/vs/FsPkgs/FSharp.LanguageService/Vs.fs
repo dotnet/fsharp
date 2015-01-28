@@ -85,6 +85,7 @@ type internal ServiceProvider(getService:Type->obj) =
     member sp.TextManager:IVsTextManager = downcast (getService (typeof<SVsTextManager>))
     member sp.Rdt:IVsRunningDocumentTable = downcast (getService (typeof<SVsRunningDocumentTable>))
     member sp.XmlService:IVsXMLMemberIndexService = downcast (getService (typeof<SVsXMLMemberIndexService>))
+    member sp.DTE:EnvDTE.DTE = downcast (getService (typeof<SDTE>))
     static member Stub = ServiceProvider(fun _t->raise (Error.UseOfUnitializedServiceProvider))
 
 /// Isolate VsTextManager as much as possible to ease transition into new editor architecture
