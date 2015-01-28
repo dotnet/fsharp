@@ -11,6 +11,7 @@ src/*.userprefs
 src/fsharp/FSStrings.resources
 lkg
 pack
+packages
 src/fsharp/FSharp.Build/*.resx
 src/fsharp/FSharp.Build-proto/*.resx
 src/fsharp/FSharp.Build-proto/*.resources
