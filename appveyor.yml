@@ -1,20 +1,7 @@
 init: 
   - git config --global core.autocrlf input 
 build_script: 
-  - cmd: gacutil /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
-  - cmd: msbuild src\fsharp-proto-build.proj
-  - cmd: msbuild src/fsharp-library-build.proj 
-  - cmd: msbuild src/fsharp-compiler-build.proj 
-  - cmd: msbuild src/fsharp-library-build.proj /p:TargetFramework=net20
-  - cmd: msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47
-  - cmd: msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7
-  - cmd: msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78
-  - cmd: msbuild src/fsharp-library-unittests-build.proj
-  - cmd: msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47
-  - cmd: msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
-  - cmd: msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
-  - cmd: src\update.cmd debug -ngen
-  - cmd: tests\BuildTestTools.cmd debug 
+  - cmd: build.cmd
 test: off 
 version: 0.0.1.{build} 
 artifacts: 
