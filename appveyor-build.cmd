@@ -81,9 +81,8 @@ REM Disabled while working out perl problem, see https://github.com/Microsoft/vi
 REM call RunTests.cmd debug fsharp Smoke
 REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd debug fsharpqa Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd debug fsharpqa Smoke
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
 
 set PATH=%PATH%;%~dp0%packages\NUnit.Runners.2.6.3\tools\
 call RunTests.cmd debug coreunit
