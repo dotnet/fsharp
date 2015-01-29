@@ -833,7 +833,7 @@ namespace Microsoft.FSharp.Core
                         SetArray2D dst i j (GetArray2D src (src1 + i) (src2 + j))
                 dst
 
-            let SetArray2DSub (dst: 'T[,]) src1 src2 len1 len2 src =
+            let SetArray2DSub (dst: 'T[,]) src1 src2 len1 len2 (src: 'T[,]) =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         SetArray2D dst (src1+i) (src2+j) (GetArray2D src i j)
@@ -858,12 +858,11 @@ namespace Microsoft.FSharp.Core
                             SetArray3D dst i j k (GetArray3D src (src1+i) (src2+j) (src3+k))
                 dst
 
-            let SetArray3DSub (dst: 'T[,,]) src1 src2 src3 len1 len2 len3 src =
+            let SetArray3DSub (dst: 'T[,,]) src1 src2 src3 len1 len2 len3 (src: 'T[,,]) =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         for k = 0 to len3 - 1 do
                             SetArray3D dst (src1+i) (src2+j) (src3+k) (GetArray3D src i j k)
-
 
 
             let inline GetArray4D (arr: 'T[,,,]) (n1:int) (n2:int) (n3:int) (n4:int)       = (# "ldelem.multi 4 !0" type ('T) arr n1 n2 n3 n4 : 'T #)  
@@ -888,7 +887,7 @@ namespace Microsoft.FSharp.Core
                               SetArray4D dst i j k m (GetArray4D src (src1+i) (src2+j) (src3+k) (src4+m))
                 dst
 
-            let SetArray4DSub (dst: 'T[,,,]) src1 src2 src3 src4 len1 len2 len3 len4 src =
+            let SetArray4DSub (dst: 'T[,,,]) src1 src2 src3 src4 len1 len2 len3 len4 (src: 'T[,,,]) =
                 for i = 0 to len1 - 1 do
                     for j = 0 to len2 - 1 do
                         for k = 0 to len3 - 1 do
@@ -5359,16 +5358,16 @@ namespace Microsoft.FSharp.Core
             [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
             let PowGeneric (one,mul,x:'T,n) = ComputePowerGenericInlined  one mul x n 
 
-            let inline ComputeSlice start finish length =
+            let inline ComputeSlice bound start finish length =
                 match start, finish with
-                | None, None -> 0, length - 1
-                | None, Some n when n >= 0 -> 0, n
-                | Some m, None when m <= length -> m, length - 1
+                | None, None -> bound, bound + length - 1
+                | None, Some n when n >= bound  -> bound , n
+                | Some m, None when m <= bound + length -> m, bound + length - 1
                 | Some m, Some n -> m, n
                 | _ -> raise (System.IndexOutOfRangeException())
 
             let inline GetArraySlice (arr: _[]) start finish =
-                let start, finish = ComputeSlice start finish arr.Length
+                let start, finish = ComputeSlice 0 start finish arr.Length
                 GetArraySub arr start (finish - start + 1)
 
             let inline SetArraySlice (dst: _[]) start finish (src:_[]) = 
@@ -5377,14 +5376,17 @@ namespace Microsoft.FSharp.Core
                 SetArraySub dst start (finish - start + 1) src
 
             let GetArraySlice2D (arr: _[,]) start1 finish1 start2 finish2 =
-                let start1, finish1 = ComputeSlice start1 finish1 (GetArray2DLength1 arr)
-                let start2, finish2 = ComputeSlice start2 finish2 (GetArray2DLength2 arr)
+                let bound1 = arr.GetLowerBound(0)
+                let bound2 = arr.GetLowerBound(1)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 arr)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 arr)
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
                 GetArray2DSub arr start1 start2 len1 len2
 
             let inline GetArraySlice2DFixed1 (arr: _[,]) fixed1 start2 finish2 = 
-                let start2, finish2 = ComputeSlice start2 finish2 (GetArray2DLength2 arr)
+                let bound2 = arr.GetLowerBound(1)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 arr)
                 let len2 = (finish2 - start2 + 1)
                 let dst = zeroCreate (if len2 < 0 then 0 else len2)
                 for j = 0 to len2 - 1 do 
@@ -5392,7 +5394,8 @@ namespace Microsoft.FSharp.Core
                 dst
 
             let inline GetArraySlice2DFixed2 (arr: _[,]) start1 finish1 fixed2 =
-                let start1, finish1 = ComputeSlice start1 finish1 (GetArray2DLength1 arr) 
+                let bound1 = arr.GetLowerBound(0)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 arr) 
                 let len1 = (finish1 - start1 + 1)
                 let dst = zeroCreate (if len1 < 0 then 0 else len1)
                 for i = 0 to len1 - 1 do 
@@ -5400,49 +5403,63 @@ namespace Microsoft.FSharp.Core
                 dst
 
             let inline SetArraySlice2DFixed1 (dst: _[,]) fixed1 start2 finish2 (src:_[]) = 
-                let start2  = (match start2 with None -> 0 | Some n -> n) 
-                let finish2 = (match finish2 with None -> GetArray2DLength2 dst - 1 | Some n -> n) 
+                let bound2 = dst.GetLowerBound(1)
+                let start2  = (match start2 with None -> bound2 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 dst - 1 | Some n -> n) 
                 let len2 = (finish2 - start2 + 1)
                 for j = 0 to len2 - 1 do
-                    SetArray2D dst fixed1 (start2+j) (GetArray src j)
+                    SetArray2D dst fixed1 (bound2+start2+j) (GetArray src j)
 
             let inline SetArraySlice2DFixed2 (dst: _[,]) start1 finish1 fixed2 (src:_[]) = 
-                let start1  = (match start1 with None -> 0 | Some n -> n) 
-                let finish1 = (match finish1 with None -> GetArray2DLength1 dst - 1 | Some n -> n) 
+                let bound1 = dst.GetLowerBound(0)
+                let start1  = (match start1 with None -> bound1 | Some n -> n) 
+                let finish1 = (match finish1 with None -> bound1 + GetArray2DLength1 dst - 1 | Some n -> n) 
                 let len1 = (finish1 - start1 + 1)
                 for i = 0 to len1 - 1 do
-                    SetArray2D dst (start1+i) fixed2 (GetArray src i)
+                    SetArray2D dst (bound1+start1+i) fixed2 (GetArray src i)
 
             let SetArraySlice2D (dst: _[,]) start1 finish1 start2 finish2 (src:_[,]) = 
-                let start1  = (match start1 with None -> 0 | Some n -> n) 
-                let start2  = (match start2 with None -> 0 | Some n -> n) 
-                let finish1 = (match finish1 with None -> GetArray2DLength1 dst - 1 | Some n -> n) 
-                let finish2 = (match finish2 with None -> GetArray2DLength2 dst - 1 | Some n -> n) 
+                let bound1 = dst.GetLowerBound(0)
+                let bound2 = dst.GetLowerBound(1)
+                let start1  = (match start1 with None -> bound1 | Some n -> n) 
+                let start2  = (match start2 with None -> bound2 | Some n -> n) 
+                let finish1 = (match finish1 with None -> bound1 + GetArray2DLength1 dst - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 dst - 1 | Some n -> n) 
                 SetArray2DSub dst start1 start2 (finish1 - start1 + 1) (finish2 - start2 + 1) src
 
             let GetArraySlice3D (arr: _[,,]) start1 finish1 start2 finish2 start3 finish3 =
-                let start1, finish1 = ComputeSlice start1 finish1 (GetArray3DLength1 arr)              
-                let start2, finish2 = ComputeSlice start2 finish2 (GetArray3DLength2 arr)              
-                let start3, finish3 = ComputeSlice start3 finish3 (GetArray3DLength3 arr)              
+                let bound1 = arr.GetLowerBound(0)
+                let bound2 = arr.GetLowerBound(1)
+                let bound3 = arr.GetLowerBound(2)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray3DLength1 arr)              
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray3DLength2 arr)              
+                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray3DLength3 arr)              
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
                 let len3 = (finish3 - start3 + 1)
                 GetArray3DSub arr start1 start2 start3 len1 len2 len3
 
             let SetArraySlice3D (dst: _[,,]) start1 finish1 start2 finish2 start3 finish3 (src:_[,,]) = 
-                let start1  = (match start1 with None -> 0 | Some n -> n) 
-                let start2  = (match start2 with None -> 0 | Some n -> n) 
-                let start3  = (match start3 with None -> 0 | Some n -> n) 
-                let finish1 = (match finish1 with None -> GetArray3DLength1 dst - 1 | Some n -> n) 
-                let finish2 = (match finish2 with None -> GetArray3DLength2 dst - 1 | Some n -> n) 
-                let finish3 = (match finish3 with None -> GetArray3DLength3 dst - 1 | Some n -> n) 
+                let bound1 = dst.GetLowerBound(0)
+                let bound2 = dst.GetLowerBound(1)
+                let bound3 = dst.GetLowerBound(2)
+                let start1  = (match start1 with None -> bound1 | Some n -> n) 
+                let start2  = (match start2 with None -> bound2 | Some n -> n) 
+                let start3  = (match start3 with None -> bound3 | Some n -> n) 
+                let finish1 = (match finish1 with None -> bound1 + GetArray3DLength1 dst - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + GetArray3DLength2 dst - 1 | Some n -> n) 
+                let finish3 = (match finish3 with None -> bound3 + GetArray3DLength3 dst - 1 | Some n -> n) 
                 SetArray3DSub dst start1 start2 start3 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) src
 
             let GetArraySlice4D (arr: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 = 
-                let start1, finish1 = ComputeSlice start1 finish1 (Array4DLength1 arr)              
-                let start2, finish2 = ComputeSlice start2 finish2 (Array4DLength2 arr)              
-                let start3, finish3 = ComputeSlice start3 finish3 (Array4DLength3 arr)              
-                let start4, finish4 = ComputeSlice start4 finish4 (Array4DLength4 arr)              
+                let bound1 = arr.GetLowerBound(0)
+                let bound2 = arr.GetLowerBound(1)
+                let bound3 = arr.GetLowerBound(2)
+                let bound4 = arr.GetLowerBound(3)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (Array4DLength1 arr)              
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (Array4DLength2 arr)              
+                let start3, finish3 = ComputeSlice bound3 start3 finish3 (Array4DLength3 arr)              
+                let start4, finish4 = ComputeSlice bound4 start4 finish4 (Array4DLength4 arr)              
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
                 let len3 = (finish3 - start3 + 1)
@@ -5450,18 +5467,22 @@ namespace Microsoft.FSharp.Core
                 GetArray4DSub arr start1 start2 start3 start4 len1 len2 len3 len4
 
             let SetArraySlice4D (dst: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 (src:_[,,,]) = 
-                let start1  = (match start1 with None -> 0 | Some n -> n) 
-                let start2  = (match start2 with None -> 0 | Some n -> n) 
-                let start3  = (match start3 with None -> 0 | Some n -> n) 
-                let start4  = (match start4 with None -> 0 | Some n -> n) 
-                let finish1 = (match finish1 with None -> Array4DLength1 dst - 1 | Some n -> n) 
-                let finish2 = (match finish2 with None -> Array4DLength2 dst - 1 | Some n -> n) 
-                let finish3 = (match finish3 with None -> Array4DLength3 dst - 1 | Some n -> n) 
-                let finish4 = (match finish4 with None -> Array4DLength4 dst - 1 | Some n -> n) 
+                let bound1 = dst.GetLowerBound(0)
+                let bound2 = dst.GetLowerBound(1)
+                let bound3 = dst.GetLowerBound(2)
+                let bound4 = dst.GetLowerBound(3)
+                let start1  = (match start1 with None -> bound1 | Some n -> n) 
+                let start2  = (match start2 with None -> bound2 | Some n -> n) 
+                let start3  = (match start3 with None -> bound3 | Some n -> n) 
+                let start4  = (match start4 with None -> bound4 | Some n -> n) 
+                let finish1 = (match finish1 with None -> bound1 + Array4DLength1 dst - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + Array4DLength2 dst - 1 | Some n -> n) 
+                let finish3 = (match finish3 with None -> bound3 + Array4DLength3 dst - 1 | Some n -> n) 
+                let finish4 = (match finish4 with None -> bound4 + Array4DLength4 dst - 1 | Some n -> n) 
                 SetArray4DSub dst start1 start2 start3 start4 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) (finish4 - start4 + 1) src
 
             let inline GetStringSlice (str:string) start finish =
-                let start, finish = ComputeSlice start finish str.Length
+                let start, finish = ComputeSlice 0 start finish str.Length
                 let len = finish-start+1
                 if len <= 0 then String.Empty
                 else str.Substring(start, len)

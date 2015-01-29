@@ -594,13 +594,62 @@ module Array2Tests = begin
     //test "a2_sub"
     //    (Array2D.sub a 1 1 2 2 = b)
 
+
     Array2D.blit b 0 0 a 0 0 2 2
     //test "a2_blit"
     //      (Array2D.sub a 0 0 2 2 = b)
 
   let _ = test_make_get_set_length ()
 
+
 end
+
+module ArrayNonZeroBasedTestsSlice = 
+  let runTest () = 
+    let arr = (Array2D.initBased 5 4 3 2 (fun i j -> (i,j)))
+    test "fewoih1" (arr.[6,*] = [|(6, 4); (6, 5)|])
+    test "fewoih2" (arr.[*,*].[1,*] = [|(6, 4); (6, 5)|])
+    test "fewoih3" (arr.[*,5] =  [|(5, 5); (6, 5); (7, 5)|])
+    test "fewoih4" (arr.[*,*].[*,1] =  [|(5, 5); (6, 5); (7, 5)|])
+    test "fewoih5" (arr.GetLowerBound(0) = 5)
+    test "fewoih6" (arr.GetLowerBound(1) = 4)
+    test "fewoih7" (arr.[*,*].GetLowerBound(0) = 0)
+    test "fewoih8" (arr.[*,*].GetLowerBound(1) = 0)
+    test "fewoih9" (arr.[*,*].[0..,1] =  [|(5, 5); (6, 5); (7, 5)|])
+    test "fewoih10" (arr.[*,*].[1..,1] =  [|(6, 5); (7, 5)|])
+    let arr2d = 
+        let arr = Array2D.zeroCreateBased 5 4 3 2 
+        for i in 5..7 do for j in 4..5 do arr.[i,j] <- (i,j)
+        arr
+    let arr2d2 = 
+        let arr = Array2D.zeroCreate 3 2 
+        for i in 0..2 do for j in 0..1 do arr.[i,j] <- (j,i)
+        arr
+    test "fewoih11" (arr2d.[6..6,5] =  [|(6, 5)|])
+    test "fewoih11" (arr2d.[..6,5] =  [|(6, 5)|])
+    test "fewoih11" (arr2d.[6..,5] =  [|(6, 5); (7, 5)|])
+    test "fewoih12" (arr2d.[*,*].[1..,1] =  [|(6, 5); (7, 5)|])
+    arr2d.[*,*] <- arr2d2
+    test "fewoih13" (arr2d.[*,*].[0..0,1] =  [|(1, 0)|])
+    test "fewoih13" (arr2d.[*,*].[1..,1] =  [|(1, 1); (1, 2)|])
+    test "fewoih13" (arr2d.[*,*].[1,1..] =  [|(1, 1)|])
+    test "fewoih13" (arr2d.[*,*].[1,0..0] =  [|(0, 1)|])
+    let arr3d = 
+        let arr = System.Array.CreateInstance(typeof<int*int*int>, [| 3;2;1 |], [|5;4;3|]) :?> (int*int*int)[,,]
+        for i in 5..7 do for j in 4..5 do for k in 3..3 do arr.[i,j,k] <- (i,j,k)
+        arr
+    let arr3d2 = 
+        let arr = System.Array.CreateInstance(typeof<int*int*int>, [| 3;2;1 |]) :?> (int*int*int)[,,]
+        for i in 0..2 do for j in 0..1 do for k in 0..0 do arr.[i,j,k] <- (k,j,i)
+        arr
+
+    test "fewoih14" (arr3d.[5,4,3] = (5,4,3))
+    test "fewoih15" (arr3d.[*,*,*].[0,0,0] =  (5,4,3))
+    arr3d.[*,*,*] <- arr3d2
+    test "fewoih16" (arr3d.[5,4,3] =  (0,0,0))
+    test "fewoih16" (arr3d.[5,5,3] =  (0,1,0))
+    test "fewoih16" (arr3d.[6,5,3] =  (0,1,1))
+  let _ = runTest()
 
 module Array3Tests = begin
 
