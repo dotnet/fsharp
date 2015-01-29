@@ -300,7 +300,7 @@ type AsyncType() =
                     return false
                 with e -> return true
               }
-        Async.RunSynchronously(a, 1000) |> Assert.IsTrue  
+        Async.RunSynchronously(a, 3000) |> Assert.IsTrue  
         
     [<Test>]
     member this.NonGenericTaskAsyncValueCancellation () =
