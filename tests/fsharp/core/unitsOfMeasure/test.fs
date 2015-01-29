@@ -19,6 +19,7 @@ let CreateBadImageFormatException () =
 
 // Regression test for https://github.com/Microsoft/visualfsharp/issues/30
 // (Compilation error: "Incorrect number of type arguments to local call"
+
 type R<[<Measure>] 'u> (f : float<'u>) =
     member r.Member = f
 
