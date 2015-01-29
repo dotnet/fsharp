@@ -12,6 +12,16 @@ To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 
 **Questions?** If you have questions about the source code, please ask in the issues and discussion forums.
 
+## 0.  A Shortcut to Build and Smoke Test
+
+You can build a subset of functionality (including bootstrapped compiler and library) and run a very 
+small number of 'smoke' tests using the script used by continuous integration:
+
+    .\appveyor-build.cmd
+
+See the script for what this does.  After you do this, you can do further testing, see  [TESTGUIDE.md](TESTGUIDE.md).
+
+
 ## 1.  Building a Proto Compiler
 
 The compiler is compiled as a set of .NET 4.0 components using a bootstrap process. This uses the Last Known Good (LKG) compiler to build.  
