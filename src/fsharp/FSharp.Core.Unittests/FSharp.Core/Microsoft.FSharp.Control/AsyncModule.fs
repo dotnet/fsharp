@@ -111,7 +111,7 @@ type AsyncModule() =
 
         let endMs = DateTime.Now.Millisecond
         let delta = endMs - startMs
-        Assert.IsTrue(abs ((abs delta) - 500) < 50, sprintf "Delta is too big %d" delta)
+        Assert.IsTrue(abs ((abs delta) - 500) < 400, sprintf "Delta is too big %d" delta)
 
     [<Test>]
     member this.``AwaitWaitHandle.TimeoutWithCancellation``() = 
