@@ -26,7 +26,7 @@
       {TargetFrameworkDirectory};
       {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
     </AssemblySearchPaths>
-    </PropertyGroup>
+  </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
@@ -108,4 +108,10 @@
     <Compile Include="SurfaceArea.4.0.fs" Condition="'$(TargetFramework)' == 'net40'"/>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Target Name="BeforeResolveReferences" Condition="'$(UseNugetPackages)'=='true'">
+    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(AssemblySearchPaths)">
+      <Output TaskParameter="Value"
+              PropertyName="AssemblySearchPaths" />
+    </CreateProperty>
+  </Target>
 </Project>

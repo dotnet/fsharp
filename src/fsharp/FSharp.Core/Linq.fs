@@ -79,25 +79,25 @@ module Nullable =
         open System
 
         [<CompiledName("ToUInt8")>]
-        let inline uint8 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
+        let inline uint8 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
         
         [<CompiledName("ToInt8")>]
-        let inline int8 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
+        let inline int8 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
         
         [<CompiledName("ToByte")>]
-        let inline byte (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
+        let inline byte (x:Nullable<_>) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
         
         [<CompiledName("ToSByte")>]
-        let inline sbyte (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
+        let inline sbyte (x:Nullable<_>) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
         
         [<CompiledName("ToInt16")>]
-        let inline int16 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.int16 x.Value) else Nullable()
+        let inline int16 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int16 x.Value) else Nullable()
         
         [<CompiledName("ToUInt16")>]
-        let inline uint16 (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.uint16 x.Value) else Nullable()
+        let inline uint16 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.uint16 x.Value) else Nullable()
         
         [<CompiledName("ToInt")>]
-        let inline int (x:Nullable< ^T >) = if x.HasValue then Nullable(Operators.int x.Value) else Nullable()
+        let inline int (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int x.Value) else Nullable()
         
         [<CompiledName("ToEnum")>]
         let inline enum (x:Nullable< int32 >) = if x.HasValue then Nullable(Operators.enum x.Value) else Nullable()
@@ -207,9 +207,11 @@ module LeafExpressionConverter =
        |> System.Reflection.MethodInfo.GetMethodFromHandle
        :?> MethodInfo
  
-    let SubstHelper<'T> (q:Expr, x:Var[], y:obj[]) : Expr<'T> =  
+    let SubstHelperRaw (q:Expr, x:Var[], y:obj[]) : Expr =  
         let d = Map.ofArray (Array.zip x y) 
-        q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value(x, v.Type))) |> Expr.Cast
+        q.Substitute(fun v -> v |> d.TryFind |> Option.map (fun x -> Expr.Value(x, v.Type)))
+ 
+    let SubstHelper<'T> (q:Expr, x:Var[], y:obj[]) : Expr<'T> =  SubstHelperRaw(q,x,y) |> Expr.Cast
  
     let showAll = 
 #if FX_RESHAPED_REFLECTION
@@ -385,6 +387,12 @@ module LeafExpressionConverter =
         methodhandleof (fun (x:Expr,y:Var[],z:obj[]) -> SubstHelper<obj> (x,y,z)) 
         |> System.Reflection.MethodInfo.GetMethodFromHandle 
         :?> MethodInfo
+
+    let substHelperRawMeth = 
+        methodhandleof (fun (x:Expr,y:Var[],z:obj[]) -> SubstHelperRaw (x,y,z)) 
+        |> System.Reflection.MethodInfo.GetMethodFromHandle 
+        :?> MethodInfo
+
     let (-->) ty1 ty2 = Reflection.FSharpType.MakeFunctionType(ty1, ty2)
 
     /// Extract member initialization expression stored in 'MemberInitializationHelper' (by QueryExtensions.fs)
@@ -762,10 +770,19 @@ module LeafExpressionConverter =
         | Patterns.IfThenElse(g, t, e) -> 
             Expression.Condition(ConvExprToLinqInContext env g, ConvExprToLinqInContext env t, ConvExprToLinqInContext env e) |> asExpr
 
-        | Patterns.Quote x ->  
+        | Patterns.QuoteTyped x ->  
             let fvs = x.GetFreeVars()
            
             Expression.Call(substHelperMeth.MakeGenericMethod [| x.Type |], 
+                            [| (Expression.Constant x) |> asExpr; 
+                               (Expression.NewArrayInit(typeof<Var>, [| for fv in fvs -> Expression.Constant fv |> asExpr |])  |> asExpr);  
+                               (Expression.NewArrayInit(typeof<obj>, [| for fv in fvs -> Expression.Convert(env.varEnv.[fv], typeof<obj>) |> asExpr |]) |> asExpr) |]) 
+                    |> asExpr
+            
+        | Patterns.QuoteRaw x ->  
+            let fvs = x.GetFreeVars()
+           
+            Expression.Call(substHelperRawMeth, 
                             [| (Expression.Constant x) |> asExpr; 
                                (Expression.NewArrayInit(typeof<Var>, [| for fv in fvs -> Expression.Constant fv |> asExpr |])  |> asExpr);  
                                (Expression.NewArrayInit(typeof<obj>, [| for fv in fvs -> Expression.Convert(env.varEnv.[fv], typeof<obj>) |> asExpr |]) |> asExpr) |]) 

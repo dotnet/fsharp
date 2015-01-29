@@ -1128,15 +1128,15 @@ module Query =
 
     let (|AnyNestedQuery|_|) e = 
         match e with 
-        | CallQueryBuilderRunValue (None, _, [_; Quote e ]) 
-        | CallQueryBuilderRunEnumerable (None, _, [_; Quote e ]) 
-        | CallQueryBuilderRunQueryable (Some _, _, [ Quote e ]) -> Some e
+        | CallQueryBuilderRunValue (None, _, [_; QuoteTyped e ]) 
+        | CallQueryBuilderRunEnumerable (None, _, [_; QuoteTyped e ]) 
+        | CallQueryBuilderRunQueryable (Some _, _, [ QuoteTyped e ]) -> Some e
         | _ -> None
 
     let (|EnumerableNestedQuery|_|) e = 
         match e with 
-        | CallQueryBuilderRunEnumerable (None, _, [_; Quote e ]) 
-        | CallQueryBuilderRunQueryable (Some _, _, [ Quote e ]) -> Some e
+        | CallQueryBuilderRunEnumerable (None, _, [_; QuoteTyped e ]) 
+        | CallQueryBuilderRunQueryable (Some _, _, [ QuoteTyped e ]) -> Some e
         | _ -> None
 
     /// Represents the result of TransInner - either a normal expression, or something we're about to turn into 

@@ -8,7 +8,7 @@
 #      Remember to use **TABS** not spaces.
 #      I don't know who you are.  I don't know what you want. But if you hose daily automation by forgetting tabs, I will look for you, I will find you, and I will revert your checkin.
 
-Core01		fsharp\core\access
+Core01,Smoke		fsharp\core\access
 Core01		fsharp\core\apporder
 Core01		fsharp\core\array
 Core01		fsharp\core\attributes
@@ -36,7 +36,7 @@ Core03		fsharp\core\internalsvisible
 Core03		fsharp\core\interop
 Core03		fsharp\core\lazy
 Core03		fsharp\core\letrec
-Core03		fsharp\core\libtest
+Core03,Smoke		fsharp\core\libtest
 Core03		fsharp\core\lift
 Core03		fsharp\core\load-script
 Core03		fsharp\core\longnames
@@ -59,14 +59,14 @@ Core05		fsharp\core\pinvoke
 Core05		fsharp\core\printf
 Core05		fsharp\core\printing
 Core05		fsharp\core\queriesCustomQueryOps
-Core06		fsharp\core\queriesLeafExpressionConvert
+Core06,CoreQuotes		fsharp\core\queriesLeafExpressionConvert
 Core06		fsharp\core\queriesNullableOperators
 Core06		fsharp\core\queriesOverIEnumerable
 Core06		fsharp\core\queriesOverIQueryable
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToEntities
 Core06		..\testsprivate\fsharp\core\queriesOverIQueryableLinqToSql
 Core06		fsharp\core\queriesOverOData
-Core06,CoreQuotes		fsharp\core\quotes
+Core06,CoreQuotes,Smoke		fsharp\core\quotes
 Core06		fsharp\core\quotesDebugInfo
 Core06		fsharp\core\quotesInMultipleModules
 Core07		fsharp\core\reflect
@@ -144,7 +144,7 @@ Samples07		..\testsprivate\fsharp\samples\XBoxLiveLogViewer
 Samples07		..\testsprivate\fsharp\samples\XNA\WindowsXNAGame
 Samples07		..\testsprivate\fsharp\samples\XNA\XBox360Game
 
-TypeProviders01		fsharp\typeProviders\helloWorld
+TypeProviders01,Smoke		fsharp\typeProviders\helloWorld
 TypeProviders01		..\testsprivate\fsharp\typeProviders\builtin\DbmlFile
 TypeProviders01		fsharp\typeProviders\builtin\EdmxFile
 TypeProviders01		fsharp\typeProviders\builtin\ODataService

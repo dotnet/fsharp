@@ -236,10 +236,21 @@ type Expr =
     /// <returns>The resulting expression.</returns>
     static member PropertySet: property:PropertyInfo * value:Expr * ?indexerArgs: Expr list -> Expr 
 
-    /// <summary>Builds an expression that represents a nested quotation literal</summary>
+    /// <summary>Builds an expression that represents a nested typed or raw quotation literal</summary>
     /// <param name="inner">The expression being quoted.</param>
     /// <returns>The resulting expression.</returns>
+    [<Obsolete("Please use Expr.QuoteTyped or Expr.QuoteRaw to distinguish between typed and raw quotation literals")>]
     static member Quote: inner:Expr -> Expr 
+
+    /// <summary>Builds an expression that represents a nested raw quotation literal</summary>
+    /// <param name="inner">The expression being quoted.</param>
+    /// <returns>The resulting expression.</returns>
+    static member QuoteRaw: inner:Expr -> Expr 
+
+    /// <summary>Builds an expression that represents a nested typed quotation literal</summary>
+    /// <param name="inner">The expression being quoted.</param>
+    /// <returns>The resulting expression.</returns>
+    static member QuoteTyped: inner:Expr -> Expr 
 
     /// <summary>Builds an expression that represents the sequential execution of one expression followed by another</summary>
     /// <param name="first">The first expression.</param>
@@ -552,7 +563,20 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     /// <returns>Expr option</returns>
     [<CompiledName("QuotePattern")>]
+    [<Obsolete("Please use QuoteTyped or QuoteRaw to distinguish between typed and raw quotation literals")>]
     val (|Quote|_|)           : input:Expr -> Expr option 
+
+    /// <summary>An active pattern to recognize expressions that represent a nested raw quotation literal</summary>
+    /// <param name="input">The input expression to match against.</param>
+    /// <returns>Expr option</returns>
+    [<CompiledName("QuoteRawPattern")>]
+    val (|QuoteRaw|_|)           : input:Expr -> Expr option 
+
+    /// <summary>An active pattern to recognize expressions that represent a nested typed quotation literal</summary>
+    /// <param name="input">The input expression to match against.</param>
+    /// <returns>Expr option</returns>
+    [<CompiledName("QuoteTypedPattern")>]
+    val (|QuoteTyped|_|)           : input:Expr -> Expr option 
 
     /// <summary>An active pattern to recognize expressions that represent sequential exeuction of one expression followed by another</summary>
     /// <param name="input">The input expression to match against.</param>
