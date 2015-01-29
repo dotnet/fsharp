@@ -3,9 +3,11 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
-    <ProjectGuid>{88e2d422-6852-46e3-a740-83e391dc7973}</ProjectGuid>
+    <ProjectGuid>{88e2d422-6852-46e9-b741-83e391dc7973}</ProjectGuid>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -13,9 +15,9 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Core.Unittests</AssemblyName>
+    <AssemblyName>FSharp.Core.Unittests.SurfaceArea.$(TargetFSharpCore)</AssemblyName>
     <TargetFrameworkVersion Condition=" '$(TargetFramework)' == 'net20' ">v3.5</TargetFrameworkVersion>
-    <Name>SystematicUnitTests</Name>
+    <Name>SystematicUnitTestsSurfaceArea</Name>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
@@ -27,11 +29,14 @@
       {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
     </AssemblySearchPaths>
     <References_Nunit>true</References_Nunit>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)' == 'sl5'">$(DefineConstants);SILVERLIGHT</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'net20'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_net20</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'net40'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_net40</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable7'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable7</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable47'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable47</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable78'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable78</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFSharpCore)' == 'portable259'">$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_portable259</DefineConstants>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;TargetFSharpCore_$(TargetFSharpCore)</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -43,11 +48,18 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>3</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'VSDebug|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\vsrelease\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
@@ -68,51 +80,21 @@
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5' " />
+    <Reference Include="System.Net" Condition="'$(TargetFramework)' == 'sl5'" />
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array4Module.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ComparisonIdentityModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule2.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
-    <Compile Include="FSharp.Core\PrimTypes.fs" />
-    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" /> 
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
-    <None Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsTestGenerator.fsx" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\OptionModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Core\PrintfTests.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\Cancellation.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\LazyType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\MailboxProcessorType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\AsyncModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\ObservableModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Control\EventModule.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
-    <Compile Include="TypeForwarding.fs" />
-    <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
+    <Compile Include="surfacearea.2.0.fs" Condition="'$(TargetFSharpCore)' == 'net20'" />
+    <Compile Include="surfacearea.4.0.fs" Condition="'$(TargetFSharpCore)' == 'net40'" />
+    <Compile Include="surfacearea.portable7.4.0.fs" Condition="'$(TargetFSharpCore)'   == 'portable7'" />
+    <Compile Include="surfacearea.portable47.4.0.fs" Condition="'$(TargetFSharpCore)'  == 'portable47'" />
+    <Compile Include="surfacearea.portable78.4.0.fs" Condition="'$(TargetFSharpCore)'  == 'portable78'" />
+    <Compile Include="surfacearea.portable259.4.0.fs" Condition="'$(TargetFSharpCore)' == 'portable259'" />
   </ItemGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Nuget.targets" />
-
+  <Target Name="IncrementalClean" />
+ 
 </Project>

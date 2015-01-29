@@ -1471,6 +1471,6 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
 
     CheckModuleExpr cenv env mexpr;
     CheckAttribs cenv env extraAttribs;
-    if cenv.usesQuotations && QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(cenv.g) = QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus then 
+    if cenv.usesQuotations then 
         viewCcu.UsesFSharp20PlusQuotations <- true
     cenv.entryPointGiven

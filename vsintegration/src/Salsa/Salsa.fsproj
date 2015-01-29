@@ -6,6 +6,7 @@
     <vsFrameworkLatest>Microsoft.VisualStudio.Shell.12.0</vsFrameworkLatest>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <References_Nunit>true</References_Nunit>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
@@ -67,7 +68,6 @@
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.VisualStudio.Text.Data" />
     <Reference Include="Microsoft.VisualStudio.CoreUtility" />
-    <Reference Include="nunit.framework" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
@@ -104,4 +104,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Nuget.targets" />
 </Project>

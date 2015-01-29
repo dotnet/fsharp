@@ -1,19 +1,30 @@
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
-         ToolsVersion="4.0">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
   <PropertyGroup>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
   </PropertyGroup>
 
   <!-- Core library tests: all except compact framework (no nunit there) -->
   <ItemGroup Condition=" '$(TargetFramework)' != 'sl3-wp' and '$(TargetFramework)' != 'sl5'">
-    <ProjectFiles Include="fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
+
+    <ProjectToBuild Include="fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj">
+      <Properties>Configuration=$(Configuration);TargetFramework=$(TargetFramework)</Properties>
+    </ProjectToBuild>
+
+    <ProjectToBuild Include="fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.SurfaceArea.fsproj">
+       <Properties Condition="'$(TargetFramework)'=='net20'">Configuration=$(Configuration);TargetFramework=net20;TargetFSharpCore=$(TargetFramework)</Properties>
+       <Properties Condition="'$(TargetFramework)'!='net20'">Configuration=$(Configuration);TargetFramework=net40;TargetFSharpCore=$(TargetFramework)</Properties>
+    </ProjectToBuild>
+
   </ItemGroup>
 
   <Import Project="root.traversal.targets"/>
 
   <!-- Insert any customizations for targets here -->
-
+  <Target Name="Build">
+    <MSBuild Projects="@(ProjectToBuild)" BuildInParallel="true" />
+  </Target>
 </Project>
-
+                                                  

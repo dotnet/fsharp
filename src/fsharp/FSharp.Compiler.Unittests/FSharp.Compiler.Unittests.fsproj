@@ -26,6 +26,9 @@
       {TargetFrameworkDirectory};
       {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
     </AssemblySearchPaths>
+    <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
+    <References_Nunit>true</References_Nunit>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
