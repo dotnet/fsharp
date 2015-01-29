@@ -1377,7 +1377,9 @@ module CheckUnionTypesAreSealed =
     type X2 = A | B of string
     do check "vwllfewlkefw4" (typedefof<X2>.IsSealed) false
     type X3 = A | B | C
-    do check "vwllfewlkefw5" (typedefof<X3>.IsSealed) false
+    do check "vwllfewlkefw5" (typedefof<X3>.IsSealed) true
+    type X4 = A | B | C | D | E | F | G | H | I
+    do check "vwllfewlkefw5" (typedefof<X4>.IsSealed) true
 
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     type SetTree<'T> = 
