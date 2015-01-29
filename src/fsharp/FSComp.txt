@@ -1022,7 +1022,8 @@ lexfltSeparatorTokensOfPatternMatchMisaligned,"The '|' tokens separating rules o
 1130,nrInvalidFieldLabel,"Invalid field label"
 1132,nrInvalidExpression,"Invalid expression '%s'"
 1133,nrNoConstructorsAvailableForType,"No constructors are available for the type '%s'"
-1134,nrUnionTypeNeedsQualifiedAccess,"The union type for union case '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('%s') in the name you are using.""
+1134,nrUnionTypeNeedsQualifiedAccess,"The union type for union case '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the union type ('%s') in the name you are using."
+1135,nrRecordTypeNeedsQualifiedAccess,"The record type for the record field '%s' was defined with the RequireQualifiedAccessAttribute. Include the name of the record type ('%s') in the name you are using."
 # -----------------------------------------------------------------------------
 # ilwrite.fs errors
 # -----------------------------------------------------------------------------
@@ -1309,7 +1310,6 @@ nicePrintOtherOverloads1,"+ 1 overload"
 nicePrintOtherOverloadsN,"+ %d overloads"
 erasedTo,"Erased to"
 3156,parsUnfinishedExpression,"Unexpected token '%s' or incomplete expression"
-3157,crefQuotationsCantContainByrefTypes,"Quotations cannot contain byref types"
 3158,parsAttributeOnIncompleteCode,"Cannot find code target for this attribute, possibly because the code after the attribute is incomplete."
 3159,parsTypeNameCannotBeEmpty,"Type name cannot be empty."
 3160,buildProblemReadingAssembly,"Problem reading assembly '%s': %s"

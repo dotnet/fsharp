@@ -10,7 +10,7 @@ CodeGen01,NoMT				CodeGen\EmittedIL\AsyncExpressionStepping
 CodeGen01,NoMT				CodeGen\EmittedIL\AttributeTargets
 CodeGen01,NoMT				CodeGen\EmittedIL\CCtorDUWithMember
 CodeGen01,NoMT				CodeGen\EmittedIL\CompiledNameAttribute
-CodeGen01,NoMT				CodeGen\EmittedIL\ComputationExpressions
+CodeGen01,NoMT,Smoke				CodeGen\EmittedIL\ComputationExpressions
 CodeGen01,NoMT				CodeGen\EmittedIL\DoNotBoxStruct
 CodeGen01,NoMT				CodeGen\EmittedIL\GeneratedIterators
 CodeGen01,NoMT				CodeGen\EmittedIL\InequalityComparison
@@ -125,14 +125,14 @@ Conformance03			Conformance\Expressions\ControlFlowExpressions\TryCatch
 Conformance03			Conformance\Expressions\ControlFlowExpressions\TryFinally
 Conformance03			Conformance\Expressions\ControlFlowExpressions\While
 Conformance03			Conformance\Expressions\DataExpressions\AddressOf
-Conformance03			Conformance\Expressions\DataExpressions\ComputationExpressions
+Conformance03,Smoke			Conformance\Expressions\DataExpressions\ComputationExpressions
 Conformance03			Conformance\Expressions\DataExpressions\ObjectExpressions
 Conformance03			Conformance\Expressions\DataExpressions\QueryExpressions
 Conformance03			Conformance\Expressions\DataExpressions\RangeExpressions
 
 Conformance04			Conformance\Expressions\DataExpressions\SequenceExpressions
 Conformance04			Conformance\Expressions\DataExpressions\Simple
-Conformance04			Conformance\Expressions\DataExpressions\TupleExpressions
+Conformance04,Smoke			Conformance\Expressions\DataExpressions\TupleExpressions
 Conformance04			Conformance\Expressions\ElaborationAndElaboratedExpressions
 Conformance04			Conformance\Expressions\EvaluationAndValues
 Conformance04			Conformance\Expressions\EvaluationOfElaboratedForms
@@ -187,7 +187,7 @@ Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\AutoPropert
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitFields
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ExplicitObjectConstructors
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\ImplicitObjectConstructors
-Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\InheritsDeclarations
+Conformance06,Smoke			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\InheritsDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\LetDoDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\MemberDeclarations
 Conformance06			Conformance\ObjectOrientedTypeDefinitions\ClassTypes\Misc
@@ -226,7 +226,7 @@ Conformance08			Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes
 Conformance08			Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes
 Conformance08			Conformance\TypesAndTypeConstraints\TypeConstraints
 Conformance08			Conformance\TypesAndTypeConstraints\TypeParameterDefinitions
-Conformance08			Conformance\UnitsOfMeasure\Basic
+Conformance08,Smoke			Conformance\UnitsOfMeasure\Basic
 Conformance08			Conformance\UnitsOfMeasure\Bounds
 Conformance08			Conformance\UnitsOfMeasure\Constants
 Conformance08			Conformance\UnitsOfMeasure\Diagnostics

@@ -5,9 +5,10 @@
     <Identity Id="EnableOpenSource..4c74b903-4a32-44da-8c3f-c004633ab0f2" Version="3.2" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Microsoft.VisualFSharpTools.EnableOpenSource</DisplayName>
     <Description xml:space="preserve">Enable FSharp.VS.FSI. </Description>
-  </Metadata>
+    <License>License.txt</License>
+  </Metadata>  
   <Installation>
-    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[12.0]" />
+    <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[14.0]" />
   </Installation>
   <Dependencies>
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />

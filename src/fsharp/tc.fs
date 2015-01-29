@@ -1828,7 +1828,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
             let frefSet = ResolveField cenv.nameResolver env.eNameResEnv ad ty fld
             fld,frefSet, fldExpr)
     let relevantTypeSets = 
-        frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun rfref -> Some rfref.TyconRef))
+        frefSets |> List.map (fun (_,frefSet,_) -> frefSet |> List.choose (fun (FieldResolution(rfref,_)) -> Some rfref.TyconRef))
     
     let tcref = 
         match List.fold (ListSet.intersect (tyconRefEq cenv.g)) (List.head relevantTypeSets) (List.tail relevantTypeSets) with
@@ -1840,13 +1840,13 @@ let BuildFieldMap cenv env isPartial ty flds m =
             // We're going to get an error of some kind below. 
             // Just choose one field ref and let the error come later 
             let (_,frefSet1,_) = List.head frefSets
-            let fref1 = List.head frefSet1
+            let (FieldResolution(fref1,_))= List.head frefSet1
             fref1.TyconRef
     
     let fldsmap,rfldsList = 
         ((Map.empty,[]), frefSets) ||> List.fold (fun (fs,rfldsList) (fld,frefs,fldExpr) -> 
-                match frefs |> List.filter (fun fref2 -> tyconRefEq cenv.g tcref fref2.TyconRef) with
-                | [fref2] -> 
+                match frefs |> List.filter (fun (FieldResolution(fref2,_)) -> tyconRefEq cenv.g tcref fref2.TyconRef) with
+                | [FieldResolution(fref2,showDeprecated)] -> 
 
                     // Record the precise resolution of the field for intellisense
                     let item = FreshenRecdFieldRef cenv.nameResolver m fref2
@@ -1856,9 +1856,12 @@ let BuildFieldMap cenv env isPartial ty flds m =
                     CheckFSharpAttributes cenv.g fref2.PropertyAttribs m |> CommitOperationResult        
                     if  Map.containsKey fref2.FieldName fs then 
                         errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName),m))
+                    if showDeprecated then
+                        warning(Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(fref2.FieldName,fref2.Tycon.DisplayName) |> snd,m))
+                        
                     if  not (tyconRefEq cenv.g tcref fref2.TyconRef) then 
                         let (_,frefSet1,_) = List.head frefSets
-                        let fref1 = List.head frefSet1
+                        let (FieldResolution(fref1,_)) = List.head frefSet1
                         errorR (FieldsFromDifferentTypes(env.DisplayEnv,fref1,fref2,m))
                         (fs,rfldsList)
                     else (Map.add fref2.FieldName fldExpr fs,
