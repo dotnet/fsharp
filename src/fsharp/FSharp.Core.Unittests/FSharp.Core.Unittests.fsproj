@@ -78,6 +78,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule2.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteListFunctions.fs" />    
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
@@ -85,6 +86,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteSeqFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" /> 
