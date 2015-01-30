@@ -3,42 +3,13 @@
 namespace FSharp.Core.Unittests.Portable.SurfaceArea
 
 open NUnit.Framework
-open System.Reflection
+open FSharp.Core.Unittests.LibraryTestFx
 
 [<TestFixture>]
 type SurfaceAreaTest() =
     [<Test>]
     member this.VerifyArea() =
-        let asm = typeof<int list>.GetTypeInfo().Assembly
-        let types = asm.ExportedTypes |> Seq.filter (fun ty -> ty.GetTypeInfo().IsPublic) |> Array.ofSeq
-
-        let actual = new System.Text.StringBuilder()
-        actual.Append("\r\n") |> ignore
-        
-        let getTypeMemberStrings (t : Type) =
-            let rec getMembers (t : Type) =
-                let ti = t.GetTypeInfo()
-                seq {
-                    yield! (t.GetRuntimeMethods() |> Seq.filter (fun x -> x.IsPublic) |> Seq.map (fun x -> (t, x :> MemberInfo)))
-                    yield! (t.GetRuntimeEvents()  |> Seq.filter (fun x -> x.AddMethod.IsPublic) |> Seq.map (fun x -> (t, x :> MemberInfo)))
-                    yield! (t.GetRuntimeFields() |> Seq.filter (fun x -> x.IsPublic) |> Seq.map (fun x -> (t, x :> MemberInfo)))
-                    yield! (ti.DeclaredConstructors |> Seq.filter (fun x -> x.IsPublic) |> Seq.map (fun x -> (t, x :> MemberInfo)))
-                    yield! (t.GetRuntimeProperties() |> Seq.filter (fun x -> x.GetMethod.IsPublic) |> Seq.map (fun x -> (t, x :> MemberInfo)))
-                    yield! ti.DeclaredNestedTypes |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map (fun x -> (t, x :> MemberInfo))
-                    yield! ti.DeclaredNestedTypes |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.collect (fun ty -> getMembers (ty.AsType()))
-                }
-            getMembers t
-            |> Seq.map (fun (ty, mem) -> sprintf "%s: %s" (ty.ToString()) (mem.ToString()))
-            |> Array.ofSeq         
-        
-        let values = 
-            types 
-            |> Array.collect (fun t -> getTypeMemberStrings t)
-            |> Array.sort
-            |> Array.iter (fun s -> actual.Append(s) |> ignore
-                                    actual.Append("\r\n") |> ignore)
-
-        let expectedSurfaceArea = @"
+        let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
@@ -2580,8 +2551,12 @@ Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_
 Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_Range[T](T, T)
 Microsoft.FSharp.Core.Operators: System.Decimal ToDecimal[T](T)
 Microsoft.FSharp.Core.Operators: System.Exception Failure(System.String)
-Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
-Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
+Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
+#if DEBUG
+                                                                @"
+Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
+#endif
+                                                                @"
 Microsoft.FSharp.Core.Operators: System.String ToString()
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
@@ -3468,10 +3443,4 @@ System.Numerics.BigInteger: System.Type GetType()
 System.Numerics.BigInteger: Void .ctor(Int32)
 System.Numerics.BigInteger: Void .ctor(Int64)
 "
-        let normalize (s:string) =
-            s.Replace("\r\n\r\n", "\r\n").Trim([|'\r';'\n'|])
-
-        let expected = expectedSurfaceArea |> normalize
-        let act = actual.ToString() |> normalize
-
-        Assert.AreEqual(expected, act, sprintf "%s\r\n\r\n Expected and actual surface area don't match. Diff the XML log against SurfaceArea.portable259.fs to see the delta." act)
+        SurfaceArea.verify expected "portable259" (sprintf "%s\\%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)

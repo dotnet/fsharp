@@ -36,7 +36,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;$(TargetFramework)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
@@ -68,8 +68,8 @@
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
   <ItemGroup>
-  <!--  <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
+    <Compile Include="LibraryTestFx.fs" />
+    <!--  <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />

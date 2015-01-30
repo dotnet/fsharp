@@ -3,27 +3,13 @@
 namespace FSharp.Core.Unittests.SurfaceArea
 
 open NUnit.Framework
-open System.Reflection
+open FSharp.Core.Unittests.LibraryTestFx
 
 [<TestFixture>]
 type SurfaceAreaTest() =
     [<Test>]
     member this.VerifyArea() =
-        let asm = typeof<int list>.Assembly
-        let types = asm.GetExportedTypes()
-
-        let actual = new System.Text.StringBuilder()
-        actual.Append("\r\n") |> ignore
-
-        let values = 
-            types 
-            |> Array.collect (fun t -> t.GetMembers())
-            |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
-            |> Array.sort
-            |> Array.iter (fun s -> actual.Append(s) |> ignore
-                                    actual.Append("\r\n") |> ignore)
-
-        let expectedSurfaceArea = @"
+        let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
@@ -2445,8 +2431,12 @@ Microsoft.FSharp.Core.Operators: System.Exception Failure(System.String)
 Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
-Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
-Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
+Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
+#if DEBUG
+                                                                @"
+Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
+#endif
+                                                                @"
 Microsoft.FSharp.Core.Operators: System.String ToString()
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
@@ -3288,11 +3278,4 @@ System.Tuple`8[T1,T2,T3,T4,T5,T6,T7,TRest]: TRest Rest
 System.Tuple`8[T1,T2,T3,T4,T5,T6,T7,TRest]: TRest get_Rest()
 System.Tuple`8[T1,T2,T3,T4,T5,T6,T7,TRest]: Void .ctor(T1, T2, T3, T4, T5, T6, T7, TRest)
 "
-
-        let normalize (s:string) =
-            s.Replace("\r\n\r\n", "\r\n").Trim([|'\r';'\n'|])
-
-        let expected = expectedSurfaceArea |> normalize
-        let act = actual.ToString() |> normalize
-
-        Assert.AreEqual(expected, act, sprintf "%s\r\n\r\n Expected and actual surface area don't match. Diff the XML log against SurfaceArea.net20.fs to see the delta." act)
+        SurfaceArea.verify expected "net20" (sprintf "%s\\%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)
