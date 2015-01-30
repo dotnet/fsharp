@@ -4,7 +4,7 @@
 
   <PropertyGroup Condition="'$(References_Nunit)' == 'true'">
     <NunitFrameworkPath>$(MSBuildThisFileDirectory)..\packages\NUnit.2.6.4\lib\nunit.framework.dll</NunitFrameworkPath>
-    <NunitConsolePath>$(MSBuildThisFileDirectory)..\packages\NUnit.Runners.2.6.4\tools\nunit-console-x86.exe</NunitConsolePath>
+    <NunitUtIlsPath>$(MSBuildThisFileDirectory)..\packages\NUnit.Runners.2.6.4\tools\lib\nunit.util.dll</NunitUtIlsPath>
     <NugetRestore>true</NugetRestore>
   </PropertyGroup>
 
@@ -19,6 +19,11 @@
     <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
     <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp' and '$(References_Nunit)' == 'true'" >
       <HintPath>$(NunitFrameworkPath)</HintPath>
+      <Private>True</Private>
+      <SpecificVersion>true</SpecificVersion>
+    </Reference>
+    <Reference Include="nunit.util, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp' and '$(References_Nunit)' == 'true'" >
+      <HintPath>$(NunitUtilsPath)</HintPath>
       <Private>True</Private>
       <SpecificVersion>true</SpecificVersion>
     </Reference>
