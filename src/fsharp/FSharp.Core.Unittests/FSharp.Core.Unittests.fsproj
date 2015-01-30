@@ -26,6 +26,7 @@
       {TargetFrameworkDirectory};
       {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
     </AssemblySearchPaths>
+    <References_Nunit>true</References_Nunit>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
@@ -49,10 +50,6 @@
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
-        <SpecificVersion>true</SpecificVersion>
-    </Reference>
     <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
@@ -108,10 +105,5 @@
     <Compile Include="SurfaceArea.4.0.fs" Condition="'$(TargetFramework)' == 'net40'"/>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="BeforeResolveReferences" Condition="'$(UseNugetPackages)'=='true'">
-    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(AssemblySearchPaths)">
-      <Output TaskParameter="Value"
-              PropertyName="AssemblySearchPaths" />
-    </CreateProperty>
-  </Target>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Nuget.targets" />
 </Project>
