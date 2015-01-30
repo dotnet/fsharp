@@ -49,9 +49,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
-  </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.Contains('portable'))">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
