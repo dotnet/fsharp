@@ -12,9 +12,6 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe.  Please see h
 set _gacutilexe="%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.1A\bin\NETFX 4.5.1 Tools\gacutil.exe"
 if not exist %_gacutilexe% echo Error: Could not find gacutil.exe.  && goto :eof
 
-.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages
-@if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :eof
-
 ::Build
 %_gacutilexe%  /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
 @if ERRORLEVEL 1 echo Error: gacutil failed && goto :eof
@@ -24,29 +21,29 @@ if not exist %_gacutilexe% echo Error: Could not find gacutil.exe.  && goto :eof
 
 ngen install lib\proto\fsc-proto.exe
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true 
+%_msbuildexe% src/fsharp-library-build.proj 
 @if ERRORLEVEL 1 echo Error: library debug build failed && goto :eof
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:UseNugetPackages=true 
+%_msbuildexe% src/fsharp-compiler-build.proj 
 @if ERRORLEVEL 1 echo Error: compile debug build failed && goto :eof
 
 REM We don't build new net20 FSharp.Core anymore
-REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=net20
+REM %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=net20
 REM @if ERRORLEVEL 1 echo Error: library net20 debug build failed && goto :eof
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47
 @if ERRORLEVEL 1 echo Error: library portable47 debug build failed && goto :eof
 
 REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
+REM %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7
 REM @if ERRORLEVEL 1 echo Error: library portable7 debug build failed && goto :eof
 
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78
 @if ERRORLEVEL 1 echo Error: library portable78 debug build failed && goto :eof
 
 REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable259
+REM %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259
 REM @if ERRORLEVEL 1 echo Error: library portable259 debug build failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true
@@ -54,15 +51,15 @@ REM @if ERRORLEVEL 1 echo Error: library portable259 debug build failed && goto 
 
 
 REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
+REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47
 @REM if ERRORLEVEL 1 echo Error: library unittests debug build failed portable47 && goto :eof
 
 REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
+REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
 REM @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable7 && goto :eof
 
 REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
+REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
 REM @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable78 && goto :eof
 
 
@@ -90,6 +87,3 @@ call RunTests.cmd debug coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug coreunit' failed && goto :eof
 
 popd
-
-
-
