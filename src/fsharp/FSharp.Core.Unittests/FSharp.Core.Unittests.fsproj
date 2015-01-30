@@ -68,7 +68,7 @@
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LibraryTestFx.fs" />
+  <!--  <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
@@ -107,7 +107,12 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
+    -->
     <Compile Include="SurfaceArea.4.0.fs" Condition="'$(TargetFramework)' == 'net40'"/>
+    <Compile Include="SurfaceArea.portable.fs" Condition="'$(TargetFramework)' == 'portable47'"/>
+    <Compile Include="SurfaceArea.portable7.fs" Condition="'$(TargetFramework)' == 'portable7'"/>
+    <Compile Include="SurfaceArea.portable78.fs" Condition="'$(TargetFramework)' == 'portable78'"/>
+    <Compile Include="SurfaceArea.portable259.fs" Condition="'$(TargetFramework)' == 'portable259'"/>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Target Name="BeforeResolveReferences" Condition="'$(UseNugetPackages)'=='true'">
@@ -116,4 +121,16 @@
               PropertyName="AssemblySearchPaths" />
     </CreateProperty>
   </Target>
+  <!--
+    <Target Name="CheckSurfaceArea">
+        <Exec Command="$(FsSrGenToolPath)\fsi.exe .\SurfaceArea.fsx $(TargetFramework) $(OutputPath)\FSharp.Core.dll"/>
+        <Exec Command="$(FSharpSourcesRoot)\..\tests\fsharpqa\testenv\bin\x86\diff.exe SurfaceArea.$(TargetFramework).expected.txt SurfaceArea.$(TargetFramework).actual.txt"/>
+  </Target>
+  <PropertyGroup>
+      <BuildDependsOn>
+        CheckSurfaceArea;
+        $(BuildDependsOn)
+      </BuildDependsOn>
+  </PropertyGroup>
+  -->
 </Project>

@@ -3,18 +3,13 @@
 namespace FSharp.Core.Unittests.SurfaceArea
 
 open NUnit.Framework
+open System.Reflection
 
 [<TestFixture>]
 type SurfaceAreaTest() =
     [<Test>]
     member this.VerifyArea() =
-        let file = typeof<int list>.Assembly.Location 
-        let asm = System.Reflection.Assembly.ReflectionOnlyLoadFrom(file)
-        let referenced = asm.GetReferencedAssemblies()
-
-        for ref in referenced do
-            System.Reflection.Assembly.ReflectionOnlyLoad(ref.FullName) |> ignore
-
+        let asm = typeof<int list>.Assembly
         let types = asm.GetExportedTypes()
 
         let actual = new System.Text.StringBuilder()
@@ -2598,12 +2593,8 @@ Microsoft.FSharp.Core.Operators: System.Exception Failure(System.String)
 Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
-Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" + 
-#if DEBUG
-                                                                @"
-Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
-#endif
-                                                                @"
+Microsoft.FSharp.Core.Operators: System.Object Box[T](T)
+Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.Operators: System.String ToString()
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
@@ -3481,19 +3472,7 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
         let normalize (s:string) =
             s.Replace("\r\n\r\n", "\r\n").Replace("\r\n", "\n").Trim([|'\r';'\n'|])
 
-        let expected = 
-            expectedSurfaceArea |> normalize
-
+        let expected = expectedSurfaceArea |> normalize
         let act = actual.ToString() |> normalize
-        if expected <> act then
-            let mutable indexFirstDiff = 0
-            while indexFirstDiff < expected.Length && expected.[indexFirstDiff] = act.[indexFirstDiff] do
-                indexFirstDiff <- indexFirstDiff + 1
-            printfn "First diff at char %d" indexFirstDiff
-            printfn "Next bit is"
-            printfn "Exp: %s" (expected.Substring(indexFirstDiff, 400).Replace("\n","     "))
-            printfn "Act: %s" (act.Substring(indexFirstDiff, 400).Replace("\n","     "))
-            printfn "Full actual below"
-            printfn ""
-            printfn "%s" act
-        Assert.AreEqual(expected, act)
+
+        Assert.AreEqual(expected, act, sprintf "%s\r\n\r\n Expected and actual surface area don't match. Diff the XML log against SurfaceArea.net40.fs to see the delta." act)
