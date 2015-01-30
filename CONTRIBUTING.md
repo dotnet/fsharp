@@ -121,3 +121,8 @@ We actively solicit contributions related to the F# language design, but the pro
 ###Coding guidelines
 
 Although there is currently no strict set of coding or style guidelines, use common sense when contributing code - make an effort to use a similar style to nearby existing code. If you have a passion for helping us develop a set of coding guidelines that we can roll out and apply within this project, get involved and start a discussion issue.
+
+###Inactivity
+Occasionally, a pull request sits for several weeks without any response from the author. This isn't necessarily an issue, but we may sometimes decide to close pull requests that have not seen any progress for a some time. This is in interest of keeping the pull request list clean so that other pull requests don't get lost in the clutter.
+
+If we do close your pull request due to inactivity, you're more than welcome to submit it anew after you address any comments or issues that were brought up on the original pull request
