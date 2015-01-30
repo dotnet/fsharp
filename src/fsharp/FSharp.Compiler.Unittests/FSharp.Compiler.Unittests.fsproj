@@ -15,7 +15,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler.Unittests</AssemblyName>
     <TargetFrameworkVersion Condition=" '$(TargetFramework)' == 'net20' ">v3.5</TargetFrameworkVersion>
-    <Name>SystematicUnitTests</Name>
+    <Name>SystematicFSharpCompilerUnitTests</Name>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
@@ -26,6 +26,7 @@
       {TargetFrameworkDirectory};
       {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
     </AssemblySearchPaths>
+    <References_Nunit>true</References_Nunit>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
@@ -48,13 +49,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
-    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
-  </ItemGroup>
   <ItemGroup Condition="!$(TargetFramework.Contains('portable'))">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -79,4 +73,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Nuget.targets" />
 </Project>

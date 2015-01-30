@@ -18,6 +18,7 @@
     <GenerateInterfaceFile>Unittests.fsi</GenerateInterfaceFile>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
+    <References_Nunit>true</References_Nunit>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
@@ -112,7 +113,6 @@
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-    <Reference Include="nunit.framework.dll" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Fsc\Fsc.fsproj">
       <Project>{ffde9e47-9675-4498-b540-69b2583dd600}</Project>
       <Name>Fsc</Name>
@@ -168,4 +168,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Nuget.targets" />
 </Project>
