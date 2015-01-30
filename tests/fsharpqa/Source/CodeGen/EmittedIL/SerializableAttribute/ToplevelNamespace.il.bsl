@@ -47,7 +47,7 @@
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public auto autochar serializable beforefieldinit XYZ.Expr
+.class public auto autochar serializable sealed beforefieldinit XYZ.Expr
        extends [mscorlib]System.Object
        implements class [mscorlib]System.IEquatable`1<class XYZ.Expr>,
                   [mscorlib]System.Collections.IStructuralEquatable,
