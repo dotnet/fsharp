@@ -73,27 +73,30 @@ module SurfaceArea =
     open System.Reflection
     open System
     
+    // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
+    
+        // get current fsharp.core
         let asm = 
             #if portable7 || portable78 || portable259
             typeof<int list>.GetTypeInfo().Assembly
             #else
             typeof<int list>.Assembly
             #endif
-            
+        
+        // public types only
         let types =
             #if portable7 || portable78 || portable259
-            asm.ExportedTypes |> Seq.filter (fun ty -> ty.GetTypeInfo().IsPublic) |> Array.ofSeq
+            asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
             #else
             asm.GetExportedTypes()
             #endif
 
-        let actual = new System.Text.StringBuilder()
-        actual.Append("\r\n") |> ignore
-        
+        // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
+            // for System.Runtime-based profiles, need to do lots of manual work
             #if portable7 || portable78 || portable259
-            let rec getMembers (t : Type) =
+            let getMembers (t : Type) =
                 let ti = t.GetTypeInfo()
                 let cast (info : #MemberInfo) = (t, info :> MemberInfo)
                 seq {
@@ -103,11 +106,10 @@ module SurfaceArea =
                     yield! t.GetRuntimeFields()     |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredConstructors  |> Seq.filter (fun m -> m.IsPublic) |> Seq.map cast
                     yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map cast
-                    yield! ti.DeclaredNestedTypes   |> Seq.filter (fun ty -> ty.IsNestedPublic) |> Seq.map (fun ty -> ty.AsType()) |> Seq.collect getMembers
-                }
+                } |> Array.ofSeq
+
             getMembers t
-            |> Seq.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
-            |> Array.ofSeq
+            |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
             #else
             t.GetMembers()
             |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
@@ -117,7 +119,8 @@ module SurfaceArea =
         |> Array.collect getTypeMemberStrings
         |> Array.sort
         |> String.concat "\r\n"
-            
+    
+    // verify public surface area matches expected
     let verify expected platform fileName =  
         let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" TestContext.CurrentContext.WorkDirectory platform
         let normalize (s:string) =
