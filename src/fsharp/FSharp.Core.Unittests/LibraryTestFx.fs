@@ -72,6 +72,7 @@ let sleep(n : int32) =
 module SurfaceArea =
     open System.Reflection
     open System
+    open System.Text.RegularExpressions
     
     // gets string form of public surface area for the currently-loaded FSharp.Core
     let private getActual () =
@@ -124,7 +125,7 @@ module SurfaceArea =
     let verify expected platform fileName =  
         let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" TestContext.CurrentContext.WorkDirectory platform
         let normalize (s:string) =
-            s.Replace("\r\n\r\n", "\r\n").Trim([|'\r';'\n'|])
+            Regex.Replace(s, "(\\r\\n|\\n)+", "\r\n").Trim([|'\r';'\n'|])
             
         let actual = getActual () |> normalize
         let expected = expected |> normalize
