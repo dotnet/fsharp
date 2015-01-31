@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.33440
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:0:9055
 }
 .assembly GenericTypeStaticField01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.GenericTypeStaticField01
 {
-  // Offset: 0x00000000 Length: 0x0000062C
+  // Offset: 0x00000000 Length: 0x00000608
 }
 .mresource public FSharpOptimizationData.GenericTypeStaticField01
 {
-  // Offset: 0x00000630 Length: 0x000001F9
+  // Offset: 0x00000610 Length: 0x000001E7
 }
 .module GenericTypeStaticField01.exe
-// MVID: {4DAC0E02-1E75-7E6B-A745-0383020EAC4D}
+// MVID: {54CA24D1-1E75-7E6B-A745-0383D124CA54}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000550000
+// Image base: 0x00460000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,7 +63,7 @@
       // Code size       10 (0xa)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 2,2 : 6,9 
+      .line 2,2 : 6,9 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\GenericTypeStaticField01.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -75,16 +75,17 @@
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
-      // Code size       18 (0x12)
+      // Code size       20 (0x14)
       .maxstack  8
-      .line 3,3 : 10,41 
+      .line 3,3 : 10,41 ''
       IL_0000:  nop
       IL_0001:  newobj     instance void class GenericTypeStaticField01/Foo`1<!a>::.ctor()
       IL_0006:  stsfld     class GenericTypeStaticField01/Foo`1<!0> class GenericTypeStaticField01/Foo`1<!a>::theInstance
       IL_000b:  ldc.i4.1
-      IL_000c:  stsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
-      .line 2,2 : 6,9 
-      IL_0011:  ret
+      IL_000c:  volatile.
+      IL_000e:  stsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
+      .line 2,2 : 6,9 ''
+      IL_0013:  ret
     } // end of method Foo`1::.cctor
 
     .method public specialname static class GenericTypeStaticField01/Foo`1<!a> 
@@ -92,7 +93,7 @@
     {
       // Code size       27 (0x1b)
       .maxstack  8
-      .line 4,4 : 28,39 
+      .line 4,4 : 28,39 ''
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
       IL_0007:  ldc.i4.1
@@ -127,7 +128,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 6,6 : 6,9 
+      .line 6,6 : 6,9 ''
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -139,16 +140,17 @@
     .method private specialname rtspecialname static 
             void  .cctor() cil managed
     {
-      // Code size       18 (0x12)
+      // Code size       20 (0x14)
       .maxstack  8
-      .line 7,7 : 10,44 
+      .line 7,7 : 10,44 ''
       IL_0000:  nop
       IL_0001:  newobj     instance void class GenericTypeStaticField01/Bar`2<!a,!b>::.ctor()
       IL_0006:  stsfld     class GenericTypeStaticField01/Bar`2<!0,!1> class GenericTypeStaticField01/Bar`2<!a,!b>::theInstance
       IL_000b:  ldc.i4.1
-      IL_000c:  stsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
-      .line 6,6 : 6,9 
-      IL_0011:  ret
+      IL_000c:  volatile.
+      IL_000e:  stsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
+      .line 6,6 : 6,9 ''
+      IL_0013:  ret
     } // end of method Bar`2::.cctor
 
     .method public specialname static class GenericTypeStaticField01/Bar`2<!a,!b> 
@@ -156,7 +158,7 @@
     {
       // Code size       27 (0x1b)
       .maxstack  8
-      .line 8,8 : 28,39 
+      .line 8,8 : 28,39 ''
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
       IL_0007:  ldc.i4.1

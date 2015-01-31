@@ -16,6 +16,19 @@ let CreateBadImageFormatException () =
     let create a b c d (e:int<_>) (f:int) g = TheType.Create a b (int c) d e f g
     seq { yield create 0 0 0 0 0 0 [0] }
 
+
+// Regression test for https://github.com/Microsoft/visualfsharp/issues/30
+// (Compilation error: "Incorrect number of type arguments to local call"
+
+type R<[<Measure>] 'u> (f : float<'u>) =
+    member r.Member = f
+
+let get (r : R<_>) = r.Member
+let foo =
+    let problem _ = List.map get
+    problem // Error: Incorrect number of type arguments to local call
+
+
 module TestLibrary =
 
     [<Measure>] 

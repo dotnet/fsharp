@@ -12,6 +12,9 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe.  Please see h
 set _gacutilexe="%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.1A\bin\NETFX 4.5.1 Tools\gacutil.exe"
 if not exist %_gacutilexe% echo Error: Could not find gacutil.exe.  && goto :eof
 
+set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
+if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
+
 .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :eof
 
@@ -22,7 +25,7 @@ if not exist %_gacutilexe% echo Error: Could not find gacutil.exe.  && goto :eof
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :eof
 
-ngen install lib\proto\fsc-proto.exe
+%_ngenexe% install lib\proto\fsc-proto.exe
 
 %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true 
 @if ERRORLEVEL 1 echo Error: library debug build failed && goto :eof
@@ -49,9 +52,11 @@ REM Dropped for faster build
 REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable259
 REM @if ERRORLEVEL 1 echo Error: library portable259 debug build failed && goto :eof
 
+
+
+
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true
 @if ERRORLEVEL 1 echo Error: library unittests debug build failed && goto :eof
-
 
 REM Dropped for faster build
 REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
@@ -61,9 +66,8 @@ REM Dropped for faster build
 REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
 REM @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable7 && goto :eof
 
-REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
-REM @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable78 && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
+@if ERRORLEVEL 1 echo Error: library unittests debug build failed portable78 && goto :eof
 
 
 @echo on
