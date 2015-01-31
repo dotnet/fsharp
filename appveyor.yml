@@ -1,3 +1,11 @@
+#---------------------------------#
+
+#    environment configuration    #
+
+#---------------------------------#
+# Operating system (build VM template)
+os: Visual Studio 2015 Preview
+
 init: 
 build_script: 
   - cmd: appveyor-build.cmd
