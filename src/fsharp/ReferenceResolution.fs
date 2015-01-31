@@ -91,11 +91,17 @@ module internal MSBuildResolver =
     let private Net40 = "v4.0"
     [<Literal>]    
     let private Net45 = "v4.5"
+#if BUILDING_PROTO
+#else
     [<Literal>]    
     let private Net451 = "v4.5.1"
+#endif
 
+#if BUILDING_PROTO
+    let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; (*SL only*) "v5.0" ]
+#else
     let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; Net451; (*SL only*) "v5.0" ]
-    
+#endif    
     let GetPathToDotNetFramework(v) =
 #if FX_ATLEAST_45
         let v =
@@ -106,7 +112,10 @@ module internal MSBuildResolver =
             | Net35 ->  Some TargetDotNetFrameworkVersion.Version35
             | Net40 ->  Some TargetDotNetFrameworkVersion.Version40
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
+#if BUILDING_PROTO
+#else
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+#endif
             | _ -> assert false; None
         match v with
         | Some v -> 
@@ -126,7 +135,10 @@ module internal MSBuildResolver =
             match version with
             | Net40 -> Some TargetDotNetFrameworkVersion.Version40
             | Net45 -> Some TargetDotNetFrameworkVersion.Version45
+#if BUILDING_PROTO
+#else
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+#endif
             | _ -> assert false; None // unknown version - some parts in the code are not synced
         match v with
         | Some v -> 
@@ -143,9 +155,13 @@ module internal MSBuildResolver =
     /// This code uses MSBuild to determine version of the highest installed framework.
     let HighestInstalledNetFrameworkVersionMajorMinor() =
 #if FX_ATLEAST_45    
+#if BUILDING_PROTO
+#else
         if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then 4, Net451
-        elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then 4, Net45
-        else 4, Net40 // version is 4.0 assumed since this code is running.
+        else
+#endif
+            if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then 4, Net45
+            else 4, Net40 // version is 4.0 assumed since this code is running.
 #else
         // FX_ATLEAST_45 is not defined is required for step when we build compiler with proto compiler and this branch should not be hit
         4, Net40

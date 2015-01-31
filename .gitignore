@@ -102,3 +102,4 @@ tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLi
 *.log
 *.jrs
 *.chk
+*.bak
