@@ -71,10 +71,9 @@
     <Reference Include="$(MsBuild_EngineReference)" />
     <Reference Include="$(MsBuild_Reference)" />
     <Reference Include="$(MsBuild_UtilitiesReference)" />
-    <Reference Include="Microsoft.VisualStudio.Shell.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-    <Reference Include="Microsoft.VisualStudio.Utilities, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
-
+    <Reference Include="$(VS_Shell_12_Reference)" />
+    <Reference Include="$(VS_Shell_UI_InternalReference)" />
+    <Reference Include="$(VS_Shell_UtilitiesReference)" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />
