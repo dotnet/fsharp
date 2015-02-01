@@ -80,16 +80,10 @@
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
     <Reference Include="UIAutomationTypes" />
-    <Reference Include="Microsoft.Build, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Framework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.core" />
+    <Reference Include="$(MsBuild_FrameworkReference)" />
+    <Reference Include="$(MsBuild_EngineReference)" />
+    <Reference Include="$(MsBuild_Reference)" />
+    <Reference Include="$(MsBuild_UtilitiesReference)" />
     <Reference Include="Microsoft.Build.Utilities.v3.5.dll" />
     <Reference Include="EnvDTE.dll" />
     <Reference Include="EnvDTE80.dll" />
