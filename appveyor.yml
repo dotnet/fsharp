@@ -1,4 +1,4 @@
-os: Visual Studio 2015 CTP 
+os: Visual Studio 2015 CTP5 
 
 init: 
 build_script: 
