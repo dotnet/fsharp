@@ -3,9 +3,9 @@
 set APPVEYOR_CI=1
 
 :: Check prerequisites
-if '%VisualStudioVersion%'!='' goto vsversionset
-if not exist ""%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe"" set VisualStudioVersion="14.0"
-if not exist ""%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe"" set VisualStudioVersion="12.0"
+if not '%VisualStudioVersion%' == '' goto vsversionset
+if not exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion="14.0"
+if not exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion="12.0"
 :vsversionset
 
 rem by default pick msbuild based on VisualStudioVersion
