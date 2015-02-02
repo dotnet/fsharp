@@ -2304,8 +2304,7 @@ namespace Microsoft.FSharp.Core
         val using: resource:('T :> System.IDisposable) -> action:('T -> 'U) -> 'U
 
 
-        /// <summary>Generate a System.Type runtime representation of a static type.
-        /// The static type is still maintained on the value returned.</summary>
+        /// <summary>Generate a System.Type runtime representation of a static type.</summary>
         [<RequiresExplicitTypeArguments>] 
         [<CompiledName("TypeOf")>]
         val inline typeof<'T> : System.Type
