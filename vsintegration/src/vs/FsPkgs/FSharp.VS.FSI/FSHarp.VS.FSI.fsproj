@@ -8,6 +8,7 @@
         <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     </PropertyGroup>
     <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+    <Import Project="$(ProjectDirectory)..\..\..\fsharp.vsreferences.targets" />
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -45,7 +46,7 @@
         <Reference Include="VSLangProj" />
         <Reference Include="VSLangProj80" />
         <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-        <Reference Include="$(VS_Shell_12_Reference)" />
+        <Reference Include="$(VS_Shell_Reference)" />
         <Reference Include="Microsoft.VisualStudio.Threading" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />

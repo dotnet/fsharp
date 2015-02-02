@@ -37,9 +37,10 @@
     <DelaySign>true</DelaySign>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(ProjectDirectory)..\..\..\..\fsharp.vsreferences.targets" />
   <ItemGroup>
-    <Reference Include=$(MsBuild_FrameworkReference) />
-    <Reference Include=$(MsBuild_EngineReference) />
+    <Reference Include="$(MsBuild_FrameworkReference)" />
+    <Reference Include="$(MsBuild_EngineReference)" />
     <Reference Include="microsoft.msxml" />
     <Reference Include="System.Drawing" />
     <Reference Include="System" />
@@ -52,7 +53,7 @@
     <Reference Include="VSLangProj" />
     <Reference Include="VSLangProj80" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="$(VS_Shell_12_Reference)" />
+    <Reference Include="$(VS_Shell_Reference)" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />

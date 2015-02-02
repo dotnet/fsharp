@@ -7,6 +7,7 @@
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(ProjectDirectory)..\..\..\fsharp.vsreferences.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>

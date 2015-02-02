@@ -7,6 +7,7 @@
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(ProjectDirectory)..\fsharp.vsreferences.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -36,7 +37,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Windows.Forms" />
 
-    <Reference Include="$(VS_Shell_12_Reference)" />
+    <Reference Include="$(VS_Shell_Reference)" />
     <Reference Include="$(MsBuild_FrameworkReference)" />
     <Reference Include="$(MsBuild_EngineReference)" />
     <Reference Include="$(MsBuild_Reference)" />

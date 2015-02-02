@@ -25,6 +25,7 @@
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(ProjectDirectory)..\..\..\..\fsharp.vsreferences.targets" />
   <ItemGroup>
     <RCResourceFile Include="..\..\devdiv\vsintegration\src\vs\FsPkgs\FSharp.Project\FS\ProjectResources.rc">
       <Link>ProjectResources.rc</Link>
@@ -71,9 +72,9 @@
     <Reference Include="$(MsBuild_EngineReference)" />
     <Reference Include="$(MsBuild_Reference)" />
     <Reference Include="$(MsBuild_UtilitiesReference)" />
-    <Reference Include="$(VS_Shell_12_Reference)" />
+    <Reference Include="$(VS_Shell_Reference)" />
     <Reference Include="$(VS_Shell_UI_InternalReference)" />
-    <Reference Include="$(VS_Shell_UtilitiesReference)" />
+    <Reference Include="$(VS_UtilitiesReference)" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />

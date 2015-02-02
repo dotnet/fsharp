@@ -7,9 +7,9 @@
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(ProjectDirectory)..\fsharp.vsreferences.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform>x86</Platform>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -17,6 +17,7 @@
     <GenerateInterfaceFile>Unittests.fsi</GenerateInterfaceFile>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
@@ -90,7 +91,7 @@
     <Reference Include="VSLangProj" />
     <Reference Include="VSLangProj80" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="$(VS_Shell_12_Reference)" />
+    <Reference Include="$(VS_Shell_Reference)" />
     <Reference Include="Microsoft.VisualStudio.Threading" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />

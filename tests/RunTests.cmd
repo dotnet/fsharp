@@ -2,8 +2,10 @@
 setlocal
 
 set FLAVOR=%1
-if /I "%FLAVOR%" == "debug" (goto :FLAVOR_OK)
-if /I "%FLAVOR%" == "release" (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "debug"     (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "release"   (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "vsdebug"   (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "vsrelease" (goto :FLAVOR_OK)
 goto :USAGE
 
 :flavor_ok
@@ -79,7 +81,7 @@ if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 

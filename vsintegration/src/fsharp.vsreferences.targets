@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- F# VS Addins have a depedency on VS.  Different VS and F# Deployments are dependent on various MsBuild versions  -->
+  <!-- This section sets the VS references the addins require depending on the value of the environment variable  -->
+  <!-- VisualStudioVersion, 12.0 for VS2013, 1 for VS2015 -->
+  <!-- By Default uses VS2013 values -->
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '14.0'">
+      <PropertyGroup>
+        <VS_Shell_Reference>Microsoft.VisualStudio.Shell.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_Shell_Reference>
+        <VS_Shell_UI_InternalReference>Microsoft.VisualStudio.Shell.UI.Internal, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_Shell_UI_InternalReference>
+        <VS_UtilitiesReference>Microsoft.VisualStudio.Utilities, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_UtilitiesReference>
+        <VS_PackageLanguageServiceReference>Microsoft.VisualStudio.Package.LanguageService.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_PackageLanguageServiceReference>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <VS_Shell_Reference>Microsoft.VisualStudio.Shell.12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_Shell_Reference>
+        <VS_Shell_UI_InternalReference>Microsoft.VisualStudio.Shell.UI.Internal, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_Shell_UI_InternalReference>
+        <VS_UtilitiesReference>Microsoft.VisualStudio.Utilities, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_UtilitiesReference>
+        <VS_PackageLanguageServiceReference>Microsoft.VisualStudio.Package.LanguageService.12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL</VS_PackageLanguageServiceReference>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+</Project>
