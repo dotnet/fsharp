@@ -1,3 +1,5 @@
+os: Visual Studio 2015 CTP
+
 init: 
 build_script: 
   - cmd: appveyor-build.cmd
