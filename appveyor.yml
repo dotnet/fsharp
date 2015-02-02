@@ -1,4 +1,4 @@
-os: Visual Studio 2015 Preview 
+os: Windows Server 2012 R@ 
 
 init: 
 build_script: 
