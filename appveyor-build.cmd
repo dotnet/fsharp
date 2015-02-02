@@ -3,10 +3,15 @@
 set APPVEYOR_CI=1
 
 :: Check prerequisites
+if '%VisualStudioVersion%'!='' goto vsversionset
+if not exist ""%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe"" set VisualStudioVersion="14.0"
+if not exist ""%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe"" set VisualStudioVersion="12.0"
+:vsversionset
+
 rem by default pick msbuild based on VisualStudioVersion
 set _msbuildexe="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
-if '%VisualStudioVersion%'='14.0' set _msbuildexe="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
-if '%VisualStudioVersion%'='12.0' set _msbuildexe="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
+if '%VisualStudioVersion%'=='14.0' set _msbuildexe="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
+if '%VisualStudioVersion%'=='12.0' set _msbuildexe="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
 
 rem manually search if we have no msbuild
 if not exist %_msbuildexe% set _msbuildexe="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
