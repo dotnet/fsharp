@@ -1,4 +1,4 @@
-os: Windows Server 2012 R2 
+os: Visual Studio 2015 CTP 
 
 init: 
 build_script: 
