@@ -3,42 +3,13 @@
 namespace FSharp.Core.Unittests.Portable.SurfaceArea
 
 open NUnit.Framework
+open FSharp.Core.Unittests.LibraryTestFx
 
 [<TestFixture>]
 type SurfaceAreaTest() =
     [<Test>]
     member this.VerifyArea() =
-#if FX_ATLEAST_45
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").CodeBase)).LocalPath) // e.g. "C:\VSPro_FSharp\binaries\x86chk\SuiteBin\FSharp\"
-#else
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).LocalPath) // e.g. "C:\VSPro_FSharp\binaries\x86chk\SuiteBin\FSharp\"
-#endif
-        let dirOfPortableFSCoreInSuiteBin = System.IO.Path.Combine(curDir, @"FSharp.Core.Portable")
-        let portableFSCore = System.IO.Path.Combine(dirOfPortableFSCoreInSuiteBin, @"FSharp.Core.dll")
-        
-        let asm = System.Reflection.Assembly.ReflectionOnlyLoadFrom(portableFSCore)
-
-        for ref in [|   // PrepareSuiteBin in devdiv build copies the Profile37 reference assemblies here, so that this unit test can consume them
-                        dirOfPortableFSCoreInSuiteBin + @"\mscorlib.dll"
-                        dirOfPortableFSCoreInSuiteBin + @"\System.Core.dll"
-                        dirOfPortableFSCoreInSuiteBin + @"\System.dll" 
-                        dirOfPortableFSCoreInSuiteBin + @"\System.Net.dll" |] do
-            System.Reflection.Assembly.ReflectionOnlyLoadFrom(ref) |> ignore
-
-        let types = asm.GetExportedTypes()
-
-        let actual = new System.Text.StringBuilder()
-        actual.Append("\r\n") |> ignore
-
-        let values = 
-            types 
-            |> Array.collect (fun t -> t.GetMembers())
-            |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
-            |> Array.sort
-            |> Array.iter (fun s -> actual.Append(s) |> ignore
-                                    actual.Append("\r\n") |> ignore)
-
-        let postdev10 = @"
+        let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
@@ -178,8 +149,8 @@ Microsoft.FSharp.Collections.ArrayModule: T[] SortBy[T,TKey](Microsoft.FSharp.Co
 Microsoft.FSharp.Collections.ArrayModule: T[] SortDescending[T](T[])
 Microsoft.FSharp.Collections.ArrayModule: T[] SortWith[T](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[T,System.Int32]], T[])
 Microsoft.FSharp.Collections.ArrayModule: T[] Sort[T](T[])
-Microsoft.FSharp.Collections.ArrayModule: T[] TakeWhile[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
 Microsoft.FSharp.Collections.ArrayModule: T[] Tail[T](T[])
+Microsoft.FSharp.Collections.ArrayModule: T[] TakeWhile[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], T[])
 Microsoft.FSharp.Collections.ArrayModule: T[] Take[T](Int32, T[])
 Microsoft.FSharp.Collections.ArrayModule: T[] Truncate[T](Int32, T[])
 Microsoft.FSharp.Collections.ArrayModule: T[] Unfold[T,TState](Microsoft.FSharp.Core.FSharpFunc`2[TState,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[T,TState]]], TState)
@@ -1155,6 +1126,12 @@ Microsoft.FSharp.Core.ExperimentalAttribute: System.String ToString()
 Microsoft.FSharp.Core.ExperimentalAttribute: System.String get_Message()
 Microsoft.FSharp.Core.ExperimentalAttribute: System.Type GetType()
 Microsoft.FSharp.Core.ExperimentalAttribute: Void .ctor(System.String)
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: Byte ToByte[T](T)
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: Int32 GetHashCode()
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: SByte ToSByte[T](T)
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: System.String ToString()
+Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked: System.Type GetType()
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Byte ToByte[T](T)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Double ToDouble[T](T)
@@ -1162,6 +1139,7 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: Int32 GetHashCode()
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Microsoft.FSharp.Collections.FSharpSet`1[T] CreateSet[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Microsoft.FSharp.Control.FSharpAsyncBuilder DefaultAsyncBuilder
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Microsoft.FSharp.Control.FSharpAsyncBuilder get_DefaultAsyncBuilder()
+Microsoft.FSharp.Core.ExtraTopLevelOperators: Microsoft.FSharp.Core.ExtraTopLevelOperators+Checked
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Microsoft.FSharp.Linq.QueryBuilder get_query()
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Microsoft.FSharp.Linq.QueryBuilder query
 Microsoft.FSharp.Core.ExtraTopLevelOperators: SByte ToSByte[T](T)
@@ -2575,7 +2553,7 @@ Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_
 Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_Range[T](T, T)
 Microsoft.FSharp.Core.Operators: System.Decimal ToDecimal[T](T)
 Microsoft.FSharp.Core.Operators: System.Exception Failure(System.String)
-Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" + 
+Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
 #if DEBUG
                                                                 @"
 Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
@@ -2766,14 +2744,17 @@ Microsoft.FSharp.Core.ReferenceEqualityAttribute: System.String ToString()
 Microsoft.FSharp.Core.ReferenceEqualityAttribute: System.Type GetType()
 Microsoft.FSharp.Core.ReferenceEqualityAttribute: Void .ctor()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Boolean IncludeValue
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Boolean IsDefaultAttribute()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Boolean Match(System.Object)
+Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Boolean get_IncludeValue()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Int32 GetHashCode()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: System.Object TypeId
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: System.Object get_TypeId()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: System.String ToString()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: System.Type GetType()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Void .ctor()
+Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Void .ctor(Boolean)
 Microsoft.FSharp.Core.RequireQualifiedAccessAttribute: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.RequireQualifiedAccessAttribute: Boolean IsDefaultAttribute()
 Microsoft.FSharp.Core.RequireQualifiedAccessAttribute: Boolean Match(System.Object)
@@ -2934,15 +2915,19 @@ Microsoft.FSharp.Data.UnitSystems.SI.UnitNames.second: System.Type GetType()
 Microsoft.FSharp.Linq.NullableModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Linq.NullableModule: Int32 GetHashCode()
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToByte[T](System.Nullable`1[T])
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Byte] ToUInt8[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Char] ToChar[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Decimal] ToDecimal[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Double] ToDouble[T](System.Nullable`1[T])
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Double] ToFloat[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int16] ToInt16[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int32] ToInt32[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int32] ToInt[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Int64] ToInt64[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.IntPtr] ToIntPtr[T](System.Nullable`1[T])
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.SByte] ToInt8[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.SByte] ToSByte[T](System.Nullable`1[T])
+Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToFloat32[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.Single] ToSingle[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt16] ToUInt16[T](System.Nullable`1[T])
 Microsoft.FSharp.Linq.NullableModule: System.Nullable`1[System.UInt32] ToUInt32[T](System.Nullable`1[T])
@@ -3177,6 +3162,7 @@ Microsoft.FSharp.Linq.RuntimeHelpers.Grouping`2[K,T]: System.Type GetType()
 Microsoft.FSharp.Linq.RuntimeHelpers.Grouping`2[K,T]: Void .ctor(K, System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter: Boolean Equals(System.Object)
 Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter: Int32 GetHashCode()
+Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter: Microsoft.FSharp.Quotations.FSharpExpr SubstHelperRaw(Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Quotations.FSharpVar[], System.Object[])
 Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter: Microsoft.FSharp.Quotations.FSharpExpr`1[T] SubstHelper[T](Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Quotations.FSharpVar[], System.Object[])
 Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter: System.Linq.Expressions.Expression QuotationToExpression(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter: System.Linq.Expressions.Expression`1[T] ImplicitExpressionConversionHelper[T](T)
@@ -3245,6 +3231,7 @@ Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr C
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Coerce(Microsoft.FSharp.Quotations.FSharpExpr, System.Type)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr DefaultValue(System.Type)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Deserialize(System.Type, Microsoft.FSharp.Collections.FSharpList`1[System.Type], Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr], Byte[])
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Deserialize40(System.Type, System.Type[], System.Type[], Microsoft.FSharp.Quotations.FSharpExpr[], Byte[])
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr FieldGet(Microsoft.FSharp.Quotations.FSharpExpr, System.Reflection.FieldInfo)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr FieldGet(System.Reflection.FieldInfo)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr FieldSet(Microsoft.FSharp.Quotations.FSharpExpr, System.Reflection.FieldInfo, Microsoft.FSharp.Quotations.FSharpExpr)
@@ -3265,6 +3252,8 @@ Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr P
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr PropertySet(Microsoft.FSharp.Quotations.FSharpExpr, System.Reflection.PropertyInfo, Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]])
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr PropertySet(System.Reflection.PropertyInfo, Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]])
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Quote(Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr QuoteRaw(Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr QuoteTyped(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Sequential(Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Substitute(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Quotations.FSharpVar,Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr]])
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr TryFinally(Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Quotations.FSharpExpr)
@@ -3273,12 +3262,16 @@ Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr T
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr TypeTest(Microsoft.FSharp.Quotations.FSharpExpr, System.Type)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr UnionCaseTest(Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Reflection.UnionCaseInfo)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Value(System.Object, System.Type)
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr ValueWithName(System.Object, System.Type, System.String)
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr ValueWithName[T](T, System.String)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Value[T](T)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr Var(Microsoft.FSharp.Quotations.FSharpVar)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr VarSet(Microsoft.FSharp.Quotations.FSharpVar, Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr WhileLoop(Microsoft.FSharp.Quotations.FSharpExpr, Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr WithValue(System.Object, System.Type, Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr`1[T] Cast[T](Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr`1[T] GlobalVar[T](System.String)
+Microsoft.FSharp.Quotations.FSharpExpr: Microsoft.FSharp.Quotations.FSharpExpr`1[T] WithValue[T](T, Microsoft.FSharp.Quotations.FSharpExpr`1[T])
 Microsoft.FSharp.Quotations.FSharpExpr: System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Quotations.FSharpVar] GetFreeVars()
 Microsoft.FSharp.Quotations.FSharpExpr: System.String ToString()
 Microsoft.FSharp.Quotations.FSharpExpr: System.String ToString(Boolean)
@@ -3286,6 +3279,7 @@ Microsoft.FSharp.Quotations.FSharpExpr: System.Type GetType()
 Microsoft.FSharp.Quotations.FSharpExpr: System.Type Type
 Microsoft.FSharp.Quotations.FSharpExpr: System.Type get_Type()
 Microsoft.FSharp.Quotations.FSharpExpr: Void RegisterReflectedDefinitions(System.Reflection.Assembly, System.String, Byte[])
+Microsoft.FSharp.Quotations.FSharpExpr: Void RegisterReflectedDefinitions(System.Reflection.Assembly, System.String, Byte[], System.Type[])
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Int32 GetHashCode()
 Microsoft.FSharp.Quotations.FSharpExpr`1[T]: Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr] CustomAttributes
@@ -3316,6 +3310,8 @@ Microsoft.FSharp.Quotations.PatternsModule: Int32 GetHashCode()
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]] NewTuplePattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr] AddressOfPattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr] QuotePattern(Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr] QuoteRawPattern(Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr] QuoteTypedPattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpVar] VarPattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[Microsoft.FSharp.Quotations.FSharpVar,Microsoft.FSharp.Quotations.FSharpExpr]],Microsoft.FSharp.Quotations.FSharpExpr]] LetRecursivePattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr],System.Reflection.FieldInfo]] FieldGetPattern(Microsoft.FSharp.Quotations.FSharpExpr)
@@ -3340,6 +3336,8 @@ Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr],System.Reflection.PropertyInfo,Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]]] PropertyGetPattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[Microsoft.FSharp.Quotations.FSharpExpr,Microsoft.FSharp.Quotations.FSharpExpr,Microsoft.FSharp.Quotations.FSharpExpr]] IfThenElsePattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[Microsoft.FSharp.Quotations.FSharpVar,Microsoft.FSharp.Quotations.FSharpExpr,Microsoft.FSharp.Quotations.FSharpExpr]] LetPattern(Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.Type,Microsoft.FSharp.Quotations.FSharpExpr]] WithValuePattern(Microsoft.FSharp.Quotations.FSharpExpr)
+Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Object,System.Type,System.String]] ValueWithNamePattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[System.Type,Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpVar],Microsoft.FSharp.Quotations.FSharpExpr]] NewDelegatePattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr],System.Reflection.PropertyInfo,Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr],Microsoft.FSharp.Quotations.FSharpExpr]] PropertySetPattern(Microsoft.FSharp.Quotations.FSharpExpr)
 Microsoft.FSharp.Quotations.PatternsModule: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`4[Microsoft.FSharp.Quotations.FSharpVar,Microsoft.FSharp.Quotations.FSharpExpr,Microsoft.FSharp.Quotations.FSharpExpr,Microsoft.FSharp.Quotations.FSharpExpr]] ForIntegerRangeLoopPattern(Microsoft.FSharp.Quotations.FSharpExpr)
@@ -3430,26 +3428,6 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
 System.IObservable`1[T]: System.IDisposable Subscribe(System.IObserver`1[T])
 System.IObserver`1[T]: Void OnCompleted()
 System.IObserver`1[T]: Void OnError(System.Exception)
-System.IObserver`1[T]: Void OnNext(T)"
-        let normalize (s:string) =
-            s.Replace("\r\n\r\n", "\r\n").Trim([|'\r';'\n'|])
-
-        let expected = 
-            postdev10 |> normalize
-
-        let act = actual.ToString() |> normalize
-        // add padding to ensure diagnostics below don't get IndexOutOfRange
-        let expected = expected + String.replicate 400 " "
-        let act = act + String.replicate 400 " "
-        if expected <> act then
-            let mutable indexFirstDiff = 0
-            while indexFirstDiff < expected.Length && expected.[indexFirstDiff] = act.[indexFirstDiff] do
-                indexFirstDiff <- indexFirstDiff + 1
-            printfn "First diff at char %d" indexFirstDiff
-            printfn "Next bit is"
-            printfn "Exp: %s" (expected.Substring(indexFirstDiff, 400).Replace("\n","     "))
-            printfn "Act: %s" (act.Substring(indexFirstDiff, 400).Replace("\n","     "))
-            printfn "Full actual below"
-            printfn ""
-            printf "%s" act
-        Assert.AreEqual(expected, act)
+System.IObserver`1[T]: Void OnNext(T)
+"
+        SurfaceArea.verify expected "portable47" (sprintf "%s\\%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)

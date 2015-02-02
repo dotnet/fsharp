@@ -10,7 +10,7 @@ aclocal.m4
 src/*.userprefs
 src/fsharp/FSStrings.resources
 lkg
-pack
+packages
 packages
 src/fsharp/FSharp.Build/*.resx
 src/fsharp/FSharp.Build-proto/*.resx
