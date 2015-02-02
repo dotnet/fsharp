@@ -1,4 +1,4 @@
-os: Windows Server 2012 R@ 
+os: Windows Server 2012 R2 
 
 init: 
 build_script: 
