@@ -25,7 +25,8 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :eof
 
-%_ngenexe% install lib\proto\fsc-proto.exe
+%_ngenexe% install Proto\net40\bin\fsc-proto.exe
+@if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :eof
 
 %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true 
 @if ERRORLEVEL 1 echo Error: library debug build failed && goto :eof
