@@ -648,8 +648,9 @@ module XmlDocWriter =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let members = ref []
         let addMember id xmlDoc = 
-            let doc = getDoc xmlDoc
-            members := (id,doc) :: !members
+            if hasDoc xmlDoc then
+                let doc = getDoc xmlDoc
+                members := (id,doc) :: !members
         let doVal (v:Val) = addMember v.XmlDocSig v.XmlDoc
         let doUnionCase (uc:UnionCase) = addMember uc.XmlDocSig uc.XmlDoc
         let doField (rf:RecdField) = addMember rf.XmlDocSig rf.XmlDoc

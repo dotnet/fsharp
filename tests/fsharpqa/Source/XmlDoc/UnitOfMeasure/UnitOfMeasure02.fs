@@ -24,16 +24,24 @@ let test =
     xml.Load(xmlname)
 
     let a1 = xml.GetElementsByTagName("summary").Item(0).FirstChild.Value = "This is B"
-    if not a1 then printfn "a1: expected: This is B"; exit 1
+    if not a1 then 
+        printfn "a1: expected: This is B" 
+        exit 1
 
     let a2 = xml.GetElementsByTagName("summary").Item(1).FirstChild.Value = "This is A"
-    if not a2 then printfn "a2: expected: This is A"; exit 1
+    if not a2 then 
+        printfn "a2: expected: This is A" 
+        exit 1
     
-    let a3 = xml.GetElementsByTagName("member").Item(1).Attributes.Item(0).Value = "M:UnitOfMeasure02.B(System.Int32,System.Int32)"
-    if not a3 then printfn "a3: expected: M:UnitOfMeasure02.B(System.Int32,System.Int32)"; exit 1
+    let a3 = xml.GetElementsByTagName("member").Item(0).Attributes.Item(0).Value = "M:UnitOfMeasure02.B(System.Int32,System.Int32)"
+    if not a3 then 
+        printfn "a3: expected: M:UnitOfMeasure02.B(System.Int32,System.Int32)" 
+        exit 1
 
-    let a4 = xml.GetElementsByTagName("member").Item(2).Attributes.Item(0).Value = "M:UnitOfMeasure02.A(System.Double)"
-    if not a4 then printfn "a4: expected: M:UnitOfMeasure02.A(System.Double)"; exit 1
+    let a4 = xml.GetElementsByTagName("member").Item(1).Attributes.Item(0).Value = "M:UnitOfMeasure02.A(System.Double)"
+    if not a4 then 
+        printfn "a4: expected: M:UnitOfMeasure02.A(System.Double)" 
+        exit 1
 #endif
     0
 

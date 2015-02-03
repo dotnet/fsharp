@@ -123,7 +123,13 @@ module SurfaceArea =
     
     // verify public surface area matches expected
     let verify expected platform fileName =  
-        let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" TestContext.CurrentContext.WorkDirectory platform
+        let workDir =
+            #if OPEN_BUILD
+            TestContext.CurrentContext.WorkDirectory
+            #else
+            ""
+            #endif
+        let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n)+", "\r\n").Trim([|'\r';'\n'|])
             
