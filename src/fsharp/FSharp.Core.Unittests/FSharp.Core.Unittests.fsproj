@@ -29,7 +29,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;$(TargetFramework)</DefineConstants>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;$(TargetFramework.ToLower())</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
