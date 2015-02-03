@@ -19,7 +19,7 @@ type ManglingNamesOfProvidedTypesWithSingleParameter() =
     member this.MangleWithDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "xyz" |])
-        Assert.AreEqual("MyNamespace.Test,", mangled)
+        Assert.AreEqual("MyNamespace.Test", mangled)
     
     [<Test>]
     member this.DemangleNonDefaultValue() = 
@@ -29,8 +29,13 @@ type ManglingNamesOfProvidedTypesWithSingleParameter() =
     
     [<Test>]
     member this.DemangleDefaultValue() = 
-        // If all provided parameters are the default value demangling fails - see #98
         let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,"
+        Assert.AreEqual("MyNamespace.Test", name)
+        Assert.AreEqual([||], parameters)
+
+    [<Test>]
+    member this.DemangleNewDefaultValue() = 
+        let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test"
         Assert.AreEqual("MyNamespace.Test", name)
         Assert.AreEqual([||], parameters)
 
@@ -53,7 +58,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
                 ("MyNamespace.Test", [| "xyz"; "abc" |], 
                     [| "Foo", Some "xyz"
                        "Foo2", Some "abc" |])
-        Assert.AreEqual("MyNamespace.Test,", mangled)
+        Assert.AreEqual("MyNamespace.Test", mangled)
     
     [<Test>]
     member this.DemangleMultiParameter() = 

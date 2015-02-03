@@ -462,7 +462,11 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             nonDefaultArgs
             |> Array.map mangleStaticStringArg
             |> String.concat ","
-        typeLogicalName+","+nonDefaultArgsText
+
+        if nonDefaultArgsText = "" then
+            typeLogicalName
+        else
+            typeLogicalName + "," + nonDefaultArgsText
 
 
     let computeMangledNameWithoutDefaultArgValues(nm,staticArgs,defaultArgValues) =
