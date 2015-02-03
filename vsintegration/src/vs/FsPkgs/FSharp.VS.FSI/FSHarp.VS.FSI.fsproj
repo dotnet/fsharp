@@ -79,7 +79,7 @@
         <Reference Include="System.Drawing"/>
         <Reference Include="System.Windows.Forms"/>
         <Reference Include="System.Xml"/>
-        <Reference Include="$(VS_UtilitiesReference)"/>
+        <Reference Include="$(VS_UtilitiesReference)" Condition= "'$(VS_UtilitiesReference)' != ''" />
         <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
           <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
           <Name>FSharp.Core</Name>
