@@ -103,7 +103,7 @@
   <PropertyGroup Condition="'$(TargetFramework)'=='net20'">
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_2_0</DefineConstants>
-   <DefineConstants>$(DefineConstants);RUNTIME</DefineConstants>
+    <DefineConstants>$(DefineConstants);RUNTIME</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CANCELLATIONTOKEN_CLASSES</DefineConstants>
@@ -123,7 +123,7 @@
   <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
+    <DefineConstants  Condition="'$(Configuration)'!='Proto'">$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
