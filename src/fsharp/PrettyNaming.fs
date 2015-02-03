@@ -445,16 +445,15 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
 
     let demangleProvidedTypeName (typeLogicalName:string) = 
         if typeLogicalName.Contains "," then 
-            let pieces = splitAroundQuotation typeLogicalName ',' 
-            if pieces.[1..] |> Array.forall (fun x -> tryDemangleStaticStringArg x |> Option.isSome) then
-                let argNamesAndValues = 
-                    pieces.[1..] |> Array.map (fun piece -> 
-                        match tryDemangleStaticStringArg piece with 
-                        | None -> raise (InvalidMangledStaticArg piece)
-                        | Some v -> v)
-                pieces.[0], argNamesAndValues
-            else 
-                typeLogicalName, [| |]
+            let pieces = splitAroundQuotation typeLogicalName ','
+            match pieces with
+            | [| x; "" |] -> x, [| |]
+            | _ ->
+                let argNamesAndValues = pieces.[1..] |> Array.choose tryDemangleStaticStringArg
+                if argNamesAndValues.Length = (pieces.Length - 1) then
+                    pieces.[0], argNamesAndValues
+                else
+                    typeLogicalName, [| |]
         else 
             typeLogicalName, [| |]
 
@@ -465,6 +464,14 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             |> String.concat ","
         typeLogicalName+","+nonDefaultArgsText
 
-    //let testDemangleStaticStringArg() = 
-    //   for x in [ ""; "\""; "\"\""; "a"; "\\"; "\\\\"; "\\\""; "_"; "\"\"" ] do 
-    //      if demangleStaticStringArg (mangleStaticStringArg x) <> x then printfn "failed for <<%s>>" x
+
+    let computeMangledNameWithoutDefaultArgValues(nm,staticArgs,defaultArgValues) =
+        let nonDefaultArgs = 
+            (staticArgs,defaultArgValues) 
+            ||> Array.zip 
+            |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
+                let actualArgValue = string staticArg 
+                match defaultArgValue with 
+                | Some v when v = actualArgValue -> None
+                | _ -> Some (defaultArgName, actualArgValue))
+        mangleProvidedTypeName (nm, nonDefaultArgs)
