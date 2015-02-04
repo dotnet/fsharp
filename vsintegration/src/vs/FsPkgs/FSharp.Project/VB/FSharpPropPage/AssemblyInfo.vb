@@ -3,6 +3,7 @@
 Imports System
 Imports System.Reflection
 Imports System.Runtime.CompilerServices
+Imports System.Runtime.InteropServices
 
 '/* F# additions: begin. */
 <Assembly: AssemblyDescription("FSharp.ProjectSystem.Base.dll")>
@@ -12,6 +13,7 @@ Imports System.Runtime.CompilerServices
 <Assembly: AssemblyProduct("Microsoft\x00ae F#")>
 <Assembly: AssemblyConfiguration("")>
 <Assembly: AssemblyCulture("")>
+<assembly: ComVisible(false)>
 
 #if STAMP_OSS_VERSION
 <Assembly: AssemblyVersion("14.0.0.9055")>       '// The assembly version for THE OSS BUILD

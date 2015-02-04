@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <vsFrameworkLatest>Microsoft.VisualStudio.Shell.12.0</vsFrameworkLatest>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
@@ -18,6 +18,16 @@
     <GenerateInterfaceFile>Unittests.fsi</GenerateInterfaceFile>
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblySearchPaths>
+      {CandidateAssemblyFiles};
+      {TargetFrameworkDirectory};
+      {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
+      $(FSharpSourcesRoot)\..\packages\NUnit.2.6.3\lib;
+      $(MSBuildToolsPath);
+      $(FSharpSourcesRoot)\packages\NUnit.2.6.3\lib;
+    </AssemblySearchPaths>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
@@ -91,7 +101,6 @@
       <SpecificVersion>true</SpecificVersion>
     </Reference>
     <Reference Include="Microsoft.Build.Utilities.v12.0" />
-    <Reference Include="Microsoft.Build.Utilities.v3.5.dll" />
     <Reference Include="EnvDTE.dll" />
     <Reference Include="EnvDTE80.dll" />
     <Reference Include="VSLangProj" />
@@ -110,9 +119,10 @@
     <Reference Include="Microsoft.VisualStudio.Text.Data.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
-    <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-    <Reference Include="nunit.framework.dll" />
+    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
+        <SpecificVersion>true</SpecificVersion>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Fsc\Fsc.fsproj">
       <Project>{ffde9e47-9675-4498-b540-69b2583dd600}</Project>
       <Name>Fsc</Name>
@@ -166,6 +176,20 @@
       <Project>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <NUnitFiles Include="$(FSharpSourcesRoot)\..\packages\NUnit.Runners.2.6.3\tools\lib\*.*" />
   </ItemGroup>
+  <Target Name="CopyNUnit">
+    <Copy SourceFiles= "@(NUnitFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
+    </Copy>
+  </Target>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <PropertyGroup>
+    <BuildDependsOn>
+      $(BuildDependsOn);
+      CopyNUnit
+    </BuildDependsOn>
+  </PropertyGroup>
+
+
 </Project>

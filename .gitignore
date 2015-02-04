@@ -27,10 +27,13 @@ src/fsharp/FSharp.Compiler/*.resx
 src/fsharp/FSharp.Compiler/*.resources
 src/fsharp/FSharp.Compiler/*.sln
 src/fsharp/FSharp.Compiler/*.userprefs
-src/*.log
+*.log
+logs
 Debug
 Release
 Proto
+VSDebug
+VSRelease
 .libs
 Makefile
 configure
@@ -64,6 +67,8 @@ tests/projects/Sample_VS2012_FSharp_ConsoleApp_net45_with_resource/Sample_VS2012
 obj
 extras
 ossreadme*.txt
+packages/
+TestResults.xml
 tests/fsharp/typecheck/sigs/*.exe
 tests/fsharp/typecheck/sigs/*.diff
 tests/fsharp/typecheck/sigs/*.err
@@ -94,7 +99,7 @@ tests/fsharpqa/Source/CodeGen/EmittedIL/QueryExpressionStepping/Utils.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLibrary.dll
 
 *.csproj.user
-
+*.orig
 *.ide
 *.log
 *.jrs

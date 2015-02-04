@@ -3,11 +3,14 @@
 #light
 namespace Microsoft.FSharp
 open System.Reflection
+open System.Runtime.InteropServices
 [<assembly:AssemblyDescription("FSharp.Build.dll")>]
 [<assembly:AssemblyCompany("Microsoft Corporation")>]
 [<assembly:AssemblyTitle("FSharp.Build.dll")>]
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  Apache 2.0 License.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
+[<assembly:ComVisible(false)>]
+
 do()
 
 #if NO_STRONG_NAMES

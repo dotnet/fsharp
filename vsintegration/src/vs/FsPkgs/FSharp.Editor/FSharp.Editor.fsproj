@@ -23,6 +23,7 @@
     <OtherFlags>$(OtherFlags) --warnon:1182  --subsystemversion:6.00</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\AssemblyInfo.fs" />
     <Compile Include="TokenContext.fs" />
     <Compile Include="SmartIndent.fs" />
     <Compile Include="BraceCompletion.fs" />
