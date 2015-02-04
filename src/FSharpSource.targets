@@ -740,4 +740,7 @@
         <CompileBefore Remove="@(CompileBefore)"/>   
     </ItemGroup>
   </Target>
+  <Target Name="BeforeBuild" BeforeTargets="Build">
+    <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
+  </Target>
 </Project>
