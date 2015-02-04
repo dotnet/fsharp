@@ -1,3 +1,8 @@
+# branches to build
+branches:
+  only:
+    - master
+
 init: 
 build_script: 
   - cmd: appveyor-build.cmd
