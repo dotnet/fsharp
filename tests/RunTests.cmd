@@ -43,6 +43,14 @@ IF NOT DEFINED APPVEYOR_CI (
 rem path to fsc.exe which will be used by tests
 set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 
+rem path to nunit runners
+set NUNITDIR=%~dp0..\packages\NUnit.Runners.2.6.3\tools
+if not exist "%NUNITDIR%" (
+    pushd %~dp0..
+    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    popd
+)    
+
 rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0\TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
@@ -178,13 +186,8 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-where.exe nunit-console.exe > NUL 2> NUL 
-if errorlevel 1 (
-  echo Error: nunit-console.exe is not in the PATH
-  exit /b 1
-)
-echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo "%NUNITDIR%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     "%NUNITDIR%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
 goto :EOF
 
@@ -194,16 +197,9 @@ set XMLFILE=IDEUnit_Xml.xml
 set OUTPUTFILE=IDEUnit_Output.log
 set ERRORFILE=IDEUnit_Error.log
 
-where.exe nunit-console-x86.exe > NUL 2> NUL 
-if errorlevel 1 (
-  echo Error: nunit-console-x86.exe is not in the PATH
-  exit /b 1
-)
+xcopy /y "%NUNITDIR%\lib\*.dll" "%FSCBINPATH%"
 
-for /f "tokens=*" %%a in  ('where.exe nunit-console-x86.exe')  do  (set nunitlocation=%%~dpa)
-xcopy /y "%nunitlocation%\lib\*.dll" "%FSCBINPATH%"
-
-echo nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
-     nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+echo "%NUNITDIR%\nunit-console-x86.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+     "%NUNITDIR%\nunit-console-x86.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF
