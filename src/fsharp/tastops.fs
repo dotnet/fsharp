@@ -5834,7 +5834,7 @@ let permuteExpr (sigma:int[]) (expr: Expr[]) (typ: TType[]) (names:string[]) =
         existsR 0 (i' - 1) (fun j' -> invSigma.[j'] > i)
    
     let rewrite i rbinds (xi:Expr) =
-        if liftPosition i then
+        if true || liftPosition i then
             let tmpv,tmpe = mkCompGenLocal xi.Range names.[i] typ.[i]
             let bind = mkCompGenBind tmpv xi
             bind :: rbinds,tmpe
