@@ -363,7 +363,6 @@ Microsoft.FSharp.Collections.SeqModule: Int32 GetHashCode()
 Microsoft.FSharp.Collections.SeqModule: Int32 Length[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Collections.FSharpList`1[T] ToList[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] TryFindIndex[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
-
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[TResult] TryPick[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpOption`1[TResult]], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[T] TryFind[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[T,T]] Pairwise[T](System.Collections.Generic.IEnumerable`1[T])
@@ -3316,7 +3315,7 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type GetType()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
 "
         let normalize (s:string) =
-            s.Replace("\r\n\r\n", "\r\n").Trim([|'\r';'\n'|])
+            s.Replace("\r\n\r\n", "\r\n").Replace("\r\n", "\n").Trim([|'\r';'\n'|])
 
         let expected = 
             expectedSurfaceArea |> normalize
