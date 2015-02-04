@@ -54,15 +54,11 @@ REM @if ERRORLEVEL 1 echo Error: library net20 debug build failed && goto :eof
 %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
 @if ERRORLEVEL 1 echo Error: library portable7 debug build failed && goto :eof
 
-
 %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
 @if ERRORLEVEL 1 echo Error: library portable78 debug build failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable259
 @if ERRORLEVEL 1 echo Error: library portable259 debug build failed && goto :eof
-
-
-
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true
 @if ERRORLEVEL 1 echo Error: library unittests debug build failed && goto :eof
@@ -96,7 +92,6 @@ REM Disabled while working out perl problem, see https://github.com/Microsoft/vi
 REM call RunTests.cmd debug fsharpqa Smoke
 REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
 
-set PATH=%PATH%;%~dp0%packages\NUnit.Runners.2.6.3\tools\
 call RunTests.cmd debug coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug coreunit' failed && goto :eof
 

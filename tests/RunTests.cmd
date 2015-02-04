@@ -10,6 +10,8 @@ goto :USAGE
 
 :flavor_ok
 
+set nunitpath=%~dp0%..\packages\NUnit.Runners.2.6.3\tools\
+
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
 set _tmp=%3
@@ -184,13 +186,8 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-where.exe nunit-console.exe > NUL 2> NUL 
-if errorlevel 1 (
-  echo Error: nunit-console.exe is not in the PATH
-  exit /b 1
-)
-echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
 goto :EOF
 
@@ -200,13 +197,8 @@ set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
 set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
 set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
 
-where.exe nunit-console.exe > NUL 2> NUL
-if errorlevel 1 (
-  echo Error: nunit-console.exe is not in the PATH
-  exit /b 1
-)
-echo nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
-     nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+echo %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+     %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
 
 goto :EOF
 
@@ -216,16 +208,7 @@ set XMLFILE=IDEUnit_Xml.xml
 set OUTPUTFILE=IDEUnit_Output.log
 set ERRORFILE=IDEUnit_Error.log
 
-where.exe nunit-console-x86.exe > NUL 2> NUL 
-if errorlevel 1 (
-  echo Error: nunit-console-x86.exe is not in the PATH
-  exit /b 1
-)
-
-for /f "tokens=*" %%a in  ('where.exe nunit-console-x86.exe')  do  (set nunitlocation=%%~dpa)
-xcopy /y "%nunitlocation%\lib\*.dll" "%FSCBINPATH%"
-
-echo nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
-     nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+echo %nunitpath%\nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+     %nunitpath%\nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF
