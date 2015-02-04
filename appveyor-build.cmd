@@ -28,42 +28,38 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 %_ngenexe% install Proto\net40\bin\fsc-proto.exe
 @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :eof
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true 
+%_msbuildexe% src/fsharp-library-build.proj
 @if ERRORLEVEL 1 echo Error: library debug build failed && goto :eof
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:UseNugetPackages=true 
+%_msbuildexe% src/fsharp-compiler-build.proj
 @if ERRORLEVEL 1 echo Error: compile debug build failed && goto :eof
 
 REM We don't build new net20 FSharp.Core anymore
-REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=net20
+REM %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=net20
 REM @if ERRORLEVEL 1 echo Error: library net20 debug build failed && goto :eof
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47
 @if ERRORLEVEL 1 echo Error: library portable47 debug build failed && goto :eof
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7
 @if ERRORLEVEL 1 echo Error: library portable7 debug build failed && goto :eof
 
-
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78
 @if ERRORLEVEL 1 echo Error: library portable78 debug build failed && goto :eof
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable259
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259
 @if ERRORLEVEL 1 echo Error: library portable259 debug build failed && goto :eof
-
-
-
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true
 @if ERRORLEVEL 1 echo Error: library unittests debug build failed && goto :eof
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47
 @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable47 && goto :eof
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
 @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable7 && goto :eof
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
 @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable78 && goto :eof
 
 
@@ -86,11 +82,7 @@ REM Disabled while working out perl problem, see https://github.com/Microsoft/vi
 REM call RunTests.cmd debug fsharpqa Smoke
 REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
 
-set PATH=%PATH%;%~dp0%packages\NUnit.Runners.2.6.3\tools\
 call RunTests.cmd debug coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug coreunit' failed && goto :eof
 
 popd
-
-
-
