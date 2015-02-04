@@ -61,6 +61,7 @@
   <ItemGroup>
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
+    <Compile Include="RecordInitialisation.fs" />
     <Compile Include="HashIfExpression.fs" />
   </ItemGroup>
   <ItemGroup>
