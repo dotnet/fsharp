@@ -545,6 +545,20 @@ type AutoCompletionListTests() as this  =
         AssertCtrlSpaceCompleteContains (typeDef4 @ ["new M.A<_, _>(S = 1,)"]) "A<_, _>(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
 
     [<Test>]
+    [<Category("Completion in object initializer")>]
+    member public this.``ObjectInitializer.CompletionForSettableExtensionProperties``() =
+        let typeDef = 
+            [
+                "type A() = member this.SetXYZ(v: int) = ()"
+                "module Ext = type A with member this.XYZ with set(v) = this.SetXYZ(v)"
+
+            ]
+
+        AssertCtrlSpaceCompleteContains (typeDef @ ["open Ext"; "A((**))"]) "A((**)" ["XYZ"] [] // positive
+        AssertCtrlSpaceCompleteContains (typeDef @ ["A((**))"]) "A((**)" [] ["XYZ"] // negative
+
+
+    [<Test>]
     [<Category("RangeOperator")>]
     member public this.``RangeOperator.CorrectUsage``() = 
         let useCases = 
