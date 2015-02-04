@@ -85,7 +85,6 @@
     <Reference Include="$(MsBuild_EngineReference)" />
     <Reference Include="$(MsBuild_Reference)" />
     <Reference Include="$(MsBuild_UtilitiesReference)" />
-    <Reference Include="Microsoft.Build.Utilities.v3.5.dll" />
     <Reference Include="EnvDTE.dll" />
     <Reference Include="EnvDTE80.dll" />
     <Reference Include="VSLangProj" />
@@ -106,10 +105,16 @@
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-    <Reference Include="nunit.framework.dll" />
+    <Reference Include="nunit.framework.dll">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.util.dll">
+      <Private>True</Private>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Fsc\Fsc.fsproj">
       <Project>{ffde9e47-9675-4498-b540-69b2583dd600}</Project>
       <Name>Fsc</Name>
+      <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
@@ -162,4 +167,11 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Target Name="BeforeResolveReferences" Condition="'$(UseNugetPackages)'=='true'">
+    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(ProjectDir)..\..\..\packages\NUnit.Runners.2.6.3\tools\lib\;$(AssemblySearchPaths)">
+      <Output TaskParameter="Value"
+              PropertyName="AssemblySearchPaths" />
+    </CreateProperty>
+  </Target>
+ 
 </Project>
