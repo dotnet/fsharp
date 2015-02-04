@@ -27,10 +27,7 @@ See the script for what this does.  After you do this, you can do further testin
 The compiler is compiled as a set of .NET 4.0 components using a bootstrap process. This uses the Last Known Good (LKG) compiler to build.  
 Note that you need the .NET framework 3.5 installed on your machine in order to complete this step.
 
-```
-gacutil /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
-msbuild src\fsharp-proto-build.proj
-```
+    msbuild src\fsharp-proto-build.proj
     
 ## 2.  Building an F# (Debug) library and compiler
 

@@ -7,9 +7,6 @@ set _msbuildexe="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
 if not exist %_msbuildexe% set _msbuildexe="%ProgramFiles%\MSBuild\12.0\Bin\MSBuild.exe"
 if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe.  Please see http://www.microsoft.com/en-us/download/details.aspx?id=40760. && goto :eof
 
-set _gacutilexe="%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.1A\bin\NETFX 4.5.1 Tools\gacutil.exe"
-if not exist %_gacutilexe% echo Error: Could not find gacutil.exe.  && goto :eof
-
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 
@@ -17,9 +14,6 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :eof
 
 ::Build
-%_gacutilexe%  /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
-@if ERRORLEVEL 1 echo Error: gacutil failed && goto :eof
-
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :eof
 
