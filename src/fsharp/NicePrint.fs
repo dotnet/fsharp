@@ -36,7 +36,7 @@ open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.PrettyNaming
 
 [<AutoOpen>]
-module private PrintUtilities = 
+module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
     let squareAngleL x = leftL "[<" ^^ x ^^ rightL ">]"
     let angleL x = sepL "<" ^^ x ^^ rightL ">"  
@@ -70,7 +70,6 @@ module private PrintUtilities =
         | [x] -> [resultFunction x (layoutFunction x)] 
         | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n))) ] 
         | _ -> []
-
     
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref:TyconRef) = 
         let demangled = 

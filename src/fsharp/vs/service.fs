@@ -110,7 +110,11 @@ module internal Params =
                     "", "", pty
                 // Layout a named argument 
                 | Some nm,_,_ -> 
-                    let prefix = if isParamArrayArg then sprintf "params %s: " nm else sprintf "%s: " nm
+                    let prefix = 
+                        if isParamArrayArg then 
+                            sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
+                        else 
+                            sprintf "%s: " nm
                     nm, prefix,pty)
             |> List.unzip3 
         let paramTypeAndRetLs,_ = NicePrint.layoutPrettifiedTypes denv (paramTypes@[rty])

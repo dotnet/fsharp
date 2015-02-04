@@ -466,7 +466,7 @@ type QuickInfoTests() =
         let fileContents = """ 
                                 let t = "a".Split('c')"""
 
-        this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "Spl", "params separator")
+        this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "Spl", "[<System.ParamArray>] separator")
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -919,7 +919,7 @@ type QuickInfoTests() =
                 type A() =
                     static member Foo([<System.ParamArrayAttribute>] a : int[]) = ()
                 let r = A.Foo(42)""" ,
-            "type A","params a:"    )
+            "type A","[<ParamArray>] a:"    )
 
     [<Test>]
     member public this.``ParamsArrayArgument.OnMethod``() =        
@@ -928,7 +928,7 @@ type QuickInfoTests() =
                 type A() =
                     static member Foo([<System.ParamArrayAttribute>] a : int[]) = ()
                 let r = A.Foo(42)""" ,
-            "A.Foo","params a:"    )
+            "A.Foo","[<System.ParamArray>] a:"    )
           
     [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903e``() =        

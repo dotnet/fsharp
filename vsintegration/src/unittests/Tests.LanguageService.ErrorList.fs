@@ -273,7 +273,7 @@ let x =
         CheckErrorList content <|
             fun errors ->
                 Assert.AreEqual(1, List.length errors)
-                assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Console.WriteLine(buffer: char []) : unit, System.Console.WriteLine(format: string, params arg: obj []) : unit, System.Console.WriteLine(value: obj) : unit, System.Console.WriteLine(value: string) : unit"
+                assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Console.WriteLine(buffer: char []) : unit, System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit, System.Console.WriteLine(value: obj) : unit, System.Console.WriteLine(value: string) : unit"
 
     [<Test>]
     member public this.``InvalidMethodOverload2``() = 
