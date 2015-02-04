@@ -507,9 +507,12 @@ type TypeCheckInfo
     
     // Filter items to show only valid & return Some if there are any
     let ReturnItemsOfType items g denv (m:range) filterCtors hasTextChangedSinceLastTypecheck f =
-        let items = items |> RemoveDuplicateItems g
-        let items = items |> RemoveExplicitlySuppressed g
-        let items = items |> FilterItemsForCtors filterCtors
+        let items = 
+            items 
+            |> RemoveDuplicateItems g
+            |> RemoveExplicitlySuppressed g
+            |> FilterItemsForCtors filterCtors
+
         if nonNil items then
             Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: Results in %d items!\n" items.Length)
             if hasTextChangedSinceLastTypecheck(textSnapshotInfo, Range.toVS m) then

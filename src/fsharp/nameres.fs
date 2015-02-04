@@ -2459,7 +2459,7 @@ type ResolveCompletionTargets =
     member this.ResolveAll = 
         match this with
         | All _ -> true
-        | _ -> false
+        | SettablePropertiesAndFields -> false
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
 let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: ResolveCompletionTargets) m ad statics typ =
@@ -2535,7 +2535,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     let minfoFilter (minfo:MethInfo) = 
         let isApplicableMeth =
             match completionTargets with
-            | ResolveCompletionTargets.All isApplicableMeth -> isApplicableMeth
+            | ResolveCompletionTargets.All x -> x
             | _ -> failwith "internal error: expected completionTargets = ResolveCompletionTargets.All"
         // Only show the Finalize, MemberwiseClose etc. methods on System.Object for values whose static type really is 
         // System.Object. Few of these are typically used from F#.  
@@ -2581,24 +2581,30 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             | _ -> pinfos
 
         pinfos
-        |> List.map (fun pinfo -> DecodeFSharpEvent [pinfo] ad g ncenv m)
-        |> List.filter (fun pinfo->
-            match pinfo with
-            | Some(Item.Event(einfo)) -> completionTargets.ResolveAll && IsStandardEventInfo ncenv.InfoReader m ad einfo
-            | _ -> pinfo.IsSome)
-        |> List.map (fun pinfo->pinfo.Value)
+        |> List.choose (fun pinfo->
+            let pinfoOpt = DecodeFSharpEvent [pinfo] ad g ncenv m
+            match pinfoOpt, completionTargets with
+            | Some(Item.Event(einfo)), ResolveCompletionTargets.All _ -> if IsStandardEventInfo ncenv.InfoReader m ad einfo then pinfoOpt else None
+            | _ -> pinfoOpt)
 
     // REVIEW: add a name filter here in the common cases?
     let minfos = 
         if completionTargets.ResolveAll then
+            let minfos =
+                AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ 
+                |> List.filter minfoFilter
+
             let addersAndRemovers = 
                 pinfoItems 
                 |> List.map (function Item.Event(FSEvent(_,_,addValRef,removeValRef)) -> [addValRef.LogicalName;removeValRef.LogicalName] | _ -> [])
                 |> List.concat
 
-            AllMethInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ 
-            |> List.filter minfoFilter
-            |> List.filter (fun minfo -> not(addersAndRemovers|>List.exists (fun ar-> ar = minfo.LogicalName)))
+            match addersAndRemovers with
+            | [] -> minfos
+            | addersAndRemovers ->
+                let isNotAdderOrRemover (minfo: MethInfo) = not(addersAndRemovers |> List.exists (fun ar -> ar = minfo.LogicalName))
+                List.filter isNotAdderOrRemover minfos
+
         else []
     // Partition methods into overload sets
     let rec partitionl (l:MethInfo list) acc = 
