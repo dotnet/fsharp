@@ -45,6 +45,10 @@ REM @if ERRORLEVEL 1 echo Error: library net20 build failed && goto :eof
 @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :eof
 
 
+%_msbuildexe% src/fsharp-compiler-unittests-build.proj
+@if ERRORLEVEL 1 echo Error: compiler unittests debug build failed && goto :eof
+
+
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :eof
 
@@ -79,6 +83,9 @@ REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed &&
 REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
 REM call RunTests.cmd release fsharpqa Smoke
 REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
+
+call RunTests.cmd release compilerunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :eof
 
 call RunTests.cmd release coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :eof
