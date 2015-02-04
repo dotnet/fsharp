@@ -49,6 +49,11 @@ REM @if ERRORLEVEL 1 echo Error: library net20 debug build failed && goto :eof
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259
 @if ERRORLEVEL 1 echo Error: library portable259 debug build failed && goto :eof
 
+                                                                                                 
+%_msbuildexe% src/fsharp-compiler-unittests-build.proj
+@if ERRORLEVEL 1 echo Error: compiler unittests debug build failed && goto :eof
+
+
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true
 @if ERRORLEVEL 1 echo Error: library unittests debug build failed && goto :eof
 
@@ -80,6 +85,9 @@ REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && g
 REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
 REM call RunTests.cmd debug fsharpqa Smoke
 REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
+
+call RunTests.cmd debug compilerunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug compilerunit' failed && goto :eof
 
 call RunTests.cmd debug coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug coreunit' failed && goto :eof
