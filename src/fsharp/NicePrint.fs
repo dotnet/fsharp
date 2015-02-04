@@ -71,7 +71,7 @@ module private PrintUtilities =
         | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n))) ] 
         | _ -> []
 
-    /// Layout a reference to a type 
+    
     let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref:TyconRef) = 
         let demangled = 
             let name =
@@ -99,7 +99,8 @@ module private PrintUtilities =
             let pathText = trimPathByDisplayEnv denv path
             if pathText = "" then tyconTextL else leftL pathText ^^ tyconTextL
 
-    let layoutTyconAttribute (denv: DisplayEnv) (tcref:TyconRef) =
+    let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
+        let tcref = attrib.TyconRef
         squareAngleL (layoutTyconRefImpl true denv tcref)
 
 module private PrintIL = 
@@ -216,9 +217,8 @@ module private PrintIL =
             // Layout an unnamed argument 
             | _, None, _ -> leftL ":"
             // Layout a named argument 
-            | true, Some nm,_ -> 
-                let typ = denv.g.attrib_ParamArrayAttribute.TyconRef                
-                layoutTyconAttribute denv typ ^^ leftL (nm + ":")
+            | true, Some nm,_ ->      
+                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (nm + ":")
             | false, Some nm,_ -> leftL (nm+":")
         preL ^^ (layoutILType denv ilTyparSubst p.Type)
        
@@ -582,6 +582,7 @@ module private PrintTypes =
         | Internal,Private -> wordL "private" ++ itemL     // print modifier, since more specific than context
         | _ -> itemL
 
+    /// Layout a reference to a type 
     let layoutTyconRef denv tycon = layoutTyconRefImpl false denv tycon
 
     /// Layout the flags of a member 
@@ -931,9 +932,8 @@ module private PrintTypes =
                 // Layout a named argument 
                 | Some id,_,isParamArray,_ -> 
                     let prefix =
-                        if isParamArray then
-                            let typ = denv.g.attrib_ParamArrayAttribute.TyconRef                
-                            layoutTyconAttribute denv typ ^^ leftL id.idText
+                        if isParamArray then    
+                            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL id.idText
                         else
                             leftL id.idText
                     prefix ^^ sepL ":" ^^ layoutTypeWithInfoAndPrec denv env 2 ty
@@ -1165,8 +1165,7 @@ module InfoMemberPrinting =
             outputTy denv os pty;
         // Layout a named argument 
         | true, Some nm,_,_ -> 
-            let typ = denv.g.attrib_ParamArrayAttribute.TyconRef
-            layoutTyconAttribute denv typ |> bufferL os
+            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> bufferL os
             bprintf os " %s: " nm 
             outputTy denv os pty
         | false, Some nm,_,_ -> 
