@@ -23,13 +23,11 @@
     <VSCTDefinitions>FX_ATLEAST_45</VSCTDefinitions> 
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <RCResourceFile>ProjectResources.rc</RCResourceFile>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <Import Project="$(ProjectDirectory)..\..\..\..\fsharp.vsreferences.targets" />
   <ItemGroup>
-    <RCResourceFile Include="..\..\devdiv\vsintegration\src\vs\FsPkgs\FSharp.Project\FS\ProjectResources.rc">
-      <Link>ProjectResources.rc</Link>
-    </RCResourceFile>
     <VSCTCompile Include="MenusAndCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx">
         <MergeWithCTO>true</MergeWithCTO>
@@ -133,5 +131,11 @@
           SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')"
           DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" 
       />
+  </Target>
+  <PropertyGroup>
+    <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
+  </PropertyGroup>
+  <Target Name="BeforeBuild">
+      <Exec Command="rc.exe /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" />
   </Target>
 </Project>

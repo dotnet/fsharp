@@ -23,7 +23,7 @@
         <MsBuild_Reference>Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</MsBuild_Reference>
         <MsBuild_UtilitiesReference>Microsoft.Build.Utilities.V12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</MsBuild_UtilitiesReference>
         <MsBuild_TaskReference>Microsoft.Build.Tasks.V12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</MsBuild_TaskReference>
-        <MsBuild_ConversionReference>Microsoft.Build.Conversion.V12, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</MsBuild_ConversionReference>
+        <MsBuild_ConversionReference>Microsoft.Build.Conversion.V12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</MsBuild_ConversionReference>
       </PropertyGroup>
     </Otherwise>
   </Choose>
