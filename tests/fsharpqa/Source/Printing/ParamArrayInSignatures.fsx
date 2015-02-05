@@ -1,5 +1,5 @@
 // #Regression #NoMT #Printing 
-#light
+// Regression test for https://github.com/Microsoft/visualfsharp/issues/109
 
 // pretty printing signatures with params arguments
 //<Expects status=success>type Heterogeneous =</Expects>
@@ -9,3 +9,5 @@
 
 type Heterogeneous =
     static member Echo([<System.ParamArray>] args: obj[]) = args
+	
+#q;;
