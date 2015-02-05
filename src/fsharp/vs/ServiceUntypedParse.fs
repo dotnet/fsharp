@@ -70,6 +70,7 @@ type internal CompletionContext =
     // completing records field
     | RecordField of RecordContext
     | RangeOperator
+    | NewObject of pos * HashSet<string>
 
 //----------------------------------------------------------------------------
 // Untyped scope
@@ -387,6 +388,9 @@ type internal UntypedParseInfo(parsed:UntypedParseResults) =
         scope.ValidateBreakpointLocationImpl(pos)
 
 module internal UntypedParseInfoImpl =
+    
+    let emptyStringSet = HashSet<string>()
+
     let GetUntypedParseResults (upi : UntypedParseInfo) = upi.Results
 
     let GetRangeOfExprLeftOfDot(line,col,parseTreeOpt) =
@@ -726,12 +730,98 @@ module internal UntypedParseInfoImpl =
                     Some CompletionContext.Invalid
             | _ -> None
 
+        let (|Operator|_|) name e = 
+            match e with
+            | SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.App(ExprAtomicFlag.NonAtomic, true, SynExpr.Ident(ident), lhs, _), rhs, _) 
+                when ident.idText = name -> Some(lhs, rhs)
+            | _ -> None
+
         // checks if we are in rhs of the range operator
         let isInRhsOfRangeOp (p : AstTraversal.TraversePath) = 
             match p with
-            | TS.Expr(SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.App(ExprAtomicFlag.NonAtomic, true, SynExpr.Ident(ident), _, _), _, _))::_  
-                when ident.idText = "op_Range"-> true
+            | TS.Expr(Operator "op_Range" _)::_ -> true
             | _ -> false
+
+        let (|Setter|_|) e =
+            match e with
+            | Operator "op_Equality" (SynExpr.Ident id, _) -> Some id
+            | _ -> None
+
+        let findSetters argList =
+            match argList with
+            | SynExpr.Paren(SynExpr.Tuple(parameters, _, _), _, _, _) -> 
+                let setters = HashSet()
+                for p in parameters do
+                    match p with
+                    | Setter id -> ignore(setters.Add id.idText)
+                    | _ -> ()
+                setters
+            | _ -> emptyStringSet
+
+        let endOfLastIdent (lid: LongIdentWithDots) = 
+            let last = List.last lid.Lid
+            last.idRange.End
+
+        let endOfClosingTokenOrLastIdent (mClosing: range option) (lid : LongIdentWithDots) =
+            match mClosing with
+            | Some m -> m.End
+            | None -> endOfLastIdent lid
+
+        let endOfClosingTokenOrIdent (mClosing: range option) (id : Ident) =
+            match mClosing with
+            | Some m -> m.End
+            | None -> id.idRange.End
+
+        let (|NewObject|_|) e =
+            match e with
+            | (SynExpr.New (_, SynType.LongIdent typeName, arg, _)) -> 
+                // new A()
+                Some (endOfLastIdent typeName, findSetters arg)
+            | (SynExpr.New (_, SynType.App(SynType.LongIdent typeName, _, _, _, mGreaterThan, _, _), arg, _)) -> 
+                // new A<_>()
+                Some (endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
+            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.Ident id, arg, _)) -> 
+                // A()
+                Some (id.idRange.End, findSetters arg)
+            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.TypeApp(SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _)) -> 
+                // A<_>()
+                Some (endOfClosingTokenOrIdent mGreaterThan id , findSetters arg)
+            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.LongIdent(_, lid, _, _), arg, _)) -> 
+                // A.B()
+                Some (endOfLastIdent lid, findSetters arg)
+            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.TypeApp(SynExpr.LongIdent(_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _)) -> 
+                // A.B<_>()
+                Some (endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters arg)
+            | _ -> None
+        
+        let isOnTheRightOfComma (elements: SynExpr list) (commas: range list) current = 
+            let rec loop elements (commas: range list) = 
+                match elements with
+                | x::xs ->
+                    match commas with
+                    | c::cs -> 
+                        if x === current then posLt c.End pos || posEq c.End pos 
+                        else loop xs cs
+                    | _ -> false
+                | _ -> false
+            loop elements commas
+
+        let (|PartOfParameterList|_|) precedingArgument path =
+            match path with
+            | TS.Expr(SynExpr.Paren _)::TS.Expr(NewObject(args))::_ -> 
+                if Option.isSome precedingArgument then None else Some args
+            | TS.Expr(SynExpr.Tuple (elements, commas, _))::TS.Expr(SynExpr.Paren _)::TS.Expr(NewObject(args))::_ -> 
+                match precedingArgument with
+                | None -> Some args
+                | Some e ->
+                    // if expression is passed then
+                    // 1. find it in among elements of the tuple
+                    // 2. find corresponding comma
+                    // 3. check that current position is past the comma
+                    // this is used for cases like (a = something-here.) if the cursor is after .
+                    // in this case this is not object initializer completion context
+                    if isOnTheRightOfComma elements commas e then Some args else None
+            | _ -> None
 
         let walker = 
             { 
@@ -741,7 +831,26 @@ module internal UntypedParseInfoImpl =
                             match defaultTraverse expr with
                             | None -> Some (CompletionContext.RangeOperator) // nothing was found - report that we were in the context of range operator
                             | x -> x // ok, we found something - return it
-                        else defaultTraverse expr
+                        else
+                        match expr with
+                        // new A($)
+                        | SynExpr.Const(SynConst.Unit, m) when rangeContainsPos m pos ->
+                            match path with
+                            | TS.Expr(NewObject args)::_ -> Some (CompletionContext.NewObject args)
+                            | _ -> defaultTraverse expr
+                        // new (... A$)
+                        | SynExpr.Ident id when id.idRange.End = pos ->
+                            match path with
+                            | PartOfParameterList None args -> Some (CompletionContext.NewObject args)
+                            | _ -> defaultTraverse expr
+                        // new (A$ = 1)
+                        // new (A = 1,$)
+                        | Setter id when id.idRange.End = pos || rangeBeforePos expr.Range pos ->
+                            let precedingArgument = if id.idRange.End = pos then None else Some expr
+                            match path with
+                            | PartOfParameterList precedingArgument args-> Some (CompletionContext.NewObject args)
+                            | _ -> defaultTraverse expr
+                        | _ -> defaultTraverse expr
 
                     member this.VisitRecordField(path, copyOpt, field) = 
                         let contextFromTreePath completionPath = 

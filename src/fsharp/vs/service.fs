@@ -508,13 +508,25 @@ type TypeCheckInfo
     let FilterItemsForCtors filterCtors items = 
         let items = items |> List.filter (function (Item.CtorGroup _) when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true) 
         items
-        
-    /// Looks at the exact name resolutions that occurred during type checking
-    /// If 'membersByResidue' is specified, we look for members of the item obtained 
-    /// from the name resolution and filter them by the specified residue (?)
-    let GetPreciseItemsFromNameResolution(line,colAtEndOfNames,membersByResidue,filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck) = 
-        let endOfNamesPos = Pos.fromVS line colAtEndOfNames
-        Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: line = %d, colAtEndOfNames = %d, endOfNamesPos = %s\n" line colAtEndOfNames (stringOfPos endOfNamesPos))
+    
+    // Filter items to show only valid & return Some if there are any
+    let ReturnItemsOfType items g denv (m:range) filterCtors hasTextChangedSinceLastTypecheck f =
+        let items = 
+            items 
+            |> RemoveDuplicateItems g
+            |> RemoveExplicitlySuppressed g
+            |> FilterItemsForCtors filterCtors
+
+        if nonNil items then
+            Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: Results in %d items!\n" items.Length)
+            if hasTextChangedSinceLastTypecheck(textSnapshotInfo, Range.toVS m) then
+                NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
+            else
+                f(items, denv, m) 
+        else NameResResult.Empty
+
+    let GetCapturedNameResolutions endOfNamesPos resolveOverloads =
+        Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: endOfNamesPos = %s\n" (stringOfPos endOfNamesPos))
 
         let quals = 
             (match resolveOverloads with ResolveOverloads.Yes ->  capturedNameResolutions | ResolveOverloads.No -> capturedResolutionsWithMethodGroups)
@@ -523,28 +535,23 @@ type TypeCheckInfo
                 posEq cnr.Pos endOfNamesPos)
         Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: Found %d relevant quals\n" quals.Count)
         
-        let items = quals |> ResizeArray.toList |> List.rev  // Logic below expects the list to be in reverse order of resolution
-        
-        // Filter items to show only valid & return Some if there are any
-        let returnItemsOfType items g denv (m:range) f =
-            let items = items |> RemoveDuplicateItems g
-            let items = items |> RemoveExplicitlySuppressed g
-            let items = items |> FilterItemsForCtors filterCtors
-            if nonNil items then
-                Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: Results in %d items!\n" items.Length)
-                if hasTextChangedSinceLastTypecheck(textSnapshotInfo, Range.toVS m) then
-                    NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
-                else
-                    f(items, denv, m) 
-            else NameResResult.Empty        
+        quals
+
+    /// Looks at the exact name resolutions that occurred during type checking
+    /// If 'membersByResidue' is specified, we look for members of the item obtained 
+    /// from the name resolution and filter them by the specified residue (?)
+    let GetPreciseItemsFromNameResolution(endOfNamesPos, membersByResidue, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck) = 
+        Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseItemsFromNameResolution: endOfNamesPos = %s\n" (stringOfPos endOfNamesPos))
+        // Logic below expects the list to be in reverse order of resolution
+        let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
 
         match items, membersByResidue with 
         
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
         | CNR(_,Item.Types(_,(typ::_)),_,denv,nenv,ad,m)::_, Some _ -> 
-            let items = ResolveCompletionsInType ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad true typ 
-            returnItemsOfType items g denv m NameResResult.Members
+            let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true typ 
+            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members 
         
         // Value reference from the name resolution. Primarilly to disallow "let x.$ = 1"
         // In most of the cases, value references can be obtained from expression typings or from environment,
@@ -575,8 +582,8 @@ type TypeCheckInfo
                         AccessibleFrom(paths, None)
                 | _ -> ad
 
-              let items = ResolveCompletionsInType ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad false ty
-              returnItemsOfType items g denv m NameResResult.Members
+              let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty
+              ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members
         
         // No residue, so the items are the full resolution of the name
         | CNR(_,_,_,denv,_,_,m) :: _, None -> 
@@ -585,9 +592,20 @@ type TypeCheckInfo
                               // "into" is special magic syntax, not an identifier or a library call.  It is part of capturedNameResolutions as an 
                               // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
                               |> List.filter (function Item.CustomOperation(CustomOperations.Into,_,_) -> false | _ -> true) 
-            returnItemsOfType items g denv m NameResResult.Members
+            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members
         | _ , _ -> NameResResult.Empty
+    
+    let GetPreciseItemsFromNameResolutionVS(line,colAtEndOfNames,membersByResidue,filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck) = 
+        GetPreciseItemsFromNameResolution(Pos.fromVS line colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck)
 
+    let GetSettableFields endOfExprPos hasTextChangedSinceLastTypecheck =
+        let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
+        match cnrs with
+        | CNR(_, Item.CtorGroup(_, ctor::_), _, denv, nenv, ad, m)::_ ->
+            let result = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.EnclosingType
+            ReturnItemsOfType result g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck NameResResult.Members
+        | _ -> NameResResult.Empty
+    
     /// finds captured typing for the given position
     let GetExprTypingForPosition(endOfExprPos) = 
         let quals = 
@@ -670,7 +688,7 @@ type TypeCheckInfo
             match bestQual with
             | Some bestQual ->
                 let (_,typ,denv,nenv,ad,m) = bestQual 
-                let items = ResolveCompletionsInType ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad false typ 
+                let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false typ 
                 Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetPreciseCompletionListFromExprTypings: Results in %d items!\n" items.Length)
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
@@ -764,6 +782,147 @@ type TypeCheckInfo
 
         let FindRecordFieldsInEnv(plid, residue) = GetClassOrRecordFieldsEnvironmentLookupResolutions(line, loc, plid, residue)
 
+        let getDeclaredItems isInRangeOperator =
+            let findFirstNonWsPos i = 
+                if i >= lineStr.Length then None
+                else
+                let mutable p = i
+                while p >= 0 && System.Char.IsWhiteSpace(lineStr.[p]) do
+                    p <- p - 1
+                if p >= 0 then Some p else None
+        
+            // are last two chars (except whitespaces) = ".."
+            let isLikeRangeOp = 
+                match findFirstNonWsPos (colAtEndOfNamesAndResidue - 1) with
+                | Some x when x >= 1 && lineStr.[x] = '.' && lineStr.[x - 1] = '.' -> true
+                | _ -> false
+
+            // if last two chars are .. and we are not in range operator context - no completion
+            if isLikeRangeOp && not isInRangeOperator then None
+            else
+                                    
+            // Try to use the exact results of name resolution during type checking to generate the results
+            // This is based on position (i.e. colAtEndOfNamesAndResidue). This is not used if a residueOpt is given.
+            let nameResItems = 
+                match residueOpt with 
+                | None -> GetPreciseItemsFromNameResolutionVS(line, colAtEndOfNamesAndResidue, None, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck)
+                | Some residue ->
+                    // deals with cases when we have spaces between dot and\or identifier, like A  . $
+                    // if this is our case - then wen need to locate end position of the name skipping whitespaces
+                    // this allows us to handle cases like: let x . $ = 1 
+
+                    // colAtEndOfNamesAndResidue is 1-based so at first we need to convert it to 0-based 
+                    match findFirstNonWsPos (colAtEndOfNamesAndResidue - 1) with
+                    | Some p when lineStr.[p] = '.' ->
+                        match findFirstNonWsPos (p - 1) with
+                        | Some colAtEndOfNames ->                 
+                            let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
+                            GetPreciseItemsFromNameResolutionVS(line, colAtEndOfNames, Some(residue), filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck)
+                        | None -> NameResResult.Empty
+                    | _ -> NameResResult.Empty        
+        
+            // Normalize to form A.B.C.D where D is the residue. It may be empty for "A.B.C."
+            // residueOpt = Some when we are looking for the exact match
+            let plid, exactMatchResidueOpt = 
+                match origLongIdentOpt, residueOpt with
+                | None, _ -> [], None
+                | Some(origLongIdent), Some _ -> origLongIdent, None
+                | Some(origLongIdent), None ->
+                    assert (nonNil origLongIdent)
+                    // note: as above, this happens when we are called for "precise" resolution - (F1 keyword, data tip etc..)
+                    let plid, residue = List.frontAndBack origLongIdent
+                    plid, Some residue
+                
+            /// Post-filter items to make sure they have precisely the right name
+            /// This also checks that there are some remaining results 
+            let (|FilterRelevantItems|_|) orig =
+                FilterRelevantItemsBy exactMatchResidueOpt (fun _ _ -> true) orig
+
+            match nameResItems with            
+            | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
+            | NameResResult.Cancel(denv,m) -> Some([], denv, m)
+            | NameResResult.Members(FilterRelevantItems(items)) -> 
+                Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name resolution results successful, #items = %d, exists ctor = %b\n" (p13 items).Length (items |> p13 |> List.exists (function Item.CtorGroup _ -> true | _ -> false)))       
+                Some items
+            | _ ->
+        
+            match origLongIdentOpt with
+            | None -> None
+            | Some _ -> 
+                Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: plid = %+A, residue = %+A, colAtEndOfNamesAndResidue = %+A\n" plid exactMatchResidueOpt colAtEndOfNamesAndResidue)       
+
+                // Try to use the type of the expression on the left to help generate a completion list
+                let mutable thereIsADotInvolved = false
+                let qualItems = 
+                    match untypedParseInfoOpt with
+                    | None -> 
+                        // Note, you will get here if the 'reason' is not CompleteWord/MemberSelect/DisplayMemberList, as those are currently the 
+                        // only reasons we do a sync parse to have the most precise and likely-to-be-correct-and-up-to-date info.  So for example,
+                        // if you do QuickInfo hovering over A in "f(x).A()", you will only get a tip if typechecking has a name-resolution recorded
+                        // for A, not if merely we know the capturedExpressionTyping of f(x) and you very recently typed ".A()" - in that case, 
+                        // you won't won't get a tip until the typechecking catches back up.
+                        GetPreciseCompletionListFromExprTypingsResult.None
+                    | Some(upi) -> 
+
+    // See ServiceUntypedParse - GetRangeOfExprLeftOfDot and TryFindExpressionASTLeftOfDotLeftOfCursor are similar, but different, can we refactor commonality?
+    //                match UntypedParseInfoImpl.GetRangeOfExprLeftOfDot(line,colAtEndOfNamesAndResidue,upi.ParseTree) with
+    //                | Some((_,_),(el,ec)) ->
+    //                    thereIsADotInvolved <- true
+    //                    GetPreciseCompletionListFromExprTypings(upi, el-1, ec, filterCtors)
+                    match UntypedParseInfoImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(line,colAtEndOfNamesAndResidue,upi.ParseTree) with
+                    | Some(pos,_) ->
+                        thereIsADotInvolved <- true
+                        GetPreciseCompletionListFromExprTypings(upi, pos.Line-1, pos.Column, filterCtors, hasTextChangedSinceLastTypecheck)
+                    | None -> 
+                        // Can get here in a case like: if "f xxx yyy" is legal, and we do "f xxx y"
+                        // We have no interest in expression typings, those are only useful for dot-completion.  We want to fallback
+                        // to "Use an environment lookup as the last resort" below
+                        GetPreciseCompletionListFromExprTypingsResult.None
+
+                match qualItems,thereIsADotInvolved with            
+                | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems(items)), _
+                        // Initially we only use the expression typings when looking up, e.g. (expr).Nam or (expr).Name1.Nam
+                        // These come through as an empty plid and residue "". Otherwise we try an environment lookup
+                        // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
+                        // it appears we're getting some typings recorded for non-atomic expressions like "f x"
+                        when (match plid with [] -> true | _ -> false)  -> 
+                    Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on expression typings successful\n")       
+                    Some items
+                | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
+                    // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
+                    // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
+                    None
+                | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged, _ ->         
+                    // we want to report no result and let second-chance intellisense kick in
+                    None
+                | _, true when (match plid with [] -> true | _ -> false)  -> 
+                    // If the user just pressed '.' after an _expression_ (not a plid), it is never right to show environment-lookup top-level completions.
+                    // The user might by typing quickly, and the LS didn't have an expression type right before the dot yet.
+                    // Second-chance intellisense will bring up the correct list in a moment.
+                    None
+                | _ ->         
+                // Use an environment lookup as the last resort
+
+                let envItems =  FindInEnv(plid, residueOpt.IsSome)
+                match nameResItems, envItems, qualItems with            
+            
+                // First, use unfiltered name resolution items, if they're not empty
+                | NameResResult.Members(items, denv, m), _, _ when nonNil items -> 
+                    Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name resolution results successful, #items = %d, exists ctor = %b\n" (items).Length (items |> List.exists (function Item.CtorGroup _ -> true | _ -> false)))       
+                    Some(items, denv, m)                
+            
+                // If we have nonempty items from environment that were resolved from a type, then use them... 
+                // (that's better than the next case - here we'd return 'int' as a type)
+                | _, FilterRelevantItems(items, denv, m), _ when nonNil items ->
+                    Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name and environment successful\n")       
+                    Some(items, denv, m)
+
+                // Try again with the qualItems
+                | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems(items)) ->
+                    Some(items)
+                
+                | _ -> None
+
         match UntypedParseInfoImpl.TryGetCompletionContext(line, colAtEndOfNamesAndResidue, untypedParseInfoOpt) with
         | Some Invalid -> None
         | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
@@ -787,148 +946,24 @@ type TypeCheckInfo
         | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
             FindRecordFieldsInEnv([typeName], None)
             |> Some
+        | Some(NewObject (endPos, fields)) ->
+            let results = GetSettableFields endPos hasTextChangedSinceLastTypecheck
+
+            let declaredItems = getDeclaredItems false
+
+            match results with
+            | NameResResult.Members(items, denv, m) -> 
+                let filtered = 
+                    items 
+                    |> RemoveDuplicateItems g
+                    |> RemoveExplicitlySuppressed g
+                    |> List.filter (fun m -> not (fields.Contains (m.DisplayName g)))
+                match declaredItems with
+                | None -> Some (items, denv, m)
+                | Some (declItems, declaredDisplayEnv, declaredRange) -> Some (filtered @ declItems, declaredDisplayEnv, declaredRange)
+            | _ -> declaredItems
         | cc ->
-
-        let findFirstNonWsPos i = 
-            if i >= lineStr.Length then None
-            else
-            let mutable p = i
-            while p >= 0 && System.Char.IsWhiteSpace(lineStr.[p]) do
-                p <- p - 1
-            if p >= 0 then Some p else None
-        
-        // are last two chars (except whitespaces) = ".."
-        let isLikeRangeOp = 
-            match findFirstNonWsPos (colAtEndOfNamesAndResidue - 1) with
-            | Some x when x >= 1 && lineStr.[x] = '.' && lineStr.[x - 1] = '.' -> true
-            | _ -> false
-
-        // if last two chars are .. and we are not in range operator context - no completion
-        if isLikeRangeOp && not (cc = Some (CompletionContext.RangeOperator)) then None
-        else
-                                    
-        // Try to use the exact results of name resolution during type checking to generate the results
-        // This is based on position (i.e. colAtEndOfNamesAndResidue). This is not used if a residueOpt is given.
-        let nameResItems = 
-            match residueOpt with 
-            | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck)
-            | Some residue ->
-                // deals with cases when we have spaces between dot and\or identifier, like A  . $
-                // if this is our case - then wen need to locate end position of the name skipping whitespaces
-                // this allows us to handle cases like: let x . $ = 1 
-
-                // colAtEndOfNamesAndResidue is 1-based so at first we need to convert it to 0-based 
-                match findFirstNonWsPos (colAtEndOfNamesAndResidue - 1) with
-                | Some p when lineStr.[p] = '.' ->
-                    match findFirstNonWsPos (p - 1) with
-                    | Some colAtEndOfNames ->                 
-                        let colAtEndOfNames = colAtEndOfNames + 1 // convert 0-based to 1-based
-                        GetPreciseItemsFromNameResolution(line, colAtEndOfNames, Some(residue), filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck)
-                    | None -> NameResResult.Empty
-                | _ -> NameResResult.Empty        
-        
-        // Normalize to form A.B.C.D where D is the residue. It may be empty for "A.B.C."
-        // residueOpt = Some when we are looking for the exact match
-        let plid, exactMatchResidueOpt = 
-            match origLongIdentOpt, residueOpt with
-            | None, _ -> [], None
-            | Some(origLongIdent), Some _ -> origLongIdent, None
-            | Some(origLongIdent), None ->
-                assert (nonNil origLongIdent)
-                // note: as above, this happens when we are called for "precise" resolution - (F1 keyword, data tip etc..)
-                let plid, residue = List.frontAndBack origLongIdent
-                plid, Some residue
-                
-        /// Post-filter items to make sure they have precisely the right name
-        /// This also checks that there are some remaining results 
-        let (|FilterRelevantItems|_|) orig =
-            FilterRelevantItemsBy exactMatchResidueOpt (fun _ _ -> true) orig
-
-        match nameResItems with            
-        | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
-        | NameResResult.Cancel(denv,m) -> Some([], denv, m)
-        | NameResResult.Members(FilterRelevantItems(items)) -> 
-            Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name resolution results successful, #items = %d, exists ctor = %b\n" (p13 items).Length (items |> p13 |> List.exists (function Item.CtorGroup _ -> true | _ -> false)))       
-            Some items
-        | _ ->
-        
-        match origLongIdentOpt with
-        | None -> None
-        | Some _ -> 
-            Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: plid = %+A, residue = %+A, colAtEndOfNamesAndResidue = %+A\n" plid exactMatchResidueOpt colAtEndOfNamesAndResidue)       
-
-            // Try to use the type of the expression on the left to help generate a completion list
-            let mutable thereIsADotInvolved = false
-            let qualItems = 
-                match untypedParseInfoOpt with
-                | None -> 
-                    // Note, you will get here if the 'reason' is not CompleteWord/MemberSelect/DisplayMemberList, as those are currently the 
-                    // only reasons we do a sync parse to have the most precise and likely-to-be-correct-and-up-to-date info.  So for example,
-                    // if you do QuickInfo hovering over A in "f(x).A()", you will only get a tip if typechecking has a name-resolution recorded
-                    // for A, not if merely we know the capturedExpressionTyping of f(x) and you very recently typed ".A()" - in that case, 
-                    // you won't won't get a tip until the typechecking catches back up.
-                    GetPreciseCompletionListFromExprTypingsResult.None
-                | Some(upi) -> 
-
-// See ServiceUntypedParse - GetRangeOfExprLeftOfDot and TryFindExpressionASTLeftOfDotLeftOfCursor are similar, but different, can we refactor commonality?
-//                match UntypedParseInfoImpl.GetRangeOfExprLeftOfDot(line,colAtEndOfNamesAndResidue,upi.ParseTree) with
-//                | Some((_,_),(el,ec)) ->
-//                    thereIsADotInvolved <- true
-//                    GetPreciseCompletionListFromExprTypings(upi, el-1, ec, filterCtors)
-                match UntypedParseInfoImpl.TryFindExpressionASTLeftOfDotLeftOfCursor(line,colAtEndOfNamesAndResidue,upi.ParseTree) with
-                | Some(pos,_) ->
-                    thereIsADotInvolved <- true
-                    GetPreciseCompletionListFromExprTypings(upi, pos.Line-1, pos.Column, filterCtors, hasTextChangedSinceLastTypecheck)
-                | None -> 
-                    // Can get here in a case like: if "f xxx yyy" is legal, and we do "f xxx y"
-                    // We have no interest in expression typings, those are only useful for dot-completion.  We want to fallback
-                    // to "Use an environment lookup as the last resort" below
-                    GetPreciseCompletionListFromExprTypingsResult.None
-
-            match qualItems,thereIsADotInvolved with            
-            | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems(items)), _
-                    // Initially we only use the expression typings when looking up, e.g. (expr).Nam or (expr).Name1.Nam
-                    // These come through as an empty plid and residue "". Otherwise we try an environment lookup
-                    // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
-                    // it appears we're getting some typings recorded for non-atomic expressions like "f x"
-                    when (match plid with [] -> true | _ -> false)  -> 
-                Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on expression typings successful\n")       
-                Some items
-            | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseThereWereTypeErrors, _ ->
-                // There was an error, e.g. we have "<expr>." and there is an error determining the type of <expr>  
-                // In this case, we don't want any of the fallback logic, rather, we want to produce zero results.
-                None
-            | GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged, _ ->         
-                // we want to report no result and let second-chance intellisense kick in
-                None
-            | _, true when (match plid with [] -> true | _ -> false)  -> 
-                // If the user just pressed '.' after an _expression_ (not a plid), it is never right to show environment-lookup top-level completions.
-                // The user might by typing quickly, and the LS didn't have an expression type right before the dot yet.
-                // Second-chance intellisense will bring up the correct list in a moment.
-                None
-            | _ ->         
-            // Use an environment lookup as the last resort
-
-            let envItems =  FindInEnv(plid, residueOpt.IsSome)
-            match nameResItems, envItems, qualItems with            
-            
-            // First, use unfiltered name resolution items, if they're not empty
-            | NameResResult.Members(items, denv, m), _, _ when nonNil items -> 
-                Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name resolution results successful, #items = %d, exists ctor = %b\n" (items).Length (items |> List.exists (function Item.CtorGroup _ -> true | _ -> false)))       
-                Some(items, denv, m)                
-            
-            // If we have nonempty items from environment that were resolved from a type, then use them... 
-            // (that's better than the next case - here we'd return 'int' as a type)
-            | _, FilterRelevantItems(items, denv, m), _ when nonNil items ->
-                Trace.PrintLine("CompilerServices", fun _ -> sprintf "GetDeclItemsForNamesAtPosition: lookup based on name and environment successful\n")       
-                Some(items, denv, m)
-
-            // Try again with the qualItems
-            | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems(items)) ->
-                Some(items)
-                
-            | _ -> None
-
+            getDeclaredItems (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
 
     // Return 'false' if this is not a completion item valid in an interface file.
     let IsValidSignatureFileItem item =

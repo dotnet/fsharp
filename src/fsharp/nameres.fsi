@@ -303,5 +303,10 @@ val FakeInstantiationGenerator : range -> Typar list -> TType list
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 val ResolvePartialLongIdent : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> range -> AccessorDomain -> string list -> bool -> Item list
 
+[<RequireQualifiedAccess>]
+type ResolveCompletionTargets =
+    | All of (MethInfo -> TType -> bool)
+    | SettablePropertiesAndFields
+
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
-val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> Range.range -> Infos.AccessorDomain -> bool -> TType -> Item list
+val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> Infos.AccessorDomain -> bool -> TType -> Item list
