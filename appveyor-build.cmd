@@ -70,13 +70,11 @@ call tests\BuildTestTools.cmd release
 
 pushd tests
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd release fsharp Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharp Smoke
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd release fsharpqa Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharpqa Smoke
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
 
 call RunTests.cmd release coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :eof
