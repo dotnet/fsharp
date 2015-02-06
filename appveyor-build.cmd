@@ -20,14 +20,15 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :eof
 
-::Build
+:: Build
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :eof
 
 %_ngenexe% install proto\net40\bin\FSharp.Compiler-proto.dll
 %_ngenexe% install proto\net40\bin\fsharp.core.dll
 %_ngenexe% install proto\net40\bin\FSharp.Build-proto.dll
-%_ngenexe% install proto\net40\bin\fsc-proto.exe
+%_ngenexe% install Proto\net40\bin\fsc-proto.exe
+@if ERRORLEVEL 1 echo Error: NGen of proto failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library release build failed && goto :eof
@@ -50,8 +51,8 @@ REM @if ERRORLEVEL 1 echo Error: library net20 build failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :eof
-%_msbuildexe% src/fsharp-compiler-unittests-build.proj
-@if ERRORLEVEL 1 echo Error: compiler unittests Release build failed && goto :eof
+%_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :eof
@@ -81,17 +82,19 @@ call src\update.cmd release -ngen
 call tests\BuildTestTools.cmd release 
 @if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd release' failed && goto :eof
 
-@echo on
+%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: vsintegration build failed && goto :eof
+%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: vsintegration unittests build failed && goto :eof
 
+@echo on
 pushd tests
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd release fsharp Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd Release fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharp Smoke
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :eof
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd release fsharpqa Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharpqa Smoke
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
 
 call RunTests.cmd release compilerunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :eof
