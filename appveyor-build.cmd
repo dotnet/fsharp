@@ -36,10 +36,6 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 %_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: compile Release build failed && goto :eof
 
-REM We don't build new net20 FSharp.Core anymore
-REM %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=Release
-REM @if ERRORLEVEL 1 echo Error: library net20 build failed && goto :eof
-
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :eof
 
@@ -81,11 +77,6 @@ call src\update.cmd release -ngen
 @echo on
 call tests\BuildTestTools.cmd release 
 @if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd release' failed && goto :eof
-
-%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: vsintegration build failed && goto :eof
-%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: vsintegration unittests build failed && goto :eof
 
 @echo on
 pushd tests
