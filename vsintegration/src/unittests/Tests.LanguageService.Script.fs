@@ -567,11 +567,12 @@ type ScriptTests() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    // 'Microsoft.TeamFoundation.Diff' is located via AssemblyFoldersEx
+
+    // Nunit still registers itself in AssemblyFoldersEx so try to locate it.  And we know that nunit exists on a machine running tests
     member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFoldersEx``() =  
         let fileContent = """
             #light
-            #r "Microsoft.TeamFoundation.Diff"
+            #r "nunit.framework.dll"
             """
         this.VerifyFSXNoErrorList(fileContent)
 
@@ -902,11 +903,11 @@ type ScriptTests() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() =  
-        let fileContent = """#r "Microsoft.TeamFoundation.Diff" """     // 'Microsoft.TeamFoundation.Diff' is located via AssemblyFoldersEx
-        let marker = "#r \"Microsoft.Tea"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFoldersEx registry key"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.TeamFoundation.Diff"
+    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
+        let fileContent = """#r "nunit.framework.dll" """     // 'nunit.framework.dll' is located via AssemblyFoldersEx
+        let marker = "#r \"nunit.fra"
+        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "nunit.framework, Version="
+        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "nunit.framework.dll"
 
     [<Test>]
     [<Category("fsx closure")>]
@@ -1298,17 +1299,31 @@ type ScriptTests() as this =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
 #if FX_ATLEAST_45
+#if VS_VERSION_DEV12
         PlaceIntoProjectFileBeforeImport
             (project, @"
                 <ItemGroup>
                     <!-- Subtle: You need this reference to compile but not to get language service -->
-                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=3.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler, Version=3.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
                     </Reference>
                 </ItemGroup>")
+#else
+        PlaceIntoProjectFileBeforeImport
+            (project, @"
+                <ItemGroup>
+                    <!-- Subtle: You need this reference to compile but not to get language service -->
+                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                        <SpecificVersion>True</SpecificVersion>
+                    </Reference>
+                    <Reference Include=""FSharp.Compiler, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                        <SpecificVersion>True</SpecificVersion>
+                    </Reference>
+                </ItemGroup>")
+#endif
 #else
         PlaceIntoProjectFileBeforeImport
             (project, @"

@@ -19,6 +19,10 @@
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '12.0' ">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '14.0' ">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
       <Link>Internal.Utilities.Collections.fsi</Link>
@@ -63,7 +67,10 @@
     <Compile Include="Tests.ProjectSystem.References.fs" />
     <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
-    <CustomCopyLocal Include="Unittests.dll.config">
+    <CustomCopyLocal Include="Unittests.dll.config" Condition="'$(VisualStudioVersion)' == '14.0'">
+        <TargetFilename>Unittests.dll.config</TargetFilename>
+    </CustomCopyLocal>
+    <CustomCopyLocal Include="Unittests.dll.v12.config" Condition="'$(VisualStudioVersion)' == '12.0'">
         <TargetFilename>Unittests.dll.config</TargetFilename>
     </CustomCopyLocal>
   </ItemGroup>

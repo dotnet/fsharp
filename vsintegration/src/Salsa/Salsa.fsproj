@@ -18,6 +18,10 @@
     <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
     <DefineConstants>FX_ATLEAST_45;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '12.0' ">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '14.0' ">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\unittests\TestLib.Utils.fs">

@@ -38,6 +38,10 @@
     <StrongNames>true</StrongNames>
     <DelaySign>true</DelaySign>
   </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '12.0' ">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '14.0' ">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="$(MsBuild_FrameworkReference)" />
     <Reference Include="$(MsBuild_EngineReference)" />
