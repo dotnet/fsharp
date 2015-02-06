@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -20,12 +20,6 @@
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
     <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' ">netcore</TargetProfile>
-    <!-- workaround for msbuild narrowing the assembly search paths when building portable libs -->
-    <AssemblySearchPaths Condition="$(TargetFramework.Contains('portable'))">
-      {CandidateAssemblyFiles};
-      {TargetFrameworkDirectory};
-      {Registry:Software\Microsoft\.NETFramework,v4.5,AssemblyFoldersEx};
-    </AssemblySearchPaths>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
@@ -50,8 +44,9 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'">
-      <SpecificVersion>true</SpecificVersion>
+    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
+        <SpecificVersion>true</SpecificVersion>
+        <HintPath>$(FSharpSourcesRoot)\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
   </ItemGroup>
@@ -65,6 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
+    <Compile Include="ManglingNameOfProvidedTypes.fs" />
     <Compile Include="HashIfExpression.fs" />
   </ItemGroup>
   <ItemGroup>

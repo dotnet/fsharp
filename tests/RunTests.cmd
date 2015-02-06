@@ -11,6 +11,11 @@ goto :USAGE
 :flavor_ok
 
 set nunitpath=%~dp0%..\packages\NUnit.Runners.2.6.3\tools\
+if not exist "%nunitpath%" (
+    pushd %~dp0..
+    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    popd
+)    
 
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
