@@ -2,11 +2,15 @@
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
+if /i "%1" == "vsdebug" goto :ok
+if /i "%1" == "vsrelease" goto :ok
 
 echo Builds a few test tools using latest compiler and runtime
 echo Usage:
 echo    BuildTestTools.cmd debug
 echo    BuildTestTools.cmd release
+echo    BuildTestTools.cmd vsdebug
+echo    BuildTestTools.cmd vsrelease
 exit /b 1
 
 :ok

@@ -25,6 +25,10 @@
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING;$(TargetFramework.ToLower())</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '12.0' ">$(DefineConstants);FX_4_3_1_0</DefineConstants>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '14.0' ">$(DefineConstants);FX_4_4_0_0</DefineConstants>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -105,4 +109,10 @@
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Target Name="BeforeResolveReferences" Condition="'$(UseNugetPackages)'=='true'">
+    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(ProjectDir)..\..\..\packages\NUnit.Runners.2.6.3\tools\lib\;$(AssemblySearchPaths)">
+      <Output TaskParameter="Value"
+              PropertyName="AssemblySearchPath" />
+    </CreateProperty>
+  </Target>
 </Project>

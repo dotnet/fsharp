@@ -3,8 +3,6 @@
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\..\..\..\..\src</FSharpSourcesRoot>
-    <vsFrameworkLatest>Microsoft.VisualStudio.Shell.12.0</vsFrameworkLatest>
-    <vsLanguageServiceLatest>Microsoft.VisualStudio.Package.LanguageService.12.0</vsLanguageServiceLatest>
     <ProjectLanguage>VisualBasic</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
@@ -49,6 +47,7 @@
     <DelaySign>true</DelaySign>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(ProjectDirectory)..\..\..\..\..\fsharp.vsreferences.targets" />
   <ItemGroup>
     <Reference Include="envdte.dll" />
     <Reference Include="envdte80.dll" />
@@ -61,7 +60,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
-    <Reference Include="$(vsFrameworkLatest)" />
+    <Reference Include="$(VS_Shell_Reference)" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Reference Include="Microsoft.VisualStudio.WCFReference.Interop.dll" />

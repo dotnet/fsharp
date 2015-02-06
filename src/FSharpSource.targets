@@ -64,6 +64,8 @@
     </Otherwise>
   </Choose>
 
+  <Import Project="FSharpSource.msbuildreferences.targets" />
+
   <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
   <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
   <PropertyGroup Condition="'$(StrongNames)' != 'true'">
@@ -121,7 +123,7 @@
   <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
+    <DefineConstants  Condition="'$(Configuration)'!='Proto'">$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_35</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>

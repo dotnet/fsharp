@@ -3,8 +3,6 @@
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\..\..\..\..\src</FSharpSourcesRoot>
-    <vsFrameworkLatest>Microsoft.VisualStudio.Shell.12.0</vsFrameworkLatest>
-    <vsLanguageServiceLatest>Microsoft.VisualStudio.Package.LanguageService.12.0</vsLanguageServiceLatest>
     <ProjectLanguage>CSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
@@ -31,6 +29,8 @@
     <TargetFrameworkProfile></TargetFrameworkProfile>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.msbuildreferences.targets" />
+  <Import Project="$(ProjectDirectory)..\..\..\..\..\fsharp.vsreferences.targets" />
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
@@ -38,18 +38,17 @@
     <StrongNames>true</StrongNames>
     <DelaySign>true</DelaySign>
   </PropertyGroup>
+  <PropertyGroup>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '12.0' ">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
+    <DefineConstants Condition=" '$(VisualStudioVersion)' == '14.0' ">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.v12.0" />
-    <Reference Include="Microsoft.Build.Conversion.v12.0" />
+    <Reference Include="$(MsBuild_FrameworkReference)" />
+    <Reference Include="$(MsBuild_EngineReference)" />
+    <Reference Include="$(MsBuild_Reference)" />
+    <Reference Include="$(MsBuild_UtilitiesReference)" />
+    <Reference Include="$(MsBuild_TaskReference)" />
+    <Reference Include="$(MsBuild_ConversionReference)" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml" />
@@ -68,7 +67,7 @@
     <Reference Include="VSLangProj80" />
     <Reference Include="microsoft.visualstudio.vcprojectengine" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="$(vsFrameworkLatest)" />
+    <Reference Include="$(VS_Shell_Reference)" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />

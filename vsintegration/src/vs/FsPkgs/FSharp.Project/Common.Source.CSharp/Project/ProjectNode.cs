@@ -3567,10 +3567,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     var sessionGuid = sqm.GetGlobalSessionGuid();
                     projectInstance.SetProperty(GlobalProperty.SqmSessionGuid.ToString(), sessionGuid.ToString());
                 }
-                else
-                {
-                    Debug.Assert(false, "Could not retrieve SQM service from the service provider");
-                }
 
                 if (extraProperties != null)
                 {
