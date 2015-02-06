@@ -104,10 +104,4 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="BeforeResolveReferences" Condition="'$(UseNugetPackages)'=='true'">
-    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(ProjectDir)..\..\..\packages\NUnit.Runners.2.6.3\tools\lib\;$(AssemblySearchPaths)">
-      <Output TaskParameter="Value"
-              PropertyName="AssemblySearchPaths" />
-    </CreateProperty>
-  </Target>
 </Project>

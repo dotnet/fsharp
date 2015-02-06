@@ -29,10 +29,10 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 %_ngenexe% install proto\net40\bin\FSharp.Build-proto.dll
 %_ngenexe% install proto\net40\bin\fsc-proto.exe
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true  /p:Configuration=Release
+%_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library release build failed && goto :eof
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:UseNugetPackages=true  /p:Configuration=Release
+%_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: compile Release build failed && goto :eof
 
 REM We don't build new net20 FSharp.Core anymore
@@ -67,6 +67,12 @@ REM @if ERRORLEVEL 1 echo Error: library net20 build failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :eof
+
+%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:TargetFramework=net40 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed vsintegration-unittests && goto :eof
+
+%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:TargetFramework=net40 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed vsintegration-unittests && goto :eof
 
 @echo on
 call src\update.cmd release -ngen

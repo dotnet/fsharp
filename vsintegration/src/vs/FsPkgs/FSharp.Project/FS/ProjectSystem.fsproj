@@ -136,6 +136,6 @@
     <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
   </PropertyGroup>
   <Target Name="BeforeBuild">
-      <Exec Command="rc.exe /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" />
+      <Exec Command='"$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe" /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)' />
   </Target>
 </Project>

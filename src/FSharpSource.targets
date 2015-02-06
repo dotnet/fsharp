@@ -745,4 +745,11 @@
   <Target Name="BeforeBuild" BeforeTargets="Build">
     <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
   </Target>
+
+  <Target Name="BeforeResolveReferences">
+    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(ProjectDir)..\..\..\packages\NUnit.Runners.2.6.3\tools\lib\;$(AssemblySearchPaths)">
+      <Output TaskParameter="Value"
+              PropertyName="AssemblySearchPaths" />
+    </CreateProperty>
+  </Target>
 </Project>
