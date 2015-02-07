@@ -70,7 +70,9 @@ type internal CompletionContext =
     // completing records field
     | RecordField of RecordContext
     | RangeOperator
-    | NewObject of pos * HashSet<string>
+    // completing named parameters\setters in parameter list of constructor\method calls
+    // end of name ast node * list of properties\parameters that were already set
+    | ParameterList of pos * HashSet<string>
 
 //----------------------------------------------------------------------------
 // Untyped scope
@@ -772,7 +774,7 @@ module internal UntypedParseInfoImpl =
             | Some m -> m.End
             | None -> id.idRange.End
 
-        let (|NewObject|_|) e =
+        let (|NewObjectOrMethodCall|_|) e =
             match e with
             | (SynExpr.New (_, SynType.LongIdent typeName, arg, _)) -> 
                 // new A()
@@ -808,9 +810,9 @@ module internal UntypedParseInfoImpl =
 
         let (|PartOfParameterList|_|) precedingArgument path =
             match path with
-            | TS.Expr(SynExpr.Paren _)::TS.Expr(NewObject(args))::_ -> 
+            | TS.Expr(SynExpr.Paren _)::TS.Expr(NewObjectOrMethodCall(args))::_ -> 
                 if Option.isSome precedingArgument then None else Some args
-            | TS.Expr(SynExpr.Tuple (elements, commas, _))::TS.Expr(SynExpr.Paren _)::TS.Expr(NewObject(args))::_ -> 
+            | TS.Expr(SynExpr.Tuple (elements, commas, _))::TS.Expr(SynExpr.Paren _)::TS.Expr(NewObjectOrMethodCall(args))::_ -> 
                 match precedingArgument with
                 | None -> Some args
                 | Some e ->
@@ -836,20 +838,26 @@ module internal UntypedParseInfoImpl =
                         // new A($)
                         | SynExpr.Const(SynConst.Unit, m) when rangeContainsPos m pos ->
                             match path with
-                            | TS.Expr(NewObject args)::_ -> Some (CompletionContext.NewObject args)
-                            | _ -> defaultTraverse expr
+                            | TS.Expr(NewObjectOrMethodCall args)::_ -> 
+                                Some (CompletionContext.ParameterList args)
+                            | _ -> 
+                                defaultTraverse expr
                         // new (... A$)
                         | SynExpr.Ident id when id.idRange.End = pos ->
                             match path with
-                            | PartOfParameterList None args -> Some (CompletionContext.NewObject args)
-                            | _ -> defaultTraverse expr
+                            | PartOfParameterList None args -> 
+                                Some (CompletionContext.ParameterList args)
+                            | _ -> 
+                                defaultTraverse expr
                         // new (A$ = 1)
                         // new (A = 1,$)
                         | Setter id when id.idRange.End = pos || rangeBeforePos expr.Range pos ->
                             let precedingArgument = if id.idRange.End = pos then None else Some expr
                             match path with
-                            | PartOfParameterList precedingArgument args-> Some (CompletionContext.NewObject args)
-                            | _ -> defaultTraverse expr
+                            | PartOfParameterList precedingArgument args-> 
+                                Some (CompletionContext.ParameterList args)
+                            | _ -> 
+                                defaultTraverse expr
                         | _ -> defaultTraverse expr
 
                     member this.VisitRecordField(path, copyOpt, field) = 
