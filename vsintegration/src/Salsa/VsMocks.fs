@@ -1635,10 +1635,10 @@ module internal VsActual =
     open Microsoft.VisualStudio.Text
 
     let vsInstallDir =
-#if VS_VERSION_DEV14
-        let key = @"SOFTWARE\Microsoft\VisualStudio\14.0"
-#else
+#if VS_VERSION_DEV12
         let key = @"SOFTWARE\Microsoft\VisualStudio\12.0"
+#else
+        let key = @"SOFTWARE\Microsoft\VisualStudio\14.0"
 #endif
         let hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32)
         let rkey = hklm.OpenSubKey(key)

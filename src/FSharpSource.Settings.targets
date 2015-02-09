@@ -71,4 +71,14 @@
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV12=True</DefineConstants>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <MSBuildVersionSuffix>core</MSBuildVersionSuffix>
+    <MSBuildVersionSuffix Condition="'$(VisualStudioVersion)' == '12.0'">V12.0</MSBuildVersionSuffix>
+  </PropertyGroup>
 </Project>

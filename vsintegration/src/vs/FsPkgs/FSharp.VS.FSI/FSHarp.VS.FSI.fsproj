@@ -8,7 +8,6 @@
         <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     </PropertyGroup>
     <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
-    <Import Project="$(ProjectDirectory)..\..\..\fsharp.vsreferences.targets" />
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -40,13 +39,14 @@
     </ItemGroup>
     <ItemGroup>
         <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll"/>
-        <Reference Include="$(VS_PackageLanguageServiceReference)" />
+        <Reference Include="Microsoft.VisualStudio.Package.LanguageService.$(VisualStudioVersion)" />
         <Reference Include="EnvDTE.dll" />
         <Reference Include="EnvDTE80.dll" />
         <Reference Include="VSLangProj" />
         <Reference Include="VSLangProj80" />
         <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-        <Reference Include="$(VS_Shell_Reference)" />
+        <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+        <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition="'$(VisualStudioVersion)' != '12.0'" />
         <Reference Include="Microsoft.VisualStudio.Threading" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
@@ -79,7 +79,6 @@
         <Reference Include="System.Drawing"/>
         <Reference Include="System.Windows.Forms"/>
         <Reference Include="System.Xml"/>
-        <Reference Include="$(VS_UtilitiesReference)" Condition= "'$(VS_UtilitiesReference)' != ''" />
         <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
           <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
           <Name>FSharp.Core</Name>
