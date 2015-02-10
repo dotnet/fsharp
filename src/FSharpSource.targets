@@ -98,8 +98,8 @@
   </PropertyGroup>  
   
   <PropertyGroup>
-    <NUnitVersion>2.6.3</NUnitVersion>
-    <NUnitFullVersion>2.6.3.13283</NUnitFullVersion>
+    <NUnitVersion>2.6.4</NUnitVersion>
+    <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
     <NunitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NunitToolsLibDir>
   </PropertyGroup>
