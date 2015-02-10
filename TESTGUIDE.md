@@ -22,9 +22,8 @@ The test cases for this suite reside next to the Visual F# Tools code, at `vsint
 In order to run all of the tests, you will need to install
 
 * [Perl](http://www.perl.org/get.html) (ActiveState Perl 5.16.3 is known to work fine)
-* [NUnit](http://nunit.org/?p=download) (2.6.3 is known to work fine)
 
-Perl and NUnit must be included in the `%PATH%` for the below steps to work.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
+Perl must be included in the `%PATH%` for the below steps to work.  It is also recommended that you run tests from an elevated command prompt, as there are a couple of test cases which modify the GAC, and this requires administrative privileges.
 
 Before running tests, make sure you have successfully built all required projects as specified in the 'Prepare For Tests' section of the [DEVGUIDE](DEVGUIDE.md).
 

@@ -10,7 +10,7 @@ goto :USAGE
 
 :flavor_ok
 
-set nunitpath=%~dp0%..\packages\NUnit.Runners.2.6.3\tools\
+set nunitpath=%~dp0%..\packages\NUnit.Runners.2.6.4\tools\
 if not exist "%nunitpath%" (
     pushd %~dp0..
     .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
