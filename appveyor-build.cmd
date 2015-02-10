@@ -1,7 +1,5 @@
 @echo on
 
-set APPVEYOR_CI=1
-
 :: Check prerequisites
 set _msbuildexe="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
 if not exist %_msbuildexe% set _msbuildexe="%ProgramFiles%\MSBuild\12.0\Bin\MSBuild.exe"
@@ -26,25 +24,17 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :eof
 %_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: compiler build failed && goto :eof
 
-REM We don't build new net20 FSharp.Core anymore
-REM %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=net20
-REM @if ERRORLEVEL 1 echo Error: library net20 build failed && goto :eof
-
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :eof
 
-
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :eof
 
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :eof
-
-
-
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :eof
@@ -58,6 +48,14 @@ REM @if ERRORLEVEL 1 echo Error: library net20 build failed && goto :eof
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :eof
 
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :eof
+
+%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: VS integration build failed && goto :eof
+
+%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :eof
 
 @echo on
 call src\update.cmd release -ngen
@@ -70,13 +68,11 @@ call tests\BuildTestTools.cmd release
 
 pushd tests
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd release fsharp Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharp Smoke
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :eof
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd release fsharpqa Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharpqa Smoke
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :eof
 
 call RunTests.cmd release coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :eof
