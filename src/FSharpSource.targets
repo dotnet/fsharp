@@ -95,6 +95,13 @@
 
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);OPEN_BUILD</DefineConstants>
+  </PropertyGroup>  
+  
+  <PropertyGroup>
+    <NUnitVersion>2.6.4</NUnitVersion>
+    <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
+    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
+    <NunitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NunitToolsLibDir>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
