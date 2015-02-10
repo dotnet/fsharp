@@ -26,6 +26,7 @@ if exist test.ok (del /f /q test.ok)
 dir test.ok > NUL 2>&1 ) || (
 @echo :FSI load failed
 set ERRORMSG=%ERRORMSG% FSI load failed;
+goto :Error
 )
 
 
