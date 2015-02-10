@@ -1,5 +1,7 @@
 @echo on
 
+set APPVEYOR_CI=1
+
 :: Check prerequisites
 set _msbuildexe="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
 if not exist %_msbuildexe% set _msbuildexe="%ProgramFiles%\MSBuild\12.0\Bin\MSBuild.exe"
