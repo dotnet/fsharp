@@ -42,30 +42,21 @@ module internal Guids =
 #endif
     
     // FSI Session command set
-    let cmdIDFsiConsoleContextMenu      = 0x2100 
-    let guidFsiConsoleCmdSet            = Guid("0E455B35-F2EB-431b-A0BE-B268D8A7D17F")
-#if FX_ATLEAST_45
     let guidInteractiveCommands         = Microsoft.VisualStudio.VSConstants.VsStd11 
     let cmdIDSessionInterrupt           = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.InteractiveSessionInterrupt
     let cmdIDSessionRestart             = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.InteractiveSessionRestart
-#else
-    let guidInteractiveCommands         = guidFsiConsoleCmdSet
-    let cmdIDSessionInterrupt           = 0x102
-    let cmdIDSessionRestart             = 0x103
-#endif
+
+    let guidFsiConsoleCmdSet            = Guid("0E455B35-F2EB-431b-A0BE-B268D8A7D17F")
+    let cmdIDAttachDebugger             = 0x104
+    let cmdIDFsiConsoleContextMenu      = 0x2100 
    
     // Command set for SendToInteractive
-#if FX_ATLEAST_45
-    // commands moved to VS Shell
-    let guidInteractive                 = Microsoft.VisualStudio.VSConstants.VsStd11 
+    // some commands moved to VS Shell
+    let guidInteractiveShell            = Microsoft.VisualStudio.VSConstants.VsStd11 
     let cmdIDSendSelection              = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive
-    let guidInteractive2                = Microsoft.VisualStudio.VSConstants.VsStd11
-#else
-    // hybrid still uses own commands
+    // some commands not in VS Shell
     let guidInteractive                 = Guid("8B9BF77B-AF94-4588-8847-2EB2BFFD29EB")
-    let cmdIDSendSelection              = 0x01
-    let guidInteractive2                = Guid("B607E86C-A761-4685-8D98-71A3BB73233A")
-#endif
+    let cmdIDDebugSelection             = 0x01
 
     let guidFsiPackage                  = "eeeeeeee-9342-42f1-8ea9-42f0e8a6be55" // FSI-LINKAGE-POINT: when packaged here
     let guidFSharpProjectPkgString      = "91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C" // FSI-LINKAGE-POINT: when packaged in project system

@@ -431,6 +431,40 @@ type internal FsiToolWindow() as this =
     let showNoActivate() = 
         let frame = this.Frame :?> IVsWindowFrame
         frame.ShowNoActivate() |> ignore
+    
+    let getDebugAttachedFSIProcess () =
+        let fsiProcId = sessions.ProcessID
+        let dte = provider.GetService(typeof<DTE>) :?> DTE
+
+        if dte.Debugger.DebuggedProcesses = null then None else
+        dte.Debugger.DebuggedProcesses
+        |> Seq.cast<Process>
+        |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
+
+    let attachDebugger () =
+        let fsiProcId = sessions.ProcessID
+        let dte = provider.GetService(typeof<DTE>) :?> DTE
+
+        // only attach if no other debugging happening
+        if dte.Debugger.CurrentProcess = null then
+            let fsiProc = 
+                if dte.Debugger.LocalProcesses = null then None else
+                dte.Debugger.LocalProcesses
+                |> Seq.cast<Process>
+                |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
+
+            match fsiProc with
+            | Some(p) -> p.Attach()
+            | _ -> ()
+
+    let detachDebugger () =
+        match getDebugAttachedFSIProcess () with
+        | Some(p) -> p.Detach(true)
+        | _ -> ()
+
+    let onAttachDebugger (sender:obj) (args:EventArgs) =
+        attachDebugger ()
+        showNoActivate ()
 
     let sendTextToFSI text = 
         try
@@ -488,7 +522,14 @@ type internal FsiToolWindow() as this =
         else        
             Windows.Forms.MessageBox.Show("Could not find the 'active text view', error code = " + sprintf "0x%x" res) |> ignore
 *)
-        
+    let onMLDebugSelection (sender:obj) (e:EventArgs) = 
+        attachDebugger () 
+        sendSelectionToFSI false
+
+    let onMLDebugLine (sender:obj) (e:EventArgs) = 
+        attachDebugger () 
+        sendSelectionToFSI true
+
     /// Handle UP and DOWN. Cycle history.    
     let onHistory (sender:obj) (e:EventArgs) =
         let command = sender :?> OleMenuCommand
@@ -526,6 +567,7 @@ type internal FsiToolWindow() as this =
     do  this.Caption          <- VFSIstrings.SR.fsharpInteractive()
    
     member this.MLSend(obj,e) = onMLSend obj e
+    member this.MLDebugSelection(obj,e) = onMLDebugSelection obj e
     member this.AddReferences(references : string[]) = 
         let text = 
             references
@@ -594,8 +636,10 @@ type internal FsiToolWindow() as this =
             addCommand guidVSStd2KCmdID (int32 VSStd2KCmdID.SHOWCONTEXTMENU)     showContextMenu None
             addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     None
             addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   onRestart       None
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  None
             
-            addCommand Guids.guidInteractive Guids.cmdIDSendSelection            onMLSend        None
+            addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSend        None
+            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebugSelection    None
             
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.UP)      onHistory      (Some supportWhenInInputArea)
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.DOWN)    onHistory      (Some supportWhenInInputArea)            

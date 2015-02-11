@@ -64,16 +64,21 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         private IntPtr pvaChar;
         private bool gotEnterKey;
         private bool snippetBound;
-        private VsCommands gotoCmd; 
+        private VsCommands gotoCmd;
+        private readonly Guid guidInteractive = new Guid("8B9BF77B-AF94-4588-8847-2EB2BFFD29EB");
+        private readonly uint cmdIDDebugSelection = 0x01;
+        private readonly uint cmdIDDebugLine = 0x02;
 
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.SnippetBound"]/*' />
         protected bool SnippetBound {
             get { return snippetBound; }
             set { snippetBound = value; }
         }
+
         private NativeMethods.ConnectionPointCookie expansionEvents;
-#if FX_ATLEAST_45
+
         private Microsoft.VisualStudio.Shell.Package projectSystemPackage = null;
+
         private Microsoft.VisualStudio.Shell.Package GetProjectSystemPackage()
         {
             // Ideally the FsiToolWindow would be a part of the language service, but right now its code lives in the
@@ -89,7 +94,20 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
             return this.projectSystemPackage;
         }
-#endif
+
+        private bool DebuggerIsRunning()
+        {
+            var debugger = this.service.GetIVsDebugger();
+            return debugger != null && this.mgr.LanguageService.IsDebugging;
+        }
+
+        private bool EditorSelectionIsEmpty()
+        {
+            string selection;
+            this.textView.GetSelectedText(out selection);
+            return selection == "";
+        }
+
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.ViewFilter"]/*' />
         internal ViewFilter(CodeWindowManager mgr, IVsTextView view) {
             this.pvaChar = IntPtr.Zero;
@@ -416,7 +434,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                         return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
                 }
             }
-#if FX_ATLEAST_45
             else if (guidCmdGroup == Microsoft.VisualStudio.VSConstants.VsStd11)
             {
                 if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
@@ -424,7 +441,29 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                     return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
                 }
             }
-#endif
+            else if (guidCmdGroup == guidInteractive)
+            {
+                if (nCmdId == cmdIDDebugSelection)
+                {
+                    if (DebuggerIsRunning())
+                        return (int)OLECMDF.OLECMDF_INVISIBLE;
+                    else
+                    {
+                        if (EditorSelectionIsEmpty())
+                            return (int)OLECMDF.OLECMDF_SUPPORTED;
+                        else
+                            return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+                    }
+                }
+                else if (nCmdId == cmdIDDebugLine)
+                {
+                    if (DebuggerIsRunning())
+                        return (int)OLECMDF.OLECMDF_INVISIBLE;
+                    else
+                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+                }
+            }
+
             return (int)NativeMethods.E_FAIL; // delegate to next command target.
         }
 
@@ -541,7 +580,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
                 }
             }
-#if FX_ATLEAST_45
             else if (guidCmdGroup == Microsoft.VisualStudio.VSConstants.VsStd11)
             {
                 if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
@@ -550,7 +588,20 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                     return true;
                 }
             }
-#endif
+            else if (guidCmdGroup == guidInteractive)
+            {
+                if (nCmdId == cmdIDDebugSelection)
+                {
+                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), false, true, null, null);
+                    return true;
+                }
+                else if (nCmdId == cmdIDDebugLine)
+                {
+                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), true, true, null, null);
+                    return true;
+                }
+            }
+
             return false;
         }
 
