@@ -96,8 +96,8 @@ module internal MSBuildResolver =
 
     let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; Net451; (*SL only*) "v5.0" ]
 
-#if FX_ATLEAST_45
     let GetPathToDotNetFramework(v) =
+#if FX_ATLEAST_45
         let v =
             match v with
             | Net11 ->  Some TargetDotNetFrameworkVersion.Version11
@@ -115,13 +115,13 @@ module internal MSBuildResolver =
             | x -> [x]
         | _ -> []
 #else
-    let GetPathToDotNetFramework(_) =
         // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
+        ignore v
         []
 #endif        
 
-#if FX_ATLEAST_45
     let DeriveTargetFrameworkDirectoriesFor40Plus(version) = 
+#if FX_ATLEAST_45
         // starting with .Net 4.0, the runtime dirs (WindowsFramework) are never used by MSBuild RAR
         let v =
             match version with
@@ -136,8 +136,8 @@ module internal MSBuildResolver =
             | x -> [x]
         | None -> []        
 #else
-    let DeriveTargetFrameworkDirectoriesFor40Plus(_) = 
         // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
+        ignore version
         []
 #endif
 

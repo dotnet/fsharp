@@ -7,7 +7,6 @@
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
-  <Import Project="$(ProjectDirectory)..\fsharp.vsreferences.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
@@ -18,10 +17,6 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants Condition=" '$(VisualStudioVersion)' == '12.0' ">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
-    <DefineConstants Condition=" '$(VisualStudioVersion)' == '14.0' ">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi">
@@ -67,10 +62,7 @@
     <Compile Include="Tests.ProjectSystem.References.fs" />
     <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
-    <CustomCopyLocal Include="Unittests.dll.config" Condition="'$(VisualStudioVersion)' == '14.0'">
-        <TargetFilename>Unittests.dll.config</TargetFilename>
-    </CustomCopyLocal>
-    <CustomCopyLocal Include="Unittests.dll.v12.config" Condition="'$(VisualStudioVersion)' == '12.0'">
+    <CustomCopyLocal Include="Unittests.dll.config">
         <TargetFilename>Unittests.dll.config</TargetFilename>
     </CustomCopyLocal>
   </ItemGroup>
@@ -88,16 +80,16 @@
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
     <Reference Include="UIAutomationTypes" />
-    <Reference Include="$(MsBuild_FrameworkReference)" />
-    <Reference Include="$(MsBuild_EngineReference)" />
-    <Reference Include="$(MsBuild_Reference)" />
-    <Reference Include="$(MsBuild_UtilitiesReference)" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
     <Reference Include="EnvDTE.dll" />
     <Reference Include="EnvDTE80.dll" />
     <Reference Include="VSLangProj" />
     <Reference Include="VSLangProj80" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="$(VS_Shell_Reference)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
     <Reference Include="Microsoft.VisualStudio.Threading" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
@@ -112,8 +104,14 @@
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-    <Reference Include="nunit.util.dll"><Private>True</Private></Reference>
-    <Reference Include="nunit.framework.dll"><Private>True</Private></Reference>
+    <Reference Include="nunit.util">
+        <Private>True</Private>
+        <HintPath>$(NunitToolsLibDir)\nunit.util.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+        <Private>True</Private>
+        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\Fsc\Fsc.fsproj">
       <Project>{ffde9e47-9675-4498-b540-69b2583dd600}</Project>
       <Name>Fsc</Name>

@@ -26,7 +26,6 @@
     <RCResourceFile>ProjectResources.rc</RCResourceFile>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
-  <Import Project="$(ProjectDirectory)..\..\..\..\fsharp.vsreferences.targets" />
   <ItemGroup>
     <VSCTCompile Include="MenusAndCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx">
@@ -66,13 +65,13 @@
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-    <Reference Include="$(MsBuild_FrameworkReference)" />
-    <Reference Include="$(MsBuild_EngineReference)" />
-    <Reference Include="$(MsBuild_Reference)" />
-    <Reference Include="$(MsBuild_UtilitiesReference)" />
-    <Reference Include="$(VS_Shell_Reference)" />
-    <Reference Include="$(VS_Shell_UI_InternalReference)" />
-    <Reference Include="$(VS_UtilitiesReference)" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />

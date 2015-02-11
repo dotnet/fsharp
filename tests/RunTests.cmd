@@ -10,8 +10,8 @@ goto :USAGE
 
 :flavor_ok
 
-set nunitpath=%~dp0%..\packages\NUnit.Runners.2.6.3\tools\
-if not exist "%nunitpath%" (
+set NUNITPATH=%~dp0%..\packages\NUnit.Runners.2.6.4\tools\
+if not exist "%NUNITPATH%" (
     pushd %~dp0..
     .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
     popd
@@ -23,17 +23,11 @@ set _tmp=%3
 if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
-set NO_TTAGS_ARG=-nottags:ReqPP
+set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
 set _tmp=%4
 if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
 
-rem Use commented line to enable parallel execution of tests
-rem 
-rem Disabled for APPVEYOR_CI due to anaemic Perl implementation
-rem 
-IF NOT DEFINED APPVEYOR_CI (
-    set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
-)
+set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
 set REDUCED_RUNTIME=1
@@ -42,12 +36,7 @@ if "%REDUCED_RUNTIME%" == "1" set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
 rem Set this to 1 in order to use an external compiler host process
 rem    This only has an effect when running the FSHARPQA tests, but can
 rem    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
-rem 
-rem Disabled for APPVEYOR_CI due to anaemic Perl implementation
-rem 
-IF NOT DEFINED APPVEYOR_CI (
-    set HOSTED_COMPILER=1
-)
+set HOSTED_COMPILER=1
 
 rem path to fsc.exe which will be used by tests
 set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
@@ -191,8 +180,8 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-echo %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-     %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
 goto :EOF
 
@@ -202,8 +191,8 @@ set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
 set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
 set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
 
-echo %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
-     %nunitpath%\nunit-console.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+echo "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+     "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
 
 goto :EOF
 
@@ -213,7 +202,7 @@ set XMLFILE=IDEUnit_Xml.xml
 set OUTPUTFILE=IDEUnit_Output.log
 set ERRORFILE=IDEUnit_Error.log
 
-echo %nunitpath%\nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
-     %nunitpath%\nunit-console-x86.exe /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+echo "%NUNITPATH%\nunit-console-x86.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+     "%NUNITPATH%\nunit-console-x86.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF

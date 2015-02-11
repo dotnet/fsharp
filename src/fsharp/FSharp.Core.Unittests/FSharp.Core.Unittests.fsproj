@@ -25,10 +25,6 @@
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING;$(TargetFramework.ToLower())</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants Condition=" '$(VisualStudioVersion)' == '12.0' ">$(DefineConstants);FX_4_3_1_0</DefineConstants>
-    <DefineConstants Condition=" '$(VisualStudioVersion)' == '14.0' ">$(DefineConstants);FX_4_4_0_0</DefineConstants>
-  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -48,9 +44,10 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
+    <Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
         <SpecificVersion>true</SpecificVersion>
-        <HintPath>$(FSharpSourcesRoot)\..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
+        <Private>True</Private>
+        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
@@ -109,10 +106,4 @@
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="BeforeResolveReferences" Condition="'$(UseNugetPackages)'=='true'">
-    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(ProjectDir)..\..\..\packages\NUnit.Runners.2.6.3\tools\lib\;$(AssemblySearchPaths)">
-      <Output TaskParameter="Value"
-              PropertyName="AssemblySearchPath" />
-    </CreateProperty>
-  </Target>
 </Project>

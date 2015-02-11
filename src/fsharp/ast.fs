@@ -1706,20 +1706,6 @@ let ParseAssemblyCodeType s m =
       IL.EcmaILGlobals.typ_Object
 #endif
 
-#if BUILDING_PROTO
-let last (source : seq<_>) =
-    use e = source.GetEnumerator() 
-    if e.MoveNext() then 
-        let mutable res = e.Current
-        while (e.MoveNext()) do res <- e.Current
-        res
-    else
-        raise (new System.InvalidOperationException())
-#else
-let last = Seq.last
-#endif
-
-
 //------------------------------------------------------------------------
 // AST constructors
 //------------------------------------------------------------------------
@@ -1755,7 +1741,7 @@ let mkSynDotBrackSeqSliceGet  m mDot arr (argslist:list<SynIndexerArg>) =
                        | SynIndexerArg.One x -> yield x
                        | _ -> () ]
     if notsliced.Length = argslist.Length then
-        SynExpr.DotIndexedGet(arr,[SynIndexerArg.One (SynExpr.Tuple(notsliced,[],unionRanges (Seq.head notsliced).Range (last notsliced).Range))],mDot,m)
+        SynExpr.DotIndexedGet(arr,[SynIndexerArg.One (SynExpr.Tuple(notsliced,[],unionRanges (List.head notsliced).Range (List.last notsliced).Range))],mDot,m)
     else
         SynExpr.DotIndexedGet(arr,argslist,mDot,m)
 

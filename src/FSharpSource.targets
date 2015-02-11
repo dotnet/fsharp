@@ -64,8 +64,6 @@
     </Otherwise>
   </Choose>
 
-  <Import Project="FSharpSource.msbuildreferences.targets" />
-
   <!-- For the proto build, portable and Silverlight framework implementations, we don't use strong names. -->
   <!-- For Silverlight, there is no way to disable strong name verification, so using the Microsoft name is not possible -->
   <PropertyGroup Condition="'$(StrongNames)' != 'true'">
@@ -97,6 +95,13 @@
 
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);OPEN_BUILD</DefineConstants>
+  </PropertyGroup>  
+  
+  <PropertyGroup>
+    <NUnitVersion>2.6.4</NUnitVersion>
+    <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
+    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
+    <NunitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NunitToolsLibDir>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
@@ -724,7 +729,7 @@
           Outputs="@(CustomCopyLocal->'$(OutDir)%(TargetFilename)')"
           Condition="'$(targetCLIDir)'!='Silverlight/4.0/'"
                 >
-    <Exec Command="$(FSharpSourcesRoot)\fsharp\FSharp.Build\subst.exe &quot;%(CustomCopyLocal.FullPath)&quot; {FinalDir} &quot;$([System.IO.Path]::GetFullPath('$(OutputPath)'))\&quot; {LkgVersion} $(LkgVersion) {BuildSuffix} &quot;$(FsBuildSuffix)&quot; {FSharpTargetsDir} &quot;%24(MSBuildThisFileDirectory)&quot; &gt; $(OutDir)%(CustomCopyLocal.TargetFilename)  "/>
+    <Exec Command="$(FSharpSourcesRoot)\fsharp\FSharp.Build\subst.exe &quot;%(CustomCopyLocal.FullPath)&quot; {VisualStudioVersion} $(VisualStudioVersion) {FinalDir} &quot;$([System.IO.Path]::GetFullPath('$(OutputPath)'))\&quot; {LkgVersion} $(LkgVersion) {BuildSuffix} &quot;$(FsBuildSuffix)&quot; {FSharpTargetsDir} &quot;%24(MSBuildThisFileDirectory)&quot; &gt; $(OutDir)%(CustomCopyLocal.TargetFilename)  "/>
     <!-- Make sure it will get cleaned  -->
     <CreateItem Include="$(OutDir)%(CustomCopyLocal.TargetFilename)">
       <Output TaskParameter="Include" ItemName="FileWrites"/>
@@ -744,12 +749,5 @@
   </Target>
   <Target Name="BeforeBuild" BeforeTargets="Build">
     <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
-  </Target>
-
-  <Target Name="BeforeResolveReferences">
-    <CreateProperty Value="$(ProjectDir)..\..\..\packages\NUnit.2.6.3\lib\;$(ProjectDir)..\..\..\packages\NUnit.Runners.2.6.3\tools\lib\;$(AssemblySearchPaths)">
-      <Output TaskParameter="Value"
-              PropertyName="AssemblySearchPaths" />
-    </CreateProperty>
   </Target>
 </Project>
