@@ -48,6 +48,7 @@ module internal Guids =
 
     let guidFsiConsoleCmdSet            = Guid("0E455B35-F2EB-431b-A0BE-B268D8A7D17F")
     let cmdIDAttachDebugger             = 0x104
+    let cmdIDDetachDebugger             = 0x105
     let cmdIDFsiConsoleContextMenu      = 0x2100 
    
     // Command set for SendToInteractive

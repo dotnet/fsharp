@@ -441,12 +441,16 @@ type internal FsiToolWindow() as this =
         |> Seq.cast<Process>
         |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
 
+    let debuggerIsRunning () =
+        let dte = provider.GetService(typeof<DTE>) :?> DTE
+        dte.Debugger.DebuggedProcesses <> null && dte.Debugger.DebuggedProcesses.Count > 0
+
     let attachDebugger () =
         let fsiProcId = sessions.ProcessID
         let dte = provider.GetService(typeof<DTE>) :?> DTE
 
         // only attach if no other debugging happening
-        if dte.Debugger.CurrentProcess = null then
+        if dte.Debugger.DebuggedProcesses = null || dte.Debugger.DebuggedProcesses.Count = 0 then
             let fsiProc = 
                 if dte.Debugger.LocalProcesses = null then None else
                 dte.Debugger.LocalProcesses
@@ -464,6 +468,10 @@ type internal FsiToolWindow() as this =
 
     let onAttachDebugger (sender:obj) (args:EventArgs) =
         attachDebugger ()
+        showNoActivate ()
+
+    let onDetachDebugger (sender:obj) (args:EventArgs) =
+        detachDebugger ()
         showNoActivate ()
 
     let sendTextToFSI text = 
@@ -637,6 +645,7 @@ type internal FsiToolWindow() as this =
             addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionInterrupt onInterrupt     None
             addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   onRestart       None
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  None
+            addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
             
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSend        None
             addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebugSelection    None
@@ -659,6 +668,18 @@ type internal FsiToolWindow() as this =
                     context.AddAttribute(VSUSERCONTEXTATTRIBUTEUSAGE.VSUC_Usage_LookupF1, "Keyword", "VS.FSharpInteractive") |> ignore
             |   _ -> Debug.Assert(false)
 
+    member __.QueryCommandStatus(guidCmdGroup:Guid, nCmdId:uint32) =
+        match () with
+        | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDAttachDebugger ->
+            if debuggerIsRunning () then Some(OLECMDF.OLECMDF_INVISIBLE)
+            else Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+
+        | _ when guidCmdGroup = Guids.guidFsiConsoleCmdSet && nCmdId = uint32 Guids.cmdIDDetachDebugger ->
+            if getDebugAttachedFSIProcess () |> Option.isSome then Some(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+            else Some(OLECMDF.OLECMDF_INVISIBLE)
+
+        | _ -> None
+                 
     interface ITestVFSI with
         /// Send a string; the ';;' will be added to the end; does not interact with history
         member this.SendTextInteraction(s:string) =
@@ -711,6 +732,15 @@ type internal FsiToolWindow() as this =
             if not (wpfTextView.HasAggregateFocus) || isFocusedElementInterceptsCommandRouting() then
                 (int Microsoft.VisualStudio.OLE.Interop.Constants.OLECMDERR_E_NOTSUPPORTED)
             else
+                let mutable allHandled = true
+                for i = 0 to ((int cCmds) - 1) do
+                    match this.QueryCommandStatus(guid, prgCmds.[i].cmdID) with
+                    | Some(commandStatus) ->
+                        prgCmds.[i].cmdf <- uint32 commandStatus
+                    | None ->
+                        allHandled <- false
+
+                if allHandled then 0 else
                 let target : IOleCommandTarget = upcast commandService
                 target.QueryStatus(&guid, cCmds, prgCmds, pCmdText)
        

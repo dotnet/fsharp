@@ -101,6 +101,15 @@
           <CommandName>FSharp.Interactive.AttachDebugger</CommandName>
           <ButtonText>Attach Debugger</ButtonText>
         </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+      </Button>
+      
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0101" type="Button">
+        <Strings>
+          <CommandName>FSharp.Interactive.DetachDebugger</CommandName>
+          <ButtonText>Detach Debugger</ButtonText>
+        </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
 
       <!-- The following places a button on the F# Editor Context Menu -->
@@ -173,7 +182,10 @@
     <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0700">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
     </CommandPlacement>
-
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0800">
+      <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
+    </CommandPlacement>
+    
     <!-- Adds MLSend to the context menu:
     <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidMLSendSelection" priority="0x0500">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
@@ -226,7 +238,10 @@
     <KeyBinding guid="guidVSStd97" id="cmdidClearPane" editor="guidFsiToolWindow" key1="C" mod1="Control Alt"  />
     
     <!-- CRTL-Alt-D when in FSI ToolWindow is attach debugger -->
-    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Alt"  />  
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Alt"  />
+    
+    <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Shift"  /> 
   </KeyBindings>
 
   <Symbols>
@@ -263,6 +278,7 @@
       <IDSymbol name="FsiConsoleSessionsGrp" value="0x1050" />      
       <IDSymbol name="cmdidFsiConsole" value="0x101" />
       <IDSymbol name="cmdidAttachDebugger" value="0x104" />
+      <IDSymbol name="cmdidDetachDebugger" value="0x105" />
      </GuidSymbol>
 
     <GuidSymbol name="guidFsiConsoleBmp" value="{9074CE8B-8F1E-4c23-8EDC-82C25E0323A8}" >
