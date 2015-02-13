@@ -3019,18 +3019,15 @@ let GetMethodArgs arg =
         | SynExprParen(SynExpr.Tuple (args,_,_),_,_,_) | SynExpr.Tuple (args,_,_) -> args
         | SynExprParen(arg,_,_,_) | arg -> [arg]
     let unnamedCallerArgs,namedCallerArgs = 
-        args 
-        |> List.filter (fun arg ->
-            match arg with
-            // drop errors to avoid confusing error messages in cases like foo(a = 1,) 
-            // here subsequent step will abort overload resolution complaining that name arguments should appear last
-            | SynExpr.ArbitraryAfterError _ -> false 
-            | _ -> true)
-        |> List.takeUntil IsNamedArg
+        args |> List.takeUntil IsNamedArg
     let namedCallerArgs = 
         namedCallerArgs |> List.choose (fun e -> 
-          if not (IsNamedArg e) then 
-              error(Error(FSComp.SR.tcNameArgumentsMustAppearLast(), e.Range)) 
+          if not (IsNamedArg e) then
+              // ignore errors to avoid confusing error messages in cases like foo(a = 1,) 
+              // do not abort overload resolution in case if named arguments are mixed with errors
+              match e with
+              | SynExpr.ArbitraryAfterError _ -> ()
+              | _ -> error(Error(FSComp.SR.tcNameArgumentsMustAppearLast(), e.Range)) 
           TryGetNamedArg e)
     unnamedCallerArgs, namedCallerArgs
 
