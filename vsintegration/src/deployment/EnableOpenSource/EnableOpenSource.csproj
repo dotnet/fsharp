@@ -27,6 +27,12 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'VSRelease'">
+    <DeployExtension>True</DeployExtension>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DeployExtension>True</DeployExtension>
+  </PropertyGroup>
   <Import Project="..\..\FSharp.Common.props" />
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>

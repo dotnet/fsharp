@@ -505,9 +505,8 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                             then 
                                                 // for .NETFramework we distinguish between 2.0, 4.0 and 4.5
                                                 if targetFramework.Version.Major < 4 then v2 
-                                                else 
-                                                    if targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
-                                                    else v45
+                                                elif targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
+                                                else v45
                                             else 
                                                 // for other target frameworks we assume that they are distinguished by the profile
                                                 let result = 
