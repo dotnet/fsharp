@@ -267,12 +267,43 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
                     return VSConstants.S_OK;
                 }
+                if ((VsCommands2K) cmd == VsMenus.OpenFolderInExplorerCmdId)
+                {
+                    result |= QueryStatusResult.SUPPORTED;
+                    result |= CanOpenFolderInExplorer()? QueryStatusResult.ENABLED : QueryStatusResult.INVISIBLE;
+                    return VSConstants.S_OK;
+                }
             }
             else
             {
                 return (int)OleConstants.OLECMDERR_E_UNKNOWNGROUP;
             }
             return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
+        }
+
+        public bool CanOpenFolderInExplorer()
+        {
+            return Directory.Exists(this.Url);
+        }
+
+        public void OpenFolderInExplorer()
+        {
+            if (CanOpenFolderInExplorer())
+                Process.Start(this.Url);
+        }
+
+        public override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        {
+            if (cmdGroup == VsMenus.guidStandardCommandSet2K)
+            {
+                if ((VsCommands2K) cmd == VsMenus.OpenFolderInExplorerCmdId)
+                {
+                    OpenFolderInExplorer();
+                    return VSConstants.S_OK;
+                }
+            }
+
+            return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
         }
 
         public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
