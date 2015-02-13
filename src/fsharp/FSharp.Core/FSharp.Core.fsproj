@@ -3,10 +3,10 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -23,7 +23,6 @@
     <OtherFlags Condition=" '$(TargetFramework)'=='portable78'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
     <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
-
 
   <ItemGroup>
     <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(protoCLIDir)\bin\fsc-proto.exe">
@@ -206,24 +205,23 @@
                                                '$(TargetFramework)' == 'portable47' OR 
                                                '$(TargetFramework)' == 'XNA\5.0' OR 
                                                '$(TargetFramework)' == 'sl3-wp' "/>
-    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' "/> 
+    <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' "/>
     <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR 
                                                '$(TargetFramework)' == 'portable47' OR 
                                                '$(TargetFramework)' == 'XNA\5.0' OR 
                                                '$(TargetFramework)' == 'sl3-wp' "/>
   </ItemGroup>
+
   <!-- References -->
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <!-- Hook compilation phase to do custom work -->
-  <PropertyGroup>
-    <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyToBuiltBin</PrepareForRunDependsOn>
-  </PropertyGroup>
-  <Target Name="CopyToBuiltBin">
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
-    </Copy>
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true">
-      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
-    </Copy>
+
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile" >
+    <ItemGroup>
+      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.optdata" />
+    </ItemGroup>
+    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

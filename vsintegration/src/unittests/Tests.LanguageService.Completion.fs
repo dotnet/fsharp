@@ -474,6 +474,89 @@ type AutoCompletionListTests() as this  =
                 "type B() = inherit A(System.String.)"
             ]
         AssertCtrlSpaceCompleteContains code "System.String." ["Empty"] ["Array"; "Collections"]
+    
+    [<Test>]
+    [<Category("Completion in object initializer")>]
+    member public this.``ObjectInitializer.CompletionForProperties``() =
+        let typeDef1 = 
+            [
+                "type A() = "
+                "   member val SettableProperty = 1 with get,set"
+                "   member val AnotherSettableProperty = 1 with get,set"
+                "   member val NonSettableProperty = 1"
+            ]
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["A(S = 1)"]) "A(S = 1" [] ["SettableProperty"; "NonSettableProperty"] // neg test
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["new A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["new A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["new A(S = 1)"]) "A(S = 1" [] ["SettableProperty"; "NonSettableProperty"] // neg test
+        AssertCtrlSpaceCompleteContains (typeDef1 @ ["new A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+
+        let typeDef2 = 
+            [
+                "type A<'a>() = "
+                "   member val SettableProperty = 1 with get,set"
+                "   member val AnotherSettableProperty = 1 with get,set"
+                "   member val NonSettableProperty = 1"
+            ]
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["A(S = 1)"]) "A(S = 1" [] ["SettableProperty"; "NonSettableProperty"] // neg test
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["new A<_>((**))"]) "A<_>((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["new A<_>(S = 1)"]) "A<_>(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["new A<_>(S = 1)"]) "A<_>(S = 1" [] ["SettableProperty"; "NonSettableProperty"] // neg test
+        AssertCtrlSpaceCompleteContains (typeDef2 @ ["new A<_>(S = 1,)"]) "A<_>(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+
+        let typeDef3 = 
+            [
+                "module M ="
+                "   type A() = "
+                "       member val SettableProperty = 1 with get,set"
+                "       member val AnotherSettableProperty = 1 with get,set"
+                "       member val NonSettableProperty = 1"
+            ]
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["M.A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["M.A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["M.A(S = 1)"]) "A(S = 1" [] ["NonSettableProperty"; "SettableProperty"] // neg test 
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["M.A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S = 1" [] ["NonSettableProperty"; "SettableProperty"] // neg test 
+        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+
+        let typeDef4 = 
+            [
+                "module M ="
+                "   type A<'a, 'b>() = "
+                "       member val SettableProperty = 1 with get,set"
+                "       member val AnotherSettableProperty = 1 with get,set"
+                "       member val NonSettableProperty = 1"
+            ]
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["M.A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["M.A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["M.A(S = 1)"]) "A(S = 1" [] ["SettableProperty"; "NonSettableProperty"] // neg test
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["M.A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["new M.A<_, _>((**))"]) "A<_, _>((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["new M.A<_, _>(S = 1)"]) "A<_, _>(S" ["SettableProperty"] ["NonSettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["new M.A<_, _>(S = 1)"]) "A<_, _>(S = 1" [] ["NonSettableProperty"; "SettableProperty"] 
+        AssertCtrlSpaceCompleteContains (typeDef4 @ ["new M.A<_, _>(S = 1,)"]) "A<_, _>(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
+
+    [<Test>]
+    [<Category("Completion in object initializer")>]
+    member public this.``ObjectInitializer.CompletionForSettableExtensionProperties``() =
+        let typeDef = 
+            [
+                "type A() = member this.SetXYZ(v: int) = ()"
+                "module Ext = type A with member this.XYZ with set(v) = this.SetXYZ(v)"
+
+            ]
+
+        AssertCtrlSpaceCompleteContains (typeDef @ ["open Ext"; "A((**))"]) "A((**)" ["XYZ"] [] // positive
+        AssertCtrlSpaceCompleteContains (typeDef @ ["A((**))"]) "A((**)" [] ["XYZ"] // negative
+
 
     [<Test>]
     [<Category("RangeOperator")>]

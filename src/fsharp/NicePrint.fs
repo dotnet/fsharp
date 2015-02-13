@@ -36,7 +36,7 @@ open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.PrettyNaming
 
 [<AutoOpen>]
-module private PrintUtilities = 
+module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
     let squareAngleL x = leftL "[<" ^^ x ^^ rightL ">]"
     let angleL x = sepL "<" ^^ x ^^ rightL ">"  
@@ -70,6 +70,37 @@ module private PrintUtilities =
         | [x] -> [resultFunction x (layoutFunction x)] 
         | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n))) ] 
         | _ -> []
+    
+    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref:TyconRef) = 
+        let demangled = 
+            let name =
+                if denv.includeStaticParametersInTypeNames then 
+                    tcref.DisplayNameWithStaticParameters 
+                elif tcref.DisplayName = tcref.DisplayNameWithStaticParameters then
+                    tcref.DisplayName // has no static params
+                else
+                    tcref.DisplayName+"<...>" // shorten
+            if isAttribute then 
+                defaultArg (String.tryDropSuffix name "Attribute") name 
+            else name
+        let tyconTextL = wordL demangled
+        if denv.shortTypeNames then 
+            tyconTextL
+        else
+            let path = demangledPathOfCompPath tcref.CompilationPath
+            let path =
+                if denv.includeStaticParametersInTypeNames then
+                    path
+                else
+                    path |> List.map (fun s -> let i = s.IndexOf(',')
+                                               if i <> -1 then s.Substring(0,i)+"<...>" // apparently has static params, shorten
+                                               else s)
+            let pathText = trimPathByDisplayEnv denv path
+            if pathText = "" then tyconTextL else leftL pathText ^^ tyconTextL
+
+    let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
+        let tcref = attrib.TyconRef
+        squareAngleL (layoutTyconRefImpl true denv tcref)
 
 module private PrintIL = 
 
@@ -185,7 +216,8 @@ module private PrintIL =
             // Layout an unnamed argument 
             | _, None, _ -> leftL ":"
             // Layout a named argument 
-            | true, Some nm,_ -> wordL "params" ^^ leftL (nm+":")
+            | true, Some nm,_ ->      
+                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (nm + ":")
             | false, Some nm,_ -> leftL (nm+":")
         preL ^^ (layoutILType denv ilTyparSubst p.Type)
        
@@ -550,27 +582,7 @@ module private PrintTypes =
         | _ -> itemL
 
     /// Layout a reference to a type 
-    let layoutTyconRef (denv: DisplayEnv) (tcref:TyconRef) = 
-        let demangled = if denv.includeStaticParametersInTypeNames then 
-                            tcref.DisplayNameWithStaticParameters 
-                        elif tcref.DisplayName = tcref.DisplayNameWithStaticParameters then
-                            tcref.DisplayName // has no static params
-                        else
-                            tcref.DisplayName+"<...>" // shorten
-        let tyconTextL = wordL demangled
-        if denv.shortTypeNames then 
-            tyconTextL
-        else
-            let path = demangledPathOfCompPath tcref.CompilationPath
-            let path =
-                if denv.includeStaticParametersInTypeNames then
-                    path
-                else
-                    path |> List.map (fun s -> let i = s.IndexOf(',')
-                                               if i <> -1 then s.Substring(0,i)+"<...>" // apparently has static params, shorten
-                                               else s)
-            let pathText = trimPathByDisplayEnv denv path
-            if pathText = "" then tyconTextL else leftL pathText ^^ tyconTextL
+    let layoutTyconRef denv tycon = layoutTyconRefImpl false denv tycon
 
     /// Layout the flags of a member 
     let layoutMemberFlags memFlags = 
@@ -918,7 +930,12 @@ module private PrintTypes =
                     layoutTypeWithInfoAndPrec denv env 2 ty
                 // Layout a named argument 
                 | Some id,_,isParamArray,_ -> 
-                    leftL ((if isParamArray then "params " else "") + id.idText) ^^ sepL ":" ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+                    let prefix =
+                        if isParamArray then    
+                            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL id.idText
+                        else
+                            leftL id.idText
+                    prefix ^^ sepL ":" ^^ layoutTypeWithInfoAndPrec denv env 2 ty
                         
             let delimitReturnValue = if denv.useColonForReturnType then ":" else "->"
 
@@ -1147,7 +1164,8 @@ module InfoMemberPrinting =
             outputTy denv os pty;
         // Layout a named argument 
         | true, Some nm,_,_ -> 
-            bprintf os "params %s: " nm 
+            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> bufferL os
+            bprintf os " %s: " nm 
             outputTy denv os pty
         | false, Some nm,_,_ -> 
             bprintf os "%s: " nm 

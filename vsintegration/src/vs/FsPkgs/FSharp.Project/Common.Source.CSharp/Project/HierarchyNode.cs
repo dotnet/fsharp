@@ -3305,16 +3305,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // update FSharp.Core only if we are addressing '.NETFramework' as opposed to e.g. Silverlight or Portable
             if (frameworkName.Identifier == ".NETFramework")
             {
-                var hasCompatibleFsCore = 
-                    (oldFrameworkName.Version.Major >= 4 && frameworkName.Version.Major >= 4) || (oldFrameworkName.Version.Major < 4 && frameworkName.Version.Major < 4);
-
-                if (!hasCompatibleFsCore)
+                // In reality for FSharp.Core compatibility with .NetFramework selection looks like this:
+                // 2 is incompatible with 4
+                // 4.0 is incompatible with 4.5
+                // 4.5 is compatible with 4.5.1 and 4.5.2 and 4.6
+                var lower = oldFrameworkName.Version < frameworkName.Version ? oldFrameworkName.Version : frameworkName.Version;
+                var upper = oldFrameworkName.Version < frameworkName.Version ? frameworkName.Version : oldFrameworkName.Version;
+                var hasIncompatibleFsCore = (lower.Major != upper.Major) || (lower.Major == 4 && (lower.Minor < 5 && upper.Minor >= 5));
+                
+                if (hasIncompatibleFsCore)
                 {
                     var newVersion =
                         frameworkName.Version.Major >= 4
                         ?
 #if FX_ATLEAST_45
-                        new Version(4, 3, 0, 0)
+                        ( frameworkName.Version.Minor < 5 ? new Version(4, 3, 0, 0) : new Version(4, 4, 0, 0) )
 #else
                         new Version(4, 0, 0, 0)
 #endif

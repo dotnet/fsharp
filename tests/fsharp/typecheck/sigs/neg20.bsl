@@ -227,12 +227,12 @@ neg20.fs(166,13,166,35): typecheck error FS0502: The member or object constructo
 neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5 : y:'a * z:'b -> int'.
 
 neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
-neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * params args:int [] -> string'. Type constraint mismatch. The type 
+neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string'. Type constraint mismatch. The type 
     obj    
 is not compatible with type
     int    
 The type 'obj' is not compatible with the type 'int'.
-neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * params args:int [] -> string'. Type constraint mismatch. The type 
+neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string'. Type constraint mismatch. The type 
     obj    
 is not compatible with type
     int []    
@@ -254,12 +254,12 @@ but here has type
     obj    
 
 neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
-neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * params args:string [] -> string'. Type constraint mismatch. The type 
+neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string'. Type constraint mismatch. The type 
     obj    
 is not compatible with type
     string    
 The type 'obj' is not compatible with the type 'string'.
-neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * params args:string [] -> string'. Type constraint mismatch. The type 
+neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string'. Type constraint mismatch. The type 
     obj    
 is not compatible with type
     string []    

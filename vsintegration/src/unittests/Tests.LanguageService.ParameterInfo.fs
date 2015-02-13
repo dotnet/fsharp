@@ -1745,7 +1745,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 )
             |> Seq.tryFind(fun (i, _) -> i = 2)
         match overloadWithTwoParamsOpt with
-        | Some(_, [_;(_name, display, _description)]) -> Assert.IsTrue(display.Contains("params args"))
+        | Some(_, [_;(_name, display, _description)]) -> Assert.IsTrue(display.Contains("[<System.ParamArray>] args"))
         | x -> Assert.Fail(sprintf "Expected overload not found, current result %A" x)
 
     (* DotNet functions for multi-parameterinfo tests -------------------------------------------------- *)

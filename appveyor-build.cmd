@@ -3,93 +3,100 @@
 set APPVEYOR_CI=1
 
 :: Check prerequisites
-set _msbuildexe="%ProgramFiles(x86)%\MSBuild\12.0\Bin\MSBuild.exe"
-if not exist %_msbuildexe% set _msbuildexe="%ProgramFiles%\MSBuild\12.0\Bin\MSBuild.exe"
-if not exist %_msbuildexe% set _msbuildexe="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
-if not exist %_msbuildexe% set _msbuildexe="%ProgramFiles%\MSBuild\14.0\Bin\MSBuild.exe"
-if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe.  Please see http://www.microsoft.com/en-us/download/details.aspx?id=40760. && goto :eof
+if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
+if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 
-set _gacutilexe="%ProgramFiles(x86)%\Microsoft SDKs\Windows\v8.1A\bin\NETFX 4.5.1 Tools\gacutil.exe"
-if not exist %_gacutilexe% echo Error: Could not find gacutil.exe.  && goto :eof
+:vsversionset
+if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :eof
+
+if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :eof
+
+set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
+if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 .\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages
-@if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :eof
+@if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
-::Build
-%_gacutilexe%  /i lkg\FSharp-2.0.50726.900\bin\FSharp.Core.dll
-@if ERRORLEVEL 1 echo Error: gacutil failed && goto :eof
-
+:: Build
 %_msbuildexe% src\fsharp-proto-build.proj
-@if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :eof
+@if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
 
-ngen install lib\proto\fsc-proto.exe
+%_ngenexe% install Proto\net40\bin\fsc-proto.exe
+@if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true 
-@if ERRORLEVEL 1 echo Error: library debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:UseNugetPackages=true 
-@if ERRORLEVEL 1 echo Error: compile debug build failed && goto :eof
+%_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
-REM We don't build new net20 FSharp.Core anymore
-REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=net20
-REM @if ERRORLEVEL 1 echo Error: library net20 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
-@if ERRORLEVEL 1 echo Error: library portable47 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
 
-REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
-REM @if ERRORLEVEL 1 echo Error: library portable7 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
 
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
-@if ERRORLEVEL 1 echo Error: library portable78 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
 
-REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable259
-REM @if ERRORLEVEL 1 echo Error: library portable259 debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true
-@if ERRORLEVEL 1 echo Error: library unittests debug build failed && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
 
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
 
-REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable47
-@REM if ERRORLEVEL 1 echo Error: library unittests debug build failed portable47 && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
 
-REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable7
-REM @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable7 && goto :eof
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
 
-REM Dropped for faster build
-REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:UseNugetPackages=true /p:TargetFramework=portable78
-REM @if ERRORLEVEL 1 echo Error: library unittests debug build failed portable78 && goto :eof
+%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
 
-
-@echo on
-call src\update.cmd debug -ngen
+%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
 
 @echo on
-call tests\BuildTestTools.cmd debug 
-REM @if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd debug' failed && goto :eof
+call src\update.cmd release -ngen
 
 @echo on
+call tests\BuildTestTools.cmd release 
+@if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd release' failed && goto :failure
 
+@echo on
 pushd tests
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd debug fsharp Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharp Smoke
+@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
 
-REM Disabled while working out perl problem, see https://github.com/Microsoft/visualfsharp/pull/169
-REM call RunTests.cmd debug fsharpqa Smoke
-REM @if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug fsharpqa Smoke' failed && goto :eof
+call RunTests.cmd release fsharpqa Smoke
+@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
 
-set PATH=%PATH%;%~dp0%packages\NUnit.Runners.2.6.3\tools\
-call RunTests.cmd debug coreunit
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd debug coreunit' failed && goto :eof
+call RunTests.cmd release compilerunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
+
+call RunTests.cmd release coreunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
 
 popd
 
+goto :eof
 
-
+:failure
+exit /b 1

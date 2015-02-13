@@ -567,11 +567,12 @@ type ScriptTests() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    // 'Microsoft.TeamFoundation.Diff' is located via AssemblyFoldersEx
+
+    // 'Microsoft.VisualStudio.QualityTools.Common.dll' is resolved via AssemblyFoldersEx over recent VS releases
     member public this.``Fsx.NoError.HashR.ResolveFromAssemblyFoldersEx``() =  
         let fileContent = """
             #light
-            #r "Microsoft.TeamFoundation.Diff"
+            #r "Microsoft.VisualStudio.QualityTools.Common.dll"
             """
         this.VerifyFSXNoErrorList(fileContent)
 
@@ -902,11 +903,11 @@ type ScriptTests() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() =  
-        let fileContent = """#r "Microsoft.TeamFoundation.Diff" """     // 'Microsoft.TeamFoundation.Diff' is located via AssemblyFoldersEx
-        let marker = "#r \"Microsoft.Tea"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Found by AssemblyFoldersEx registry key"
-        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.TeamFoundation.Diff"
+    member public this.``Fsx.HashR_QuickInfo.ResolveFromAssemblyFoldersEx``() = 
+        let fileContent = """#r "Microsoft.VisualStudio.QualityTools.Common.dll" """     // 'Microsoft.VisualStudio.QualityTools.Common.dll' is located via AssemblyFoldersEx
+        let marker = "#r \"Microsoft.Vis"
+        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common, Version="
+        this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile fileContent marker "Microsoft.VisualStudio.QualityTools.Common.dll"
 
     [<Test>]
     [<Category("fsx closure")>]
@@ -1297,31 +1298,24 @@ type ScriptTests() as this =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-#if FX_ATLEAST_45
-        PlaceIntoProjectFileBeforeImport
-            (project, @"
-                <ItemGroup>
-                    <!-- Subtle: You need this reference to compile but not to get language service -->
-                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
-                        <SpecificVersion>True</SpecificVersion>
-                    </Reference>
-                    <Reference Include=""FSharp.Compiler, Version=4.3.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
-                        <SpecificVersion>True</SpecificVersion>
-                    </Reference>
-                </ItemGroup>")
+        let fsVersion =
+#if VS_VERSION_DEV12
+            "4.3.1.0"
 #else
+            "4.4.0.0"
+#endif
         PlaceIntoProjectFileBeforeImport
-            (project, @"
+            (project, sprintf @"
                 <ItemGroup>
                     <!-- Subtle: You need this reference to compile but not to get language service -->
-                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler.Interactive.Settings, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
                     </Reference>
-                </ItemGroup>")
-#endif
+                </ItemGroup>" fsVersion fsVersion)
+
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["let x = fsi.CommandLineArgs"])
         let build = time1 Build project "Time to build project" 

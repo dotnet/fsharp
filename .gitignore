@@ -10,7 +10,7 @@ aclocal.m4
 src/*.userprefs
 src/fsharp/FSStrings.resources
 lkg
-pack
+packages
 src/fsharp/FSharp.Build/*.resx
 src/fsharp/FSharp.Build-proto/*.resx
 src/fsharp/FSharp.Build-proto/*.resources
@@ -30,6 +30,8 @@ src/fsharp/FSharp.Compiler/*.userprefs
 src/*.log
 Debug
 Release
+vsdebug
+vsrelease
 Proto
 .libs
 Makefile
@@ -99,3 +101,4 @@ tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLi
 *.log
 *.jrs
 *.chk
+*.bak

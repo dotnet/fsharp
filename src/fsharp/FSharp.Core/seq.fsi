@@ -567,7 +567,6 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the index is negative or the input sequence does not contain enough elements.</exception>
         [<CompiledName("Item")>]
-        [<Obsolete("please use Seq.item")>]
         val item: index:int -> source:seq<'T> -> 'T
 
         /// <summary>Applies the given function to each element of the collection.</summary>

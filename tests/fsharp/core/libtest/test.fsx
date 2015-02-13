@@ -5258,7 +5258,8 @@ module TripleQuoteStrings =
     check "ckjenew-0ecwe3" """Hello ""world""" "Hello \"\"world"
 #if INTERACTIVE // FSI prints \r\n or \n depending on PIPE vs FEED so we'll just skip it
 #else
-    check "ckjenew-0ecwe4" """Hello 
+    if System.Environment.GetEnvironmentVariable("APPVEYOR_CI") <> "1" then
+        check "ckjenew-0ecwe4" """Hello 
 ""world""" "Hello \r\n\"\"world"
 #endif
     // cehcek there is no escaping...

@@ -1,5 +1,6 @@
 [![Issue Stats](http://issuestats.com/github/Microsoft/visualfsharp/badge/pr)](http://issuestats.com/github/microsoft/visualfsharp)
 [![Issue Stats](http://issuestats.com/github/Microsoft/visualfsharp/badge/issue)](http://issuestats.com/github/microsoft/visualfsharp)
+[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/fsharp4.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/fsharp4)
 
 #Visual F# Tools
 

@@ -1262,16 +1262,7 @@ module internal ExtensionTyping =
             staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))),range=m)
 
         let defaultArgValues = defaultArgValues.PUntaint(id,m)
-
-        let nonDefaultArgs = 
-            (staticArgs,defaultArgValues) 
-            ||> Array.zip 
-            |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
-                let actualArgValue = string  staticArg 
-                match defaultArgValue with 
-                | Some v when v = actualArgValue -> None
-                | _ -> Some (defaultArgName, actualArgValue))
-        PrettyNaming.mangleProvidedTypeName (nm, nonDefaultArgs)
+        PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm,staticArgs,defaultArgValues)
 
     /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
     let TryApplyProvidedMethod(methBeforeArgs:Tainted<ProvidedMethodBase>, staticArgs:obj[], m:range) =
