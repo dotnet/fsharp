@@ -432,7 +432,7 @@ type internal FsiToolWindow() as this =
         let frame = this.Frame :?> IVsWindowFrame
         frame.ShowNoActivate() |> ignore
     
-    let getDebugAttachedFSIProcess () =
+    let getDebugAttachedFSIProcess() =
         let fsiProcId = sessions.ProcessID
         let dte = provider.GetService(typeof<DTE>) :?> DTE
 
@@ -441,11 +441,11 @@ type internal FsiToolWindow() as this =
         |> Seq.cast<Process>
         |> Seq.tryFind (fun p -> p.ProcessID = fsiProcId)
 
-    let debuggerIsRunning () =
+    let debuggerIsRunning() =
         let dte = provider.GetService(typeof<DTE>) :?> DTE
         dte.Debugger.DebuggedProcesses <> null && dte.Debugger.DebuggedProcesses.Count > 0
 
-    let attachDebugger () =
+    let attachDebugger() =
         let fsiProcId = sessions.ProcessID
         let dte = provider.GetService(typeof<DTE>) :?> DTE
 
@@ -461,18 +461,18 @@ type internal FsiToolWindow() as this =
             | Some(p) -> p.Attach()
             | _ -> ()
 
-    let detachDebugger () =
+    let detachDebugger() =
         match getDebugAttachedFSIProcess () with
         | Some(p) -> p.Detach(true)
         | _ -> ()
 
     let onAttachDebugger (sender:obj) (args:EventArgs) =
-        attachDebugger ()
-        showNoActivate ()
+        attachDebugger()
+        showNoActivate()
 
     let onDetachDebugger (sender:obj) (args:EventArgs) =
-        detachDebugger ()
-        showNoActivate ()
+        detachDebugger()
+        showNoActivate()
 
     let sendTextToFSI text = 
         try
@@ -531,12 +531,12 @@ type internal FsiToolWindow() as this =
             Windows.Forms.MessageBox.Show("Could not find the 'active text view', error code = " + sprintf "0x%x" res) |> ignore
 *)
     let onMLDebugSelection (sender:obj) (e:EventArgs) = 
-        attachDebugger () 
-        sendSelectionToFSI false
+        attachDebugger() 
+        sendSelectionToFSI(false)
 
     let onMLDebugLine (sender:obj) (e:EventArgs) = 
-        attachDebugger () 
-        sendSelectionToFSI true
+        attachDebugger() 
+        sendSelectionToFSI(true)
 
     /// Handle UP and DOWN. Cycle history.    
     let onHistory (sender:obj) (e:EventArgs) =
