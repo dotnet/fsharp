@@ -10,7 +10,7 @@
 
 Core01,Smoke		fsharp\core\access
 Core01		fsharp\core\apporder
-Core01		fsharp\core\array
+Core01,Smoke		fsharp\core\array
 Core01		fsharp\core\attributes
 Core01		fsharp\core\comprehensions
 Core01		fsharp\core\control
@@ -31,7 +31,7 @@ Core02		fsharp\core\fsi-shadowcopy
 Core02		fsharp\core\genericmeasures
 Core02		fsharp\core\hiding
 Core03		fsharp\core\innerpoly
-Core03		fsharp\core\int32
+Core03,Smoke		fsharp\core\int32
 Core03		fsharp\core\internalsvisible
 Core03		fsharp\core\interop
 Core03		fsharp\core\lazy
