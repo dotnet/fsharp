@@ -2206,7 +2206,8 @@ and sigptrGetLocal ctxt numtypars bytes sigptr =
             false, sigptr
     let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
     { IsPinned = pinned;
-      Type = typ }, sigptr
+      Type = typ;
+      DebugInfo = None }, sigptr
          
 and readBlobHeapAsMethodSig ctxt numtypars blobIdx  =
     ctxt.readBlobHeapAsMethodSig (BlobAsMethodSigIdx (numtypars,blobIdx))

@@ -377,7 +377,7 @@ let rec convInstr cenv (tmps: ILLocalsAllocator) inplab outlab instr =
                         InstrMorph [ AI_pop; (AI_ldc (DT_I4, ILConst.I4 0)) ] 
                 | RuntimeTypes -> 
                         let baseTy = baseTyOfUnionSpec cuspec
-                        let locn = tmps.AllocLocal (mkILLocal baseTy)
+                        let locn = tmps.AllocLocal (mkILLocal baseTy None)
 
                         let mkCase last inplab cidx failLab = 
                             let alt = altOfUnionSpec cuspec cidx
@@ -495,7 +495,7 @@ let rec convInstr cenv (tmps: ILLocalsAllocator) inplab outlab instr =
         
             match cuspecRepr.DiscriminationTechnique cuspec with 
             | RuntimeTypes ->  
-                let locn = tmps.AllocLocal (mkILLocal baseTy)
+                let locn = tmps.AllocLocal (mkILLocal baseTy None)
                 let mkCase _last inplab (cidx,tg) failLab = 
                     let alt = altOfUnionSpec cuspec cidx
                     let altTy = tyForAlt cuspec alt

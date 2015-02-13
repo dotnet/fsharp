@@ -970,7 +970,8 @@ type ILNativeType =
 [<NoComparison; NoEquality>]
 type ILLocal = 
     { Type: ILType;
-      IsPinned: bool }
+      IsPinned: bool;
+      DebugInfo : (string * int * int) option }
      
 
 type ILLocals = ILList<ILLocal>
@@ -1955,7 +1956,7 @@ val mkILParam: string option * ILType -> ILParameter
 val mkILParamAnon: ILType -> ILParameter
 val mkILParamNamed: string * ILType -> ILParameter
 val mkILReturn: ILType -> ILReturn
-val mkILLocal: ILType -> ILLocal
+val mkILLocal: ILType -> (string * int * int) option -> ILLocal
 val mkILLocals : ILLocal list -> ILLocals
 val emptyILLocals : ILLocals
 
