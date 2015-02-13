@@ -1059,9 +1059,6 @@ let rec convClassUnionDef cenv enc td cud =
             |> List.filter (fun pd -> not (cud.cudHasHelpers = SpecialFSharpListHelpers && (pd.Name = "Empty"  || pd.Name = "IsEmpty"  )) &&
                                       not (cud.cudHasHelpers = SpecialFSharpOptionHelpers && (pd.Name = "Value" || pd.Name = "None")))
     
-    let casesTypeDef = 
-           None
-
     let enumTypeDef = 
         // The nested Tags type is elided if there is only one tag
         // The Tag property is NOT elided if there is only one tag
@@ -1095,15 +1092,14 @@ let rec convClassUnionDef cenv enc td cud =
 
     let baseTypeDef = 
         { Name = td.Name;
-          NestedTypes = mkILTypeDefs (Option.toList casesTypeDef @ 
-                               Option.toList enumTypeDef @ 
+          NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ 
                                altTypeDefs @ 
                                altDebugTypeDefs @
                                (convTypeDefs cenv (enc@[td]) td.NestedTypes).AsList);
           GenericParams= td.GenericParams;
           Access = td.Access;
           IsAbstract = isAbstract;
-          IsSealed = false;
+          IsSealed = altTypeDefs.IsEmpty;
           IsSerializable=td.IsSerializable;
           IsComInterop=false;
           Layout=td.Layout; 

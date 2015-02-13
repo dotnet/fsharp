@@ -6,31 +6,31 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverate run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
-CodeGen01,NoMT				CodeGen\EmittedIL\AsyncExpressionStepping
-CodeGen01,NoMT				CodeGen\EmittedIL\AttributeTargets
-CodeGen01,NoMT				CodeGen\EmittedIL\CCtorDUWithMember
-CodeGen01,NoMT				CodeGen\EmittedIL\CompiledNameAttribute
-CodeGen01,NoMT,Smoke				CodeGen\EmittedIL\ComputationExpressions
-CodeGen01,NoMT				CodeGen\EmittedIL\DoNotBoxStruct
-CodeGen01,NoMT				CodeGen\EmittedIL\GeneratedIterators
-CodeGen01,NoMT				CodeGen\EmittedIL\InequalityComparison
-CodeGen01,NoMT				CodeGen\EmittedIL\ListExpressionStepping
-CodeGen01,NoMT				CodeGen\EmittedIL\MethodImplAttribute
-CodeGen01,NoMT,Smoke				CodeGen\EmittedIL\Misc
-CodeGen01,CodeGenMutation,NoMT				CodeGen\EmittedIL\Mutation
-CodeGen01,NoMT				CodeGen\EmittedIL\Operators
-CodeGen01,NoMT				CodeGen\EmittedIL\QueryExpressionStepping
-CodeGen01,NoMT				CodeGen\EmittedIL\SeqExpressionStepping
-CodeGen01,NoMT				CodeGen\EmittedIL\SeqExpressionTailCalls
-CodeGen01,NoMT				CodeGen\EmittedIL\SerializableAttribute
-CodeGen01,NoMT,Smoke				CodeGen\EmittedIL\StaticInit
-CodeGen01,NoMT				CodeGen\EmittedIL\SteppingMatch
-CodeGen01,NoMT				CodeGen\EmittedIL\TailCalls
-CodeGen01,NoMT				CodeGen\EmittedIL\TestFunctions
-CodeGen01,NoMT				CodeGen\EmittedIL\Tuples
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
+CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\ComputationExpressions
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\DoNotBoxStruct
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\GeneratedIterators
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\InequalityComparison
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ListExpressionStepping
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
+CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\Misc
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SerializableAttribute
+CodeGen01,NoMT,CodeGen,Smoke				CodeGen\EmittedIL\StaticInit
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
 NoHostedCompiler,CodeGen01,NoMT		CodeGen\EmittedIL\TypeProviders
-CodeGen01,NoMT				CodeGen\StringEncoding
-CodeGen01,NoMT				CodeGen\Structure
+CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
+CodeGen01,NoMT,CodeGen				CodeGen\Structure
 
 
 CompilerOptions01,NoMT				CompilerOptions\fsc\checked
@@ -303,10 +303,10 @@ Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
 Misc02			OCamlCompat
-Misc02			Optimizations\AssemblyBoundary
-Misc02			Optimizations\ForLoop
-Misc02			Optimizations\GenericComparison
-Misc02			Optimizations\Inlining
+Misc02,CodeGen			Optimizations\AssemblyBoundary
+Misc02,CodeGen			Optimizations\ForLoop
+Misc02,CodeGen			Optimizations\GenericComparison
+Misc02,CodeGen			Optimizations\Inlining
 Misc02,NoMT		Printing
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\UnitsOfMeasure
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents

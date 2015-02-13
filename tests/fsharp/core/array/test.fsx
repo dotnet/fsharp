@@ -1419,6 +1419,30 @@ module bug872632 =
 
     do check "bug872632" Foo.x.Length 8
 
+module CheckUnionTypesAreSealed =
+    open System
+    do check "vwllfewlkefw1" (typedefof<list<int>>.IsSealed) true
+    do check "vwllfewlkefw2" (typedefof<option<int>>.IsSealed) true
+    type X1 = A | B
+    do check "vwllfewlkefw3" (typedefof<X1>.IsSealed) true
+    type X2 = A | B of string
+    do check "vwllfewlkefw4" (typedefof<X2>.IsSealed) false
+    type X3 = A | B | C
+    do check "vwllfewlkefw5" (typedefof<X3>.IsSealed) true
+    type X4 = A | B | C | D | E | F | G | H | I
+    do check "vwllfewlkefw5" (typedefof<X4>.IsSealed) true
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+    type SetTree<'T> = 
+        | SetEmpty                                          
+        | SetNode of 'T * SetTree<'T> *  SetTree<'T> 
+    do check "vwllfewlkefw6" (typedefof<SetTree<int>>.IsSealed) true
+
+    type SetTree2<'T> = 
+        | SetEmpty                                          
+        | SetNode of 'T * SetTree2<'T> *  SetTree2<'T> 
+    do check "vwllfewlkefw6" (typedefof<SetTree2<int>>.IsSealed) false
+
 module manyIndexes =
     open System
     

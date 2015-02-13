@@ -51,7 +51,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable nested public beforefieldinit Weirdo
+  .class auto autochar serializable sealed nested public beforefieldinit Weirdo
          extends [mscorlib]System.Object
          implements class [mscorlib]System.IEquatable`1<class GeneralizationOnUnions01/Weirdo>,
                     [mscorlib]System.Collections.IStructuralEquatable,
