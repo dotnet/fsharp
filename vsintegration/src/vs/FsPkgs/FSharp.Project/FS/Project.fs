@@ -497,13 +497,16 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                     |> Seq.toList
                                 let (_, _, v2) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v20)
                                 let (_, _, v4) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v40)
+                                let (_, _, v45) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v45)
                                 {
                                     new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService with
                                         member this.ListAvailableFSharpCoreVersions(targetFramework) =
                                             if targetFramework.Identifier = FSharpSDKHelper.NETFramework
                                             then 
-                                                // for .NETFramework we distinguish only between 2.0 and 4.0
-                                                if targetFramework.Version.Major < 4 then v2 else v4
+                                                // for .NETFramework we distinguish between 2.0, 4.0 and 4.5
+                                                if targetFramework.Version.Major < 4 then v2 
+                                                elif targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
+                                                else v45
                                             else 
                                                 // for other target frameworks we assume that they are distinguished by the profile
                                                 let result = 
