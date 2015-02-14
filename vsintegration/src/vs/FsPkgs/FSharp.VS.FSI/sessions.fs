@@ -152,17 +152,18 @@ let catchAll (ie: IEvent<_,_>) : IEvent<_> =
     ie.Add(fun x -> try w(x) with err -> ignore(System.Windows.Forms.MessageBox.Show(err.ToString())); ());
     e
 
+let fsiExeName () = if SessionsProperties.useAnyCpuVersion then "fsianycpu.exe" else "fsi.exe"
 let determineFsiRelativePath () =
     let thisAssembly : System.Reflection.Assembly = typeof<Microsoft.FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
     let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
     // Use the quick-development path if available    
-    Path.Combine(thisAssemblyDirectory,"fsi.exe")        
+    Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
 let determineFsiPath () =    
     // Use the quick-development path if available
     let fsiRelativePath       = determineFsiRelativePath()        
     let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with | Some(s) -> s | None -> ""
-    let fsiRegistryPath = Path.Combine(fsbin, if SessionsProperties.useAnyCpuVersion then "fsianycpu.exe" else "fsi.exe")
+    let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
     // Choose relative path, if it exists (for developers), otherwise, the installed path.    
     if  File.Exists(fsiRelativePath) then
         fsiRelativePath
