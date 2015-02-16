@@ -125,9 +125,12 @@ module ReflectionAdapters =
         member this.GetConstructor(parameterTypes : Type[]) = 
             this.GetTypeInfo().DeclaredConstructors
             |> Seq.filter (fun ci ->
-                let parameters = ci.GetParameters()
-                (parameters.Length = parameterTypes.Length) &&
-                (parameterTypes, parameters) ||> Array.forall2 (fun ty pi -> pi.ParameterType.Equals ty) 
+                not ci.IsStatic && //exclude type initializer
+                (
+                    let parameters = ci.GetParameters()
+                    (parameters.Length = parameterTypes.Length) &&
+                    (parameterTypes, parameters) ||> Array.forall2 (fun ty pi -> pi.ParameterType.Equals ty) 
+                )
             )
             |> Seq.toArray
             |> commit
