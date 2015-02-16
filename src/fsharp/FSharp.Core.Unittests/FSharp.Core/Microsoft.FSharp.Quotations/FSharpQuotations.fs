@@ -67,3 +67,7 @@ type FSharpQuotationsTests() =
                 let wrongValue = <@ "!" @>
                 Check.argumentException(fun () -> ExprShape.RebuildShapeCombination(shape, [wrongValue;lambda]))
         |   _ -> Assert.Fail()
+
+    [<Test>]
+    member x.GetConstructorFiltersOutStaticConstructor() =
+        ignore <@ System.Exception() @>
