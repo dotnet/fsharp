@@ -868,12 +868,14 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                   let rec buildDisplayMessage (txt:string) (layouts:Layout list) =
                                     let p1 = txt.IndexOf ("{", StringComparison.Ordinal)
                                     let p2 = txt.IndexOf ("}", StringComparison.Ordinal)
-                                    if p1 < 0 || p2 < 0 || p1+1 >= p2 then 
-                                        None 
-                                    else
-                                        let preText = if p1 <= 0 then "" else txt.[0..p1-1]
-                                        let postText = if p2+1 >= txt.Length then "" else txt.[p2+1..]
-                                        let prop = txt.[p1+1..p2-1]
+                                    match (p1, p2) with
+                                      | (-1, -1) when layouts.Length > 1 -> Some (spaceListL (List.rev layouts))
+                                      | (-1, -1) -> None
+                                      | (opened, closed) when opened + 1 >= closed -> Some (wordL ("<StructuredFormatDisplay exception: unbalanced brackets: found '{' without matching '}'>")) //unbalanced
+                                      | (opened, closed) -> //go for it
+                                        let preText = if opened <= 0 then "" else txt.[0..opened-1]
+                                        let postText = if closed+1 >= txt.Length then "" else txt.[closed+1..]
+                                        let prop = txt.[opened+1..closed-1]
                                         match catchExn (fun () -> getProperty x prop) with
                                           | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
                                           | Choice1Of2 alternativeObj ->
