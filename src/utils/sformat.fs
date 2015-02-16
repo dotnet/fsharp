@@ -872,7 +872,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                       | (-1, -1) when layouts.Length > 1 -> Some (spaceListL (List.rev layouts))
                                       | (-1, -1) -> None
                                       | (opened, closed) when opened + 1 >= closed -> Some (wordL ("<StructuredFormatDisplay exception: unbalanced brackets: found '{' without matching '}'>")) //unbalanced
-                                      | (opened, closed) -> //go for it
+                                      | (opened, closed) -> 
                                         let preText = if opened <= 0 then "" else txt.[0..opened-1]
                                         let postText = if closed+1 >= txt.Length then "" else txt.[closed+1..]
                                         let prop = txt.[opened+1..closed-1]
@@ -903,11 +903,16 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                       | _ -> postText.Substring(0, currentPostTextEndIndex)
                                                   let newLayouts = (leftL preText ^^ alternativeObjL ^^ rightL currentPostText)::layouts
                                                   match postText with
-                                                  | "" -> Some (spaceListL (List.rev newLayouts))//end, so we can return everything
-                                                  | _ -> buildDisplayMessage postText newLayouts
+                                                  | "" -> 
+                                                    // We are done, build a space-delimited layout from the collection of layouts we've accumulated
+                                                    Some (spaceListL (List.rev newLayouts))
+                                                  | _ -> 
+                                                    // More to process, let's recurse
+                                                    buildDisplayMessage postText newLayouts
                                               with _ -> 
                                                 None
-                                  buildDisplayMessage txt [emptyL]
+                                  // Seed with an empty layout with a space to the left for formatting purposes
+                                  buildDisplayMessage txt [leftL ""] 
 #if RUNTIME
 #else
 #if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
