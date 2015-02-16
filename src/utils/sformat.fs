@@ -865,13 +865,13 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                if txt = null || txt.Length <= 1 then  
                                    None
                                else
-                                  let rec buildDisplayMessage (txt:string) (layouts:Layout list) =
+                                  let rec buildObjMessageL (txt:string) (layouts:Layout list) =
                                     let p1 = txt.IndexOf ("{", StringComparison.Ordinal)
                                     let p2 = txt.IndexOf ("}", StringComparison.Ordinal)
                                     match (p1, p2) with
                                       | (-1, -1) when layouts.Length > 1 -> Some (spaceListL (List.rev layouts))
                                       | (-1, -1) -> None
-                                      | (opened, closed) when opened + 1 >= closed -> Some (wordL ("<StructuredFormatDisplay exception: unbalanced brackets: found '{' without matching '}'>")) //unbalanced
+                                      | (opened, closed) when opened + 1 >= closed -> Some (wordL ("<StructuredFormatDisplay exception: unbalanced brackets: found '{' without matching '}'>"))
                                       | (opened, closed) -> 
                                         let preText = if opened <= 0 then "" else txt.[0..opened-1]
                                         let postText = if closed+1 >= txt.Length then "" else txt.[closed+1..]
@@ -895,24 +895,38 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                         | :? string as s -> sepL s
                                                         | _ -> sameObjL (depthLim-1) Precedence.BracketIfTuple alternativeObj
                                                   countNodes 0 // 0 means we do not count the preText and postText 
-                                                  
+
+                                                  // the postText for this node will be everything up to the next occurrence of an opening brace, if one exists
                                                   let currentPostTextEndIndex = postText.IndexOf("{", StringComparison.Ordinal)
                                                   let currentPostText = 
                                                     match currentPostTextEndIndex with
                                                       | -1 -> postText
                                                       | _ -> postText.Substring(0, currentPostTextEndIndex)
-                                                  let newLayouts = (leftL preText ^^ alternativeObjL ^^ rightL currentPostText)::layouts
+
+                                                  // If preText starts with space, or postText ends with space, we can 
+                                                  // remove those as we will be combining the layouts using spaces.
+                                                  let removeExtraneousSpace (text:string) =
+                                                    let spaceIndex = text.IndexOf(" ", StringComparison.Ordinal)
+                                                    match spaceIndex with
+                                                      | -1 -> text
+                                                      | 0 -> text.Substring(1)
+                                                      | _ -> text
+
+                                                  let currentPreText = removeExtraneousSpace preText
+                                                  let currentPostSpaceText = removeExtraneousSpace currentPostText
+
+                                                  let newLayouts = (leftL currentPreText ^^ alternativeObjL ^^ rightL currentPostSpaceText)::layouts
                                                   match postText with
                                                   | "" -> 
                                                     // We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                                     Some (spaceListL (List.rev newLayouts))
                                                   | _ -> 
-                                                    // More to process, let's recurse
-                                                    buildDisplayMessage postText newLayouts
+                                                    // More to process, keep going
+                                                    buildObjMessageL postText newLayouts
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
-                                  buildDisplayMessage txt [leftL ""] 
+                                  buildObjMessageL txt [leftL ""] 
 #if RUNTIME
 #else
 #if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
