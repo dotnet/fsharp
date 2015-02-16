@@ -865,37 +865,47 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                if txt = null || txt.Length <= 1 then  
                                    None
                                else
-                                  let p1 = txt.IndexOf ("{", StringComparison.Ordinal)
-                                  let p2 = txt.LastIndexOf ("}", StringComparison.Ordinal)
-                                  if p1 < 0 || p2 < 0 || p1+1 >= p2 then 
-                                      None 
-                                  else
-                                      let preText = if p1 <= 0 then "" else txt.[0..p1-1]
-                                      let postText = if p2+1 >= txt.Length then "" else txt.[p2+1..]
-                                      let prop = txt.[p1+1..p2-1]
-                                      match catchExn (fun () -> getProperty x prop) with
-                                        | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
-                                        | Choice1Of2 alternativeObj ->
-                                            try 
-                                                let alternativeObjL = 
-                                                  match alternativeObj with 
-                                                      // A particular rule is that if the alternative property
-                                                      // returns a string, we turn off auto-quoting and esaping of
-                                                      // the string, i.e. just treat the string as display text.
-                                                      // This allows simple implementations of 
-                                                      // such as
-                                                      //
-                                                      //    [<StructuredFormatDisplay("{StructuredDisplayString}I")>]
-                                                      //    type BigInt(signInt:int, v : BigNat) =
-                                                      //        member x.StructuredDisplayString = x.ToString()
-                                                      //
-                                                      | :? string as s -> sepL s
-                                                      | _ -> sameObjL (depthLim-1) Precedence.BracketIfTuple alternativeObj
-                                                countNodes 0 // 0 means we do not count the preText and postText 
-                                                Some (leftL preText ^^ alternativeObjL ^^ rightL postText)
-                                            with _ -> 
-                                              None
-
+                                  let rec buildDisplayMessage (txt:string) (layouts:Layout list) =
+                                    let p1 = txt.IndexOf ("{", StringComparison.Ordinal)
+                                    let p2 = txt.IndexOf ("}", StringComparison.Ordinal)
+                                    if p1 < 0 || p2 < 0 || p1+1 >= p2 then 
+                                        None 
+                                    else
+                                        let preText = if p1 <= 0 then "" else txt.[0..p1-1]
+                                        let postText = if p2+1 >= txt.Length then "" else txt.[p2+1..]
+                                        let prop = txt.[p1+1..p2-1]
+                                        match catchExn (fun () -> getProperty x prop) with
+                                          | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
+                                          | Choice1Of2 alternativeObj ->
+                                              try 
+                                                  let alternativeObjL = 
+                                                    match alternativeObj with 
+                                                        // A particular rule is that if the alternative property
+                                                        // returns a string, we turn off auto-quoting and esaping of
+                                                        // the string, i.e. just treat the string as display text.
+                                                        // This allows simple implementations of 
+                                                        // such as
+                                                        //
+                                                        //    [<StructuredFormatDisplay("{StructuredDisplayString}I")>]
+                                                        //    type BigInt(signInt:int, v : BigNat) =
+                                                        //        member x.StructuredDisplayString = x.ToString()
+                                                        //
+                                                        | :? string as s -> sepL s
+                                                        | _ -> sameObjL (depthLim-1) Precedence.BracketIfTuple alternativeObj
+                                                  countNodes 0 // 0 means we do not count the preText and postText 
+                                                  
+                                                  let currentPostTextEndIndex = postText.IndexOf("{", StringComparison.Ordinal)
+                                                  let currentPostText = 
+                                                    match currentPostTextEndIndex with
+                                                      | -1 -> postText
+                                                      | _ -> postText.Substring(0, currentPostTextEndIndex)
+                                                  let newLayouts = (leftL preText ^^ alternativeObjL ^^ rightL currentPostText)::layouts
+                                                  match postText with
+                                                  | "" -> Some (spaceListL (List.rev newLayouts))//end, so we can return everything
+                                                  | _ -> buildDisplayMessage postText newLayouts
+                                              with _ -> 
+                                                None
+                                  buildDisplayMessage txt [emptyL]
 #if RUNTIME
 #else
 #if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
