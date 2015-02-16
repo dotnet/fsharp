@@ -903,26 +903,14 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                       | -1 -> postText
                                                       | _ -> postText.Substring(0, currentPostTextEndIndex)
 
-                                                  // If preText starts with space, or postText ends with space, we can 
-                                                  // remove those as we will be combining the layouts using spaces.
-                                                  let removeExtraneousSpace (text:string) =
-                                                    let spaceIndex = text.IndexOf(" ", StringComparison.Ordinal)
-                                                    match spaceIndex with
-                                                      | -1 -> text
-                                                      | 0 -> text.Substring(1)
-                                                      | _ -> text
-
-                                                  let currentPreText = removeExtraneousSpace preText
-                                                  let currentPostSpaceText = removeExtraneousSpace currentPostText
-
-                                                  let newLayouts = (leftL currentPreText ^^ alternativeObjL ^^ rightL currentPostSpaceText)::layouts
+                                                  let newLayouts = (sepL preText ^^ alternativeObjL ^^ sepL currentPostText)::layouts
                                                   match postText with
                                                   | "" -> 
                                                     // We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                                     Some (spaceListL (List.rev newLayouts))
                                                   | _ -> 
                                                     // More to process, keep going
-                                                    buildObjMessageL postText newLayouts
+                                                    buildObjMessageL (postText.Substring(currentPostTextEndIndex)) newLayouts
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
