@@ -598,13 +598,42 @@ type TypeCheckInfo
     let GetPreciseItemsFromNameResolutionVS(line,colAtEndOfNames,membersByResidue,filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck) = 
         GetPreciseItemsFromNameResolution(Pos.fromVS line colAtEndOfNames, membersByResidue, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck)
 
-    let GetSettableFields endOfExprPos hasTextChangedSinceLastTypecheck =
+    let CollectParameters (methods: MethInfo list) amap m: Item list = 
+        methods
+        |> List.collect (fun meth ->
+            match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
+            | x::_ -> x |> List.choose(fun (ParamData(_isParamArray, _isOut, _optArgInfo, name, _, ty)) -> 
+                match name with
+                | Some n -> Some (Item.ArgName(Ident(n, m), ty, Some (ArgumentContainer.Method meth)))
+                | None -> None
+                )
+            | _ -> []
+        )
+
+    let GetNamedParametersAndSettableFields endOfExprPos hasTextChangedSinceLastTypecheck =
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
-        match cnrs with
-        | CNR(_, Item.CtorGroup(_, ctor::_), _, denv, nenv, ad, m)::_ ->
-            let result = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.EnclosingType
+        let result =
+            match cnrs with
+            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m)::_ ->
+                let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.EnclosingType
+                let parameters = CollectParameters ctors amap m
+                Some (denv, m, props @ parameters)
+            | CNR(_, Item.MethodGroup(_, methods), _, denv, nenv, ad, m)::_ ->
+                let props = 
+                    methods
+                    |> List.collect (fun meth ->
+                        let retTy = meth.GetFSharpReturnTy(amap, m, meth.FormalMethodInst)
+                        ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy
+                    )
+                let parameters = CollectParameters methods amap m
+                Some (denv, m, props @ parameters)
+            | _ -> 
+                None
+        match result with
+        | None -> 
+            NameResResult.Empty
+        | Some (denv, m, result) -> 
             ReturnItemsOfType result g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck NameResResult.Members
-        | _ -> NameResResult.Empty
     
     /// finds captured typing for the given position
     let GetExprTypingForPosition(endOfExprPos) = 
@@ -644,7 +673,6 @@ type TypeCheckInfo
             let items = Nameres.ResolveRecordOrClassFieldsOfType ncenv m ad typ false
             Some (items, denv, m)
         | _ -> None
-
 
     /// Looks at the exact expression types at the position to the left of the 
     /// residue then the source when it was typechecked.
@@ -946,8 +974,8 @@ type TypeCheckInfo
         | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
             FindRecordFieldsInEnv([typeName], None)
             |> Some
-        | Some(NewObject (endPos, fields)) ->
-            let results = GetSettableFields endPos hasTextChangedSinceLastTypecheck
+        | Some(CompletionContext.ParameterList (endPos, fields)) ->
+            let results = GetNamedParametersAndSettableFields endPos hasTextChangedSinceLastTypecheck
 
             let declaredItems = getDeclaredItems false
 

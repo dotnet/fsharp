@@ -67,9 +67,9 @@ type internal CompletionContext =
     // completing records field
     | RecordField of RecordContext
     | RangeOperator
-    // completing property setters in constructor call
-    // end of constructor ast node * list of properties that were already set
-    | NewObject of pos * HashSet<string>
+    // completing named parameters\setters in parameter list of constructor\method calls
+    // end of name ast node * list of properties\parameters that were already set
+    | ParameterList of pos * HashSet<string>
 
 // implementation details used by other code in the compiler    
 module internal UntypedParseInfoImpl =
