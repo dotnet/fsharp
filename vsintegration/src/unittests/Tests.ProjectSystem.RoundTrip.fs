@@ -137,4 +137,15 @@ type RoundTrip() =
                                   FolderItem @"A\"           // <Folder> must be before anything below it
                                   CompileItem @"bar.fs"]
         this.``Fsproj.NegativeTest`` items
-        
+
+    [<Test>]
+    member public this.``FsprojRoundTrip.Basic.Valid.Case1``() =
+        let items = MSBuildItems [CompileItem @"First\Second\foo.fs"
+                                  CompileItem @"Second\foo.fs"
+                                  ]
+        this.``FsprojRoundtrip.PositiveTest``(items, items)
+
+    [<Test>]
+    member public this.``FsprojRoundTrip.Basic.Valid.Case2``() =
+        let items = MSBuildItems [CompileItem @"First\First\foo.fs"]
+        this.``FsprojRoundtrip.PositiveTest``(items, items)

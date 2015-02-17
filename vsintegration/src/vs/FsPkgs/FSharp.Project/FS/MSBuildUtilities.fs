@@ -12,6 +12,53 @@ open System.Diagnostics
 open System.IO
 open System
 
+module FSharpSRTyped =
+        
+    let projectRenderFolderMultiple (projectName: string) (invalidItem: string) =
+        String.Format(FSharpSR.GetString(FSharpSR.ProjectRenderFolderMultiple), projectName, invalidItem)
+
+module internal MSBuildHelpers =
+
+    let getPath msbuildProject { Link = link; Include = includePath } =
+        let projectDir = MSBuildEvaluationHelpers.projectDir msbuildProject
+        (link, includePath)
+        |> ProjectTree.displayPath projectDir
+
+    /// Does two things:
+    //  - Gets rid of unnecessary <Folder>s (e.g. non-empty ones - only empty <Folder>s need explicit representation in project file
+    //  - Throws if the project cannot be rendered in the solution explorer (e.g. A\foo.fs, B\bar.fs, A\qux.fs would make folder 'A' get rendered twice -> illegal) and throwIfCannotRender=true
+    let EnsureProperFolderLogic msbuildProject (big : ProjectItemGroupElement) throwIfCannotRender =
+
+        let projectTree, uselessFolders = 
+            big.Items
+            |> Seq.map MSBuildProjectItem.ofMSBuildItemElement
+            |> List.ofSeq
+            |> ProjectTree.createTree (getPath msbuildProject)
+
+        match projectTree |> ProjectTree.checkAlreadyRenderedFolder ProjectTree.alreadyRenderedFolderNodeKey with
+        | [] -> ()
+        | (_ :: path,node) :: _ when throwIfCannotRender ->
+            let pathString =
+                [node]
+                |> List.append path
+                |> List.map ProjectTree.label
+                |> String.concat @"\"
+            //TODO info on all invalid nodes
+            //TODO add xml location to info
+            let projectName = MSBuildEvaluationHelpers.projectName msbuildProject
+            let msg = FSharpSRTyped.projectRenderFolderMultiple projectName pathString
+            
+            raise (InvalidOperationException(msg))
+        | _alreadyRenderedItems -> 
+            //TODO why ignore?
+            ()
+
+        //remove non empty Folders
+        for { Item = bi } in uselessFolders do
+            big.RemoveChild(bi)
+
+        big
+
 // The Dev9 MSBuild OM is not very good for re-ordering items.  This class
 // abstracts over some MSBuild-maniupulation intentions.  The implementation
 // will differ from Dev9 to Dev10.  For Dev9, use reflection to access internal
@@ -19,13 +66,6 @@ open System
 // (The Dev9 support has since been cut, so this abstraction layer is now a legacy artifact.)
 type internal MSBuildUtilities() =
 
-
-    static let EnumerateItems(big : ProjectItemGroupElement) =
-        big.Items
-
-    static let GetItemType(item : ProjectItemElement) =
-        item.ItemType
-        
     // Gets the <... Include="path"> path for this item, except if the item is a link, then
     // gets the <Link>path</Link> value instead.
     // In other words, gets the location that will be displayed in the solution explorer.
@@ -35,6 +75,7 @@ type internal MSBuildUtilities() =
             item.EvaluatedInclude
         else
             strPath
+
     static let GetUnescapedUnevaluatedInclude(item : ProjectItemElement) =
         let mutable foundLink = None
         for m in item.Metadata do
@@ -54,89 +95,14 @@ type internal MSBuildUtilities() =
     static let ComputeFolder(path : string, projectUrl : Url) =
         Path.GetDirectoryName(PackageUtilities.MakeRelativeIfRooted(path, projectUrl)) + "\\"
 
-    static let FolderComparer = StringComparer.OrdinalIgnoreCase 
     static let FilenameComparer = StringComparer.OrdinalIgnoreCase 
 
     static let Same(x : ProjectItemElement, y : ProjectItemElement) =
         Object.ReferenceEquals(x,y)
 
-    // Does two things:
-    //  - Gets rid of unnecessary <Folder>s (e.g. non-empty ones - only empty <Folder>s need explicit representation in project file
-    //  - Throws if the project cannot be rendered in the solution explorer (e.g. A\foo.fs, B\bar.fs, A\qux.fs would make folder 'A' get rendered twice -> illegal) and throwIfCannotRender=true
-    static let EnsureProperFolderLogic (_msbuildProject : Project) (big : ProjectItemGroupElement) (projectNode : ProjectNode) throwIfCannotRender =
-        let pathsComparer = { new IEqualityComparer<List<string>> with
-                                    member this.Equals(x, y) =
-                                        if x.Count <> y.Count then
-                                            false
-                                        else
-                                            let mutable result = true
-                                            for i in 0 .. x.Count - 1 do
-                                                if FolderComparer.Compare(x.[i], y.[i]) <> 0 then
-                                                    result <- false
-                                            result
-                                    member this.GetHashCode(x) =
-                                        if x.Count = 0 then 
-                                            0
-                                        else
-                                            x.[x.Count - 1].GetHashCode() }
-        let explicitFolders = new Dictionary<List<string>, (ProjectItemElement * int)>( pathsComparer )   // int is number of items under folder
-        let Inc( pathParts : List<string> ) =
-            if explicitFolders.ContainsKey(pathParts) then
-                let bi, oldCount = explicitFolders.[pathParts]
-                explicitFolders.[pathParts] <- (bi, oldCount + 1)
-
-        let alreadyRenderedFolders = new HashSet<List<string>>( pathsComparer)
-
-        let IsPrefix(x : List<string>, y : List<string>) =
-            if x.Count > y.Count then
-                false
-            elif x.Count = 0 then
-                true
-            else
-                let mutable result = true
-                for i in 0 .. x.Count - 1 do
-                    if FolderComparer.Compare(x.[i], y.[i]) <> 0 then
-                        result <- false
-                result
-        
-        let SameList(x : List<string>, y : List<string>) =
-            if x.Count <> y.Count then
-                false
-            else
-                let mutable r = true
-                for i in 0 .. x.Count - 1 do
-                    if x.[i] <> y.[i] then
-                        r <- false
-                r
-        
-        let mutable curPathParts = new List<string>()
-        for bi in EnumerateItems(big) do
-            let path = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
-            let pathParts = new List<_>(path.Split( [| '\\' |], StringSplitOptions.RemoveEmptyEntries))
-            while not( IsPrefix(curPathParts, pathParts) ) do
-                // pop folder
-                curPathParts.RemoveAt(curPathParts.Count - 1)   // e.g. transition from A\B\C\foo.fs to A\
-            while not(SameList(curPathParts, pathParts)) do
-                // push folder
-                Inc(curPathParts)
-                curPathParts.Add(pathParts.[curPathParts.Count]) // e.g. transition from A\ to A\D\E\bar.fs
-                if not(alreadyRenderedFolders.Add(curPathParts)) && throwIfCannotRender then
-                    raise <| new InvalidOperationException(String.Format(FSharpSR.GetString(FSharpSR.ProjectRenderFolderMultiple), projectNode.ProjectFile, bi.Include))
-            Inc(curPathParts)
-            if bi.ItemType = ProjectFileConstants.Folder then
-                explicitFolders.Add(new List<_>(pathParts), (bi,0))
-
-        // remove non-empty folders
-        for kvp in explicitFolders do
-            let bi, count = kvp.Value
-            if count <> 0 then
-                big.RemoveChild(bi)
-                                        
-        big
-
     /// Partition items into an <ItemGroup> that matters for ordering and one that doesn't.  Return the former.
     /// Throw if cannot render.
-    static let Rearrange(msbuildProject : Project, projectNode : ProjectNode) =
+    static let Rearrange(msbuildProject : Project) =
         let newBig = msbuildProject.Xml.CreateItemGroupElement()    // all the items we care about
         let otherBig = msbuildProject.Xml.CreateItemGroupElement()  // items that don't matter for ordering
         let mutable otherBigHasItems = false
@@ -158,18 +124,18 @@ type internal MSBuildUtilities() =
             newBig.AppendChild(i)
         for i in List.rev otherBis do
             otherBig.AppendChild(i)
-        EnsureProperFolderLogic msbuildProject newBig projectNode true
+        MSBuildHelpers.EnsureProperFolderLogic msbuildProject newBig true
             
     /// If necessary, partition items into an <ItemGroup> that matters for ordering and one that doesn't.  Return the former.
     /// Throw if cannot render and throwIfCannotRender=true.
-    static let EnsureValid (msbuildProject : Project) (projectNode : ProjectNode) (throwIfCannotRender:bool) =
+    static let EnsureValid (msbuildProject : Project) (throwIfCannotRender:bool) =
         let mutable priorGroupWithAtLeastOneItemThatMattersForOrdering = None
         let mutable needToRearrange = false
         let mutable bigsToRemove = []
         for big in msbuildProject.Xml.ItemGroups do
                 let mutable thisGroupHasAtLeastOneItemThatMattersForOrdering = false
                 let mutable thisGroupHasAtLeastOneItemThatDoesNotMatterForOrdering = false
-                for bi in EnumerateItems(big) do
+                for bi in big.Items do
                     if MattersForOrdering(bi) then
                         thisGroupHasAtLeastOneItemThatMattersForOrdering <- true
                     else
@@ -186,20 +152,20 @@ type internal MSBuildUtilities() =
         for big in bigsToRemove do
             msbuildProject.Xml.RemoveChild(big)
         if needToRearrange then
-            Rearrange(msbuildProject, projectNode)
+            Rearrange(msbuildProject)
         else
             match priorGroupWithAtLeastOneItemThatMattersForOrdering with
-            | Some(g) -> EnsureProperFolderLogic msbuildProject g projectNode throwIfCannotRender
+            | Some(g) -> MSBuildHelpers.EnsureProperFolderLogic msbuildProject g throwIfCannotRender
             | None -> msbuildProject.Xml.AddItemGroup()
 
-    static let CheckItemType(item, buildItemName) =
+    static let CheckItemType(item: ProjectItemElement, buildItemName) =
         // It checks if this node item has the same BuildActionType as returned by DefaultBuildAction(), which only can see the file name.
         // Additionally, return true when a node item has "None" as "default" build action to avoid "compile" or "publish". 
-        let itemType = GetItemType(item)
+        let itemType = item.ItemType
         itemType = "None" || itemType = buildItemName
 
     static member ThrowIfNotValidAndRearrangeIfNecessary (projectNode : ProjectNode) =
-        EnsureValid projectNode.BuildProject projectNode true |> ignore
+        EnsureValid projectNode.BuildProject true |> ignore
         
     static member private MoveFileAboveHelper(item : ProjectItemElement, itemToMoveAbove : ProjectItemElement, big : ProjectItemGroupElement, _projectNode : ProjectNode) =  
         // TODO wildcards?
@@ -208,11 +174,10 @@ type internal MSBuildUtilities() =
 
     /// Move <... Include='relativeFileName'> to above nodeToMoveAbove (from solution-explorer point-of-view)
     static member MoveFileAbove(relativeFileName : string, nodeToMoveAbove : HierarchyNode, projectNode : ProjectNode) =  
-        let msbuildProject = projectNode.BuildProject
         let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
-        let big = EnsureValid msbuildProject projectNode true
+        let big = EnsureValid (projectNode.BuildProject) true
         let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
+        for bi in big.Items do
             if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
                 itemToMove <- Some(bi)
         Debug.Assert(itemToMove.IsSome, "did not find item")
@@ -226,11 +191,10 @@ type internal MSBuildUtilities() =
         big.InsertAfterChild(item, itemToMoveBelow)
 
     static member MoveFileBelowCore(relativeFileName : string, itemToMoveBelow : ProjectItemElement, projectNode : ProjectNode, throwIfCannotRender) =  
-        let msbuildProject = projectNode.BuildProject
         let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
-        let big = EnsureValid msbuildProject projectNode throwIfCannotRender
+        let big = EnsureValid (projectNode.BuildProject) throwIfCannotRender
         let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
+        for bi in big.Items do
             if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
                 itemToMove <- Some(bi)
         Debug.Assert(itemToMove.IsSome, "did not find item")
@@ -247,11 +211,10 @@ type internal MSBuildUtilities() =
     static member MoveFileToBottomOfGroup(relativeFileName : string, projectNode : ProjectNode) =  
         let dir = Path.GetDirectoryName(relativeFileName) + "\\"
         let mutable lastItemInDir = null
-        let msbuildProject = projectNode.BuildProject
         let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
-        let big = EnsureValid msbuildProject projectNode false
+        let big = EnsureValid (projectNode.BuildProject) false
         let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
+        for bi in big.Items do
             if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
                 itemToMove <- Some(bi)
             else
@@ -273,10 +236,9 @@ type internal MSBuildUtilities() =
         | :? FolderNode -> 
             // find the last item in this folder
             let folder = ComputeFolder(toMoveAfter.Url, projectNode.BaseURI)
-            let msbuildProject = projectNode.BuildProject
-            let big = EnsureValid msbuildProject projectNode true
+            let big = EnsureValid (projectNode.BuildProject) true
             let mutable result = null
-            for bi in EnumerateItems(big) do
+            for bi in big.Items do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if curFolder.StartsWith(folder, StringComparison.OrdinalIgnoreCase) then
                     result <- bi
@@ -294,10 +256,9 @@ type internal MSBuildUtilities() =
             | _ -> Debug.Assert(false, "something is wrong, virtual non-folder?")
             // find the first item in this folder
             let folder = ComputeFolder(toMoveBefore.Url, projectNode.BaseURI)
-            let msbuildProject = projectNode.BuildProject
-            let big = EnsureValid msbuildProject projectNode true
+            let big = EnsureValid (projectNode.BuildProject) true
             let mutable result = null
-            for bi in EnumerateItems(big) do
+            for bi in big.Items do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if result = null && curFolder.StartsWith(folder, StringComparison.OrdinalIgnoreCase) then
                     result <- bi
@@ -309,23 +270,22 @@ type internal MSBuildUtilities() =
         let itemToMove = toMove.ItemNode.Item
         let itemToMoveBefore = MSBuildUtilities.FindFirst(toMoveBefore, projectNode)
         // TODO EnsureValid call below is extra work
-        MSBuildUtilities.MoveFileAboveHelper(itemToMove.Xml, itemToMoveBefore, (EnsureValid projectNode.BuildProject projectNode true), projectNode)
+        MSBuildUtilities.MoveFileAboveHelper(itemToMove.Xml, itemToMoveBefore, (EnsureValid projectNode.BuildProject true), projectNode)
 
     static member MoveFileDown(toMove : HierarchyNode, toMoveAfter : HierarchyNode, projectNode : ProjectNode) =
         Debug.Assert(toMove.ItemNode.Item <> null, "something is wrong - virtual file?")
         let itemToMove = toMove.ItemNode.Item
         let itemToMoveAfter = MSBuildUtilities.FindLast(toMoveAfter, projectNode)
         // TODO EnsureValid call below is extra work
-        MSBuildUtilities.MoveFileBelowHelper(itemToMove.Xml, itemToMoveAfter, (EnsureValid projectNode.BuildProject projectNode true), projectNode)
+        MSBuildUtilities.MoveFileBelowHelper(itemToMove.Xml, itemToMoveAfter, (EnsureValid projectNode.BuildProject true), projectNode)
 
     /// Move <Folder> and all its subitems up one "solution hierarchy" slot in the list of items.
     static member private MoveFolderUpHelper(folderToBeMoved : string, itemToMoveBefore : ProjectItemElement, projectNode : ProjectNode) =
-        let msbuildProject = projectNode.BuildProject
-        let big = EnsureValid msbuildProject projectNode true
+        let big = EnsureValid (projectNode.BuildProject) true
         let index = ref 0
         let itemToMoveBeforeIndex = ref -1
         let itemsToMove = 
-            [for bi in EnumerateItems(big) do
+            [for bi in big.Items do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if curFolder.StartsWith(folderToBeMoved, StringComparison.OrdinalIgnoreCase) then
                     yield (bi, !index)
@@ -333,7 +293,7 @@ type internal MSBuildUtilities() =
                     itemToMoveBeforeIndex := !index
                 index := !index + 1]
         if !itemToMoveBeforeIndex = -1 then
-            Debug.Assert(false, sprintf "did not find item to move before <%s Include=\"%s\">" (GetItemType itemToMoveBefore) (GetUnescapedUnevaluatedInclude itemToMoveBefore))
+            Debug.Assert(false, sprintf "did not find item to move before <%s Include=\"%s\">" (itemToMoveBefore.ItemType) (GetUnescapedUnevaluatedInclude itemToMoveBefore))
         if itemsToMove.IsEmpty then
             Debug.Assert(false, sprintf "did not find any item to move (anything in folder %s)" folderToBeMoved)
         for (item,i) in itemsToMove do
@@ -349,12 +309,11 @@ type internal MSBuildUtilities() =
 
     /// Move <Folder> and all its subitems down one "solution hierarchy" slot in the list of items.
     static member private MoveFolderDownHelper(folderToBeMoved : string, itemToMoveAfter : ProjectItemElement, projectNode : ProjectNode) =
-        let msbuildProject = projectNode.BuildProject
-        let big = EnsureValid msbuildProject projectNode true
+        let big = EnsureValid (projectNode.BuildProject) true
         let index = ref 0
         let itemToMoveAfterIndex = ref -1
         let itemsToMove = 
-            [for bi in EnumerateItems(big) do
+            [for bi in big.Items do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if curFolder.StartsWith(folderToBeMoved, StringComparison.OrdinalIgnoreCase) then
                     yield (bi, !index)
@@ -362,7 +321,7 @@ type internal MSBuildUtilities() =
                     itemToMoveAfterIndex := !index
                 index := !index + 1]
         if !itemToMoveAfterIndex = -1 then
-            Debug.Assert(false, sprintf "did not find item to move after <%s Include=\"%s\">" (GetItemType itemToMoveAfter) (GetUnescapedUnevaluatedInclude itemToMoveAfter))
+            Debug.Assert(false, sprintf "did not find item to move after <%s Include=\"%s\">" (itemToMoveAfter.ItemType) (GetUnescapedUnevaluatedInclude itemToMoveAfter))
         if itemsToMove.IsEmpty then
             Debug.Assert(false, sprintf "did not find any item to move (anything in folder %s)" folderToBeMoved)
         for (item,i) in List.rev itemsToMove do
