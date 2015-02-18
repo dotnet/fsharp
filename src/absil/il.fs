@@ -678,8 +678,8 @@ type ILTypeRef =
         
     member tref.FullName = String.concat "." (tref.Enclosing @ [tref.Name])
         
-    member tref.BasicQualifiedName = 
-        String.concat "+" (tref.Enclosing @ [ tref.Name ])
+    member tref.BasicQualifiedName =
+        (String.concat "+" (tref.Enclosing @ [ tref.Name ] )).Replace(",", @"\,")
 
     member tref.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic) = 
         let sco = tref.Scope.QualifiedNameWithNoShortPrimaryAssembly
