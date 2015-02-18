@@ -95,12 +95,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return this.projectSystemPackage;
         }
 
-        private bool DebuggerIsRunning()
-        {
-            var debugger = this.service.GetIVsDebugger();
-            return debugger != null && this.mgr.LanguageService.IsDebugging;
-        }
-
         private bool EditorSelectionIsEmpty()
         {
             string selection;
@@ -222,16 +216,16 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             get { return this.textView; }
         }
 
-		/// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ViewFilter.IsExpansionUIActive"]/*' />
-		public virtual bool IsExpansionUIActive {
-			get {
-				IVsTextViewEx tve = this.textView as IVsTextViewEx;
-				if (tve != null && tve.IsExpansionUIActive() == VSConstants.S_OK) {
-					return true;
-				}
-				return false;
-			}
-		}
+        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ViewFilter.IsExpansionUIActive"]/*' />
+        public virtual bool IsExpansionUIActive {
+            get {
+                IVsTextViewEx tve = this.textView as IVsTextViewEx;
+                if (tve != null && tve.IsExpansionUIActive() == VSConstants.S_OK) {
+                    return true;
+                }
+                return false;
+            }
+        }
 
         #region IVsTextViewFilter methods
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetWordExtent"]/*' />
@@ -362,76 +356,86 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// OLECMDF_ENABLED | OLECMDF_SUPPORTED.  
         /// Return E_FAIL if want to delegate to the next command target.
         /// </returns>
-        protected virtual int QueryCommandStatus(ref Guid guidCmdGroup, uint nCmdId) {
+        protected virtual int QueryCommandStatus(ref Guid guidCmdGroup, uint nCmdId)
+        {
             ExpansionProvider ep = GetExpansionProvider();
-            if (ep != null && ep.InTemplateEditingMode) {
+            if (ep != null && ep.InTemplateEditingMode)
+            {
                 int hr = 0;
                 if (ep.HandleQueryStatus(ref guidCmdGroup, nCmdId, out hr))
                     return hr;
             }
-            if (guidCmdGroup == typeof(VsCommands).GUID) {
+            if (guidCmdGroup == typeof(VsCommands).GUID)
+            {
                 VsCommands cmd = (VsCommands)nCmdId;
 
-                switch (cmd) {
-                    case VsCommands.GotoDefn:
-                    case VsCommands.GotoDecl:
-                    case VsCommands.GotoRef:
-                    case VsCommands.Goto:
-                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+                switch (cmd)
+                {
+                case VsCommands.GotoDefn:
+                case VsCommands.GotoDecl:
+                case VsCommands.GotoRef:
+                case VsCommands.Goto:
+                    return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
                 }
-            } else if (guidCmdGroup == typeof(VsCommands2K).GUID) {
+            }
+            else if (guidCmdGroup == typeof(VsCommands2K).GUID)
+            {
                 VsCommands2K cmd = (VsCommands2K)nCmdId;
 
-                switch (cmd) {
-                    case VsCommands2K.FORMATDOCUMENT:
-                        if (this.CanReformat())
-                            return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                        break;
-                    case VsCommands2K.FORMATSELECTION:
-                        if (this.CanReformat())
-                            return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                        break;
-
-                    case VsCommands2K.COMMENT_BLOCK:
-                    case VsCommands2K.UNCOMMENT_BLOCK:
-                        if (this.commentSupported)
-                            return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                        break;
-
-                    case VsCommands2K.SHOWMEMBERLIST:
-                    case VsCommands2K.COMPLETEWORD:
-                    case VsCommands2K.PARAMINFO:
+                switch (cmd)
+                {
+                case VsCommands2K.FORMATDOCUMENT:
+                    if (this.CanReformat())
                         return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-
-                    case VsCommands2K.QUICKINFO:
-                        if (this.service.Preferences.EnableQuickInfo) {
-                            return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                        }
-                        break;
-
-                    //                    case VsCommands2K.HANDLEIMEMESSAGE:
-                    //                        return 0;
-
-                    // Let the core editor handle this.  Stop outlining also removes user
-                    // defined hidden sections so it is handy to keep this enabled.
-                    //                    case VsCommands2K.OUTLN_STOP_HIDING_ALL: 
-                    //                        int rc = (int)OLECMDF.OLECMDF_SUPPORTED;
-                    //                        if (this.source.OutliningEnabled) {
-                    //                            rc |= (int)OLECMDF.OLECMDF_ENABLED;
-                    //                        }
-                    //                        return rc;
-
-                    case VsCommands2K.OUTLN_START_AUTOHIDING:
-                        if (this.source.OutliningEnabled) {
-                            return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
-                        }
+                    break;
+                case VsCommands2K.FORMATSELECTION:
+                    if (this.CanReformat())
                         return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                        
-                    case VsCommands2K.OUTLN_STOP_HIDING_ALL: //"stop outlining" on context menu
-                        if (this.source.OutliningEnabled) {
-                            return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                        }
+                    break;
+
+                case VsCommands2K.COMMENT_BLOCK:
+                case VsCommands2K.UNCOMMENT_BLOCK:
+                    if (this.commentSupported)
+                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+                    break;
+
+                case VsCommands2K.SHOWMEMBERLIST:
+                case VsCommands2K.COMPLETEWORD:
+                case VsCommands2K.PARAMINFO:
+                    return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+
+                case VsCommands2K.QUICKINFO:
+                    if (this.service.Preferences.EnableQuickInfo)
+                    {
+                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+                    }
+                    break;
+
+                //                    case VsCommands2K.HANDLEIMEMESSAGE:
+                //                        return 0;
+
+                // Let the core editor handle this.  Stop outlining also removes user
+                // defined hidden sections so it is handy to keep this enabled.
+                //                    case VsCommands2K.OUTLN_STOP_HIDING_ALL: 
+                //                        int rc = (int)OLECMDF.OLECMDF_SUPPORTED;
+                //                        if (this.source.OutliningEnabled) {
+                //                            rc |= (int)OLECMDF.OLECMDF_ENABLED;
+                //                        }
+                //                        return rc;
+
+                case VsCommands2K.OUTLN_START_AUTOHIDING:
+                    if (this.source.OutliningEnabled)
+                    {
                         return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
+                    }
+                    return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+
+                case VsCommands2K.OUTLN_STOP_HIDING_ALL: //"stop outlining" on context menu
+                    if (this.source.OutliningEnabled)
+                    {
+                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+                    }
+                    return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
                 }
             }
             else if (guidCmdGroup == Microsoft.VisualStudio.VSConstants.VsStd11)
@@ -445,19 +449,21 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == cmdIDDebugSelection)
                 {
-                    if (DebuggerIsRunning())
+                    var dbgState = Interactive.Hooks.GetDebuggerState(GetProjectSystemPackage());
+
+                    if (dbgState == Interactive.FsiDebuggerState.AttachedNotToFSI)
                         return (int)OLECMDF.OLECMDF_INVISIBLE;
+                    else if (EditorSelectionIsEmpty())
+                        return (int)OLECMDF.OLECMDF_SUPPORTED;
                     else
-                    {
-                        if (EditorSelectionIsEmpty())
-                            return (int)OLECMDF.OLECMDF_SUPPORTED;
-                        else
-                            return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                    }
+                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
                 }
+
                 else if (nCmdId == cmdIDDebugLine)
                 {
-                    if (DebuggerIsRunning())
+                    var dbgState = Interactive.Hooks.GetDebuggerState(GetProjectSystemPackage());
+
+                    if (dbgState == Interactive.FsiDebuggerState.AttachedNotToFSI)
                         return (int)OLECMDF.OLECMDF_INVISIBLE;
                     else
                         return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
@@ -584,7 +590,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
                 {
-                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), null, null);
+                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), false, null, null);
                     return true;
                 }
             }
@@ -592,12 +598,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == cmdIDDebugSelection)
                 {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), false, true, null, null);
-                    return true;
-                }
-                else if (nCmdId == cmdIDDebugLine)
-                {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), true, true, null, null);
+                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), true, null, null);
                     return true;
                 }
             }
