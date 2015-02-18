@@ -1186,7 +1186,7 @@ and ILFilterBlock =
 type ILLocal = 
     { Type: ILType;
       IsPinned: bool;
-      DebugInfo : (string * int * int) option }
+      DebugInfo: (string * int * int) option }
       
 type ILLocals = ILList<ILLocal>
 let emptyILLocals = (ILList.empty : ILLocals)
