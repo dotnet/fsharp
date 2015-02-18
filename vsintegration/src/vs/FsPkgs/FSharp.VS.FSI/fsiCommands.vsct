@@ -99,7 +99,7 @@
       <Button guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0100" type="Button">
         <Strings>
           <CommandName>FSharp.Interactive.AttachDebugger</CommandName>
-          <ButtonText>Attach Debugger</ButtonText>
+          <ButtonText>Start Debugging</ButtonText>
         </Strings>
         <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
@@ -107,7 +107,7 @@
       <Button guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0101" type="Button">
         <Strings>
           <CommandName>FSharp.Interactive.DetachDebugger</CommandName>
-          <ButtonText>Detach Debugger</ButtonText>
+          <ButtonText>Stop Debugging</ButtonText>
         </Strings>
         <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
@@ -222,7 +222,7 @@
          Here we bind it in the Editor context of the standard TextEditor.
          Ideally, we would bind it for F# only editor.
     -->
-    <KeyBinding guid ="guidInteractive" id ="cmdidDebugSelection" editor="GUID_TextEditorFactory" key1="D" mod1="Control" key2="VK_RETURN" mod2="Alt"  />
+    <KeyBinding guid ="guidInteractive" id ="cmdidDebugSelection" editor="GUID_TextEditorFactory" key1="D" mod1="Alt" key2="VK_RETURN" mod2="Alt"  />
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
 
     <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
