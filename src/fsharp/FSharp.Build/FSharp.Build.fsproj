@@ -14,15 +14,15 @@
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
-      <FsSrGen Include="FSBuild.txt">
-        <Link>FSBuild.txt</Link>
-      </FsSrGen>
+    <FsSrGen Include="FSBuild.txt">
+      <Link>FSBuild.txt</Link>
+    </FsSrGen>
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs">
-      <Link>assemblyinfo.FSharp.Build.dll.fs</Link>
+      <Link>Utilities/assemblyinfo.FSharp.Build.dll.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
-      <Link>CompilerLocationUtils.fs</Link>
+      <Link>Utilities/CompilerLocationUtils.fs</Link>
     </Compile>
     <Compile Include="Fsc.fsi" />
     <Compile Include="Fsc.fs" />
@@ -50,8 +50,8 @@
     <Reference Include="Microsoft.Build.Utilities.v12.0" />
     <Reference Include="Microsoft.Build.Tasks.v12.0" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-        <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-        <Name>FSharp.Core</Name>
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

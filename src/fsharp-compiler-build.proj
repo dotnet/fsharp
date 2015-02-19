@@ -12,8 +12,8 @@
     <ProjectFiles Include="fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj"/>
     <ProjectFiles Include="fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj"/>
     <ProjectFiles Include="fsharp\Fsc\Fsc.fsproj"/>
-    <ProjectFiles Include="fsharp\Fsi\Fsi.fsproj"/>
-    <ProjectFiles Include="fsharp\FsiAnyCpu\FsiAnyCpu.fsproj"/>
+    <ProjectFiles Include="fsharp\fsi\Fsi.fsproj"/>
+    <ProjectFiles Include="fsharp\fsiAnyCpu\FsiAnyCpu.fsproj"/>
   </ItemGroup>
 
 

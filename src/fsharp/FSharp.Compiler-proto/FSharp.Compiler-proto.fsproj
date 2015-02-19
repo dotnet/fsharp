@@ -124,7 +124,7 @@
       <Link>ildiag.fs</Link>
     </Compile>
     <Compile Include="..\ReferenceResolution.fs">
-          <Link>ReferenceResolution.fs</Link>
+      <Link>ReferenceResolution.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\il.fsi">
       <Link>il.fsi</Link>
@@ -180,28 +180,26 @@
       <Link>range.fs</Link>
     </Compile>
     <Compile Include="..\ErrorLogger.fs">
-		  <Link>ErrorLogger.fs</Link>
-	</Compile>
-
-	  <Compile Include="..\InternalCollections.fsi">
+      <Link>ErrorLogger.fs</Link>
+    </Compile>
+    <Compile Include="..\InternalCollections.fsi">
       <Link>InternalCollections.fsi</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fs">
       <Link>InternalCollections.fs</Link>
     </Compile>
-
     <Compile Include="..\..\absil\ilread.fsi">
       <Link>ilread.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilread.fs">
       <Link>ilread.fs</Link>
     </Compile>
-	  <Compile Include="..\..\absil\ilwrite.fsi">
-		  <Link>ilwrite.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\..\absil\ilwrite.fs">
-		  <Link>ilwrite.fs</Link>
-	  </Compile>
+    <Compile Include="..\..\absil\ilwrite.fsi">
+      <Link>ilwrite.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilwrite.fs">
+      <Link>ilwrite.fs</Link>
+    </Compile>
     <Compile Include="..\..\absil\ilreflect.fs">
       <Link>ilreflect.fs</Link>
     </Compile>
@@ -214,13 +212,13 @@
     <Compile Include="..\..\ilx\ilxsettings.fs">
       <Link>ilxsettings.fs</Link>
     </Compile>
-	  <Compile Include="..\..\ilx\pubclo.fsi">
-		  <Link>pubclo.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\..\ilx\pubclo.fs">
+    <Compile Include="..\..\ilx\pubclo.fsi">
+      <Link>pubclo.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\ilx\pubclo.fs">
       <Link>pubclo.fs</Link>
     </Compile>
-	<Compile Include="..\..\ilx\cu_erase.fs">
+    <Compile Include="..\..\ilx\cu_erase.fs">
       <Link>cu_erase.fs</Link>
     </Compile>
     <Compile Include="..\InternalFileSystemUtils.fsi">
@@ -241,23 +239,23 @@
     <Compile Include="..\layout.fs">
       <Link>layout.fs</Link>
     </Compile>
-	  <Compile Include="..\ast.fs">
-		  <Link>ast.fs</Link>
-	  </Compile>
-	  <Compile Include="pars.fs" />
-	  <Compile Include="..\lexhelp.fsi">
-		  <Link>lexhelp.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\lexhelp.fs">
-		  <Link>lexhelp.fs</Link>
-	  </Compile>
-	  <Compile Include="lex.fs" />
-	  <Compile Include="..\sreflect.fsi">
-		  <Link>sreflect.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\sreflect.fs">
-		  <Link>sreflect.fs</Link>
-	  </Compile>
+    <Compile Include="..\ast.fs">
+      <Link>ast.fs</Link>
+    </Compile>
+    <Compile Include="pars.fs" />
+    <Compile Include="..\lexhelp.fsi">
+      <Link>lexhelp.fsi</Link>
+    </Compile>
+    <Compile Include="..\lexhelp.fs">
+      <Link>lexhelp.fs</Link>
+    </Compile>
+    <Compile Include="lex.fs" />
+    <Compile Include="..\sreflect.fsi">
+      <Link>sreflect.fsi</Link>
+    </Compile>
+    <Compile Include="..\sreflect.fs">
+      <Link>sreflect.fs</Link>
+    </Compile>
     <Compile Include="..\QueueList.fs">
       <Link>QueueList.fs</Link>
     </Compile>
@@ -265,14 +263,14 @@
       <Link>tast.fs</Link>
     </Compile>
     <Compile Include="..\env.fs">
-		  <Link>env.fs</Link>
-	  </Compile>
-	  <Compile Include="..\tastops.fsi">
-		  <Link>tastops.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\tastops.fs">
-		  <Link>tastops.fs</Link>
-	  </Compile>
+      <Link>env.fs</Link>
+    </Compile>
+    <Compile Include="..\tastops.fsi">
+      <Link>tastops.fsi</Link>
+    </Compile>
+    <Compile Include="..\tastops.fs">
+      <Link>tastops.fs</Link>
+    </Compile>
     <Compile Include="..\pickle.fsi">
       <Link>pickle.fsi</Link>
     </Compile>
@@ -282,16 +280,15 @@
     <Compile Include="..\lexfilter.fs">
       <Link>lexfilter.fs</Link>
     </Compile>
-	  <Compile Include="..\import.fsi">
-		  <Link>import.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\import.fs">
+    <Compile Include="..\import.fsi">
+      <Link>import.fsi</Link>
+    </Compile>
+    <Compile Include="..\import.fs">
       <Link>import.fs</Link>
     </Compile>
     <Compile Include="..\infos.fs">
       <Link>infos.fs</Link>
     </Compile>
-
     <Compile Include="..\NicePrint.fs">
       <Link>NicePrint.fs</Link>
     </Compile>
@@ -316,10 +313,10 @@
     <Compile Include="..\outcome.fs">
       <Link>outcome.fs</Link>
     </Compile>
-	  <Compile Include="..\csolve.fsi">
-		  <Link>csolve.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\csolve.fs">
+    <Compile Include="..\csolve.fsi">
+      <Link>csolve.fsi</Link>
+    </Compile>
+    <Compile Include="..\csolve.fs">
       <Link>csolve.fs</Link>
     </Compile>
     <Compile Include="..\formats.fsi">
@@ -328,10 +325,10 @@
     <Compile Include="..\formats.fs">
       <Link>formats.fs</Link>
     </Compile>
-	  <Compile Include="..\nameres.fsi">
-		  <Link>nameres.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\nameres.fs">
+    <Compile Include="..\nameres.fsi">
+      <Link>nameres.fsi</Link>
+    </Compile>
+    <Compile Include="..\nameres.fs">
       <Link>nameres.fs</Link>
     </Compile>
     <Compile Include="..\unsolved.fs">
@@ -361,10 +358,10 @@
     <Compile Include="..\opt.fs">
       <Link>opt.fs</Link>
     </Compile>
-	  <Compile Include="..\detuple.fsi">
-		  <Link>detuple.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\detuple.fs">
+    <Compile Include="..\detuple.fsi">
+      <Link>detuple.fsi</Link>
+    </Compile>
+    <Compile Include="..\detuple.fs">
       <Link>detuple.fs</Link>
     </Compile>
     <Compile Include="..\tlr.fsi">
@@ -418,9 +415,9 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Utilities.v12.0" />
     <Reference Include="Microsoft.Build.Tasks.v12.0" />

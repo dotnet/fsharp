@@ -14,9 +14,9 @@
     <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v2.0</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
-      <FsSrGen Include="..\fsiserver\FSServerShared.txt">
-        <Link>FSServerShared.txt</Link>
-      </FsSrGen>
+    <FsSrGen Include="..\fsiserver\FSServerShared.txt">
+      <Link>FSServerShared.txt</Link>
+    </FsSrGen>
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Server.Shared.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Server.Shared.dll.fs</Link>
@@ -30,9 +30,9 @@
     <Reference Include="System" />
     <Reference Include="System.Runtime.Remoting" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-		  <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-		  <Name>FSharp.Core</Name>
-	  </ProjectReference>
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
