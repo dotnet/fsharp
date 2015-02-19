@@ -615,7 +615,7 @@ tcExpressionWithIfRequiresParenthesis,"This list or array expression includes an
 757,tcInheritCannotBeUsedOnInterfaceType,"'inherit' cannot be used on interface types. Consider implementing the interface by using 'interface ... with ... end' instead."
 758,tcNewCannotBeUsedOnInterfaceType,"'new' cannot be used on interface types. Consider using an object expression '{{ new ... with ... }}' instead."
 759,tcAbstractTypeCannotBeInstantiated,"Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{{ new ... with ... }}' instead."
-760,tcIDisposableTypeShouldUseNew,"It is recommended that objects that support the IDisposable interface are created using 'new Type(args)' rather than 'Type(args)' to indicate that resources may be owned by the generated value"
+760,tcIDisposableTypeShouldUseNew,"It is recommended that objects supporting the IDisposable interface are created using the syntax 'new Type(args)', rather than 'Type(args)' or 'Type' as a function value representing the constructor, to indicate that resources may be owned by the generated value"
 761,tcSyntaxCanOnlyBeUsedToCreateObjectTypes,"'%s' may only be used to construct object types"
 762,tcConstructorRequiresCall,"Constructors for the type '%s' must directly or indirectly call its implicit object constructor. Use a call to the implicit object constructor instead of a record expression."
 763,tcUndefinedField,"The field '%s' has been given a value, but is not present in the type '%s'"
