@@ -620,8 +620,8 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>This attribute is used to mark how a type is displayed by default when using 
     /// '%A' printf formatting patterns and other two-dimensional text-based display layouts. 
-    /// In this version of F# the only valid values are of the form <c>PreText {PropertyName} PostText</c>.
-    /// The property name indicates a property to evaluate and to display instead of the object itself. </summary>
+    /// In this version of F# valid values are of the form <c>PreText {PropertyName1} PostText {PropertyName2} ... {PropertyNameX} PostText</c>.
+    /// The property names indicate properties to evaluate and to display instead of the object itself. </summary>
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Interface ||| AttributeTargets.Struct ||| AttributeTargets.Delegate ||| AttributeTargets.Enum,AllowMultiple=false)>]  
     [<Sealed>]
     type StructuredFormatDisplayAttribute =

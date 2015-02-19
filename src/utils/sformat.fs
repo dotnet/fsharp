@@ -901,7 +901,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                   let currentPostText = 
                                                     match currentPostTextEndIndex with
                                                       | -1 -> postText
-                                                      | _ -> postText.Substring(0, currentPostTextEndIndex)
+                                                      | _ -> postText.[0..currentPostTextEndIndex-1]
 
                                                   let newLayouts = (sepL preText ^^ alternativeObjL ^^ sepL currentPostText)::layouts
                                                   match postText with
@@ -909,8 +909,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                     // We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                                     Some (spaceListL (List.rev newLayouts))
                                                   | _ -> 
-                                                    // More to process, keep going
-                                                    buildObjMessageL (postText.Substring(currentPostTextEndIndex)) newLayouts
+                                                    // More to process, keep going, using the postText starting at the next instance of a '{'
+                                                    buildObjMessageL postText.[currentPostTextEndIndex+1..] newLayouts
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
