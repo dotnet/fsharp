@@ -113,7 +113,7 @@ module internal Hooks =
                     
             command.Supported  <- true
             command.Visible    <- looksLikeFSharp
-            command.Enabled    <- if selectLine then true else haveSelection
+            command.Enabled    <- true
 
     let mutable private hasBeenInitialized = false
 

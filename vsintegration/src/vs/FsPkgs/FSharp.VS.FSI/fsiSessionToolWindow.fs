@@ -454,17 +454,17 @@ type internal FsiToolWindow() as this =
             // Change post CTP.            
             let dte = provider.GetService(typeof<DTE>) :?> DTE        
             let activeD = dte.ActiveDocument            
-            match dte.ActiveDocument.Selection with
-            | :? TextSelection as selection ->
-                let origLine = selection.CurrentLine 
-                if selectLine then 
-                    selection.SelectLine()
+            match activeD.Selection with
+            | :? TextSelection as selection when selectLine || selection.Text = "" ->
+                selection.SelectLine()
                 showNoActivate()
                 executeInteraction (System.IO.Path.GetDirectoryName(activeD.FullName)) activeD.FullName selection.TopLine selection.Text 
-                if selectLine then 
-                    // This has the effect of moving the line and de-selecting it.
-                    selection.LineDown(false, 0)
-                    selection.StartOfLine(vsStartOfLineOptions.vsStartOfLineOptionsFirstColumn, false)
+                // This has the effect of moving the line and de-selecting it.
+                selection.LineDown(false, 0)
+                selection.StartOfLine(vsStartOfLineOptions.vsStartOfLineOptionsFirstColumn, false)
+            | :? TextSelection as selection ->
+                showNoActivate()
+                executeInteraction (System.IO.Path.GetDirectoryName(activeD.FullName)) activeD.FullName selection.TopLine selection.Text 
             | _ ->
                 ()
         with
