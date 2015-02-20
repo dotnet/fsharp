@@ -216,6 +216,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: array:'T[] -> 'T
 
+        /// <summary>Produces the set difference of two arrays by using generic hash and equality comparisons to compare values.</summary>
+        ///
+        /// <param name="array1">An array whose elements that are not also in second will be returned.</param>
+        /// <param name="array2">A second array whose elements that also occur in the first array will cause those elements to be
+        /// removed from the result.</param>
+        ///
+        /// <returns>An array that contains the set difference of the elements of two arrays.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the two input arrays is null.</exception>
+        [<CompiledName("Except")>]
+        val except: array1:'T[] -> array2:'T[] -> 'T[] when 'T : equality
+
         /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
         ///
         /// <remarks>The predicate is applied to the elements of the input array. If any application 

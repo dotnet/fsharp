@@ -275,6 +275,32 @@ type ListModule() =
         Assert.AreEqual([3,3; 2,2; 1,3],List.countBy (fun x -> if x < 3 then x else 3) [5;2;1;2;3;3;1;1])
 
     [<Test>]
+    member this.Except() =
+        // integer list
+        let intList1 = [ yield! {1..100}
+                         yield! {1..100} ]
+        let intList2 = [1..10]
+        let expectedIntList = [11..100]
+
+        Assert.AreEqual(expectedIntList, List.except intList1 intList2)
+
+        // string list
+        let strList1 = ["a"; "b"; "c"; "d"; "a"]
+        let strList2 = ["b"; "c"]
+        let expectedStrList = ["a"; "d"]
+
+        Assert.AreEqual(expectedStrList, List.except strList1 strList2)
+
+        // empty list
+        let emptyIntList = []
+        Assert.AreEqual([1..100], List.except intList1 emptyIntList)
+        Assert.AreEqual(emptyIntList, List.except emptyIntList intList1)
+        Assert.AreEqual(emptyIntList, List.except emptyIntList emptyIntList)
+        Assert.AreEqual(emptyIntList, List.except intList1 intList1)
+
+        ()
+
+    [<Test>]
     member this.Exists() =
         // integer List
         let intArr = [ 2;4;6;8 ]

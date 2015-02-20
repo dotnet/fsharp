@@ -419,6 +419,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Filter")>]
         let filter f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
+        [<CompiledName("Except")>]
+        let except list1 (list2: _ list) =
+            match list1, list2 with
+            | [], _ -> list1
+            | _ ->
+                let cached = HashSet(list2, HashIdentity.Structural)
+                list1 |> filter (fun item -> cached.Add item)
+
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 

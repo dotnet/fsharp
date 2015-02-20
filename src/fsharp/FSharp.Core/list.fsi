@@ -125,6 +125,16 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         val empty<'T> : 'T list
 
+        /// <summary>Produces the set difference of two lists by using generic hash and equality comparisons to compare values.</summary>
+        ///
+        /// <param name="list1">A list whose elements that are not also in second will be returned.</param>
+        /// <param name="list2">A second list whose elements that also occur in the first list will cause those elements to be
+        /// removed from the result.</param>
+        ///
+        /// <returns>A list that contains the set difference of the elements of two lists.</returns>
+        [<CompiledName("Except")>]
+        val except: list1:'T list -> list2:'T list -> 'T list when 'T : equality
+
         /// <summary>Returns the only element of the list.</summary>
         ///
         /// <param name="list">The input list.</param>

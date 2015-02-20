@@ -477,7 +477,39 @@ type SeqModule() =
        
         CheckThrowsArgumentNullException(fun () -> Seq.distinctBy funcInt nullSeq  |> ignore) 
         () 
-    
+
+    [<Test>]
+    member this.Except() =
+        // integer Seq
+        let intSeq1 = seq { yield! {1..100}
+                            yield! {1..100} }
+        let intSeq2 = {1..10}
+        let expectedIntSeq = {11..100}
+
+        VerifySeqsEqual expectedIntSeq <| Seq.except intSeq1 intSeq2
+
+        // string Seq
+        let strSeq1 = seq ["a"; "b"; "c"; "d"; "a"]
+        let strSeq2 = seq ["b"; "c"]
+        let expectedStrSeq = seq ["a"; "d"]
+
+        VerifySeqsEqual expectedStrSeq <| Seq.except strSeq1 strSeq2
+
+        // empty Seq
+        let emptyIntSeq = Seq.empty<int>
+        VerifySeqsEqual {1..100} <| Seq.except intSeq1 emptyIntSeq
+        VerifySeqsEqual emptyIntSeq <| Seq.except emptyIntSeq intSeq1
+        VerifySeqsEqual emptyIntSeq <| Seq.except emptyIntSeq emptyIntSeq
+        VerifySeqsEqual emptyIntSeq <| Seq.except intSeq1 intSeq1
+
+        // null Seq
+        let nullSeq : seq<int> = null
+        CheckThrowsArgumentNullException(fun () -> Seq.except nullSeq emptyIntSeq |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Seq.except emptyIntSeq nullSeq |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Seq.except nullSeq nullSeq |> ignore)
+
+        ()
+
     [<Test>]
     member this.Exists() =
 

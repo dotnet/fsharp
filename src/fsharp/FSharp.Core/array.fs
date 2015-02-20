@@ -200,7 +200,7 @@ namespace Microsoft.FSharp.Collections
             Array.Copy(array1, 0, res, 0, n1)
             Array.Copy(array2, 0, res, n1, n2)
             res   
-                     
+
         [<CompiledName("Head")>]
         let head (array : 'T[]) =
             checkNonNull "array" array
@@ -477,6 +477,17 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Where")>]
         let where f (array: _[]) = filter f array
+
+        [<CompiledName("Except")>]
+        let except (array1:'T[]) (array2:'T[]) =
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+
+            if array1.Length = 0 then
+                array1
+            else
+                let cached = HashSet(array2, HashIdentity.Structural)
+                filter (fun item -> cached.Add item) array1
 
         [<CompiledName("Partition")>]
         let partition f (array: _[]) = 
