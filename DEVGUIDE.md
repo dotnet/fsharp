@@ -10,7 +10,7 @@ To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 > Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A copy of the license can be found in the [License.txt](License.txt) file at the root of this distribution.
 > By using this source code in any fashion, you are agreeing to be bound by the terms of the Apache License, Version 2.0. You must not remove this notice, or any other, from this software.
 
-**Questions?** If you have questions about the source code, please ask in the issues and discussion forums.
+**Questions?** If you have questions about the source code, please ask in the issues.
 
 ## 0.  A Shortcut to Build and Smoke Test
 
@@ -89,31 +89,31 @@ Prior to a **Release** test run, you need to do **all** of these:
     tests\BuildTestTools.cmd release 
 
 
-[Optional] If testing the Visual F# IDE Tools (see below) you will also need:
+[Optional] If testing **Release** build of the Visual F# IDE Tools (see below) you will also need:
 
     msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
     msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
 
 ## 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# 4.0 SDK on the machine
 
-NOTE: Step #2 will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
+**Note:** Step #3 will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
 components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
 
-NOTE: Step #3 will clobber the machine-wide installed F# 4.0 SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
-by Visual F# Interactive and the fsc.exe used by Microsoft.FSharp.targets.  Repairing Visual Studio 2015 is currently the 
+**Note:** Step #4 will clobber the machine-wide installed F# 4.0 SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
+by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 2015 is currently the 
 only way to revert this step.  
 
-NOTE: After you complete the install, the FSharp.Core referenced by your projects will not be updated. If you want to make
+**Note:** After you complete the install, the FSharp.Core referenced by your projects will not be updated. If you want to make
 a project that references your updated FSharp.Core, you must explicitly change the ``TargetFSharpCoreVersion`` in the .fsproj
 file to ``4.4.0.5099`` (or a corresponding portable version number with suffix ``5099``).
 
-For debug:
+For **Debug**:
 
 1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
 1. Run ``debug\net40\bin\EnableOpenSource.vsix``
 1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# 4.0 SDK)
 
-For release:
+For **Release**:
 
 1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
 1. Run ``release\net40\bin\EnableOpenSource.vsix``
