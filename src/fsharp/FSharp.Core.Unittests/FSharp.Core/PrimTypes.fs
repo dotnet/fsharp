@@ -104,7 +104,7 @@ type LanguagePrimitivesModule() =
         
         // reference type
         let resultRef = LanguagePrimitives.GenericComparison "ABC" "ABCDE"
-        Assert.AreEqual(resultRef,-68)
+        Assert.AreEqual(sign resultRef,-1)
         
         // null reference
         let resultRef = LanguagePrimitives.GenericComparison "ABC" null
@@ -131,23 +131,23 @@ type LanguagePrimitivesModule() =
         
         // reference type
         let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "ABCDE" "ABC"
-        Assert.AreEqual(resultRef,68)
+        Assert.AreEqual(sign resultRef,1)
 
         let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "ABC" "ABC"
-        Assert.AreEqual(resultRef,0)
+        Assert.AreEqual(sign resultRef,0)
         
         let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "abc" "abcde"
-        Assert.AreEqual(resultRef,-100)
+        Assert.AreEqual(sign resultRef,-1)
         
         // null reference
         let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default "ABC" null
-        Assert.AreEqual(resultRef,1)
+        Assert.AreEqual(sign resultRef,1)
 
         let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default null null
-        Assert.AreEqual(resultRef,0)
+        Assert.AreEqual(sign resultRef,0)
 
         let resultRef = LanguagePrimitives.GenericComparisonWithComparer System.Collections.Comparer.Default null "abc"
-        Assert.AreEqual(resultRef,-1)
+        Assert.AreEqual(sign resultRef,-1)
         
         ()   
 #endif
