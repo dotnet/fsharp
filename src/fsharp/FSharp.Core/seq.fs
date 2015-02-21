@@ -1815,14 +1815,14 @@ namespace Microsoft.FSharp.Collections
             readonly arr, state
 
         [<CompiledName("Except")>]
-        let except (source1: seq<'T>) (source2: seq<'T>) =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
+        let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
+            checkNonNull "itemsToExclude" itemsToExclude
+            checkNonNull "source" source
 
             seq {
-                use e = source1.GetEnumerator()
+                use e = source.GetEnumerator()
                 if e.MoveNext() then
-                    let cached = HashSet(source2)
+                    let cached = HashSet(itemsToExclude, HashIdentity.Structural)
                     let next = e.Current
                     if (cached.Add next) then yield next
                     while e.MoveNext() do

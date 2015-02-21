@@ -420,12 +420,16 @@ namespace Microsoft.FSharp.Collections
         let filter f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
         [<CompiledName("Except")>]
-        let except list1 (list2: _ list) =
-            match list1, list2 with
-            | [], _ -> list1
+        let except itemsToExclude list =
+            match box itemsToExclude with
+            | null -> nullArg "itemsToExclude"
+            | _ -> ()
+
+            match list with
+            | [] -> list
             | _ ->
-                let cached = HashSet(list2, HashIdentity.Structural)
-                list1 |> filter (fun item -> cached.Add item)
+                let cached = HashSet(itemsToExclude, HashIdentity.Structural)
+                list |> filter (fun item -> cached.Add item)
 
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x

@@ -216,17 +216,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ExactlyOne")>]
         val exactlyOne: array:'T[] -> 'T
 
-        /// <summary>Produces the set difference of two arrays by using generic hash and equality comparisons to compare values.</summary>
+        /// <summary>Returns a new list with the distinct elements of the input array which do not appear in the itemsToExclude sequence,
+        /// using generic hash and equality comparisons to compare values.</summary>
         ///
-        /// <param name="array1">An array whose elements that are not also in second will be returned.</param>
-        /// <param name="array2">A second array whose elements that also occur in the first array will cause those elements to be
+        /// <param name="itemsToExclude">A sequence whose elements that also occur in the input array will cause those elements to be
         /// removed from the result.</param>
+        /// <param name="array">An array whose elements that are not also in itemsToExclude will be returned.</param>
         ///
-        /// <returns>An array that contains the set difference of the elements of two arrays.</returns>
+        /// <returns>An array that contains the distinct elements of <c>array</c> that do not appear in <c>itemsToExclude</c>.</returns>
         ///
-        /// <exception cref="System.ArgumentNullException">Thrown when either of the two input arrays is null.</exception>
+        /// <exception cref="System.ArgumentNullException">Thrown when either itemsToExclude or array is null.</exception>
         [<CompiledName("Except")>]
-        val except: array1:'T[] -> array2:'T[] -> 'T[] when 'T : equality
+        val except: itemsToExclude:seq<'T> -> array:'T[] -> 'T[] when 'T : equality
 
         /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
         ///

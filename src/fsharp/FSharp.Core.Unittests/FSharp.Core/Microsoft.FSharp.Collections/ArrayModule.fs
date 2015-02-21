@@ -194,19 +194,19 @@ type ArrayModule() =
         let intArr2 = [| 1 .. 10 |]
         let expectedIntArr = [| 11 .. 100 |]
 
-        Assert.AreEqual(expectedIntArr, Array.except intArr1 intArr2)
+        Assert.AreEqual(expectedIntArr, Array.except intArr2 intArr1)
 
         // string array
         let strArr1 = [| "a"; "b"; "c"; "d"; "a" |]
         let strArr2 = [| "b"; "c" |]
         let expectedStrArr = [| "a"; "d" |]
 
-        Assert.AreEqual(expectedStrArr, Array.except strArr1 strArr2)
+        Assert.AreEqual(expectedStrArr, Array.except strArr2 strArr1)
 
         // empty array
         let emptyIntArr = [| |]
-        Assert.AreEqual([|1..100|], Array.except intArr1 emptyIntArr)
-        Assert.AreEqual(emptyIntArr, Array.except emptyIntArr intArr1)
+        Assert.AreEqual([|1..100|], Array.except emptyIntArr intArr1)
+        Assert.AreEqual(emptyIntArr, Array.except intArr1 emptyIntArr)
         Assert.AreEqual(emptyIntArr, Array.except emptyIntArr emptyIntArr)
         Assert.AreEqual(emptyIntArr, Array.except intArr1 intArr1)
 

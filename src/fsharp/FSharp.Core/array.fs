@@ -479,15 +479,15 @@ namespace Microsoft.FSharp.Collections
         let where f (array: _[]) = filter f array
 
         [<CompiledName("Except")>]
-        let except (array1:'T[]) (array2:'T[]) =
-            checkNonNull "array1" array1
-            checkNonNull "array2" array2
+        let except (itemsToExclude: seq<_>) (array:_[]) =
+            checkNonNull "itemsToExclude" itemsToExclude
+            checkNonNull "array" array
 
-            if array1.Length = 0 then
-                array1
+            if array.Length = 0 then
+                array
             else
-                let cached = HashSet(array2, HashIdentity.Structural)
-                filter (fun item -> cached.Add item) array1
+                let cached = HashSet(itemsToExclude, HashIdentity.Structural)
+                filter (fun item -> cached.Add item) array
 
         [<CompiledName("Partition")>]
         let partition f (array: _[]) = 

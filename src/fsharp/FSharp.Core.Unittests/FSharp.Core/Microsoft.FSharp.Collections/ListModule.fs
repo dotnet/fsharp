@@ -282,22 +282,25 @@ type ListModule() =
         let intList2 = [1..10]
         let expectedIntList = [11..100]
 
-        Assert.AreEqual(expectedIntList, List.except intList1 intList2)
+        Assert.AreEqual(expectedIntList, List.except intList2 intList1)
 
         // string list
         let strList1 = ["a"; "b"; "c"; "d"; "a"]
         let strList2 = ["b"; "c"]
         let expectedStrList = ["a"; "d"]
 
-        Assert.AreEqual(expectedStrList, List.except strList1 strList2)
+        Assert.AreEqual(expectedStrList, List.except strList2 strList1)
 
         // empty list
         let emptyIntList = []
-        Assert.AreEqual([1..100], List.except intList1 emptyIntList)
-        Assert.AreEqual(emptyIntList, List.except emptyIntList intList1)
+        Assert.AreEqual([1..100], List.except emptyIntList intList1)
+        Assert.AreEqual(emptyIntList, List.except intList1 emptyIntList)
         Assert.AreEqual(emptyIntList, List.except emptyIntList emptyIntList)
         Assert.AreEqual(emptyIntList, List.except intList1 intList1)
 
+        // null seq
+        let nullSeq : int [] = null
+        CheckThrowsArgumentNullException(fun () -> List.except nullSeq emptyIntList |> ignore)
         ()
 
     [<Test>]

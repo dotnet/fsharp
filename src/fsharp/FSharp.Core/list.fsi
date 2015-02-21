@@ -125,15 +125,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         val empty<'T> : 'T list
 
-        /// <summary>Produces the set difference of two lists by using generic hash and equality comparisons to compare values.</summary>
+        /// <summary>Returns a new list with the distinct elements of the input list which do not appear in the itemsToExclude sequence,
+        /// using generic hash and equality comparisons to compare values.</summary>
         ///
-        /// <param name="list1">A list whose elements that are not also in second will be returned.</param>
-        /// <param name="list2">A second list whose elements that also occur in the first list will cause those elements to be
+        /// <param name="itemsToExclude">A sequence whose elements that also occur in the input list will cause those elements to be
         /// removed from the result.</param>
+        /// <param name="list">A list whose elements that are not also in itemsToExclude will be returned.</param>
         ///
-        /// <returns>A list that contains the set difference of the elements of two lists.</returns>
+        /// <returns>A list that contains the distinct elements of <c>list</c> that do not appear in <c>itemsToExclude</c>.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when itemsToExclude is null.</exception>
         [<CompiledName("Except")>]
-        val except: list1:'T list -> list2:'T list -> 'T list when 'T : equality
+        val except: itemsToExclude:seq<'T> -> list:'T list -> 'T list when 'T : equality
 
         /// <summary>Returns the only element of the list.</summary>
         ///
