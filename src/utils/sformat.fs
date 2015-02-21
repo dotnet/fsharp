@@ -912,9 +912,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                   | remainingPropertyText when currentPostTextEndIndex > -1 -> 
                                                     // More to process, keep going, using the postText starting at the next instance of a '{'
                                                     buildObjMessageL remainingPropertyText.[currentPostTextEndIndex..] newLayouts
-                                                  | _ ->
+                                                  | remainingPropertyText when remainingPropertyText.IndexOf("}", StringComparison.Ordinal) = -1 ->
                                                     // We are done, there's remaining text but no more properties
                                                     Some (spaceListL (List.rev newLayouts))
+                                                  | _ ->
+                                                    // we have an unmatched ending bracket
+                                                    None
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
