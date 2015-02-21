@@ -870,12 +870,13 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                     let p2 = txt.IndexOf ("}", StringComparison.Ordinal)
                                     match (p1, p2) with
                                       | (-1, -1) when layouts.Length > 1 -> Some (spaceListL (List.rev layouts))
-                                      | (-1, -1) -> None
-                                      | (opened, closed) when opened + 1 >= closed -> Some (wordL ("<StructuredFormatDisplay exception: unbalanced brackets: found '{' without matching '}'>"))
+                                      | (-1, -1) | (-1, _) | (_, -1) -> None // this handles the case where there weren't any properties specified
+                                      | (opened, closed) when opened + 1 >= closed || (-1 < txt.IndexOf("{", opened+1) && txt.IndexOf("{", opened+1) < closed) -> None // mis-matched brackets
                                       | (opened, closed) -> 
                                         let preText = if opened <= 0 then "" else txt.[0..opened-1]
                                         let postText = if closed+1 >= txt.Length then "" else txt.[closed+1..]
                                         let prop = txt.[opened+1..closed-1]
+
                                         match catchExn (fun () -> getProperty x prop) with
                                           | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
                                           | Choice1Of2 alternativeObj ->
@@ -910,7 +911,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                     Some (spaceListL (List.rev newLayouts))
                                                   | _ -> 
                                                     // More to process, keep going, using the postText starting at the next instance of a '{'
-                                                    buildObjMessageL postText.[currentPostTextEndIndex+1..] newLayouts
+                                                    buildObjMessageL postText.[currentPostTextEndIndex..] newLayouts
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
