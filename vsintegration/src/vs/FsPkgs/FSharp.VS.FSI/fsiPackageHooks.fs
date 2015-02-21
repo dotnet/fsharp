@@ -132,7 +132,7 @@ module internal Hooks =
                 // Add OLECommand to OleCommandTarget at the package level,
                 // for when it is fired from other contexts, e.g. text editor.
                 let id  = new CommandID(Guids.guidInteractive,int32 Guids.cmdIDSendSelection)
-                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this id)
+                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this), id)
                 cmd.BeforeQueryStatus.AddHandler(new EventHandler(supportWhenFSharpDocument))
                 commandService.AddCommand(cmd)
 
