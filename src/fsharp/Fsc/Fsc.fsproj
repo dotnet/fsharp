@@ -24,14 +24,14 @@
   <ItemGroup>
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
-      <Link>assemblyinfo.fsc.exe.fs</Link>
+      <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
     </Compile>
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
     <None Include="fsc.exe.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fsc.exe.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -48,5 +48,5 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets"  />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

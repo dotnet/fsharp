@@ -188,10 +188,10 @@
       <Link>Units/SI.fs</Link>
     </Compile>
     <Compile Include="fslib-extra-pervasives.fsi">
-      <Link>fslib-extra-pervasives.fsi</Link>
+      <Link>Extras/fslib-extra-pervasives.fsi</Link>
     </Compile>
     <Compile Include="fslib-extra-pervasives.fs">
-      <Link>fslib-extra-pervasives.fs</Link>
+      <Link>Extras/fslib-extra-pervasives.fs</Link>
     </Compile>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
       <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
@@ -207,9 +207,9 @@
                                                '$(TargetFramework)' == 'sl3-wp' "/>
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' "/>
     <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'sl5' OR 
-                                               '$(TargetFramework)' == 'portable47' OR 
-                                               '$(TargetFramework)' == 'XNA\5.0' OR 
-                                               '$(TargetFramework)' == 'sl3-wp' "/>
+                                                '$(TargetFramework)' == 'portable47' OR 
+                                                '$(TargetFramework)' == 'XNA\5.0' OR 
+                                                '$(TargetFramework)' == 'sl3-wp' "/>
   </ItemGroup>
 
   <!-- References -->

@@ -33,7 +33,7 @@
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Runtime.Remoting" />
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)'=='net40'" />
+    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <ProjectReference Include="..\FSharp.Compiler-proto\FSharp.Compiler-proto.fsproj">
       <Project>{33E0FB8C-93DC-4AD7-9DCD-9FBDA6C2F061}</Project>
       <Name>FSharp.Compiler-proto</Name>
