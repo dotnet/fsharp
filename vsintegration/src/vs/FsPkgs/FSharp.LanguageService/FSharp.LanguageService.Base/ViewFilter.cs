@@ -423,10 +423,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 {
                     return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
                 }
-                else if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
-                {
-                    return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                }
             }
 #endif
             return (int)NativeMethods.E_FAIL; // delegate to next command target.
@@ -550,14 +546,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
                 {
-                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), false, null, null);
+                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), null, null);
                     return true;
                 }
-                else if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
-                {
-                    Microsoft.VisualStudio.FSharp.Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), true, null, null);
-                    return true;
-                }
+
             }
 #endif
             return false;

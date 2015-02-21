@@ -119,7 +119,6 @@
       <!-- The following places a button on the F# Editor Context Menu -->
       <!-- In Dev11, shell now has 
       <Button guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" priority ="0x100" type ="Button">
-      <Button guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" priority ="0x105" type ="Button">
       -->
       <!-- In Dev10 hybrid, we need buttons below -->
       <Button Condition="!Defined(FX_ATLEAST_45)" guid ="guidInteractive" id ="cmdidSendSelection" priority ="0x100" type ="Button">
@@ -128,15 +127,6 @@
         <Strings>
           <ButtonText>Send To Interactive</ButtonText>
           <CommandName>Interactive.Send.Selection.Context</CommandName>
-        </Strings>
-        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
-      </Button>
-      <Button Condition="!Defined(FX_ATLEAST_45)" guid ="guidInteractive2" id ="cmdidSendLine" priority ="0x101" type ="Button">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
-        <Icon guid="guidFsiConsoleBmp" id="bmpConsole"/>
-        <Strings>
-          <ButtonText>Send Line To Interactive</ButtonText>
-          <CommandName>Interactive.Send.Line.Context</CommandName>
         </Strings>
         <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>

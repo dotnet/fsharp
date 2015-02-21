@@ -448,14 +448,14 @@ type internal FsiToolWindow() as this =
         let interaction = "\n" + directiveA + "\n" + directiveB + "\n" + text + "\n" + directiveC + "\n;;\n"
         executeTextNoHistory interaction
 
-    let sendSelectionToFSI(selectLine : bool) =
+    let sendSelectionToFSI() =
         try
             // REVIEW: See supportWhenFSharpDocument for alternative way of obtaining selection, via IVs APIs.
             // Change post CTP.            
             let dte = provider.GetService(typeof<DTE>) :?> DTE        
             let activeD = dte.ActiveDocument            
             match activeD.Selection with
-            | :? TextSelection as selection when selectLine || selection.Text = "" ->
+            | :? TextSelection as selection when selection.Text = "" ->
                 selection.SelectLine()
                 showNoActivate()
                 executeInteraction (System.IO.Path.GetDirectoryName(activeD.FullName)) activeD.FullName selection.TopLine selection.Text 
@@ -472,11 +472,8 @@ type internal FsiToolWindow() as this =
                  // REVIEW: log error into Trace.
                  // Example errors include no active document.
 
-    let onMLSendLine (sender:obj) (e:EventArgs) =
-        sendSelectionToFSI(true)
-
     let onMLSend (sender:obj) (e:EventArgs) =       
-        sendSelectionToFSI(false)
+        sendSelectionToFSI()
 (*
         // Remove: after next submit (passing through SD)       
         // The below did not work, so move to use Automatic API via DTE above...        
@@ -529,7 +526,6 @@ type internal FsiToolWindow() as this =
     do  this.Caption          <- VFSIstrings.SR.fsharpInteractive()
    
     member this.MLSend(obj,e) = onMLSend obj e
-    member this.MLSendLine(obj,e) = onMLSendLine obj e
     member this.AddReferences(references : string[]) = 
         let text = 
             references
@@ -600,7 +596,6 @@ type internal FsiToolWindow() as this =
             addCommand Guids.guidInteractiveCommands Guids.cmdIDSessionRestart   onRestart       None
             
             addCommand Guids.guidInteractive Guids.cmdIDSendSelection            onMLSend        None
-            addCommand Guids.guidInteractive2 Guids.cmdIDSendLine                onMLSendLine    None
             
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.UP)      onHistory      (Some supportWhenInInputArea)
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.DOWN)    onHistory      (Some supportWhenInInputArea)            
