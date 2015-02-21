@@ -487,7 +487,7 @@ namespace Microsoft.FSharp.Collections
                 array
             else
                 let cached = HashSet(itemsToExclude, HashIdentity.Structural)
-                filter (fun item -> cached.Add item) array
+                array |> filter cached.Add
 
         [<CompiledName("Partition")>]
         let partition f (array: _[]) = 

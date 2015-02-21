@@ -429,7 +429,7 @@ namespace Microsoft.FSharp.Collections
             | [] -> list
             | _ ->
                 let cached = HashSet(itemsToExclude, HashIdentity.Structural)
-                list |> filter (fun item -> cached.Add item)
+                list |> filter cached.Add
 
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
