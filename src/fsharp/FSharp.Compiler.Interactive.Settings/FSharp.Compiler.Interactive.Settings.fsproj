@@ -15,31 +15,30 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <ItemGroup>
-      <FsSrGen Include="..\FSInteractiveSettings.txt">
-        <Link>FSInteractiveSettings.txt</Link>
-      </FsSrGen>
+    <FsSrGen Include="..\FSInteractiveSettings.txt">
+      <Link>FSInteractiveSettings.txt</Link>
+    </FsSrGen>
     <Compile Include="InternalsVisibleTo.fs"/>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs</Link>
-    </Compile>
-    <Compile Include="..\fsiaux.fsi">
-      <Link>fsiaux.fsi</Link>
-    </Compile>
-    <Compile Include="..\fsiaux.fs">
-      <Link>fsiaux.fs</Link>
+      <Link>Utilities/assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs</Link>
     </Compile>
     <Compile Include="..\fsiattrs.fs">
-      <Link>fsiattrs.fs</Link>
+      <Link>Utilities/fsiattrs.fs</Link>
+    </Compile>
+    <Compile Include="..\fsiaux.fsi">
+      <Link>InteractiveSettings/fsiaux.fsi</Link>
+    </Compile>
+    <Compile Include="..\fsiaux.fs">
+      <Link>InteractiveSettings/fsiaux.fs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-				<Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-				<Name>FSharp.Core</Name>
-		</ProjectReference>
-	</ItemGroup>
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  </Project>
+</Project>

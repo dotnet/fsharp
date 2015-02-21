@@ -3994,7 +3994,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     if not (FileSystem.SafeExists sigFileName)  then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile(), m));
                     [ (ilShortAssemName, (fun () -> FileSystem.ReadAllBytesShim sigFileName))]
-                  else
+                else
                     sigDataReaders
             sigDataReaders 
             |> List.map (fun (ccuName, sigDataReader) -> 

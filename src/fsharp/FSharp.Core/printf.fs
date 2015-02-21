@@ -157,7 +157,7 @@ module internal PrintfImpl =
                         buf.Append(c) |> ignore
                         go (i + 1) buf
             go i (Text.StringBuilder())
-    
+
     /// Abstracts generated printer from the details of particular environment: how to write text, how to produce results etc...
     [<AbstractClass>]
     type PrintfEnv<'State, 'Residue, 'Result> =
@@ -1266,7 +1266,11 @@ module internal PrintfImpl =
             )
 #endif
 
-        [<DefaultValue; ThreadStatic>]
+        [<DefaultValue>]
+#if FX_NO_THREAD_STATIC
+#else
+        [<ThreadStatic>]
+#endif
         static val mutable private last : string * CachedItem<'T, 'State, 'Residue, 'Result>
     
         static member Get(key : Format<'T, 'State, 'Residue, 'Result>) =
