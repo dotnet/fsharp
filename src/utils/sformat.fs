@@ -909,9 +909,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                   | "" -> 
                                                     // We are done, build a space-delimited layout from the collection of layouts we've accumulated
                                                     Some (spaceListL (List.rev newLayouts))
-                                                  | _ -> 
+                                                  | remainingPropertyText when currentPostTextEndIndex > -1 -> 
                                                     // More to process, keep going, using the postText starting at the next instance of a '{'
-                                                    buildObjMessageL postText.[currentPostTextEndIndex..] newLayouts
+                                                    buildObjMessageL remainingPropertyText.[currentPostTextEndIndex..] newLayouts
+                                                  | _ ->
+                                                    // We are done, there's remaining text but no more properties
+                                                    Some (spaceListL (List.rev newLayouts))
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
