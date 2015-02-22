@@ -51,7 +51,6 @@ Core04		fsharp\core\members\factors
 Core04		fsharp\core\members\incremental
 Core04		fsharp\core\members\ops
 Core05		..\testsprivate\fsharp\core\mscorlib
-Core01		fsharp\core\names
 Core05		fsharp\core\namespaces
 Core05		fsharp\core\nested
 Core05		fsharp\core\parsing
