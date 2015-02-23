@@ -180,6 +180,9 @@
   <data name="inputMustBeNonNegative" xml:space="preserve">
     <value>The input must be non-negative.</value>
   </data>
+  <data name="inputMustBePositive" xml:space="preserve">
+    <value>The input must be positive.</value>
+  </data>
   <data name="inputSequenceEmpty" xml:space="preserve">
     <value>The input sequence was empty.</value>
   </data>

@@ -538,7 +538,7 @@ module internal List =
             windowedToFreshConsTail cons2 windowSize i t arr
 
     let windowed windowSize list =
-        if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
+        if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBePositive))
         match list with
         | [] -> []
         | _ ->

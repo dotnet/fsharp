@@ -1362,7 +1362,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Windowed")>]
         let windowed windowSize (source: seq<_>) =    
             checkNonNull "source" source
-            if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
+            if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBePositive))
             seq { 
                 let arr = Array.zeroCreateUnchecked windowSize
                 let r = ref (windowSize - 1)

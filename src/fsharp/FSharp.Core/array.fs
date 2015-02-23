@@ -549,7 +549,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Windowed")>]
         let windowed windowSize (array:'T[]) =
             checkNonNull "array" array
-            if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBeNonNegative))
+            if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBePositive))
             let len = array.Length
             if windowSize > len then
                 [| |]
