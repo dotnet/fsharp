@@ -570,6 +570,30 @@ namespace Microsoft.FSharp.Collections
                     res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked i windowSize array
                 res
 
+        [<CompiledName("ChunkBySize")>]
+        let chunkBySize chunkSize (array:'T[]) =
+            checkNonNull "array" array
+            if chunkSize <= 0 then invalidArg "chunkSize" (SR.GetString(SR.inputMustBePositive))
+            let len = array.Length
+            if len = 0 then
+                [| |]
+            else if chunkSize > len then
+                [| copy array |]
+            else
+                let chunkCount = (len - 1) / chunkSize + 1
+                let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunkCount : 'T[][]
+                for i = 0 to len / chunkSize - 1 do
+                    res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked (i * chunkSize) chunkSize array
+                if len % chunkCount <> 0 then
+                    res.[chunkCount - 1] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked ((chunkCount - 1) * chunkSize) (len % chunkSize) array
+                res
+
+        [<CompiledName("SplitInto")>]
+        let splitInto count (array:_[]) =
+            checkNonNull "array" array
+            if count <= 0 then invalidArg "count" (SR.GetString(SR.inputMustBePositive))
+            Microsoft.FSharp.Primitives.Basics.Array.splitInto count array
+
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) = 
             checkNonNull "array1" array1

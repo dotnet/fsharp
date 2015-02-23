@@ -1828,3 +1828,29 @@ namespace Microsoft.FSharp.Collections
                     while e.MoveNext() do
                         let next = e.Current
                         if (cached.Add next) then yield next }
+
+        [<CompiledName("ChunkBySize")>]
+        let chunkBySize chunkSize (source : seq<_>) =
+            checkNonNull "source" source
+            if chunkSize <= 0 then invalidArg "chunkSize" (SR.GetString(SR.inputMustBePositive))
+            seq { use e = source.GetEnumerator()
+                  let nextChunk() =
+                      let res = Array.zeroCreateUnchecked chunkSize
+                      res.[0] <- e.Current
+                      let i = ref 1
+                      while !i < chunkSize && e.MoveNext() do
+                          res.[!i] <- e.Current
+                          i := !i + 1
+                      if !i = chunkSize then
+                          res
+                      else
+                          res |> Array.subUnchecked 0 !i
+                  while e.MoveNext() do
+                      yield nextChunk() }
+
+        [<CompiledName("SplitInto")>]
+        let splitInto count source =
+            checkNonNull "source" source
+            if count <= 0 then invalidArg "count" (SR.GetString(SR.inputMustBePositive))
+            mkDelayedSeq (fun () ->
+                source |> toArray |> Array.splitInto count :> seq<_>)

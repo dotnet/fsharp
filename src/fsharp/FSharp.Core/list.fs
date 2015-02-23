@@ -471,6 +471,12 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Windowed")>]
         let windowed n x = Microsoft.FSharp.Primitives.Basics.List.windowed n x
 
+        [<CompiledName("ChunkBySize")>]
+        let chunkBySize chunkSize list = Microsoft.FSharp.Primitives.Basics.List.chunkBySize chunkSize list
+
+        [<CompiledName("SplitInto")>]
+        let splitInto count list = Microsoft.FSharp.Primitives.Basics.List.splitInto count list
+
         [<CompiledName("Zip")>]
         let zip x1 x2 =  Microsoft.FSharp.Primitives.Basics.List.zip x1 x2
 
