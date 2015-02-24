@@ -326,3 +326,55 @@ type UpToDate() =
 
             Assert.IsFalse(config.IsFastUpToDateCheckEnabled())
             ))
+
+[<TestFixture>]
+type ``UpToDate PreserveNewest`` () = 
+
+    [<Test>]
+    member public this.IsUpToDatePreserveNewest () =
+
+        let test (input, inputTimestamp) (output, outputTimestamp) =
+            let logs = ref []
+            let outputPanel = VsMocks.vsOutputWindowPane(logs)
+            let logger = OutputWindowLogger.CreateUpToDateCheckLogger(outputPanel)
+        
+            let tryTimestamp (path: string) (_l: OutputWindowLogger) =
+                let toN = function Some d -> Nullable<_>(d) | None -> Nullable<_>()
+                match path with
+                | x when x = input -> toN inputTimestamp
+                | x when x = output -> toN outputTimestamp
+                | _ -> failwithf "unexpected %s" path
+
+            let u = ProjectConfig.IsUpToDatePreserveNewest(logger, (Func<_,_,_>(tryTimestamp)), input, output)
+            u, !logs
+            
+        let now = System.DateTime.Now
+        let before = now.AddHours(-1.0)
+
+        let ``no input -> not up-to-date and log`` =
+            let u, logs = test ("readme.md", None) ("leggimi.md", None)
+            Assert.IsFalse(u)
+            logs
+            |> List.exists (fun s -> s.Contains("readme.md") && s.Contains("can't find expected input"))
+            |> Assert.IsTrue
+
+        let ``no output -> not up-to-date and log`` =
+            let u, logs = test ("from.txt", Some now) ("to.txt", None)
+            Assert.IsFalse(u)
+            logs
+            |> List.exists (fun s -> s.Contains("to.txt") && s.Contains("can't find expected output"))
+            |> Assert.IsTrue
+
+        let ``a newer version of output file is ok`` =
+            let u, logs = test ("before.doc", Some before) ("after.doc", Some now)
+            Assert.True(u)
+            logs |> AssertEqual []
+
+        let ``stale output file -> not up-to-date and log`` =
+            let u, logs = test ("logo.png", Some now) ("animatedlogo.gif", Some before)
+            Assert.IsFalse(u)
+            logs
+            |> List.exists (fun s -> s.Contains("animatedlogo.gif") && s.Contains("stale"))
+            |> Assert.IsTrue
+            
+        ()        
