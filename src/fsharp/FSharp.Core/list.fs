@@ -419,6 +419,18 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Filter")>]
         let filter f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
+        [<CompiledName("Except")>]
+        let except itemsToExclude list =
+            match box itemsToExclude with
+            | null -> nullArg "itemsToExclude"
+            | _ -> ()
+
+            match list with
+            | [] -> list
+            | _ ->
+                let cached = HashSet(itemsToExclude, HashIdentity.Structural)
+                list |> filter cached.Add
+
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 

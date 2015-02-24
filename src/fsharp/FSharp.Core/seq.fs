@@ -1813,3 +1813,18 @@ namespace Microsoft.FSharp.Collections
             let array = source |> toArray
             let arr,state = Array.mapFoldBack f array acc
             readonly arr, state
+
+        [<CompiledName("Except")>]
+        let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
+            checkNonNull "itemsToExclude" itemsToExclude
+            checkNonNull "source" source
+
+            seq {
+                use e = source.GetEnumerator()
+                if e.MoveNext() then
+                    let cached = HashSet(itemsToExclude, HashIdentity.Structural)
+                    let next = e.Current
+                    if (cached.Add next) then yield next
+                    while e.MoveNext() do
+                        let next = e.Current
+                        if (cached.Add next) then yield next }

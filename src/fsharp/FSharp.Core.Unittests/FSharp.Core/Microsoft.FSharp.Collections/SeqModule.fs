@@ -477,7 +477,46 @@ type SeqModule() =
        
         CheckThrowsArgumentNullException(fun () -> Seq.distinctBy funcInt nullSeq  |> ignore) 
         () 
-    
+
+    [<Test>]
+    member this.Except() =
+        // integer Seq
+        let intSeq1 = seq { yield! {1..100}
+                            yield! {1..100} }
+        let intSeq2 = {1..10}
+        let expectedIntSeq = {11..100}
+
+        VerifySeqsEqual expectedIntSeq <| Seq.except intSeq2 intSeq1
+
+        // string Seq
+        let strSeq1 = seq ["a"; "b"; "c"; "d"; "a"]
+        let strSeq2 = seq ["b"; "c"]
+        let expectedStrSeq = seq ["a"; "d"]
+
+        VerifySeqsEqual expectedStrSeq <| Seq.except strSeq2 strSeq1
+
+        // double Seq
+        // Sequences with nan do not behave, due to the F# generic equality comparisons
+//        let floatSeq1 = seq [1.0; 1.0; System.Double.MaxValue; nan; nan]
+//
+//        VerifySeqsEqual [1.0; System.Double.MaxValue; nan; nan] <| Seq.except [] floatSeq1
+//        VerifySeqsEqual [1.0; System.Double.MaxValue] <| Seq.except [nan] floatSeq1
+
+        // empty Seq
+        let emptyIntSeq = Seq.empty<int>
+        VerifySeqsEqual {1..100} <| Seq.except emptyIntSeq intSeq1
+        VerifySeqsEqual emptyIntSeq <| Seq.except intSeq1 emptyIntSeq
+        VerifySeqsEqual emptyIntSeq <| Seq.except emptyIntSeq emptyIntSeq
+        VerifySeqsEqual emptyIntSeq <| Seq.except intSeq1 intSeq1
+
+        // null Seq
+        let nullSeq : seq<int> = null
+        CheckThrowsArgumentNullException(fun () -> Seq.except nullSeq emptyIntSeq |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Seq.except emptyIntSeq nullSeq |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Seq.except nullSeq nullSeq |> ignore)
+
+        ()
+
     [<Test>]
     member this.Exists() =
 

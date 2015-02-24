@@ -125,6 +125,19 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         val empty<'T> : 'T list
 
+        /// <summary>Returns a new list with the distinct elements of the input list which do not appear in the itemsToExclude sequence,
+        /// using generic hash and equality comparisons to compare values.</summary>
+        ///
+        /// <param name="itemsToExclude">A sequence whose elements that also occur in the input list will cause those elements to be
+        /// removed from the result.</param>
+        /// <param name="list">A list whose elements that are not also in itemsToExclude will be returned.</param>
+        ///
+        /// <returns>A list that contains the distinct elements of <c>list</c> that do not appear in <c>itemsToExclude</c>.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when itemsToExclude is null.</exception>
+        [<CompiledName("Except")>]
+        val except: itemsToExclude:seq<'T> -> list:'T list -> 'T list when 'T : equality
+
         /// <summary>Returns the only element of the list.</summary>
         ///
         /// <param name="list">The input list.</param>

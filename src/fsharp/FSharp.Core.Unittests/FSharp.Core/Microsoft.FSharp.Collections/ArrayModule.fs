@@ -185,7 +185,39 @@ type ArrayModule() =
         Assert.AreEqual([|null|], Array.distinctBy id [|null|])
         let list = new System.Collections.Generic.List<int>()
         Assert.AreEqual([|null, list|], Array.distinctBy id [|null, list|])
-        
+
+    [<Test>]
+    member this.Except() =
+        // integer array
+        let intArr1 = [| yield! {1..100}
+                         yield! {1..100} |]
+        let intArr2 = [| 1 .. 10 |]
+        let expectedIntArr = [| 11 .. 100 |]
+
+        Assert.AreEqual(expectedIntArr, Array.except intArr2 intArr1)
+
+        // string array
+        let strArr1 = [| "a"; "b"; "c"; "d"; "a" |]
+        let strArr2 = [| "b"; "c" |]
+        let expectedStrArr = [| "a"; "d" |]
+
+        Assert.AreEqual(expectedStrArr, Array.except strArr2 strArr1)
+
+        // empty array
+        let emptyIntArr = [| |]
+        Assert.AreEqual([|1..100|], Array.except emptyIntArr intArr1)
+        Assert.AreEqual(emptyIntArr, Array.except intArr1 emptyIntArr)
+        Assert.AreEqual(emptyIntArr, Array.except emptyIntArr emptyIntArr)
+        Assert.AreEqual(emptyIntArr, Array.except intArr1 intArr1)
+
+        // null array
+        let nullArr : int [] = null
+        CheckThrowsArgumentNullException(fun () -> Array.except nullArr emptyIntArr |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Array.except emptyIntArr nullArr |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Array.except nullArr nullArr |> ignore)
+
+        ()
+
     [<Test>]
     member this.Take() =
         Assert.AreEqual([||],Array.take 0 [||])

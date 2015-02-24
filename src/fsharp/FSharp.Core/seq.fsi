@@ -243,6 +243,24 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         val empty<'T> : seq<'T>
 
+        /// <summary>Returns a new sequence with the distinct elements of the second sequence which do not apear in the first sequence,
+        /// using generic hash and equality comparisons to compare values.</summary>
+        ///
+        /// <remarks>Note that this function returns a sequence that digests the whole of the first input sequence as soon as
+        /// the result sequence is iterated. As a result this function should not be used with
+        /// large or infinite sequences in the first parameter. The function makes no assumption on the ordering of the first input
+        /// sequence.</remarks>
+        ///
+        /// <param name="itemsToExclude">A sequence whose elements that also occur in the second sequence will cause those elements to be
+        /// removed from the returned sequence.</param>
+        /// <param name="source">A sequence whose elements that are not also in first will be returned.</param>
+        ///
+        /// <returns>A sequence that contains the set difference of the elements of two sequences.</returns>
+        ///
+        /// <exception cref="System.ArgumentNullException">Thrown when either of the two input sequences is null.</exception>
+        [<CompiledName("Except")>]
+        val except: itemsToExclude:seq<'T> -> source:seq<'T> -> seq<'T> when 'T : equality
+
         /// <summary>Tests if any element of the sequence satisfies the given predicate.</summary>
         ///
         /// <remarks>The predicate is applied to the elements of the input sequence. If any application 
