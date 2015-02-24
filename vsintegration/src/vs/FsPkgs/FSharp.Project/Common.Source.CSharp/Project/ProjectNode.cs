@@ -2560,6 +2560,24 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
+        /// <remarks>Support hex format (like 0xFF)</remarks>
+        /// <exception cref="System.Exception">
+        /// Raise if invalid format
+        /// The inner exception contains the real exception, of type FormatException, StackOverflowException
+        /// </exception>
+        public static long? ParsePropertyValueToInt64(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return null;
+
+            var converter = new System.ComponentModel.Int64Converter();
+            var result = converter.ConvertFromInvariantString(s);
+            if (result == null)
+                return null;
+
+            return (long) result;
+        }
+
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         internal virtual ProjectOptions GetProjectOptions(ConfigCanonicalName configCanonicalName)
         {
@@ -2638,28 +2656,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 options.AllowUnsafeCode = true;
             }
 
-            if (GetProjectProperty("BaseAddress", false) != null)
+            string baseAddressPropertyString = GetProjectProperty("BaseAddress", false);
+            try
             {
-                try
-                {
-                    options.BaseAddress = Int64.Parse(GetProjectProperty("BaseAddress", false), CultureInfo.InvariantCulture);
-                }
-                catch (ArgumentNullException e)
-                {
-                    Trace.WriteLine("Exception : " + e.Message);
-                }
-                catch (ArgumentException e)
-                {
-                    Trace.WriteLine("Exception : " + e.Message);
-                }
-                catch (FormatException e)
-                {
-                    Trace.WriteLine("Exception : " + e.Message);
-                }
-                catch (OverflowException e)
-                {
-                    Trace.WriteLine("Exception : " + e.Message);
-                }
+                var result = ParsePropertyValueToInt64(baseAddressPropertyString);
+                if (result.HasValue)
+                    options.BaseAddress = result.Value;
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(string.Format("Exception parsing property {0}='{1}': {2}", "BaseAddress", baseAddressPropertyString, e.Message));
             }
 
             if (GetBoolAttr("CheckForOverflowUnderflow"))
