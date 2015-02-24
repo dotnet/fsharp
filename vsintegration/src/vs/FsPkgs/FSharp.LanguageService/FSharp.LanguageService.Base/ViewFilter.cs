@@ -549,7 +549,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                     Microsoft.VisualStudio.FSharp.Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), null, null);
                     return true;
                 }
-
             }
 #endif
             return false;
