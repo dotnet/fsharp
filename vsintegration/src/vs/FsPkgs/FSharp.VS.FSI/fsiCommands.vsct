@@ -119,7 +119,6 @@
       <!-- The following places a button on the F# Editor Context Menu -->
       <!-- In Dev11, shell now has 
       <Button guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" priority ="0x100" type ="Button">
-      <Button guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" priority ="0x105" type ="Button">
       -->
       <!-- In Dev10 hybrid, we need buttons below -->
       <Button Condition="!Defined(FX_ATLEAST_45)" guid ="guidInteractive" id ="cmdidSendSelection" priority ="0x100" type ="Button">
@@ -128,15 +127,6 @@
         <Strings>
           <ButtonText>Send To Interactive</ButtonText>
           <CommandName>Interactive.Send.Selection.Context</CommandName>
-        </Strings>
-        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
-      </Button>
-      <Button Condition="!Defined(FX_ATLEAST_45)" guid ="guidInteractive2" id ="cmdidSendLine" priority ="0x101" type ="Button">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
-        <Icon guid="guidFsiConsoleBmp" id="bmpConsole"/>
-        <Strings>
-          <ButtonText>Send Line To Interactive</ButtonText>
-          <CommandName>Interactive.Send.Line.Context</CommandName>
         </Strings>
         <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
@@ -241,10 +231,6 @@
     <KeyBinding Condition="!Defined(FX_ATLEAST_45)" guid="guidInteractive" id="cmdidSendSelection" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
     <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
 
-    <!-- VK_OEM_7 is the ' mark -->
-    <KeyBinding Condition="!Defined(FX_ATLEAST_45)" guid="guidInteractive2" id="cmdidSendLine" editor="GUID_TextEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
-    <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" editor="GUID_TextEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
-
     <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
     <KeyBinding guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow"    editor="guidVSStd97" key1="F" mod1="Control Alt"  />
 
@@ -312,7 +298,6 @@
 
     <GuidSymbol name="guidVSStd11" value="{D63DB1F0-404E-4B21-9648-CA8D99245EC3}" >
       <IDSymbol name="cmdidExecuteSelectionInInteractive" value ="0x018"/>
-      <IDSymbol name="cmdidExecuteLineInInteractive" value ="0x019"/>
       <IDSymbol name="cmdidInteractiveSessionInterrupt" value ="0x01A"/>
       <IDSymbol name="cmdidInteractiveSessionRestart" value ="0x01B"/>
     </GuidSymbol>
@@ -321,10 +306,7 @@
     <GuidSymbol Condition="!Defined(FX_ATLEAST_45)" name="guidInteractive" value="{8B9BF77B-AF94-4588-8847-2EB2BFFD29EB}" >
       <IDSymbol name="cmdidSendSelection" value ="0x01"/>
     </GuidSymbol>
-    <GuidSymbol Condition="!Defined(FX_ATLEAST_45)" name="guidInteractive2" value="{B607E86C-A761-4685-8D98-71A3BB73233A}" >
-      <IDSymbol name="cmdidSendLine" value ="0x01"/>
-    </GuidSymbol>
-
+  
   </Symbols>
 
 </CommandTable>

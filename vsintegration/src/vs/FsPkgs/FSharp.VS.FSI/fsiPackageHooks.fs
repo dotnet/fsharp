@@ -69,17 +69,14 @@ module internal Hooks =
         with e2 ->
             (System.Windows.Forms.MessageBox.Show(VFSIstrings.SR.exceptionRaisedWhenRequestingToolWindow(e2.ToString())) |> ignore)
 
-    let OnMLSend (this:Package) (selectLine : bool) (sender:obj) (e:EventArgs) =
-        withFSIToolWindow this (fun window ->
-            if selectLine then window.MLSendLine(sender,e)
-            else window.MLSend(sender,e)
-        )
+    let OnMLSend (this:Package) (sender:obj) (e:EventArgs) =
+        withFSIToolWindow this (fun window -> window.MLSend(sender, e))
 
     let AddReferencesToFSI (this:Package) references =
         withFSIToolWindow this (fun window -> window.AddReferences references)
 
     // FxCop request this function not be public
-    let private supportWhenFSharpDocument (selectLine : bool) (sender:obj) (e:EventArgs) =    
+    let private supportWhenFSharpDocument (sender:obj) (e:EventArgs) =    
         let command = sender :?> OleMenuCommand       
         if command <> null then                        
             let looksLikeFSharp,haveSelection = 
@@ -135,12 +132,8 @@ module internal Hooks =
                 // Add OLECommand to OleCommandTarget at the package level,
                 // for when it is fired from other contexts, e.g. text editor.
                 let id  = new CommandID(Guids.guidInteractive,int32 Guids.cmdIDSendSelection)
-                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this false), id)
-                cmd.BeforeQueryStatus.AddHandler(new EventHandler(supportWhenFSharpDocument false))
+                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this), id)
+                cmd.BeforeQueryStatus.AddHandler(new EventHandler(supportWhenFSharpDocument))
                 commandService.AddCommand(cmd)
 
-                let id  = new CommandID(Guids.guidInteractive2,int32 Guids.cmdIDSendLine)
-                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this true), id)
-                cmd.BeforeQueryStatus.AddHandler(new EventHandler(supportWhenFSharpDocument true))
-                commandService.AddCommand(cmd)
 #endif

@@ -60,13 +60,11 @@ module internal Guids =
     let guidInteractive                 = Microsoft.VisualStudio.VSConstants.VsStd11 
     let cmdIDSendSelection              = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive
     let guidInteractive2                = Microsoft.VisualStudio.VSConstants.VsStd11
-    let cmdIDSendLine                   = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive
 #else
     // hybrid still uses own commands
     let guidInteractive                 = Guid("8B9BF77B-AF94-4588-8847-2EB2BFFD29EB")
     let cmdIDSendSelection              = 0x01
     let guidInteractive2                = Guid("B607E86C-A761-4685-8D98-71A3BB73233A")
-    let cmdIDSendLine                   = 0x01
 #endif
 
     let guidFsiPackage                  = "eeeeeeee-9342-42f1-8ea9-42f0e8a6be55" // FSI-LINKAGE-POINT: when packaged here
