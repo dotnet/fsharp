@@ -384,6 +384,71 @@ module CheckDisplayAttributes8 =
        override x.ToString() = "2"
 
     test "cenwoiwe8" (lazy(sprintf "%A" (Foo()))) "[1; 2]"
+
+// Check one returning two strings
+module CheckDisplayAttributes9 =
+
+    [<StructuredFormatDisplay("{Hello} {World}")>]
+    type Foo() = 
+       member internal x.Hello = "Hello"
+       member internal x.World = "World"
+
+    test "cenwoiwe9" (lazy(sprintf "%A" (Foo()))) "Hello World"
+
+// Check one returning an int and a list
+module CheckDisplayAttributes10 =
+
+    [<StructuredFormatDisplay("{Hello}: {StructuredDisplay}")>]
+    type Foo() = 
+       member internal x.StructuredDisplay = [1;2]
+       member internal x.Hello = "Hello"
+       override x.ToString() = "2"
+
+    test "cenwoiwe10" (lazy(sprintf "%A" (Foo()))) "Hello: [1; 2]"
+
+// Check one returning an int and a string with no spaces
+module CheckDisplayAttributes11 =
+
+    [<StructuredFormatDisplay("{Val}{Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+
+    test "cenwoiwe11" (lazy(sprintf "%A" (Foo()))) "42Hello"
+
+// Check one with an unmatched opening bracket
+module CheckDisplayAttributes12 =
+
+    [<StructuredFormatDisplay("{Val{Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe12" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check one with an unmatched closing bracket
+module CheckDisplayAttributes13 =
+
+    [<StructuredFormatDisplay("{Val}Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe13" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check one with an unmatched trailing open bracket
+module CheckDisplayAttributes14 =
+
+    [<StructuredFormatDisplay("{Val}{Hello")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe14" (lazy(sprintf "%A" (Foo()))) "x"
+
 let func0()=
     test "test1" (lazy(sprintf "%b" true)) "true"
     test "test2" (lazy(sprintf "%5b" true)) " true"
