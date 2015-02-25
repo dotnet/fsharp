@@ -67,7 +67,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         private VsCommands gotoCmd;
         private readonly Guid guidInteractive = new Guid("8B9BF77B-AF94-4588-8847-2EB2BFFD29EB");
         private readonly uint cmdIDDebugSelection = 0x01;
-        private readonly uint cmdIDDebugLine = 0x02;
 
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.SnippetBound"]/*' />
         protected bool SnippetBound {
@@ -93,13 +92,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 this.projectSystemPackage = (Microsoft.VisualStudio.Shell.Package)pkg; // we know our object is an instance of this type
             }
             return this.projectSystemPackage;
-        }
-
-        private bool EditorSelectionIsEmpty()
-        {
-            string selection;
-            this.textView.GetSelectedText(out selection);
-            return selection == "";
         }
 
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.ViewFilter"]/*' />
@@ -448,18 +440,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             else if (guidCmdGroup == guidInteractive)
             {
                 if (nCmdId == cmdIDDebugSelection)
-                {
-                    var dbgState = Interactive.Hooks.GetDebuggerState(GetProjectSystemPackage());
-
-                    if (dbgState == Interactive.FsiDebuggerState.AttachedNotToFSI)
-                        return (int)OLECMDF.OLECMDF_INVISIBLE;
-                    else if (EditorSelectionIsEmpty())
-                        return (int)OLECMDF.OLECMDF_SUPPORTED;
-                    else
-                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
-                }
-
-                else if (nCmdId == cmdIDDebugLine)
                 {
                     var dbgState = Interactive.Hooks.GetDebuggerState(GetProjectSystemPackage());
 

@@ -74,8 +74,8 @@ module internal Hooks =
 
     let OnMLSend (this:Package) (debug : bool) (sender:obj) (e:EventArgs) =
         withFSIToolWindow this (fun window ->
-            if debug then window.MLSend(sender, e)
-            else window.MLDebugSelection(sender, e)
+            if debug then window.MLDebug(sender, e)
+            else window.MLSend(sender, e)
         )
 
     let AddReferencesToFSI (this:Package) references =

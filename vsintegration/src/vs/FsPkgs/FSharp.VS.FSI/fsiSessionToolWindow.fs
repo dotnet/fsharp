@@ -543,7 +543,7 @@ type internal FsiToolWindow() as this =
     let onMLSend (sender:obj) (e:EventArgs) =       
         sendSelectionToFSI false
 
-    let onMLDebugSelection (sender:obj) (e:EventArgs) = 
+    let onMLDebug (sender:obj) (e:EventArgs) = 
         attachDebugger ()
         sendSelectionToFSI true
 
@@ -584,7 +584,7 @@ type internal FsiToolWindow() as this =
     do  this.Caption          <- VFSIstrings.SR.fsharpInteractive()
    
     member this.MLSend(obj,e) = onMLSend obj e
-    member this.MLDebugSelection(obj,e) = onMLDebugSelection obj e
+    member this.MLDebug(obj,e) = onMLDebug obj e
 
     member this.GetDebuggerState() =
         let (state, _) = getDebuggerState ()
@@ -662,7 +662,7 @@ type internal FsiToolWindow() as this =
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
             
             addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSend        None
-            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebugSelection    None
+            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebug       None
             
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.UP)      onHistory      (Some supportWhenInInputArea)
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.DOWN)    onHistory      (Some supportWhenInInputArea)            
