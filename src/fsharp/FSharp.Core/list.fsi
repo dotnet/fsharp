@@ -851,13 +851,13 @@ namespace Microsoft.FSharp.Collections
         val where: predicate:('T -> bool) -> list:'T list -> 'T list
 
         /// <summary>Returns a list of sliding windows containing elements drawn from the input
-        /// list. Each window is returned as a fresh array.</summary>
+        /// list. Each window is returned as a fresh list.</summary>
         /// <param name="windowSize">The number of elements in each window.</param>
         /// <param name="list">The input list.</param>
         /// <returns>The result list.</returns>
         /// <exception cref="System.ArgumentException">Thrown when windowSize is not positive.</exception>
         [<CompiledName("Windowed")>]
-        val windowed : windowSize:int -> list:'T list -> 'T[] list
+        val windowed : windowSize:int -> list:'T list -> 'T list list
 
         /// <summary>Combines the two lists into a list of pairs. The two lists must have equal lengths.</summary>
         /// <param name="list1">The first input list.</param>

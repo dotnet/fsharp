@@ -21,7 +21,7 @@ type ListWindowedTestInput<'t> =
     {
         InputList : 't list
         WindowSize : int
-        ExpectedList : 't[] list
+        ExpectedList : 't list list
         Exception : Type option
     }
 
@@ -965,19 +965,19 @@ type ListModule02() =
         {
           InputList = [1..10]
           WindowSize = 1
-          ExpectedList =  [ for i in 1..10 do yield [| i |] ]
+          ExpectedList =  [ for i in 1..10 do yield [i] ]
           Exception = None
         } |> testWindowed
         {
           InputList = [1..10]
           WindowSize = 5
-          ExpectedList =  [ for i in 1..6 do yield [| i; i+1; i+2; i+3; i+4 |] ]
+          ExpectedList =  [ for i in 1..6 do yield [i; i+1; i+2; i+3; i+4] ]
           Exception = None
         } |> testWindowed
         {
           InputList = [1..10]
           WindowSize = 10
-          ExpectedList =  [ yield [| 1 .. 10 |] ]
+          ExpectedList =  [ yield [1..10] ]
           Exception = None
         } |> testWindowed
         {
@@ -989,7 +989,7 @@ type ListModule02() =
         {
           InputList = ["str1";"str2";"str3";"str4"]
           WindowSize = 2
-          ExpectedList =  [ [|"str1";"str2"|]; [|"str2";"str3"|]; [|"str3";"str4"|] ]
+          ExpectedList =  [ ["str1";"str2"]; ["str2";"str3"]; ["str3";"str4"] ]
           Exception = None
         } |> testWindowed
         {
@@ -1007,21 +1007,21 @@ type ListModule02() =
 
         // expectedLists indexed by arraySize,windowSize
         let expectedLists = Array2D.zeroCreate 6 6
-        expectedLists.[1,1] <- [ [|1|] ]
-        expectedLists.[2,1] <- [ [|1|]; [|2|] ]
-        expectedLists.[2,2] <- [ [|1; 2|] ]
-        expectedLists.[3,1] <- [ [|1|]; [|2|]; [|3|] ]
-        expectedLists.[3,2] <- [ [|1; 2|]; [|2; 3|] ]
-        expectedLists.[3,3] <- [ [|1; 2; 3|] ]
-        expectedLists.[4,1] <- [ [|1|]; [|2|]; [|3|]; [|4|] ]
-        expectedLists.[4,2] <- [ [|1; 2|]; [|2; 3|]; [|3; 4|] ]
-        expectedLists.[4,3] <- [ [|1; 2; 3|]; [|2; 3; 4|] ]
-        expectedLists.[4,4] <- [ [|1; 2; 3; 4|] ]
-        expectedLists.[5,1] <- [ [|1|]; [|2|]; [|3|]; [|4|]; [|5|] ]
-        expectedLists.[5,2] <- [ [|1; 2|]; [|2; 3|]; [|3; 4|]; [|4; 5|] ]
-        expectedLists.[5,3] <- [ [|1; 2; 3|]; [|2; 3; 4|]; [|3; 4; 5|] ]
-        expectedLists.[5,4] <- [ [|1; 2; 3; 4|]; [|2; 3; 4; 5|] ]
-        expectedLists.[5,5] <- [ [|1; 2; 3; 4; 5|] ]
+        expectedLists.[1,1] <- [ [1] ]
+        expectedLists.[2,1] <- [ [1]; [2] ]
+        expectedLists.[2,2] <- [ [1; 2] ]
+        expectedLists.[3,1] <- [ [1]; [2]; [3] ]
+        expectedLists.[3,2] <- [ [1; 2]; [2; 3] ]
+        expectedLists.[3,3] <- [ [1; 2; 3] ]
+        expectedLists.[4,1] <- [ [1]; [2]; [3]; [4] ]
+        expectedLists.[4,2] <- [ [1; 2]; [2; 3]; [3; 4] ]
+        expectedLists.[4,3] <- [ [1; 2; 3]; [2; 3; 4] ]
+        expectedLists.[4,4] <- [ [1; 2; 3; 4] ]
+        expectedLists.[5,1] <- [ [1]; [2]; [3]; [4]; [5] ]
+        expectedLists.[5,2] <- [ [1; 2]; [2; 3]; [3; 4]; [4; 5] ]
+        expectedLists.[5,3] <- [ [1; 2; 3]; [2; 3; 4]; [3; 4; 5] ]
+        expectedLists.[5,4] <- [ [1; 2; 3; 4]; [2; 3; 4; 5] ]
+        expectedLists.[5,5] <- [ [1; 2; 3; 4; 5] ]
 
         for arraySize = 0 to 5 do
             for windowSize = -1 to 5 do

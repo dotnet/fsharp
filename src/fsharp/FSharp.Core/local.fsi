@@ -27,7 +27,7 @@ module internal List =
     val unfold : ('State -> ('T * 'State) option) -> 'State -> 'T list
     val unzip : ('T1 * 'T2) list -> 'T1 list * 'T2 list
     val unzip3 : ('T1 * 'T2 * 'T3) list -> 'T1 list * 'T2 list * 'T3 list
-    val windowed : int -> 'T list -> 'T[] list
+    val windowed : int -> 'T list -> 'T list list
     val zip : 'T1 list -> 'T2 list -> ('T1 * 'T2) list
     val zip3 : 'T1 list -> 'T2 list -> 'T3 list -> ('T1 * 'T2 * 'T3) list
     val ofArray : 'T[] -> 'T list
