@@ -1298,8 +1298,11 @@ module Patterns =
         if System.Int32.TryParse(a, &idx) && b = ""  then
             st.referencedTypeDefs.[idx]
         else 
+            // escape commas found in type name, which are not already escaped
+            // '\' is not valid in a type name except as an escape character, so logic can be pretty simple
+            let escapedTcName = System.Text.RegularExpressions.Regex.Replace(a, @"(?<!\\),", @"\,")
             let assref = decodeAssemblyRef st b
-            mkNamedTycon (a,assref)
+            mkNamedTycon (escapedTcName, assref)
 
     let u_tyconstSpec st = 
       let tag = u_byte_as_int st 
