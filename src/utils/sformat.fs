@@ -894,7 +894,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                         //        member x.StructuredDisplayString = x.ToString()
                                                         //
                                                         | :? string as s -> sepL s
-                                                        | _ -> sameObjL (depthLim-1) Precedence.BracketIfTuple alternativeObj
+                                                        | _ -> 
+                                                          // recursing like this can be expensive, so let's throttle it severely
+                                                          sameObjL (depthLim/10) Precedence.BracketIfTuple alternativeObj
                                                   countNodes 0 // 0 means we do not count the preText and postText 
 
                                                   // the postText for this node will be everything up to the next occurrence of an opening brace, if one exists

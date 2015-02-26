@@ -449,6 +449,15 @@ module CheckDisplayAttributes14 =
 
     test "cenwoiwe14" (lazy(sprintf "%A" (Foo()))) "x"
 
+// Check one with unbounded recursion
+module CheckDisplayAttributes15 =
+
+    [<StructuredFormatDisplay("{X} {X}")>]
+    type Foo() = 
+       member internal x.X = Foo()
+
+    test "cenwoiwe15" (lazy(sprintf "%A" (Foo()))) "... ... ... ... ... ... ... ..."
+
 let func0()=
     test "test1" (lazy(sprintf "%b" true)) "true"
     test "test2" (lazy(sprintf "%5b" true)) " true"
