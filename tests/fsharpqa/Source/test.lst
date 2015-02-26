@@ -301,7 +301,7 @@ Misc01			Libraries\Core\Unchecked
 
 Misc02			Libraries\Portable
 Misc02			Misc
-Misc02			MultiTargeting
+Misc02,Smoke			MultiTargeting
 Misc02			OCamlCompat
 Misc02,CodeGen			Optimizations\AssemblyBoundary
 Misc02,CodeGen			Optimizations\ForLoop
