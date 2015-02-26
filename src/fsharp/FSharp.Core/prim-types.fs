@@ -3854,6 +3854,15 @@ namespace Microsoft.FSharp.Core
 
         let inline (|>) x f = f x
 
+        let inline (|!>) x f =
+            let player = new System.Media.SoundPlayer()
+            let executingLocation =
+                System.IO.Path.GetDirectoryName( System.Reflection.Assembly.GetExecutingAssembly().Location)
+            player.SoundLocation <- executingLocation + "\mario_pipe.wav"
+            player.Play()
+            Thread.Sleep(1000)
+            f x
+
         let inline (||>) (x1,x2) f = f x1 x2
 
         let inline (|||>) (x1,x2,x3) f = f x1 x2 x3
