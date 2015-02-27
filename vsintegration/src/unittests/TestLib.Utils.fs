@@ -35,7 +35,17 @@ module Asserts =
             let message = sprintf "Expected S_OK"
             printfn "%s" message
             Assert.Fail(message)
-
+    let Throws<'T when 'T:> Exception> f =
+        let error =
+            try
+                f ()
+                Some(sprintf "No exception occurred, expected %O" typeof<'T>)
+            with
+            | :? 'T -> None
+            | e -> Some(sprintf "Wrong exception type occurred. Got %O, expecting %O" (e.GetType()) typeof<'T>)
+        match error with
+        | Some(msg) -> Assert.Fail(msg)
+        | None -> ()
 
 module UIStuff =
     let SetupSynchronizationContext() =

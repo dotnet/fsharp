@@ -768,6 +768,14 @@ type Utilities() =
         ()
 
 
+    [<Test>]
+    member public this.``Parse MSBuild property of type Int64`` () = 
+        Assert.AreEqual(123L, ProjectNode.ParsePropertyValueToInt64("123"))
+        Assert.AreEqual(255L, ProjectNode.ParsePropertyValueToInt64("0xFF"))
+        Assert.AreEqual(null, ProjectNode.ParsePropertyValueToInt64(""))
+        Assert.AreEqual(null, ProjectNode.ParsePropertyValueToInt64(null))
+        Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("abc")))
+        Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("12333333333333333333333333")))
 
 #if DEBUGGERVISUALIZER
 module internal DebugViz =

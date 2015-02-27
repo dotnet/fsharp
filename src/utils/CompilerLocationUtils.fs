@@ -12,6 +12,7 @@ open System.Runtime.InteropServices
 
 module internal FSharpEnvironment =
 
+    /// The F# version reported in the banner
 #if OPEN_BUILD
     let DotNetBuildString = "(private)"
 #else
@@ -20,7 +21,6 @@ module internal FSharpEnvironment =
 
     /// The .NET build string that F# was built against (e.g. "4.0.21104.0")
     let DotNetBuildString = Microsoft.BuildSettings.Version.OfFile
-
 #endif
 
     let FSharpCoreLibRunningVersion = 
@@ -202,10 +202,13 @@ module internal FSharpEnvironment =
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try 
+            // FSharp.Compiler support setting an appkey for compiler location. I've never seen this used.
             let result = tryAppConfig "fsharp-compiler-location"
             match result with 
             | Some _ ->  result 
             | None -> 
+
+                // On windows the location of the compiler is via a registry key
 
                 // Note: If the keys below change, be sure to update code in:
                 // Property pages (ApplicationPropPage.vb)
@@ -228,20 +231,21 @@ module internal FSharpEnvironment =
                     let result =  tryRegKey key2
                     match result with 
                     | Some _ ->  result 
-                    | None -> 
+                    | None ->
 
-            // This was failing on rolling build for staging because the prototype compiler doesn't have the key. Disable there.
-            #if FX_ATLEAST_40_COMPILER_LOCATION
+                        // This was failing on rolling build for staging because the prototype compiler doesn't have the key. Disable there.
+#if FX_ATLEAST_40_COMPILER_LOCATION
                         System.Diagnostics.Debug.Assert(result<>None, sprintf "Could not find location of compiler at '%s' or '%s'" key1 key2)
-            #endif                                
-                          
-                            // For the prototype compiler, we can just use the current domain
+#endif
+
+                        // For the prototype compiler, we can just use the current domain
                         tryCurrentDomain()
         with e -> 
             System.Diagnostics.Debug.Assert(false, "Error while determining default location of F# compiler")
             None
 
 #if FX_ATLEAST_45
+
     // Apply the given function to the registry entry corresponding to the subkey.
     // The reg key is dispoed at the end of the scope.
     let useKey subkey f =
