@@ -774,9 +774,8 @@ type Utilities() =
         Assert.AreEqual(255L, ProjectNode.ParsePropertyValueToInt64("0xFF"))
         Assert.AreEqual(null, ProjectNode.ParsePropertyValueToInt64(""))
         Assert.AreEqual(null, ProjectNode.ParsePropertyValueToInt64(null))
-        Assert.Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("abc"))) |> ignore
-        Assert.Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("12333333333333333333333333"))) |> ignore
-
+        Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("abc")))
+        Throws<Exception>(fun () -> ignore (ProjectNode.ParsePropertyValueToInt64("12333333333333333333333333")))
 
 #if DEBUGGERVISUALIZER
 module internal DebugViz =
