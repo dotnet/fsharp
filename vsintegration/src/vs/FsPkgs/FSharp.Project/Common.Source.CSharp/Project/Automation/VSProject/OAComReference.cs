@@ -24,15 +24,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
             get
             {
-                int locale = 0;
-                try
-                {
-                    locale = BaseReferenceNode.LCID;
-                }
-                catch (System.FormatException)
-                {
-                    // Do Nothing
-                }
+                var locale = BaseReferenceNode.LCID;
+
                 if (0 == locale)
                 {
                     return string.Empty;
