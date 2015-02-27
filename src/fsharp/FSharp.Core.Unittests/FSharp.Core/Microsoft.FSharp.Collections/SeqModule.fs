@@ -302,7 +302,74 @@ type SeqModule() =
         
         CheckThrowsArgumentNullException (fun () -> Seq.choose funcInt nullSeq |> ignore) 
         ()
-    
+
+    [<Test>]
+    member this.ChunkBySize() =
+
+        let verify expected actual =
+            Seq.zip expected actual
+            |> Seq.iter ((<||) VerifySeqsEqual)
+
+        // int Seq
+        verify [[1..4];[5..8]] <| Seq.chunkBySize 4 {1..8}
+        verify [[1..4];[5..8];[9..10]] <| Seq.chunkBySize 4 {1..10}
+        verify [[1]; [2]; [3]; [4]] <| Seq.chunkBySize 1 {1..4}
+
+        Seq.chunkBySize 2 (Seq.initInfinite id)
+        |> Seq.take 3
+        |> verify [[0;1];[2;3];[4;5]]
+
+        Seq.chunkBySize 1 (Seq.initInfinite id)
+        |> Seq.take 5
+        |> verify [[0];[1];[2];[3];[4]]
+
+        // string Seq
+        verify [["a"; "b"];["c";"d"];["e"]] <| Seq.chunkBySize 2 ["a";"b";"c";"d";"e"]
+
+        // empty Seq
+        verify Seq.empty <| Seq.chunkBySize 3 Seq.empty
+
+        // null Seq
+        let nullSeq:seq<_> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.chunkBySize 3 nullSeq |> ignore)
+
+        // invalidArg
+        CheckThrowsArgumentException (fun () -> Seq.chunkBySize 0 {1..10} |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.chunkBySize -1 {1..10} |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.SplitInto() =
+
+        let verify expected actual =
+            Seq.zip expected actual
+            |> Seq.iter ((<||) VerifySeqsEqual)
+
+        // int Seq
+        Seq.splitInto 3 {1..10} |> verify (seq [ {1..4}; {5..7}; {8..10} ])
+        Seq.splitInto 3 {1..11} |> verify (seq [ {1..4}; {5..8}; {9..11} ])
+        Seq.splitInto 3 {1..12} |> verify (seq [ {1..4}; {5..8}; {9..12} ])
+
+        Seq.splitInto 4 {1..5} |> verify (seq [ [1..2]; [3]; [4]; [5] ])
+        Seq.splitInto 20 {1..4} |> verify (seq [ [1]; [2]; [3]; [4] ])
+
+        // string Seq
+        Seq.splitInto 3 ["a";"b";"c";"d";"e"] |> verify ([ ["a"; "b"]; ["c";"d"]; ["e"] ])
+
+        // empty Seq
+        VerifySeqsEqual [] <| Seq.splitInto 3 []
+
+        // null Seq
+        let nullSeq:seq<_> = null
+        CheckThrowsArgumentNullException (fun () -> Seq.splitInto 3 nullSeq |> ignore)
+
+        // invalidArg
+        CheckThrowsArgumentException (fun () -> Seq.splitInto 0 [1..10] |> ignore)
+        CheckThrowsArgumentException (fun () -> Seq.splitInto -1 [1..10] |> ignore)
+
+        ()
+
     [<Test>]
     member this.Compare() =
     

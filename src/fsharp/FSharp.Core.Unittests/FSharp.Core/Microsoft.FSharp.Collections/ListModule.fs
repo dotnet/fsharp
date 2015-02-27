@@ -107,7 +107,50 @@ type ListModule() =
         Assert.AreEqual(22.476666666666666666666666667M, averageOfDecimal)
             
         ()
-        
+
+    [<Test>]
+    member this.ChunkBySize() =
+
+        // int list
+        Assert.AreEqual([ [1..4]; [5..8] ], List.chunkBySize 4 [1..8])
+        Assert.AreEqual([ [1..4]; [5..8]; [9..10] ], List.chunkBySize 4 [1..10])
+        Assert.AreEqual([ [1]; [2]; [3]; [4] ], List.chunkBySize 1 [1..4])
+
+        // string list
+        Assert.AreEqual([ ["a"; "b"]; ["c";"d"]; ["e"] ], List.chunkBySize 2 ["a";"b";"c";"d";"e"])
+
+        // empty list
+        Assert.AreEqual([], List.chunkBySize 3 [])
+
+        // invalidArg
+        CheckThrowsArgumentException (fun () -> List.chunkBySize 0 [1..10] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.chunkBySize -1 [1..10] |> ignore)
+
+        ()
+
+    [<Test>]
+    member this.SplitInto() =
+
+        // int list
+        Assert.AreEqual([ [1..4]; [5..7]; [8..10] ], List.splitInto 3 [1..10])
+        Assert.AreEqual([ [1..4]; [5..8]; [9..11] ], List.splitInto 3 [1..11])
+        Assert.AreEqual([ [1..4]; [5..8]; [9..12] ], List.splitInto 3 [1..12])
+
+        Assert.AreEqual([ [1..2]; [3]; [4]; [5] ], List.splitInto 4 [1..5])
+        Assert.AreEqual([ [1]; [2]; [3]; [4] ], List.splitInto 20 [1..4])
+
+        // string list
+        Assert.AreEqual([ ["a"; "b"]; ["c";"d"]; ["e"] ], List.splitInto 3 ["a";"b";"c";"d";"e"])
+
+        // empty list
+        Assert.AreEqual([], List.splitInto 3 [])
+
+        // invalidArg
+        CheckThrowsArgumentException (fun () -> List.splitInto 0 [1..10] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.splitInto -1 [1..10] |> ignore)
+
+        ()
+
     [<Test>]
     member this.distinct() = 
         // distinct should work on empty list

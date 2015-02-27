@@ -129,6 +129,15 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> source:seq<'T> -> seq<'U>
 
+        /// <summary>Divides the input sequence into chunks of size at most <c>chunkSize</c>.</summary>
+        /// <param name="chunkSize">The maximum size of each chunk.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The sequence divided into chunks.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
+        [<CompiledName("ChunkBySize")>]
+        val chunkBySize: chunkSize:int -> source:seq<'T> -> seq<'T[]>
+
         /// <summary>Applies the given function to each element of the sequence and concatenates all the
         /// results.</summary>
         ///
@@ -235,6 +244,17 @@ namespace Microsoft.FSharp.Collections
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("DistinctBy")>]
         val distinctBy: projection:('T -> 'Key) -> source:seq<'T> -> seq<'T> when 'Key : equality
+
+        /// <summary>Splits the input sequence into at most <c>count</c> chunks.</summary>
+        /// <remarks>This function returns a sequence that digests the whole initial sequence as soon as that
+        /// sequence is iterated. As a result this function should not be used with large or infinite sequences.</remarks>
+        /// <param name="count">The maximum number of chunks.</param>
+        /// <param name="source">The input sequence.</param>
+        /// <returns>The sequence split into chunks.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
+        [<CompiledName("SplitInto")>]
+        val splitInto: count:int -> source:seq<'T> -> seq<'T[]>
 
         /// <summary>Creates an empty sequence.</summary>
         ///

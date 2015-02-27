@@ -54,6 +54,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Choose")>]
         val choose: chooser:('T -> 'U option) -> list:'T list -> 'U list
 
+        /// <summary>Divides the input list into chunks of size at most <c>chunkSize</c>.</summary>
+        /// <param name="chunkSize">The maximum size of each chunk.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The list divided into chunks.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when <c>chunkSize</c> is not positive.</exception>
+        [<CompiledName("ChunkBySize")>]
+        val chunkBySize: chunkSize:int -> list:'T list -> 'T list list
+
         /// <summary>For each element of the list, applies the given function. Concatenates all the results and return the combined list.</summary>
         /// <param name="mapping">The function to transform each input element into a sublist to be concatenated.</param>
         /// <param name="list">The input list.</param>
@@ -119,6 +127,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The result list.</returns>
         [<CompiledName("CountBy")>]
         val countBy : projection:('T -> 'Key) -> list:'T list -> ('Key * int) list when 'Key : equality
+
+        /// <summary>Splits the input list into at most <c>count</c> chunks.</summary>
+        /// <param name="count">The maximum number of chunks.</param>
+        /// <param name="list">The input list.</param>
+        /// <returns>The list split into chunks.</returns>
+        /// <exception cref="System.ArgumentException">Thrown when <c>count</c> is not positive.</exception>
+        [<CompiledName("SplitInto")>]
+        val splitInto: count:int -> list:'T list -> 'T list list
 
         /// <summary>Returns an empty list of the given type.</summary>
         [<GeneralizableValue>]

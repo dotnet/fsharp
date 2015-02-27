@@ -542,6 +542,59 @@ module internal List =
             windowedToFreshConsTail cons windowSize (len - windowSize) list.Tail
             cons
 
+    let rec chunkBySizeToFreshConsTail chunkCons resCons chunkSize i list =
+        match list with
+        | [] ->
+            setFreshConsTail chunkCons []
+            setFreshConsTail resCons []
+        | h::t ->
+            let cons = freshConsNoTail h
+            if i = chunkSize then
+                setFreshConsTail chunkCons []
+                let newResCons = freshConsNoTail cons
+                setFreshConsTail resCons newResCons
+                chunkBySizeToFreshConsTail cons newResCons chunkSize 1 t
+            else
+                setFreshConsTail chunkCons cons
+                chunkBySizeToFreshConsTail cons resCons chunkSize (i+1) t
+
+    let chunkBySize chunkSize list =
+        if chunkSize <= 0 then invalidArg "chunkSize" (SR.GetString(SR.inputMustBePositive))
+        match list with
+        | [] -> []
+        | head::tail ->
+            let chunkCons = freshConsNoTail head
+            let res = freshConsNoTail chunkCons
+            chunkBySizeToFreshConsTail chunkCons res chunkSize 1 tail
+            res
+
+    let rec splitIntoToFreshConsTail chunkCons resCons lenDivCount lenModCount i j list =
+        match list with
+        | [] ->
+            setFreshConsTail chunkCons []
+            setFreshConsTail resCons []
+        | h::t ->
+            let cons = freshConsNoTail h
+            if (i < lenModCount && j = lenDivCount + 1) || (i >= lenModCount && j = lenDivCount) then
+                setFreshConsTail chunkCons []
+                let newResCons = freshConsNoTail cons
+                setFreshConsTail resCons newResCons
+                splitIntoToFreshConsTail cons newResCons lenDivCount lenModCount (i + 1) 1 t
+            else
+                setFreshConsTail chunkCons cons
+                splitIntoToFreshConsTail cons resCons lenDivCount lenModCount i (j + 1) t
+
+    let splitInto count (list: _ list) =
+        if count <= 0 then invalidArg "count" (SR.GetString(SR.inputMustBePositive))
+        match list.Length with
+        | 0 -> []
+        | len ->
+            let chunkCons = freshConsNoTail list.Head
+            let res = freshConsNoTail chunkCons
+            let count = min len count
+            splitIntoToFreshConsTail chunkCons res (len / count) (len % count) 0 1 list.Tail
+            res
+
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
     let rec zipToFreshConsTail cons xs1 xs2 = 
@@ -868,3 +921,20 @@ module internal Array =
         else
             Array.Copy(array, startIndex, res, 0, count)
         res
+
+    let splitInto count (array : 'T[]) =
+        let len = array.Length
+        if len = 0 then
+            [| |]
+        else
+            let count = min count len
+            let res = zeroCreateUnchecked count : 'T[][]
+            let minChunkSize = len / count
+            let startIndex = ref 0
+            for i = 0 to len % count - 1 do
+                res.[i] <- subUnchecked !startIndex (minChunkSize + 1) array
+                startIndex := !startIndex + minChunkSize + 1
+            for i = len % count to count - 1 do
+                res.[i] <- subUnchecked !startIndex minChunkSize array
+                startIndex := !startIndex + minChunkSize
+            res
