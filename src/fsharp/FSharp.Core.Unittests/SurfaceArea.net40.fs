@@ -3468,4 +3468,4 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type GetType()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
 "
-        SurfaceArea.verify expected "net40" (sprintf "%s\\%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)
+        SurfaceArea.verify expected "net40" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))

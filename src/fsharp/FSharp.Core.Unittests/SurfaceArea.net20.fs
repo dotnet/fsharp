@@ -3278,4 +3278,4 @@ System.Tuple`8[T1,T2,T3,T4,T5,T6,T7,TRest]: TRest Rest
 System.Tuple`8[T1,T2,T3,T4,T5,T6,T7,TRest]: TRest get_Rest()
 System.Tuple`8[T1,T2,T3,T4,T5,T6,T7,TRest]: Void .ctor(T1, T2, T3, T4, T5, T6, T7, TRest)
 "
-        SurfaceArea.verify expected "net20" (sprintf "%s\\%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)
+        SurfaceArea.verify expected "net20" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))

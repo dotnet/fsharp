@@ -3452,4 +3452,4 @@ System.Numerics.BigInteger: System.Type GetType()
 System.Numerics.BigInteger: Void .ctor(Int32)
 System.Numerics.BigInteger: Void .ctor(Int64)
 "
-        SurfaceArea.verify expected "portable259" (sprintf "%s\\%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)
+        SurfaceArea.verify expected "portable259" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
