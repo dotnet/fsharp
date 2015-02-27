@@ -12,6 +12,11 @@ F# is a mature, open source, cross-platform, functional-first programming langua
 
 Changes contributed here are packaged into the Visual F# Tools, the F# Open Edition, and other open source F# editing tools. Microsoft coordinates packaging this repository as part of the Visual F# Tools, while the F# community coordinates packaging it as the Open Edition of F# for use on Linux, OSX, Android, iOS, and other platforms, via the [fsharp/fsharp GitHub repo](https://github.com/fsharp/fsharp/).
 
+## We're having a Bugbash!!!!   find bugs and win a __Cup<`t>__
+
+[Bug bash page](https://github.com/Microsoft/visualfsharp/wiki/Have-a-Cup-'t--Visual-F%23-Tools-March-Bugbash)
+
+
 ###Engineering status
 
 [F# 4.0 status](https://github.com/Microsoft/visualfsharp/wiki/F%23-4.0-Status)
