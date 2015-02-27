@@ -324,25 +324,7 @@ type cenv =
 // [ns]            ,name -> ns+name
 // [ns;typeA;typeB],name -> ns+typeA+typeB+name
 let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) = 
-
-    // If an inner nested type's name contains a space, the proper encoding is "\+" on both sides - otherwise,
-    // we use "+"
-    let rec collectPrefixParts (l : string list) (acc : string list) =
-        match l with
-        | h1 :: (h2 :: _ as tl) ->
-            collectPrefixParts tl 
-                (List.append
-                    acc
-                    [   yield h1
-                        if h1.Contains(" ") || h2.Contains(" ") then
-                            yield "\\+"
-                        else
-                            yield "+"])
-        | h :: [] -> List.append acc [h]
-        | _ -> acc
-
-    let prefix = collectPrefixParts tref.Enclosing [] |> List.fold (fun (s1 : string) (s2 : string) -> s1 + s2) ""
-    let qualifiedName = prefix + (if prefix <> "" then (if tref.Name.Contains(" ") then "\\+" else "+") else "") + tref.Name  // e.g. Name.Space.Class+NestedClass
+    let qualifiedName = (String.concat "+" (tref.Enclosing @ [ tref.Name ])).Replace(",", @"\,")
     match tref.Scope with
     | ILScopeRef.Assembly asmref ->
         let assembly = 
