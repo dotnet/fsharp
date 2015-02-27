@@ -1534,7 +1534,7 @@ let discardAndReturnVoid = DiscardThen ReturnVoid
 // the bodies of methods in a couple of places
 //------------------------------------------------------------------------- 
  
-let CodeGenThen mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,eenv,alreadyUsedArgs,alreadyUsedLocals,codeGenFunction,m) = 
+let CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,eenv,alreadyUsedArgs,alreadyUsedLocals,codeGenFunction,m) = 
     let cgbuf = new CodeGenBuffer(m,mgbuf,methodName,alreadyUsedArgs,alreadyUsedLocals,zapFirstSeqPointToStart)
     let start = CG.GenerateMark cgbuf "mstart"
     let innerVals = entryPointInfo |> List.map (fun (v,kind) -> (v,(kind,start))) 
@@ -1554,7 +1554,21 @@ let CodeGenThen mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,eenv,al
             { locRange=(start.CodeLabel, finish.CodeLabel);
               locInfos= [{ LocalIndex=i; LocalName=nm }] })
 
-    (List.map (snd >> mkILLocal) locals, 
+    let ilLocals =
+        locals
+        |> List.map (fun (infos, ty) ->
+            // in interactive environment, attach name and range info to locals to improve debug experience
+            if cenv.opts.isInteractive && cenv.opts.generateDebugSymbols then
+                match infos with
+                | [(nm, (start, finish))] -> mkILLocal ty (Some(nm, start.CodeLabel, finish.CodeLabel))
+                // REVIEW: what do these cases represent?
+                | _ :: _
+                | [] -> mkILLocal ty None 
+            // if not interactive, don't bother adding this info
+            else
+                mkILLocal ty None)
+
+    (ilLocals, 
      maxStack,
      computeCodeLabelToPC,
      code,
@@ -1566,7 +1580,7 @@ let CodeGenMethod cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,
     (* Codegen the method. REVIEW: change this to generate the AbsIL code tree directly... *)
 
     let locals,maxStack,computeCodeLabelToPC,instrs,exns,localDebugSpecs,hasSequencePoints = 
-      CodeGenThen mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,eenv,alreadyUsedArgs,alreadyUsedLocals,codeGenFunction,m)
+      CodeGenThen cenv mgbuf (zapFirstSeqPointToStart,entryPointInfo,methodName,eenv,alreadyUsedArgs,alreadyUsedLocals,codeGenFunction,m)
 
     let dump() = 
        instrs |> Array.iteri (fun i instr -> dprintf "%s: %d: %A\n" methodName i instr);

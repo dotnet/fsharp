@@ -226,7 +226,7 @@ let rec convInstr cenv (tmps: ILLocalsAllocator, thisGenParams: ILGenericParamet
                 | Apps_app (arg,rest) -> 
                     let storers, loaders = unwind rest
                     let argStorers,argLoaders = 
-                          let locn = tmps.AllocLocal (mkILLocal arg)
+                          let locn = tmps.AllocLocal (mkILLocal arg None)
                           [mkStloc locn], [mkLdloc locn]
                     argStorers :: storers, argLoaders :: loaders  
                 | Apps_done _ -> 
@@ -348,7 +348,7 @@ let mkILFreeVarForParam (p : ILParameter) =
     let nm = (match p.Name with Some x -> x | None -> failwith "closure parameters must be given names")
     mkILFreeVar(nm, false,p.Type)
 
-let mkILLocalForFreeVar (p: IlxClosureFreeVar) = mkILLocal p.fvType
+let mkILLocalForFreeVar (p: IlxClosureFreeVar) = mkILLocal p.fvType None
 
 let mkILCloFldSpecs _cenv flds = 
     flds |> Array.map (fun fv -> (fv.fvName,fv.fvType)) |> Array.toList

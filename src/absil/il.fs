@@ -1185,7 +1185,8 @@ and ILFilterBlock =
 [<NoComparison; NoEquality>]
 type ILLocal = 
     { Type: ILType;
-      IsPinned: bool }
+      IsPinned: bool;
+      DebugInfo: (string * int * int) option }
       
 type ILLocals = ILList<ILLocal>
 let emptyILLocals = (ILList.empty : ILLocals)
@@ -3022,9 +3023,10 @@ let mkILReturn ty : ILReturn =
       Type=ty;
       CustomAttrs=emptyILCustomAttrs  }
 
-let mkILLocal ty = 
+let mkILLocal ty dbgInfo = 
     { IsPinned=false;
-      Type=ty; }
+      Type=ty;
+      DebugInfo=dbgInfo }
 
 type ILFieldSpec with
   member fr.ActualType = 

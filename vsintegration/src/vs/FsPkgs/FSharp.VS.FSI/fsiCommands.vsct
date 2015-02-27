@@ -92,43 +92,37 @@
         </Strings>
       </Button>
 
-      <!-- In Dev11, shell now has 
+      <!-- In Dev11+, shell now has 
       <Button guid ="guidVSStd11" id ="cmdidInteractiveSessionInterrupt" priority ="0x100" type ="Button">
       <Button guid ="guidVSStd11" id ="cmdidInteractiveSessionRestart" priority ="0x105" type ="Button">
       -->
-      <!-- In Dev10 hybrid, we need buttons below -->
-      <Button Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionInterrupt" priority="0x0100" type="Button">
-        <Parent guid="guidFsiConsoleCmdSet" id="IDG_VS_WNDO_OTRWNDWS1"/>
-        <!-- Icon guid="guidImages" id="bmpPic2" /-->
-        <Icon guid="guidCancelEvaluationBmp" id="bmpConsole" />        
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0100" type="Button">
         <Strings>
-          <CommandName>FSharp.Interactive.Interrupt</CommandName>
-          <ButtonText>Cancel Evaluation</ButtonText> <!-- This was called "Interrupt Session" -->
+          <CommandName>FSharp.Interactive.AttachDebugger</CommandName>
+          <ButtonText>Start Debugging</ButtonText>
         </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
-      <Button Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionRestart" priority="0x0100" type="Button">
-        <Parent guid="guidFsiConsoleCmdSet" id="IDG_VS_WNDO_OTRWNDWS1"/>
-        <!-- Icon guid="guidImages" id="bmpPic2" /-->
-        <Icon guid="guidResetSessionBmp" id="bmpConsole" /> 
+      
+      <Button guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0101" type="Button">
         <Strings>
-          <CommandName>FSharp.Interactive.Restart</CommandName>
-          <ButtonText>Reset Session</ButtonText>
+          <CommandName>FSharp.Interactive.DetachDebugger</CommandName>
+          <ButtonText>Stop Debugging</ButtonText>
         </Strings>
+        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
 
       <!-- The following places a button on the F# Editor Context Menu -->
-      <!-- In Dev11, shell now has 
+      <!-- In Dev11+, shell now has 
       <Button guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" priority ="0x100" type ="Button">
       -->
-      <!-- In Dev10 hybrid, we need buttons below -->
-      <Button Condition="!Defined(FX_ATLEAST_45)" guid ="guidInteractive" id ="cmdidSendSelection" priority ="0x100" type ="Button">
-          <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
-        <Icon guid="guidFsiConsoleBmp" id="bmpConsole"/>
+      <Button guid ="guidInteractive" id ="cmdidDebugSelection" priority ="0x106" type ="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
         <Strings>
-          <ButtonText>Send To Interactive</ButtonText>
-          <CommandName>Interactive.Send.Selection.Context</CommandName>
+          <ButtonText>Debug in F# Interactive</ButtonText>
+          <CommandName>Interactive.Debug.Selection.Context</CommandName>
         </Strings>
-        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
+       <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
 
     </Buttons>
@@ -177,20 +171,21 @@
     <CommandPlacement guid="guidVSStd97" id="cmdidClearPane" priority="0x0200">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleClearGrp"/>
     </CommandPlacement>
-    <!-- Context menu, session group: Hybrid -->  
-    <CommandPlacement Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionInterrupt" priority="0x0100">
+          
+    <!-- Context menu, session group -->
+    <CommandPlacement guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" priority="0x0100">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
     </CommandPlacement>
-    <CommandPlacement Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionRestart" priority="0x0300">
+    <CommandPlacement guid="guidVSStd11" id="cmdidInteractiveSessionRestart" priority="0x0300">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
     </CommandPlacement>
-    <!-- Context menu, session group: Dev11 -->
-    <CommandPlacement Condition="Defined(FX_ATLEAST_45)" guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" priority="0x0100">
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" priority="0x0700">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
     </CommandPlacement>
-    <CommandPlacement Condition="Defined(FX_ATLEAST_45)" guid="guidVSStd11" id="cmdidInteractiveSessionRestart" priority="0x0300">
+    <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" priority="0x0800">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
     </CommandPlacement>
+    
     <!-- Adds MLSend to the context menu:
     <CommandPlacement guid="guidFsiConsoleCmdSet" id="cmdidMLSendSelection" priority="0x0500">
       <Parent guid="guidFsiConsoleCmdSet" id="FsiConsoleSessionsGrp"/>
@@ -226,24 +221,27 @@
          ALT-ENTER is globally bound to Diagram.Property.
          Here we bind it in the Editor context of the standard TextEditor.
          Ideally, we would bind it for F# only editor.
-         Both Hybrid and Dev11 are used here, to build both ways.
     -->
-    <KeyBinding Condition="!Defined(FX_ATLEAST_45)" guid="guidInteractive" id="cmdidSendSelection" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
-    <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
+    <KeyBinding guid ="guidInteractive" id ="cmdidDebugSelection" editor="GUID_TextEditorFactory" key1="D" mod1="Alt" key2="VK_RETURN" mod2="Alt"  />
+    <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
 
     <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
     <KeyBinding guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow"    editor="guidVSStd97" key1="F" mod1="Control Alt"  />
 
-    <!-- CRTL-Break when in FSI ToolWindow is Interrupt -->
-    <KeyBinding Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control"  />    
-    <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control"  />
+    <!-- CRTL-Break when in FSI ToolWindow is Interrupt --> 
+    <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionInterrupt" editor="guidFsiToolWindow" key1="VK_CANCEL" mod1="Control"  />
   
-    <!-- CRTL-Alt-R when in FSI ToolWindow is Reset -->
-    <KeyBinding Condition="!Defined(FX_ATLEAST_45)" guid="guidFsiConsoleCmdSet" id="cmdidSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control Alt"  />    
-    <KeyBinding Condition="Defined(FX_ATLEAST_45)" guid="guidVSStd11" id="cmdidInteractiveSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control Alt"  />
+    <!-- CRTL-Alt-R when in FSI ToolWindow is Reset -->  
+    <KeyBinding guid="guidVSStd11" id="cmdidInteractiveSessionRestart" editor="guidFsiToolWindow" key1="R" mod1="Control Alt"  />
   
      <!-- CRTL-Alt-C when in FSI ToolWindow is Clear All -->
     <KeyBinding guid="guidVSStd97" id="cmdidClearPane" editor="guidFsiToolWindow" key1="C" mod1="Control Alt"  />
+    
+    <!-- CRTL-Alt-D when in FSI ToolWindow is attach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidAttachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Alt"  />
+    
+    <!-- CRTL-Shift-D when in FSI ToolWindow is detach debugger -->
+    <KeyBinding guid="guidFsiConsoleCmdSet" id="cmdidDetachDebugger" editor="guidFsiToolWindow" key1="D" mod1="Control Shift"  /> 
   </KeyBindings>
 
   <Symbols>
@@ -279,9 +277,8 @@
       <IDSymbol name="FsiConsoleClearGrp" value="0x1040" /> 
       <IDSymbol name="FsiConsoleSessionsGrp" value="0x1050" />      
       <IDSymbol name="cmdidFsiConsole" value="0x101" />
-      <!-- below is only used by hybrid   -->
-      <IDSymbol Condition="!Defined(FX_ATLEAST_45)" name="cmdidSessionInterrupt" value="0x102" />
-      <IDSymbol Condition="!Defined(FX_ATLEAST_45)" name="cmdidSessionRestart" value="0x103" />
+      <IDSymbol name="cmdidAttachDebugger" value="0x104" />
+      <IDSymbol name="cmdidDetachDebugger" value="0x105" />
      </GuidSymbol>
 
     <GuidSymbol name="guidFsiConsoleBmp" value="{9074CE8B-8F1E-4c23-8EDC-82C25E0323A8}" >
@@ -301,12 +298,11 @@
       <IDSymbol name="cmdidInteractiveSessionInterrupt" value ="0x01A"/>
       <IDSymbol name="cmdidInteractiveSessionRestart" value ="0x01B"/>
     </GuidSymbol>
-
-<!-- below is only used by hybrid   -->
-    <GuidSymbol Condition="!Defined(FX_ATLEAST_45)" name="guidInteractive" value="{8B9BF77B-AF94-4588-8847-2EB2BFFD29EB}" >
-      <IDSymbol name="cmdidSendSelection" value ="0x01"/>
-    </GuidSymbol>
   
+    <GuidSymbol name="guidInteractive" value="{8B9BF77B-AF94-4588-8847-2EB2BFFD29EB}" >
+      <IDSymbol name="cmdidDebugSelection" value ="0x01"/>
+    </GuidSymbol>
+
   </Symbols>
 
 </CommandTable>

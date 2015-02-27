@@ -733,7 +733,8 @@ type internal FsiDynamicCompilerState =
       tcState   : Build.TcState 
       ilxGenerator : Ilxgen.IlxAssemblyGenerator
       // Why is this not in FsiOptions?
-      timing    : bool }
+      timing    : bool
+      debugBreak : bool }
 
 let internal WithImplicitHome (tcConfigB, dir) f = 
     let old = tcConfigB.implicitIncludeDir 
@@ -986,12 +987,21 @@ type internal FsiDynamicCompiler
         let mkBind pat expr = Binding (None, DoBinding, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, NoSequencePointAtInvisibleBinding)
         let bindingA = mkBind (mkSynPatVar None itID) expr (* let it = <expr> *)  // NOTE: the generalizability of 'expr' must not be damaged, e.g. this can't be an application 
         let saverPath  = ["Microsoft";"FSharp";"Compiler";"Interactive";"RuntimeHelpers";"SaveIt"]
-        let dots = List.replicate (saverPath.Length - 1) rangeStdin
-        let bindingB = mkBind (SynPat.Wild m) (SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.LongIdent(false, LongIdentWithDots(List.map (mkSynId rangeStdin) saverPath,dots),None,m), itExp,m)) (* let _  = saverPath it *)
+        let dots = List.replicate (saverPath.Length - 1) m
+        let bindingB = mkBind (SynPat.Wild m) (SynExpr.App(ExprAtomicFlag.NonAtomic, false, SynExpr.LongIdent(false, LongIdentWithDots(List.map (mkSynId m) saverPath,dots),None,m), itExp,m)) (* let _  = saverPath it *)
         let defA = SynModuleDecl.Let (false, [bindingA], m)
         let defB = SynModuleDecl.Let (false, [bindingB], m)
         
         [defA; defB]
+
+    // construct an invisible call to Debugger.Break(), in the specified range
+    member __.CreateDebuggerBreak (m : range) =
+        let breakPath = ["System";"Diagnostics";"Debugger";"Break"]
+        let dots = List.replicate (breakPath.Length - 1) m
+        let methCall = SynExpr.LongIdent(false, LongIdentWithDots(List.map (mkSynId m) breakPath, dots), None, m)
+        let args = SynExpr.Const(SynConst.Unit, m)
+        let breakStatement = SynExpr.App(ExprAtomicFlag.Atomic, false, methCall, args, m)
+        SynModuleDecl.DoExpr(SequencePointInfoForBinding.NoSequencePointAtDoBinding, breakStatement, m)
 
     member __.EvalRequireReference istate m path = 
         if Path.IsInvalidPath(path) then
@@ -1080,6 +1090,7 @@ type internal FsiDynamicCompiler
          tcState   = tcState;
          ilxGenerator = ilxGenerator;
          timing    = false;
+         debugBreak = false;
         } 
 
 
@@ -1619,7 +1630,10 @@ type internal FsiInteractionProcessor
             | IHash (ParsedHashDirective("silentCd",[path],m),_) ->
                 ChangeDirectory path m;
                 fsiConsolePrompt.SkipNext(); (* "silent" directive *)
-                istate,Completed                  
+                istate,Completed   
+                               
+            | IHash (ParsedHashDirective("dbgbreak",[],_),_) -> 
+                {istate with debugBreak = true},Completed
 
             | IHash (ParsedHashDirective("time",[],_),_) -> 
                 if istate.timing then
@@ -1678,18 +1692,36 @@ type internal FsiInteractionProcessor
     /// #directive comes through with other definitions as a SynModuleDecl.HashDirective.
     /// We split these out for individual processing.
     let rec ExecInteractions (exitViaKillThread, tcConfig, istate, action:ParsedFsiInteraction option) =
-        let action,nextAction = 
+        let action,nextAction,istate = 
             match action with
-            | None                                      -> None  ,None
-            | Some (IHash _)                            -> action,None
-            | Some (IDefns ([],_))                      -> None  ,None
+            | None                                      -> None  ,None,istate
+            | Some (IHash _)                            -> action,None,istate
+            | Some (IDefns ([],_))                      -> None  ,None,istate
             | Some (IDefns (SynModuleDecl.HashDirective(hash,mh)::defs,m)) -> 
-                Some (IHash(hash,mh)),Some (IDefns(defs,m))
+                Some (IHash(hash,mh)),Some (IDefns(defs,m)),istate
 
             | Some (IDefns (defs,m))                    -> 
                 let isDefHash = function SynModuleDecl.HashDirective(_,_) -> true | _ -> false
+                let isBreakable def = 
+                    // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
+                    match def with
+                    | SynModuleDecl.DoExpr (SequencePointInfoForBinding.SequencePointAtBinding _, _, _)
+                    | SynModuleDecl.Let (_, SynBinding.Binding(_, _, _, _, _, _, _, _ ,_ ,_ ,_ , SequencePointInfoForBinding.SequencePointAtBinding _) :: _, _) -> true
+                    | _ -> false
                 let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
                 let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList
+
+                // If user is debugging their script interactively, inject call
+                // to Debugger.Break() at the first "breakable" line.
+                // Update istate so that more Break() calls aren't injected when recursing
+                let defsA,istate =
+                    if istate.debugBreak then
+                        let preBreak = Seq.takeWhile (isBreakable >> not) defsA |> Seq.toList
+                        let postBreak = Seq.skipWhile (isBreakable >> not) defsA |> Seq.toList
+                        match postBreak with
+                        | h :: _ -> preBreak @ (fsiDynamicCompiler.CreateDebuggerBreak(h.Range) :: postBreak), { istate with debugBreak = false }
+                        | _ -> defsA, istate
+                    else defsA,istate
 
                 // When the last declaration has a shape of DoExp (i.e., non-binding), 
                 // transform it to a shape of "let it = <exp>", so we can refer it.
@@ -1698,7 +1730,7 @@ type internal FsiInteractionProcessor
                             | SynModuleDecl.DoExpr(_,exp,_), rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
                             | _ -> defsA
 
-                Some (IDefns(defsA,m)),Some (IDefns(defsB,m))
+                Some (IDefns(defsA,m)),Some (IDefns(defsB,m)),istate
 
         match action with
           | None -> assert(nextAction.IsNone); istate,Completed

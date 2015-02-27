@@ -733,6 +733,7 @@ type internal LineTokenizer(text:string,
                     | true,"I" 
                     | true,"load" 
                     | true,"time" 
+                    | true,"dbgbreak" 
                     | true,"cd" 
 #if DEBUG
                     | true,"terms" 

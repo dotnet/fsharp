@@ -56,24 +56,33 @@ module internal Hooks =
         with e2 ->
             (System.Windows.Forms.MessageBox.Show(e2.ToString()) |> ignore)
 
-    let private withFSIToolWindow (this:Package) f =
+    let private queryFSIToolWindow (this:Package) (f : FsiToolWindow -> 't) (dflt : 't) =
         try            
             let window = this.FindToolWindow(typeof<FsiToolWindow>, 0, true)
             let windowFrame = window.Frame :?> IVsWindowFrame
             if windowFrame.IsVisible() <> VSConstants.S_OK then
                 windowFrame.Show() |> throwOnFailure0
             match window with
-            | null -> ()
             | :? FsiToolWindow as window -> f window
-            | _ -> ()
+            | _ -> dflt
         with e2 ->
             (System.Windows.Forms.MessageBox.Show(VFSIstrings.SR.exceptionRaisedWhenRequestingToolWindow(e2.ToString())) |> ignore)
+            dflt
 
-    let OnMLSend (this:Package) (sender:obj) (e:EventArgs) =
-        withFSIToolWindow this (fun window -> window.MLSend(sender, e))
+    let private withFSIToolWindow (this:Package) f =
+        queryFSIToolWindow this f ()
+
+    let OnMLSend (this:Package) (debug : bool) (sender:obj) (e:EventArgs) =
+        withFSIToolWindow this (fun window ->
+            if debug then window.MLDebug(sender, e)
+            else window.MLSend(sender, e)
+        )
 
     let AddReferencesToFSI (this:Package) references =
         withFSIToolWindow this (fun window -> window.AddReferences references)
+
+    let GetDebuggerState (this:Package) =
+        queryFSIToolWindow this (fun window -> window.GetDebuggerState()) FsiDebuggerState.AttachedNotToFSI
 
     // FxCop request this function not be public
     let private supportWhenFSharpDocument (sender:obj) (e:EventArgs) =    
@@ -124,16 +133,3 @@ module internal Hooks =
                 let id  = new CommandID(Guids.guidFsiPackageCmdSet,int32 Guids.cmdIDLaunchFsiToolWindow)
                 let cmd = new MenuCommand(new EventHandler(ShowToolWindow this), id)
                 commandService.AddCommand(cmd)
-
-#if FX_ATLEAST_45
-                // Dev11 handles FSI commands in LS ViewFilter
-#else
-                // See VS SDK docs on "Command Routing Algorithm".
-                // Add OLECommand to OleCommandTarget at the package level,
-                // for when it is fired from other contexts, e.g. text editor.
-                let id  = new CommandID(Guids.guidInteractive,int32 Guids.cmdIDSendSelection)
-                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this), id)
-                cmd.BeforeQueryStatus.AddHandler(new EventHandler(supportWhenFSharpDocument))
-                commandService.AddCommand(cmd)
-
-#endif
