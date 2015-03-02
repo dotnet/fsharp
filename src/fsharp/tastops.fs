@@ -1562,6 +1562,7 @@ let isStructTy g ty =
 // - Any non-generic user-defined struct-type that contains fields of unmanaged-types only.
 // [Note: Constructed types and type-parameters are never unmanaged-types. end note]
 let rec isUnmanagedTy g ty =
+    let ty = stripTyEqnsAndMeasureEqns g ty
     if isAppTy g ty then
         let tcref = tcrefOfAppTy g ty
         let isEq tcref2  = tyconRefEq g tcref tcref2 
