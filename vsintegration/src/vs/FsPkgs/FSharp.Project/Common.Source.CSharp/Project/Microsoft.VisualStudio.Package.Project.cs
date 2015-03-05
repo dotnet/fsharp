@@ -153,6 +153,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /*internal, but public for FSharp.Project.dll*/ public const string ProjectProperties = "ProjectProperties";
         /*internal, but public for FSharp.Project.dll*/ public const string Quiet = "Quiet";
         /*internal, but public for FSharp.Project.dll*/ public const string QueryReloadNestedProject = "QueryReloadNestedProject";
+        /*internal, but public for FSharp.Project.dll*/ public const string ReferenceCouldNotBeAdded = "ReferenceCouldNotBeAdded";
         /*internal, but public for FSharp.Project.dll*/ public const string ReferenceAlreadyExists = "ReferenceAlreadyExists";
         /*internal, but public for FSharp.Project.dll*/ public const string ReferenceWithAssemblyNameAlreadyExists = "ReferenceWithAssemblyNameAlreadyExists";
         /*internal, but public for FSharp.Project.dll*/ public const string ReferencesNodeName = "ReferencesNodeName";

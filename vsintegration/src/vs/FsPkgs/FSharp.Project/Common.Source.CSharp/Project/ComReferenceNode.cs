@@ -42,7 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private string installedFilePath;
         private string minorVersionNumber;
         private string majorVersionNumber;
-        private string lcid;
+        private readonly int lcid;
         #endregion
 
         #region properties
@@ -76,7 +76,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "LCID")]
-        public string LCID
+        public int LCID
         {
             get { return lcid; }
         }
@@ -133,7 +133,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             this.majorVersionNumber = this.ItemNode.GetMetadata(ProjectFileConstants.VersionMajor);
             this.minorVersionNumber = this.ItemNode.GetMetadata(ProjectFileConstants.VersionMinor);
-            this.lcid = this.ItemNode.GetMetadata(ProjectFileConstants.Lcid);
+            this.lcid = int.Parse(this.ItemNode.GetMetadata(ProjectFileConstants.Lcid));
             this.SetProjectItemsThatRelyOnReferencesToBeResolved(false);
             this.SetInstalledFilePath();
         }
@@ -161,14 +161,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.typeGuid = selectorData.guidTypeLibrary;
             this.majorVersionNumber = selectorData.wTypeLibraryMajorVersion.ToString(CultureInfo.InvariantCulture);
             this.minorVersionNumber = selectorData.wTypeLibraryMinorVersion.ToString(CultureInfo.InvariantCulture);
-            this.lcid = selectorData.lcidTypeLibrary.ToString(CultureInfo.InvariantCulture);
+            this.lcid = (int) selectorData.lcidTypeLibrary;
 
             // Check to see if the COM object actually exists.
             this.SetInstalledFilePath();
             // If the value cannot be set throw.
             if (String.IsNullOrEmpty(this.installedFilePath))
             {
-                throw new ArgumentException();
+                var message = string.Format(SR.GetString(SR.ReferenceCouldNotBeAdded, CultureInfo.CurrentUICulture), selectorData.bstrTitle);
+                throw new InvalidOperationException(message);
             }
         }
 
@@ -195,14 +196,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.typeGuid = typeAttr.guid;
                 this.majorVersionNumber = typeAttr.wMajorVerNum.ToString(CultureInfo.InvariantCulture);
                 this.minorVersionNumber = typeAttr.wMinorVerNum.ToString(CultureInfo.InvariantCulture);
-                this.lcid = typeAttr.lcid.ToString(CultureInfo.InvariantCulture);
+                this.lcid = typeAttr.lcid;
 
                 // Check to see if the COM object actually exists.
                 this.SetInstalledFilePath();
                 // If the value cannot be set throw.
                 if (String.IsNullOrEmpty(this.installedFilePath))
                 {
-                    throw new ArgumentException();
+                    var message = string.Format(SR.GetString(SR.ReferenceCouldNotBeAdded, CultureInfo.CurrentUICulture), filePath);
+                    throw new InvalidOperationException(message);
                 }
             }
             finally
@@ -281,21 +283,20 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         private ProjectElement GetProjectElementBasedOnInputFromComponentSelectorData()
         {
-
             ProjectElement element = new ProjectElement(this.ProjectMgr, this.typeName, ProjectFileConstants.COMReference);
 
             // Set the basic information regarding this COM component
             element.SetMetadata(ProjectFileConstants.Guid, this.typeGuid.ToString("B"));
             element.SetMetadata(ProjectFileConstants.VersionMajor, this.majorVersionNumber);
             element.SetMetadata(ProjectFileConstants.VersionMinor, this.minorVersionNumber);
-            element.SetMetadata(ProjectFileConstants.Lcid, this.lcid);
+            element.SetMetadata(ProjectFileConstants.Lcid, this.lcid.ToString());
             element.SetMetadata(ProjectFileConstants.Isolated, false.ToString());
 
             // See if a PIA exist for this component
             TypeLibConverter typelib = new TypeLibConverter();
             string assemblyName;
             string assemblyCodeBase;
-            if (typelib.GetPrimaryInteropAssembly(this.typeGuid, Int32.Parse(this.majorVersionNumber, CultureInfo.InvariantCulture), Int32.Parse(this.minorVersionNumber, CultureInfo.InvariantCulture), Int32.Parse(this.lcid, CultureInfo.InvariantCulture), out assemblyName, out assemblyCodeBase))
+            if (typelib.GetPrimaryInteropAssembly(this.typeGuid, Int32.Parse(this.majorVersionNumber, CultureInfo.InvariantCulture), Int32.Parse(this.minorVersionNumber, CultureInfo.InvariantCulture), this.lcid, out assemblyName, out assemblyCodeBase))
             {
                 element.SetMetadata(ProjectFileConstants.WrapperTool, WrapperToolAttributeValue.Primary.ToString().ToLowerInvariant());
             }
@@ -325,7 +326,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 if (String.Compare(MSBuildItem.GetMetadataValue(reference, ProjectFileConstants.Guid), this.typeGuid.ToString("B"), StringComparison.OrdinalIgnoreCase) == 0
                     && String.Compare(MSBuildItem.GetMetadataValue(reference, ProjectFileConstants.VersionMajor), this.majorVersionNumber, StringComparison.OrdinalIgnoreCase) == 0
                     && String.Compare(MSBuildItem.GetMetadataValue(reference, ProjectFileConstants.VersionMinor), this.minorVersionNumber, StringComparison.OrdinalIgnoreCase) == 0
-                    && String.Compare(MSBuildItem.GetMetadataValue(reference, ProjectFileConstants.Lcid), this.lcid, StringComparison.OrdinalIgnoreCase) == 0)
+                    && String.Compare(MSBuildItem.GetMetadataValue(reference, ProjectFileConstants.Lcid), this.lcid.ToString(), StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     string name = MSBuildItem.GetEvaluatedInclude(reference);
                     if (Path.IsPathRooted(name))
@@ -365,9 +366,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         this.typeName = typeLib.GetValue(string.Empty) as string;
                     }
                     // Now get the path to the file that contains this type library.
-                    using (RegistryKey installKey = typeLib.OpenSubKey(string.Format(CultureInfo.InvariantCulture, @"{0}\win32", this.lcid)))
+
+                    // lcid 
+                    //   The hexadecimal string representation of the locale identifier (LCID). 
+                    //   It is one to four hexadecimal digits with no 0x prefix and no leading zeros. 
+                    using (RegistryKey installKey = typeLib.OpenSubKey(string.Format(CultureInfo.InvariantCulture, @"{0:X}\win32", this.lcid)))
                     {
-                        this.installedFilePath = installKey.GetValue(String.Empty) as String;
+                        if (installKey != null)
+                        {
+                            this.installedFilePath = installKey.GetValue(String.Empty) as String;
+                        }
                     }
                 }
             }
