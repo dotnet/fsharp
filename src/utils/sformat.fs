@@ -866,16 +866,22 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                    None
                                else
                                   let rec buildObjMessageL (txt:string) (layouts:Layout list) =
-                                    let p1 = txt.IndexOf ("{", StringComparison.Ordinal)
-                                    let p2 = txt.IndexOf ("}", StringComparison.Ordinal)
-                                    match (p1, p2) with
-                                      | (-1, -1) when layouts.Length > 1 -> Some (spaceListL (List.rev layouts))
-                                      | (-1, -1) | (-1, _) | (_, -1) -> None // this handles the case where there weren't any properties specified
-                                      | (opened, closed) when opened + 1 >= closed || (-1 < txt.IndexOf("{", opened+1) && txt.IndexOf("{", opened+1) < closed) -> None // mis-matched brackets
-                                      | (opened, closed) -> 
-                                        let preText = if opened <= 0 then "" else txt.[0..opened-1]
-                                        let postText = if closed+1 >= txt.Length then "" else txt.[closed+1..]
-                                        let prop = txt.[opened+1..closed-1]
+                                    
+                                    let replaceEscapedBrackets (txt:string) =
+                                      txt.Replace("\{", "{").Replace("\}", "}")
+
+                                    // to simplify support for escaped brackets, switch to using a Regex to simply parse the text as the following regex groups:
+                                    //  1) Everything up to the first opening bracket not preceded by a "\"
+                                    //  2) Everything between that opening bracket and a closing bracket not preceded by a "\"
+                                    //  3) Everything after that closing bracket
+                                    let m = System.Text.RegularExpressions.Regex.Match(txt, @"^(.*)(?<!\\){(.*)(?<!\\)}(.*)$")
+                                    match m.Success with
+                                      | false when layouts.Length > 1 -> Some (spaceListL (List.rev layouts))
+                                      | false -> None
+                                      | true ->
+                                        let preText = replaceEscapedBrackets(m.Groups.get_Item(1).Value) // everything before the first opening bracket
+                                        let postText = m.Groups.get_Item(3).Value // Everything after the closing bracket
+                                        let prop = replaceEscapedBrackets(m.Groups.get_Item(2).Value)//System.Text.RegularExpressions.Regex.Unescape(m.Groups.get_Item(2).Value) // Unescape everything between the opening and closing brackets
 
                                         match catchExn (fun () -> getProperty x prop) with
                                           | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
@@ -899,27 +905,25 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                           sameObjL (depthLim/10) Precedence.BracketIfTuple alternativeObj
                                                   countNodes 0 // 0 means we do not count the preText and postText 
 
+                                                  let postTextMatch = System.Text.RegularExpressions.Regex.Match(postText, @"^(.*)(?<!\\){(.*)(?<!\\)}(.*)$")
                                                   // the postText for this node will be everything up to the next occurrence of an opening brace, if one exists
-                                                  let currentPostTextEndIndex = postText.IndexOf("{", StringComparison.Ordinal)
-                                                  let currentPostText = 
-                                                    match currentPostTextEndIndex with
-                                                      | -1 -> postText
-                                                      | _ -> postText.[0..currentPostTextEndIndex-1]
+                                                  let currentPostText =
+                                                    match postTextMatch.Success with
+                                                      | false -> replaceEscapedBrackets(postText)
+                                                      | true -> replaceEscapedBrackets(postTextMatch.Groups.get_Item(1).Value)
 
                                                   let newLayouts = (sepL preText ^^ alternativeObjL ^^ sepL currentPostText)::layouts
                                                   match postText with
-                                                  | "" -> 
-                                                    // We are done, build a space-delimited layout from the collection of layouts we've accumulated
-                                                    Some (spaceListL (List.rev newLayouts))
-                                                  | remainingPropertyText when currentPostTextEndIndex > -1 -> 
-                                                    // More to process, keep going, using the postText starting at the next instance of a '{'
-                                                    buildObjMessageL remainingPropertyText.[currentPostTextEndIndex..] newLayouts
-                                                  | remainingPropertyText when remainingPropertyText.IndexOf("}", StringComparison.Ordinal) = -1 ->
-                                                    // We are done, there's remaining text but no more properties
-                                                    Some (spaceListL (List.rev newLayouts))
-                                                  | _ ->
-                                                    // we have an unmatched ending bracket
-                                                    None
+                                                    | "" ->
+                                                      //We are done, build a space-delimited layout from the collection of layouts we've accumulated
+                                                      Some (spaceListL (List.rev newLayouts))
+                                                    | remainingPropertyText when postTextMatch.Success ->
+                                                      // More to process, keep going, using the postText starting at the next instance of a '{'
+                                                      let openingBracketIndex = remainingPropertyText.IndexOf(postTextMatch.Groups.get_Item(2).Value)-1
+                                                      buildObjMessageL remainingPropertyText.[openingBracketIndex..] newLayouts
+                                                    | _ ->
+                                                      // We are done, there's more text but it doesn't contain any more properties
+                                                      Some (spaceListL (List.rev newLayouts))
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes

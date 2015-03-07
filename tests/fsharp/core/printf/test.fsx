@@ -456,7 +456,76 @@ module CheckDisplayAttributes15 =
     type Foo() = 
        member internal x.X = Foo()
 
+    // the number of "..." is based on the default number of recursive calls made before hitting the limit
     test "cenwoiwe15" (lazy(sprintf "%A" (Foo()))) "... ... ... ... ... ... ... ..."
+
+// Check escaped brackets with no other members
+module CheckDisplayAttributes16 =
+
+    [<StructuredFormatDisplay("{\{\}}")>]
+    type Foo() = 
+      member __.``{}`` = "abc"
+
+    test "cenwoiwe16" (lazy(sprintf "%A" (Foo()))) "abc"
+
+// Check escaped brackets with other members
+module CheckDisplayAttributes17 =
+
+    [<StructuredFormatDisplay("{One\} \{Two}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+
+    test "cenwoiwe17" (lazy(sprintf "%A" (Foo()))) "abc"
+
+// Check escaped brackets with all brackets escaped
+module CheckDisplayAttributes18 =
+
+    [<StructuredFormatDisplay("\{One\} \{Two\}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe18" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check escaped brackets with opening bracket escaped, invalidating property reference
+module CheckDisplayAttributes19 =
+
+    [<StructuredFormatDisplay("\{One\} \{Two}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe19" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check escaped brackets with closing bracket escaped, invalidating property reference
+module CheckDisplayAttributes20 =
+
+    [<StructuredFormatDisplay("{One\} \{Two\}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe20" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check escaped brackets display properly
+module CheckDisplayAttributes21 =
+
+    [<StructuredFormatDisplay("\{{One}\}")>]
+    type Foo() =
+      member __.``One} {Two`` = "abc"
+      member __.One = 123
+      member __.Two = 456
+      override x.ToString() = "x"
+
+    test "cenwoiwe21" (lazy(sprintf "%A" (Foo()))) "{123}"
 
 let func0()=
     test "test1" (lazy(sprintf "%b" true)) "true"
