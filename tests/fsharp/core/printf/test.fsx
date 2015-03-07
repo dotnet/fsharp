@@ -425,7 +425,8 @@ module CheckDisplayAttributes12 =
        member internal x.Hello = "Hello"
        override x.ToString() = "x"
 
-    test "cenwoiwe12" (lazy(sprintf "%A" (Foo()))) "x"
+    // this should produce an error message
+    test "cenwoiwe12" (lazy(sprintf "%A" (Foo()))) "<StructuredFormatDisplay exception: Method 'Test+CheckDisplayAttributes12+Foo.Val{Hello' not found.>"
 
 // Check one with an unmatched closing bracket
 module CheckDisplayAttributes13 =
@@ -456,7 +457,6 @@ module CheckDisplayAttributes15 =
     type Foo() = 
        member internal x.X = Foo()
 
-    // the number of "..." is based on the default number of recursive calls made before hitting the limit
     test "cenwoiwe15" (lazy(sprintf "%A" (Foo()))) "... ... ... ... ... ... ... ..."
 
 // Check escaped brackets with no other members
