@@ -1664,9 +1664,6 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
 
 let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
 
-    // foreach --> fast integer for loops
-    let expr = DetectFastIntegerForLoops cenv.g expr
-
     // Eliminate subsumption coercions for functions. This must be done post-typechecking because we need
     // complete inference types.
     let expr = NormalizeAndAdjustPossibleSubsumptionExprs cenv.g expr
@@ -2035,6 +2032,9 @@ and OptimizeLetRec cenv env (binds,bodyExpr,m) =
 //------------------------------------------------------------------------- 
 
 and OptimizeLinearExpr cenv env expr contf =
+
+    let expr = DetectAndOptimizeForExpression cenv.g OptimizeAllForExpressions expr
+
     if verboseOptimizations then dprintf "OptimizeLinearExpr\n";
     let expr = if cenv.settings.ExpandStructrualValues() then ExpandStructuralBinding cenv expr else expr 
     match expr with 
