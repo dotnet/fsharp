@@ -8,6 +8,15 @@ call %~d0%~p0..\..\..\config.bat
 call ..\..\single-neg-test.bat neg91
 @if ERRORLEVEL 1 goto Error
 
+"%FSC%" %fsc_flags% --target:exe -o:pos20.exe  pos20.fs 
+@if ERRORLEVEL 1 goto Error
+
+"%PEVERIFY%" pos20.exe
+@if ERRORLEVEL 1 goto Error
+
+pos20.exe
+@if ERRORLEVEL 1 goto Error
+
 "%FSC%" %fsc_flags% --target:exe -o:pos19.exe  pos19.fs 
 @if ERRORLEVEL 1 goto Error
 

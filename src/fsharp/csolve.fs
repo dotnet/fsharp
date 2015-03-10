@@ -1740,8 +1740,7 @@ and SolveTypIsUnmanaged (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
     if isTyparTy g ty then 
         AddConstraint csenv ndeep m2 trace (destTyparTy g ty) (TyparConstraint.IsUnmanaged(m))
     else
-        let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-        if isUnmanagedTy g underlyingTy then
+        if isUnmanagedTy g ty then
             CompleteD
         else
             ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresUnmanagedType(NicePrint.minimalStringOfType denv ty),m,m2))
