@@ -3177,7 +3177,7 @@ let ParseInput (lexer,errorLogger:ErrorLogger,lexbuf:UnicodeLexing.Lexbuf,defaul
                 let intfs = Parser.signatureFile lexer lexbuf 
                 PostParseModuleSpecs (defaultNamespace,filename,isLastCompiland,intfs)
             else 
-                errorLogger.Error(InternalError(FSComp.SR.buildUnknownFileSuffix(filename),Range.rangeStartup))
+                errorLogger.Error(Error(FSComp.SR.buildInvalidSourceFileExtension(filename),Range.rangeStartup))
         filteringErrorLogger.ScopedPragmas <- GetScopedPragmasForInput input
         input
     finally
