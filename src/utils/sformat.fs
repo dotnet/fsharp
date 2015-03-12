@@ -930,7 +930,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                     | remainingPropertyText when postTextMatch.Success ->
                                                       
                                                       // look for stray brackets in the text before the next opening bracket
-                                                      let strayClosingMatch = System.Text.RegularExpressions.Regex.IsMatch(postTextMatch.Groups.["pre"].Value, illFormedBracketPattern) //when postTextMatch.Success
+                                                      let strayClosingMatch = System.Text.RegularExpressions.Regex.IsMatch(postTextMatch.Groups.["pre"].Value, illFormedBracketPattern)
                                                       match strayClosingMatch with
                                                       | true -> None
                                                       | false -> 
@@ -946,16 +946,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                         // We are done, there's more text but it doesn't contain any more properties, we need to remove escaped brackets now though
                                                         // since that wasn't done when creating currentPostText
                                                         Some (spaceListL (List.rev ((sepL preText ^^ alternativeObjL ^^ sepL (replaceEscapedBrackets(remaingPropertyText)))::layouts)))
-                                                      
-                                                      //let openingBracketIndex = postTextMatch.Groups.["prop"].Index-1
-                                                      //buildObjMessageL remainingPropertyText.[openingBracketIndex..] newLayouts
-//                                                    | remainingPropertyText when System.Text.RegularExpressions.Regex.IsMatch(remainingPropertyText, illFormedBracketPattern) -> 
-//                                                      // we have remaining text that doesn't match our messageRegexPattern, but still contains un-escaped brackets, bail
-//                                                      None
-//                                                    | _ ->
-//                                                      // We are done, there's more text but it doesn't contain any more properties, we need to remove escaped brackets now though
-//                                                      // since that wasn't done when creating currentPostText
-//                                                      Some (spaceListL (List.rev ((sepL preText ^^ alternativeObjL ^^ sepL (replaceEscapedBrackets(currentPostText)))::layouts)))
                                               with _ -> 
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
