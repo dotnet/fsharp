@@ -867,7 +867,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                else
                                   let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
                                   let illFormedBracketPattern = @"(?<!\\){|(?<!\\)}"
-                                  //let strayClosingBracketPattern = @"(?<!\\)}"
 
                                   let rec buildObjMessageL (txt:string) (layouts:Layout list) =
                                     
