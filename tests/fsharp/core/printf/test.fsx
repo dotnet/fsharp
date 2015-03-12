@@ -425,7 +425,7 @@ module CheckDisplayAttributes12 =
        member internal x.Hello = "Hello"
        override x.ToString() = "x"
 
-    // this should produce an error message
+    // this should produce an error
     test "cenwoiwe12" (lazy(sprintf "%A" (Foo()))) "<StructuredFormatDisplay exception: Method 'Test+CheckDisplayAttributes12+Foo.Val{Hello' not found.>"
 
 // Check one with an unmatched closing bracket
@@ -489,7 +489,7 @@ module CheckDisplayAttributes18 =
       member __.Two = 456
       override x.ToString() = "x"
 
-    test "cenwoiwe18" (lazy(sprintf "%A" (Foo()))) "x"
+    test "cenwoiwe18" (lazy(sprintf "%A" (Foo()))) "{One} {Two}"
 
 // Check escaped brackets with opening bracket escaped, invalidating property reference
 module CheckDisplayAttributes19 =
@@ -526,6 +526,28 @@ module CheckDisplayAttributes21 =
       override x.ToString() = "x"
 
     test "cenwoiwe21" (lazy(sprintf "%A" (Foo()))) "{123}"
+
+// Check one with an two matched pairs and a trailing closing bracket
+module CheckDisplayAttributes22 =
+
+    [<StructuredFormatDisplay("{Val}{Hello} }")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe22" (lazy(sprintf "%A" (Foo()))) "x"
+
+// Check one with an two matched pairs and an unmatched closing bracket in-between
+module CheckDisplayAttributes23 =
+
+    [<StructuredFormatDisplay("{Val} } {Hello}")>]
+    type Foo() = 
+       member internal x.Val = 42
+       member internal x.Hello = "Hello"
+       override x.ToString() = "x"
+
+    test "cenwoiwe23" (lazy(sprintf "%A" (Foo()))) "x"
 
 let func0()=
     test "test1" (lazy(sprintf "%b" true)) "true"
