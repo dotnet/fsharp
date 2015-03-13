@@ -2705,9 +2705,15 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         let isNetModule = String.Compare(ext,".netmodule",StringComparison.OrdinalIgnoreCase)=0 
         if String.Compare(ext,".dll",StringComparison.OrdinalIgnoreCase)=0 
            || String.Compare(ext,".exe",StringComparison.OrdinalIgnoreCase)=0 
-           || isNetModule then 
+           || isNetModule then
 
-            let resolved = TryResolveFileUsingPaths(tcConfig.SearchPathsForLibraryFiles,m,nm)
+            let searchPaths =
+                if m <> range0 && m <> rangeStartup && m <> rangeCmdArgs && FileSystem.IsPathRootedShim m.FileName then
+                    tcConfig.SearchPathsForLibraryFiles @ [Path.GetDirectoryName(m.FileName)]
+                else    
+                    tcConfig.SearchPathsForLibraryFiles
+
+            let resolved = TryResolveFileUsingPaths(searchPaths,m,nm)
             match resolved with 
             | Some(resolved) -> 
                 let sysdir = tcConfig.IsSystemAssembly resolved
