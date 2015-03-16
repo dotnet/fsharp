@@ -3276,7 +3276,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         // This is called back from IVsTrackProjectRetargeting::OnSetTargetFramework
         // to actually set the target framework.
-
         public int UpdateTargetFramework(
             IVsHierarchy hier,
             string currentTargetFrameworkMoniker,
@@ -3301,6 +3300,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             projectMgr.BuildProject.SetProperty(ProjectFileConstants.TargetFrameworkVersion, HierarchyNode.GetFrameworkVersionString(frameworkName));
             projectMgr.BuildProject.SetProperty(ProjectFileConstants.TargetFrameworkProfile, frameworkName.Profile);
 
+            string targetFSharpCoreVersion = projectMgr.BuildProject.GetPropertyValue(ProjectFileConstants.TargetFSharpCoreVersion);
+            bool autoGenerateBindingRedirects;
+            bool.TryParse(projectMgr.BuildProject.GetPropertyValue("AutoGenerateBindingRedirects"), out autoGenerateBindingRedirects);
+
 #if FX_ATLEAST_45
             // update FSharp.Core only if we are addressing '.NETFramework' as opposed to e.g. Silverlight or Portable
             if (frameworkName.Identifier == ".NETFramework")
@@ -3316,20 +3319,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 if (hasIncompatibleFsCore)
                 {
                     var newVersion =
-                        frameworkName.Version.Major >= 4
-                        ?
-#if FX_ATLEAST_45
-                        ( frameworkName.Version.Minor < 5 ? new Version(4, 3, 0, 0) : new Version(4, 4, 0, 0) )
-#else
-                        new Version(4, 0, 0, 0)
-#endif
-                        :
-#if FX_ATLEAST_45
-                        new Version(2, 3, 0, 0)
-#else
-                        new Version(2, 0, 0, 0)
-#endif
-                        ;
+                        frameworkName.Version.Major >= 4 ?
+                        ( frameworkName.Version.Minor < 5 ? new Version(4, 3, 0, 0) : new Version(4, 4, 0, 0) ) : new Version(2, 3, 0, 0);
 
                     if (projectMgr.CanUseTargetFSharpCoreReference)
                     {
@@ -3368,13 +3359,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             });
                         }
                     }
+                    targetFSharpCoreVersion = newVersion.ToString();
                 }
             }
 #endif
 
             try
             {
-                this.projectMgr.FixupAppConfigOnTargetFXChange(newTargetFrameworkMoniker);
+                this.projectMgr.FixupAppConfigOnTargetFXChange(newTargetFrameworkMoniker, targetFSharpCoreVersion, autoGenerateBindingRedirects);
             }
             catch(Exception e)
             {

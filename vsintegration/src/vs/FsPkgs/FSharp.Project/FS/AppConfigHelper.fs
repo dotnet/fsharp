@@ -317,92 +317,94 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if dirty then isDirty <- dirty            
         
         /// Updates list of binding redirects to the config file. Content of list is governed by the major version of target framework.
-        /// Current redirects: 2.0 -> "2.0.0.0" to "2.3.0.0". 4.0 or greater - "2.0.0.0" to "4.3.0.0", "2.3.5.0" to "4.3.0.0", "4.0.0.0" to "4.3.0.0"
-        member x.EnsureHasBindingRedirects(majorVersion) =
+        member x.EnsureHasBindingRedirects(majorVersion, minorVersion, targetFSharpCoreVersion, autoGenerateBindingRedirects) =
 
-            // some helpers to simplify work with XLinq
-            let xname = System.Xml.Linq.XName.Get
-            let xnameAsmV1 name = xname ("{urn:schemas-microsoft-com:asm.v1}" + name)
+            if not autoGenerateBindingRedirects then
+                // some helpers to simplify work with XLinq
+                let xname = System.Xml.Linq.XName.Get
+                let xnameAsmV1 name = xname ("{urn:schemas-microsoft-com:asm.v1}" + name)
 
-            let fsCoreAttributes = 
-                [
-                    xname "name", "FSharp.Core"
-                    xname "publicKeyToken", Microsoft.VisualStudio.FSharp.ProjectSystem.Utilities.FsCorePublicKeyToken
-                    xname "culture", "neutral"
-                ]
-
-            // depending on major version of target framework we need to populate corresponding binding redirects in config
-            let redirects = 
-                if majorVersion >= 4 then
+                let fsCoreAttributes = 
                     [
-                        "2.0.0.0", "4.3.0.0"
-                        "2.3.5.0", "4.3.0.0"
-                        "4.0.0.0", "4.3.0.0"
-                    ]
-                else
-                    [
-                        "2.0.0.0", "2.3.0.0"
+                        xname "name", "FSharp.Core"
+                        xname "publicKeyToken", Microsoft.VisualStudio.FSharp.ProjectSystem.Utilities.FsCorePublicKeyToken
+                        xname "culture", "neutral"
                     ]
 
-            let OldVersion = "oldVersion"
-            let NewVersion = "newVersion"
-            let BindingRedirect = "bindingRedirect"
-            let DependentAssembly = "dependentAssembly"
-            let AssemblyIdentity = "assemblyIdentity"
+                // depending on major version of target framework we need to populate corresponding binding redirects in config
+                let redirects = 
+                    if majorVersion >= 4 then
+                        [
+                            "2.0.0.0", targetFSharpCoreVersion
+                            "2.3.5.0", targetFSharpCoreVersion
+                            "4.0.0.0", targetFSharpCoreVersion
+                        ] @ if minorVersion >= 5 && targetFSharpCoreVersion <> "4.3.1.0" then 
+                                ["4.3.1.0", targetFSharpCoreVersion] 
+                            else 
+                                []
+                    else
+                        [
+                            "2.0.0.0", "2.3.0.0"
+                        ]
 
-            let create (p : System.Xml.Linq.XElement) name attrs = 
-                let el = new System.Xml.Linq.XElement(name : System.Xml.Linq.XName)
-                p.Add(el)
-                for (name, value) in attrs do
-                    let attr = new System.Xml.Linq.XAttribute(name, value)
-                    el.Add(attr)
-                el
+                let OldVersion = "oldVersion"
+                let NewVersion = "newVersion"
+                let BindingRedirect = "bindingRedirect"
+                let DependentAssembly = "dependentAssembly"
+                let AssemblyIdentity = "assemblyIdentity"
 
-            let createRedirect p (oldVersion, newVersion) = 
-                create p (xnameAsmV1 BindingRedirect) [xname OldVersion, oldVersion; xname NewVersion, newVersion]
-                |> ignore
-
-            let getOrCreate(p : System.Xml.Linq.XElement) name =
-                match p.Element(name) with
-                | null -> create p name []
-                | el -> el
-            
-            let document = fileHolder.GetXml()
-            let runtime = getOrCreate document.Root (xname "runtime")
-            let assemblyBinding = getOrCreate runtime (xnameAsmV1 "assemblyBinding")
-
-            // find dependentAssembly node with attributes that corresponds to the FSharp.Core
-            let fsharpCoreDependentAssemblyElement =
-                let n =
-                    assemblyBinding.Elements(xnameAsmV1 DependentAssembly)
-                    |> Seq.tryFind(
-                        fun da -> 
-                            match da.Element(xnameAsmV1 AssemblyIdentity) with
-                            | null -> false
-                            | x -> 
-                                fsCoreAttributes 
-                                |> Seq.forall (
-                                    fun (attr, value) ->
-                                        match x.Attribute attr with
-                                        | null -> false
-                                        | v -> v.Value = value
-                                )
-                        )
-                match n with
-                | Some el -> 
-                    // drop existing redirects for FSharp.Core
-                    let existingRedirects = el.Elements (xnameAsmV1 BindingRedirect)  |> List.ofSeq
-                    for existingRedirect in existingRedirects do
-                        existingRedirect.Remove()
+                let create (p : System.Xml.Linq.XElement) name attrs = 
+                    let el = new System.Xml.Linq.XElement(name : System.Xml.Linq.XName)
+                    p.Add(el)
+                    for (name, value) in attrs do
+                        let attr = new System.Xml.Linq.XAttribute(name, value)
+                        el.Add(attr)
                     el
-                | None ->
-                    let dependentAssembly = create assemblyBinding (xnameAsmV1 DependentAssembly) []
-                    let _fsCoreIdentity = create dependentAssembly (xnameAsmV1 AssemblyIdentity) fsCoreAttributes
-                    dependentAssembly
 
-            for redirect in redirects do 
-                createRedirect fsharpCoreDependentAssemblyElement redirect
-            
+                let createRedirect p (oldVersion, newVersion) =
+                    create p (xnameAsmV1 BindingRedirect) [xname OldVersion, oldVersion; xname NewVersion, newVersion] |> ignore
+
+                let getOrCreate(p : System.Xml.Linq.XElement) name =
+                    match p.Element(name) with
+                    | null -> create p name []
+                    | el -> el
+
+                let document = fileHolder.GetXml()
+                let runtime = getOrCreate document.Root (xname "runtime")
+                let assemblyBinding = getOrCreate runtime (xnameAsmV1 "assemblyBinding")
+
+                // find dependentAssembly node with attributes that corresponds to the FSharp.Core
+                let fsharpCoreDependentAssemblyElement =
+                    let n =
+                        assemblyBinding.Elements(xnameAsmV1 DependentAssembly)
+                        |> Seq.tryFind(
+                            fun da -> 
+                                match da.Element(xnameAsmV1 AssemblyIdentity) with
+                                | null -> false
+                                | x -> 
+                                    fsCoreAttributes 
+                                    |> Seq.forall (
+                                        fun (attr, value) ->
+                                            match x.Attribute attr with
+                                            | null -> false
+                                            | v -> v.Value = value
+                                    )
+                            )
+                    match n with
+                    | Some el -> 
+                        // drop existing redirects for FSharp.Core
+                        let existingRedirects = el.Elements (xnameAsmV1 BindingRedirect)  |> List.ofSeq
+                        for existingRedirect in existingRedirects do
+                            existingRedirect.Remove()
+                        el
+                    | None ->
+                        let dependentAssembly = create assemblyBinding (xnameAsmV1 DependentAssembly) []
+                        let _fsCoreIdentity = create dependentAssembly (xnameAsmV1 AssemblyIdentity) fsCoreAttributes
+                        dependentAssembly
+
+                for redirect in redirects do 
+                    createRedirect fsharpCoreDependentAssemblyElement redirect
+
         member x.IsDirty() = isDirty
         
         member x.Save() =

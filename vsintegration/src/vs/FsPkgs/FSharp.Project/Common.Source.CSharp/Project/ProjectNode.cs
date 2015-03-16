@@ -3347,7 +3347,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public abstract void ComputeSourcesAndFlags();
 
-        internal abstract int FixupAppConfigOnTargetFXChange(string newTargetFramework);
+        internal abstract int FixupAppConfigOnTargetFXChange(string newTargetFramework, string targetFSharpCoreVersion, bool autoGenerateBindingRedirects);
 
         /// <summary>
         /// This execute an MSBuild target.
