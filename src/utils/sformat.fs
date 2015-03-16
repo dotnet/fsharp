@@ -865,37 +865,90 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                if txt = null || txt.Length <= 1 then  
                                    None
                                else
-                                  let p1 = txt.IndexOf ("{", StringComparison.Ordinal)
-                                  let p2 = txt.LastIndexOf ("}", StringComparison.Ordinal)
-                                  if p1 < 0 || p2 < 0 || p1+1 >= p2 then 
-                                      None 
-                                  else
-                                      let preText = if p1 <= 0 then "" else txt.[0..p1-1]
-                                      let postText = if p2+1 >= txt.Length then "" else txt.[p2+1..]
-                                      let prop = txt.[p1+1..p2-1]
-                                      match catchExn (fun () -> getProperty x prop) with
-                                        | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
-                                        | Choice1Of2 alternativeObj ->
-                                            try 
-                                                let alternativeObjL = 
-                                                  match alternativeObj with 
-                                                      // A particular rule is that if the alternative property
-                                                      // returns a string, we turn off auto-quoting and esaping of
-                                                      // the string, i.e. just treat the string as display text.
-                                                      // This allows simple implementations of 
-                                                      // such as
-                                                      //
-                                                      //    [<StructuredFormatDisplay("{StructuredDisplayString}I")>]
-                                                      //    type BigInt(signInt:int, v : BigNat) =
-                                                      //        member x.StructuredDisplayString = x.ToString()
-                                                      //
-                                                      | :? string as s -> sepL s
-                                                      | _ -> sameObjL (depthLim-1) Precedence.BracketIfTuple alternativeObj
-                                                countNodes 0 // 0 means we do not count the preText and postText 
-                                                Some (leftL preText ^^ alternativeObjL ^^ rightL postText)
-                                            with _ -> 
-                                              None
+                                  let messageRegexPattern = @"^(?<pre>.*?)(?<!\\){(?<prop>.*?)(?<!\\)}(?<post>.*)$"
+                                  let illFormedBracketPattern = @"(?<!\\){|(?<!\\)}"
 
+                                  let rec buildObjMessageL (txt:string) (layouts:Layout list) =
+                                    
+                                    let replaceEscapedBrackets (txt:string) =
+                                      txt.Replace("\{", "{").Replace("\}", "}")
+                                      
+                                    // to simplify support for escaped brackets, switch to using a Regex to simply parse the text as the following regex groups:
+                                    //  1) Everything up to the first opening bracket not preceded by a "\", lazily
+                                    //  2) Everything between that opening bracket and a closing bracket not preceded by a "\", lazily
+                                    //  3) Everything after that closing bracket
+                                    let m = System.Text.RegularExpressions.Regex.Match(txt, messageRegexPattern)
+                                    match m.Success with
+                                      | false ->  
+                                        // there isn't a match on the regex looking for a property, so now let's make sure we don't have an ill-formed format string (i.e. mismatched/stray brackets)
+                                        let illFormedMatch = System.Text.RegularExpressions.Regex.IsMatch(txt, illFormedBracketPattern)
+                                        match illFormedMatch with
+                                        | true -> None // there are mismatched brackets, bail out
+                                        | false when layouts.Length > 1 -> Some (spaceListL (List.rev ((wordL (replaceEscapedBrackets(txt))::layouts))))
+                                        | false -> Some (wordL (replaceEscapedBrackets(txt)))
+                                      | true ->
+                                        // we have a hit on a property reference
+                                        let preText = replaceEscapedBrackets(m.Groups.["pre"].Value) // everything before the first opening bracket
+                                        let postText = m.Groups.["post"].Value // Everything after the closing bracket
+                                        let prop = replaceEscapedBrackets(m.Groups.["prop"].Value) // Unescape everything between the opening and closing brackets
+
+                                        match catchExn (fun () -> getProperty x prop) with
+                                          | Choice2Of2 e -> Some (wordL ("<StructuredFormatDisplay exception: " + e.Message + ">"))
+                                          | Choice1Of2 alternativeObj ->
+                                              try 
+                                                  let alternativeObjL = 
+                                                    match alternativeObj with 
+                                                        // A particular rule is that if the alternative property
+                                                        // returns a string, we turn off auto-quoting and esaping of
+                                                        // the string, i.e. just treat the string as display text.
+                                                        // This allows simple implementations of 
+                                                        // such as
+                                                        //
+                                                        //    [<StructuredFormatDisplay("{StructuredDisplayString}I")>]
+                                                        //    type BigInt(signInt:int, v : BigNat) =
+                                                        //        member x.StructuredDisplayString = x.ToString()
+                                                        //
+                                                        | :? string as s -> sepL s
+                                                        | _ -> 
+                                                          // recursing like this can be expensive, so let's throttle it severely
+                                                          sameObjL (depthLim/10) Precedence.BracketIfTuple alternativeObj
+                                                  countNodes 0 // 0 means we do not count the preText and postText 
+
+                                                  let postTextMatch = System.Text.RegularExpressions.Regex.Match(postText, messageRegexPattern)
+                                                  // the postText for this node will be everything up to the next occurrence of an opening brace, if one exists
+                                                  let currentPostText =
+                                                    match postTextMatch.Success with
+                                                      | false -> postText 
+                                                      | true -> postTextMatch.Groups.["pre"].Value
+
+                                                  let newLayouts = (sepL preText ^^ alternativeObjL ^^ sepL currentPostText)::layouts
+                                                  match postText with
+                                                    | "" ->
+                                                      //We are done, build a space-delimited layout from the collection of layouts we've accumulated
+                                                      Some (spaceListL (List.rev newLayouts))
+                                                    | remainingPropertyText when postTextMatch.Success ->
+                                                      
+                                                      // look for stray brackets in the text before the next opening bracket
+                                                      let strayClosingMatch = System.Text.RegularExpressions.Regex.IsMatch(postTextMatch.Groups.["pre"].Value, illFormedBracketPattern)
+                                                      match strayClosingMatch with
+                                                      | true -> None
+                                                      | false -> 
+                                                        // More to process, keep going, using the postText starting at the next instance of a '{'
+                                                        let openingBracketIndex = postTextMatch.Groups.["prop"].Index-1
+                                                        buildObjMessageL remainingPropertyText.[openingBracketIndex..] newLayouts
+                                                    | remaingPropertyText ->
+                                                      // make sure we don't have any stray brackets
+                                                      let strayClosingMatch = System.Text.RegularExpressions.Regex.IsMatch(remaingPropertyText, illFormedBracketPattern)
+                                                      match strayClosingMatch with
+                                                      | true -> None
+                                                      | false ->
+                                                        // We are done, there's more text but it doesn't contain any more properties, we need to remove escaped brackets now though
+                                                        // since that wasn't done when creating currentPostText
+                                                        Some (spaceListL (List.rev ((sepL preText ^^ alternativeObjL ^^ sepL (replaceEscapedBrackets(remaingPropertyText)))::layouts)))
+                                              with _ -> 
+                                                None
+                                  // Seed with an empty layout with a space to the left for formatting purposes
+                                  buildObjMessageL txt [leftL ""] 
 #if RUNTIME
 #else
 #if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
