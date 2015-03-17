@@ -459,8 +459,12 @@ sub RunCommand {
 # GetSrc -- Find the source file to build
 #
 sub GetSrc() {
+  my $cwd = cwd();
+  
   # The environment SOURCE var usually defines what to compile
-  my $source = $ENV{SOURCE};
+  $_ = $ENV{SOURCE};
+  s/\$CWD/$cwd/;
+  my $source = $_;
   return($source) if defined($source);
 
   # Or if there's only one source file in the directory
