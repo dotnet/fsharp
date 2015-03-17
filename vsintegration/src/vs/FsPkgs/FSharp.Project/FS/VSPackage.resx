@@ -384,10 +384,10 @@
     <value>A blank XML file</value>
   </data>
   <data name="5034" xml:space="preserve">
-    <value>Portable Library (.NET 4.0+, Windows 8, Silverlight 5, Xamarin)</value>
+    <value>Portable Library (.NET 4.5, Windows Store, Silverlight 5, Xamarin)</value>
   </data>
   <data name="5035" xml:space="preserve">
-    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.0+, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</value>
+    <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Silverlight 5, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 47</value>
   </data>
   <data name="5036" xml:space="preserve">
     <value>Data</value>
