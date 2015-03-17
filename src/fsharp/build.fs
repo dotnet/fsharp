@@ -2708,6 +2708,10 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
            || isNetModule then
 
             let searchPaths =
+                // if this is a #r reference (not from dummy range), make sure the directory of the declaring
+                // file is included in the search path. This should ideally already be one of the search paths, but
+                // during some global checks it won't be.  We append to the end of the search list so that this is the last
+                // place that is checked.
                 if m <> range0 && m <> rangeStartup && m <> rangeCmdArgs && FileSystem.IsPathRootedShim m.FileName then
                     tcConfig.SearchPathsForLibraryFiles @ [Path.GetDirectoryName(m.FileName)]
                 else    
