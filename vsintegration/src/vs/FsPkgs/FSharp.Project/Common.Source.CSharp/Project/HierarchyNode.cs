@@ -3305,61 +3305,57 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             bool.TryParse(projectMgr.BuildProject.GetPropertyValue("AutoGenerateBindingRedirects"), out autoGenerateBindingRedirects);
 
 #if FX_ATLEAST_45
-            // update FSharp.Core only if we are addressing '.NETFramework' as opposed to e.g. Silverlight or Portable
-            if (frameworkName.Identifier == ".NETFramework")
-            {
-                // In reality for FSharp.Core compatibility with .NetFramework selection looks like this:
-                // 2 is incompatible with 4
-                // 4.0 is incompatible with 4.5
-                // 4.5 is compatible with 4.5.1 and 4.5.2 and 4.6
-                var lower = oldFrameworkName.Version < frameworkName.Version ? oldFrameworkName.Version : frameworkName.Version;
-                var upper = oldFrameworkName.Version < frameworkName.Version ? frameworkName.Version : oldFrameworkName.Version;
-                var hasIncompatibleFsCore = (lower.Major != upper.Major) || (lower.Major == 4 && (lower.Minor < 5 && upper.Minor >= 5));
+            // In reality for FSharp.Core compatibility with .NetFramework selection looks like this:
+            // 2 is incompatible with 4
+            // 4.0 is incompatible with 4.5
+            // 4.5 is compatible with 4.5.1 and 4.5.2 and 4.6
+            var lower = oldFrameworkName.Version < frameworkName.Version ? oldFrameworkName.Version : frameworkName.Version;
+            var upper = oldFrameworkName.Version < frameworkName.Version ? frameworkName.Version : oldFrameworkName.Version;
+            var hasIncompatibleFsCore = (lower.Major != upper.Major) || (lower.Major == 4 && (lower.Minor < 5 && upper.Minor >= 5));
                 
-                if (hasIncompatibleFsCore)
+            if (hasIncompatibleFsCore)
+            {
+                var newVersion =
+                    frameworkName.Version.Major >= 4 ?
+                    ( frameworkName.Version.Minor < 5 ? new Version(4, 3, 0, 0) : new Version(4, 4, 0, 0) ) : new Version(2, 3, 0, 0);
+                targetFSharpCoreVersion = newVersion.ToString();
+
+                if (projectMgr.CanUseTargetFSharpCoreReference)
                 {
-                    var newVersion =
-                        frameworkName.Version.Major >= 4 ?
-                        ( frameworkName.Version.Minor < 5 ? new Version(4, 3, 0, 0) : new Version(4, 4, 0, 0) ) : new Version(2, 3, 0, 0);
+                    // this project controls version of FSharp.Core with project level property TargetFSharpCoreVersion- set it
+                    projectMgr.SetProjectProperty(ProjectFileConstants.TargetFSharpCoreVersion, targetFSharpCoreVersion);
+                }
+                else
+                {
+                    // project doesn't use TargetFSharpCoreVersion - fix the reference explicitly
+                    var fsCoreName = new System.Reflection.AssemblyName(string.Format("FSharp.Core, Culture=neutral, PublicKeyToken={0}", Utilities.FsCorePublicKeyToken));
 
-                    if (projectMgr.CanUseTargetFSharpCoreReference)
+                    var vsProj = (VSLangProj.VSProject)projectMgr.Object;
+
+                    var references = vsProj.References;
+
+                    // replace existing fscore with one that has matching version with current target framework
+                    var existingFsCore =
+                        Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(
+                            () => references
+                                .OfType<Automation.OAAssemblyReference>()
+                                .FirstOrDefault(r => r.Name == fsCoreName.Name && r.PublicKeyToken == Utilities.FsCorePublicKeyToken && r.Culture == fsCoreName.CultureName)
+                            );
+
+                    if (existingFsCore != null)
                     {
-                        // this project controls version of FSharp.Core with project level property TargetFSharpCoreVersion- set it
-                        projectMgr.SetProjectProperty(ProjectFileConstants.TargetFSharpCoreVersion, newVersion.ToString());
-                    }
-                    else
-                    {
-                        // project doesn't use TargetFSharpCoreVersion - fix the reference explicitly
-                        var fsCoreName = new System.Reflection.AssemblyName(string.Format("FSharp.Core, Culture=neutral, PublicKeyToken={0}", Utilities.FsCorePublicKeyToken));
-
-                        var vsProj = (VSLangProj.VSProject)projectMgr.Object;
-
-                        var references = vsProj.References;
-
-                        // replace existing fscore with one that has matching version with current target framework
-                        var existingFsCore =
-                            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(
-                                () => references
-                                    .OfType<Automation.OAAssemblyReference>()
-                                    .FirstOrDefault(r => r.Name == fsCoreName.Name && r.PublicKeyToken == Utilities.FsCorePublicKeyToken && r.Culture == fsCoreName.CultureName)
-                                );
-
-                        if (existingFsCore != null)
+                        Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
                         {
-                            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
-                            {
-                                // save copyLocal value - after calling existingFsCore.Remove() becomes invalid and can raise exceptions
-                                var copyLocal = existingFsCore.CopyLocal;
-                                existingFsCore.Remove();
-                                fsCoreName.Version = newVersion;
+                            // save copyLocal value - after calling existingFsCore.Remove() becomes invalid and can raise exceptions
+                            var copyLocal = existingFsCore.CopyLocal;
+                            existingFsCore.Remove();
+                            fsCoreName.Version = newVersion;
 
-                                // stores assembly FQN
-                                var newRef = references.Add(fsCoreName.FullName);
-                                newRef.CopyLocal = copyLocal;
-                            });
-                        }
+                            // stores assembly FQN
+                            var newRef = references.Add(fsCoreName.FullName);
+                            newRef.CopyLocal = copyLocal;
+                        });
                     }
-                    targetFSharpCoreVersion = newVersion.ToString();
                 }
             }
 #endif

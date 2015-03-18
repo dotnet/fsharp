@@ -73,7 +73,7 @@ type MultiTargeting() =
             use project = TheTests.CreateProject(projFile, "true", ccn, sp)
             
             let validate (fn : System.Runtime.Versioning.FrameworkName) eR eS =
-                let (name, runtime, sku) = project.DetermineRuntimeAndSKU(fn.ToString())
+                let (runtime, sku) = project.DetermineRuntimeAndSKU(fn.ToString())
                 Assert.AreEqual(eR, runtime)
                 Assert.AreEqual(eS, sku)
             validate (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))) "v4.0" ".NETFramework,Version=v4.0"
