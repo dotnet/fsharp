@@ -6,6 +6,7 @@ open System
 open System.Diagnostics
 open System.Globalization
 open System.Runtime.InteropServices
+open System.Text.RegularExpressions
 open System.ComponentModel.Design
 open Microsoft.Win32
 open Microsoft.VisualStudio
@@ -487,9 +488,62 @@ type internal FsiToolWindow() as this =
                 | _ -> ()
             with _ -> ()
 
+    // checks if current session is configured such that debugging will work well
+    // if not, pops a dialog warning the user
+    let checkDebuggability () =
+        let lastIndexOfPattern s patt =
+            let patt' = sprintf @"(\s|^)%s(\s|$)" patt
+            match Regex.Matches(s, patt') |> Seq.cast<Match> |> Seq.tryLast with
+            | None -> -1
+            | Some(m) -> m.Index
+
+        // checks if combined arg string results in debug info on/off
+        let debugInfoEnabled (args : string) =
+            // FSI default is --debug:pdbonly, so disabling must be explicit
+            match lastIndexOfPattern args @"(--|/)debug-" with
+            | -1 -> true 
+            | idxDisabled ->
+                // check if it's enabled by later args
+                let afterDisabled = args.Substring(idxDisabled + 5)
+                let idxEnabled =
+                    [lastIndexOfPattern afterDisabled @"(--|/)debug(\+|:full|:pdbonly)?"
+                     lastIndexOfPattern afterDisabled @"(--|/)g"] |> List.max
+                idxEnabled > idxDisabled
+
+        // checks if combined arg string results in optimizations on/off
+        let optimizationsEnabled (args : string) =
+            // FSI default is --optimize+, so disabling must be explicit
+            match lastIndexOfPattern args @"(--|/)optimize-" with
+            | -1 -> true 
+            | idxDisabled ->
+                // check if it's enabled by later args
+                let afterDisabled = args.Substring(idxDisabled + 5)
+                let idxEnabled = lastIndexOfPattern afterDisabled @"(--|/)optimize\+?"
+                idxEnabled > idxDisabled
+        
+        // debug experience is good when optimizations are off and debug info is produced
+        if debugInfoEnabled sessions.ProcessArgs && not (optimizationsEnabled sessions.ProcessArgs) then
+            true
+        else
+            // otherwise, warn user that debug experience will be degraded
+            let result =
+                VsShellUtilities.ShowMessageBox(
+                    serviceProvider = provider,
+                    message = VFSIstrings.SR.sessionIsNotDebugFriendly(),
+                    title = null,
+                    icon = OLEMSGICON.OLEMSGICON_WARNING, 
+                    msgButton = OLEMSGBUTTON.OLEMSGBUTTON_OKCANCEL, 
+                    defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
+                )
+
+            // if user picks OK, allow debugging anyways
+            result = 1
+
+
     let onAttachDebugger (sender:obj) (args:EventArgs) =
-        attachDebugger()
-        showNoActivate()
+        if checkDebuggability() then
+            attachDebugger()
+            showNoActivate()
 
     let onDetachDebugger (sender:obj) (args:EventArgs) =
         detachDebugger()

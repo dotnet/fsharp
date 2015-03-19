@@ -8,3 +8,4 @@ sessionTerminationDetected,"Session termination detected. Press Enter to restart
 fsharpInteractive,"F# Interactive"
 couldNotFindFsiExe,"Could not find fsi.exe, the F# Interactive executable.\nThis file does not exist:\n\n%s\n"
 killingProcessRaisedException,"Killing process raised exception:\n%s"
+sessionIsNotDebugFriendly,"The current F# Interactive session is not configured for debugging. For the best experience, enable debugging in F# Interactive settings, then reset the session."
