@@ -593,7 +593,81 @@ type ScriptTests() as this =
         let code = ["#light";"#r @\"" + fullyqualifiepathtoddll + "\""]
         let (project, _) = createSingleFileFsxFromLines code
         AssertNoErrorsOrWarnings(project)
- 
+
+    [<Test>]
+    [<Category("fsx closure")>]
+    member public this.``Fsx.NoError.HashR.RelativePath1``() = 
+        use _guard = this.UsingNewVS()  
+        let solution = this.CreateSolution()
+        let project = CreateProject(solution,"testproject")    
+        let file1 = AddFileFromText(project,"lib.fs",
+                                    ["module Lib"
+                                     "let X = 42"
+                                     ])
+        
+        let bld = Build(project)
+
+        let script1Dir = Path.Combine(ProjectDirectory(project), "ccc")
+        let script1Path = Path.Combine(script1Dir, "Script1.fsx")
+        let script2Dir = Path.Combine(ProjectDirectory(project), "aaa\\bbb")
+        let script2Path = Path.Combine(script2Dir, "Script2.fsx")
+        
+        Directory.CreateDirectory(script1Dir) |> ignore
+        Directory.CreateDirectory(script2Dir) |> ignore
+        File.Move(bld.ExecutableOutput, Path.Combine(ProjectDirectory(project), "aaa\\lib.exe"))
+
+        let script1 = File.WriteAllLines(script1Path,
+                                      ["#load \"../aaa/bbb/Script2.fsx\""
+                                       "printfn \"%O\" Lib.X"
+                                       ])
+        let script2 = File.WriteAllLines(script2Path,
+                                      ["#r \"../lib.exe\""
+                                       ])
+                                       
+        let script1 = OpenFile(project, script1Path)   
+        TakeCoffeeBreak(this.VS)
+        
+        MoveCursorToEndOfMarker(script1,"#load")
+        let ans = GetSquiggleAtCursor(script1)
+        AssertNoSquiggle(ans)
+
+    [<Test>]
+    [<Category("fsx closure")>]
+    member public this.``Fsx.NoError.HashR.RelativePath2``() = 
+        use _guard = this.UsingNewVS()  
+        let solution = this.CreateSolution()
+        let project = CreateProject(solution,"testproject")    
+        let file1 = AddFileFromText(project,"lib.fs",
+                                    ["module Lib"
+                                     "let X = 42"
+                                     ])
+        
+        let bld = Build(project)
+
+        let script1Dir = Path.Combine(ProjectDirectory(project), "ccc")
+        let script1Path = Path.Combine(script1Dir, "Script1.fsx")
+        let script2Dir = Path.Combine(ProjectDirectory(project), "aaa")
+        let script2Path = Path.Combine(script2Dir, "Script2.fsx")
+        
+        Directory.CreateDirectory(script1Dir) |> ignore
+        Directory.CreateDirectory(script2Dir) |> ignore
+        File.Move(bld.ExecutableOutput, Path.Combine(ProjectDirectory(project), "aaa\\lib.exe"))
+
+        let script1 = File.WriteAllLines(script1Path,
+                                      ["#load \"../aaa/Script2.fsx\""
+                                       "printfn \"%O\" Lib.X"
+                                       ])
+        let script2 = File.WriteAllLines(script2Path,
+                                      ["#r \"lib.exe\""
+                                       ])
+                                       
+        let script1 = OpenFile(project, script1Path)   
+        TakeCoffeeBreak(this.VS)
+        
+        MoveCursorToEndOfMarker(script1,"#load")
+        let ans = GetSquiggleAtCursor(script1)
+        AssertNoSquiggle(ans)
+
      /// FEATURE: #load in an .fsx file will include that file in the 'build' of the .fsx.
     [<Test>]
     member public this.``Fsx.NoError.HashLoad.Simple``() =  
