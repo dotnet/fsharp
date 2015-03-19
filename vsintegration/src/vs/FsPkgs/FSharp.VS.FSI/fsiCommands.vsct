@@ -129,7 +129,7 @@
 
     <Bitmaps>
       <Bitmap guid="guidImages" href="Resources\Images_32bit.bmp" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows"/>
-      <Bitmap guid="guidFsiConsoleBmp" href="Resources\TabIcon.bmp" usedList="bmpConsole"/>
+      <Bitmap guid="guidFsiConsoleBmp" href="Resources\TabIcon.png" />
       <Bitmap guid="guidCancelEvaluationBmp" href="Resources\CancelEvaluation.bmp" usedList="bmpConsole"/>
       <Bitmap guid="guidResetSessionBmp" href="Resources\ResetSession.bmp" usedList="bmpConsole"/>
     </Bitmaps>
@@ -281,7 +281,7 @@
       <IDSymbol name="cmdidDetachDebugger" value="0x105" />
      </GuidSymbol>
 
-    <GuidSymbol name="guidFsiConsoleBmp" value="{9074CE8B-8F1E-4c23-8EDC-82C25E0323A8}" >
+    <GuidSymbol name="guidFsiConsoleBmp" value="{01F8DC29-935A-4460-8D5D-F213B4CFA7EA}" >
       <IDSymbol name="bmpConsole" value="0x01" />
     </GuidSymbol>
 
