@@ -21,6 +21,7 @@ open System
 open System.IO
 open System.Diagnostics
 open System.Globalization
+open System.Text.RegularExpressions
 open System.Windows.Forms
 open System.Runtime.InteropServices
 open System.ComponentModel.Design
@@ -103,7 +104,51 @@ module internal Util =
     let throwOnFailure2 (res,a,b)     = Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure res |> ignore; (a,b)
     let throwOnFailure3 (res,a,b,c)   = Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure res |> ignore; (a,b,c)
     let throwOnFailure4 (res,a,b,c,d) = Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure res |> ignore; (a,b,c,d)
-    
+
+    module RegistryHelpers =
+        /// returns Some(value) if key/value exists, None otherwise
+        let tryReadHKCU<'t> subkey valueName =
+            use key = Registry.CurrentUser.OpenSubKey(subkey)
+            if key = null then None else
+            match key.GetValue(valueName) with
+            | :? 't as valTyped -> Some(valTyped)
+            | _ -> None
+
+        /// write value to HKCU subkey, uses default .NET/registry type conversions
+        let writeHKCU subkey valueName value =
+            use key = Registry.CurrentUser.OpenSubKey(subkey, true)
+            key.SetValue(valueName, value)
+
+    module ArgParsing =
+        let private lastIndexOfPattern s patt =
+            let patt' = sprintf @"(\s|^)%s(\s|$)" patt
+            match Regex.Matches(s, patt') |> Seq.cast<Match> |> Seq.tryLast with
+            | None -> -1
+            | Some(m) -> m.Index
+
+        /// checks if combined arg string results in debug info on/off
+        let debugInfoEnabled (args : string) =
+            // FSI default is --debug:pdbonly, so disabling must be explicit
+            match lastIndexOfPattern args @"(--|/)debug-" with
+            | -1 -> true 
+            | idxDisabled ->
+                // check if it's enabled by later args
+                let afterDisabled = args.Substring(idxDisabled + 5)
+                let idxEnabled =
+                    [lastIndexOfPattern afterDisabled @"(--|/)debug(\+|:full|:pdbonly)?"
+                     lastIndexOfPattern afterDisabled @"(--|/)g"] |> List.max
+                idxEnabled > idxDisabled
+
+        /// checks if combined arg string results in optimizations on/off
+        let optimizationsEnabled (args : string) =
+            // FSI default is --optimize+, so disabling must be explicit
+            match lastIndexOfPattern args @"(--|/)optimize-" with
+            | -1 -> true 
+            | idxDisabled ->
+                // check if it's enabled by later args
+                let afterDisabled = args.Substring(idxDisabled + 5)
+                let idxEnabled = lastIndexOfPattern afterDisabled @"(--|/)optimize\+?"
+                idxEnabled > idxDisabled
 
 // History buffer.
 // For now, follows the cmd.exe model.
