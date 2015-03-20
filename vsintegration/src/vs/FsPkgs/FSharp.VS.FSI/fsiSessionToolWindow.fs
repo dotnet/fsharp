@@ -501,6 +501,21 @@ type internal FsiToolWindow() as this =
             match RegistryHelpers.tryReadHKCU (defaultVSRegistryRoot + "\\" + settingsRegistrySubKey) debugPromptRegistryValue with
             | Some(1) -> true  // warning dialog suppressed
             | _ ->
+#if VS_VERSION_DEV12
+                let result = 
+                    VsShellUtilities.ShowMessageBox( 
+                        serviceProvider = provider, 
+                        message = VFSIstrings.SR.sessionIsNotDebugFriendly(), 
+                        title = VFSIstrings.SR.fsharpInteractive(), 
+                        icon = OLEMSGICON.OLEMSGICON_WARNING,  
+                        msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO,  
+                        defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST 
+                    ) 
+                
+                // if user picks YES, allow debugging anyways 
+                result = 6 
+
+#else
                 let mutable suppressDiag = false
                 let result =
                     Microsoft.VisualStudio.PlatformUI.MessageDialog.Show(
@@ -516,6 +531,7 @@ type internal FsiToolWindow() as this =
 
                 // if user picks YES, allow debugging anyways
                 result = Microsoft.VisualStudio.PlatformUI.MessageDialogCommand.Yes
+#endif
 
     let onAttachDebugger (sender:obj) (args:EventArgs) =
         if checkDebuggability() then
