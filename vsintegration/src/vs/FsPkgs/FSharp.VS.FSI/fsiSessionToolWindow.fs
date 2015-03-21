@@ -35,6 +35,10 @@ type internal ITestVFSI =
 #nowarn "47"
 module internal Locals = 
     let fsiFontsAndColorsCategory = new Guid("{00CCEE86-3140-4E06-A65A-A92665A40D6F}")
+    let defaultVSRegistryRoot = @"Software\Microsoft\VisualStudio\14.0"
+    let settingsRegistrySubKey = @"General"
+    let debugPromptRegistryValue = "FSharpHideScriptDebugWarning"
+
     let fixServerPrompt (str:string) =
         // Prompts come through as "SERVER-PROMPT>\n" (when in "server mode").
         // In fsi.exe, the newline is needed to get the output send through to VS.
@@ -487,9 +491,52 @@ type internal FsiToolWindow() as this =
                 | _ -> ()
             with _ -> ()
 
+    // checks if current session is configured such that debugging will work well
+    // if not, pops a dialog warning the user
+    let checkDebuggability () =       
+        // debug experience is good when optimizations are off and debug info is produced
+        if ArgParsing.debugInfoEnabled sessions.ProcessArgs && not (ArgParsing.optimizationsEnabled sessions.ProcessArgs) then
+            true
+        else
+            match RegistryHelpers.tryReadHKCU (defaultVSRegistryRoot + "\\" + settingsRegistrySubKey) debugPromptRegistryValue with
+            | Some(1) -> true  // warning dialog suppressed
+            | _ ->
+#if VS_VERSION_DEV12
+                let result = 
+                    VsShellUtilities.ShowMessageBox( 
+                        serviceProvider = provider, 
+                        message = VFSIstrings.SR.sessionIsNotDebugFriendly(), 
+                        title = VFSIstrings.SR.fsharpInteractive(), 
+                        icon = OLEMSGICON.OLEMSGICON_WARNING,  
+                        msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO,  
+                        defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST 
+                    ) 
+                
+                // if user picks YES, allow debugging anyways 
+                result = 6 
+
+#else
+                let mutable suppressDiag = false
+                let result =
+                    Microsoft.VisualStudio.PlatformUI.MessageDialog.Show(
+                        VFSIstrings.SR.fsharpInteractive(),
+                        VFSIstrings.SR.sessionIsNotDebugFriendly(),
+                        Microsoft.VisualStudio.PlatformUI.MessageDialogCommandSet.YesNo,
+                        VFSIstrings.SR.doNotShowWarningInFuture(),
+                        &suppressDiag
+                    )
+                
+                if suppressDiag && result <> Microsoft.VisualStudio.PlatformUI.MessageDialogCommand.Abort then
+                    RegistryHelpers.writeHKCU (defaultVSRegistryRoot + "\\" + settingsRegistrySubKey) debugPromptRegistryValue 1
+
+                // if user picks YES, allow debugging anyways
+                result = Microsoft.VisualStudio.PlatformUI.MessageDialogCommand.Yes
+#endif
+
     let onAttachDebugger (sender:obj) (args:EventArgs) =
-        attachDebugger()
-        showNoActivate()
+        if checkDebuggability() then
+            attachDebugger()
+            showNoActivate()
 
     let onDetachDebugger (sender:obj) (args:EventArgs) =
         detachDebugger()

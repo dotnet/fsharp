@@ -31,7 +31,16 @@ let FSharpInteractiveShadowCopyDescr = "FSharpInteractiveShadowCopyDescr"
 let FSharpInteractiveShadowCopy = "FSharpInteractiveShadowCopy"
 
 [<Literal>]
+let FSharpInteractiveDebugMode = "FSharpInteractiveDebugMode"
+
+[<Literal>]
+let FSharpInteractiveDebugModeDescr = "FSharpInteractiveDebugModeDescr"
+
+[<Literal>]
 let FSharpInteractiveMisc = "FSharpInteractiveMisc"
+
+[<Literal>]
+let FSharpInteractiveDebugging = "FSharpInteractiveDebugging"
 
 type DisplayNameAttribute(resName) =
     inherit System.ComponentModel.DisplayNameAttribute(GetString(resName))

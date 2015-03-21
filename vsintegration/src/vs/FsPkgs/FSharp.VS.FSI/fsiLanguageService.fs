@@ -32,10 +32,12 @@ module SP = Microsoft.VisualStudio.FSharp.Interactive.Session.SessionsProperties
 [<Guid("4489e9de-6ac1-3cd6-bff8-a904fd0e82d4")>]
 type FsiPropertyPage() = 
     inherit DialogPage()    
+       
     [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
     [<SRProperties.DisplayName(SRProperties.FSharpInteractive64Bit)>] 
     [<SRProperties.Description(SRProperties.FSharpInteractive64BitDescr)>] 
     member this.FsiPreferAnyCPUVersion with get() = SP.useAnyCpuVersion and set (x:bool) = SP.useAnyCpuVersion <- x
+
     [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
     [<SRProperties.DisplayName(SRProperties.FSharpInteractiveOptions)>]
     [<SRProperties.Description(SRProperties.FSharpInteractiveOptionsDescr)>] 
@@ -45,6 +47,12 @@ type FsiPropertyPage() =
     [<SRProperties.DisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
     [<SRProperties.Description(SRProperties.FSharpInteractiveShadowCopyDescr)>] 
     member this.FsiShadowCopy with get() = SP.fsiShadowCopy and set (x:bool) = SP.fsiShadowCopy <- x
+
+    [<SRProperties.Category(SRProperties.FSharpInteractiveDebugging)>]
+    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveDebugMode)>]
+    [<SRProperties.Description(SRProperties.FSharpInteractiveDebugModeDescr)>] 
+    member this.FsiDebugMode with get() = SP.fsiDebugMode and set (x:bool) = SP.fsiDebugMode <- x
+
 // CompletionSet
 type internal FsiCompletionSet(imageList,source:Source) = 
     inherit CompletionSet(imageList, source)
