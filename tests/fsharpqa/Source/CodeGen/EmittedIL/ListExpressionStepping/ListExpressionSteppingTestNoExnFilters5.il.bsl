@@ -15,7 +15,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 2:0:0:0
 }
-.assembly ListExpressionSteppingTest5
+.assembly ListExpressionSteppingTestNoExnFilters5
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -27,15 +27,15 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.ListExpressionSteppingTest5
+.mresource public FSharpSignatureData.ListExpressionSteppingTestNoExnFilters5
 {
   // Offset: 0x00000000 Length: 0x0000024F
 }
-.mresource public FSharpOptimizationData.ListExpressionSteppingTest5
+.mresource public FSharpOptimizationData.ListExpressionSteppingTestNoExnFilters5
 {
   // Offset: 0x00000258 Length: 0x000000AF
 }
-.module ListExpressionSteppingTest5.dll
+.module ListExpressionSteppingTestNoExnFilters5.dll
 // MVID: {4D94A695-E557-77D9-A745-038395A6944D}
 .imagebase 0x00400000
 .file alignment 0x00000200
@@ -47,11 +47,11 @@
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed ListExpressionSteppingTest5
+.class public abstract auto ansi sealed ListExpressionSteppingTestNoExnFilters5
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class abstract auto ansi sealed nested public ListExpressionSteppingTest5
+  .class abstract auto ansi sealed nested public ListExpressionSteppingTestNoExnFilters5
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
@@ -81,19 +81,19 @@
         .maxstack  6
         IL_0000:  ldarg.0
         IL_0001:  ldarg.1
-        IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::x
+        IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::x
         IL_0007:  ldarg.0
         IL_0008:  ldarg.2
-        IL_0009:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::y
+        IL_0009:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::y
         IL_000e:  ldarg.0
         IL_000f:  ldarg.3
-        IL_0010:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::z
+        IL_0010:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::z
         IL_0015:  ldarg.0
         IL_0016:  ldarg.s    pc
-        IL_0018:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_0018:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         IL_001d:  ldarg.0
         IL_001e:  ldarg.s    current
-        IL_0020:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::current
+        IL_0020:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::current
         IL_0025:  ldarg.0
         IL_0026:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
         IL_002b:  ret
@@ -107,7 +107,7 @@
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
         .line 100001,100001 : 0,0 
         IL_0000:  ldarg.0
-        IL_0001:  ldfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_0001:  ldfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         IL_0006:  ldc.i4.1
         IL_0007:  sub
         IL_0008:  switch     ( 
@@ -152,66 +152,66 @@
         IL_003a:  ldarg.0
         IL_003b:  ldc.i4.0
         IL_003c:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
-        IL_0041:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::x
+        IL_0041:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::x
         IL_0046:  ldarg.0
         IL_0047:  ldc.i4.1
-        IL_0048:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_0048:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         .line 7,7 : 15,28 
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.0
         IL_004f:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
-        IL_0054:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::y
+        IL_0054:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::y
         .line 8,8 : 15,21 
         IL_0059:  ldarg.0
-        IL_005a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::y
+        IL_005a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::y
         IL_005f:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_0064:  nop
         IL_0065:  ldarg.0
         IL_0066:  ldc.i4.2
-        IL_0067:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_0067:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         .line 9,9 : 15,23 
         IL_006c:  ldarg.0
         IL_006d:  ldarg.0
-        IL_006e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::x
+        IL_006e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::x
         IL_0073:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
-        IL_0078:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::current
+        IL_0078:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::current
         IL_007d:  ldc.i4.1
         IL_007e:  ret
 
         .line 10,10 : 15,30 
         IL_007f:  ldarg.0
         IL_0080:  ldarg.0
-        IL_0081:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::x
+        IL_0081:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::x
         IL_0086:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
         IL_008b:  ldarg.0
-        IL_008c:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::y
+        IL_008c:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::y
         IL_0091:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
         IL_0096:  add
-        IL_0097:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::z
+        IL_0097:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::z
         IL_009c:  ldarg.0
         IL_009d:  ldc.i4.3
-        IL_009e:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_009e:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         .line 11,11 : 15,22 
         IL_00a3:  ldarg.0
         IL_00a4:  ldarg.0
-        IL_00a5:  ldfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::z
-        IL_00aa:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::current
+        IL_00a5:  ldfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::z
+        IL_00aa:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::current
         IL_00af:  ldc.i4.1
         IL_00b0:  ret
 
         .line 10,10 : 19,20 
         IL_00b1:  ldarg.0
         IL_00b2:  ldc.i4.0
-        IL_00b3:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::z
+        IL_00b3:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::z
         IL_00b8:  ldarg.0
         IL_00b9:  ldnull
-        IL_00ba:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::y
+        IL_00ba:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::y
         IL_00bf:  ldarg.0
         IL_00c0:  ldc.i4.4
-        IL_00c1:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_00c1:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         .line 13,13 : 14,20 
         IL_00c6:  ldarg.0
-        IL_00c7:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::x
+        IL_00c7:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::x
         IL_00cc:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_00d1:  nop
         .line 14,14 : 14,28 
@@ -221,13 +221,13 @@
         IL_00e1:  pop
         IL_00e2:  ldarg.0
         IL_00e3:  ldnull
-        IL_00e4:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::x
+        IL_00e4:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::x
         IL_00e9:  ldarg.0
         IL_00ea:  ldc.i4.4
-        IL_00eb:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_00eb:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         IL_00f0:  ldarg.0
         IL_00f1:  ldc.i4.0
-        IL_00f2:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::current
+        IL_00f2:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::current
         IL_00f7:  ldc.i4.0
         IL_00f8:  ret
       } // end of method f4@5::GenerateNext
@@ -244,7 +244,7 @@
         IL_0000:  ldnull
         IL_0001:  stloc.0
         IL_0002:  ldarg.0
-        IL_0003:  ldfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_0003:  ldfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         IL_0008:  ldc.i4.4
         IL_0009:  sub
         IL_000a:  switch     ( 
@@ -262,7 +262,7 @@
         .try
         {
           IL_001c:  ldarg.0
-          IL_001d:  ldfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+          IL_001d:  ldfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
           IL_0022:  switch     ( 
                                 IL_003d,
                                 IL_003f,
@@ -317,10 +317,10 @@
           IL_005a:  nop
           IL_005b:  ldarg.0
           IL_005c:  ldc.i4.4
-          IL_005d:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+          IL_005d:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
           .line 13,13 : 14,20 
           IL_0062:  ldarg.0
-          IL_0063:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::x
+          IL_0063:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::x
           IL_0068:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
           IL_006d:  nop
           .line 14,14 : 14,28 
@@ -332,10 +332,10 @@
           IL_007e:  nop
           IL_007f:  ldarg.0
           IL_0080:  ldc.i4.4
-          IL_0081:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+          IL_0081:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
           IL_0086:  ldarg.0
           IL_0087:  ldc.i4.0
-          IL_0088:  stfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::current
+          IL_0088:  stfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::current
           IL_008d:  ldnull
           IL_008e:  stloc.1
           IL_008f:  leave.s    IL_009d
@@ -384,7 +384,7 @@
         .maxstack  5
         IL_0000:  nop
         IL_0001:  ldarg.0
-        IL_0002:  ldfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::pc
+        IL_0002:  ldfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::pc
         IL_0007:  switch     ( 
                               IL_0022,
                               IL_0024,
@@ -441,7 +441,7 @@
         .maxstack  5
         IL_0000:  nop
         IL_0001:  ldarg.0
-        IL_0002:  ldfld      int32 ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::current
+        IL_0002:  ldfld      int32 ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::current
         IL_0007:  ret
       } // end of method f4@5::get_LastGenerated
 
@@ -458,7 +458,7 @@
         IL_0003:  ldc.i4.0
         IL_0004:  ldc.i4.0
         IL_0005:  ldc.i4.0
-        IL_0006:  newobj     instance void ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
+        IL_0006:  newobj     instance void ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
                                                                                                                class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
                                                                                                                int32,
                                                                                                                int32,
@@ -480,7 +480,7 @@
       IL_0003:  ldc.i4.0
       IL_0004:  ldc.i4.0
       IL_0005:  ldc.i4.0
-      IL_0006:  newobj     instance void ListExpressionSteppingTest5/ListExpressionSteppingTest5/f4@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
+      IL_0006:  newobj     instance void ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5/f4@5::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>,
                                                                                                              int32,
                                                                                                              int32,
@@ -488,13 +488,13 @@
       IL_000b:  tail.
       IL_000d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0012:  ret
-    } // end of method ListExpressionSteppingTest5::f4
+    } // end of method ListExpressionSteppingTestNoExnFilters5::f4
 
-  } // end of class ListExpressionSteppingTest5
+  } // end of class ListExpressionSteppingTestNoExnFilters5
 
-} // end of class ListExpressionSteppingTest5
+} // end of class ListExpressionSteppingTestNoExnFilters5
 
-.class private abstract auto ansi sealed '<StartupCode$ListExpressionSteppingTest5>'.$ListExpressionSteppingTest5
+.class private abstract auto ansi sealed '<StartupCode$ListExpressionSteppingTestNoExnFilters5>'.$ListExpressionSteppingTestNoExnFilters5
        extends [mscorlib]System.Object
 {
   .field static assembly int32 init@
@@ -508,12 +508,12 @@
     .maxstack  3
     .line 16,16 : 13,17 
     IL_0000:  nop
-    IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTest5/ListExpressionSteppingTest5::f4()
+    IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> ListExpressionSteppingTestNoExnFilters5/ListExpressionSteppingTestNoExnFilters5::f4()
     IL_0006:  pop
     IL_0007:  ret
-  } // end of method $ListExpressionSteppingTest5::.cctor
+  } // end of method $ListExpressionSteppingTestNoExnFilters5::.cctor
 
-} // end of class '<StartupCode$ListExpressionSteppingTest5>'.$ListExpressionSteppingTest5
+} // end of class '<StartupCode$ListExpressionSteppingTestNoExnFilters5>'.$ListExpressionSteppingTestNoExnFilters5
 
 
 // =============================================================

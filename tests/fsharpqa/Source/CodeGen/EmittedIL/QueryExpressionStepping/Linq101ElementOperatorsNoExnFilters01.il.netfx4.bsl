@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.33440
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,13 +13,13 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:0:9055
+  .ver 4:3:0:0
 }
 .assembly extern Utils
 {
   .ver 0:0:0:0
 }
-.assembly Linq101ElementOperators01
+.assembly Linq101ElementOperatorsNoExnFilters01
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -31,27 +31,27 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.Linq101ElementOperators01
+.mresource public FSharpSignatureData.Linq101ElementOperatorsNoExnFilters01
 {
-  // Offset: 0x00000000 Length: 0x00000368
+  // Offset: 0x00000000 Length: 0x000003A7
 }
-.mresource public FSharpOptimizationData.Linq101ElementOperators01
+.mresource public FSharpOptimizationData.Linq101ElementOperatorsNoExnFilters01
 {
-  // Offset: 0x00000370 Length: 0x00000127
+  // Offset: 0x000003B0 Length: 0x00000127
 }
-.module Linq101ElementOperators01.exe
-// MVID: {550ED4E1-19D7-C20D-A745-0383E1D40E55}
+.module Linq101ElementOperatorsNoExnFilters01.exe
+// MVID: {4F31D858-19D7-C20D-A745-038358D8314F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00A80000
+// Image base: 0x0000000000490000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed Linq101ElementOperators01
+.class public abstract auto ansi sealed Linq101ElementOperatorsNoExnFilters01
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
@@ -87,19 +87,19 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::_arg1
+      IL_0002:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::_arg1
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::p
+      IL_0009:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::p
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperators01/products12@12::'enum'
+      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01/products12@12::'enum'
       IL_0015:  ldarg.0
       IL_0016:  ldarg.s    pc
-      IL_0018:  stfld      int32 Linq101ElementOperators01/products12@12::pc
+      IL_0018:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
       IL_001d:  ldarg.0
       IL_001e:  ldarg.s    current
-      IL_0020:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::current
+      IL_0020:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::current
       IL_0025:  ldarg.0
       IL_0026:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<class [Utils]Utils/Product>::.ctor()
       IL_002b:  ret
@@ -113,7 +113,7 @@
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 100001,100001 : 0,0 
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101ElementOperators01/products12@12::pc
+      IL_0001:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -128,88 +128,88 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_002d:  nop
-      .line 12,12 : 9,29 ''
+      .line 12,12 : 9,29 
       IL_002e:  ldarg.0
-      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101ElementOperators01::get_products()
+      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01::get_products()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>
       IL_0039:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
-      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperators01/products12@12::'enum'
+      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01/products12@12::'enum'
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
-      IL_0045:  stfld      int32 Linq101ElementOperators01/products12@12::pc
-      .line 12,12 : 9,29 ''
+      IL_0045:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
+      .line 12,12 : 9,29 
       IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperators01/products12@12::'enum'
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01/products12@12::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_0055:  brfalse.s  IL_009a
 
       IL_0057:  ldarg.0
       IL_0058:  ldarg.0
-      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperators01/products12@12::'enum'
+      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01/products12@12::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
-      IL_0063:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::_arg1
-      .line 12,12 : 9,29 ''
+      IL_0063:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::_arg1
+      .line 12,12 : 9,29 
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
-      IL_006a:  ldfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::_arg1
-      IL_006f:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::p
+      IL_006a:  ldfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::_arg1
+      IL_006f:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::p
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
-      IL_0076:  stfld      int32 Linq101ElementOperators01/products12@12::pc
-      .line 13,13 : 9,33 ''
+      IL_0076:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
+      .line 13,13 : 9,33 
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
-      IL_007d:  ldfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::p
-      IL_0082:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::current
+      IL_007d:  ldfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::p
+      IL_0082:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::current
       IL_0087:  ldc.i4.1
       IL_0088:  ret
 
       IL_0089:  ldarg.0
       IL_008a:  ldnull
-      IL_008b:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::p
-      .line 12,12 : 9,29 ''
+      IL_008b:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::p
+      .line 12,12 : 9,29 
       IL_0090:  ldarg.0
       IL_0091:  ldnull
-      IL_0092:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::_arg1
-      .line 100001,100001 : 0,0 ''
+      IL_0092:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::_arg1
+      .line 100001,100001 : 0,0 
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
-      IL_009c:  stfld      int32 Linq101ElementOperators01/products12@12::pc
-      .line 12,12 : 9,29 ''
+      IL_009c:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
+      .line 12,12 : 9,29 
       IL_00a1:  ldarg.0
-      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperators01/products12@12::'enum'
+      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01/products12@12::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
       IL_00ac:  nop
       IL_00ad:  ldarg.0
       IL_00ae:  ldnull
-      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperators01/products12@12::'enum'
+      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01/products12@12::'enum'
       IL_00b4:  ldarg.0
       IL_00b5:  ldc.i4.3
-      IL_00b6:  stfld      int32 Linq101ElementOperators01/products12@12::pc
+      IL_00b6:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
       IL_00bb:  ldarg.0
       IL_00bc:  ldnull
-      IL_00bd:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::current
+      IL_00bd:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::current
       IL_00c2:  ldc.i4.0
       IL_00c3:  ret
     } // end of method products12@12::GenerateNext
@@ -217,35 +217,34 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       160 (0xa0)
+      // Code size       150 (0x96)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception ef,
-               [3] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 ''
+               [2] class [mscorlib]System.Exception e)
+      .line 100001,100001 : 0,0 
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      int32 Linq101ElementOperators01/products12@12::pc
+      IL_0003:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
       IL_0008:  ldc.i4.3
       IL_0009:  sub
       IL_000a:  switch     ( 
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0015:  nop
-      IL_0016:  br         IL_0093
+      IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_001b:  nop
       .try
       {
         IL_001c:  ldarg.0
-        IL_001d:  ldfld      int32 Linq101ElementOperators01/products12@12::pc
+        IL_001d:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
         IL_0022:  switch     ( 
                               IL_0039,
                               IL_003b,
@@ -261,93 +260,85 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004d:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
-        IL_0051:  stfld      int32 Linq101ElementOperators01/products12@12::pc
+        IL_0051:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
         IL_0056:  ldarg.0
-        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperators01/products12@12::'enum'
+        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01/products12@12::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
-        IL_0065:  stfld      int32 Linq101ElementOperators01/products12@12::pc
+        IL_0065:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
         IL_006a:  ldarg.0
         IL_006b:  ldnull
-        IL_006c:  stfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::current
+        IL_006c:  stfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::current
         IL_0071:  ldnull
         IL_0072:  stloc.1
-        IL_0073:  leave.s    IL_008b
+        IL_0073:  leave.s    IL_0081
 
       }  // end .try
-      filter
+      catch [mscorlib]System.Object 
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        IL_007b:  ldc.i4.1
-        .line 100001,100001 : 0,0 ''
-        IL_007c:  nop
-        IL_007d:  endfilter
-      }  // end filter
-      {  // handler
-        IL_007f:  castclass  [mscorlib]System.Exception
-        IL_0084:  stloc.3
-        .line 12,12 : 9,29 ''
-        IL_0085:  ldloc.3
-        IL_0086:  stloc.0
-        IL_0087:  ldnull
-        IL_0088:  stloc.1
-        IL_0089:  leave.s    IL_008b
+        .line 12,12 : 9,29 
+        IL_007b:  ldloc.2
+        IL_007c:  stloc.0
+        IL_007d:  ldnull
+        IL_007e:  stloc.1
+        IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
       }  // end handler
-      IL_008b:  ldloc.1
-      IL_008c:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_008d:  nop
-      IL_008e:  br         IL_0002
+      IL_0081:  ldloc.1
+      IL_0082:  pop
+      .line 100001,100001 : 0,0 
+      IL_0083:  nop
+      IL_0084:  br         IL_0002
 
+      IL_0089:  ldloc.0
+      IL_008a:  ldnull
+      IL_008b:  cgt.un
+      IL_008d:  brfalse.s  IL_0091
+
+      IL_008f:  br.s       IL_0093
+
+      IL_0091:  br.s       IL_0095
+
+      .line 100001,100001 : 0,0 
       IL_0093:  ldloc.0
-      IL_0094:  ldnull
-      IL_0095:  cgt.un
-      IL_0097:  brfalse.s  IL_009b
+      IL_0094:  throw
 
-      IL_0099:  br.s       IL_009d
-
-      IL_009b:  br.s       IL_009f
-
-      .line 100001,100001 : 0,0 ''
-      IL_009d:  ldloc.0
-      IL_009e:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_009f:  ret
+      .line 100001,100001 : 0,0 
+      IL_0095:  ret
     } // end of method products12@12::Close
 
     .method public strict virtual instance bool 
@@ -357,7 +348,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 Linq101ElementOperators01/products12@12::pc
+      IL_0002:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/products12@12::pc
       IL_0007:  switch     ( 
                             IL_001e,
                             IL_0020,
@@ -405,7 +396,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      class [Utils]Utils/Product Linq101ElementOperators01/products12@12::current
+      IL_0002:  ldfld      class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01/products12@12::current
       IL_0007:  ret
     } // end of method products12@12::get_LastGenerated
 
@@ -422,7 +413,7 @@
       IL_0003:  ldnull
       IL_0004:  ldc.i4.0
       IL_0005:  ldnull
-      IL_0006:  newobj     instance void Linq101ElementOperators01/products12@12::.ctor(class [Utils]Utils/Product,
+      IL_0006:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/products12@12::.ctor(class [Utils]Utils/Product,
                                                                                         class [Utils]Utils/Product,
                                                                                         class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
                                                                                         int32,
@@ -450,7 +441,7 @@
     {
       // Code size       12 (0xc)
       .maxstack  8
-      .line 13,13 : 16,32 ''
+      .line 13,13 : 16,32 
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance int32 [Utils]Utils/Product::get_ProductID()
@@ -493,19 +484,19 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      string Linq101ElementOperators01/startsWithO@22::_arg1
+      IL_0002:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::_arg1
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      string Linq101ElementOperators01/startsWithO@22::s
+      IL_0009:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::s
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperators01/startsWithO@22::'enum'
+      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperatorsNoExnFilters01/startsWithO@22::'enum'
       IL_0015:  ldarg.0
       IL_0016:  ldarg.s    pc
-      IL_0018:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+      IL_0018:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
       IL_001d:  ldarg.0
       IL_001e:  ldarg.s    current
-      IL_0020:  stfld      string Linq101ElementOperators01/startsWithO@22::current
+      IL_0020:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::current
       IL_0025:  ldarg.0
       IL_0026:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<string>::.ctor()
       IL_002b:  ret
@@ -516,9 +507,9 @@
     {
       // Code size       196 (0xc4)
       .maxstack  6
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+      IL_0001:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -533,88 +524,88 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_002d:  nop
-      .line 22,22 : 9,28 ''
+      .line 22,22 : 9,28 
       IL_002e:  ldarg.0
-      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101ElementOperators01::get_strings()
+      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101ElementOperatorsNoExnFilters01::get_strings()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<string>
       IL_0039:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperators01/startsWithO@22::'enum'
+      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperatorsNoExnFilters01/startsWithO@22::'enum'
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
-      IL_0045:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
-      .line 22,22 : 9,28 ''
+      IL_0045:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
+      .line 22,22 : 9,28 
       IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperators01/startsWithO@22::'enum'
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperatorsNoExnFilters01/startsWithO@22::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_0055:  brfalse.s  IL_009a
 
       IL_0057:  ldarg.0
       IL_0058:  ldarg.0
-      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperators01/startsWithO@22::'enum'
+      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperatorsNoExnFilters01/startsWithO@22::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0063:  stfld      string Linq101ElementOperators01/startsWithO@22::_arg1
-      .line 22,22 : 9,28 ''
+      IL_0063:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::_arg1
+      .line 22,22 : 9,28 
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
-      IL_006a:  ldfld      string Linq101ElementOperators01/startsWithO@22::_arg1
-      IL_006f:  stfld      string Linq101ElementOperators01/startsWithO@22::s
+      IL_006a:  ldfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::_arg1
+      IL_006f:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::s
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
-      IL_0076:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
-      .line 23,23 : 9,28 ''
+      IL_0076:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
+      .line 23,23 : 9,28 
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
-      IL_007d:  ldfld      string Linq101ElementOperators01/startsWithO@22::s
-      IL_0082:  stfld      string Linq101ElementOperators01/startsWithO@22::current
+      IL_007d:  ldfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::s
+      IL_0082:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::current
       IL_0087:  ldc.i4.1
       IL_0088:  ret
 
       IL_0089:  ldarg.0
       IL_008a:  ldnull
-      IL_008b:  stfld      string Linq101ElementOperators01/startsWithO@22::s
-      .line 22,22 : 9,28 ''
+      IL_008b:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::s
+      .line 22,22 : 9,28 
       IL_0090:  ldarg.0
       IL_0091:  ldnull
-      IL_0092:  stfld      string Linq101ElementOperators01/startsWithO@22::_arg1
-      .line 100001,100001 : 0,0 ''
+      IL_0092:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::_arg1
+      .line 100001,100001 : 0,0 
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
-      IL_009c:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
-      .line 22,22 : 9,28 ''
+      IL_009c:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
+      .line 22,22 : 9,28 
       IL_00a1:  ldarg.0
-      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperators01/startsWithO@22::'enum'
+      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperatorsNoExnFilters01/startsWithO@22::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
       IL_00ac:  nop
       IL_00ad:  ldarg.0
       IL_00ae:  ldnull
-      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperators01/startsWithO@22::'enum'
+      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperatorsNoExnFilters01/startsWithO@22::'enum'
       IL_00b4:  ldarg.0
       IL_00b5:  ldc.i4.3
-      IL_00b6:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+      IL_00b6:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
       IL_00bb:  ldarg.0
       IL_00bc:  ldnull
-      IL_00bd:  stfld      string Linq101ElementOperators01/startsWithO@22::current
+      IL_00bd:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::current
       IL_00c2:  ldc.i4.0
       IL_00c3:  ret
     } // end of method startsWithO@22::GenerateNext
@@ -622,35 +613,34 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       160 (0xa0)
+      // Code size       150 (0x96)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception ef,
-               [3] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 ''
+               [2] class [mscorlib]System.Exception e)
+      .line 100001,100001 : 0,0 
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+      IL_0003:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
       IL_0008:  ldc.i4.3
       IL_0009:  sub
       IL_000a:  switch     ( 
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0015:  nop
-      IL_0016:  br         IL_0093
+      IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_001b:  nop
       .try
       {
         IL_001c:  ldarg.0
-        IL_001d:  ldfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+        IL_001d:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
         IL_0022:  switch     ( 
                               IL_0039,
                               IL_003b,
@@ -666,93 +656,85 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004d:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
-        IL_0051:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+        IL_0051:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
         IL_0056:  ldarg.0
-        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperators01/startsWithO@22::'enum'
+        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101ElementOperatorsNoExnFilters01/startsWithO@22::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
-        IL_0065:  stfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+        IL_0065:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
         IL_006a:  ldarg.0
         IL_006b:  ldnull
-        IL_006c:  stfld      string Linq101ElementOperators01/startsWithO@22::current
+        IL_006c:  stfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::current
         IL_0071:  ldnull
         IL_0072:  stloc.1
-        IL_0073:  leave.s    IL_008b
+        IL_0073:  leave.s    IL_0081
 
       }  // end .try
-      filter
+      catch [mscorlib]System.Object 
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        IL_007b:  ldc.i4.1
-        .line 100001,100001 : 0,0 ''
-        IL_007c:  nop
-        IL_007d:  endfilter
-      }  // end filter
-      {  // handler
-        IL_007f:  castclass  [mscorlib]System.Exception
-        IL_0084:  stloc.3
-        .line 22,22 : 9,28 ''
-        IL_0085:  ldloc.3
-        IL_0086:  stloc.0
-        IL_0087:  ldnull
-        IL_0088:  stloc.1
-        IL_0089:  leave.s    IL_008b
+        .line 22,22 : 9,28 
+        IL_007b:  ldloc.2
+        IL_007c:  stloc.0
+        IL_007d:  ldnull
+        IL_007e:  stloc.1
+        IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
       }  // end handler
-      IL_008b:  ldloc.1
-      IL_008c:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_008d:  nop
-      IL_008e:  br         IL_0002
+      IL_0081:  ldloc.1
+      IL_0082:  pop
+      .line 100001,100001 : 0,0 
+      IL_0083:  nop
+      IL_0084:  br         IL_0002
 
+      IL_0089:  ldloc.0
+      IL_008a:  ldnull
+      IL_008b:  cgt.un
+      IL_008d:  brfalse.s  IL_0091
+
+      IL_008f:  br.s       IL_0093
+
+      IL_0091:  br.s       IL_0095
+
+      .line 100001,100001 : 0,0 
       IL_0093:  ldloc.0
-      IL_0094:  ldnull
-      IL_0095:  cgt.un
-      IL_0097:  brfalse.s  IL_009b
+      IL_0094:  throw
 
-      IL_0099:  br.s       IL_009d
-
-      IL_009b:  br.s       IL_009f
-
-      .line 100001,100001 : 0,0 ''
-      IL_009d:  ldloc.0
-      IL_009e:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_009f:  ret
+      .line 100001,100001 : 0,0 
+      IL_0095:  ret
     } // end of method startsWithO@22::Close
 
     .method public strict virtual instance bool 
@@ -762,7 +744,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 Linq101ElementOperators01/startsWithO@22::pc
+      IL_0002:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/startsWithO@22::pc
       IL_0007:  switch     ( 
                             IL_001e,
                             IL_0020,
@@ -810,7 +792,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      string Linq101ElementOperators01/startsWithO@22::current
+      IL_0002:  ldfld      string Linq101ElementOperatorsNoExnFilters01/startsWithO@22::current
       IL_0007:  ret
     } // end of method startsWithO@22::get_LastGenerated
 
@@ -827,7 +809,7 @@
       IL_0003:  ldnull
       IL_0004:  ldc.i4.0
       IL_0005:  ldnull
-      IL_0006:  newobj     instance void Linq101ElementOperators01/startsWithO@22::.ctor(string,
+      IL_0006:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/startsWithO@22::.ctor(string,
                                                                                          string,
                                                                                          class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
                                                                                          int32,
@@ -855,7 +837,7 @@
     {
       // Code size       13 (0xd)
       .maxstack  8
-      .line 23,23 : 16,27 ''
+      .line 23,23 : 16,27 
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.0
@@ -899,19 +881,19 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::_arg1
+      IL_0002:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::_arg1
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::n
+      IL_0009:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::n
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/firstNumOrDefault@31::'enum'
+      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::'enum'
       IL_0015:  ldarg.0
       IL_0016:  ldarg.s    pc
-      IL_0018:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+      IL_0018:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
       IL_001d:  ldarg.0
       IL_001e:  ldarg.s    current
-      IL_0020:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::current
+      IL_0020:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::current
       IL_0025:  ldarg.0
       IL_0026:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_002b:  ret
@@ -922,9 +904,9 @@
     {
       // Code size       196 (0xc4)
       .maxstack  6
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+      IL_0001:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -939,88 +921,88 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_002d:  nop
-      .line 31,31 : 9,28 ''
+      .line 31,31 : 9,28 
       IL_002e:  ldarg.0
-      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperators01::get_numbers()
+      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperatorsNoExnFilters01::get_numbers()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
       IL_0039:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/firstNumOrDefault@31::'enum'
+      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::'enum'
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
-      IL_0045:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
-      .line 31,31 : 9,28 ''
+      IL_0045:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
+      .line 31,31 : 9,28 
       IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/firstNumOrDefault@31::'enum'
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_0055:  brfalse.s  IL_009a
 
       IL_0057:  ldarg.0
       IL_0058:  ldarg.0
-      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/firstNumOrDefault@31::'enum'
+      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0063:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::_arg1
-      .line 31,31 : 9,28 ''
+      IL_0063:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::_arg1
+      .line 31,31 : 9,28 
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
-      IL_006a:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::_arg1
-      IL_006f:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::n
+      IL_006a:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::_arg1
+      IL_006f:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::n
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
-      IL_0076:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
-      .line 32,32 : 9,22 ''
+      IL_0076:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
+      .line 32,32 : 9,22 
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
-      IL_007d:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::n
-      IL_0082:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::current
+      IL_007d:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::n
+      IL_0082:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::current
       IL_0087:  ldc.i4.1
       IL_0088:  ret
 
       IL_0089:  ldarg.0
       IL_008a:  ldc.i4.0
-      IL_008b:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::n
-      .line 31,31 : 9,28 ''
+      IL_008b:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::n
+      .line 31,31 : 9,28 
       IL_0090:  ldarg.0
       IL_0091:  ldc.i4.0
-      IL_0092:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::_arg1
-      .line 100001,100001 : 0,0 ''
+      IL_0092:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::_arg1
+      .line 100001,100001 : 0,0 
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
-      IL_009c:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
-      .line 31,31 : 9,28 ''
+      IL_009c:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
+      .line 31,31 : 9,28 
       IL_00a1:  ldarg.0
-      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/firstNumOrDefault@31::'enum'
+      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_00ac:  nop
       IL_00ad:  ldarg.0
       IL_00ae:  ldnull
-      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/firstNumOrDefault@31::'enum'
+      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::'enum'
       IL_00b4:  ldarg.0
       IL_00b5:  ldc.i4.3
-      IL_00b6:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+      IL_00b6:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
       IL_00bb:  ldarg.0
       IL_00bc:  ldc.i4.0
-      IL_00bd:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::current
+      IL_00bd:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::current
       IL_00c2:  ldc.i4.0
       IL_00c3:  ret
     } // end of method firstNumOrDefault@31::GenerateNext
@@ -1028,35 +1010,34 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       160 (0xa0)
+      // Code size       150 (0x96)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception ef,
-               [3] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 ''
+               [2] class [mscorlib]System.Exception e)
+      .line 100001,100001 : 0,0 
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+      IL_0003:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
       IL_0008:  ldc.i4.3
       IL_0009:  sub
       IL_000a:  switch     ( 
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0015:  nop
-      IL_0016:  br         IL_0093
+      IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_001b:  nop
       .try
       {
         IL_001c:  ldarg.0
-        IL_001d:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+        IL_001d:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
         IL_0022:  switch     ( 
                               IL_0039,
                               IL_003b,
@@ -1072,93 +1053,85 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004d:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
-        IL_0051:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+        IL_0051:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
         IL_0056:  ldarg.0
-        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/firstNumOrDefault@31::'enum'
+        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
-        IL_0065:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+        IL_0065:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
         IL_006a:  ldarg.0
         IL_006b:  ldc.i4.0
-        IL_006c:  stfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::current
+        IL_006c:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::current
         IL_0071:  ldnull
         IL_0072:  stloc.1
-        IL_0073:  leave.s    IL_008b
+        IL_0073:  leave.s    IL_0081
 
       }  // end .try
-      filter
+      catch [mscorlib]System.Object 
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        IL_007b:  ldc.i4.1
-        .line 100001,100001 : 0,0 ''
-        IL_007c:  nop
-        IL_007d:  endfilter
-      }  // end filter
-      {  // handler
-        IL_007f:  castclass  [mscorlib]System.Exception
-        IL_0084:  stloc.3
-        .line 31,31 : 9,28 ''
-        IL_0085:  ldloc.3
-        IL_0086:  stloc.0
-        IL_0087:  ldnull
-        IL_0088:  stloc.1
-        IL_0089:  leave.s    IL_008b
+        .line 31,31 : 9,28 
+        IL_007b:  ldloc.2
+        IL_007c:  stloc.0
+        IL_007d:  ldnull
+        IL_007e:  stloc.1
+        IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
       }  // end handler
-      IL_008b:  ldloc.1
-      IL_008c:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_008d:  nop
-      IL_008e:  br         IL_0002
+      IL_0081:  ldloc.1
+      IL_0082:  pop
+      .line 100001,100001 : 0,0 
+      IL_0083:  nop
+      IL_0084:  br         IL_0002
 
+      IL_0089:  ldloc.0
+      IL_008a:  ldnull
+      IL_008b:  cgt.un
+      IL_008d:  brfalse.s  IL_0091
+
+      IL_008f:  br.s       IL_0093
+
+      IL_0091:  br.s       IL_0095
+
+      .line 100001,100001 : 0,0 
       IL_0093:  ldloc.0
-      IL_0094:  ldnull
-      IL_0095:  cgt.un
-      IL_0097:  brfalse.s  IL_009b
+      IL_0094:  throw
 
-      IL_0099:  br.s       IL_009d
-
-      IL_009b:  br.s       IL_009f
-
-      .line 100001,100001 : 0,0 ''
-      IL_009d:  ldloc.0
-      IL_009e:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_009f:  ret
+      .line 100001,100001 : 0,0 
+      IL_0095:  ret
     } // end of method firstNumOrDefault@31::Close
 
     .method public strict virtual instance bool 
@@ -1168,7 +1141,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::pc
+      IL_0002:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::pc
       IL_0007:  switch     ( 
                             IL_001e,
                             IL_0020,
@@ -1216,7 +1189,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 Linq101ElementOperators01/firstNumOrDefault@31::current
+      IL_0002:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::current
       IL_0007:  ret
     } // end of method firstNumOrDefault@31::get_LastGenerated
 
@@ -1233,7 +1206,7 @@
       IL_0003:  ldnull
       IL_0004:  ldc.i4.0
       IL_0005:  ldc.i4.0
-      IL_0006:  newobj     instance void Linq101ElementOperators01/firstNumOrDefault@31::.ctor(int32,
+      IL_0006:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::.ctor(int32,
                                                                                                int32,
                                                                                                class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                                int32,
@@ -1275,19 +1248,19 @@
       .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::_arg1
+      IL_0002:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::_arg1
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::n
+      IL_0009:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::n
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/fourthLowNum@52::'enum'
+      IL_0010:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::'enum'
       IL_0015:  ldarg.0
       IL_0016:  ldarg.s    pc
-      IL_0018:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+      IL_0018:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
       IL_001d:  ldarg.0
       IL_001e:  ldarg.s    current
-      IL_0020:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::current
+      IL_0020:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::current
       IL_0025:  ldarg.0
       IL_0026:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_002b:  ret
@@ -1298,9 +1271,9 @@
     {
       // Code size       196 (0xc4)
       .maxstack  6
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+      IL_0001:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -1315,88 +1288,88 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0021:  nop
       IL_0022:  br.s       IL_009a
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0024:  nop
       IL_0025:  br.s       IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0027:  nop
       IL_0028:  br         IL_00bb
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_002d:  nop
-      .line 52,52 : 9,29 ''
+      .line 52,52 : 9,29 
       IL_002e:  ldarg.0
-      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperators01::get_numbers2()
+      IL_002f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperatorsNoExnFilters01::get_numbers2()
       IL_0034:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
       IL_0039:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/fourthLowNum@52::'enum'
+      IL_003e:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::'enum'
       IL_0043:  ldarg.0
       IL_0044:  ldc.i4.1
-      IL_0045:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
-      .line 52,52 : 9,29 ''
+      IL_0045:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
+      .line 52,52 : 9,29 
       IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/fourthLowNum@52::'enum'
+      IL_004b:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::'enum'
       IL_0050:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
       IL_0055:  brfalse.s  IL_009a
 
       IL_0057:  ldarg.0
       IL_0058:  ldarg.0
-      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/fourthLowNum@52::'enum'
+      IL_0059:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::'enum'
       IL_005e:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0063:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::_arg1
-      .line 52,52 : 9,29 ''
+      IL_0063:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::_arg1
+      .line 52,52 : 9,29 
       IL_0068:  ldarg.0
       IL_0069:  ldarg.0
-      IL_006a:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::_arg1
-      IL_006f:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::n
+      IL_006a:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::_arg1
+      IL_006f:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::n
       IL_0074:  ldarg.0
       IL_0075:  ldc.i4.2
-      IL_0076:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
-      .line 53,53 : 9,22 ''
+      IL_0076:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
+      .line 53,53 : 9,22 
       IL_007b:  ldarg.0
       IL_007c:  ldarg.0
-      IL_007d:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::n
-      IL_0082:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::current
+      IL_007d:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::n
+      IL_0082:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::current
       IL_0087:  ldc.i4.1
       IL_0088:  ret
 
       IL_0089:  ldarg.0
       IL_008a:  ldc.i4.0
-      IL_008b:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::n
-      .line 52,52 : 9,29 ''
+      IL_008b:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::n
+      .line 52,52 : 9,29 
       IL_0090:  ldarg.0
       IL_0091:  ldc.i4.0
-      IL_0092:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::_arg1
-      .line 100001,100001 : 0,0 ''
+      IL_0092:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::_arg1
+      .line 100001,100001 : 0,0 
       IL_0097:  nop
       IL_0098:  br.s       IL_004a
 
       IL_009a:  ldarg.0
       IL_009b:  ldc.i4.3
-      IL_009c:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
-      .line 52,52 : 9,29 ''
+      IL_009c:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
+      .line 52,52 : 9,29 
       IL_00a1:  ldarg.0
-      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/fourthLowNum@52::'enum'
+      IL_00a2:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::'enum'
       IL_00a7:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
       IL_00ac:  nop
       IL_00ad:  ldarg.0
       IL_00ae:  ldnull
-      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/fourthLowNum@52::'enum'
+      IL_00af:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::'enum'
       IL_00b4:  ldarg.0
       IL_00b5:  ldc.i4.3
-      IL_00b6:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+      IL_00b6:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
       IL_00bb:  ldarg.0
       IL_00bc:  ldc.i4.0
-      IL_00bd:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::current
+      IL_00bd:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::current
       IL_00c2:  ldc.i4.0
       IL_00c3:  ret
     } // end of method fourthLowNum@52::GenerateNext
@@ -1404,35 +1377,34 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       160 (0xa0)
+      // Code size       150 (0x96)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception ef,
-               [3] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 ''
+               [2] class [mscorlib]System.Exception e)
+      .line 100001,100001 : 0,0 
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+      IL_0003:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
       IL_0008:  ldc.i4.3
       IL_0009:  sub
       IL_000a:  switch     ( 
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_0015:  nop
-      IL_0016:  br         IL_0093
+      IL_0016:  br         IL_0089
 
-      .line 100001,100001 : 0,0 ''
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 
       IL_001b:  nop
       .try
       {
         IL_001c:  ldarg.0
-        IL_001d:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+        IL_001d:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
         IL_0022:  switch     ( 
                               IL_0039,
                               IL_003b,
@@ -1448,93 +1420,85 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 ''
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 
         IL_004d:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
-        IL_0051:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+        IL_0051:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
         IL_0056:  ldarg.0
-        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperators01/fourthLowNum@52::'enum'
+        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
-        IL_0065:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+        IL_0065:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
         IL_006a:  ldarg.0
         IL_006b:  ldc.i4.0
-        IL_006c:  stfld      int32 Linq101ElementOperators01/fourthLowNum@52::current
+        IL_006c:  stfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::current
         IL_0071:  ldnull
         IL_0072:  stloc.1
-        IL_0073:  leave.s    IL_008b
+        IL_0073:  leave.s    IL_0081
 
       }  // end .try
-      filter
+      catch [mscorlib]System.Object 
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        IL_007b:  ldc.i4.1
-        .line 100001,100001 : 0,0 ''
-        IL_007c:  nop
-        IL_007d:  endfilter
-      }  // end filter
-      {  // handler
-        IL_007f:  castclass  [mscorlib]System.Exception
-        IL_0084:  stloc.3
-        .line 52,52 : 9,29 ''
-        IL_0085:  ldloc.3
-        IL_0086:  stloc.0
-        IL_0087:  ldnull
-        IL_0088:  stloc.1
-        IL_0089:  leave.s    IL_008b
+        .line 52,52 : 9,29 
+        IL_007b:  ldloc.2
+        IL_007c:  stloc.0
+        IL_007d:  ldnull
+        IL_007e:  stloc.1
+        IL_007f:  leave.s    IL_0081
 
-        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 
       }  // end handler
-      IL_008b:  ldloc.1
-      IL_008c:  pop
-      .line 100001,100001 : 0,0 ''
-      IL_008d:  nop
-      IL_008e:  br         IL_0002
+      IL_0081:  ldloc.1
+      IL_0082:  pop
+      .line 100001,100001 : 0,0 
+      IL_0083:  nop
+      IL_0084:  br         IL_0002
 
+      IL_0089:  ldloc.0
+      IL_008a:  ldnull
+      IL_008b:  cgt.un
+      IL_008d:  brfalse.s  IL_0091
+
+      IL_008f:  br.s       IL_0093
+
+      IL_0091:  br.s       IL_0095
+
+      .line 100001,100001 : 0,0 
       IL_0093:  ldloc.0
-      IL_0094:  ldnull
-      IL_0095:  cgt.un
-      IL_0097:  brfalse.s  IL_009b
+      IL_0094:  throw
 
-      IL_0099:  br.s       IL_009d
-
-      IL_009b:  br.s       IL_009f
-
-      .line 100001,100001 : 0,0 ''
-      IL_009d:  ldloc.0
-      IL_009e:  throw
-
-      .line 100001,100001 : 0,0 ''
-      IL_009f:  ret
+      .line 100001,100001 : 0,0 
+      IL_0095:  ret
     } // end of method fourthLowNum@52::Close
 
     .method public strict virtual instance bool 
@@ -1544,7 +1508,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::pc
+      IL_0002:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::pc
       IL_0007:  switch     ( 
                             IL_001e,
                             IL_0020,
@@ -1592,7 +1556,7 @@
       .maxstack  8
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 Linq101ElementOperators01/fourthLowNum@52::current
+      IL_0002:  ldfld      int32 Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::current
       IL_0007:  ret
     } // end of method fourthLowNum@52::get_LastGenerated
 
@@ -1609,7 +1573,7 @@
       IL_0003:  ldnull
       IL_0004:  ldc.i4.0
       IL_0005:  ldc.i4.0
-      IL_0006:  newobj     instance void Linq101ElementOperators01/fourthLowNum@52::.ctor(int32,
+      IL_0006:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::.ctor(int32,
                                                                                           int32,
                                                                                           class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                           int32,
@@ -1637,7 +1601,7 @@
     {
       // Code size       6 (0x6)
       .maxstack  8
-      .line 53,53 : 16,21 ''
+      .line 53,53 : 16,21 
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.5
@@ -1652,36 +1616,36 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::products@8
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::products@8
     IL_0005:  ret
-  } // end of method Linq101ElementOperators01::get_products
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_products
 
   .method public specialname static class [Utils]Utils/Product 
           get_products12() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [Utils]Utils/Product '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::products12@10
+    IL_0000:  ldsfld     class [Utils]Utils/Product '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::products12@10
     IL_0005:  ret
-  } // end of method Linq101ElementOperators01::get_products12
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_products12
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 
           get_strings() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::strings@18
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::strings@18
     IL_0005:  ret
-  } // end of method Linq101ElementOperators01::get_strings
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_strings
 
   .method public specialname static string 
           get_startsWithO() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     string '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::startsWithO@20
+    IL_0000:  ldsfld     string '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::startsWithO@20
     IL_0005:  ret
-  } // end of method Linq101ElementOperators01::get_startsWithO
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_startsWithO
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
           get_numbers() cil managed
@@ -1693,81 +1657,81 @@
     IL_0000:  nop
     IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
     IL_0006:  ret
-  } // end of method Linq101ElementOperators01::get_numbers
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_numbers
 
   .method public specialname static int32 
           get_firstNumOrDefault() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::firstNumOrDefault@29
+    IL_0000:  ldsfld     int32 '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::firstNumOrDefault@29
     IL_0005:  ret
-  } // end of method Linq101ElementOperators01::get_firstNumOrDefault
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_firstNumOrDefault
 
   .method public specialname static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
           get_numbers2() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::numbers2@48
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::numbers2@48
     IL_0005:  ret
-  } // end of method Linq101ElementOperators01::get_numbers2
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_numbers2
 
   .method public specialname static int32 
           get_fourthLowNum() cil managed
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::fourthLowNum@50
+    IL_0000:  ldsfld     int32 '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::fourthLowNum@50
     IL_0005:  ret
-  } // end of method Linq101ElementOperators01::get_fourthLowNum
+  } // end of method Linq101ElementOperatorsNoExnFilters01::get_fourthLowNum
 
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product>
           products()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101ElementOperators01::get_products()
-  } // end of property Linq101ElementOperators01::products
+    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101ElementOperatorsNoExnFilters01::get_products()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::products
   .property class [Utils]Utils/Product products12()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [Utils]Utils/Product Linq101ElementOperators01::get_products12()
-  } // end of property Linq101ElementOperators01::products12
+    .get class [Utils]Utils/Product Linq101ElementOperatorsNoExnFilters01::get_products12()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::products12
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>
           strings()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101ElementOperators01::get_strings()
-  } // end of property Linq101ElementOperators01::strings
+    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101ElementOperatorsNoExnFilters01::get_strings()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::strings
   .property string startsWithO()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get string Linq101ElementOperators01::get_startsWithO()
-  } // end of property Linq101ElementOperators01::startsWithO
+    .get string Linq101ElementOperatorsNoExnFilters01::get_startsWithO()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::startsWithO
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>
           numbers()
   {
-    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperators01::get_numbers()
-  } // end of property Linq101ElementOperators01::numbers
+    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperatorsNoExnFilters01::get_numbers()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::numbers
   .property int32 firstNumOrDefault()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get int32 Linq101ElementOperators01::get_firstNumOrDefault()
-  } // end of property Linq101ElementOperators01::firstNumOrDefault
+    .get int32 Linq101ElementOperatorsNoExnFilters01::get_firstNumOrDefault()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::firstNumOrDefault
   .property class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>
           numbers2()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperators01::get_numbers2()
-  } // end of property Linq101ElementOperators01::numbers2
+    .get class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperatorsNoExnFilters01::get_numbers2()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::numbers2
   .property int32 fourthLowNum()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 09 00 00 00 00 00 ) 
-    .get int32 Linq101ElementOperators01::get_fourthLowNum()
-  } // end of property Linq101ElementOperators01::fourthLowNum
-} // end of class Linq101ElementOperators01
+    .get int32 Linq101ElementOperatorsNoExnFilters01::get_fourthLowNum()
+  } // end of property Linq101ElementOperatorsNoExnFilters01::fourthLowNum
+} // end of class Linq101ElementOperatorsNoExnFilters01
 
-.class private abstract auto ansi sealed '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01
+.class private abstract auto ansi sealed '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01
        extends [mscorlib]System.Object
 {
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> products@8
@@ -1805,11 +1769,11 @@
              [9] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_9,
              [10] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_10,
              [11] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_11)
-    .line 8,8 : 1,32 ''
+    .line 8,8 : 1,32 
     IL_0000:  nop
     IL_0001:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
     IL_0006:  dup
-    IL_0007:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::products@8
+    IL_0007:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::products@8
     IL_000c:  stloc.0
     IL_000d:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0012:  stloc.s    builder@
@@ -1820,20 +1784,20 @@
     IL_001a:  ldnull
     IL_001b:  ldc.i4.0
     IL_001c:  ldnull
-    IL_001d:  newobj     instance void Linq101ElementOperators01/products12@12::.ctor(class [Utils]Utils/Product,
+    IL_001d:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/products12@12::.ctor(class [Utils]Utils/Product,
                                                                                       class [Utils]Utils/Product,
                                                                                       class [mscorlib]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>,
                                                                                       int32,
                                                                                       class [Utils]Utils/Product)
     IL_0022:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_0027:  newobj     instance void Linq101ElementOperators01/'products12@13-1'::.ctor()
+    IL_0027:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/'products12@13-1'::.ctor()
     IL_002c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_0031:  callvirt   instance !!0 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Head<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
     IL_0036:  dup
-    IL_0037:  stsfld     class [Utils]Utils/Product '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::products12@10
+    IL_0037:  stsfld     class [Utils]Utils/Product '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::products12@10
     IL_003c:  stloc.1
-    .line 18,18 : 1,97 ''
+    .line 18,18 : 1,97 
     IL_003d:  ldstr      "zero"
     IL_0042:  ldstr      "one"
     IL_0047:  ldstr      "two"
@@ -1866,7 +1830,7 @@
     IL_00a1:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_00a6:  dup
-    IL_00a7:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::strings@18
+    IL_00a7:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::strings@18
     IL_00ac:  stloc.2
     IL_00ad:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00b2:  stloc.s    V_9
@@ -1877,21 +1841,21 @@
     IL_00ba:  ldnull
     IL_00bb:  ldc.i4.0
     IL_00bc:  ldnull
-    IL_00bd:  newobj     instance void Linq101ElementOperators01/startsWithO@22::.ctor(string,
+    IL_00bd:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/startsWithO@22::.ctor(string,
                                                                                        string,
                                                                                        class [mscorlib]System.Collections.Generic.IEnumerator`1<string>,
                                                                                        int32,
                                                                                        string)
     IL_00c2:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_00c7:  newobj     instance void Linq101ElementOperators01/'startsWithO@23-1'::.ctor()
+    IL_00c7:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/'startsWithO@23-1'::.ctor()
     IL_00cc:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_00d1:  callvirt   instance !!0 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Head<string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
     IL_00d6:  dup
-    IL_00d7:  stsfld     string '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::startsWithO@20
+    IL_00d7:  stsfld     string '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::startsWithO@20
     IL_00dc:  stloc.3
-    .line 28,28 : 1,28 ''
-    IL_00dd:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperators01::get_numbers()
+    .line 28,28 : 1,28 
+    IL_00dd:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101ElementOperatorsNoExnFilters01::get_numbers()
     IL_00e2:  stloc.s    numbers
     IL_00e4:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00e9:  stloc.s    V_10
@@ -1901,7 +1865,7 @@
     IL_00ef:  ldnull
     IL_00f0:  ldc.i4.0
     IL_00f1:  ldc.i4.0
-    IL_00f2:  newobj     instance void Linq101ElementOperators01/firstNumOrDefault@31::.ctor(int32,
+    IL_00f2:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/firstNumOrDefault@31::.ctor(int32,
                                                                                              int32,
                                                                                              class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                              int32,
@@ -1909,9 +1873,9 @@
     IL_00f7:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
     IL_00fc:  callvirt   instance !!0 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::HeadOrDefault<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>)
     IL_0101:  dup
-    IL_0102:  stsfld     int32 '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::firstNumOrDefault@29
+    IL_0102:  stsfld     int32 '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::firstNumOrDefault@29
     IL_0107:  stloc.s    firstNumOrDefault
-    .line 48,48 : 1,48 ''
+    .line 48,48 : 1,48 
     IL_0109:  ldc.i4.5
     IL_010a:  ldc.i4.4
     IL_010b:  ldc.i4.1
@@ -1944,7 +1908,7 @@
     IL_0146:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_014b:  dup
-    IL_014c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::numbers2@48
+    IL_014c:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::numbers2@48
     IL_0151:  stloc.s    numbers2
     IL_0153:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_0158:  stloc.s    V_11
@@ -1955,25 +1919,25 @@
     IL_0160:  ldnull
     IL_0161:  ldc.i4.0
     IL_0162:  ldc.i4.0
-    IL_0163:  newobj     instance void Linq101ElementOperators01/fourthLowNum@52::.ctor(int32,
+    IL_0163:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/fourthLowNum@52::.ctor(int32,
                                                                                         int32,
                                                                                         class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
                                                                                         int32,
                                                                                         int32)
     IL_0168:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,class [mscorlib]System.Collections.IEnumerable>::.ctor(class [mscorlib]System.Collections.Generic.IEnumerable`1<!0>)
-    IL_016d:  newobj     instance void Linq101ElementOperators01/'fourthLowNum@53-1'::.ctor()
+    IL_016d:  newobj     instance void Linq101ElementOperatorsNoExnFilters01/'fourthLowNum@53-1'::.ctor()
     IL_0172:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Where<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>)
     IL_0177:  ldc.i4.1
     IL_0178:  callvirt   instance !!0 [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Nth<int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                  int32)
     IL_017d:  dup
-    IL_017e:  stsfld     int32 '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01::fourthLowNum@50
+    IL_017e:  stsfld     int32 '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01::fourthLowNum@50
     IL_0183:  stloc.s    fourthLowNum
     IL_0185:  ret
-  } // end of method $Linq101ElementOperators01::main@
+  } // end of method $Linq101ElementOperatorsNoExnFilters01::main@
 
-} // end of class '<StartupCode$Linq101ElementOperators01>'.$Linq101ElementOperators01
+} // end of class '<StartupCode$Linq101ElementOperatorsNoExnFilters01>'.$Linq101ElementOperatorsNoExnFilters01
 
 
 // =============================================================

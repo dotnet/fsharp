@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.33440
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:0:9055
 }
 .assembly GenIter02
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.GenIter02
 {
-  // Offset: 0x00000000 Length: 0x0000021C
+  // Offset: 0x00000000 Length: 0x000001DE
 }
 .mresource public FSharpOptimizationData.GenIter02
 {
-  // Offset: 0x00000220 Length: 0x0000007B
+  // Offset: 0x000001E8 Length: 0x0000007B
 }
 .module GenIter02.exe
-// MVID: {4DAC0AD2-F857-DC98-A745-0383D20AAC4D}
+// MVID: {550E3272-F857-DC98-A745-038372320E55}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000000002F0000
+// Image base: 0x00440000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -116,25 +116,25 @@
 
       IL_001f:  br.s       IL_002a
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0021:  nop
       IL_0022:  br         IL_009f
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0027:  nop
       IL_0028:  br.s       IL_0095
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_002a:  nop
       IL_002b:  br         IL_00c0
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0030:  nop
-      .line 5,7 : 7,23 
+      .line 5,7 : 7,23 ''
       IL_0031:  ldarg.0
       IL_0032:  ldc.i4.0
       IL_0033:  ldc.i4.1
@@ -147,7 +147,7 @@
       IL_0044:  ldarg.0
       IL_0045:  ldc.i4.1
       IL_0046:  stfld      int32 GenIter02/squaresOfOneToTenB@5::pc
-      .line 5,7 : 7,23 
+      .line 5,7 : 7,23 ''
       IL_004b:  ldarg.0
       IL_004c:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter02/squaresOfOneToTenB@5::'enum'
       IL_0051:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
@@ -158,7 +158,7 @@
       IL_005a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter02/squaresOfOneToTenB@5::'enum'
       IL_005f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
       IL_0064:  stfld      int32 GenIter02/squaresOfOneToTenB@5::x
-      .line 6,6 : 12,27 
+      .line 6,6 : 12,27 ''
       IL_0069:  ldstr      "hello"
       IL_006e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
       IL_0073:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -166,7 +166,7 @@
       IL_0079:  ldarg.0
       IL_007a:  ldc.i4.2
       IL_007b:  stfld      int32 GenIter02/squaresOfOneToTenB@5::pc
-      .line 7,7 : 12,23 
+      .line 7,7 : 12,23 ''
       IL_0080:  ldarg.0
       IL_0081:  ldarg.0
       IL_0082:  ldfld      int32 GenIter02/squaresOfOneToTenB@5::x
@@ -177,18 +177,18 @@
       IL_0093:  ldc.i4.1
       IL_0094:  ret
 
-      .line 5,7 : 7,23 
+      .line 5,7 : 7,23 ''
       IL_0095:  ldarg.0
       IL_0096:  ldc.i4.0
       IL_0097:  stfld      int32 GenIter02/squaresOfOneToTenB@5::x
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
       IL_009c:  nop
       IL_009d:  br.s       IL_004b
 
       IL_009f:  ldarg.0
       IL_00a0:  ldc.i4.3
       IL_00a1:  stfld      int32 GenIter02/squaresOfOneToTenB@5::pc
-      .line 5,7 : 7,23 
+      .line 5,7 : 7,23 ''
       IL_00a6:  ldarg.0
       IL_00a7:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter02/squaresOfOneToTenB@5::'enum'
       IL_00ac:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
@@ -209,12 +209,13 @@
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       150 (0x96)
+      // Code size       160 (0xa0)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-               [2] class [mscorlib]System.Exception e)
-      .line 100001,100001 : 0,0 
+               [2] class [mscorlib]System.Exception ef,
+               [3] class [mscorlib]System.Exception e)
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
@@ -225,13 +226,13 @@
                             IL_0015)
       IL_0013:  br.s       IL_001b
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0015:  nop
-      IL_0016:  br         IL_0089
+      IL_0016:  br         IL_0093
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_001b:  nop
       .try
       {
@@ -252,30 +253,30 @@
 
         IL_003f:  br.s       IL_004a
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0041:  nop
         IL_0042:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0044:  nop
         IL_0045:  br.s       IL_004f
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0047:  nop
         IL_0048:  br.s       IL_004e
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004a:  nop
         IL_004b:  br.s       IL_0063
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_004d:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
@@ -284,7 +285,7 @@
         IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter02/squaresOfOneToTenB@5::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_0061:  nop
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
@@ -294,43 +295,51 @@
         IL_006c:  stfld      int32 GenIter02/squaresOfOneToTenB@5::current
         IL_0071:  ldnull
         IL_0072:  stloc.1
-        IL_0073:  leave.s    IL_0081
+        IL_0073:  leave.s    IL_008b
 
       }  // end .try
-      catch [mscorlib]System.Object 
+      filter
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 5,7 : 7,23 
-        IL_007b:  ldloc.2
-        IL_007c:  stloc.0
-        IL_007d:  ldnull
-        IL_007e:  stloc.1
-        IL_007f:  leave.s    IL_0081
+        IL_007b:  ldc.i4.1
+        .line 100001,100001 : 0,0 ''
+        IL_007c:  nop
+        IL_007d:  endfilter
+      }  // end filter
+      {  // handler
+        IL_007f:  castclass  [mscorlib]System.Exception
+        IL_0084:  stloc.3
+        .line 5,7 : 7,23 ''
+        IL_0085:  ldloc.3
+        IL_0086:  stloc.0
+        IL_0087:  ldnull
+        IL_0088:  stloc.1
+        IL_0089:  leave.s    IL_008b
 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_0081:  ldloc.1
-      IL_0082:  pop
-      .line 100001,100001 : 0,0 
-      IL_0083:  nop
-      IL_0084:  br         IL_0002
+      IL_008b:  ldloc.1
+      IL_008c:  pop
+      .line 100001,100001 : 0,0 ''
+      IL_008d:  nop
+      IL_008e:  br         IL_0002
 
-      IL_0089:  ldloc.0
-      IL_008a:  ldnull
-      IL_008b:  cgt.un
-      IL_008d:  brfalse.s  IL_0091
-
-      IL_008f:  br.s       IL_0093
-
-      IL_0091:  br.s       IL_0095
-
-      .line 100001,100001 : 0,0 
       IL_0093:  ldloc.0
-      IL_0094:  throw
+      IL_0094:  ldnull
+      IL_0095:  cgt.un
+      IL_0097:  brfalse.s  IL_009b
 
-      .line 100001,100001 : 0,0 
-      IL_0095:  ret
+      IL_0099:  br.s       IL_009d
+
+      IL_009b:  br.s       IL_009f
+
+      .line 100001,100001 : 0,0 ''
+      IL_009d:  ldloc.0
+      IL_009e:  throw
+
+      .line 100001,100001 : 0,0 ''
+      IL_009f:  ret
     } // end of method squaresOfOneToTenB@5::Close
 
     .method public strict virtual instance bool 
@@ -418,7 +427,7 @@
   {
     // Code size       18 (0x12)
     .maxstack  8
-    .line 5,7 : 5,25 
+    .line 5,7 : 5,25 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  ldnull

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.33440
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:0:9055
+  .ver 4:0:0:0
 }
 .assembly Testfunction22h
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Testfunction22h
 {
-  // Offset: 0x00000000 Length: 0x00000143
+  // Offset: 0x00000000 Length: 0x00000181
 }
 .mresource public FSharpOptimizationData.Testfunction22h
 {
-  // Offset: 0x00000148 Length: 0x00000056
+  // Offset: 0x00000188 Length: 0x00000056
 }
 .module Testfunction22h.exe
-// MVID: {550EFC67-0266-39F6-A745-038367FC0E55}
+// MVID: {4DAC30FF-0266-39F6-A745-0383FF30AC4D}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00310000
+// Image base: 0x0000000000300000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,48 +63,39 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       39 (0x27)
+    // Code size       29 (0x1d)
     .maxstack  3
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_0,
-             [1] class [mscorlib]System.Exception V_1,
-             [2] class [mscorlib]System.Exception V_2)
+             [1] class [mscorlib]System.Exception V_1)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 1,4 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22h.fs'
+    .line 3,3 : 1,4 
     IL_0000:  nop
     .try
     {
       IL_0001:  nop
-      .line 4,4 : 4,30 ''
+      .line 4,4 : 4,30 
       IL_0002:  call       void [mscorlib]System.Console::WriteLine()
       IL_0007:  ldnull
       IL_0008:  stloc.0
-      IL_0009:  leave.s    IL_0024
+      IL_0009:  leave.s    IL_001a
 
-      .line 5,5 : 1,5 ''
+      .line 5,5 : 1,5 
     }  // end .try
-    filter
+    catch [mscorlib]System.Object 
     {
       IL_000b:  castclass  [mscorlib]System.Exception
       IL_0010:  stloc.1
-      IL_0011:  ldc.i4.1
-      .line 100001,100001 : 0,0 ''
-      IL_0012:  nop
-      IL_0013:  endfilter
-    }  // end filter
-    {  // handler
-      IL_0015:  castclass  [mscorlib]System.Exception
-      IL_001a:  stloc.2
-      .line 6,6 : 11,37 ''
-      IL_001b:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0020:  ldnull
-      IL_0021:  stloc.0
-      IL_0022:  leave.s    IL_0024
+      .line 6,6 : 11,37 
+      IL_0011:  call       void [mscorlib]System.Console::WriteLine()
+      IL_0016:  ldnull
+      IL_0017:  stloc.0
+      IL_0018:  leave.s    IL_001a
 
-      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 
     }  // end handler
-    IL_0024:  ldloc.0
-    IL_0025:  pop
-    IL_0026:  ret
+    IL_001a:  ldloc.0
+    IL_001b:  pop
+    IL_001c:  ret
   } // end of method $Testfunction22h::main@
 
 } // end of class '<StartupCode$Testfunction22h>'.$Testfunction22h

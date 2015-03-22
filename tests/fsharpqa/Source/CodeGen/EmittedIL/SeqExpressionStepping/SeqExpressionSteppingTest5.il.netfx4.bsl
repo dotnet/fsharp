@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.33440
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:0:9055
 }
 .assembly SeqExpressionSteppingTest5
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.SeqExpressionSteppingTest5
 {
-  // Offset: 0x00000000 Length: 0x0000028C
+  // Offset: 0x00000000 Length: 0x0000024D
 }
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest5
 {
-  // Offset: 0x00000290 Length: 0x000000AD
+  // Offset: 0x00000258 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest5.exe
-// MVID: {4DAC1462-2432-9401-A745-03836214AC4D}
+// MVID: {550EFC3E-2432-9401-A745-03833EFC0E55}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000270000
+// Image base: 0x005A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -105,7 +105,7 @@
         // Code size       249 (0xf9)
         .maxstack  7
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest5.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
         IL_0006:  ldc.i4.1
@@ -125,30 +125,30 @@
 
         IL_0025:  br.s       IL_0033
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0027:  nop
         IL_0028:  br         IL_00bf
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_002d:  nop
         IL_002e:  br.s       IL_007f
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0030:  nop
         IL_0031:  br.s       IL_00b1
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0033:  nop
         IL_0034:  br         IL_00f0
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0039:  nop
-        .line 5,5 : 15,28 
+        .line 5,5 : 15,28 ''
         IL_003a:  ldarg.0
         IL_003b:  ldc.i4.0
         IL_003c:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
@@ -156,12 +156,12 @@
         IL_0046:  ldarg.0
         IL_0047:  ldc.i4.1
         IL_0048:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
-        .line 7,7 : 19,32 
+        .line 7,7 : 19,32 ''
         IL_004d:  ldarg.0
         IL_004e:  ldc.i4.0
         IL_004f:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
         IL_0054:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::y
-        .line 8,8 : 19,25 
+        .line 8,8 : 19,25 ''
         IL_0059:  ldarg.0
         IL_005a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::y
         IL_005f:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
@@ -169,7 +169,7 @@
         IL_0065:  ldarg.0
         IL_0066:  ldc.i4.2
         IL_0067:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
-        .line 9,9 : 19,27 
+        .line 9,9 : 19,27 ''
         IL_006c:  ldarg.0
         IL_006d:  ldarg.0
         IL_006e:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::x
@@ -178,7 +178,7 @@
         IL_007d:  ldc.i4.1
         IL_007e:  ret
 
-        .line 10,10 : 19,34 
+        .line 10,10 : 19,34 ''
         IL_007f:  ldarg.0
         IL_0080:  ldarg.0
         IL_0081:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::x
@@ -191,7 +191,7 @@
         IL_009c:  ldarg.0
         IL_009d:  ldc.i4.3
         IL_009e:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
-        .line 11,11 : 19,26 
+        .line 11,11 : 19,26 ''
         IL_00a3:  ldarg.0
         IL_00a4:  ldarg.0
         IL_00a5:  ldfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::z
@@ -199,7 +199,7 @@
         IL_00af:  ldc.i4.1
         IL_00b0:  ret
 
-        .line 10,10 : 23,24 
+        .line 10,10 : 23,24 ''
         IL_00b1:  ldarg.0
         IL_00b2:  ldc.i4.0
         IL_00b3:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::z
@@ -209,12 +209,12 @@
         IL_00bf:  ldarg.0
         IL_00c0:  ldc.i4.4
         IL_00c1:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
-        .line 13,13 : 18,24 
+        .line 13,13 : 18,24 ''
         IL_00c6:  ldarg.0
         IL_00c7:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::x
         IL_00cc:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
         IL_00d1:  nop
-        .line 14,14 : 18,32 
+        .line 14,14 : 18,32 ''
         IL_00d2:  ldstr      "done"
         IL_00d7:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
         IL_00dc:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -235,12 +235,13 @@
       .method public strict virtual instance void 
               Close() cil managed
       {
-        // Code size       178 (0xb2)
+        // Code size       188 (0xbc)
         .maxstack  6
         .locals init ([0] class [mscorlib]System.Exception V_0,
                  [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-                 [2] class [mscorlib]System.Exception e)
-        .line 100001,100001 : 0,0 
+                 [2] class [mscorlib]System.Exception ef,
+                 [3] class [mscorlib]System.Exception e)
+        .line 100001,100001 : 0,0 ''
         IL_0000:  ldnull
         IL_0001:  stloc.0
         IL_0002:  ldarg.0
@@ -251,13 +252,13 @@
                               IL_0015)
         IL_0013:  br.s       IL_001b
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_0015:  nop
-        IL_0016:  br         IL_00a5
+        IL_0016:  br         IL_00af
 
-        .line 100001,100001 : 0,0 
-        .line 100001,100001 : 0,0 
+        .line 100001,100001 : 0,0 ''
+        .line 100001,100001 : 0,0 ''
         IL_001b:  nop
         .try
         {
@@ -281,54 +282,54 @@
 
           IL_0045:  br.s       IL_0053
 
-          .line 100001,100001 : 0,0 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
+          .line 100001,100001 : 0,0 ''
           IL_0047:  nop
           IL_0048:  br.s       IL_007f
 
-          .line 100001,100001 : 0,0 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
+          .line 100001,100001 : 0,0 ''
           IL_004a:  nop
           IL_004b:  br.s       IL_005b
 
-          .line 100001,100001 : 0,0 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
+          .line 100001,100001 : 0,0 ''
           IL_004d:  nop
           IL_004e:  br.s       IL_005a
 
-          .line 100001,100001 : 0,0 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
+          .line 100001,100001 : 0,0 ''
           IL_0050:  nop
           IL_0051:  br.s       IL_0057
 
-          .line 100001,100001 : 0,0 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
+          .line 100001,100001 : 0,0 ''
           IL_0053:  nop
           IL_0054:  br.s       IL_007f
 
-          .line 100001,100001 : 0,0 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
+          .line 100001,100001 : 0,0 ''
           IL_0056:  nop
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
           IL_0057:  nop
           IL_0058:  br.s       IL_005b
 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
           IL_005a:  nop
           IL_005b:  ldarg.0
           IL_005c:  ldc.i4.4
           IL_005d:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::pc
-          .line 13,13 : 18,24 
+          .line 13,13 : 18,24 ''
           IL_0062:  ldarg.0
           IL_0063:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::x
           IL_0068:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
           IL_006d:  nop
-          .line 14,14 : 18,32 
+          .line 14,14 : 18,32 ''
           IL_006e:  ldstr      "done"
           IL_0073:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
           IL_0078:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
           IL_007d:  pop
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
           IL_007e:  nop
           IL_007f:  ldarg.0
           IL_0080:  ldc.i4.4
@@ -338,43 +339,51 @@
           IL_0088:  stfld      int32 SeqExpressionSteppingTest5/SeqExpressionSteppingTest5/f4@5::current
           IL_008d:  ldnull
           IL_008e:  stloc.1
-          IL_008f:  leave.s    IL_009d
+          IL_008f:  leave.s    IL_00a7
 
         }  // end .try
-        catch [mscorlib]System.Object 
+        filter
         {
           IL_0091:  castclass  [mscorlib]System.Exception
           IL_0096:  stloc.2
-          .line 5,5 : 19,20 
-          IL_0097:  ldloc.2
-          IL_0098:  stloc.0
-          IL_0099:  ldnull
-          IL_009a:  stloc.1
-          IL_009b:  leave.s    IL_009d
+          IL_0097:  ldc.i4.1
+          .line 100001,100001 : 0,0 ''
+          IL_0098:  nop
+          IL_0099:  endfilter
+        }  // end filter
+        {  // handler
+          IL_009b:  castclass  [mscorlib]System.Exception
+          IL_00a0:  stloc.3
+          .line 5,5 : 19,20 ''
+          IL_00a1:  ldloc.3
+          IL_00a2:  stloc.0
+          IL_00a3:  ldnull
+          IL_00a4:  stloc.1
+          IL_00a5:  leave.s    IL_00a7
 
-          .line 100001,100001 : 0,0 
+          .line 100001,100001 : 0,0 ''
         }  // end handler
-        IL_009d:  ldloc.1
-        IL_009e:  pop
-        .line 100001,100001 : 0,0 
-        IL_009f:  nop
-        IL_00a0:  br         IL_0002
+        IL_00a7:  ldloc.1
+        IL_00a8:  pop
+        .line 100001,100001 : 0,0 ''
+        IL_00a9:  nop
+        IL_00aa:  br         IL_0002
 
-        IL_00a5:  ldloc.0
-        IL_00a6:  ldnull
-        IL_00a7:  cgt.un
-        IL_00a9:  brfalse.s  IL_00ad
-
-        IL_00ab:  br.s       IL_00af
-
-        IL_00ad:  br.s       IL_00b1
-
-        .line 100001,100001 : 0,0 
         IL_00af:  ldloc.0
-        IL_00b0:  throw
+        IL_00b0:  ldnull
+        IL_00b1:  cgt.un
+        IL_00b3:  brfalse.s  IL_00b7
 
-        .line 100001,100001 : 0,0 
-        IL_00b1:  ret
+        IL_00b5:  br.s       IL_00b9
+
+        IL_00b7:  br.s       IL_00bb
+
+        .line 100001,100001 : 0,0 ''
+        IL_00b9:  ldloc.0
+        IL_00ba:  throw
+
+        .line 100001,100001 : 0,0 ''
+        IL_00bb:  ret
       } // end of method f4@5::Close
 
       .method public strict virtual instance bool 
@@ -473,7 +482,7 @@
     {
       // Code size       12 (0xc)
       .maxstack  8
-      .line 5,14 : 9,34 
+      .line 5,14 : 9,34 ''
       IL_0000:  nop
       IL_0001:  ldnull
       IL_0002:  ldnull
@@ -504,7 +513,7 @@
     .entrypoint
     // Code size       13 (0xd)
     .maxstack  8
-    .line 16,16 : 13,30 
+    .line 16,16 : 13,30 ''
     IL_0000:  nop
     IL_0001:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> SeqExpressionSteppingTest5/SeqExpressionSteppingTest5::f4()
     IL_0006:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Length<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
