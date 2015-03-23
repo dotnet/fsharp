@@ -1399,8 +1399,22 @@ module private TastDefinitionPrinting =
               v.DisplayName,            // sort by name 
               List.sum v.NumArgs ,  // sort by #curried
               v.NumArgs.Length)  // sort by arity 
-        let ctors = GetIntrinsicConstructorInfosOfType infoReader m ty 
-        let meths = GetImmediateIntrinsicMethInfosOfType (None,ad) g amap m ty 
+
+        let shouldShow (valRef : ValRef option) =
+            match valRef with
+            | None -> true
+            | Some(vr) ->
+                (denv.showObsoleteMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForObsolete denv.g vr.Attribs)) &&
+                (denv.showHiddenMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForHidden denv.g vr.Attribs))
+
+        let ctors =
+            GetIntrinsicConstructorInfosOfType infoReader m ty
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+
+        let meths =
+            GetImmediateIntrinsicMethInfosOfType (None,ad) g amap m ty
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+
         let iimplsLs = 
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
@@ -1408,10 +1422,12 @@ module private TastDefinitionPrinting =
                 GetImmediateInterfacesOfType g amap m ty |> List.map (fun ity -> wordL (if isInterfaceTy g ty then "inherit" else "interface") --- layoutType denv ity)
 
         let props = 
-            GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.Yes)  PreferOverrides m ty 
+            GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.Yes)  PreferOverrides m ty
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
         let events = 
-            infoReader.GetEventInfosOfType(None,ad,m,ty) 
+            infoReader.GetEventInfosOfType(None,ad,m,ty)
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
         let impliedNames = 
             try 

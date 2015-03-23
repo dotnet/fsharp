@@ -209,6 +209,29 @@ module TypeProviderThatThrowsErrorsModule =
 type TypeProviderThatThrowsErrors() = 
     inherit TypeProviderForNamespaces(TypeProviderThatThrowsErrorsModule.rootNamespace, TypeProviderThatThrowsErrorsModule.types)
 
+open System.ComponentModel
+type TPBaseTy() =
+    [<EditorBrowsableAttribute(EditorBrowsableState.Never)>] 
+    [<CompilerMessageAttribute("This method is intended for use in generated code only.", 10001, IsHidden=true, IsError=false)>]
+    member this.DoNotShowHidden = ()
+
+    [<System.ObsoleteAttribute("TP base type obsolete member")>]
+    member this.DoNotShowObsolete = ()
+
+    member this.ShowThisProp = ()
+
+[<TypeProvider>]
+type HiddenMembersInBaseClassProvider() as this = 
+    inherit TypeProviderForNamespaces()
+    let namespaceName = "HiddenMembersInBaseClass"    
+    let thisAssembly  = System.Reflection.Assembly.GetExecutingAssembly()
+
+    let typeT = ProvidedTypeDefinition(thisAssembly, namespaceName, "HiddenBaseMembersTP", Some typeof<TPBaseTy>)
+    let types = [ typeT ]
+
+    do
+        this.AddNamespace(namespaceName,types)
+
 module TypeProviderForTestingTuplesErasureModule = 
     type private Marker = interface end
     let assembly = typeof<Marker>.Assembly

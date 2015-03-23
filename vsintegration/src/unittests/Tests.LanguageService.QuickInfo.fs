@@ -204,6 +204,16 @@ type QuickInfoTests() =
             atStart = true,
             f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsFalse(text.Contains "member Print1"))
             )
+
+    [<Test>]
+    member public this.``QuickInfo.HideBaseClassMembersTP``() =
+        let fileContents = "type foo = HiddenMembersInBaseClass.HiddenBaseMembersTP(*Marker*)"
+        
+        this.AssertQuickInfoContainsAtStartOfMarker(
+            fileContents,
+            marker = "MembersTP(*Marker*)",
+            expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy\n  member ShowThisProp : unit",
+            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
