@@ -1,6 +1,6 @@
 // #Regression #NoMT #CompilerOptions 
 // Regression test for FSHARP1.0:6108
-// Note: --warnon *WAS* for internal use only, now it is NOT.
+// Note: --warnon *WAS* for test purposes only, now it is NOT.
 //<Expects status="warning" span="(13,9)" id="FS1182">The value 'u' is unused$</Expects>
 //<Expects status="warning" span="(17,9)" id="FS1182">The value 's' is unused$</Expects>
 //<Expects status="warning" span="(17,11)" id="FS1182">The value 'n' is unused$</Expects>

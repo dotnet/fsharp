@@ -420,7 +420,7 @@ let advancedFlagsFsc tcConfigB =
         yield CompilerOption("quotations-debug", tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = On), None, Some(FSComp.SR.optsEmitDebugInfoInQuotations()))
     ]
 
-// OptionBlock: Internal options (internal use only)
+// OptionBlock: Internal options (test use only)
 //--------------------------------------------------
 
 let testFlag tcConfigB = 

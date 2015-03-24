@@ -90,7 +90,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Microsoft Internal Use Only.  Gets the file name of the project.
+        /// For use by F# tooling only.  Gets the file name of the project.
         /// </summary>
         public virtual string FileName
         {
@@ -102,7 +102,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Microsoft Internal Use Only. Specfies if the project is dirty.
+        /// For use by F# tooling only. Specfies if the project is dirty.
         /// </summary>
         public virtual bool IsDirty
         {
@@ -453,7 +453,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
         #region ISupportVSProperties methods
         /// <summary>
-        /// Microsoft Internal Use Only. 
+        /// For use by F# tooling only. 
         /// </summary>
         public virtual void NotifyPropertiesDelete()
         {
