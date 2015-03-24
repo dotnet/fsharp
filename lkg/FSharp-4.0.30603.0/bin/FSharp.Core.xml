@@ -5461,7 +5461,7 @@
 
 </member>
 <member name="T:Microsoft.FSharp.Core.LanguagePrimitives.ErrorStrings">
- <summary>For internal use only</summary>
+ <summary>For compiler use only</summary>
 </member>
 <member name="T:Microsoft.FSharp.Core.LanguagePrimitives">
  <summary>Language primitives associated with the F# language</summary>

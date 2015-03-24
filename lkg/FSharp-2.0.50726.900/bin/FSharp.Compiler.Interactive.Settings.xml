@@ -209,7 +209,7 @@
 </member>
 <member name="T:Microsoft.FSharp.Compiler.Interactive.RuntimeHelpers">
 <summary>
- Hooks (internal use only, may change without notice).
+ Hooks (test use only, may change without notice).
 </summary>
 </member>
 <member name="P:Microsoft.FSharp.Compiler.Interactive.Settings.fsi">

@@ -3693,7 +3693,7 @@
 </member>
 <member name="M:FSComp.SR.optsInternalNoDescription(System.String)">
 <summary>
- The command-line option &apos;%s&apos; is for internal use only
+ The command-line option &apos;%s&apos; is for test purposes only
  (Originally from d:\Depot\staging\src\fsharp\FSComp.txt:927)
 </summary>
 </member>
@@ -8532,7 +8532,7 @@ Build a new array that contains the elements of the first array followed by the 
 </member>
 <member name="T:Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseIlxFuncs">
 <summary>
- Internal use only.  Erase closures
+ Test purposes only.  Erase closures
 </summary>
 </member>
 <member name="">
@@ -16261,7 +16261,7 @@ Build a new array that contains the elements of the first array followed by the 
 </member>
 <member name="T:Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants">
 <summary>
- Internal use only.  Code and constants shared between binary reader/writer.
+ Compiler use only.  Code and constants shared between binary reader/writer.
 </summary>
 </member>
 <member name="">
