@@ -1416,15 +1416,17 @@ let rec (|KnownValApp|_|) expr =
 // This transform encourages that by allowing projections to be simplified.
 //------------------------------------------------------------------------- 
 
+let CanExpandStructuralBinding (v: Val) =
+    not v.IsCompiledAsTopLevel &&  
+    not v.IsMember && 
+    not v.IsTypeFunction &&
+    not v.IsMutable
+
 let ExprIsValue = function Expr.Val _ -> true | _ -> false
-let ExpandStructuralBinding cenv expr =
+let ExpandStructuralBindingRaw cenv expr =
     match expr with
     | Expr.Let (TBind(v,rhs,tgtSeqPtOpt),body,m,_) 
-        when (isTupleExpr rhs &&  
-              not v.IsCompiledAsTopLevel &&  
-              not v.IsMember && 
-              not v.IsTypeFunction &&
-              not v.IsMutable) ->
+        when isTupleExpr rhs && CanExpandStructuralBinding v ->
           let args   = tryDestTuple rhs
           if List.forall ExprIsValue args then
               expr (* avoid re-expanding when recursion hits original binding *)
@@ -1440,6 +1442,34 @@ let ExpandStructuralBinding cenv expr =
               mkLetsBind m binds (mkLet tgtSeqPtOpt m v tuple body)
               (* REVIEW: other cases - records, explicit lists etc. *)
     | expr -> expr
+
+// Moves outer tuple binding inside near the tupled expression:
+// let t = (let a0=v0 in let a1=v1 in ... in let an=vn in e0,e1,...,em) in body
+// let a0=v0 in let a1=v1 in ... in let an=vn in (let t = e0,e1,...,em in body)
+// This way ExpandStructuralBinding can replace expressions in constants, t is directly bound
+// to a tuple expression so that other optimizations such as OptimizeTupleFieldGet work,
+// and the tuple allocation can be eliminated.
+// Most importantly, this successfully eliminates tuple allocations for implicitly returned
+// formal arguments in method calls.
+let rec RearrangeTupleBindings expr fin =
+    match expr with
+    | Expr.Let (bind,body,m,_) ->
+        match RearrangeTupleBindings body fin with
+        | Some b -> Some (mkLetBind m bind b)
+        | None -> None
+    | Expr.Op (TOp.Tuple,_,_,_) ->
+        Some (fin expr)
+    | _ -> None
+
+let ExpandStructuralBinding cenv expr =
+    match expr with
+    | Expr.Let (TBind(v,rhs,tgtSeqPtOpt),body,m,_) 
+        when isTupleTy cenv.g v.Type && not (isTupleExpr rhs) && CanExpandStructuralBinding v ->
+          match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
+          | Some e -> ExpandStructuralBindingRaw cenv e
+          | None -> expr
+    | expr -> ExpandStructuralBindingRaw cenv expr
+
 //-------------------------------------------------------------------------
 // QueryBuilder.Run elimination helpers
 //------------------------------------------------------------------------- 
