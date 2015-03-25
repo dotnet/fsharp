@@ -26,7 +26,8 @@ REM add %FSCBinPath% to path only if not already there. Otherwise, the path keep
 echo %path%; | find /i "%FSCBinPath%;" > NUL
 if ERRORLEVEL 1    set PATH=%PATH%;%FSCBinPath%
 
-if "%FSDIFF%"=="" set FSDIFF=%SCRIPT_ROOT%fsharpqa\testenv\bin\%processor_architecture%\diff.exe -dew
+if "%FSDIFF%"=="" set FSDIFF=%SCRIPT_ROOT%fsharpqa\testenv\bin\diff.exe
+if not exist "%FSDIFF%" echo FSDIFF not found at expected path of %fsdiff% && exit /b 1
 
 rem check if we're already configured, if not use the configuration from the last line of the config file
 if "%fsc%"=="" ( 

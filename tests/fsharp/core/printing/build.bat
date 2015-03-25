@@ -12,19 +12,6 @@ if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
   goto Skip
 )
 
-rem recall  >fred.txt 2>&1 merges stderr into the stdout redirect
-rem however 2>&1  >fred.txt did not seem to do it.
-
-REM Here we use diff.exe without -dew option to trap whitespace changes, like bug 4429.
-REM Any whitespace change needs to be investigated, these tests are to check exact output.
-REM Base line updates are easy: sd edit and delete the .bsl and rerun the test.
-set PRDIFF=%~d0%~p0..\..\..\fsharpqa\testenv\bin\%processor_architecture%\diff.exe
-echo Diff tool is %PRDIFF%
-if NOT EXIST %PRDIFF% (
-    echo ERROR: Diff tool not found at %PRDIFF%
-    exit /b 1
-)
-
 echo == Plain
 "%FSI%" %fsc_flags_errors_ok%  --nologo                                    <test.fsx >z.raw.output.test.default.txt 2>&1
 echo == PrintSize 1000
@@ -50,11 +37,11 @@ if NOT EXIST z.output.test.1000.bsl    COPY z.output.test.1000.txt    z.output.t
 if NOT EXIST z.output.test.200.bsl     COPY z.output.test.200.txt     z.output.test.200.bsl
 if NOT EXIST z.output.test.quiet.bsl   COPY z.output.test.quiet.txt   z.output.test.quiet.bsl
 
-%PRDIFF% z.output.test.default.txt z.output.test.default.bsl > z.output.test.default.diff
-%PRDIFF% z.output.test.off.txt     z.output.test.off.bsl     > z.output.test.off.diff
-%PRDIFF% z.output.test.1000.txt    z.output.test.1000.bsl    > z.output.test.1000.diff
-%PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
-%PRDIFF% z.output.test.quiet.txt   z.output.test.quiet.bsl   > z.output.test.quiet.diff
+%FSDIFF% z.output.test.default.txt z.output.test.default.bsl > z.output.test.default.diff
+%FSDIFF% z.output.test.off.txt     z.output.test.off.bsl     > z.output.test.off.diff
+%FSDIFF% z.output.test.1000.txt    z.output.test.1000.bsl    > z.output.test.1000.diff
+%FSDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
+%FSDIFF% z.output.test.quiet.txt   z.output.test.quiet.bsl   > z.output.test.quiet.diff
 
 echo ======== Differences From ========
 TYPE  z.output.test.default.diff
