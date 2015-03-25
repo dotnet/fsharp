@@ -29,9 +29,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'VSRelease'">
     <DeployExtension Condition="'$(AppVeyor)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == ''">True</DeployExtension>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DeployExtension Condition="'$(AppVeyor)' != ''">False</DeployExtension>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'VSDebug'">
+    <DeployExtension Condition="'$(AppVeyor)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == ''">True</DeployExtension>
   </PropertyGroup>
   <Import Project="..\..\FSharp.Common.props" />
   <PropertyGroup>
