@@ -73,7 +73,7 @@ type MultiTargeting() =
             use project = TheTests.CreateProject(projFile, "true", ccn, sp)
             
             let validate (fn : System.Runtime.Versioning.FrameworkName) eR eS =
-                let (name, runtime, sku) = project.DetermineRuntimeAndSKU(fn.ToString())
+                let (runtime, sku) = project.DetermineRuntimeAndSKU(fn.ToString())
                 Assert.AreEqual(eR, runtime)
                 Assert.AreEqual(eS, sku)
             validate (new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))) "v4.0" ".NETFramework,Version=v4.0"
@@ -154,7 +154,7 @@ type MultiTargeting() =
             let refLibPath = this.prepTest(projFile)
             use project = TheTests.CreateProject(projFile, "true", ccn, sp)
             let fn = new System.Runtime.Versioning.FrameworkName(".NETFramework", new System.Version(4, 0))
-            project.FixupAppConfigOnTargetFXChange(fn.ToString()) |> ignore
+            project.FixupAppConfigOnTargetFXChange(fn.ToString(), "4.3.0.0", false) |> ignore
             let appFile = Path.Combine((Path.GetDirectoryName projFile), "app.config")
             let appText = System.IO.File.ReadAllText(appFile)
             Assert.IsTrue(appText.Contains("<supportedRuntime version=\"v4.0\" sku=\".NETFramework,Version=v4.0\" />"))
