@@ -1916,7 +1916,7 @@ and callsig =  Callsig of callconv * typ list * typ
 (* MS-ILX *) and genparam = 
 (* MS-ILX *)   | GenFormal_type
 (* MS-ILX *)   | GenFormal_tyrep of exn  
-(* MS-ILX *)          (* For internal use only. *)                       
+(* MS-ILX *)          (* For compiler use only. *)                       
 (* MS-ILX *)          (* We use exn as an annotation here. *)            
 (* MS-ILX *)          (* Types are still used as actuals for type-reps *)
 

@@ -283,7 +283,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Microsoft Internal Use Only. Checks if the document associated to this item is dirty.
+        /// For use by F# tooling only. Checks if the document associated to this item is dirty.
         /// </summary>
         public virtual bool IsDirty
         {

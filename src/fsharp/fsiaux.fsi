@@ -61,7 +61,7 @@ module Settings =
   /// <summary>The settings associated with the interactive session.</summary>
   val fsi : InteractiveSession
 
-/// <summary>Hooks (internal use only, may change without notice).</summary>
+/// <summary>Hooks (test use only, may change without notice).</summary>
 module RuntimeHelpers = 
     val SaveIt : 'T -> unit
     val internal GetSavedIt : unit -> obj

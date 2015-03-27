@@ -77,7 +77,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
         #region EnvDTE.Properties
         /// <summary>
-        /// Microsoft Internal Use Only.
+        /// For use by F# tooling only.
         /// </summary>
         public virtual object Application
         {
