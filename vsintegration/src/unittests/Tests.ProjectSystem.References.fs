@@ -671,14 +671,14 @@ type References() =
 
             // check reference node properties
             Assert.IsNotNull comReference
-            Assert.IsInstanceOf(typeof<ComReferenceNode>, comReference)
+            Assert.IsTrue(comReference :? ComReferenceNode)
             let comRef = comReference :?> ComReferenceNode
             Assert.AreEqual(1, comRef.MajorVersionNumber)
             Assert.AreEqual(0, comRef.MinorVersionNumber)
             Assert.AreEqual(guid, comRef.TypeGuid)
             Assert.AreEqual("Microsoft Shell Controls And Automation", comRef.Caption)
             let sysDirectory = Environment.GetFolderPath(Environment.SpecialFolder.SystemX86)
-            StringAssert.AreEqualIgnoringCase(Path.Combine(sysDirectory, "shell32.dll"), comRef.InstalledFilePath)
+            Assert.IsTrue(String.Compare(Path.Combine(sysDirectory, "shell32.dll"), comRef.InstalledFilePath, StringComparison.OrdinalIgnoreCase) = 0)
 
             // check node exists under references
             let l = new List<ComReferenceNode>()
