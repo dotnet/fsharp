@@ -35,7 +35,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
         #region EnvDTE.Property
         /// <summary>
-        /// Microsoft Internal Use Only.
+        /// For use by F# tooling only.
         /// </summary>
         public object Application
         {
@@ -126,7 +126,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
         /// <summary>
-        /// Microsoft Internal Use Only.
+        /// For use by F# tooling only.
         /// </summary>
         public EnvDTE.Properties Parent
         {

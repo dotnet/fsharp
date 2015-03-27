@@ -125,6 +125,10 @@
     <value>Advanced</value>
     <comment>Project Property Page Caption</comment>
   </data>
+  <data name="ReferenceCouldNotBeAdded" xml:space="preserve">
+    <value>A reference to '{0}' could not be added.</value>
+    <comment>ReferenceCouldNotBeAdded error message</comment>
+  </data>
   <data name="ReferenceAlreadyExists" xml:space="preserve">
     <value>A reference to '{0}' could not be added. A reference to the component '{1}' already exists in the project.</value>
     <comment>ReferenceAlreadyExists error message</comment>

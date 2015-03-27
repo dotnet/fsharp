@@ -1014,7 +1014,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The division result.</returns>
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
 
-        /// <summary>For internal use only</summary>
+        /// <summary>For compiler use only</summary>
         [<Sealed>]
         type (* internal *) ErrorStrings = 
 

@@ -16,6 +16,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.Win32
+open System.Xml.Linq
 
 [<TestFixture>]
 type References() = 
@@ -648,3 +649,59 @@ type References() =
             let contents = File.ReadAllText(newProjFileName)
             AssertContains contents newPropVal
         )
+
+            
+    [<Test>]
+    member public this.``AddReference.COM`` () = 
+        DoWithTempFile "Test.fsproj" (fun projFile ->
+            File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
+            use project = TheTests.CreateProject(projFile)
+
+            let guid = Guid("50a7e9b0-70ef-11d1-b75a-00a0c90564fe")
+
+            let selectorData = VSCOMPONENTSELECTORDATA (
+                ``type`` = VSCOMPONENTTYPE.VSCOMPONENTTYPE_Com2,
+                guidTypeLibrary = guid,
+                wTypeLibraryMinorVersion = 0us,
+                wTypeLibraryMajorVersion = 1us,
+                bstrTitle = "Microsoft Shell Controls And Automation" )
+            let refContainer = GetReferenceContainerNode(project)
+
+            let comReference = refContainer.AddReferenceFromSelectorData(selectorData)
+
+            // check reference node properties
+            Assert.IsNotNull comReference
+            Assert.IsInstanceOf(typeof<ComReferenceNode>, comReference)
+            let comRef = comReference :?> ComReferenceNode
+            Assert.AreEqual(1, comRef.MajorVersionNumber)
+            Assert.AreEqual(0, comRef.MinorVersionNumber)
+            Assert.AreEqual(guid, comRef.TypeGuid)
+            Assert.AreEqual("Microsoft Shell Controls And Automation", comRef.Caption)
+            let sysDirectory = Environment.GetFolderPath(Environment.SpecialFolder.SystemX86)
+            StringAssert.AreEqualIgnoringCase(Path.Combine(sysDirectory, "shell32.dll"), comRef.InstalledFilePath)
+
+            // check node exists under references
+            let l = new List<ComReferenceNode>()
+            project.FindNodesOfType(l)
+
+            Assert.AreEqual(1, l.Count)
+            let referenceNode = l.[0]
+            Assert.AreSame(comRef, referenceNode)
+
+            // check saved msbuild item
+            SaveProject(project)
+            let fsproj = XDocument.Load(project.FileName)
+            printfn "%O" fsproj
+            let xn s = fsproj.Root.GetDefaultNamespace().GetName(s)
+            let comReferencesXml = fsproj.Descendants(xn "COMReference") |> Seq.toList
+
+            Assert.AreEqual(1, comReferencesXml |> List.length)
+
+            let comRefXml = comReferencesXml |> List.head
+
+            Assert.AreEqual("Microsoft Shell Controls And Automation", comRefXml.Attribute(XName.Get("Include")).Value)
+            Assert.AreEqual(guid, Guid(comRefXml.Element(xn "Guid").Value))
+            Assert.AreEqual("1", comRefXml.Element(xn "VersionMajor").Value)
+            Assert.AreEqual("0", comRefXml.Element(xn "VersionMinor").Value)
+            Assert.AreEqual("0", comRefXml.Element(xn "Lcid").Value)
+            )

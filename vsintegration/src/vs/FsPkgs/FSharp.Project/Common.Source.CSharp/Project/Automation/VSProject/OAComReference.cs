@@ -24,15 +24,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
             get
             {
-                int locale = 0;
-                try
-                {
-                    locale = int.Parse(BaseReferenceNode.LCID, CultureInfo.InvariantCulture);
-                }
-                catch (System.FormatException)
-                {
-                    // Do Nothing
-                }
+                var locale = BaseReferenceNode.LCID;
+
                 if (0 == locale)
                 {
                     return string.Empty;

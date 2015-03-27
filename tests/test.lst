@@ -173,7 +173,6 @@ Misc01		fsharp\regression\86
 Misc02		fsharp\regression\321
 Misc02		fsharp\regression\655
 Misc02		fsharp\regression\656
-Misc02		fsharp\regression\ml-1
 Misc02		..\testsprivate\fsharp\regression\standalone-bug
 Misc02		fsharp\regression\tuple-bug-1
 Misc02		fsharp\tools\bundle
