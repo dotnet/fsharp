@@ -95,7 +95,7 @@ val pdbInitialize:
     string (* .exe/.dll already written and closed *) -> 
     string  (* .pdb to write *) ->
     PdbWriter
-val pdbClose: PdbWriter -> unit
+val pdbClose: PdbWriter -> string -> string -> unit
 val pdbCloseDocument : PdbDocumentWriter -> unit
 val pdbSetUserEntryPoint: PdbWriter -> int32 -> unit
 val pdbDefineDocument: PdbWriter -> string -> PdbDocumentWriter
