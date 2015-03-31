@@ -752,8 +752,12 @@ and string sargs skip = parse
       
  | unicodeGraphShort
     { let (buf,_fin,m,args) = sargs 
-      addUnicodeChar buf (int (unicodeGraphShort (lexemeTrimLeft lexbuf 2)));
-      if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m)))  else string sargs skip lexbuf  }
+      let c = int (unicodeGraphShort (lexemeTrimLeft lexbuf 2))
+      if c >= 0xD800 && c <= 0xDFFF then
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral()) (CHAR (char c))
+      else
+          addUnicodeChar buf c;
+          if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m)))  else string sargs skip lexbuf  }
      
  | unicodeGraphLong
     { let (buf,_fin,m,args) = sargs 

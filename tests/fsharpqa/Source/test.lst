@@ -172,7 +172,7 @@ Conformance05			Conformance\LexicalAnalysis\LineDirectives
 Conformance05			Conformance\LexicalAnalysis\NumericLiterals
 Conformance05			Conformance\LexicalAnalysis\Shift\Generics
 
-Conformance06			Conformance\LexicalAnalysis\StringsAndCharacters
+Conformance06,Smoke			Conformance\LexicalAnalysis\StringsAndCharacters
 Conformance06			Conformance\LexicalAnalysis\SymbolicKeywords
 Conformance06			Conformance\LexicalAnalysis\SymbolicOperators
 Conformance06			Conformance\LexicalAnalysis\Whitespace
