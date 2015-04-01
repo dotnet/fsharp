@@ -2658,7 +2658,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     nodeBeforeMe.NextSibling <- lastNode
                     lastNode.NextSibling <- thisNode
                 
-                root.OnItemAdded(root, lastNode)
+                root.OnItemAdded(lastNode.Parent, lastNode)
                 lastNode :?> FSharpFileNode
 
             /// In solution explorer, move the last of my siblings to just below me, return the moved FSharpFileNode
@@ -2677,7 +2677,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 let tmp = target.NextSibling 
                 target.NextSibling <- lastNode
                 lastNode.NextSibling <- tmp
-                root.OnItemAdded(root, lastNode)
+                root.OnItemAdded(lastNode.Parent, lastNode)
                 lastNode :?> FSharpFileNode
 
             override x.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
