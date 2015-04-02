@@ -44,6 +44,10 @@
     <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == ''">..\..\..</FSharpSourcesRoot>
+    <!-- Eliminate MSBuild warning due to including FSI.exe which is x86 -->
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+    <DeployExtension Condition="'$(AppVeyor)' != ''">False</DeployExtension>
+    <DeployExtension Condition="'$(AppVeyor)' == ''">True</DeployExtension>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' or '$(Configuration)' == 'VSDebug' ">
     <StartAction>Program</StartAction>
