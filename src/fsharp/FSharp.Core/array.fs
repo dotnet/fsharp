@@ -80,7 +80,7 @@ namespace Microsoft.FSharp.Collections
     
         [<AbstractClass; Sealed>]
         type internal EmptyStorage<'T>() =
-            static let empty = ([||] : 'T[])
+            static let empty = (zeroCreate 0 : 'T[])
             static member Empty = empty
 
         [<CompiledName("Empty")>]

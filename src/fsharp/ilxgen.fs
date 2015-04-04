@@ -2069,12 +2069,14 @@ and GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel =
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenNewArray cenv cgbuf eenv (elems: Expr list,elemTy,m) sequel =
+  if !IlxSettings.ilxCompilingFSharpCoreLib = false && elems.Length = 0 then
+    GenExpr cenv cgbuf eenv SPSuppress (mkCallArrayEmpty cenv.g m elemTy) sequel
   // REVIEW: The restriction against enum types here has to do with Dev10/Dev11 bug 872799
   // GenConstArray generates a call to RuntimeHelpers.InitializeArray.  On CLR 2.0/x64 and CLR 4.0/x64/x86,
   // InitializeArray is a JIT intrinsic that will result in invalid runtime CodeGen when initializing an array
   // of enum types. Until bug 872799 is fixed, we'll need to generate arrays the "simple" way for enum types
   // Also note - C# never uses InitializeArray for enum types, so this change puts us on equal footing with them.
-  if elems.Length <= 5 || not cenv.opts.emitConstantArraysUsingStaticDataBlobs || (isEnumTy cenv.g elemTy) then 
+  elif elems.Length <= 5 || not cenv.opts.emitConstantArraysUsingStaticDataBlobs || (isEnumTy cenv.g elemTy) then 
       GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel 
   else
       // Try to emit a constant byte-blob array 

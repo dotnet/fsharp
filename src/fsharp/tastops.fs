@@ -5941,6 +5941,7 @@ let mkCallGenericHashWithComparerOuter       g m ty comp e1       = mkApps g (ty
 let mkCallSubtractionOperator g m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
 
 let mkCallArrayLength g m ty el                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [el], m)
+let mkCallArrayEmpty g m ty                        = mkApps g (typedExprForIntrinsic g m g.array_empty_info,  [[ty]], [ ],  m)
 let mkCallArrayGet   g m ty e1 e2                  = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; e2 ],  m)
 let mkCallArray2DGet g m ty e1 idx1 idx2           = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ],  m)
 let mkCallArray3DGet g m ty e1 idx1 idx2 idx3      = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ],  m)
