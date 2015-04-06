@@ -59,7 +59,7 @@ When submitting issues, please use the following guidelines
 
 ###CLA
 
-Contributors are required to sign a [Contribution License Agreement](https://cla.msopentech.com/) (CLA) before any pull requests will be considered. After submitting a request via the provided form, electronically sign the CLA when you receive the email containing the link to the document. This only needs to be done once for each Microsoft OSS project you contribute to.
+Contributors are required to sign a [Contribution License Agreement](https://cla.microsoft.com/) (CLA) before any pull requests will be considered. After submitting a request via the provided form, electronically sign the CLA when you receive the email containing the link to the document. This only needs to be done once for each Microsoft OSS project you contribute to.
 
 ###Quality and Testing
 
