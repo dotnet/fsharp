@@ -1139,6 +1139,7 @@ lexIndentOffForML,"Consider using a file with extension '.ml' or '.mli' instead"
 1242,parsMissingGreaterThan,"Unmatched '<'. Expected closing '>'"
 1243,parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString,"Unexpected quotation operator '<@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '<' and '@' characters."
 1244,parsErrorParsingAsOperatorName,"Attempted to parse this as an operator name, but failed"
+1245,lexInvalidUnicodeLiteral,"This is not a valid UTF-16 literal"
 # Fsc.exe resource strings
 fscTooManyErrors,"Exiting - too many errors"
 2001,docfileNoXmlSuffix,"The documentation file has no .xml suffix"
