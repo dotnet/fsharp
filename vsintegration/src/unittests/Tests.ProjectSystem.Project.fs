@@ -695,6 +695,68 @@ type Project() =
                 File.Delete(absFilePath)
             ))
     
+    [<Test>] //ref bug https://github.com/Microsoft/visualfsharp/issues/259
+    member public this.``RenameFile.InFolder``() =
+        this.MakeProjectAndDo(["file1.fs"; @"Folder1\file2.fs"; @"Folder1\nested1.fs"], [], "", (fun project ->
+            let absFilePath = Path.Combine(project.ProjectFolder, "Folder1", "nested1.fs")
+            try
+                Directory.CreateDirectory(Path.GetDirectoryName(absFilePath)) |> ignore;
+                File.AppendAllText(absFilePath, "#light")
+                let orig1 = TheTests.FindNodeWithCaption(project, "nested1.fs")
+                let folder1 = TheTests.FindNodeWithCaption(project, "Folder1")
+                VsMocks.vsRunningDocumentTableFindAndLockDocumentVsHierarchyMock <- project
+                
+                let added, deleted = ResizeArray(), ResizeArray()
+
+                let sink = 
+                    { new IVsHierarchyEvents with
+                        member x.OnInvalidateIcon _hicon = VSConstants.S_OK
+                        member x.OnInvalidateItems _itemidParent = VSConstants.S_OK
+                        member x.OnItemAdded (itemidParent, itemidSiblingPrev, itemidAdded) = 
+                            added.Add(itemidParent, itemidSiblingPrev, itemidAdded)
+                            VSConstants.S_OK
+                        member x.OnItemDeleted (itemid) =
+                            deleted.Add(itemid)
+                            VSConstants.S_OK
+                        member x.OnItemsAppended (itemidParent) =
+                            VSConstants.S_OK
+                        member x.OnPropertyChanged (itemid, propid, flags) =
+                            VSConstants.S_OK }
+
+                let cookie = ref 0u
+                project.AdviseHierarchyEvents(sink, cookie) |> ErrorHandler.ThrowOnFailure |> ignore
+
+                // rename the file
+                orig1.SetEditLabel("renamedNested2.fs") |> ErrorHandler.ThrowOnFailure |> ignore
+
+                SaveProject project
+
+                let file2 = TheTests.FindNodeWithCaption (project, "file2.fs")
+                let renamedNested2 = TheTests.FindNodeWithCaption (project, "renamedNested2.fs")
+
+                AssertEqual [ folder1.ID, file2.ID, renamedNested2.ID ] (added |> Seq.distinct |> List.ofSeq)
+                AssertEqual [ orig1.ID ] (deleted |> Seq.distinct |> List.ofSeq)
+
+                // TODO ensure IVsTrackProjectDocumentsEvents Renamed was fired
+
+                // ensure right in .fsproj
+                let msbuildInfo = TheTests.MsBuildCompileItems(project.BuildProject)
+                AssertEqual ["file1.fs"; @"Folder1\file2.fs"; @"Folder1\renamedNested2.fs"] msbuildInfo
+
+                // ensure right in solution explorer
+                let expect = 
+                    Tree("References", ANYTREE,
+                    Tree("file1.fs", Nil,
+                    Tree("Folder1", 
+                       Tree("file2.fs", Nil,
+                       Tree("renamedNested2.fs", Nil, Nil)),
+                    Nil)))
+                TheTests.AssertSameTree (expect, project.FirstChild)
+
+            finally
+                if File.Exists(absFilePath) then File.Delete(absFilePath)
+            ))
+    
     [<Test>]
     member public this.``RenameFile.BuildActionIsResetBasedOnFilenameExtension``() =
         let GetTextFromBuildAction (action:VSLangProj.prjBuildAction) =
