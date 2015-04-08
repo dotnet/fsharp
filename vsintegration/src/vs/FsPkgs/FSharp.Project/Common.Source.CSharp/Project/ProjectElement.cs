@@ -42,10 +42,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// This class represent a project item (usualy a file) and allow getting and
     /// setting attribute on it.
-    /// This class allow us to keep the /*internal, but public for FSharp.Project.dll*/ public details of our items hidden from
+    /// This class allow us to keep the public details of our items hidden from
     /// our derived classes.
     /// While the class itself is public so it can be manipulated by derived classes,
-    /// its /*internal, but public for FSharp.Project.dll*/ public constructors make sure it can only be created from within the assembly.
+    /// its public constructors make sure it can only be created from within the assembly.
     /// </summary>
     internal sealed class ProjectElement
     {
@@ -87,7 +87,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public Microsoft.Build.Evaluation.ProjectItem Item
+        public Microsoft.Build.Evaluation.ProjectItem Item
         {
             get
             {
@@ -95,7 +95,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public bool IsVirtual
+        public bool IsVirtual
         {
             get
             {
@@ -107,10 +107,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #region ctors
         /// <summary>
         /// Constructor to create a new MSBuild.BuildItem and add it to the project
-        /// Only have /*internal, but public for FSharp.Project.dll*/ public constructors as the only one who should be creating
+        /// Only have public constructors as the only one who should be creating
         /// such object is the project itself (see Project.CreateFileNode()).
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public ProjectElement(ProjectNode project, string itemPath, string itemType)
+        public ProjectElement(ProjectNode project, string itemPath, string itemType)
         {
             if (project == null)
             {
@@ -174,13 +174,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         /// <summary>
         /// Constructor to Wrap an existing MSBuild.BuildItem
-        /// Only have /*internal, but public for FSharp.Project.dll*/ public constructors as the only one who should be creating
+        /// Only have public constructors as the only one who should be creating
         /// such object is the project itself (see Project.CreateFileNode()).
         /// </summary>
         /// <param name="project">Project that owns this item</param>
         /// <param name="existingItem">an MSBuild.BuildItem; can be null if virtualFolder is true</param>
         /// <param name="virtualFolder">Is this item virtual (such as reference folder)</param>
-        /*internal, but public for FSharp.Project.dll*/ public ProjectElement(ProjectNode project, Microsoft.Build.Evaluation.ProjectItem existingItem, bool virtualFolder)
+        public ProjectElement(ProjectNode project, Microsoft.Build.Evaluation.ProjectItem existingItem, bool virtualFolder)
         {
             if (project == null)
                 throw new ArgumentNullException("project");

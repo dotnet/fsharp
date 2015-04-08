@@ -169,9 +169,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string CanUseTargetFSharpCoreVersion = "CanUseTargetFSharpCoreVersion";
     }
 
-    /*internal, but public for FSharp.Project.dll*/ public static class ProjectFileValues
+    public static class ProjectFileValues
     {
-        /*internal, but public for FSharp.Project.dll*/ public const string AnyCPU = "AnyCPU";
+        public const string AnyCPU = "AnyCPU";
     }
 
     internal enum WrapperToolAttributeValue

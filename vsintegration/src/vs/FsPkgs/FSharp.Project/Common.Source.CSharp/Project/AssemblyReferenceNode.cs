@@ -62,7 +62,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The name of the assembly this reference represents.
         /// </summary>
         /// <value></value>
-        /*internal, but public for FSharp.Project.dll*/ public System.Reflection.AssemblyName AssemblyName
+        public System.Reflection.AssemblyName AssemblyName
         {
             get
             {
@@ -75,7 +75,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// machine. It can be different from the AssemblyName property because it can
         /// be more specific.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public System.Reflection.AssemblyName ResolvedAssembly
+        public System.Reflection.AssemblyName ResolvedAssembly
         {
             get { return this.resolvedInfo.ResolvedAssemblyName; }
         }
@@ -120,7 +120,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         private Automation.OAAssemblyReference assemblyRef;
-        /*internal, but public for FSharp.Project.dll*/ public override object Object
+        public override object Object
         {
             get
             {
@@ -325,7 +325,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return ProjectMgr.CanUseTargetFSharpCoreReference && IsFSharpCoreReference(this) && ContainsUsagesOfTargetFSharpCoreVersionProperty(this); }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             if (IsSpecialFSharpCoreReference)
             {
@@ -338,7 +338,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Links a reference node to the project and hierarchy.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void BindReferenceData()
+        public override void BindReferenceData()
         {
             // BindReferenceData only happens for newly created AssemblyReferenceNodes (as opposed to loaded from fsproj)
             Debug.Assert(this.resolvedInfo.WasSuccessfullyResolved, "assembly was not resolved, we should not be trying to link a node to put in .fsproj file");
@@ -440,7 +440,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 	    /// Determines if this is node a valid node for painting the default reference icon.
 	    /// </summary>
 	    /// <returns></returns>
-	    public /*protected, but public for FSharp.Project.dll*/ override bool CanShowDefaultIcon()
+	    public override bool CanShowDefaultIcon()
  	    {
 		    if (String.IsNullOrEmpty(this.myAssemblyPath) || !File.Exists(this.myAssemblyPath))
 		    {
@@ -474,7 +474,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var result = this.ProjectMgr.Build(MsBuildTarget.ResolveAssemblyReferences);
             this.ResolveReference(result);
         }
-        internal /*protected, but public for FSharp.Project.dll*/ override void ResolveReference(BuildResult buildResult)
+        internal override void ResolveReference(BuildResult buildResult)
         {
             Debug.Assert(this.ItemNode != null && this.ItemNode.Item != null, "called ResolveReference before initializing ItemNode");
             this.ResolveFromBuiltProject(MSBuildItem.GetEvaluatedInclude(this.ItemNode.Item), buildResult);
@@ -687,7 +687,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override Guid GetBrowseLibraryGuid()
+        public override Guid GetBrowseLibraryGuid()
         {
             return VSConstants.guidCOMPLUSLibrary;
         }

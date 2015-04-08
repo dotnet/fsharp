@@ -36,7 +36,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <summary>
             /// Defines the nested project item that is to be reloaded.
             /// </summary>
-            /*internal, but public for FSharp.Project.dll*/ public uint ItemID
+            public uint ItemID
             {
                 get
                 {
@@ -52,7 +52,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <summary>
             /// Defines the file change cookie that is returned when listenning on file changes on the nested project item.
             /// </summary>
-            /*internal, but public for FSharp.Project.dll*/ public uint FileChangeCookie
+            public uint FileChangeCookie
             {
                 get
                 {
@@ -94,7 +94,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Overloaded ctor.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public FileChangeManager(IServiceProvider serviceProvider)
+        public FileChangeManager(IServiceProvider serviceProvider)
         {
             #region input validation
             if (serviceProvider == null)
@@ -180,7 +180,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Observe when the given file is updated on disk. In this case we do not care about the item id that represents the file in the hierarchy.
         /// </summary>
         /// <param name="fileName">File to observe.</param>
-        /*internal, but public for FSharp.Project.dll*/ public void ObserveItem(string fileName)
+        public void ObserveItem(string fileName)
         {
             this.ObserveItem(fileName, VSConstants.VSITEMID_NIL);
         }
@@ -190,7 +190,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="fileName">File to observe.</param>
         /// <param name="id">The item id of the item to observe.</param>
-        /*internal, but public for FSharp.Project.dll*/ public void ObserveItem(string fileName, uint id)
+        public void ObserveItem(string fileName, uint id)
         {
             #region Input validation
             if (String.IsNullOrEmpty(fileName))
@@ -220,7 +220,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="fileName">File to ignore observing.</param>
         /// <param name="ignore">Flag indicating whether or not to ignore changes (1 to ignore, 0 to stop ignoring).</param>
-        /*internal, but public for FSharp.Project.dll*/ public void IgnoreItemChanges(string fileName, bool ignore)
+        public void IgnoreItemChanges(string fileName, bool ignore)
         {
             #region Input validation
             if (String.IsNullOrEmpty(fileName))
@@ -241,7 +241,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Stop observing when the file is updated on disk.
         /// </summary>
         /// <param name="fileName">File to stop observing.</param>
-        /*internal, but public for FSharp.Project.dll*/ public void StopObservingItem(string fileName)
+        public void StopObservingItem(string fileName)
         {
             #region Input validation
             if (String.IsNullOrEmpty(fileName))

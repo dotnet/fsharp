@@ -61,7 +61,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region properties
-        /*internal, but public for FSharp.Project.dll*/ public IVsHierarchy NestedHierarchy
+        public IVsHierarchy NestedHierarchy
         {
             get
             {
@@ -74,7 +74,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Returns the __VSADDVPFLAGS that will be passed in when calling AddVirtualProjectEx
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual uint VirtualProjectFlags
+        public virtual uint VirtualProjectFlags
         {
             get { return 0; }
         }
@@ -128,7 +128,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return DefaultSortOrderNode.NestedProjectNode; }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ bool IsDisposed
+        public bool IsDisposed
         {
             get { return this.isDisposed; }
             set { this.isDisposed = value; }
@@ -140,7 +140,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         #region ctor
 
-        public /*protected, but public for FSharp.Project.dll*/ NestedProjectNode()
+        public NestedProjectNode()
         {
         }
 
@@ -417,7 +417,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// This is temporary until we have support for re-adding a nested item
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             return false;
         }
@@ -426,7 +426,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Delegates the call to the inner hierarchy.
         /// </summary>
         /// <param name="reserved">Reserved parameter defined at the IVsPersistHierarchyItem2::ReloadItem parameter.</param>
-        public /*protected, but public for FSharp.Project.dll*/ override void ReloadItem(uint reserved)
+        public override void ReloadItem(uint reserved)
         {
             #region precondition
             if (this.isDisposed || this.ProjectMgr == null || this.ProjectMgr.IsClosed)
@@ -440,7 +440,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             IVsPersistHierarchyItem2 persistHierachyItem = this.nestedHierarchy as IVsPersistHierarchyItem2;
 
             // We are expecting that if we get called then the nestedhierarchy supports IVsPersistHierarchyItem2, since then hierrachy should support handling its own reload.
-            // There should be no errormessage to the user since this is an /*internal, but public for FSharp.Project.dll*/ public error, that it cannot be fixed at user level.
+            // There should be no errormessage to the user since this is an public error, that it cannot be fixed at user level.
             if (persistHierachyItem == null)
             {
                 throw new InvalidOperationException();
@@ -453,7 +453,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Flag indicating that changes to a file can be ignored when item is saved or reloaded. 
         /// </summary>
         /// <param name="ignoreFlag">Flag indicating whether or not to ignore changes (1 to ignore, 0 to stop ignoring).</param>
-        public /*protected, but public for FSharp.Project.dll*/ override void IgnoreItemFileChanges(bool ignoreFlag)
+        public override void IgnoreItemFileChanges(bool ignoreFlag)
         {
             #region precondition
             if (this.isDisposed || this.ProjectMgr == null || this.ProjectMgr.IsClosed)
@@ -482,7 +482,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="files">The files to which an array of VSADDFILEFLAGS has to be specified.</param>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override VSADDFILEFLAGS[] GetAddFileFlags(string[] files)
+        public override VSADDFILEFLAGS[] GetAddFileFlags(string[] files)
         {
             if (files == null || files.Length == 0)
             {
@@ -504,7 +504,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="files">The files to which an array of VSADDFILEFLAGS has to be specified.</param>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override VSQUERYADDFILEFLAGS[] GetQueryAddFileFlags(string[] files)
+        public override VSQUERYADDFILEFLAGS[] GetQueryAddFileFlags(string[] files)
         {
             if (files == null || files.Length == 0)
             {
@@ -526,7 +526,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="files">The files to which an array of VSREMOVEFILEFLAGS has to be specified.</param>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override VSREMOVEFILEFLAGS[] GetRemoveFileFlags(string[] files)
+        public override VSREMOVEFILEFLAGS[] GetRemoveFileFlags(string[] files)
         {
             if (files == null || files.Length == 0)
             {
@@ -548,7 +548,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="files">The files to which an array of VSQUERYREMOVEFILEFLAGS has to be specified.</param>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override VSQUERYREMOVEFILEFLAGS[] GetQueryRemoveFileFlags(string[] files)
+        public override VSQUERYREMOVEFILEFLAGS[] GetQueryRemoveFileFlags(string[] files)
         {
             if (files == null || files.Length == 0)
             {
@@ -655,7 +655,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Links a nested project as a virtual project to the solution.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void AddVirtualProject()
+        public virtual void AddVirtualProject()
         {
             // This is the second step in creating and adding a nested project. The inner hierarchy must have been
             // already initialized at this point. 
@@ -716,7 +716,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Creates the project directory if it does not exist.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void CreateProjectDirectory()
+        public virtual void CreateProjectDirectory()
         {
             string directoryName = Path.GetDirectoryName(this.projectPath);
 
@@ -733,7 +733,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// nested project node.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "RDT")]
-        public /*protected, but public for FSharp.Project.dll*/ virtual void LockRDTEntry()
+        public virtual void LockRDTEntry()
         {
             // Define flags for the nested project document
             _VSRDTFLAGS flags = _VSRDTFLAGS.RDT_VirtualDocument | _VSRDTFLAGS.RDT_ProjSlnDocument; ;
@@ -799,7 +799,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Unlock the RDT entry for the nested project
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "RDT")]
-        public /*protected, but public for FSharp.Project.dll*/ virtual void UnlockRDTEntry()
+        public virtual void UnlockRDTEntry()
         {
             if (this.isDisposed || this.ProjectMgr == null || this.ProjectMgr.IsClosed)
             {
@@ -821,7 +821,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Renames the project file in the parent project structure.
         /// </summary>
         /// <param name="label">The new label.</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void RenameNestedProjectInParentProject(string label)
+        public virtual void RenameNestedProjectInParentProject(string label)
         {
             string existingLabel = this.Caption;
 
@@ -871,7 +871,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Saves the nested project information in the project file.
         /// </summary>
         /// <param name="newFileName"></param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void SaveNestedProjectItemInProjectFile(string newFileName)
+        public virtual void SaveNestedProjectItemInProjectFile(string newFileName)
         {
             string existingInclude = MSBuildItem.GetEvaluatedInclude(this.ItemNode.Item);
             string existingRelativePath = Path.GetDirectoryName(existingInclude);
@@ -884,7 +884,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Closes a nested project and releases the nested hierrachy pointer.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public void CloseNestedProjectNode()
+        public void CloseNestedProjectNode()
         {
             if (this.isDisposed || this.ProjectMgr == null || this.ProjectMgr.IsClosed)
             {

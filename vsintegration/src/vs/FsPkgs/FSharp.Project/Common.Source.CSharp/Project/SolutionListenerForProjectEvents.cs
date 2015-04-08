@@ -40,7 +40,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region ctor
-        /*internal, but public for FSharp.Project.dll*/ public SolutionListenerForProjectEvents(IServiceProvider serviceProvider)
+        public SolutionListenerForProjectEvents(IServiceProvider serviceProvider)
             : base(serviceProvider)
         {
         }

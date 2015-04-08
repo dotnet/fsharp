@@ -50,7 +50,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 #endregion
 
                 #region properties
-                /*internal, but public for FSharp.Project.dll*/ public FORMATETC Format
+                public FORMATETC Format
                 {
                         get
                         {
@@ -58,7 +58,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         }
                 }
 
-                /*internal, but public for FSharp.Project.dll*/ public long Data
+                public long Data
                 {
                         get
                         {
@@ -67,7 +67,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
                 [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-                /*internal, but public for FSharp.Project.dll*/ public DATADIR DataDir
+                public DATADIR DataDir
                 {
                         get
                         {
@@ -80,7 +80,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 /// <summary>
                 /// The IntPtr is data allocated that should be removed. It is allocated by the ProcessSelectionData method.
                 /// </summary>
-                /*internal, but public for FSharp.Project.dll*/ public DataCacheEntry(FORMATETC fmt, IntPtr data, DATADIR dir)
+                public DataCacheEntry(FORMATETC fmt, IntPtr data, DATADIR dir)
                 {
                         this.format = fmt;
                         this.data = (long)data;
@@ -138,22 +138,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         internal sealed class DataObject : IDataObject
         {
                 #region fields
-                /*internal, but public for FSharp.Project.dll*/ public const int DATA_S_SAMEFORMATETC = 0x00040130;
+                public const int DATA_S_SAMEFORMATETC = 0x00040130;
 
-                /*internal, but public for FSharp.Project.dll*/ public static readonly int DATA_E_FORMATETC = ForceCast(0x80040064);
+                public static readonly int DATA_E_FORMATETC = ForceCast(0x80040064);
 
                 EventSinkCollection map;
 
                 ArrayList entries;
                 #endregion
 
-                /*internal, but public for FSharp.Project.dll*/ public DataObject()
+                public DataObject()
                 {
                         this.map = new EventSinkCollection();
                         this.entries = new ArrayList();
                 }
 
-                /*internal, but public for FSharp.Project.dll*/ public void SetData(FORMATETC format, IntPtr data)
+                public void SetData(FORMATETC format, IntPtr data)
                 {
                         this.entries.Add(new DataCacheEntry(format, data, DATADIR.DATADIR_SET));
                 }
@@ -240,12 +240,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 #endregion
 
                 #region static methods
-                /*internal, but public for FSharp.Project.dll*/ public static int ForceCast(uint i)
+                public static int ForceCast(uint i)
                 {
                         unchecked { return (int)i; }
                 }
 
-                /*internal, but public for FSharp.Project.dll*/ public static uint ForceCast(int i)
+                public static uint ForceCast(int i)
                 {
                         unchecked { return (uint)i; }
                 }
@@ -257,12 +257,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         internal static class DragDropHelper
         {
 #pragma warning disable 414
-                /*internal, but public for FSharp.Project.dll*/ internal static readonly ushort CF_VSREFPROJECTS = 0;
-                /*internal, but public for FSharp.Project.dll*/ internal static readonly ushort CF_VSSTGPROJECTS = 0;
-                /*internal, but public for FSharp.Project.dll*/ internal static readonly ushort CF_VSREFPROJECTITEMS = 0;
-                /*internal, but public for FSharp.Project.dll*/ internal static readonly ushort CF_VSSTGPROJECTITEMS = 0;
-                /*internal, but public for FSharp.Project.dll*/ internal static readonly ushort CF_PROJECTCLIPDESCRIPTOR = 0;
-                /*internal, but public for FSharp.Project.dll*/ internal static readonly ushort CF_VSPROJECTCLIPDESCRIPTOR = 0;
+                internal static readonly ushort CF_VSREFPROJECTS = 0;
+                internal static readonly ushort CF_VSSTGPROJECTS = 0;
+                internal static readonly ushort CF_VSREFPROJECTITEMS = 0;
+                internal static readonly ushort CF_VSSTGPROJECTITEMS = 0;
+                internal static readonly ushort CF_PROJECTCLIPDESCRIPTOR = 0;
+                internal static readonly ushort CF_VSPROJECTCLIPDESCRIPTOR = 0;
 #pragma warning restore 414
 
                 static DragDropHelper()
@@ -414,7 +414,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 /// </summary>
                 /// <param name="dropHandle"></param>
                 /// <returns></returns>
-                /*internal, but public for FSharp.Project.dll*/ public static string GetData(IntPtr dropHandle)
+                public static string GetData(IntPtr dropHandle)
                 {
                         IntPtr data = UnsafeNativeMethods.GlobalLock(dropHandle);
                         try
@@ -437,7 +437,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         return null;
                 }
 
-                /*internal, but public for FSharp.Project.dll*/ public static void FillFormatEtc(ref FORMATETC template, ushort clipFormat, ref FORMATETC result)
+                public static void FillFormatEtc(ref FORMATETC template, ushort clipFormat, ref FORMATETC result)
                 {
                         if (clipFormat != 0)
                         {
@@ -450,7 +450,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         }
                 }
 
-                /*internal, but public for FSharp.Project.dll*/ public static void OleCopyFormatEtc(ref FORMATETC src, ref FORMATETC dest)
+                public static void OleCopyFormatEtc(ref FORMATETC src, ref FORMATETC dest)
                 {
                         dest.cfFormat = src.cfFormat;
                         dest.ptd = Marshal.AllocCoTaskMem(Marshal.SizeOf(src.ptd));
@@ -460,7 +460,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         dest.tymed = src.tymed;
                 }
 
-                /*internal, but public for FSharp.Project.dll*/ public static IntPtr CopyHGlobal(IntPtr data)
+                public static IntPtr CopyHGlobal(IntPtr data)
                 {
                         IntPtr src = UnsafeNativeMethods.GlobalLock(data);
                         int size = UnsafeNativeMethods.GlobalSize(data);
@@ -491,7 +491,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         return ptr;
                 }
 
-                /*internal, but public for FSharp.Project.dll*/ public static void CopyStringToHGlobal(string s, IntPtr data, int bufferSize)
+                public static void CopyStringToHGlobal(string s, IntPtr data, int bufferSize)
                 {
                         Int16 nullTerminator = 0;
                         int dwSize = Marshal.SizeOf(nullTerminator);

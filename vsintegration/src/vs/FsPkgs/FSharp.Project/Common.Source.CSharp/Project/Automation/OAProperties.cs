@@ -184,7 +184,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Add properties to the collection of properties filtering only those properties which are com-visible and AutomationBrowsable
         /// </summary>
         /// <param name="targetType">The type of NodeProperties the we should filter on</param>
-        public /*protected, but public for FSharp.Project.dll*/ void AddPropertiesFromType(Type targetType)
+        public void AddPropertiesFromType(Type targetType)
         {
             Debug.Assert(targetType != null);
 
@@ -209,7 +209,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Creates a new OAProperty object and adds it to the current list of properties
         /// </summary>
         /// <param name="propertyInfo">The property to be associated with an OAProperty object</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void AddProperty(PropertyInfo propertyInfo)
+        public virtual void AddProperty(PropertyInfo propertyInfo)
         {
             this.properties.Add(propertyInfo.Name, new OAProperty(this, propertyInfo));
         }

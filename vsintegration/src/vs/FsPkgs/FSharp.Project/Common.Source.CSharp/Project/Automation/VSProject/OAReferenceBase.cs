@@ -31,7 +31,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         #endregion
 
         #region properties
-        public /*protected, but public for FSharp.Project.dll*/ RefType BaseReferenceNode
+        public RefType BaseReferenceNode
         {
             get { return referenceNode; }
         }

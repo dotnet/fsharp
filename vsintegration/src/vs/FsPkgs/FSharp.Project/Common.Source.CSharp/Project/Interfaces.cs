@@ -24,7 +24,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// This interface defines the rules for handling build dependency on a project container.
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it shouldbe available for the aggregator it must be made public.</remarks>
+    /// <remarks>Normally this should be an public interface but since it shouldbe available for the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     [CLSCompliant(false)]
     public interface IBuildDependencyOnProjectContainer
@@ -49,7 +49,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// Interface for manipulating build dependency
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it shouldbe available for the aggregator it must be made public.</remarks>
+    /// <remarks>Normally this should be an public interface but since it shouldbe available for the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     [CLSCompliant(false)]
     public interface IBuildDependencyUpdate
@@ -80,7 +80,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// Provides access to the reference data container.
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it should be available for
+    /// <remarks>Normally this should be an public interface but since it should be available for
     /// the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     public interface IReferenceContainerProvider
@@ -91,7 +91,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// Defines a container for manipulating references
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it should be available for
+    /// <remarks>Normally this should be an public interface but since it should be available for
     /// the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     public interface IReferenceContainer

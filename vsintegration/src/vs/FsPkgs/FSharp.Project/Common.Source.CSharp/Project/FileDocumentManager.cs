@@ -189,7 +189,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.Node.OnInvalidateItems(this.Node.Parent);
 
                 // Bail since we are not able to open the item
-                // Do not return an error code otherwise an /*internal, but public for FSharp.Project.dll*/ public error message is shown. The scenario for this operation
+                // Do not return an error code otherwise an public error message is shown. The scenario for this operation
                 // normally is already a reaction to a dialog box telling that the item has been removed.
                 return VSConstants.S_FALSE;
             }

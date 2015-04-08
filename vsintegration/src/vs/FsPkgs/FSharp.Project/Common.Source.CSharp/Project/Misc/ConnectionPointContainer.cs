@@ -62,7 +62,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private uint nextCookie;
         private ConnectionPointContainer container;
         private IEventSource<SinkType> source;
-        /*internal, but public for FSharp.Project.dll*/ public ConnectionPoint(ConnectionPointContainer container, IEventSource<SinkType> source)
+        public ConnectionPoint(ConnectionPointContainer container, IEventSource<SinkType> source)
         {
             if (null == container)
             {
