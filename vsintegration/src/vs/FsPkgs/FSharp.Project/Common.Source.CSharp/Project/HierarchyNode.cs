@@ -3385,12 +3385,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             int hr = VSConstants.E_FAIL;
 
-            /*
-            Guid CLSID_VsTextBuffer = new Guid("{8E7B96A8-E33D-11d0-A6D5-00C04FB67F6A}");
-            Guid iid = VSConstants.IID_IUnknown;
-            IntPtr docData = IntPtr.Zero;
-            */
-
             IVsTextLines buffer;
             Type textLinesType = typeof(IVsTextLines);
             Guid riid = textLinesType.GUID;
@@ -3402,16 +3396,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             try
             {
-                /*
-                ILocalRegistry localReg = this.projectMgr.GetService(typeof(SLocalRegistry)) as ILocalRegistry;
-                hr = localReg.CreateInstance(CLSID_VsTextBuffer, null, ref iid, (uint)CLSCTX.CLSCTX_INPROC_SERVER, out docData);
-
-                if (!ErrorHandler.Succeeded(hr))
-                {
-                    return hr;
-                }
-                */
-
                 buffer = (IVsTextLines)this.projectMgr.Package.CreateInstance(ref clsid, ref riid, textLinesType);
 
                 if (buffer == null)
@@ -3421,7 +3405,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 docData = Marshal.GetIUnknownForObject(buffer);
 
-                // persistDocData = Marshal.GetObjectForIUnknown(docData) as IVsPersistDocData;
                 persistDocData = buffer as IVsPersistDocData;
 
                 if (persistDocData == null)
@@ -3476,12 +3459,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             finally
             {
-                /*
-                if (docData != IntPtr.Zero)
-                {
-                    Marshal.Release(docData);
-                }
-                */
             }
 
             return hr;
