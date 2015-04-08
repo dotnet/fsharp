@@ -2320,13 +2320,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new ArgumentNullException("child");
             }
 
-            HierarchyNode foo;
-            foo = this.projectMgr == null ? this : this.projectMgr;
             if (parent.onChildAdded != null)
             {
                 HierarchyNodeEventArgs args = new HierarchyNodeEventArgs(child);
                 parent.onChildAdded(parent, args);
             }
+
+            var foo = this.projectMgr ?? this;
 
             if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
@@ -2355,8 +2355,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public void OnItemDeleted()
         {
-            HierarchyNode foo;
-            foo = this.projectMgr == null ? this : this.projectMgr;
+            var foo = this.projectMgr ?? this;
 
             if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
@@ -2398,8 +2397,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new ArgumentNullException("parent");
             }
 
-            HierarchyNode foo;
-            foo = this.projectMgr == null ? this : this.projectMgr;
+            var foo = this.projectMgr ?? this;
 
             if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
@@ -2425,8 +2423,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 throw new ArgumentNullException("node");
             }
-            HierarchyNode foo;
-            foo = this.projectMgr == null ? this : this.projectMgr;
+
+            var foo = this.projectMgr ?? this;
+            
             if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
                 return;
@@ -2450,8 +2449,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 throw new ArgumentNullException("parent");
             }
-            HierarchyNode foo;
-            foo = this.projectMgr == null ? this : this.projectMgr;
+
+            var foo = this.projectMgr ?? this;
+
             if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
                 return;
