@@ -170,7 +170,7 @@ type TheTests() =
                  | x -> x
         match TryFind node with
         | Some(x) -> x
-        | None -> failwith "did not find node with caption %s" caption
+        | None -> failwithf "did not find node with caption %s" caption
        
     static member MoveDown(node : HierarchyNode) =
         match node with
