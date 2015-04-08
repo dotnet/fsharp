@@ -560,8 +560,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new ArgumentNullException("node");
             }
 
-            var map = this.projectMgr.ItemIdMap;
-
             // make sure the node is in the map.
             Object nodeWithSameID = this.projectMgr.ItemIdMap[node.hierarchyId];
             if (!Object.ReferenceEquals(node, nodeWithSameID as HierarchyNode))
