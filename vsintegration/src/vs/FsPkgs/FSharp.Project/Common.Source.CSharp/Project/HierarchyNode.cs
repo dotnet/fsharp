@@ -2310,11 +2310,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public void OnItemAdded(HierarchyNode parent, HierarchyNode child)
         {
-            if (null != parent.onChildAdded)
-            {
-                HierarchyNodeEventArgs args = new HierarchyNodeEventArgs(child);
-                parent.onChildAdded(parent, args);
-            }
             if (parent == null)
             {
                 throw new ArgumentNullException("parent");
@@ -2327,6 +2322,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             HierarchyNode foo;
             foo = this.projectMgr == null ? this : this.projectMgr;
+            if (parent.onChildAdded != null)
+            {
+                HierarchyNodeEventArgs args = new HierarchyNodeEventArgs(child);
+                parent.onChildAdded(parent, args);
+            }
 
             if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
