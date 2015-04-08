@@ -114,7 +114,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Is Visual Studio in design mode.
         /// </summary>
-        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="site">The service provider.</param>
         /// <returns>true if visual studio is in design mode</returns>
         public static bool IsVisualStudioInDesignMode(IServiceProvider site)
         {
@@ -677,7 +677,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Initializes the in memory project. Sets BuildEnabled on the project to true.
         /// </summary>
-        /// <param name="engine">The build engine to use to create a build project.</param>
+        /// <param name="buildEngine">The build engine to use to create a build project.</param>
         /// <param name="fullProjectPath">The full path of the project.</param>
         /// <returns>A loaded msbuild project.</returns>
         public static Microsoft.Build.Evaluation.Project InitializeMsBuildProject(Microsoft.Build.Evaluation.ProjectCollection buildEngine, string fullProjectPath)
@@ -934,8 +934,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
         /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
-        /// <param name="configuration">The name of the active configuration.</param>
-        /// <param name="platform">The name of the platform.</param>
         /// <returns>true if successfull.</returns>
         public static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, IVsHierarchy hierarchy, out ConfigCanonicalName configCanonicalName)
         {
