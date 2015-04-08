@@ -43,6 +43,7 @@ val internal callStringFinisher : ('a -> 'b -> byte[] -> 'c) -> AbstractIL.Inter
 val internal addUnicodeString : AbstractIL.Internal.ByteBuffer -> string -> unit
 val internal addUnicodeChar : AbstractIL.Internal.ByteBuffer -> int -> unit
 val internal addByteChar : AbstractIL.Internal.ByteBuffer -> char -> unit
+val internal stringBufferAsString : byte[] -> string
 val internal stringBufferAsBytes : AbstractIL.Internal.ByteBuffer -> byte[]
 val internal stringBufferIsBytes : AbstractIL.Internal.ByteBuffer -> bool
 val internal newline : Lexing.LexBuffer<'a> -> unit
@@ -51,7 +52,7 @@ val internal digit : char -> int32
 val internal hexdigit : char -> int32
 val internal unicodeGraphShort : string -> uint16
 val internal hexGraphShort : string -> uint16
-val internal unicodeGraphLong : string -> uint16 option * uint16
+val internal unicodeGraphLong : string -> (uint16 option * uint16) option
 val internal escape : char -> char
 
 exception internal ReservedKeyword of string * Range.range
