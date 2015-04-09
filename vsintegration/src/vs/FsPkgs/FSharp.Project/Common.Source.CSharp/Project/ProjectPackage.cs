@@ -50,9 +50,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Subscribe to the solution events
             this.solutionListeners.Add(new SolutionListenerForProjectReferenceUpdate(this));
             this.solutionListeners.Add(new SolutionListenerForProjectOpen(this));
-#if UNUSED_NESTED_PROJECTS
-            this.solutionListeners.Add(new SolutionListenerForBuildDependencyUpdate(this));
-#endif
             this.solutionListeners.Add(new SolutionListenerForProjectEvents(this));
 
             foreach (SolutionListener solutionListener in this.solutionListeners)

@@ -3004,16 +3004,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                 selectedNodes.Add(node);
                             }
                         }
-#if UNUSED_NESTED_PROJECTS
-                        else
-                        {
-                            NestedProjectNode node = this.GetNestedProjectForHierarchy(hierarchy);
-                            if (node != null)
-                            {
-                                selectedNodes.Add(node);
-                            }
-                        }
-#endif
                     }
                     else if (multiItemSelect != null)
                     {
@@ -4645,36 +4635,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return result;
         }
-
-#if UNUSED_NESTED_PROJECTS
-        /// <summary>
-        /// Checks whether a hierarchy is a nested project.
-        /// </summary>
-        /// <param name="hierarchy"></param>
-        /// <returns></returns>
-        /*internal, but public for FSharp.Project.dll*/ public NestedProjectNode GetNestedProjectForHierarchy(IVsHierarchy hierarchy)
-        {
-            if (hierarchy != null && (hierarchy is IVsProject3))
-            {
-                IVsProject3 project = hierarchy as IVsProject3;
-
-                string mkDocument = String.Empty;
-                project.GetMkDocument(VSConstants.VSITEMID_ROOT, out mkDocument);
-
-                if (!String.IsNullOrEmpty(mkDocument))
-                {
-                    HierarchyNode node = this.FindChild(mkDocument);
-
-                    if (node != null && (node is NestedProjectNode))
-                    {
-                        return node as NestedProjectNode;
-                    }
-                }
-            }
-
-            return null;
-        }
-#endif
 
         /// <summary>
         /// Given a node determines what is the directory that can accept files.
