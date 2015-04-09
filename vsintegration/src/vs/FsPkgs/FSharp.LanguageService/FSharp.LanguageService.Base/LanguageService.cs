@@ -690,7 +690,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         public abstract int ValidateBreakpointLocation(IVsTextBuffer buffer, int line, int col, TextSpan[] pCodeSpan);
 
-        /// <include file='doc\Package.uex' path='docs/doc[@for="LanguageService.GetService"]' />
         internal object GetService(Type serviceType)
         {
             if (this.site != null)

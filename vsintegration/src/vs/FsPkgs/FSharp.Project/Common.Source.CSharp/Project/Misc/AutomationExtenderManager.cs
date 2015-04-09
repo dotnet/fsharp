@@ -408,14 +408,12 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
         
     }
     
-    /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="AutomationExtMgr_IFilterProperties"]/*' />
     /// <devdoc>
     ///    <para>[To be supplied.]</para>
     /// </devdoc>
     [ComImport, Guid("aade1f59-6ace-43d1-8fca-42af3a5c4f3c"),InterfaceTypeAttribute(ComInterfaceType.InterfaceIsDual)]
     internal interface  AutomationExtMgr_IFilterProperties {
    
-           /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="AutomationExtMgr_IFilterProperties.IsPropertyHidden"]/*' />
            /// <devdoc>
            ///    <para>[To be supplied.]</para>
            /// </devdoc>
@@ -451,7 +449,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
         }
 
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.CreateExtendedProperties"]/*' />
         /// <devdoc>
         ///     Creates the extended descriptors for an object given a list of extenders
         ///     and property names.
@@ -481,7 +478,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return extenders;
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetAttributes"]/*' />
         /// <devdoc>
         ///     Retrieves an array of member attributes for the given object.
         /// </devdoc>
@@ -489,7 +485,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetAttributes(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetClassName"]/*' />
         /// <devdoc>
         ///     Retrieves the class name for this object.  If null is returned,
         ///     the type name is used.
@@ -498,7 +493,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetClassName(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetComponentName"]/*' />
         /// <devdoc>
         ///     Retrieves the name for this object.  If null is returned,
         ///     the default is used.
@@ -507,7 +501,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetComponentName(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetConverter"]/*' />
         /// <devdoc>
         ///      Retrieves the type converter for this object.
         /// </devdoc>
@@ -515,7 +508,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetConverter(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetDefaultEvent"]/*' />
         /// <devdoc>
         ///     Retrieves the default event.
         /// </devdoc>
@@ -524,7 +516,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
         }
 
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetDefaultProperty"]/*' />
         /// <devdoc>
         ///     Retrieves the default property.
         /// </devdoc>
@@ -532,7 +523,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetDefaultProperty(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetEditor"]/*' />
         /// <devdoc>
         ///      Retrieves the an editor for this object.
         /// </devdoc>
@@ -540,7 +530,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetEditor(baseObject, editorBaseType);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetEvents"]/*' />
         /// <devdoc>
         ///     Retrieves an array of events that the given component instance
         ///     provides.  This may differ from the set of events the class
@@ -551,7 +540,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetEvents(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetEvents1"]/*' />
         /// <devdoc>
         ///     Retrieves an array of events that the given component instance
         ///     provides.  This may differ from the set of events the class
@@ -563,7 +551,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetEvents(baseObject, attributes);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetProperties"]/*' />
         /// <devdoc>
         ///     Retrieves an array of properties that the given component instance
         ///     provides.  This may differ from the set of properties the class
@@ -574,7 +561,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return ((ICustomTypeDescriptor)this).GetProperties(new Attribute[0]);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="ExtendedObjectWrapper.GetProperties1"]/*' />
         /// <devdoc>
         ///     Retrieves an array of properties that the given component instance
         ///     provides.  This may differ from the set of properties the class
@@ -774,7 +760,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             this.filteredProps = new Hashtable();
         }
         
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.FilterProperty"]/*' />
         /// <devdoc>
         ///     Filters the given property with the given member attribute.  We only
         ///     support filtering by adding a single attribute here.
@@ -783,7 +768,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             filteredProps[prop] = attr;
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetAttributes"]/*' />
         /// <devdoc>
         ///     Retrieves an array of member attributes for the given object.
         /// </devdoc>
@@ -791,7 +775,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetAttributes(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetClassName"]/*' />
         /// <devdoc>
         ///     Retrieves the class name for this object.  If null is returned,
         ///     the type name is used.
@@ -800,7 +783,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetClassName(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetComponentName"]/*' />
         /// <devdoc>
         ///     Retrieves the name for this object.  If null is returned,
         ///     the default is used.
@@ -809,7 +791,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetComponentName(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetConverter"]/*' />
         /// <devdoc>
         ///      Retrieves the type converter for this object.
         /// </devdoc>
@@ -817,7 +798,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetConverter(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetDefaultEvent"]/*' />
         /// <devdoc>
         ///     Retrieves the default event.
         /// </devdoc>
@@ -825,7 +805,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return null;
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetDefaultProperty"]/*' />
         /// <devdoc>
         ///     Retrieves the default property.
         /// </devdoc>
@@ -833,7 +812,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetDefaultProperty(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetEditor"]/*' />
         /// <devdoc>
         ///      Retrieves the an editor for this object.
         /// </devdoc>
@@ -841,7 +819,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetEditor(baseObject, editorBaseType);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetEvents"]/*' />
         /// <devdoc>
         ///     Retrieves an array of events that the given component instance
         ///     provides.  This may differ from the set of events the class
@@ -852,7 +829,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetEvents(baseObject);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetEvents1"]/*' />
         /// <devdoc>
         ///     Retrieves an array of events that the given component instance
         ///     provides.  This may differ from the set of events the class
@@ -864,7 +840,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetEvents(baseObject, attributes);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetProperties"]/*' />
         /// <devdoc>
         ///     Retrieves an array of properties that the given component instance
         ///     provides.  This may differ from the set of properties the class
@@ -875,7 +850,6 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return ((ICustomTypeDescriptor)this).GetProperties(new Attribute[0]);
         }
 
-        /// <include file='doc\AutomationExtenderManager.uex' path='docs/doc[@for="FilteredObjectWrapper.GetProperties1"]/*' />
         /// <devdoc>
         ///     Retrieves an array of properties that the given component instance
         ///     provides.  This may differ from the set of properties the class

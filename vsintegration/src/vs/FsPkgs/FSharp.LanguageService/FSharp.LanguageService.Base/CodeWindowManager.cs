@@ -14,7 +14,6 @@ using IServiceProvider = System.IServiceProvider;
 using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
-    /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager"]/*' />
     /// <summary>
     /// CodeWindowManager provides a default implementation of the VSIP interface IVsCodeWindowManager
     /// and manages the LanguageService, Source, ViewFilter, and DocumentProperties objects associated
@@ -42,7 +41,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         DocumentProperties properties;
 #endif
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.CodeWindowManager"]/*' />
         /// <summary>
         /// The CodeWindowManager is constructed by the base LanguageService class when VS calls
         /// the IVsLanguageInfo.GetCodeWindowManager method.  You can override CreateCodeWindowManager
@@ -58,14 +56,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 #endif
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.Finalize"]/*' />
         ~CodeWindowManager() {
 #if	LANGTRACE
             Trace.WriteLine("~CodeWindowManager");
 #endif
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.Close"]/*' />
         /// <summary>Closes all view filters, and the document properties window</summary>
         internal void Close() {
 #if	LANGTRACE
@@ -93,17 +89,14 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.LanguageService;"]/*' />
         /// <summary>Returns the LanguageService object that created this code window manager</summary>
         internal LanguageService LanguageService {
             get { return this.service; }
         }
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.Source;"]/*' />
         /// <summary>returns the Source object associated with the IVsTextLines buffer for this code window</summary>
         internal ISource Source {
             get { return this.source; }
         }
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.GetFilter;"]/*' />
         /// <summary>
         /// Returns the ViewFilter for the given view or null if no matching filter is found.
         /// </summary>
@@ -118,7 +111,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
 #if DOCUMENT_PROPERTIES
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.Properties;"]/*' />
         /// <summary>Returns the DocumentProperties, if any.  You can update this property if you want to 
         /// change the document properties on the fly.</summary>
         internal DocumentProperties Properties {
@@ -132,18 +124,15 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 #endif
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.DropDownHelper"]/*' />
         /// <summary>Return the optional TypeAndMemberDropdownBars object for the drop down combos</summary>
         internal TypeAndMemberDropdownBars DropDownHelper {
             get { return this.dropDownHelper; }
         }
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.CodeWindow"]/*' />
         /// <summary>Return the IVsCodeWindow associated with this code window manager.</summary>
         internal IVsCodeWindow CodeWindow {
             get { return this.codeWindow; }
         }
       
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.AddAdornments"]/*' />
         /// <summary>Install the optional TypeAndMemberDropdownBars, and primary and secondary view filters</summary>
         public virtual int AddAdornments() {
 #if	LANGTRACE
@@ -181,7 +170,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.RemoveAdornments"]/*' />
         /// <summary>Remove drop down combos, view filters, and notify the LanguageService that the Source and
         /// CodeWindowManager is now closed</summary>
         public virtual int RemoveAdornments() {
@@ -211,7 +199,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.OnNewView"]/*' />
         /// <summary>Install a new view filter for the given view. This method calls your
         /// CreateViewFilter method.</summary>
         public virtual int OnNewView(IVsTextView newView) {
@@ -223,11 +210,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.OnKillFocus"]/*' />
         public virtual void OnKillFocus(IVsTextView textView) {
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.OnSetFocus"]/*' />
         /// <summary>Refresh the document properties</summary>
         public virtual void OnSetFocus(IVsTextView textView) {
 #if DOCUMENT_PROPERTIES
@@ -241,7 +226,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
 
 
-    /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars"]/*' />
     /// <summary>
     /// Represents the two drop down bars on the top of a text editor window that allow 
     /// types and type members to be selected by name.
@@ -272,14 +256,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         const int DropClasses = 0;
         const int DropMethods = 1;
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.TypeAndMemberDropdownBars"]/*' />
         protected TypeAndMemberDropdownBars(LanguageService languageService) {
             this.languageService = languageService;
             this.dropDownTypes = new ArrayList();
             this.dropDownMembers = new ArrayList();
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.Done"]/*' />
         public void Done() { //TODO: use IDisposable pattern
             if (this.imageList != null) {
                 imageList.Dispose();
@@ -299,7 +281,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
 
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.OnSynchronizeDropdowns"]/*' />
         /// <summary>
         /// This method is called to update the drop down bars to match the current contents of the text editor window. 
         /// It is called during OnIdle when the caret position changes.  You can provide new drop down members here.
@@ -318,7 +299,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
 
         // IVsDropdownBarClient methods
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.GetComboAttributes"]/*' />
         public virtual int GetComboAttributes(int combo, out uint entries, out uint entryType, out IntPtr iList) {
             entries = 0;
             entryType = 0;
@@ -339,7 +319,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             HasImage = 4
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.GetComboTipText"]/*' />
         public virtual int GetComboTipText(int combo, out string text) {
             if (combo == TypeAndMemberDropdownBars.DropClasses)
                 text = SR.GetString(SR.ComboTypesTip);
@@ -348,7 +327,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.GetEntryAttributes"]/*' />
         public virtual int GetEntryAttributes(int combo, int entry, out uint fontAttrs) {
             fontAttrs = (uint)DROPDOWNFONTATTR.FONTATTR_PLAIN;
             DropDownMember member = GetMember(combo, entry);
@@ -358,7 +336,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.GetEntryImage"]/*' />
         public virtual int GetEntryImage(int combo, int entry, out int imgIndex) {
             // this happens during drawing and has to be fast 
             imgIndex = -1;
@@ -369,7 +346,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.GetEntryText"]/*' />
         public virtual int GetEntryText(int combo, int entry, out string text) {
             text = null;
             DropDownMember member = GetMember(combo, entry);
@@ -379,12 +355,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.OnComboGetFocus"]/*' />
         public virtual int OnComboGetFocus(int combo) {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.GetMember"]/*' />
         public DropDownMember GetMember(int combo, int entry) {
             if (combo == TypeAndMemberDropdownBars.DropClasses) {
                 if (this.dropDownTypes != null && entry >= 0 && entry < this.dropDownTypes.Count)
@@ -396,7 +370,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return null;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.OnItemChosen"]/*' />
         public virtual int OnItemChosen(int combo, int entry) {
             DropDownMember member = GetMember(combo, entry);
             if (!Object.ReferenceEquals(member,null)) {
@@ -415,11 +388,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.SetFocus"]/*' />
         [DllImport("user32.dll")]
         static extern void SetFocus(IntPtr hwnd);
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="TypeAndMemberDropdownBars.OnItemSelected"]/*' />
         public int OnItemSelected(int combo, int index) {
             //nop
             return NativeMethods.S_OK;
@@ -431,7 +402,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
     }
 
-    /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember"]/*' />
     internal class DropDownMember : IComparable {
 
         private string label;
@@ -439,7 +409,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         private int glyph;
         private DROPDOWNFONTATTR fontAttr;
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.Label;"]/*' />
         public string Label {
             get {
                 return this.label;
@@ -449,7 +418,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.Span;"]/*' />
         public TextSpan Span {
             get {
                 return this.span;
@@ -458,7 +426,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 this.span = value;
             }
         }
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.Glyph;"]/*' />
         public int Glyph {
             get {
                 return this.glyph;
@@ -467,7 +434,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 this.glyph = value;
             }
         }
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.FontAttr;"]/*' />
         public DROPDOWNFONTATTR FontAttr {
             get {
                 return this.fontAttr;
@@ -477,7 +443,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.DropDownMember"]/*' />
         public DropDownMember(string label, TextSpan span, int glyph, DROPDOWNFONTATTR fontAttribute) {
             if (label == null) {
                 throw new ArgumentNullException("label");
@@ -488,14 +453,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.FontAttr = fontAttribute;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.CompareTo"]/*' />
         public int CompareTo(object obj) {
             // if this overload is used then it assumes a case-sensitive current culture comparison
             // which allows for case-senstive languages to work
             return CompareTo(obj, StringComparison.CurrentCulture);
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.CompareTo"]/*' />
         public int CompareTo(object obj, StringComparison stringComparison)
         {
             if (obj is DropDownMember)
@@ -506,7 +469,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         // Omitting Equals violates FxCop rule: IComparableImplementationsOverrideEquals.
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.Equals"]/*' />
         public override bool Equals(Object obj) {
             if (!(obj is DropDownMember))
                 return false;
@@ -514,7 +476,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         // Omitting getHashCode violates FxCop rule: EqualsOverridesRequireGetHashCodeOverride.
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DropDownMember.GetHashCode"]/*' />
         public override int GetHashCode() {
             return this.Label.GetHashCode();
         }
