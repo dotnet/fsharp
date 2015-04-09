@@ -5111,12 +5111,10 @@ and TcExprOfUnknownTypeThen cenv env tpenv expr delayed =
       try
         TcExprThen cenv exprty env tpenv expr delayed
       with e -> 
-
-        // Error recovery - return some rubbish expression, but replace/annotate 
-        // the type of the current expression with a type variable that indicates an error 
+        let m = expr.Range
         errorRecovery e m 
-        solveTypAsError cenv env.DisplayEnv m ty
-        mkThrow m ty (mkOne cenv.g m), tpenv
+        solveTypAsError cenv env.DisplayEnv m exprty
+        mkThrow m exprty (mkOne cenv.g m), tpenv
     expr',exprty,tpenv
 
 /// This is used to typecheck legitimate 'main body of constructor' expressions 
