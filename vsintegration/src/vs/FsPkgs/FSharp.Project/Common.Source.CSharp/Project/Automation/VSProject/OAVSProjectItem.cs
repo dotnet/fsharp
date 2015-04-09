@@ -55,9 +55,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
         public virtual void RunCustomTool()
         {
-#if SINGLE_FILE_GENERATOR
-            this.FileNode.RunGenerator();
-#endif
         }
 
         #endregion
