@@ -131,7 +131,6 @@
     <Compile Include="FileChangeManager.cs" />
     <Compile Include="FileDocumentManager.cs" />
     <Compile Include="FileNode.cs" />
-    <Compile Include="DependentFileNode.cs" />
     <Compile Include="FolderNode.cs" />
     <Compile Include="GlobalPropertyHandler.cs" />
     <Compile Include="GlobalSuppressions.cs" />

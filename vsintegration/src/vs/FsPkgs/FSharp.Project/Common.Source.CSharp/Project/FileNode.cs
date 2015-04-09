@@ -427,12 +427,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             string oldrelPath = this.ItemNode.GetMetadata(ProjectFileConstants.Include);
 
             RenameDocument(oldName, newName);
-#if UNUSED_DEPENDENT_FILES
-                                if (this is DependentFileNode)
-                                {
-                                        OnInvalidateItems(this.Parent);
-                                }
-#endif
+
             // Return S_FALSE if the hierarchy item id has changed.  This forces VS to flush the stale
             // hierarchy item id.
             if (returnValue == (int)VSConstants.S_OK || returnValue == (int)VSConstants.S_FALSE || returnValue == VSConstants.OLE_E_PROMPTSAVECANCELLED)

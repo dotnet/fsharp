@@ -2278,52 +2278,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
         }
 
-#if UNUSED_DEPENDENT_FILES
-        /// <summary>
-        /// This add methos adds the "key" item to the hierarchy, potentially adding other subitems in the process
-        /// This method may recurse if the parent is an other subitem
-        /// 
-        /// </summary>
-        /// <param name="subitems">List of subitems not yet added to the hierarchy</param>
-        /// <param name="key">Key to retrieve the target item from the subitems list</param>
-        /// <returns>Newly added node</returns>
-        /// <remarks>If the parent node was found we add the dependent item to it otherwise we add the item ignoring the "DependentUpon" metatdata</remarks>
-        public /*protected, but public for FSharp.Project.dll*/ virtual HierarchyNode AddDependentFileNode(IDictionary<String, Microsoft.Build.Evaluation.ProjectItem> subitems, string key)
-        {
-            Microsoft.Build.Evaluation.ProjectItem item = subitems[key];
-            subitems.Remove(key);
-
-            HierarchyNode newNode;
-            HierarchyNode parent = null;
-
-            string dependentOf = MSBuildItem.GetMetadataValue(item, ProjectFileConstants.DependentUpon);
-            Debug.Assert(String.Compare(dependentOf, key, StringComparison.OrdinalIgnoreCase) != 0, "File dependent upon itself is not valid. Ignoring the DependentUpon metadata");
-            if (subitems.ContainsKey(dependentOf))
-            {
-                // The parent item is an other subitem, so recurse into this method to add the parent first
-                parent = AddDependentFileNode(subitems, dependentOf);
-            }
-            else
-            {
-                // See if the parent node already exist in the hierarchy
-                uint parentItemID;
-                string path = Path.Combine(this.ProjectFolder, dependentOf);
-                ErrorHandler.ThrowOnFailure(this.ParseCanonicalName(path, out parentItemID));
-                if (parentItemID != 0)
-                    parent = this.NodeFromItemId(parentItemID);
-                Debug.Assert(parent != null, "File dependent upon a non existing item or circular dependency. Ignoring the DependentUpon metadata");
-            }
-
-            // If the parent node was found we add the dependent item to it otherwise we add the item ignoring the "DependentUpon" metatdata
-            if (parent != null)
-                newNode = this.AddDependentFileNodeToNode(item, parent);
-            else
-                newNode = this.AddIndependentFileNode(item);
-
-            return newNode;
-        }
-#endif
-
         /// <summary>
         /// This is called from the main thread before the background build starts.
         ///  cleanBuild is not part of the vsopts, but passed down as the callpath is differently
@@ -2777,29 +2731,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             ProjectElement item = this.AddFileToMsBuild(file);
             return this.CreateFileNode(item, newItemId);
         }
-
-#if UNUSED_DEPENDENT_FILES
-        /// <summary>
-        /// Create dependent file node based on an msbuild item
-        /// </summary>
-        /// <param name="item">msbuild item</param>
-        /// <returns>dependent file node</returns>
-        public virtual DependentFileNode CreateDependentFileNode(ProjectElement item)
-        {
-            return new DependentFileNode(this, item);
-        }
-
-        /// <summary>
-        /// Create a dependent file node based on a string.
-        /// </summary>
-        /// <param name="file">filename of the new dependent file node</param>
-        /// <returns>Dependent node added</returns>
-        public virtual DependentFileNode CreateDependentFileNode(string file)
-        {
-            ProjectElement item = this.AddFileToMsBuild(file);
-            return this.CreateDependentFileNode(item);
-        }
-#endif
 
         /// <summary>
         /// Return an absolute path that is normalized (e.g. no ".." portions)
@@ -3970,28 +3901,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private HierarchyNode AddNewFileNodeToHierarchyCore(HierarchyNode parentNode, string fileName, uint? newItemId = null)
         {
-            HierarchyNode child;
-
-#if UNUSED_DEPENDENT_FILES
-            // In the case of subitem, we want to create dependent file node
-            // and set the DependentUpon property
-            if (this.canFileNodesHaveChilds && (parentNode is FileNode || parentNode is DependentFileNode))
-            {
-                child = this.CreateDependentFileNode(fileName);
-                child.ItemNode.SetMetadata(ProjectFileConstants.DependentUpon, parentNode.ItemNode.GetMetadata(ProjectFileConstants.Include));
-
-                // Make sure to set the HasNameRelation flag on the dependent node if it is related to the parent by name
-                if (!child.HasParentNodeNameRelation && string.Compare(child.GetRelationalName(), parentNode.GetRelationalName(), StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    child.HasParentNodeNameRelation = true;
-                }
-            }
-            else
-#endif
-            {
-                //Create and add new filenode to the project
-                child = this.CreateFileNode(fileName, newItemId);
-            }
+            //Create and add new filenode to the project
+            HierarchyNode child = this.CreateFileNode(fileName, newItemId);
 
             parentNode.AddChild(child);
 
@@ -4247,34 +4158,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     subitems.Add(MSBuildItem.GetEvaluatedInclude(item), item);
                 }
             }
-
-#if UNUSED_DEPENDENT_FILES
-            // Now process the dependent items.
-            if (this.CanFileNodesHaveChilds)
-            {
-                ProcessDependentFileNodes(subitemsKeys, subitems);
-            }
-#endif
         }
-
-#if UNUSED_DEPENDENT_FILES
-        /// <summary>
-        /// Processes dependent filenodes from list of subitems. Multi level supported, but not circular dependencies.
-        /// </summary>
-        /// <param name="subitemsKeys">List of sub item keys </param>
-        /// <param name="subitems"></param>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void ProcessDependentFileNodes(List<String> subitemsKeys, Dictionary<String, Microsoft.Build.Evaluation.ProjectItem> subitems)
-        {
-            foreach (string key in subitemsKeys)
-            {
-                // A previous pass could have removed the key so make sure it still needs to be added
-                if (!subitems.ContainsKey(key))
-                    continue;
-
-                AddDependentFileNode(subitems, key);
-            }
-        }
-#endif
 
         /// <summary>
         /// For flavored projects which implement IPersistXMLFragment, load the information now
@@ -6506,28 +6390,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             node.SetIsLinkedFile(hasLink);
             return node;
         }
-
-#if UNUSED_DEPENDENT_FILES
-        /// <summary>
-        /// Add a dependent file node to the hierarchy
-        /// </summary>
-        /// <param name="item">msbuild item to add</param>
-        /// <param name="parentNode">Parent Node</param>
-        /// <returns>Added node</returns>
-        private HierarchyNode AddDependentFileNodeToNode(Microsoft.Build.Evaluation.ProjectItem item, HierarchyNode parentNode)
-        {
-            FileNode node = this.CreateDependentFileNode(new ProjectElement(this, item, false));
-            parentNode.AddChild(node);
-            
-            // Make sure to set the HasNameRelation flag on the dependent node if it is related to the parent by name
-            if (!node.HasParentNodeNameRelation && string.Compare(node.GetRelationalName(), parentNode.GetRelationalName(), StringComparison.OrdinalIgnoreCase) == 0)
-            {
-                node.HasParentNodeNameRelation = true;
-            }
-
-            return node;
-        }
-#endif
 
         /// <summary>
         /// Add a file node to the hierarchy

@@ -1262,16 +1262,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
                 (newNode :> LinkedFileNode)
 
-#if UNUSED_DEPENDENT_FILES
-            override x.CreateDependentFileNode(item:ProjectElement ) =
-                let node = base.CreateDependentFileNode(item)
-                if (null <> node) then 
-                    let includ = item.GetMetadata(ProjectFileConstants.Include)
-                    if (FSharpProjectNode.IsCompilingFSharpFile(includ)) then 
-                        node.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
-                node
-#endif
-
             /// Creates the format list for the open file dialog
             /// <param name="formatlist">The formatlist to return</param>
             override x.GetFormatList(formatlist:byref<string> ) =

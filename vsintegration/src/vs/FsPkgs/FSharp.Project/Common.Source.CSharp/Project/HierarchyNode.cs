@@ -2188,11 +2188,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             files.Add(this.GetMkDocument());
 
-#if UNUSED_DEPENDENT_FILES
-            tagVsSccFilesFlags flagsToAdd = (this.firstChild != null && (this.firstChild is DependentFileNode)) ? tagVsSccFilesFlags.SFF_HasSpecialFiles : tagVsSccFilesFlags.SFF_NoFlags;
-#else
             tagVsSccFilesFlags flagsToAdd = tagVsSccFilesFlags.SFF_NoFlags;
-#endif
 
             flags.Add(flagsToAdd);
         }
