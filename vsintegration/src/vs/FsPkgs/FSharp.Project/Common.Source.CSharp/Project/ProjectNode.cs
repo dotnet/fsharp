@@ -657,13 +657,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private Microsoft.Build.Framework.ILogger myDebugLogger;
         private static readonly System.Runtime.Versioning.FrameworkName DefaultTargetFrameworkMoniker = new System.Runtime.Versioning.FrameworkName(".NETFramework", new Version(4, 0));
 
-#if UNUSED
-        /// <summary>
-        /// Token processor used by the project sample.
-        /// </summary>
-        private TokenProcessor tokenProcessor = null;
-#endif
-
         /// <summary>
         /// Member to store output base relative path. Used by OutputBaseRelativePath property
         /// </summary>
@@ -981,24 +974,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-#if UNUSED
-        /// <summary>
-        /// Get and set the Token processor.
-        /// </summary>
-        public TokenProcessor FileTemplateProcessor
-        {
-            get
-            {
-                if (tokenProcessor == null)
-                    tokenProcessor = new TokenProcessor();
-                return tokenProcessor;
-            }
-            set
-            {
-                tokenProcessor = value;
-            }
-        }
-#endif
         public IVsHierarchy InteropSafeIVsHierarchy { get; protected set; }
         public IVsUIHierarchy InteropSafeIVsUIHierarchy { get; protected set; }
         public IVsProject InteropSafeIVsProject { get; protected set; }

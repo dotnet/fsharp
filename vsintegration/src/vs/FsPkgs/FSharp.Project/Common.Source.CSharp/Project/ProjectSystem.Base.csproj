@@ -83,8 +83,6 @@
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="..\RegistrationAttributes\WebSiteProjectAttribute.cs" />
-    <Compile Include="..\RegistrationAttributes\WebSiteProjectRelatedFilesAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryTemplateMappingAttribute.cs" />
@@ -179,7 +177,6 @@
     <Compile Include="StructuresEnums.cs" />
     <Compile Include="SuspendFileChanges.cs" />
     <Compile Include="Tracing.cs" />
-    <Compile Include="TokenProcessor.cs" />
     <Compile Include="TrackDocumentsHelper.cs" />
     <Compile Include="TypeConverters.cs" />
     <Compile Include="Url.cs" />
