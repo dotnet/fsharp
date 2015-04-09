@@ -2326,9 +2326,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 parent.onChildAdded(parent, args);
             }
 
-            var foo = this.projectMgr ?? this;
+            var root = this.projectMgr ?? this;
 
-            if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
+            if (root == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
                 return;
             }
@@ -2341,7 +2341,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             HierarchyNode prev = child.PreviousSibling;
             uint prevId = (prev != null) ? prev.hierarchyId : VSConstants.VSITEMID_NIL;
-            foreach (IVsHierarchyEvents sink in foo.hierarchyEventSinks)
+            foreach (IVsHierarchyEvents sink in root.hierarchyEventSinks)
             {
                 int result = sink.OnItemAdded(parent.hierarchyId, prevId, child.hierarchyId);
                 if (ErrorHandler.Failed(result) && result != VSConstants.E_NOTIMPL)
@@ -2355,9 +2355,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public void OnItemDeleted()
         {
-            var foo = this.projectMgr ?? this;
+            var root = this.projectMgr ?? this;
 
-            if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
+            if (root == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
                 return;
             }
@@ -2367,14 +2367,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.projectMgr.ExtensibilityEventsHelper.FireItemRemoved(this);
             }
 
-            if (foo.hierarchyEventSinks.Count > 0)
+            if (root.hierarchyEventSinks.Count > 0)
             {
                 // Note that in some cases (deletion of project node for example), an Advise
                 // may be removed while we are iterating over it. To get around this problem we
                 // take a snapshot of the advise list and walk that.
                 List<IVsHierarchyEvents> clonedSink = new List<IVsHierarchyEvents>();
 
-                foreach (IVsHierarchyEvents anEvent in foo.hierarchyEventSinks)
+                foreach (IVsHierarchyEvents anEvent in root.hierarchyEventSinks)
                 {
                     clonedSink.Add(anEvent);
                 }
@@ -2397,14 +2397,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new ArgumentNullException("parent");
             }
 
-            var foo = this.projectMgr ?? this;
+            var root = this.projectMgr ?? this;
 
-            if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
+            if (root == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
                 return;
             }
 
-            foreach (IVsHierarchyEvents sink in foo.hierarchyEventSinks)
+            foreach (IVsHierarchyEvents sink in root.hierarchyEventSinks)
             {
                 int result = sink.OnItemsAppended(parent.hierarchyId);
 
@@ -2424,14 +2424,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new ArgumentNullException("node");
             }
 
-            var foo = this.projectMgr ?? this;
+            var root = this.projectMgr ?? this;
             
-            if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
+            if (root == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
                 return;
             }
 
-            foreach (IVsHierarchyEvents sink in foo.hierarchyEventSinks)
+            foreach (IVsHierarchyEvents sink in root.hierarchyEventSinks)
             {
                 int result = sink.OnPropertyChanged(node.hierarchyId, propid, flags);
 
@@ -2450,14 +2450,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new ArgumentNullException("parent");
             }
 
-            var foo = this.projectMgr ?? this;
+            var root = this.projectMgr ?? this;
 
-            if (foo == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
+            if (root == this.projectMgr && (this.projectMgr.EventTriggeringFlag & ProjectNode.EventTriggering.DoNotTriggerHierarchyEvents) != 0)
             {
                 return;
             }
 
-            foreach (IVsHierarchyEvents sink in foo.hierarchyEventSinks)
+            foreach (IVsHierarchyEvents sink in root.hierarchyEventSinks)
             {
                 int result = sink.OnInvalidateItems(parent.hierarchyId);
 
