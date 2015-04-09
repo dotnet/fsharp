@@ -532,7 +532,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         return VSConstants.S_OK;
 
                     case VsCommands.ViewCode:
-                    //case VsCommands.Delete: goto case VsCommands.OpenWith;
                     case VsCommands.Open:
                     case VsCommands.OpenWith:
                         result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;

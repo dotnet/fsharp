@@ -562,7 +562,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private Microsoft.Build.Evaluation.Project buildProject;
 
         // TODO cache an instance for perf; but be sure not to be stale (correctness)
-        //private ProjectInstance projectInstance;
         private BuildActionConverter buildActionConverter = new BuildActionConverter();
 
         private ConfigProvider configProvider;

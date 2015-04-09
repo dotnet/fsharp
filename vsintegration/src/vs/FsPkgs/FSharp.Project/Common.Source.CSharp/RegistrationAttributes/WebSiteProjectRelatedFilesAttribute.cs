@@ -30,7 +30,6 @@ namespace Microsoft.VisualStudio.Shell
     {
         private const string webSiteProjectGuid = "{E24C65DC-7377-472B-9ABA-BC803B73C61A}";
 
-        //private Type packageType;
         private string primaryFileExtension;
         private string relatedFileExtension;
         

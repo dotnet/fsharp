@@ -48,7 +48,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IVsSetTargetFrameworkWorkerCallback,
         IVsProjectResources,
         IDisposable
-    //, IVsBuildStatusCallback 
     {
 
         // for good debugger experience

@@ -515,7 +515,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 int IEnumSTATDATA.Next(uint celt, STATDATA[] d, out uint fetched)
                 {
                         uint rc = 0;
-                        //uint size = (fetched != null) ? fetched[0] : 0;
                         for (uint i = 0; i < celt; i++)
                         {
                                 if (e.MoveNext())
@@ -574,7 +573,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 int IEnumFORMATETC.Next(uint celt, FORMATETC[] d, uint[] fetched)
                 {
                         uint rc = 0;
-                        //uint size = (fetched != null) ? fetched[0] : 0;
                         for (uint i = 0; i < celt; i++)
                         {
                                 if (e.MoveNext())
