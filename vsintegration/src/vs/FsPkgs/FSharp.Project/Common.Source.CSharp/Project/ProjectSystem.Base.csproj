@@ -171,7 +171,6 @@
     <Compile Include="Tracing.cs" />
     <Compile Include="TrackDocumentsHelper.cs" />
     <Compile Include="TypeConverters.cs" />
-    <Compile Include="Url.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="VsCommands.cs" />
     <Compile Include="VSMDCodeDomProvider.cs" />
