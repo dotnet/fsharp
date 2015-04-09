@@ -119,7 +119,7 @@
       <Button guid ="guidInteractive" id ="cmdidDebugSelection" priority ="0x106" type ="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
         <Strings>
-          <ButtonText>Debug in F# Interactive</ButtonText>
+          <ButtonText>Debug In Interactive</ButtonText>
           <CommandName>Interactive.Debug.Selection.Context</CommandName>
         </Strings>
        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
