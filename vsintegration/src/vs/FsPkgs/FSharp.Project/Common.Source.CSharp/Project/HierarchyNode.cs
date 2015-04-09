@@ -3383,83 +3383,73 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private int CreateResourceDocDataHelper(FileNode f, uint itemidResource, out IVsPersistDocData persistDocData, out IVsTextLines textLines)
         {
-            int hr = VSConstants.E_FAIL;
-
-            IVsTextLines buffer;
             Type textLinesType = typeof(IVsTextLines);
             Guid riid = textLinesType.GUID;
             Guid clsid = typeof(VsTextBufferClass).GUID;
-            IntPtr docData = IntPtr.Zero;
 
             persistDocData = null;
             textLines = null;
 
-            try
+            var buffer = (IVsTextLines)this.projectMgr.Package.CreateInstance(ref clsid, ref riid, textLinesType);
+
+            if (buffer == null)
             {
-                buffer = (IVsTextLines)this.projectMgr.Package.CreateInstance(ref clsid, ref riid, textLinesType);
-
-                if (buffer == null)
-                {
-                    return VSConstants.E_FAIL;
-                }
-
-                docData = Marshal.GetIUnknownForObject(buffer);
-
-                persistDocData = buffer as IVsPersistDocData;
-
-                if (persistDocData == null)
-                {
-                    return VSConstants.E_FAIL;
-                }
-
-                IObjectWithSite siteObject = persistDocData as IObjectWithSite;
-                IOleServiceProvider site = GetService(typeof(IOleServiceProvider)) as IOleServiceProvider;
-                if (siteObject != null && site != null)
-                {
-                    siteObject.SetSite(site);
-                }
-                else
-                {
-                    // We need to set the site, and if we cannot, we need to fail
-                    Debug.Assert(false, "Cannot set site on VsTextBuffer!");
-                    return VSConstants.E_FAIL;
-                }
-
-                IVsRunningDocumentTable rdt = this.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
-                if (rdt == null)
-                {
-                    Debug.Assert(false, "Cannot get RDT?");
-                    return VSConstants.E_FAIL;
-                }
-
-                string path = f.Url;
-                uint cookie = 0;
-
-                hr = rdt.RegisterAndLockDocument(
-                    (uint)(_VSRDTFLAGS.RDT_ReadLock | _VSRDTFLAGS.RDT_EditLock),
-                    path,
-                    this,
-                    itemidResource,
-                    docData,
-                    out cookie);
-
-                if (!ErrorHandler.Succeeded(hr))
-                {
-                    return hr;
-                }
-
-                hr = persistDocData.LoadDocData(path);
-
-                if (!ErrorHandler.Succeeded(hr))
-                {
-                    return hr;
-                }
-
-                textLines = buffer;
+                return VSConstants.E_FAIL;
             }
-            finally
+
+            var docData = Marshal.GetIUnknownForObject(buffer);
+
+            persistDocData = buffer as IVsPersistDocData;
+
+            if (persistDocData == null)
             {
+                return VSConstants.E_FAIL;
             }
+
+            var siteObject = persistDocData as IObjectWithSite;
+            var site = GetService(typeof(IOleServiceProvider)) as IOleServiceProvider;
+            if (siteObject != null && site != null)
+            {
+                siteObject.SetSite(site);
+            }
+            else
+            {
+                // We need to set the site, and if we cannot, we need to fail
+                Debug.Assert(false, "Cannot set site on VsTextBuffer!");
+                return VSConstants.E_FAIL;
+            }
+
+            var rdt = this.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+            if (rdt == null)
+            {
+                Debug.Assert(false, "Cannot get RDT?");
+                return VSConstants.E_FAIL;
+            }
+
+            string path = f.Url;
+            uint cookie;
+
+            var hr = rdt.RegisterAndLockDocument(
+                (uint)(_VSRDTFLAGS.RDT_ReadLock | _VSRDTFLAGS.RDT_EditLock),
+                path,
+                this,
+                itemidResource,
+                docData,
+                out cookie);
+
+            if (!ErrorHandler.Succeeded(hr))
+            {
+                return hr;
+            }
+
+            hr = persistDocData.LoadDocData(path);
+
+            if (!ErrorHandler.Succeeded(hr))
+            {
+                return hr;
+            }
+
+            textLines = buffer;
 
             return hr;
         }
