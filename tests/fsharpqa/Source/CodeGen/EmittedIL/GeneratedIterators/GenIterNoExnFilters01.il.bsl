@@ -15,7 +15,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 2:0:0:0
 }
-.assembly GenIter03
+.assembly GenIterNoExnFilters01
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -27,31 +27,31 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.GenIter03
+.mresource public FSharpSignatureData.GenIterNoExnFilters01
 {
-  // Offset: 0x00000000 Length: 0x000001DA
+  // Offset: 0x00000000 Length: 0x000001D9
 }
-.mresource public FSharpOptimizationData.GenIter03
+.mresource public FSharpOptimizationData.GenIterNoExnFilters01
 {
-  // Offset: 0x000001E0 Length: 0x0000007B
+  // Offset: 0x000001E0 Length: 0x0000007A
 }
-.module GenIter03.exe
-// MVID: {4D94B1BB-F77C-DC98-A745-0383BBB1944D}
+.module GenIterNoExnFilters01.exe
+// MVID: {4D94B058-F836-DC98-A745-038358B0944D}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x005A0000
+// Image base: 0x00580000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed GenIter03
+.class public abstract auto ansi sealed GenIterNoExnFilters01
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar sealed nested assembly beforefieldinit specialname squaresOfOneToTenC@3
+  .class auto autochar sealed nested assembly beforefieldinit specialname squaresOfOneToTen@4
          extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
@@ -78,30 +78,30 @@
       .maxstack  6
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
-      IL_0002:  stfld      int32 GenIter03/squaresOfOneToTenC@3::x
+      IL_0002:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::x
       IL_0007:  ldarg.0
       IL_0008:  ldarg.2
-      IL_0009:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter03/squaresOfOneToTenC@3::'enum'
+      IL_0009:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIterNoExnFilters01/squaresOfOneToTen@4::'enum'
       IL_000e:  ldarg.0
       IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 GenIter03/squaresOfOneToTenC@3::pc
+      IL_0010:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
       IL_0015:  ldarg.0
       IL_0016:  ldarg.s    current
-      IL_0018:  stfld      int32 GenIter03/squaresOfOneToTenC@3::current
+      IL_0018:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::current
       IL_001d:  ldarg.0
       IL_001e:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
       IL_0023:  ret
-    } // end of method squaresOfOneToTenC@3::.ctor
+    } // end of method squaresOfOneToTen@4::.ctor
 
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       183 (0xb7)
+      // Code size       182 (0xb6)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 100001,100001 : 0,0 
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 GenIter03/squaresOfOneToTenC@3::pc
+      IL_0001:  ldfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
@@ -119,87 +119,87 @@
       .line 100001,100001 : 0,0 
       .line 100001,100001 : 0,0 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008d
+      IL_0022:  br.s       IL_008c
 
       .line 100001,100001 : 0,0 
       .line 100001,100001 : 0,0 
       IL_0024:  nop
-      IL_0025:  br.s       IL_0083
+      IL_0025:  br.s       IL_0082
 
       .line 100001,100001 : 0,0 
       .line 100001,100001 : 0,0 
       IL_0027:  nop
-      IL_0028:  br         IL_00ae
+      IL_0028:  br         IL_00ad
 
       .line 100001,100001 : 0,0 
       .line 100001,100001 : 0,0 
       IL_002d:  nop
-      .line 3,3 : 30,49 
+      .line 4,5 : 7,23 
       IL_002e:  ldarg.0
       IL_002f:  ldc.i4.0
       IL_0030:  ldc.i4.1
-      IL_0031:  ldc.i4.s   10
-      IL_0033:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
+      IL_0031:  ldc.i4.2
+      IL_0032:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> [FSharp.Core]Microsoft.FSharp.Core.Operators/OperatorIntrinsics::RangeInt32(int32,
                                                                                                                                                                        int32,
                                                                                                                                                                        int32)
-      IL_0038:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
-      IL_003d:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter03/squaresOfOneToTenC@3::'enum'
-      IL_0042:  ldarg.0
-      IL_0043:  ldc.i4.1
-      IL_0044:  stfld      int32 GenIter03/squaresOfOneToTenC@3::pc
-      .line 3,3 : 30,49 
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter03/squaresOfOneToTenC@3::'enum'
-      IL_004f:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0054:  brfalse.s  IL_008d
+      IL_0037:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>::GetEnumerator()
+      IL_003c:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIterNoExnFilters01/squaresOfOneToTen@4::'enum'
+      IL_0041:  ldarg.0
+      IL_0042:  ldc.i4.1
+      IL_0043:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
+      .line 4,5 : 7,23 
+      IL_0048:  ldarg.0
+      IL_0049:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIterNoExnFilters01/squaresOfOneToTen@4::'enum'
+      IL_004e:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0053:  brfalse.s  IL_008c
 
+      IL_0055:  ldarg.0
       IL_0056:  ldarg.0
-      IL_0057:  ldarg.0
-      IL_0058:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter03/squaresOfOneToTenC@3::'enum'
-      IL_005d:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0062:  stfld      int32 GenIter03/squaresOfOneToTenC@3::x
-      IL_0067:  ldarg.0
-      IL_0068:  ldc.i4.2
-      IL_0069:  stfld      int32 GenIter03/squaresOfOneToTenC@3::pc
-      .line 3,3 : 50,55 
+      IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIterNoExnFilters01/squaresOfOneToTen@4::'enum'
+      IL_005c:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_0061:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::x
+      IL_0066:  ldarg.0
+      IL_0067:  ldc.i4.2
+      IL_0068:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
+      .line 5,5 : 18,23 
+      IL_006d:  ldarg.0
       IL_006e:  ldarg.0
-      IL_006f:  ldarg.0
-      IL_0070:  ldfld      int32 GenIter03/squaresOfOneToTenC@3::x
-      IL_0075:  ldarg.0
-      IL_0076:  ldfld      int32 GenIter03/squaresOfOneToTenC@3::x
-      IL_007b:  mul
-      IL_007c:  stfld      int32 GenIter03/squaresOfOneToTenC@3::current
-      IL_0081:  ldc.i4.1
-      IL_0082:  ret
+      IL_006f:  ldfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::x
+      IL_0074:  ldarg.0
+      IL_0075:  ldfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::x
+      IL_007a:  mul
+      IL_007b:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::current
+      IL_0080:  ldc.i4.1
+      IL_0081:  ret
 
-      .line 3,3 : 30,49 
-      IL_0083:  ldarg.0
-      IL_0084:  ldc.i4.0
-      IL_0085:  stfld      int32 GenIter03/squaresOfOneToTenC@3::x
+      .line 4,5 : 7,23 
+      IL_0082:  ldarg.0
+      IL_0083:  ldc.i4.0
+      IL_0084:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::x
       .line 100001,100001 : 0,0 
-      IL_008a:  nop
-      IL_008b:  br.s       IL_0049
+      IL_0089:  nop
+      IL_008a:  br.s       IL_0048
 
-      IL_008d:  ldarg.0
-      IL_008e:  ldc.i4.3
-      IL_008f:  stfld      int32 GenIter03/squaresOfOneToTenC@3::pc
-      .line 3,3 : 30,49 
-      IL_0094:  ldarg.0
-      IL_0095:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter03/squaresOfOneToTenC@3::'enum'
-      IL_009a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_009f:  nop
-      IL_00a0:  ldarg.0
-      IL_00a1:  ldnull
-      IL_00a2:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter03/squaresOfOneToTenC@3::'enum'
-      IL_00a7:  ldarg.0
-      IL_00a8:  ldc.i4.3
-      IL_00a9:  stfld      int32 GenIter03/squaresOfOneToTenC@3::pc
-      IL_00ae:  ldarg.0
-      IL_00af:  ldc.i4.0
-      IL_00b0:  stfld      int32 GenIter03/squaresOfOneToTenC@3::current
-      IL_00b5:  ldc.i4.0
-      IL_00b6:  ret
-    } // end of method squaresOfOneToTenC@3::GenerateNext
+      IL_008c:  ldarg.0
+      IL_008d:  ldc.i4.3
+      IL_008e:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
+      .line 4,5 : 7,23 
+      IL_0093:  ldarg.0
+      IL_0094:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIterNoExnFilters01/squaresOfOneToTen@4::'enum'
+      IL_0099:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_009e:  nop
+      IL_009f:  ldarg.0
+      IL_00a0:  ldnull
+      IL_00a1:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIterNoExnFilters01/squaresOfOneToTen@4::'enum'
+      IL_00a6:  ldarg.0
+      IL_00a7:  ldc.i4.3
+      IL_00a8:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
+      IL_00ad:  ldarg.0
+      IL_00ae:  ldc.i4.0
+      IL_00af:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::current
+      IL_00b4:  ldc.i4.0
+      IL_00b5:  ret
+    } // end of method squaresOfOneToTen@4::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
@@ -213,7 +213,7 @@
       IL_0000:  ldnull
       IL_0001:  stloc.0
       IL_0002:  ldarg.0
-      IL_0003:  ldfld      int32 GenIter03/squaresOfOneToTenC@3::pc
+      IL_0003:  ldfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
       IL_0008:  ldc.i4.3
       IL_0009:  sub
       IL_000a:  switch     ( 
@@ -231,7 +231,7 @@
       .try
       {
         IL_001c:  ldarg.0
-        IL_001d:  ldfld      int32 GenIter03/squaresOfOneToTenC@3::pc
+        IL_001d:  ldfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
         IL_0022:  switch     ( 
                               IL_0039,
                               IL_003b,
@@ -274,19 +274,19 @@
         IL_004e:  nop
         IL_004f:  ldarg.0
         IL_0050:  ldc.i4.3
-        IL_0051:  stfld      int32 GenIter03/squaresOfOneToTenC@3::pc
+        IL_0051:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
         IL_0056:  ldarg.0
-        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIter03/squaresOfOneToTenC@3::'enum'
+        IL_0057:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> GenIterNoExnFilters01/squaresOfOneToTen@4::'enum'
         IL_005c:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
         IL_0061:  nop
         .line 100001,100001 : 0,0 
         IL_0062:  nop
         IL_0063:  ldarg.0
         IL_0064:  ldc.i4.3
-        IL_0065:  stfld      int32 GenIter03/squaresOfOneToTenC@3::pc
+        IL_0065:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
         IL_006a:  ldarg.0
         IL_006b:  ldc.i4.0
-        IL_006c:  stfld      int32 GenIter03/squaresOfOneToTenC@3::current
+        IL_006c:  stfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::current
         IL_0071:  ldnull
         IL_0072:  stloc.1
         IL_0073:  leave.s    IL_0081
@@ -296,7 +296,7 @@
       {
         IL_0075:  castclass  [mscorlib]System.Exception
         IL_007a:  stloc.2
-        .line 3,3 : 30,49 
+        .line 4,5 : 7,23 
         IL_007b:  ldloc.2
         IL_007c:  stloc.0
         IL_007d:  ldnull
@@ -326,7 +326,7 @@
 
       .line 100001,100001 : 0,0 
       IL_0095:  ret
-    } // end of method squaresOfOneToTenC@3::Close
+    } // end of method squaresOfOneToTen@4::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
@@ -335,7 +335,7 @@
       .maxstack  5
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 GenIter03/squaresOfOneToTenC@3::pc
+      IL_0002:  ldfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::pc
       IL_0007:  switch     ( 
                             IL_001e,
                             IL_0020,
@@ -372,7 +372,7 @@
 
       IL_0037:  ldc.i4.0
       IL_0038:  ret
-    } // end of method squaresOfOneToTenC@3::get_CheckClose
+    } // end of method squaresOfOneToTen@4::get_CheckClose
 
     .method public strict virtual instance int32 
             get_LastGenerated() cil managed
@@ -383,9 +383,9 @@
       .maxstack  5
       IL_0000:  nop
       IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 GenIter03/squaresOfOneToTenC@3::current
+      IL_0002:  ldfld      int32 GenIterNoExnFilters01/squaresOfOneToTen@4::current
       IL_0007:  ret
-    } // end of method squaresOfOneToTenC@3::get_LastGenerated
+    } // end of method squaresOfOneToTen@4::get_LastGenerated
 
     .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
             GetFreshEnumerator() cil managed
@@ -399,38 +399,38 @@
       IL_0002:  ldnull
       IL_0003:  ldc.i4.0
       IL_0004:  ldc.i4.0
-      IL_0005:  newobj     instance void GenIter03/squaresOfOneToTenC@3::.ctor(int32,
-                                                                               class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                               int32,
-                                                                               int32)
+      IL_0005:  newobj     instance void GenIterNoExnFilters01/squaresOfOneToTen@4::.ctor(int32,
+                                                                              class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                              int32,
+                                                                              int32)
       IL_000a:  ret
-    } // end of method squaresOfOneToTenC@3::GetFreshEnumerator
+    } // end of method squaresOfOneToTen@4::GetFreshEnumerator
 
-  } // end of class squaresOfOneToTenC@3
+  } // end of class squaresOfOneToTen@4
 
   .method public static class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 
-          squaresOfOneToTenC() cil managed
+          squaresOfOneToTen() cil managed
   {
     // Code size       18 (0x12)
     .maxstack  6
-    .line 3,3 : 28,57 
+    .line 4,5 : 5,25 
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  ldnull
     IL_0003:  ldc.i4.0
     IL_0004:  ldc.i4.0
-    IL_0005:  newobj     instance void GenIter03/squaresOfOneToTenC@3::.ctor(int32,
-                                                                             class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
-                                                                             int32,
-                                                                             int32)
+    IL_0005:  newobj     instance void GenIterNoExnFilters01/squaresOfOneToTen@4::.ctor(int32,
+                                                                            class [mscorlib]System.Collections.Generic.IEnumerator`1<int32>,
+                                                                            int32,
+                                                                            int32)
     IL_000a:  tail.
     IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToList<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0011:  ret
-  } // end of method GenIter03::squaresOfOneToTenC
+  } // end of method GenIterNoExnFilters01::squaresOfOneToTen
 
-} // end of class GenIter03
+} // end of class GenIterNoExnFilters01
 
-.class private abstract auto ansi sealed '<StartupCode$GenIter03>'.$GenIter03
+.class private abstract auto ansi sealed '<StartupCode$GenIterNoExnFilters01>'.$GenIterNoExnFilters01
        extends [mscorlib]System.Object
 {
   .method public static void  main@() cil managed
@@ -440,9 +440,9 @@
     .maxstack  2
     IL_0000:  nop
     IL_0001:  ret
-  } // end of method $GenIter03::main@
+  } // end of method $GenIterNoExnFilters01::main@
 
-} // end of class '<StartupCode$GenIter03>'.$GenIter03
+} // end of class '<StartupCode$GenIterNoExnFilters01>'.$GenIterNoExnFilters01
 
 
 // =============================================================

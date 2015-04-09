@@ -15,7 +15,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 4:4:0:9055
 }
-.assembly Testfunction22h
+.assembly TryWith_FilterBlocks01
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -27,33 +27,33 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.Testfunction22h
+.mresource public FSharpSignatureData.TryWith_FilterBlocks01
 {
-  // Offset: 0x00000000 Length: 0x00000143
+  // Offset: 0x00000000 Length: 0x00000122
 }
-.mresource public FSharpOptimizationData.Testfunction22h
+.mresource public FSharpOptimizationData.TryWith_FilterBlocks01
 {
-  // Offset: 0x00000148 Length: 0x00000056
+  // Offset: 0x00000128 Length: 0x0000005D
 }
-.module Testfunction22h.exe
-// MVID: {550EFC67-0266-39F6-A745-038367FC0E55}
+.module TryWith_FilterBlocks01.exe
+// MVID: {54D7D809-3732-DEEC-A745-038309D8D754}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00310000
+// Image base: 0x005C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed Testfunction22h
+.class public abstract auto ansi sealed TryWith_FilterBlocks01
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-} // end of class Testfunction22h
+} // end of class TryWith_FilterBlocks01
 
-.class private abstract auto ansi sealed '<StartupCode$Testfunction22h>'.$Testfunction22h
+.class private abstract auto ansi sealed '<StartupCode$TryWith_FilterBlocks01>'.$TryWith_FilterBlocks01
        extends [mscorlib]System.Object
 {
   .field static assembly int32 init@
@@ -63,51 +63,93 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       39 (0x27)
-    .maxstack  3
+    // Code size       81 (0x51)
+    .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_0,
              [1] class [mscorlib]System.Exception V_1,
-             [2] class [mscorlib]System.Exception V_2)
+             [2] class [mscorlib]System.Exception e,
+             [3] class [mscorlib]System.Exception V_3,
+             [4] class [mscorlib]System.Exception V_4,
+             [5] class [mscorlib]System.Exception V_5,
+             [6] class [mscorlib]System.Exception V_6)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 1,4 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22h.fs'
+    .line 3,3 : 1,4 
     IL_0000:  nop
     .try
     {
       IL_0001:  nop
-      .line 4,4 : 4,30 ''
-      IL_0002:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0007:  ldnull
-      IL_0008:  stloc.0
-      IL_0009:  leave.s    IL_0024
+      .line 4,4 : 3,5 ''
+      IL_0002:  ldnull
+      IL_0003:  stloc.0
+      IL_0004:  leave.s    IL_004e
 
-      .line 5,5 : 1,5 ''
+      .line 5,5 : 2,6 ''
     }  // end .try
     filter
     {
-      IL_000b:  castclass  [mscorlib]System.Exception
-      IL_0010:  stloc.1
-      IL_0011:  ldc.i4.1
+      IL_0006:  castclass  [mscorlib]System.Exception
+      IL_000b:  stloc.1
+      IL_000c:  ldloc.1
+      IL_000d:  stloc.2
+      IL_000e:  ldloc.2
+      IL_000f:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
+      IL_0014:  ldc.i4.0
+      IL_0015:  ceq
+      IL_0017:  brfalse.s  IL_001b
+
+      IL_0019:  br.s       IL_001d
+
+      IL_001b:  br.s       IL_0023
+
       .line 100001,100001 : 0,0 ''
-      IL_0012:  nop
-      IL_0013:  endfilter
+      IL_001d:  ldloc.1
+      IL_001e:  stloc.3
+      IL_001f:  ldc.i4.1
+      .line 100001,100001 : 0,0 ''
+      IL_0020:  nop
+      IL_0021:  br.s       IL_0025
+
+      .line 7,7 : 5,6 ''
+      IL_0023:  ldc.i4.1
+      .line 100001,100001 : 0,0 ''
+      IL_0024:  nop
+      IL_0025:  endfilter
     }  // end filter
     {  // handler
-      IL_0015:  castclass  [mscorlib]System.Exception
-      IL_001a:  stloc.2
-      .line 6,6 : 11,37 ''
-      IL_001b:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0020:  ldnull
-      IL_0021:  stloc.0
-      IL_0022:  leave.s    IL_0024
+      IL_0027:  castclass  [mscorlib]System.Exception
+      IL_002c:  stloc.s    V_4
+      IL_002e:  ldloc.s    V_4
+      IL_0030:  stloc.s    V_5
+      IL_0032:  ldloc.s    V_5
+      IL_0034:  callvirt   instance int32 [mscorlib]System.Object::GetHashCode()
+      IL_0039:  ldc.i4.0
+      IL_003a:  ceq
+      IL_003c:  brfalse.s  IL_0040
+
+      IL_003e:  br.s       IL_0042
+
+      IL_0040:  br.s       IL_004a
+
+      IL_0042:  ldloc.s    V_4
+      IL_0044:  stloc.s    V_6
+      .line 6,6 : 35,37 ''
+      IL_0046:  ldnull
+      IL_0047:  stloc.0
+      IL_0048:  leave.s    IL_004e
+
+      .line 7,7 : 10,12 ''
+      IL_004a:  ldnull
+      IL_004b:  stloc.0
+      IL_004c:  leave.s    IL_004e
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0024:  ldloc.0
-    IL_0025:  pop
-    IL_0026:  ret
-  } // end of method $Testfunction22h::main@
+    IL_004e:  ldloc.0
+    IL_004f:  pop
+    IL_0050:  ret
+  } // end of method $TryWith_FilterBlocks01::main@
 
-} // end of class '<StartupCode$Testfunction22h>'.$Testfunction22h
+} // end of class '<StartupCode$TryWith_FilterBlocks01>'.$TryWith_FilterBlocks01
 
 
 // =============================================================
