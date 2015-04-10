@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Core.Printf
@@ -2996,7 +2996,7 @@ type PropertyCollector(g,amap,m,typ,optFilter,ad) =
         else
             props.[pinfo] <- pinfo
 
-    member x.Collect(membInfo,vref:ValRef) = 
+    member x.Collect(membInfo:ValMemberInfo,vref:ValRef) = 
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.PropertyGet ->
             let pinfo = FSProp(g,typ,Some vref,None) 
@@ -3124,8 +3124,8 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         infos 
 
     /// Make a reference to a record or class field
-    let MakeRecdFieldInfo g typ tcref fspec = 
-        RecdFieldInfo(argsOfAppTy g typ,mkNestedRecdFieldRef tcref fspec)
+    let MakeRecdFieldInfo g typ (tcref:TyconRef) fspec = 
+        RecdFieldInfo(argsOfAppTy g typ,tcref.NestedRecdFieldRef fspec)
 
     /// Get the F#-declared record fields or class 'val' fields of a type
     let GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,_ad) _m typ =

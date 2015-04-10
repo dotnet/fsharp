@@ -16,21 +16,16 @@ type ILStrongNameSigner =
     static member OpenKeyContainer: string -> ILStrongNameSigner
 
 type options =
- { ilg: ILGlobals
-   pdbfile: string option;
-   signer : ILStrongNameSigner option;
-   fixupOverlappingSequencePoints : bool;
-   emitTailcalls: bool;
-   showTimes : bool;
-   dumpDebugInfo : bool }
+    { ilg: ILGlobals
+      pdbfile: string option
+      signer : ILStrongNameSigner option
+      fixupOverlappingSequencePoints : bool
+      emitTailcalls: bool
+      showTimes : bool
+      dumpDebugInfo : bool }
 
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
-val WriteILBinary: 
-    filename: string ->
-    options:  options ->
-    input:    ILModuleDef -> 
-    noDebugData: bool ->
-    unit
+val WriteILBinary: filename: string * options:  options * input: ILModuleDef * noDebugData: bool -> unit
 
 
 

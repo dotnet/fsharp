@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+/// Functions to import .NET binary metadata as TAST objects
 module internal Microsoft.FSharp.Compiler.Import
 
 #nowarn "44" // This construct is deprecated. please use List.item
@@ -7,15 +8,15 @@ module internal Microsoft.FSharp.Compiler.Import
 open System.Reflection
 open System.Collections.Generic
 open Internal.Utilities
+
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler 
-
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 #if EXTENSIONTYPING
@@ -52,7 +53,7 @@ type AssemblyLoader =
 ///
 /// There is normally only one ImportMap for any assembly compilation, though additional instances can be created
 /// using tcImports.GetImportMap() if needed, and it is not harmful if multiple instances are used. The object 
-/// serves as an interface through to the tables stored in the primary TcImports structures defined in build.fs. 
+/// serves as an interface through to the tables stored in the primary TcImports structures defined in CompileOps.fs. 
 [<Sealed>]
 type ImportMap(g:TcGlobals,assemblyLoader:AssemblyLoader) =
     let typeRefToTyconRefCache = new System.Collections.Generic.Dictionary<ILTypeRef,TyconRef>()
@@ -91,7 +92,7 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
             ()
 #endif
     match tryRescopeEntity ccu tycon with 
-    | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m));
+    | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
     | Some tcref -> tcref
     
 
@@ -365,7 +366,7 @@ let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) 
             let constraints = if gp.HasReferenceTypeConstraint then (TyparConstraint.IsReferenceType(m)::constraints) else constraints
             let constraints = if gp.HasNotNullableValueTypeConstraint then (TyparConstraint.IsNonNullableStruct(m)::constraints) else constraints
             let constraints = if gp.HasDefaultConstructorConstraint then (TyparConstraint.RequiresDefaultConstructor(m)::constraints) else constraints
-            tp.FixupConstraints constraints);
+            tp.FixupConstraints constraints)
         tps
 
 
@@ -389,7 +390,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
             match keylist with 
             | [] -> ()
             | key::rest -> 
-                buckets.[key] <- (rest,v) :: (if buckets.ContainsKey key then buckets.[key] else []);
+                buckets.[key] <- (rest,v) :: (if buckets.ContainsKey key then buckets.[key] else [])
 
         [ for (KeyValue(key,items)) in buckets -> nodef key items ]
 
@@ -397,10 +398,10 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
  
 
 /// Import an IL type definition as a new F# TAST Entity node.
-let rec ImportILTypeDef amap m scoref cpath enc nm (tdef:ILTypeDef)  =
+let rec ImportILTypeDef amap m scoref (cpath:CompilationPath) enc nm (tdef:ILTypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes = 
         lazy 
-            let cpath = mkNestedCPath cpath nm ModuleOrType
+            let cpath = cpath.NestedCompPath nm ModuleOrType
             ImportILTypeDefs amap m scoref cpath (enc@[tdef]) tdef.NestedTypes
     // Add the type itself. 
     NewILTycon 
@@ -415,7 +416,7 @@ let rec ImportILTypeDef amap m scoref cpath enc nm (tdef:ILTypeDef)  =
 
 /// Import a list of (possibly nested) IL types as a new ModuleOrNamespaceType node
 /// containing new entities, bucketing by namespace along the way.
-and ImportILTypeDefList amap m cpath enc items =
+and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
     // Split into the ones with namespaces and without. Add the ones with namespaces in buckets.
     // That is, discriminate based in the first element of the namespace list (e.g. "System") 
     // and, for each bag, fold-in a lazy computation to add the types under that bag .
@@ -428,7 +429,7 @@ and ImportILTypeDefList amap m cpath enc items =
         items 
         |> multisetDiscriminateAndMap 
             (fun n tgs ->
-                let modty = lazy (ImportILTypeDefList amap m (mkNestedCPath cpath n Namespace) enc tgs)
+                let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
                 NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] modty)
             (fun (n,info:Lazy<_>) -> 
                 let (scoref2,_,lazyTypeDef:Lazy<ILTypeDef>) = info.Force()
@@ -485,7 +486,7 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod:ILModuleDef) 
     let scoref = ILScopeRef.Assembly aref
     let mtypsForExportedTypes = ImportILAssemblyExportedTypes amap m auxModLoader scoref mainmod.ManifestOfAssembly.ExportedTypes
     let mainmod = ImportILAssemblyMainTypeDefs amap m scoref mainmod
-    combineModuleOrNamespaceTypeList [] m (mainmod :: mtypsForExportedTypes)
+    CombineCcuContentFragments m (mainmod :: mtypsForExportedTypes)
 
 /// Import the type forwarder table for an IL assembly
 let ImportILAssemblyTypeForwarders (amap, m, exportedTypes:ILExportedTypesAndForwarders) = 
@@ -517,19 +518,19 @@ let ImportILAssembly(amap:(unit -> ImportMap),m,auxModuleLoader,sref,sourceDir,f
             | _ -> error(InternalError("ImportILAssembly: cannot reference .NET netmodules directly, reference the containing assembly instead",m))
         let nm = aref.Name
         let mty = ImportILAssemblyTypeDefs(amap,m,auxModuleLoader,aref,ilModule)
-        let ccuData = 
-          { IsFSharp=false;
-            UsesFSharp20PlusQuotations=false;
+        let ccuData : CcuData = 
+          { IsFSharp=false
+            UsesFSharp20PlusQuotations=false
 #if EXTENSIONTYPING
-            InvalidateEvent=invalidateCcu;
-            IsProviderGenerated = false;
+            InvalidateEvent=invalidateCcu
+            IsProviderGenerated = false
             ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
 #endif
-            QualifiedName= Some sref.QualifiedName;
-            Contents = NewCcuContents sref m nm mty ;
-            ILScopeRef = sref;
-            Stamp = newStamp();
-            SourceCodeDirectory = sourceDir;  // note: not an accurate value, but IL assemblies don't give us this information in any attributes. 
+            QualifiedName= Some sref.QualifiedName
+            Contents = NewCcuContents sref m nm mty 
+            ILScopeRef = sref
+            Stamp = newStamp()
+            SourceCodeDirectory = sourceDir  // note: not an accurate value, but IL assemblies don't give us this information in any attributes. 
             FileName = filename
             MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (amap()).g ty1 ty2)
             TypeForwarders = 

@@ -22,7 +22,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.IL (* Abstract IL  *)
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
@@ -1323,7 +1323,7 @@ module private TastDefinitionPrinting =
             let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
             sepListL (wordL "*") (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
 
-    let layoutUnionCase denv  prefixL ucase =
+    let layoutUnionCase denv  prefixL (ucase:UnionCase) =
         let nmL = wordL (DemangleOperatorName ucase.Id.idText) 
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
         match ucase.RecdFields with
