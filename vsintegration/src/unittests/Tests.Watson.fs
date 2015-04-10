@@ -43,7 +43,7 @@ type Check =
                     Assert.Fail("The correct callstack was not reported to watson.")
         finally               
 #if DEBUG
-            Microsoft.FSharp.Compiler.CompileOps.FullCompiler.showAssertForUnexpectedException := true
+            Microsoft.FSharp.Compiler.CompileOps.FullCompiler.showAssertForUnexpectedException := true 
 #endif
         File.Delete("watson-test.fs")
 
