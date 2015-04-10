@@ -498,6 +498,8 @@ let BindCcu (ccu:Tast.CcuThunk) mval env (g:TcGlobals) =
 #if DEBUG
     if verboseOptimizationInfo then 
         dprintf "*** Reloading optimization data for assembly %s, info = \n%s\n" ccu.AssemblyName (showL (Layout.squashTo 192 (moduleInfoL g mval)));  
+#else
+    ignore g
 #endif
 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName,mval)  }
@@ -1204,6 +1206,8 @@ let AbstractAndRemapModulInfo msg g m (repackage,hidden) info =
     let mrpi = mkRepackageRemapping repackage
 #if DEBUG
     if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (Layout.showL (Layout.squashTo 192 (moduleInfoL g info)));
+#else
+    ignore (msg,m)
 #endif
     let info = info |> AbstractLazyModulInfoByHiding false hidden
 #if DEBUG
