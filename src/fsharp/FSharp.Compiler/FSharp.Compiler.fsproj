@@ -130,10 +130,10 @@
       <Link>Utilities\TraceCall.fs</Link>
     </Compile>
     <Compile Include="..\rational.fsi">
-      <Link>ErrorLogging\rational.fsi</Link>
+      <Link>Utilities\rational.fsi</Link>
     </Compile>
     <Compile Include="..\rational.fs">
-      <Link>ErrorLogging\rational.fs</Link>
+      <Link>Utilities\rational.fs</Link>
     </Compile>
     <Compile Include="..\range.fsi">
       <Link>ErrorLogging\range.fsi</Link>

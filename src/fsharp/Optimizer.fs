@@ -3261,6 +3261,7 @@ and p_ModuleInfo x st =
 
 and p_LazyModuleInfo x st = 
     p_lazy p_ModuleInfo x st
+let p_CcuOptimizationInfo x st = p_LazyModuleInfo x st
 
 #endif // !NO_COMPILER_BACKEND
 
@@ -3289,5 +3290,4 @@ and u_ModuleInfo st =
 
 and u_LazyModuleInfo st = u_lazy u_ModuleInfo st
 
-let p_CcuOptimizationInfo x st = p_LazyModuleInfo x st
 let u_CcuOptimizationInfo st = u_LazyModuleInfo st
