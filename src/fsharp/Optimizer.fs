@@ -494,10 +494,10 @@ let BindTypeVarsToUnknown (tps:Typar list) env =
                 tp.Data.typar_id <- ident (nm,tp.Range));      
     List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
-let BindCcu (ccu:Tast.CcuThunk) mval env (cenv:cenv) = 
+let BindCcu (ccu:Tast.CcuThunk) mval env (g:TcGlobals) = 
 #if DEBUG
     if verboseOptimizationInfo then 
-        dprintf "*** Reloading optimization data for assembly %s, info = \n%s\n" ccu.AssemblyName (showL (Layout.squashTo 192 (moduleInfoL cenv mval)));  
+        dprintf "*** Reloading optimization data for assembly %s, info = \n%s\n" ccu.AssemblyName (showL (Layout.squashTo 192 (moduleInfoL g mval)));  
 #endif
 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName,mval)  }
