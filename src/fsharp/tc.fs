@@ -3702,6 +3702,9 @@ type DelayedItem =
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
   | DelayedDotLookup of Ast.Ident list * range
 
+  /// Represents an incomplete "item."
+  | DelayedDot
+ 
   /// Represents the valueExpr in "item <- valueExpr", also "item.[indexerArgs] <- valueExpr" etc.
   | DelayedSet of Ast.SynExpr * range
 
@@ -5099,6 +5102,20 @@ and TcExprNoRecover cenv ty (env: TcEnv) tpenv (expr: SynExpr) =
 
     tm,tpenv
 
+// This recursive entry is only used from one callsite (DiscardAfterMissingQualificationAfterDot)
+// and has been added relatively late in F# 4.0 to preserve the structure of previous code.  It pushes a 'delayed' parameter
+// through TcExprOfUnknownType, TcExpr and TcExprNoRecover
+and TcExprOfUnknownTypeThen cenv env tpenv expr delayed =
+    let exprty = NewInferenceType ()
+    let expr',tpenv = 
+      try
+        TcExprThen cenv exprty env tpenv expr delayed
+      with e -> 
+        let m = expr.Range
+        errorRecovery e m 
+        solveTypAsError cenv env.DisplayEnv m exprty
+        mkThrow m exprty (mkOne cenv.g m), tpenv
+    expr',exprty,tpenv
 
 /// This is used to typecheck legitimate 'main body of constructor' expressions 
 and TcExprThatIsCtorBody safeInitInfo cenv overallTy env tpenv expr =
@@ -5454,10 +5471,9 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         //solveTypAsError cenv env.DisplayEnv m overallTy
         mkDefault(m,overallTy), tpenv
 
+    // expr. (already reported as an error)
     | SynExpr.DiscardAfterMissingQualificationAfterDot (e1,m) ->
-        // For some reason we use "UnknownType" for this one, it's not clear we need to.
-        let _,_,tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownType cenv env tpenv e1)
-        //solveTypAsError cenv env.DisplayEnv m overallTy
+        let _,_,tpenv = suppressErrorReporting (fun () -> TcExprOfUnknownTypeThen cenv env tpenv e1 [DelayedDot])
         mkDefault(m,overallTy),tpenv
 
     | SynExpr.FromParseError (e1,m) -> 
@@ -7732,6 +7748,7 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
             // Avoid unifying twice: we're about to unify in TcDelayed 
             if nonNil delayed then 
                 UnifyTypes cenv env mExpr overallTy exprty
+        | DelayedDot :: _
         | DelayedSet _ :: _
         | DelayedDotLookup _ :: _ -> ()
         | DelayedTypeApp (_, _mTypeArgs, mExprAndTypeArgs) :: delayedList' ->
@@ -7766,7 +7783,9 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
         CallExprHasTypeSink cenv.tcSink (mExpr,env.NameEnv,exprty, env.DisplayEnv,env.eAccessRights)
 
     match delayed with 
-    | [] -> UnifyTypes cenv env mExpr overallTy exprty; expr.Expr,tpenv
+    | []  
+    | DelayedDot :: _ -> 
+        UnifyTypes cenv env mExpr overallTy exprty; expr.Expr,tpenv
     // expr.M(args) where x.M is a .NET method or index property 
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 
     // expr.M where x.M is a .NET method or index property 
@@ -7844,7 +7863,7 @@ and TcLongIdentThen cenv overallTy env tpenv (LongIdentWithDots(longId,_)) delay
         // resolve type name lookup of 'MyOverloadedType' 
         // Also determine if type names should resolve to Item.Types or Item.CtorGroup 
         match delayed with 
-        | DelayedTypeApp (tyargs, _, _) :: DelayedDotLookup _ :: _ -> 
+        | DelayedTypeApp (tyargs, _, _) :: (DelayedDot | DelayedDotLookup _) :: _ -> 
             // cases like 'MyType<int>.Sth' 
             TypeNameResolutionInfo(ResolveTypeNamesToTypeRefs, TypeNameResolutionStaticArgsInfo.FromTyArgs tyargs.Length)
 
