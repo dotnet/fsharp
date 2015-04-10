@@ -28,22 +28,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class TrackDocumentsHelper
     {
-        #region fields
         private ProjectNode projectMgr;
-        #endregion
 
-        #region properties
-
-        #endregion
-
-        #region ctors
         /*internal, but public for FSharp.Project.dll*/ public TrackDocumentsHelper(ProjectNode project)
         {
             this.projectMgr = project;
         }
-        #endregion
 
-        #region helper methods
         /// <summary>
         /// Gets the IVsTrackProjectDocuments2 object by asking the service provider for it.
         /// </summary>
@@ -175,7 +166,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 ErrorHandler.ThrowOnFailure(this.GetIVsTrackProjectDocuments2().OnAfterRenameFile(projectMgr.InteropSafeIVsProject, strOldName, strNewName, flag));
             }
         }
-        #endregion
     }
 }
 

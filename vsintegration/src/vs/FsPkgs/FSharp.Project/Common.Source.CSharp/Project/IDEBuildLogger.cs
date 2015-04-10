@@ -32,7 +32,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public sealed class IDEBuildLogger : Logger
     {
-        #region fields
         // TODO: Remove these constants when we have a version that supports getting the verbosity using automation.
         private string buildVerbosityRegistryRoot = LoggingConstants.DefaultVSRegistryRoot;
         // TODO: Re-enable this constants when we have a version that suppoerts getting the verbosity using automation.
@@ -51,9 +50,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private TaskReporter taskReporter;
         private bool haveCachedRegistry = false;
 
-		#endregion
-
-		#region properties
 		public string WarningString
 		{
 			get { return this.warningString; }
@@ -93,9 +89,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return taskReporter; }
             set { taskReporter = value; }
         }
-		#endregion
 
-		#region ctors
 		/// <summary>
 		/// Constructor.  Inititialize member data.
 		/// </summary>
@@ -114,9 +108,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hierarchy.GetSite(out site));
 			this.serviceProvider = new ServiceProvider(site);
 		}
-		#endregion
 
-		#region overridden methods
 		/// <summary>
 		/// Overridden from the Logger class.
 		/// </summary>
@@ -141,9 +133,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             eventSource.WarningRaised += new BuildWarningEventHandler(WarningHandler);
             eventSource.MessageRaised += new BuildMessageEventHandler(MessageHandler);
         }
-		#endregion
 
-		#region event delegates
 		/// <summary>
 		/// This is the delegate for error events.
 		/// </summary>
@@ -652,9 +642,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 		}
 
-		#endregion
-
-		#region helpers
 		/// <summary>
 		/// This method takes a MessageImportance and returns true if messages
 		/// at importance i should be loggeed.  Otherwise return false.
@@ -810,7 +797,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             //EnvDTE.DTE dte = this.serviceProvider.GetService(typeof(EnvDTE.DTE)) as EnvDTE.DTE;
             //EnvDTE.Properties properties = dte.get_Properties(EnvironmentCategory, ProjectsAndSolutionSubCategory);
         }
-		#endregion
     }
 
     /// <summary>

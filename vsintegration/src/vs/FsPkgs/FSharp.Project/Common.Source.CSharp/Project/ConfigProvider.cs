@@ -30,14 +30,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public class ConfigProvider : IVsCfgProvider2, IVsProjectCfgProvider, IVsExtensibleObject
     {
-        #region fields
         private ProjectNode project;
         private EventSinkCollection cfgEventSinks = new EventSinkCollection();
         private List<KeyValuePair<KeyValuePair<string, string>, string>> newCfgProps = new List<KeyValuePair<KeyValuePair<string, string>, string>>();
         private Dictionary<ConfigCanonicalName, ProjectConfig> configurationsList = new Dictionary<ConfigCanonicalName, ProjectConfig>();
-        #endregion
 
-        #region Properties
         /// <summary>
         /// The associated project.
         /// </summary>
@@ -65,16 +62,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-
-        #region ctors
         internal ConfigProvider(ProjectNode manager)
         {
             this.project = manager;
         }
-        #endregion
 
-        #region methods
         /// <summary>
         /// Creates new Project Configuartion objects based on the configuration name.
         /// </summary>
@@ -99,9 +91,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return new ProjectConfig(this.project, canonicalName);
         }
 
-        #endregion
-
-        #region IVsProjectCfgProvider methods
         /// <summary>
         /// Provides access to the IVsProjectCfg interface implemented on a project's configuration object. 
         /// </summary>
@@ -162,11 +151,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             usesIndependentConfigurations = 1;
             return VSConstants.S_OK;
         }
-        #endregion
 
 
-
-        #region IVsCfgProvider2 methods
         /// <summary>
         /// Copies an existing configuration name or creates a new one. 
         /// </summary>
@@ -690,9 +676,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             cookie = this.cfgEventSinks.Add(sink);
             return VSConstants.S_OK;
         }
-        #endregion
-
-#region IVsExtensibleObject Members
 
         /// <summary>
         /// Proved access to an IDispatchable object being a list of configuration properties
@@ -717,9 +700,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
 
         }
-        #endregion
 
-#region helper methods
         /// <summary>
         /// Called when a new configuration name was added.
         /// </summary>
@@ -880,7 +861,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-        #endregion
 
         /// <summary>
         /// Get all the configurations in the project.

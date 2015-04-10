@@ -24,12 +24,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <remarks>This is a partial class.</remarks>
     public partial class ProjectNode : IVsUIHierWinClipboardHelperEvents
     {
-        #region fields
         private uint copyPasteCookie;
         private DropDataType dropDataType;
-        #endregion
 
-        #region override of IVsHierarchyDropDataTarget methods
         /// <summary>
         /// Called as soon as the mouse drags an item over a new hierarchy or hierarchy window
         /// </summary>
@@ -166,9 +163,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return returnValue;
         }
-        #endregion
 
-        #region override of IVsHierarchyDropDataSource2 methods
         /// <summary>
         /// Returns information about one or more of the items being dragged
         /// </summary>
@@ -304,9 +299,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-        #endregion
-
-        #region IVsUIHierWinClipboardHelperEvents Members
         /// <summary>
         /// Called after your cut/copied items has been pasted
         /// </summary>
@@ -349,9 +341,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.SourceDraggedOrCutOrCopied = false;
             return VSConstants.S_OK;
         }
-        #endregion
 
-        #region virtual methods
         /// <summary>
         /// Determines if a node can accept drop opertaion.
         /// </summary>
@@ -600,9 +590,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return newNode;
         }    
-        #endregion
 
-        #region non-virtual methods
         /// <summary>
         /// Handle the Cut operation to the clipboard
         /// </summary>
@@ -1105,9 +1093,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
 
-        #endregion
-
-        #region private helper methods
         /// <summary>
         /// Empties all the data structures added to the clipboard and flushes the clipboard.
         /// </summary>
@@ -1185,7 +1170,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return ptr;
         }
-
-        #endregion
     }
 }

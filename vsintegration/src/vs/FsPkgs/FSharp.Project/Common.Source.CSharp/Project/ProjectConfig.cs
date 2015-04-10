@@ -183,18 +183,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IVsSpecifyProjectDesignerPages,
         IVsCfgBrowseObject
     {
-        #region constants
         /*internal, but public for FSharp.Project.dll*/ public const string Debug = "Debug";
         /*internal, but public for FSharp.Project.dll*/ public const string Release = "Release";
         /*internal, but public for FSharp.Project.dll*/ public const string AnyCPU = "AnyCPU";
         /*internal, but public for FSharp.Project.dll*/ public const string AnyCPU32BitPreferred = "AnyCPU32BitPreferred";
         public const string Any_CPU = "Any CPU";
 
-        #endregion
 
 
-
-        #region fields
         private ProjectNode project;
         private ConfigCanonicalName configCanonicalName;
         private DateTime lastCache;
@@ -206,7 +202,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private IVsProjectFlavorCfg flavoredCfg = null;
         private BuildableProjectConfig buildableCfg = null;
         private readonly ProjectConfigProperties projectConfigurationProperties ;
-        #endregion
 
         private string GetProjectAssemblyName()
         {
@@ -218,7 +213,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return this.projectAssemblyNameCache;
         }
 
-        #region properties
         public ProjectNode ProjectMgr
         {
             get
@@ -642,9 +636,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.outputGroups;
             }
         }
-        #endregion
 
-        #region ctors
         internal ProjectConfig(ProjectNode project, ConfigCanonicalName configName)
         {
             this.project = project;
@@ -662,9 +654,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.project.LoadXmlFragment(persistXML, this.DisplayName);
             }
         }
-        #endregion
 
-        #region methods
         public /*protected, but public for FSharp.Project.dll*/ virtual OutputGroup CreateOutputGroup(ProjectNode project, KeyValuePair<string, string> group)
         {
             OutputGroup outputGroup = new OutputGroup(group.Key, group.Value, project, this);
@@ -815,9 +805,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return hr;
         }
-        #endregion
 
-#region IVsSpecifyPropertyPages
         public void GetPages(CAUUID[] pages)
         {
             // We do not check whether the supportsProjectDesigner is set to false on the ProjectNode.
@@ -835,9 +823,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             pages[0] = new CAUUID();
             pages[0].cElems = 0;
         }
-        #endregion
 
-#region IVsSpecifyProjectDesignerPages
         /// <summary>
         /// Implementation of the IVsSpecifyProjectDesignerPages. It will retun the pages that are configuration dependent.
         /// </summary>
@@ -848,9 +834,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.GetCfgPropertyPages(pages);
             return VSConstants.S_OK;
         }
-        #endregion
 
-#region IVsCfg methods
         /// <summary>
         /// The display name is a two part item
         /// first part is the config name, 2nd part is the platform name
@@ -887,9 +871,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return VSConstants.S_OK;
         }
-        #endregion
 
-#region IVsProjectCfg methods
         public virtual int EnumOutputs(out IVsEnumOutputs eo)
         {
             CCITracing.TraceCall();
@@ -974,7 +956,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             output = null;
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
         private VsDebugTargetInfo GetDebugTargetInfo(uint grfLaunch, bool forLaunch)
         {
@@ -1088,7 +1069,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return info;
         }
-#region IVsDebuggableProjectCfg methods
+
         /// <summary>
         /// Called by the vs shell to start debugging (managed or unmanaged).
         /// Override this method to support other debug engines.
@@ -1143,9 +1124,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             fCanLaunch = this.fCanLaunchCache;
             return VSConstants.S_OK;
         }
-        #endregion
 
-        #region IVsQueryDebuggableProjectCfg
         public virtual int QueryDebugTargets(uint grfLaunch, uint cTargets, VsDebugTargetInfo2[] debugTargetInfo, uint[] actualTargets)
         {
             if (debugTargetInfo == null) // caller only queries for number of targets
@@ -1190,9 +1169,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 actualTargets[0] = 1;
             return VSConstants.S_OK;
         }
-        #endregion
-
-        #region IVsProjectCfg2 Members
 
         public virtual int OpenOutputGroup(string szCanonicalName, out IVsOutputGroup ppIVsOutputGroup)
         {
@@ -1286,9 +1262,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.E_NOTIMPL;
         }
 
-        #endregion
-
-#region IVsCfgBrowseObject
         /// <summary>
         /// Maps back to the configuration corresponding to the browse object. 
         /// </summary>
@@ -1314,9 +1287,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return this.project.NodeProperties.GetProjectItem(out hier, out itemid);
         }
-        #endregion
-
-#region helper methods
 
         private void EnsureCache()
         {
@@ -1380,9 +1350,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 pages[0] = PackageUtilities.CreateCAUUIDFromGuidArray(guids);
             }
         }
-        #endregion
 
-#region IVsProjectFlavorCfg Members
         /// <summary>
         /// This is called to let the flavored config let go
         /// of any reference it may still be holding to the base config
@@ -1424,9 +1392,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-
-        #endregion
-
 
         public string Platform { get { return this.configCanonicalName.Platform; } }
 
@@ -1692,16 +1657,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 #endif
 
-        #region fields
         ProjectConfig config = null;
         EventSinkCollection callbacks = new EventSinkCollection();
         string[] filesWeCalledHandsOff = null;
 #if FX_ATLEAST_45
         IVsBuildManagerAccessor buildManagerAccessor = null; 
 #endif
-        #endregion
 
-        #region ctors
         internal BuildableProjectConfig(ProjectConfig config)
         {
             this.config = config;
@@ -1709,11 +1671,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.buildManagerAccessor = this.config.ProjectMgr.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor;
 #endif
         }
-        #endregion
 
 #if FX_ATLEAST_45
-        #region IVsBuildableProjectCfg2 Members
-
         private const int VSBLDCFGPROPID_SupportsMTBuild = -16000;
 
         public int GetBuildCfgProperty(int propid, out object pvar)
@@ -1734,10 +1693,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return this.StartBuild(pIVsOutputWindowPane, dwOptions);
         }
-        #endregion
 #endif
-
-        #region IVsBuildableProjectCfg methods
 
         public virtual int AdviseBuildStatusCallback(IVsBuildStatusCallback callback, out uint cookie)
         {
@@ -1851,9 +1807,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
-        #region helpers
         private bool NotifyBuildBegin()
         {
 
@@ -1979,6 +1933,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 referenceNode.RefreshReference(buildResult);
             }
         }
-        #endregion
     }
 }

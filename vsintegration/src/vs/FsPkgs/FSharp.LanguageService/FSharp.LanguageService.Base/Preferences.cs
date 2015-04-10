@@ -418,8 +418,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        #region IVsTextManagerEvents2 Members
-
         /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.OnRegisterMarkerType"]/*' />
         public virtual int OnRegisterMarkerType(int iMarkerType) {
             return NativeMethods.S_OK;
@@ -448,7 +446,5 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
             return NativeMethods.S_OK;
         }
-
-        #endregion
     }
 }

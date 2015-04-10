@@ -31,8 +31,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IVsParentProject,
         IBuildDependencyOnProjectContainer
     {
-        #region fields
-
         /// <summary>
         /// Setting this flag to true will build all nested project when building this project
         /// </summary>
@@ -47,15 +45,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         ///This might need a refactoring when nested projects can be added and removed by demand.
         /// </devremark>
         private FileChangeManager nestedProjectNodeReloader;
-        #endregion
 
-        #region ctors
         internal ProjectContainerNode()
         {
         }
-        #endregion
 
-        #region properties
         /// <summary>
         /// Returns teh object that handles listening to file changes on the nested project files.
         /// </summary>
@@ -72,9 +66,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.nestedProjectNodeReloader;
             }
         }
-        #endregion
 
-        #region overridden properties
         /// <summary>
         /// This is the object that will be returned by EnvDTE.Project.Object for this project
         /// </summary>
@@ -83,9 +75,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return new Automation.OASolutionFolder<ProjectContainerNode>(this); }
         }
 
-        #endregion
-
-        #region public overridden methods
         /// <summary>
         /// Gets the nested hierarchy.
         /// </summary>
@@ -184,12 +173,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
         public override int ReloadItem(uint itemId, uint reserved)
         {
-            #region precondition
             if (this.IsClosed)
             {
                 return VSConstants.E_FAIL;
             }
-            #endregion
 
             NestedProjectNode node = this.NodeFromItemId(itemId) as NestedProjectNode;
 
@@ -220,9 +207,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             base.Reload();
             this.CreateNestedProjectNodes();
         }
-        #endregion
 
-        #region IVsParentProject
         public virtual int OpenChildren()
         {
             IVsSolution solution = this.GetService(typeof(IVsSolution)) as IVsSolution;
@@ -317,9 +302,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return returnValue;
         }
-        #endregion
 
-        #region IBuildDependencyOnProjectContainerNode
         /// <summary>
         /// Defines whether nested projects should be build with the parent project
         /// </summary>
@@ -348,9 +331,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return nestedProjectList.ToArray();
         }
-        #endregion
-
-        #region helper methods
 
         /*internal, but public for FSharp.Project.dll*/ protected void RemoveNestedProjectNodes()
         {
@@ -769,7 +749,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="e">Event args containing the file name that was updated.</param>
         private void OnNestedProjectFileChangedOnDisk(object sender, FileChangedOnDiskEventArgs e)
         {
-            #region Pre-condition validation
             Debug.Assert(e != null, "No event args specified for the FileChangedOnDisk event");
 
             // We care only about time change for reload.
@@ -782,7 +761,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             string moniker;
             this.GetMkDocument(e.ItemID, out moniker);
             Debug.Assert(NativeMethods.IsSamePath(moniker, e.FileName), " The file + " + e.FileName + " has changed but we could not retrieve the path for the item id associated to the path.");
-            #endregion
 
             bool reload = true;
             if (!Utilities.IsInAutomationFunction(this.Site))
@@ -803,7 +781,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.ReloadItem(e.ItemID, 0);
             }
         }
-        #endregion
     }
 }
 #endif

@@ -34,7 +34,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         internal sealed class DataCacheEntry : IDisposable
         {
-                #region fields
                 /// <summary>
                 /// Defines an object that will be a mutex for this object for synchronizing thread calls.
                 /// </summary>
@@ -47,9 +46,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 private DATADIR dataDir;
 
                 private bool isDisposed;
-                #endregion
 
-                #region properties
                 /*internal, but public for FSharp.Project.dll*/ public FORMATETC Format
                 {
                         get
@@ -75,8 +72,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         }
                 }
 
-                #endregion
-
                 /// <summary>
                 /// The IntPtr is data allocated that should be removed. It is allocated by the ProcessSelectionData method.
                 /// </summary>
@@ -87,7 +82,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         this.dataDir = dir;
                 }
 
-                #region Dispose
                 ~DataCacheEntry()
                 {
                         Dispose(false);
@@ -128,7 +122,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                 }
                         }
                 }
-                #endregion
         }
 
         /// <summary>
@@ -137,7 +130,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         internal sealed class DataObject : IDataObject
         {
-                #region fields
                 /*internal, but public for FSharp.Project.dll*/ public const int DATA_S_SAMEFORMATETC = 0x00040130;
 
                 /*internal, but public for FSharp.Project.dll*/ public static readonly int DATA_E_FORMATETC = ForceCast(0x80040064);
@@ -145,7 +137,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 EventSinkCollection map;
 
                 ArrayList entries;
-                #endregion
 
                 /*internal, but public for FSharp.Project.dll*/ public DataObject()
                 {
@@ -158,7 +149,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         this.entries.Add(new DataCacheEntry(format, data, DATADIR.DATADIR_SET));
                 }
 
-                #region IDataObject methods
                 int IDataObject.DAdvise(FORMATETC[] e, uint adv, IAdviseSink sink, out uint cookie)
                 {
                         STATDATA sdata = new STATDATA();
@@ -237,9 +227,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 void IDataObject.SetData(FORMATETC[] fmt, STGMEDIUM[] m, int fRelease)
                 {
                 }
-                #endregion
 
-                #region static methods
                 /*internal, but public for FSharp.Project.dll*/ public static int ForceCast(uint i)
                 {
                         unchecked { return (int)i; }
@@ -249,8 +237,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                         unchecked { return (uint)i; }
                 }
-
-                #endregion
         }
 
         [SecurityPermissionAttribute(SecurityAction.Demand, Flags = SecurityPermissionFlag.UnmanagedCode)]

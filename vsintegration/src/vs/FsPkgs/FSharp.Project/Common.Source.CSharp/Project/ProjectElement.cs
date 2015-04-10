@@ -49,15 +49,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal sealed class ProjectElement
     {
-        #region fields
         private Microsoft.Build.Evaluation.ProjectItem item;
         private ProjectNode itemProject;
         private bool deleted = false;
         private bool isVirtual = false;
         private Dictionary<string, string> virtualProperties;
-        #endregion
 
-        #region properties
         public string ItemName
         {
             get
@@ -102,9 +99,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.isVirtual;
             }
         }
-        #endregion
 
-        #region ctors
         /// <summary>
         /// Constructor to create a new MSBuild.BuildItem and add it to the project
         /// Only have /*internal, but public for FSharp.Project.dll*/ public constructors as the only one who should be creating
@@ -195,9 +190,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (this.isVirtual)
                 this.virtualProperties = new Dictionary<string, string>();
         }
-        #endregion
 
-        #region public methods
         /// <summary>
         /// Calling this method remove this item from the project file.
         /// Once the item is delete, you should not longer be using it.
@@ -392,9 +385,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return path;
         }
 
-        #endregion
-
-#region helper methods
         /// <summary>
         /// Has the item been deleted
         /// </summary>
@@ -402,9 +392,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return (this.deleted || this.item == null);
         }
-        #endregion
 
-#region overridden from System.Object
         public static bool operator ==(ProjectElement element1, ProjectElement element2)
         {
             // Do they reference the same element?
@@ -465,9 +453,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // TODO, this is not in sync with Equals, so don't put these objects in a dictionary
             return base.GetHashCode();
         }
-        #endregion
-
-
 
     }
 }

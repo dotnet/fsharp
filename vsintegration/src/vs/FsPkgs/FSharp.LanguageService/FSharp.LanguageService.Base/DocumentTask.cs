@@ -423,8 +423,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             get { return this.textLineMarker; }
         }
 
-        #region IVsTextMarkerClient methods
-
         /*---------------------------------------------------------
             IVsTextMarkerClient
         -----------------------------------------------------------*/
@@ -471,7 +469,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual int ExecMarkerCommand(IVsTextMarker marker, int item) {
             return NativeMethods.S_OK;
         }
-        #endregion
 
         int IVsProvideUserContext.GetUserContext(out IVsUserContext ppctx)
         {

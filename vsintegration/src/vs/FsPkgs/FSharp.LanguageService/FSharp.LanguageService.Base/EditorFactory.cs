@@ -219,8 +219,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return true;
         }
 
-        #region IVsEditorFactory
-
         /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.CreateEditorInstance"]/*' />
         /// <summary>
         /// This method checks to see if the specified file is one that your editor supports
@@ -605,7 +603,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.package = null;
             return NativeMethods.S_OK;
         }
-        #endregion
     }
 }
 #endif

@@ -164,7 +164,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return this.GetType().GUID;
         }
 
-        #region IVsProvideColorableItems
         public virtual int GetItemCount(out int count)
         {
             count = 0;
@@ -176,9 +175,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             item = null;
             return NativeMethods.E_NOTIMPL;
         }
-        #endregion
 
-        #region IVsLanguageContextProvider
         int IVsLanguageContextProvider.UpdateLanguageContext(uint dwHint, IVsTextLines buffer, TextSpan[] ptsSelection, object ptr)
         {
             if (ptr != null && ptr is IVsUserContext && buffer is IVsTextBuffer)
@@ -211,8 +208,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 }
             }
         }
-
-        #endregion
 
         internal virtual int UpdateLanguageContext(LanguageContextHint hint, IVsTextLines buffer, TextSpan[] ptsSelection, IVsUserContext context)
         {
@@ -566,7 +561,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return new ExpansionProvider(src);
         }
 
-        #region IVsLanguageInfo methods
         // GetCodeWindowManager -- this gives us the VsCodeWindow which is what we need to
         // add adornments and so forth.
         public int GetCodeWindowManager(IVsCodeWindow codeWindow, out IVsCodeWindowManager mgr)
@@ -616,9 +610,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return NativeMethods.S_OK;
         }
 
-        #endregion
-
-        #region IVsLanguageDebugInfo methods
         public abstract int GetLanguageID(IVsTextBuffer buffer, int line, int col, out Guid langId);
 
         public virtual int GetLocationOfName(string name, out string pbstrMkDoc, TextSpan[] spans)
@@ -698,7 +689,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         public abstract int ValidateBreakpointLocation(IVsTextBuffer buffer, int line, int col, TextSpan[] pCodeSpan);
-        #endregion
 
         /// <include file='doc\Package.uex' path='docs/doc[@for="LanguageService.GetService"]' />
         internal object GetService(Type serviceType)
@@ -710,7 +700,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return null;
         }
 
-        #region Microsoft.VisualStudio.OLE.Interop.IServiceProvider methods
         public virtual int QueryService(ref Guid guidService, ref Guid iid, out IntPtr obj)
         {
             obj = IntPtr.Zero;
@@ -723,7 +712,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
             return (int)NativeMethods.E_UNEXPECTED;
         }
-        #endregion
 
         // Override this method if you want to insert your own view filter
         // into the command chain.  
@@ -1009,7 +997,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
 
-        #region IObjectWithSite
         public void GetSite(ref Guid iid, out IntPtr ptr)
         {
             IntPtr pUnk = Marshal.GetIUnknownForObject(this.site);
@@ -1037,7 +1024,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             Microsoft.VisualStudio.Shell.Package pkg = (Microsoft.VisualStudio.Shell.Package)this.site.GetService(typeof(Microsoft.VisualStudio.Shell.Package));
             this.lcid = pkg.GetProviderLocale();
         }
-        #endregion
 
 #if IVsOutliningCapableLanguage                 
         public virtual void CollapseToDefinitions(IVsTextLines buffer, IVsOutliningSession session) {
@@ -1047,16 +1033,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 #endif
 
 
-        #region IVsDebuggerEvents Members
-
         public virtual int OnModeChange(DBGMODE dbgmodeNew)
         {
             this.dbgMode = dbgmodeNew;
             return NativeMethods.S_OK;
         }
-
-        #endregion
-
 
         /// Return true if the given encoding information is invalid for your language service
         /// Default always returns false.  If you return true, then also return an error
@@ -1115,7 +1096,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return -1;
         }
 
-        #region IVsFormatFilterProvider Members
         int IVsFormatFilterProvider.QueryInvalidEncoding(uint format, out string pbstrMessage)
         {
             if (QueryInvalidEncoding((__VSTFF)format, out pbstrMessage))
@@ -1161,10 +1141,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return NativeMethods.S_OK;
         }
 
-        #endregion
-
-        #region ILanguageServiceTestHelper
-
         /// <summary>
         /// Version number will increment to indicate a change in the semantics of preexisting methods. 
         /// </summary>
@@ -1173,7 +1149,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return 3;
         }
 
-        #endregion
     } // end class LanguageService
 
     internal class BackgroundRequestAsyncResult

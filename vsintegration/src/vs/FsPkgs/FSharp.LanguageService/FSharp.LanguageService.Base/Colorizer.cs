@@ -66,7 +66,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.hiBackColor = hiBackColor;
         }
 
-    #region IVsColorableItem methods
         /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetDefaultColors"]/*' />
         public virtual int GetDefaultColors(COLORINDEX[] foreColor, COLORINDEX[] backColor) {
             if (foreColor != null) foreColor[0] = this.foreColor;
@@ -83,9 +82,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             name = this.displayName;
             return NativeMethods.S_OK;
         }
-        #endregion
 
-    #region IVsHiColorItem methods
         /// <include file='doc\Colorizer.uex' path='docs/doc[@for="Colorizer.GetColorData"]/*' />
         public virtual int GetColorData(int cdElement, out uint crColor) 
         {
@@ -126,10 +123,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
             return (uint)(red | (green << 8) | (blue << 16));
         }
-        #endregion
 
-
-    #region IVsMergeableUIItem Members
 
         /// <include file='doc\Colorizer.uex' path='docs/doc[@for="ColorableItem.GetCanonicalName"]/*' />
         public virtual int GetCanonicalName(out string name) {
@@ -151,7 +145,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return NativeMethods.E_NOTIMPL;
         }
 
-        #endregion
     }
 #endif
 

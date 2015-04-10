@@ -23,15 +23,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAReferenceItem : OAProjectItem<ReferenceNode>
     {
-        #region ctors
         internal OAReferenceItem(OAProject project, ReferenceNode node)
             : base(project, node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         /// <summary>
         /// Not implemented. If called throws invalid operation exception.
         /// </summary>    
@@ -87,6 +83,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return null;
             }
         }
-        #endregion
     }
 }

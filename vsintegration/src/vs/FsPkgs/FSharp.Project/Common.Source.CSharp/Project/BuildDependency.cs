@@ -23,7 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.projectMgr = projectMgr;
         }
 
-        #region IVsBuildDependency methods
         public int get_CanonicalName(out string canonicalName)
         {
             canonicalName = null;
@@ -73,9 +72,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return (unknownProject == null) ? VSConstants.S_FALSE : VSConstants.S_OK;
         }
 
-        #endregion
-
-        #region helper methods
         private IVsHierarchy GetReferencedHierarchy()
         {
             IVsHierarchy hierarchy = null;
@@ -88,8 +84,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VsShellUtilities.GetHierarchy(this.projectMgr.Site, this.referencedProjectGuid);
 
         }
-
-        #endregion
 
     }
 }

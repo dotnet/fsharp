@@ -24,13 +24,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OANavigableProjectItems : EnvDTE.ProjectItems
     {
-        #region fields
         private OAProject project;
         private IList<EnvDTE.ProjectItem> items;
         private HierarchyNode nodeWithItems;
-        #endregion
 
-        #region properties
         /// <summary>
         /// Defines an /*internal, but public for FSharp.Project.dll*/ public list of project items
         /// </summary>
@@ -63,9 +60,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return this.nodeWithItems;
             }
         }
-        #endregion
 
-        #region ctor
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -90,9 +85,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             this.project = project;
             this.nodeWithItems = nodeWithItems;
         }
-        #endregion
-
-        #region EnvDTE.ProjectItems
 
         /// <summary>
         /// Gets a value indicating the number of objects in the collection.
@@ -251,9 +243,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        #endregion
-
-        #region virtual methods
         /// <summary>
         /// Retrives a list of items associated with the current node.
         /// </summary>
@@ -277,6 +266,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return list;
             });
         }
-        #endregion
     }
 }

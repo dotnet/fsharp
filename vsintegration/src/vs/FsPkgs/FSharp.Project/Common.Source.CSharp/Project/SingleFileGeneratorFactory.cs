@@ -23,27 +23,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class SingleFileGeneratorFactory : IVsSingleFileGeneratorFactory
     {
-        #region nested types
         private class GeneratorMetaData
         {
-            #region fields
             private Guid generatorClsid = Guid.Empty;
             private int generatesDesignTimeSource = -1;
             private int generatesSharedDesignTimeSource = -1;
             private int useDesignTimeCompilationFlag = -1;
             object generator = null;
-            #endregion
 
-            #region ctor
             /// <summary>
             /// Constructor
             /// </summary>
             public GeneratorMetaData()
             {
             }
-            #endregion
 
-            #region Public Properties
             /// <summary>
             /// Generator instance
             /// </summary>
@@ -118,11 +112,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     generatorClsid = value;
                 }
             }
-            #endregion
         }
-        #endregion
 
-        #region fields
         /// <summary>
         /// Base generator registry key for MPF based project
         /// </summary>
@@ -162,9 +153,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// A service provider
         /// </summary>
         private System.IServiceProvider serviceProvider;
-        #endregion
 
-        #region ctors
         /// <summary>
         /// Constructor for SingleFileGeneratorFactory
         /// </summary>
@@ -175,9 +164,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.projectType = projectType;
             this.serviceProvider = serviceProvider;
         }
-        #endregion
 
-        #region properties
         /// <summary>
         /// Defines the project type guid of the associated project.
         /// </summary>
@@ -195,9 +182,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return this.serviceProvider; }
             set { this.serviceProvider = value; }
         }
-        #endregion
 
-        #region IVsSingleFileGeneratorFactory Helpers
         /// <summary>
         /// Returns the project generator key under [VS-ConfigurationRoot]]\Generators
         /// </summary>
@@ -231,9 +216,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.serviceProvider.GetService(typeof(SLocalRegistry)) as ILocalRegistry;
             }
         }
-        #endregion
 
-        #region IVsSingleFileGeneratorFactory Members
         /// <summary>
         /// Creates an instance of the single file generator requested
         /// </summary>
@@ -353,8 +336,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-        #endregion
-
     }
 }
 #endif

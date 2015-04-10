@@ -48,16 +48,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             public bool? WantSpecificVersion;  // null -> nothing in .fsproj, true/false mean serialize that value to .fsproj
         }
 
-        #region fields
         private string myAssemblyPath = String.Empty;
         private FileChangeManager myFileChangeListener;
         private bool myIsDisposed = false;
         private AssemblyResolvedInfo resolvedInfo;
         private AssemblyMSBuildProjectionInfo msbuildProjectionInfo;
         private bool fsprojIncludeHasFilename = false;
-        #endregion
 
-        #region properties
         /// <summary>
         /// The name of the assembly this reference represents.
         /// </summary>
@@ -131,9 +128,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return assemblyRef;
             }
         }
-        #endregion
-
-        #region ctors
 
         internal static AssemblyReferenceNode CreateFromProjectFile(ProjectNode root, ProjectElement element, BuildResult buildResult)
         { return new AssemblyReferenceNode(root, element, buildResult); }
@@ -201,9 +195,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             this.InitializeFileChangeEvents();
         }
-        #endregion
-
-        #region methods
 
         internal static bool IsFSharpCoreReference(ReferenceNode node)
         {
@@ -707,6 +698,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 #endif
 
-        #endregion
     }
 }

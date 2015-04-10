@@ -71,7 +71,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.buffer = buffer;
         }
 
-        #region IOleCommandTarget methods
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="SimpleEditorView.QueryCommandStatus"]/*' />
         /// <summary>
         /// Override this method to provide custom command status, 
@@ -157,10 +156,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
-        #endregion
 
-
-        #region IVsWindowPane methods
 
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="SimpleEditorView.ClosePane"]/*' />
         public virtual int ClosePane() {
@@ -222,9 +218,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual int TranslateAccelerator(MSG[] msg) {
             return (int)NativeMethods.S_FALSE;
         }
-        #endregion 
 
-        #region IVsToolboxUser methods
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="SimpleEditorView.IsSupported"]/*' />
         public virtual int IsSupported(Microsoft.VisualStudio.OLE.Interop.IDataObject data) {
             return (int)NativeMethods.S_FALSE;
@@ -233,24 +227,18 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual int ItemPicked(Microsoft.VisualStudio.OLE.Interop.IDataObject data) {
             return NativeMethods.S_OK;
         }
-        #endregion
 
-        #region IVsStatusbarUser methods
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="SimpleEditorView.SetInfo"]/*' />
         public virtual int SetInfo() {
             return NativeMethods.S_OK;
         }
-        #endregion
 
-            #region IVsWindowPaneCommit methods
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="SimpleEditorView.CommitPendingEdit"]/*' />
         public virtual int CommitPendingEdit(out int fCommitFailed) {
             fCommitFailed = 0;
             return NativeMethods.S_OK;
         }
-            #endregion
 
-            #region IOleComponent Methods
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="SimpleEditorView.FDoIdle"]/*' />
         public virtual int FDoIdle(uint grfidlef) {
             return 0;
@@ -290,7 +278,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual int FReserved1(uint reserved, uint message, IntPtr wParam, IntPtr lParam) {
             return 1;
         }
-            #endregion 
     }
 
 #if CUT
@@ -334,7 +321,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         protected OleEditorView(IVsTextLines buffer) : base(buffer) {
         }
     
-        #region IOleObject methods
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="OleEditorView.Advise"]/*' />
         public virtual void Advise(IAdviseSink sink, out uint cookie) {
             cookie = eventSinks.Add(sink);
@@ -422,10 +408,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual int Update() {
             return NativeMethods.S_OK;
         }
-        #endregion 
     
 
-        #region IOleInPlaceActiveObject
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="OleEditorView.EnableModeless"]/*' />
         public virtual void EnableModeless(int fEnable) {
         }
@@ -438,11 +422,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="OleEditorView.ResizeBorder"]/*' />
         public virtual void ResizeBorder(RECT[] border, ref Guid iid, IOleInPlaceUIWindow window, int fFrameWindow) {
         }
-        #endregion 
 
 
 
-        #region IOleInPlaceObject methods
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="OleEditorView.ContextSensitiveHelp"]/*' />
         public virtual void ContextSensitiveHelp(int fEnterHelp) {
         }
@@ -462,10 +444,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="OleEditorView.UIDeactivate"]/*' />
         public virtual void UIDeactivate() {
         }
-        #endregion 
-
-        #region IOleInPlaceComponent methods
-
 
         /// <include file='doc\EditorView.uex' path='docs/doc[@for="OleEditorView.FQueryClose"]/*' />
         public virtual int FQueryClose(int fPromptUser) {
@@ -508,7 +486,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.pIPCompSite = pIPCompSite;
             return NativeMethods.S_OK;
         }
-        #endregion
     }
 #endif
     /// <include file='doc\EditorView.uex' path='docs/doc[@for="EditorControl"]/*' />

@@ -160,8 +160,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
         const int SizeOfVariant = 16;
 
-        #region IVsExpansionEvents Members
-
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnAfterSnippetsKeyBindingChange"]/*' />
         public virtual int OnAfterSnippetsKeyBindingChange(uint dwCmdGuid, uint dwCmdId, int fBound) {
             this.snippetBound = fBound == 0 ? false : true;
@@ -173,7 +171,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return VSConstants.S_OK;
         }
 
-        #endregion
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.CodeWindowManager;"]/*' />
         /// <summary>Returnt the CodeWindowManager that created this view filter.</summary>
         public CodeWindowManager CodeWindowManager {
@@ -215,7 +212,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 			}
 		}
 
-        #region IVsTextViewFilter methods
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetWordExtent"]/*' />
         /// <summary>Returns the result of Source.GetWordExtent.</summary>
         public virtual int GetWordExtent(int line, int index, uint flags, TextSpan[] span) {
@@ -305,9 +301,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             TextSpanHelper.MakePositive(ref span[0]);
             return NativeMethods.S_OK;
         }
-        #endregion
 
-        #region IVsTextViewEvents methods
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnChangeCaretLine"]/*' />
         public virtual void OnChangeCaretLine(IVsTextView view, int line, int col) {
         }
@@ -332,7 +326,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.service.OnActiveViewChanged(view);
             if (this.mgr != null) this.mgr.OnSetFocus(view); // is null during shutdown.
         }
-        #endregion
 
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.QueryCommandStatus"]/*' />
         /// <summary>
@@ -763,7 +756,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        #region IOleCommandTarget methods
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.IOleCommandTarget.QueryStatus"]/*' />
         /// <internalonly/>
         int IOleCommandTarget.QueryStatus(ref Guid guidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
@@ -825,7 +817,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
-        #endregion
 
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.HandleQuickInfo"]/*' />
         /// <summary>This method is called to handle the VsCommands2K.QUICKINFO command.</summary>
@@ -1051,8 +1042,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             uiShell = null;
         }
 
-        #region CommentSelection
-
         // Special View filter command handling.
         /// <include file='doc\Source.uex' path='docs/doc[@for="ViewFilter.CommentSelection"]/*' />
         public virtual void CommentSelection() {
@@ -1086,10 +1075,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             NativeMethods.ThrowOnFailure(textView.SetSelection(span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex));
 
         }
-        #endregion
-
-
-        #region Reformat
 
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.ReformatDocument;"]/*' />
         public virtual void ReformatDocument() {
@@ -1134,9 +1119,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             if (this.service.IsDebugging) return false;
             return this.service.Preferences.EnableFormatSelection;
         }
-
-        #endregion
-
     }
 
     /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData"]/*' />
@@ -1220,7 +1202,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         ////////////////////////////////////////////////////////////////////////////////
-        #region IVsTextTipData
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.GetTipText"]/*' />
         public virtual int GetTipText(string[] pbstrText, out int pfFontData) {
             pfFontData = 0; // TODO: Do whatever formatting we might want...
@@ -1252,6 +1233,5 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.UpdateView"]/*' />
         public virtual void UpdateView() {
         }
-        #endregion
     }
 }

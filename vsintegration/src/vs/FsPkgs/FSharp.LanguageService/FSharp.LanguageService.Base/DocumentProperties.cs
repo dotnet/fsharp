@@ -72,9 +72,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.Dispose(true);
         }
 
-        #region IDisposable Members
-
-
         /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.Dispose"]/*' />
         public void Dispose() {
             Dispose(true);
@@ -100,9 +97,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         ~DocumentProperties() {
             Dispose(false);
         }
-        #endregion
 
-        #region ISelectionContainer methods.
         /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.CountObjects"]/*' />
         public virtual int CountObjects(uint flags, out uint pc) {
             pc = this.visible ? (uint)1 : (uint)0;
@@ -120,7 +115,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             // nop
             return NativeMethods.S_OK;
         }
-    #endregion
     }
 
 }

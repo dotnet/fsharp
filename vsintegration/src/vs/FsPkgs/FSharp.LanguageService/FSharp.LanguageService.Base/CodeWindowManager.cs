@@ -143,7 +143,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             get { return this.codeWindow; }
         }
       
-        #region IVsCodeWindowManager methods
         /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="CodeWindowManager.AddAdornments"]/*' />
         /// <summary>Install the optional TypeAndMemberDropdownBars, and primary and secondary view filters</summary>
         public virtual int AddAdornments() {
@@ -237,7 +236,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
 #endif
         }
-        #endregion
 
     }
 

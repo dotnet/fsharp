@@ -17,7 +17,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class FileChangeManager : IVsFileChangeEvents
     {
-        #region nested objects
         /// <summary>
         /// Defines a data structure that can link a item moniker to the item and its file change cookie.
         /// </summary>
@@ -65,9 +64,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
 
-        #region Fields
         /// <summary>
         /// Event that is raised when one of the observed file names have changed on disk.
         /// </summary>
@@ -88,20 +85,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Has Disposed already been called?
         /// </summary>
         private bool disposed;
-        #endregion
 
-        #region Constructor
         /// <summary>
         /// Overloaded ctor.
         /// </summary>
         /*internal, but public for FSharp.Project.dll*/ public FileChangeManager(IServiceProvider serviceProvider)
         {
-            #region input validation
             if (serviceProvider == null)
             {
                 throw new ArgumentNullException("serviceProvider");
             }
-            #endregion
 
             this.fileChangeService = (IVsFileChangeEx)serviceProvider.GetService(typeof(SVsFileChangeEx));
 
@@ -111,9 +104,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException();
             }
         }
-        #endregion
 
-        #region IDisposable Members
         /// <summary>
         /// Disposes resources.
         /// </summary>
@@ -136,9 +127,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Clean the observerItems list
             this.observedItems.Clear();
         }
-        #endregion
 
-        #region IVsFileChangeEvents Members
         /// <summary>
         /// Called when one of the file have changed on disk.
         /// </summary>
@@ -173,9 +162,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return VSConstants.S_OK;
         }
-        #endregion
 
-        #region helpers    
         /// <summary>
         /// Observe when the given file is updated on disk. In this case we do not care about the item id that represents the file in the hierarchy.
         /// </summary>
@@ -192,12 +179,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="id">The item id of the item to observe.</param>
         /*internal, but public for FSharp.Project.dll*/ public void ObserveItem(string fileName, uint id)
         {
-            #region Input validation
             if (String.IsNullOrEmpty(fileName))
             {
                 throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "fileName");
             }
-            #endregion
 
             string fullFileName = Utilities.CanonicalizeFileName(fileName);
             if (!this.observedItems.ContainsKey(fullFileName))
@@ -222,12 +207,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="ignore">Flag indicating whether or not to ignore changes (1 to ignore, 0 to stop ignoring).</param>
         /*internal, but public for FSharp.Project.dll*/ public void IgnoreItemChanges(string fileName, bool ignore)
         {
-            #region Input validation
             if (String.IsNullOrEmpty(fileName))
             {
                 throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "fileName");
             }
-            #endregion
 
             string fullFileName = Utilities.CanonicalizeFileName(fileName);
             if (this.observedItems.ContainsKey(fullFileName))
@@ -243,12 +226,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="fileName">File to stop observing.</param>
         /*internal, but public for FSharp.Project.dll*/ public void StopObservingItem(string fileName)
         {
-            #region Input validation
             if (String.IsNullOrEmpty(fileName))
             {
                 throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "fileName");
             }
-            #endregion
 
             string fullFileName = Utilities.CanonicalizeFileName(fileName);
 
@@ -266,6 +247,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 ErrorHandler.ThrowOnFailure(this.fileChangeService.UnadviseFileChange(itemInfo.FileChangeCookie));
             }
         }
-        #endregion
     }
 }

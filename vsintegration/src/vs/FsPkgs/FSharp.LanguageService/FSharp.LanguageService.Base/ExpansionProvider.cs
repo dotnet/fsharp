@@ -504,8 +504,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return value != null;
         }
 
-        #region IVsExpansionClient Members
-
         /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionProvider.EndExpansion"]/*' />
         public int EndExpansion() {
             this.expansionActive = false;
@@ -630,9 +628,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             func = GetExpansionFunction(doc.DocumentElement, fieldName);
             return NativeMethods.S_OK;
         }
-
-        #endregion
-
     }
 
 
@@ -781,8 +776,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return result;
         }
 
-        #region IVsExpansionFunction Members
-
         /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ExpansionFunction.FieldChanged"]/*' />
         public virtual int FieldChanged(string bstrField, out int fRequeryValue) {
             // Returns true if we care about this field changing.
@@ -862,8 +855,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.provider = null;
             return NativeMethods.S_OK;
         }
-
-        #endregion
     }
 
     // todo: for some reason VsExpansionManager is wrong.

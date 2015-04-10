@@ -17,7 +17,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
-    #region structures
     [StructLayoutAttribute(LayoutKind.Sequential)]
     internal struct _DROPFILES
     {
@@ -27,9 +26,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public Int32 fNC;
         public Int32 fWide;
     }
-    #endregion
 
-    #region enums
     /// <summary>
     /// Defines possible types of output that can produced by a language project
     /// </summary>
@@ -343,15 +340,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         SqmSessionGuid
     }
 
-	#endregion
-
     public class AfterProjectFileOpenedEventArgs : EventArgs
     {
-        #region fields
         private bool added;
-        #endregion
 
-        #region properties
         /// <summary>
         /// True if the project is added to the solution after the solution is opened. false if the project is added to the solution while the solution is being opened.
         /// </summary>
@@ -360,23 +352,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get { return this.added; }
         }
-        #endregion
 
-        #region ctor
         /*internal, but public for FSharp.Project.dll*/ public AfterProjectFileOpenedEventArgs(bool added)
         {
             this.added = added;
         }
-        #endregion
     }
 
     public class BeforeProjectFileClosedEventArgs : EventArgs
     {
-        #region fields
         private bool removed;
-        #endregion
 
-        #region properties
         /// <summary>
         /// true if the project was removed from the solution before the solution was closed. false if the project was removed from the solution while the solution was being closed.
         /// </summary>
@@ -385,14 +371,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get { return this.removed; }
         }
-        #endregion
 
-        #region ctor
         /*internal, but public for FSharp.Project.dll*/ public BeforeProjectFileClosedEventArgs(bool removed)
         {
             this.removed = removed;
         }
-        #endregion
     }
 
     /// <summary>
@@ -418,7 +401,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class FileChangedOnDiskEventArgs : EventArgs
     {
-        #region Private fields
         /// <summary>
         /// File name that was changed on disk.
         /// </summary>
@@ -433,7 +415,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The reason the file has changed on disk.
         /// </summary>
         private _VSFILECHANGEFLAGS fileChangeFlag;
-        #endregion
 
         /// <summary>
         /// Constructs a new event args.
@@ -489,12 +470,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class ActiveConfigurationChangedEventArgs : EventArgs
     {
-        #region Private fields
         /// <summary>
         /// The hierarchy whose configuration has changed 
         /// </summary>
         private IVsHierarchy hierarchy;
-        #endregion
 
         /// <summary>
         /// Constructs a new event args.

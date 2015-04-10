@@ -25,18 +25,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAVSProjectItem : VSProjectItem
     {
-        #region fields
         private FileNode fileNode;
-        #endregion
 
-        #region ctors
         internal OAVSProjectItem(FileNode fileNode)
         {
             this.FileNode = fileNode;
         }
-        #endregion
-
-        #region VSProjectItem Members
 
         public virtual Project ContainingProject
         {
@@ -60,9 +54,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 #endif
         }
 
-        #endregion
-
-        #region public properties
         /// <summary>
         /// File Node property
         /// </summary>
@@ -77,7 +68,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 fileNode = value;
             }
         }
-        #endregion
-
     }
 }

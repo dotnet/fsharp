@@ -28,18 +28,12 @@ namespace Microsoft.VisualStudio.Shell
     [System.Runtime.InteropServices.ComVisibleAttribute(false)]
     public sealed class WebSiteProjectRelatedFilesAttribute : RegistrationAttribute
     {
-        #region Constants
         private const string webSiteProjectGuid = "{E24C65DC-7377-472B-9ABA-BC803B73C61A}";
-        #endregion
 
-        #region Fields
         //private Type packageType;
         private string primaryFileExtension;
         private string relatedFileExtension;
-        #endregion
         
-        #region Constructors
-
         /// <summary>
         /// Creates a new WebSiteProjectAttribute attribute to register a 
         /// language with the web site project 
@@ -69,9 +63,7 @@ namespace Microsoft.VisualStudio.Shell
             this.relatedFileExtension = relatedFileExtension;
 
         }
-        #endregion
 
-        #region Properties
         /// <summary>
         /// Gets the primary file extension which will nest files
         /// </summary>
@@ -100,9 +92,6 @@ namespace Microsoft.VisualStudio.Shell
             }
         }
 
-        #endregion
-
-        #region Methods
         /// <summary>
         /// Called to register this attribute with the given context.  The context
         /// contains the location where the registration information should be placed.
@@ -134,7 +123,6 @@ namespace Microsoft.VisualStudio.Shell
             }
 
         }
-        #endregion
     }
 }
 #endif
