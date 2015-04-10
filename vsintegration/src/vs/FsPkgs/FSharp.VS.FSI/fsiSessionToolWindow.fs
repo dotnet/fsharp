@@ -591,7 +591,8 @@ type internal FsiToolWindow() as this =
         sendSelectionToFSI false
 
     let onMLDebug (sender:obj) (e:EventArgs) = 
-        attachDebugger ()
+        if checkDebuggability () then
+            attachDebugger ()
         sendSelectionToFSI true
 
     /// Handle UP and DOWN. Cycle history.    
