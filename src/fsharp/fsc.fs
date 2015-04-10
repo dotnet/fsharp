@@ -495,7 +495,7 @@ let ProcessCommandLineArgsAndImportAssemblies
 
 module InterfaceFileWriter =
 
-    let BuildInitialDisplayEnvForDocGeneration tcGlobals = 
+    let BuildInitialDisplayEnvForSigFileGeneration tcGlobals = 
         let denv = DisplayEnv.Empty tcGlobals
         let denv = 
             { denv with 

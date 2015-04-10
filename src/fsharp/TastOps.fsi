@@ -1212,13 +1212,13 @@ val TryFindFSharpInt32Attribute    : TcGlobals -> BuiltinAttribInfo -> Attribs -
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///
 /// This is used to detect the 'DefaultMemberAttribute' and 'ConditionalAttribute' attributes (on type definitions)
-val TryFindTyconRefStringAttribute : TcGlobals -> range -> Env.BuiltinAttribInfo -> TyconRef -> string option
+val TryFindTyconRefStringAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> string option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a bool argument.
-val TryFindTyconRefBoolAttribute : TcGlobals -> range -> Env.BuiltinAttribInfo -> TyconRef -> bool option
+val TryFindTyconRefBoolAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool option
 
 /// Try to find a specific attribute on a type definition
-val TyconRefHasAttribute : TcGlobals -> range -> Env.BuiltinAttribInfo -> TyconRef -> bool
+val TyconRefHasAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool
 
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool option

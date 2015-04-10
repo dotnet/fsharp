@@ -229,7 +229,7 @@ type internal FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWrit
           Layout.wordL ""
             
     /// Display the signature of an F# value declaration, along with its actual value.
-    member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: IlxGen.IlxAssemblyGenerator, v:Val) =
+    member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: IlxAssemblyGenerator, v:Val) =
         // Implemented via a lookup from v to a concrete (System.Object,System.Type).
         // This (obj,objTy) pair can then be fed to the fsi value printer.
         // Note: The value may be (null:Object).

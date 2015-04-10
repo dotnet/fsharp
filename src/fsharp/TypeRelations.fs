@@ -25,7 +25,7 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Infos.AccessibilityLogic
-open Microsoft.FSharp.Compiler.Nameres
+open Microsoft.FSharp.Compiler.NameResolution
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -1649,7 +1649,7 @@ let MakeCalledArgs amap m (minfo:MethInfo) minst =
 /// and returns a CalledMeth object for further analysis.
 type CalledMeth<'T>
       (infoReader:InfoReader,
-       nameEnv: Microsoft.FSharp.Compiler.Nameres.NameResolutionEnv option,
+       nameEnv: NameResolutionEnv option,
        isCheckingAttributeCall, 
        freshenMethInfo,// a function to help generate fresh type variables the property setters methods in generic classes 
        m, 

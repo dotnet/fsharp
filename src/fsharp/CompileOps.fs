@@ -3605,7 +3605,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                   ILScopeRef = ilScopeRef;
                   ILAssemblyRefs = ilAssemblyRefs }
             tcImports.RegisterDll(dllinfo);
-            let ccuData = 
+            let ccuData : CcuData = 
               { IsFSharp=false;
                 UsesFSharp20PlusQuotations=false;
                 InvalidateEvent=(new Event<_>()).Publish
