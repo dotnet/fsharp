@@ -89,17 +89,21 @@ let GetSuperTypeOfType g amap m typ =
 /// Make a type for System.Collections.Generic.IList<ty>
 let mkSystemCollectionsGenericIListTy g ty = TType_app(g.tcref_System_Collections_Generic_IList,[ty])
 
+[<RequireQualifiedAccess>]
+/// Indicates whether we can skip interface types that lie outside the reference set
+type SkipUnrefInterfaces = Yes | No
+
 
 /// Collect the set of immediate declared interface types for an F# type, but do not
 /// traverse the type hierarchy to collect further interfaces.
-let rec GetImmediateInterfacesOfType g amap m typ = 
+let rec GetImmediateInterfacesOfType skipUnref g amap m typ = 
     let itys = 
         if isAppTy g typ then
             let tcref,tinst = destAppTy g typ
             if tcref.IsMeasureableReprTycon then             
                 [ match tcref.TypeReprInfo with 
                   | TMeasureableRepr reprTy -> 
-                       for ity in GetImmediateInterfacesOfType g amap m reprTy do 
+                       for ity in GetImmediateInterfacesOfType skipUnref g amap m reprTy do 
                           if isAppTy g ity then 
                               let itcref = tcrefOfAppTy g ity
                               if not (tyconRefEq g itcref g.system_GenericIComparable_tcref) && 
@@ -125,7 +129,7 @@ let rec GetImmediateInterfacesOfType g amap m typ =
                     // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always 
                     // assume those are present. 
                     [ for ity in tdef.Implements |> ILList.toList  do
-                         if CanImportType scoref amap m ity then 
+                         if skipUnref = SkipUnrefInterfaces.No || CanImportType scoref amap m ity then 
                              yield ImportType scoref amap m tinst ity ]
 
                 | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -147,7 +151,7 @@ type AllowMultiIntfInstantiations = Yes | No
 
 /// Traverse the type hierarchy, e.g. f D (f C (f System.Object acc)). 
 /// Visit base types and interfaces first.
-let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst visitor g amap m typ acc = 
+let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m typ acc = 
     let rec loop ndeep typ ((visitedTycon,visited:TyconRefMultiMap<_>,acc) as state) =
 
         let seenThisTycon = isAppTy g typ && Set.contains (tcrefOfAppTy g typ).Stamp visitedTycon 
@@ -171,7 +175,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst visitor g
             if isInterfaceTy g typ then 
                 List.foldBack 
                    (loop (ndeep+1)) 
-                   (GetImmediateInterfacesOfType g amap m typ) 
+                   (GetImmediateInterfacesOfType skipUnref g amap m typ) 
                       (loop ndeep g.obj_ty state)
             elif isTyparTy g typ then 
                 let tp = destTyparTy g typ
@@ -200,7 +204,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst visitor g
                     if followInterfaces then 
                         List.foldBack 
                           (loop (ndeep+1)) 
-                          (GetImmediateInterfacesOfType g amap m typ) 
+                          (GetImmediateInterfacesOfType skipUnref g amap m typ) 
                           state 
                     else 
                         state
@@ -214,22 +218,25 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst visitor g
         (visitedTycon,visited,acc)
     loop 0 typ (Set.empty,TyconRefMultiMap<_>.Empty,acc)  |> p33
 
-/// Fold, do not follow interfaces
-let FoldPrimaryHierarchyOfType f g amap m allowMultiIntfInst typ acc = FoldHierarchyOfTypeAux false allowMultiIntfInst f g amap m typ acc 
+/// Fold, do not follow interfaces (unless the type is itself an interface)
+let FoldPrimaryHierarchyOfType f g amap m allowMultiIntfInst typ acc = 
+    FoldHierarchyOfTypeAux false allowMultiIntfInst SkipUnrefInterfaces.No f g amap m typ acc 
 
-/// Fold, following interfaces
-let FoldEntireHierarchyOfType f g amap m allowMultiIntfInst typ acc = FoldHierarchyOfTypeAux true allowMultiIntfInst f g amap m typ acc
+/// Fold, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
+let FoldEntireHierarchyOfType f g amap m allowMultiIntfInst typ acc = 
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes f g amap m typ acc
 
-/// Iterate, following interfaces
-let IterateEntireHierarchyOfType f g amap m allowMultiIntfInst typ = FoldHierarchyOfTypeAux true allowMultiIntfInst (fun ty () -> f ty) g amap m typ () 
+/// Iterate, following interfaces. Skipping interfaces that lie outside the referenced assembly set is allowed.
+let IterateEntireHierarchyOfType f g amap m allowMultiIntfInst typ = 
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes (fun ty () -> f ty) g amap m typ () 
 
 /// Search for one element satisfying a predicate, following interfaces
 let ExistsInEntireHierarchyOfType f g amap m allowMultiIntfInst typ = 
-    FoldHierarchyOfTypeAux true allowMultiIntfInst (fun ty acc -> acc || f ty ) g amap m typ false 
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.Yes (fun ty acc -> acc || f ty ) g amap m typ false 
 
 /// Search for one element where a function returns a 'Some' result, following interfaces
 let SearchEntireHierarchyOfType f g amap m typ = 
-    FoldHierarchyOfTypeAux true AllowMultiIntfInstantiations.Yes
+    FoldHierarchyOfTypeAux true AllowMultiIntfInstantiations.Yes SkipUnrefInterfaces.Yes
         (fun ty acc -> 
             match acc with 
             | None -> if f ty then Some(ty) else None 
@@ -238,7 +245,7 @@ let SearchEntireHierarchyOfType f g amap m typ =
 
 /// Get all super types of the type, including the type itself
 let AllSuperTypesOfType g amap m allowMultiIntfInst ty = 
-    FoldHierarchyOfTypeAux true allowMultiIntfInst (ListSet.insert (typeEquiv g)) g amap m ty [] 
+    FoldHierarchyOfTypeAux true allowMultiIntfInst SkipUnrefInterfaces.No (ListSet.insert (typeEquiv g)) g amap m ty [] 
 
 /// Get all interfaces of a type, including the type itself if it is an interface
 let AllInterfacesOfType g amap m allowMultiIntfInst ty = 
