@@ -2042,7 +2042,7 @@ and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
         (args,relevantFields) ||> List.iter2 (fun e f -> 
                 CG.EmitInstr cgbuf (pop 0) (Push (if tcref.IsStructOrEnumTycon then [ILType.Byref typ] else [typ])) mkLdarg0; 
                 GenExpr cenv cgbuf eenv SPSuppress e Continue;
-                GenFieldStore false cenv cgbuf eenv (tcref.NestedRecdFieldRef f,argtys,m) discard) 
+                GenFieldStore false cenv cgbuf eenv (tcref.MakeNestedRecdFieldRef f,argtys,m) discard) 
         // Object construction doesn't generate a true value. 
         // Object constructions will always just get thrown away so this is safe 
         GenSequel cenv eenv.cloc cgbuf sequel
@@ -6330,7 +6330,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                    let isPropHidden = 
                        ((fspec.IsCompilerGenerated && not tycon.IsEnumTycon) ||
                         hiddenRepr ||
-                        IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.NestedRecdFieldRef fspec))
+                        IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef fspec))
                    let ilType = GenType cenv.amap m cenv.g eenvinner.tyenv fspec.FormalType
                    let ilFieldName = ComputeFieldName tycon fspec
                         

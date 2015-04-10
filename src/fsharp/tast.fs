@@ -4071,9 +4071,9 @@ let mkNonLocalTyconRefPreResolved x nleref id = ERefNonLocalPreResolved x (mkNes
 
 type EntityRef with 
     
-    member tcref.UnionCasesAsRefList         = tcref.UnionCasesAsList         |> List.map tcref.NestedUnionCaseRef
-    member tcref.TrueInstanceFieldsAsRefList = tcref.TrueInstanceFieldsAsList |> List.map tcref.NestedRecdFieldRef
-    member tcref.AllFieldAsRefList           = tcref.AllFieldsAsList          |> List.map tcref.NestedRecdFieldRef
+    member tcref.UnionCasesAsRefList         = tcref.UnionCasesAsList         |> List.map tcref.MakeNestedUnionCaseRef
+    member tcref.TrueInstanceFieldsAsRefList = tcref.TrueInstanceFieldsAsList |> List.map tcref.MakeNestedRecdFieldRef
+    member tcref.AllFieldAsRefList           = tcref.AllFieldsAsList          |> List.map tcref.MakeNestedRecdFieldRef
 
     member tcref.NestedTyconRef (x:Entity) = 
         match tcref with 
@@ -4081,12 +4081,12 @@ type EntityRef with
         | ERefNonLocal nlr -> mkNonLocalTyconRefPreResolved x nlr x.LogicalName
 
     member tcref.RecdFieldRefInNestedTycon tycon (id:Ident) = mkRecdFieldRef (tcref.NestedTyconRef tycon) id.idText 
-    member tcref.NestedRecdFieldRef  (rf: RecdField) = mkRecdFieldRef tcref rf.Name
-    member tcref.NestedUnionCaseRef  (uc: UnionCase) = mkUnionCaseRef tcref uc.Id.idText
+    member tcref.MakeNestedRecdFieldRef  (rf: RecdField) = mkRecdFieldRef tcref rf.Name
+    member tcref.MakeNestedUnionCaseRef  (uc: UnionCase) = mkUnionCaseRef tcref uc.Id.idText
 
 /// Make a reference to a union case for type in a module or namespace
 let mkModuleUnionCaseRef (modref:ModuleOrNamespaceRef) tycon uc = 
-    (modref.NestedTyconRef tycon).NestedUnionCaseRef uc
+    (modref.NestedTyconRef tycon).MakeNestedUnionCaseRef uc
 
 let VRefLocal    x : ValRef = { binding=x; nlr=Unchecked.defaultof<_> }      
 let VRefNonLocal x : ValRef = { binding=Unchecked.defaultof<_>; nlr=x }      

@@ -190,7 +190,7 @@ let mkRecdCompare g tcref (tycon:Tycon) =
     let compe = mkILCallGetComparer g m
     let mkTest (fspec:RecdField) = 
         let fty = fspec.FormalType 
-        let fref = tcref.NestedRecdFieldRef fspec 
+        let fref = tcref.MakeNestedRecdFieldRef fspec 
         let m = fref.Range 
         mkCallGenericComparisonWithComparerOuter g m fty
           compe
@@ -214,7 +214,7 @@ let mkRecdCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_,thate) com
     
     let mkTest (fspec:RecdField) = 
         let fty = fspec.FormalType 
-        let fref = tcref.NestedRecdFieldRef fspec 
+        let fref = tcref.MakeNestedRecdFieldRef fspec 
         let m = fref.Range 
         mkCallGenericComparisonWithComparerOuter g m fty
           compe
@@ -238,7 +238,7 @@ let mkRecdEquality g tcref (tycon:Tycon) =
     let thisv,thatv,thise,thate = mkThisVarThatVar g m ty 
     let mkTest (fspec:RecdField) = 
         let fty = fspec.FormalType 
-        let fref = tcref.NestedRecdFieldRef fspec 
+        let fref = tcref.MakeNestedRecdFieldRef fspec 
         let m = fref.Range 
         mkCallGenericEqualityEROuter g m fty
           (mkRecdFieldGetViaExprAddr(thise, fref, tinst, m))
@@ -259,7 +259,7 @@ let mkRecdEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (th
     
     let mkTest (fspec:RecdField) =
         let fty = fspec.FormalType
-        let fref = tcref.NestedRecdFieldRef fspec
+        let fref = tcref.MakeNestedRecdFieldRef fspec
         let m = fref.Range
         
         mkCallGenericEqualityWithComparerOuter g m fty
@@ -339,7 +339,7 @@ let mkUnionCompare g tcref (tycon:Tycon) =
     let expr = 
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
         let mkCase ucase =
-            let cref = tcref.NestedUnionCaseRef ucase 
+            let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
             let thisucv,thisucve = mkCompGenLocal m "thisCast" (mkProvenUnionCaseTy cref tinst)
             let thatucv,thatucve = mkCompGenLocal m "objCast" (mkProvenUnionCaseTy cref tinst)
@@ -396,7 +396,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (thatv,thate
     let expr = 
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
         let mkCase ucase =
-            let cref = tcref.NestedUnionCaseRef ucase 
+            let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
             let thisucv,thisucve = mkCompGenLocal m "thisCastu" (mkProvenUnionCaseTy cref tinst)
             let thatucv,thatucve = mkCompGenLocal m "thatCastu" (mkProvenUnionCaseTy cref tinst)
@@ -455,7 +455,7 @@ let mkUnionEquality g tcref (tycon:Tycon) =
     let expr = 
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
         let mkCase ucase =
-            let cref = tcref.NestedUnionCaseRef ucase 
+            let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
             let thisucv,thisucve = mkCompGenLocal m "thisCast" (mkProvenUnionCaseTy cref tinst)
             let thatucv,thatucve = mkCompGenLocal m "objCast" (mkProvenUnionCaseTy cref tinst)
@@ -510,7 +510,7 @@ let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (t
     let expr = 
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
         let mkCase ucase =
-            let cref = tcref.NestedUnionCaseRef ucase 
+            let cref = tcref.MakeNestedUnionCaseRef ucase 
             let m = cref.Range 
             let thisucv,thisucve = mkCompGenLocal m "thisCastu" (mkProvenUnionCaseTy cref tinst)
             let thatucv,thatucve = mkCompGenLocal m "thatCastu" (mkProvenUnionCaseTy cref tinst)
@@ -567,7 +567,7 @@ let mkRecdHashWithComparer g tcref (tycon:Tycon) compe =
     let thisv,thise = mkThisVar g m ty
     let mkFieldHash (fspec:RecdField) = 
         let fty = fspec.FormalType
-        let fref = tcref.NestedRecdFieldRef fspec 
+        let fref = tcref.MakeNestedRecdFieldRef fspec 
         let m = fref.Range 
         let e = mkRecdFieldGetViaExprAddr(thise, fref, tinst, m)
         
@@ -605,7 +605,7 @@ let mkUnionHashWithComparer g tcref (tycon:Tycon) compe =
     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
     let accv,acce = mkMutableCompGenLocal m "i" g.int_ty                  
     let mkCase i ucase1 = 
-      let c1ref = tcref.NestedUnionCaseRef ucase1 
+      let c1ref = tcref.MakeNestedUnionCaseRef ucase1 
       let ucv,ucve = mkCompGenLocal m "unionCase" (mkProvenUnionCaseTy c1ref tinst)
       let m = c1ref.Range 
       let mkHash j (rfield:RecdField) =  

@@ -632,12 +632,16 @@ let (|StripInt32Value|_|) = function StripConstValue(Const.Int32 n) -> Some n | 
 //------------------------------------------------------------------------- 
 
 let MakeValueInfoForValue g m vref vinfo            = 
+#if DEBUG
     let rec check x = 
         match x with 
         | ValValue (vref2,detail)  -> if valRefEq g vref vref2 then error(Error(FSComp.SR.optRecursiveValValue(showL(exprValueInfoL g vinfo)),m)) else check detail
         | SizeValue (_n,detail) -> check detail
         | _ -> ()
     check vinfo;
+#else
+    ignore g; ignore m;
+#endif
     ValValue (vref,vinfo)       |> BoundValueInfoBySize
 
 let MakeValueInfoForRecord tcref argvals        = RecdValue (tcref,argvals)   |> BoundValueInfoBySize
@@ -1038,12 +1042,12 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         | TupleValue vinfos         -> 
             TupleValue (Array.map abstractExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> 
-            if hiddenTyconRepr tcref.Deref || Array.exists (tcref.NestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
+            if hiddenTyconRepr tcref.Deref || Array.exists (tcref.MakeNestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
             then UnknownValue 
             else RecdValue (tcref,Array.map abstractExprInfo vinfos)
         | UnionCaseValue(ucref,vinfos) -> 
             let tcref = ucref.TyconRef
-            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Array.exists (tcref.NestedUnionCaseRef >> hiddenUnionCase) 
+            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Array.exists (tcref.MakeNestedUnionCaseRef >> hiddenUnionCase) 
             then UnknownValue 
             else UnionCaseValue (ucref,Array.map abstractExprInfo vinfos)
         | SizeValue(_vdepth,vinfo)   -> MakeSizedValueInfo (abstractExprInfo vinfo)

@@ -546,7 +546,7 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :Uni
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) amap m  nenv (tcref:TyconRef) = 
 
     let isIL = tcref.IsILTycon
-    let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.NestedUnionCaseRef 
+    let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef 
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
 
     let eIndexedExtensionMembers, eUnindexedExtensionMembers = 
@@ -562,7 +562,7 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         else 
             (nenv.eFieldLabels,flds) ||> Array.fold (fun acc f -> 
                    if f.IsStatic || f.IsCompilerGenerated then acc 
-                   else AddRecdField (tcref.NestedRecdFieldRef f) acc)
+                   else AddRecdField (tcref.MakeNestedRecdFieldRef f) acc)
     
     let eUnqualifiedItems = 
         let tab = nenv.eUnqualifiedItems
@@ -1499,7 +1499,7 @@ let TryFindUnionCaseOfType g typ nm =
         let tcref,tinst = destAppTy g typ
         match tcref.GetUnionCaseByName nm with 
         | None -> None
-        | Some ucase -> Some(UnionCaseInfo(tinst,tcref.NestedUnionCaseRef ucase))
+        | Some ucase -> Some(UnionCaseInfo(tinst,tcref.MakeNestedUnionCaseRef ucase))
     else 
         None
 

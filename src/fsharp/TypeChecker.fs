@@ -5860,7 +5860,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
                fspecs 
                |> List.filter (fun rfld -> rfld.Name |> fieldNameUnbound)
                |> List.filter (fun f -> not f.IsZeroInit)
-               |> List.map (fun fspec ->fspec.Name, mkRecdFieldGet cenv.g (oldve',tcref.NestedRecdFieldRef fspec,tinst,m))
+               |> List.map (fun fspec ->fspec.Name, mkRecdFieldGet cenv.g (oldve',tcref.MakeNestedRecdFieldRef fspec,tinst,m))
 
     let fldsList = fldsList @ oldFldsList
 
@@ -14018,10 +14018,10 @@ module EstablishTypeDefinitionCores = begin
                 let nenv = envinner.NameEnv
                 // Record fields should be visible from IntelliSense, so add fake names for them (similarly to "let a = ..")
                 for fspec in (fields |> List.filter (fun fspec -> not fspec.IsCompilerGenerated)) do
-                    let info = RecdFieldInfo(thisTyInst, thisTyconRef.NestedRecdFieldRef fspec)
+                    let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
                     let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
                     // Name resolution gives better info for tooltips
-                    let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.NestedRecdFieldRef fspec)
+                    let item = FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec)
                     CallNameResolutionSink cenv.tcSink (fspec.Range,nenv,item,item,ItemOccurence.Binding,envinner.DisplayEnv,ad)
                     // Environment is needed for completions
                     CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
