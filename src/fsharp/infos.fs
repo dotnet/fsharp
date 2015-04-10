@@ -36,6 +36,9 @@ open Microsoft.FSharp.Core.CompilerServices
 let ImportType scoref amap m importInst ilty = 
     ilty |> rescopeILType scoref |>  Import.ImportILType amap m importInst 
 
+let CanImportType scoref amap m ilty = 
+    ilty |> rescopeILType scoref |>  Import.CanImportILType amap m 
+
 //-------------------------------------------------------------------------
 // Fold the hierarchy. 
 //  REVIEW: this code generalizes the iteration used below for member lookup.
@@ -113,7 +116,18 @@ let rec GetImmediateInterfacesOfType g amap m typ =
                           yield Import.ImportProvidedType amap m ity ]
 #endif
                 | ILTypeMetadata (scoref,tdef) -> 
-                    tdef.Implements |> ILList.toList |> List.map (ImportType scoref amap m tinst) 
+
+                    // ImportType may fail for an interface if the assembly load set is incomplete and the interface
+                    // comes from another assembly. In this case we simply skip the interface:
+                    // if we don't skip it, then compilation will just fail here, and if type checking
+                    // succeeds with fewer non-dereferencable interfaces reported then it would have 
+                    // succeeded with more reported. There are pathological corner cases where this 
+                    // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always 
+                    // assume those are present. 
+                    [ for ity in tdef.Implements |> ILList.toList  do
+                         if CanImportType scoref amap m ity then 
+                             yield ImportType scoref amap m tinst ity ]
+
                 | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                     tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g typ)) 
         else 

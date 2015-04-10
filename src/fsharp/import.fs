@@ -60,6 +60,16 @@ type ImportMap(g:TcGlobals,assemblyLoader:AssemblyLoader) =
     member this.assemblyLoader = assemblyLoader
     member this.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
 
+let CanImportILScopeRef (env:ImportMap) m scoref = 
+    match scoref with 
+    | ILScopeRef.Local    -> true
+    | ILScopeRef.Module _ -> true
+    | ILScopeRef.Assembly assref -> 
+        match env.assemblyLoader.LoadAssembly (m,assref) with
+        | UnresolvedCcu _ ->  false
+        | ResolvedCcu _ -> true
+
+
 /// Import a reference to a type definition, given the AbstractIL data for the type reference
 let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) = 
     let ccu =  
@@ -123,6 +133,10 @@ let ImportILTypeRef (env:ImportMap) m (tref:ILTypeRef) =
         env.ILTypeRefToTyconRefCache.[tref] <- tcref
         tcref
 
+/// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
+let CanImportILTypeRef (env:ImportMap) m (tref:ILTypeRef) =
+    env.ILTypeRefToTyconRefCache.ContainsKey(tref) || CanImportILScopeRef env m tref.Scope
+
 /// Import a type, given an AbstractIL ILTypeRef and an F# type instantiation.
 /// 
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than 
@@ -158,6 +172,19 @@ let rec ImportILType (env:ImportMap) m tinst typ =
          try List.nth tinst (int u16) 
          with _ -> 
               error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(),m))
+
+let rec CanImportILType (env:ImportMap) m typ =  
+    match typ with
+    | ILType.Void -> true
+    | ILType.Array(_bounds,ty) -> CanImportILType env m ty
+    | ILType.Boxed  tspec | ILType.Value tspec ->
+        CanImportILTypeRef env m tspec.TypeRef 
+        && tspec.GenericArgs |> ILList.toList |> List.forall (CanImportILType env m) 
+    | ILType.Byref ty -> CanImportILType env m ty
+    | ILType.Ptr ty  -> CanImportILType env m ty
+    | ILType.FunctionPointer _ -> true
+    | ILType.Modified(_,_,ty) -> CanImportILType env m ty
+    | ILType.TypeVar _u16 -> true
 
 #if EXTENSIONTYPING
 
