@@ -290,9 +290,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        /// <summary>
-        /// Gets or sets the name of the object.
-        /// </summary>
         public virtual string Name
         {
             get

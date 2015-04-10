@@ -408,15 +408,9 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
         
     }
     
-    /// <devdoc>
-    ///    <para>[To be supplied.]</para>
-    /// </devdoc>
     [ComImport, Guid("aade1f59-6ace-43d1-8fca-42af3a5c4f3c"),InterfaceTypeAttribute(ComInterfaceType.InterfaceIsDual)]
     internal interface  AutomationExtMgr_IFilterProperties {
    
-           /// <devdoc>
-           ///    <para>[To be supplied.]</para>
-           /// </devdoc>
            [return: System.Runtime.InteropServices.MarshalAs(UnmanagedType.I4)]
            [PreserveSig]                             
            int IsPropertyHidden(string name, [Out]out vsFilterProperties propertyHidden);
@@ -501,31 +495,19 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetComponentName(baseObject);
         }
 
-        /// <devdoc>
-        ///      Retrieves the type converter for this object.
-        /// </devdoc>
         TypeConverter ICustomTypeDescriptor.GetConverter() {
             return TypeDescriptor.GetConverter(baseObject);
         }
 
-        /// <devdoc>
-        ///     Retrieves the default event.
-        /// </devdoc>
         EventDescriptor ICustomTypeDescriptor.GetDefaultEvent() {
             return null;
         }
 
 
-        /// <devdoc>
-        ///     Retrieves the default property.
-        /// </devdoc>
         PropertyDescriptor ICustomTypeDescriptor.GetDefaultProperty() {
             return TypeDescriptor.GetDefaultProperty(baseObject);
         }
 
-        /// <devdoc>
-        ///      Retrieves the an editor for this object.
-        /// </devdoc>
         object ICustomTypeDescriptor.GetEditor(Type editorBaseType) {
             return TypeDescriptor.GetEditor(baseObject, editorBaseType);
         }
@@ -791,30 +773,18 @@ namespace Microsoft.VisualStudio.Editors.PropertyPages
             return TypeDescriptor.GetComponentName(baseObject);
         }
 
-        /// <devdoc>
-        ///      Retrieves the type converter for this object.
-        /// </devdoc>
         TypeConverter ICustomTypeDescriptor.GetConverter() {
             return TypeDescriptor.GetConverter(baseObject);
         }
 
-        /// <devdoc>
-        ///     Retrieves the default event.
-        /// </devdoc>
         EventDescriptor ICustomTypeDescriptor.GetDefaultEvent() {
             return null;
         }
 
-        /// <devdoc>
-        ///     Retrieves the default property.
-        /// </devdoc>
         PropertyDescriptor ICustomTypeDescriptor.GetDefaultProperty() {
             return TypeDescriptor.GetDefaultProperty(baseObject);
         }
 
-        /// <devdoc>
-        ///      Retrieves the an editor for this object.
-        /// </devdoc>
         object ICustomTypeDescriptor.GetEditor(Type editorBaseType) {
             return TypeDescriptor.GetEditor(baseObject, editorBaseType);
         }

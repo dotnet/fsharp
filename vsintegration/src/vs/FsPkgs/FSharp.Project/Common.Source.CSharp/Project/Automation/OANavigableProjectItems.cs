@@ -97,9 +97,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        /// <summary>
-        /// Gets the immediate parent object of a ProjectItems collection.
-        /// </summary>
         public virtual object Parent
         {
             get
@@ -224,10 +221,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             return null;
         }
 
-        /// <summary>
-        /// Returns an enumeration for items in a collection. 
-        /// </summary>
-        /// <returns>An IEnumerator for this object.</returns>
         public virtual IEnumerator GetEnumerator()
         {
             if (this.items == null)

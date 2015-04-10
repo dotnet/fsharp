@@ -163,9 +163,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
             throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "index");
         }
-        /// <summary>
-        /// Gets the immediate parent object of a Properties collection.
-        /// </summary>
+
         public virtual object Parent
         {
             get { return null; }

@@ -536,9 +536,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// constructor for the ProjectReferenceNode
-        /// </summary>
         internal ProjectReferenceNode(ProjectNode root, string referencedProjectName, string projectPath, string projectReference)
             : base(root)
         {

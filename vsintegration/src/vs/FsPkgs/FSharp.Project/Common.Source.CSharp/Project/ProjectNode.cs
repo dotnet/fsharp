@@ -682,7 +682,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// </summary>
 		private ProjectPackage package;
 
-        // Has the object been disposed.
         private bool isDisposed;
 
         /// <summary>
@@ -1649,10 +1648,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return Path.Combine(this.BaseURI.AbsoluteUrl, this.filename);
         }
 
-        /// <summary>
-        /// Disposes the project node object.
-        /// </summary>
-        /// <param name="disposing">Flag determining ehether it was deterministic or non deterministic clean up.</param>
         protected override void Dispose(bool disposing)
         {
             if (this.isDisposed)

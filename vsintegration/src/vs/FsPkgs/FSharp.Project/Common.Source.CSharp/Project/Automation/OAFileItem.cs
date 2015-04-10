@@ -303,9 +303,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             });
         }
 
-        /// <summary>
-        /// Gets the ProjectItems for the object.
-        /// </summary>
         public override ProjectItems ProjectItems
         {
             get

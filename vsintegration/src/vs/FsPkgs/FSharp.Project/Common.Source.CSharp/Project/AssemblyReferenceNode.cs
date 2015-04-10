@@ -274,10 +274,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        /// <summary>
-        /// Closes the node.
-        /// </summary>
-        /// <returns></returns>
+
         public override int Close()
         {
             try
@@ -374,10 +371,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // LBXML_KEY_REFERENCE_EXTENSION       "ExecutableExtension"
         }
 
-        /// <summary>
-        /// Disposes the node
-        /// </summary>
-        /// <param name="disposing"></param>
         protected override void Dispose(bool disposing)
         {
             if (this.myIsDisposed)

@@ -31,9 +31,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             private int useDesignTimeCompilationFlag = -1;
             object generator = null;
 
-            /// <summary>
-            /// Constructor
-            /// </summary>
             public GeneratorMetaData()
             {
             }

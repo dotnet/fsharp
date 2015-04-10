@@ -113,9 +113,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// Constructor for the ComReferenceNode. 
-        /// </summary>
         internal ComReferenceNode(ProjectNode root, ProjectElement element)
             : base(root, element)
         {

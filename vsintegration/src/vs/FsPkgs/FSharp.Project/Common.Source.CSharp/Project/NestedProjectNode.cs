@@ -85,9 +85,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// The Caption of the nested project.
-        /// </summary>
         public override string Caption
         {
             get

@@ -30,9 +30,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         // Internal fields
         private ArrayList tokenlist;
 
-        /// <summary>
-        /// Constructor
-        /// </summary>
         public TokenProcessor()
         {
             tokenlist = new ArrayList();

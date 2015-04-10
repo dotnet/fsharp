@@ -47,9 +47,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             throw new InvalidOperationException();
         }
 
-        /// <summary>
-        /// Gets or sets the name of the object.
-        /// </summary>
         public override string Name
         {
             get

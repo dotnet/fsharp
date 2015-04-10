@@ -109,35 +109,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private List<HierarchyNode> itemsDraggedOrCutOrCopied;
         private bool sourceDraggedOrCutOrCopied;
 
-        /// <summary>
-        /// Has the object been disposed.
-        /// </summary>
-        /// <devremark>We will not specify a property for isDisposed, rather it is expected that the a private flag is defined
-        /// on all subclasses. We do not want get in a situation where the base class's dipose is not called because a child sets the flag through the property.</devremark>
         private bool isDisposed;
 
-        /// <summary>
-        /// The URL of the node.
-        /// </summary>
-        /// <value></value>
         public abstract string Url
         {
             get;
         }
 
-        /// <summary>
-        /// The Caption of the node.
-        /// </summary>
-        /// <value></value>
         public abstract string Caption
         {
             get;
         }
 
-        /// <summary>
-        /// The item type guid associated to a node.
-        /// </summary>
-        /// <value></value>
         public abstract Guid ItemTypeGuid
         {
             get;

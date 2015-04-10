@@ -81,14 +81,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         private Dictionary<string, ObservedItemInfo> observedItems = new Dictionary<string, ObservedItemInfo>();
 
-        /// <summary>
-        /// Has Disposed already been called?
-        /// </summary>
         private bool disposed;
 
-        /// <summary>
-        /// Overloaded ctor.
-        /// </summary>
         /*internal, but public for FSharp.Project.dll*/ public FileChangeManager(IServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
@@ -105,9 +99,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// Disposes resources.
-        /// </summary>
         public void Dispose()
         {
             // Don't dispose more than once

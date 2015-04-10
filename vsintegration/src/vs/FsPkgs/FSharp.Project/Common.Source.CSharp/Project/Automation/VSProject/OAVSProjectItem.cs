@@ -54,9 +54,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 #endif
         }
 
-        /// <summary>
-        /// File Node property
-        /// </summary>
         public FileNode FileNode
         {
             get

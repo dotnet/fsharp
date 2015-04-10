@@ -27,18 +27,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         public /*protected, but public for FSharp.Project.dll*/ delegate void CannotAddReferenceErrorMessage();
 
-        /// <summary>
-        /// constructor for the ReferenceNode
-        /// </summary>
         internal ReferenceNode(ProjectNode root, ProjectElement element)
             : base(root, element)
         {
             this.ExcludeNodeFromScc = true;
         }
 
-        /// <summary>
-        /// constructor for the ReferenceNode
-        /// </summary>
         internal ReferenceNode(ProjectNode root)
             : base(root)
         {

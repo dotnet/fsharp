@@ -90,9 +90,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             set { taskReporter = value; }
         }
 
-		/// <summary>
-		/// Constructor.  Inititialize member data.
-		/// </summary>
 		internal IDEBuildLogger(IVsOutputWindowPane output, TaskProvider taskProvider, IVsHierarchy hierarchy)
 		{
 			if (taskProvider == null)
@@ -109,9 +106,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			this.serviceProvider = new ServiceProvider(site);
 		}
 
-		/// <summary>
-		/// Overridden from the Logger class.
-		/// </summary>
 		public override void Initialize(IEventSource eventSource)
 		{
 			if (null == eventSource)
