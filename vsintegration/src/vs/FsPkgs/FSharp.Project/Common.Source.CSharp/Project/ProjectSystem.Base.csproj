@@ -137,7 +137,6 @@
     <Compile Include="FileNode.cs" />
     <Compile Include="DependentFileNode.cs" />
     <Compile Include="FolderNode.cs" />
-    <Compile Include="GlobalPropertyHandler.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HierarchyNode.cs" />
     <Compile Include="ImageHandler.cs" />
