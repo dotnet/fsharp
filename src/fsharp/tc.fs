@@ -607,18 +607,23 @@ let BuildRootModuleExpr enclosingNamespacePath cpath mexpr =
         ||> List.foldBack (fun id (cpath, mexpr) -> (parentCompPath cpath, wrapModuleOrNamespaceExprInNamespace id (parentCompPath cpath) mexpr))
         |> snd
 
-let ImplicitlyOpenOwnNamespace tcSink (g:TcGlobals) amap scopem (enclosingNamespacePath: Ident list) env = 
+let TryStripPrefixPath (g:TcGlobals) (enclosingNamespacePath: Ident list) = 
+    match enclosingNamespacePath with 
+    | p::rest when  g.isInteractive &&
+                    p.idText.StartsWith(FsiDynamicModulePrefix,System.StringComparison.Ordinal) && 
+                    p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit &&
+                    rest.Length > 0 -> Some(p,rest)
+    | _ -> None
+
+let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env = 
     if isNil enclosingNamespacePath then 
         env
     else
         // For F# interactive, skip "FSI_0002" prefixes when determining the path to open implicitly
         let enclosingNamespacePathToOpen = 
-            match enclosingNamespacePath with 
-            | p::rest when  g.isInteractive &&
-                            p.idText.StartsWith(FsiDynamicModulePrefix,System.StringComparison.Ordinal) && 
-                            p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit &&
-                            rest.Length > 0 -> rest
-            | rest -> rest
+            match TryStripPrefixPath g enclosingNamespacePath with 
+            | Some(_,rest) -> rest
+            | None -> enclosingNamespacePath
 
         let ad = env.eAccessRights
         match ResolveLongIndentAsModuleOrNamespace amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
@@ -15079,6 +15084,13 @@ let rec TcSignatureElement cenv parent endm (env: TcEnv) e : Eventually<TcEnv> =
                     let modulTypeRoot = BuildRootModuleType enclosingNamespacePath envinner.eCompPath !(envinner.eModuleOrNamespaceTypeAccumulator)
 
                     let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env modulTypeRoot
+
+                    // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment.
+                    let env = 
+                        match TryStripPrefixPath cenv.g enclosingNamespacePath with 
+                        | Some(p,_) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p]
+                        | None -> env
+
                     // Publish the combined module type
                     env.eModuleOrNamespaceTypeAccumulator := combineModuleOrNamespaceTypeList [] m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
                     env
@@ -15306,6 +15318,13 @@ let rec TcModuleOrNamespaceElement (cenv:cenv) parent scopem env e = // : ((Modu
                   let modulTypeRoot = BuildRootModuleType enclosingNamespacePath envinner.eCompPath !(envinner.eModuleOrNamespaceTypeAccumulator)
 
                   let env = AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m env modulTypeRoot
+
+                  // If the namespace is an interactive fragment e.g. FSI_0002, then open FSI_0002 in the subsequent environment
+                  let env = 
+                      match TryStripPrefixPath cenv.g enclosingNamespacePath with 
+                      | Some(p,_) -> TcOpenDecl cenv.tcSink cenv.g cenv.amap m.EndRange m.EndRange env [p]
+                      | None -> env
+
                   // Publish the combined module type
                   env.eModuleOrNamespaceTypeAccumulator := combineModuleOrNamespaceTypeList [] m [!(env.eModuleOrNamespaceTypeAccumulator); modulTypeRoot]
                   env
