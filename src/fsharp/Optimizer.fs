@@ -3052,7 +3052,9 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
             else einfo 
         if v.MustInline  && IsPartialExprVal einfo.Info then 
             errorR(InternalError("the mustinline value '"^v.LogicalName^"' was not inferred to have a known value",v.Range));
+#if DEBUG
         if verboseOptimizations then dprintf "val %s gets opt info %s\n" (showL(valL v)) (showL(exprValueInfoL cenv.g einfo.Info));
+#endif
         
         let env = BindInternalLocalVal cenv v (mkValInfo einfo v) env 
         (TBind(v,repr',spBind), einfo), env
