@@ -2477,6 +2477,18 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             with get() = (x.Node :?> FSharpFileNode).SubType
             and set(value) = (x.Node :?> FSharpFileNode).SubType <- value
 
+        override x.CreateDesignPropertyDescriptor propertyDescriptor =
+            let isLinkFile = 
+                match x.Node with
+                | :? FSharpFileNode as f -> f.IsLinkFile
+                | _ -> false
+
+            let fileNameEditable = not isLinkFile
+
+            if (not(fileNameEditable) && (propertyDescriptor.Name = "FileName"))
+            then Microsoft.VisualStudio.Editors.PropertyPages.FilteredObjectWrapper.ReadOnlyPropertyDescriptorWrapper(propertyDescriptor) :> PropertyDescriptor
+            else base.CreateDesignPropertyDescriptor(propertyDescriptor)
+
 
     and (* type *)
      
