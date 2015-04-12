@@ -44,6 +44,7 @@ RunTests.cmd <debug|release> coreunitportable47
 RunTests.cmd <debug|release> coreunitportable7
 RunTests.cmd <debug|release> coreunitportable78
 RunTests.cmd <debug|release> coreunitportable259
+RunTests.cmd <debug|release> coreproperty
 RunTests.cmd <debug|release> ideunit
 ```
 
@@ -102,6 +103,8 @@ To build these unit test binaries, from the `src` directory call
   - Output binary is `FSharp.Compiler.Unittests.dll`
 - `msbuild fsharp-library-unittests-build.proj`
   - Output binary is `FSharp.Core.Unittests.dll`
+- `msbuild fsharp-library-propertytests-build.proj`
+  - Output binary is `FSharp.Core.PropertyTests.dll`  
 
 You can execute and re-run these tests using any standard NUnit approach - via graphical `nunit.exe` or on the command line via `nunit-console.exe`.
 
