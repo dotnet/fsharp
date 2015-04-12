@@ -66,6 +66,9 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
 
+%_msbuildexe% src/fsharp-library-propertytests-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library propertytests build failed && goto :failure
+
 %_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
 
@@ -93,6 +96,9 @@ call RunTests.cmd release compilerunit
 
 call RunTests.cmd release coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+
+call RunTests.cmd release coreproperty
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreproperty' failed && goto :failure
 
 popd
 
