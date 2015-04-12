@@ -55,6 +55,10 @@ if /I "%2" == "compilerunit" (
    set compilerunitsuffix=net40
    goto :COMPILERUNIT
 )
+if /I "%2" == "coreproperty" (
+   set corepropertysuffix=net40
+   goto :COREPROPERTY
+)
 if /I "%2" == "coreunit" (
    set coreunitsuffix=net40
    goto :COREUNIT
@@ -211,6 +215,18 @@ echo "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFI
      "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
 goto :EOF
+
+:COREPROPERTY
+
+set XMLFILE=CoreUnit_%corepropertytsuffix%_Xml.xml
+set OUTPUTFILE=CoreUnit_%corepropertysuffix%_Output.log
+set ERRORFILE=CoreUnit_%corepropertysuffix%_Error.log
+
+echo "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%corepropertysuffix%\bin\FSharp.Core.PropertyTests.dll 
+     "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%corepropertysuffix%\bin\FSharp.Core.PropertyTests.dll 
+
+goto :EOF
+
 
 :COMPILERUNIT
 
