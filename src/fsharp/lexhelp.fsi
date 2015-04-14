@@ -33,6 +33,11 @@ type lexargs =
     lightSyntaxStatus: LightSyntaxStatus;
     errorLogger: ErrorLogger}
 
+type LongUnicodeLexResult =
+    | SurrogatePair of uint16 * uint16
+    | SingleChar of uint16
+    | Invalid
+
 val resetLexbufPos : string -> UnicodeLexing.Lexbuf -> unit
 val mkLexargs : 'a * string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger -> lexargs
 val reusingLexbufForParsing : UnicodeLexing.Lexbuf -> (unit -> 'a) -> 'a 
@@ -52,7 +57,7 @@ val internal digit : char -> int32
 val internal hexdigit : char -> int32
 val internal unicodeGraphShort : string -> uint16
 val internal hexGraphShort : string -> uint16
-val internal unicodeGraphLong : string -> (uint16 option * uint16) option
+val internal unicodeGraphLong : string -> LongUnicodeLexResult
 val internal escape : char -> char
 
 exception internal ReservedKeyword of string * Range.range

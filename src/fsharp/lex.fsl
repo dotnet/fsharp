@@ -411,7 +411,7 @@ rule token args skip = parse
  | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
  | '\'' unicodeGraphLong '\''  
      { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
-       | Some(None, lo) -> CHAR (char lo)
+       | SingleChar(c) -> CHAR (char c)
        | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
  | "(*IF-FSHARP"    
      { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
@@ -757,13 +757,17 @@ and string sargs skip = parse
  | unicodeGraphLong
     { let (buf,_fin,m,args) = sargs
       let hexChars = lexemeTrimLeft lexbuf 2
+      let result = lazy (if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf)
       match unicodeGraphLong hexChars with
-      | None ->
-          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf)
-      | Some(hi, lo) -> 
-          (match hi with | None -> () | Some c -> addUnicodeChar buf (int c));
-          addUnicodeChar buf (int lo);
-          (if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf)  }
+      | Invalid ->
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result.Force())
+      | SingleChar(c) ->
+          addUnicodeChar buf (int c)
+          result.Force()
+      | SurrogatePair(hi, lo) -> 
+          addUnicodeChar buf (int hi)
+          addUnicodeChar buf (int lo)
+          result.Force() }
      
  |  '"' 
     { let (buf,fin,_m,_args) = sargs 

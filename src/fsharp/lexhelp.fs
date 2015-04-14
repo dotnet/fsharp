@@ -56,6 +56,12 @@ type lexargs =
       lightSyntaxStatus : LightSyntaxStatus;
       errorLogger: ErrorLogger }
 
+/// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
+type LongUnicodeLexResult =
+    | SurrogatePair of uint16 * uint16
+    | SingleChar of uint16
+    | Invalid
+
 let mkLexargs (_filename,defines,lightSyntaxStatus,resourceManager,ifdefStack,errorLogger) =
     { defines = defines;
       ifdefStack= ifdefStack;
@@ -154,15 +160,15 @@ let unicodeGraphLong (s:string) =
     let high = hexdigit s.[0] * 4096 + hexdigit s.[1] * 256 + hexdigit s.[2] * 16 + hexdigit s.[3] in 
     let low = hexdigit s.[4] * 4096 + hexdigit s.[5] * 256 + hexdigit s.[6] * 16 + hexdigit s.[7] in 
     // not a surrogate pair
-    if high = 0 then Some(None, uint16 low)
+    if high = 0 then SingleChar(uint16 low)
     // invalid encoding
-    elif high > 0x10 then None
+    elif high > 0x10 then Invalid
     // valid surrogate pair - see http://www.unicode.org/unicode/uni2book/ch03.pdf, section 3.7 *)
     else
       let codepoint = high * 0x10000 + low
       let hiSurr = uint16 (0xD800 + ((codepoint - 0x10000) / 0x400))
       let loSurr = uint16 (0xDC00 + ((codepoint - 0x10000) % 0x400))
-      Some(Some(hiSurr), loSurr)
+      SurrogatePair(hiSurr, loSurr)
 
 let escape c = 
     match c with
