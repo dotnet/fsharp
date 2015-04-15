@@ -124,7 +124,7 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                             BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
                         )
                      else
-                        STRING (System.Text.Encoding.Unicode.GetString(s,0,s.Length)))  
+                        STRING (Lexhelp.stringBufferAsString s))  
     buf,fin,m
              
 // Utility functions for processing XML documentation 
@@ -410,10 +410,9 @@ rule token args skip = parse
  | '\'' hexGraphShort '\'' { CHAR (char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
  | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
  | '\'' unicodeGraphLong '\''  
-     { let hi,lo = unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) 
-       match hi with 
-       | None -> CHAR (char lo)
-       | Some _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char lo)) }
+     { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
+       | SingleChar(c) -> CHAR (char c)
+       | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
  | "(*IF-FSHARP"    
      { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
  | "(*F#"            
@@ -756,11 +755,19 @@ and string sargs skip = parse
       if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m)))  else string sargs skip lexbuf  }
      
  | unicodeGraphLong
-    { let (buf,_fin,m,args) = sargs 
-      let hi,lo = unicodeGraphLong (lexemeTrimLeft lexbuf 2) 
-      (match hi with | None -> () | Some c -> addUnicodeChar buf (int c));
-      addUnicodeChar buf (int lo);
-      if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf  }
+    { let (buf,_fin,m,args) = sargs
+      let hexChars = lexemeTrimLeft lexbuf 2
+      let result () = if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf
+      match unicodeGraphLong hexChars with
+      | Invalid ->
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result ())
+      | SingleChar(c) ->
+          addUnicodeChar buf (int c)
+          result ()
+      | SurrogatePair(hi, lo) -> 
+          addUnicodeChar buf (int hi)
+          addUnicodeChar buf (int lo)
+          result () }
      
  |  '"' 
     { let (buf,fin,_m,_args) = sargs 
