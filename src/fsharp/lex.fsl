@@ -757,17 +757,17 @@ and string sargs skip = parse
  | unicodeGraphLong
     { let (buf,_fin,m,args) = sargs
       let hexChars = lexemeTrimLeft lexbuf 2
-      let result = lazy (if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf)
+      let result () = if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string sargs skip lexbuf
       match unicodeGraphLong hexChars with
       | Invalid ->
-          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result.Force())
+          fail args lexbuf (FSComp.SR.lexInvalidUnicodeLiteral hexChars) (result ())
       | SingleChar(c) ->
           addUnicodeChar buf (int c)
-          result.Force()
+          result ()
       | SurrogatePair(hi, lo) -> 
           addUnicodeChar buf (int hi)
           addUnicodeChar buf (int lo)
-          result.Force() }
+          result () }
      
  |  '"' 
     { let (buf,fin,_m,_args) = sargs 
