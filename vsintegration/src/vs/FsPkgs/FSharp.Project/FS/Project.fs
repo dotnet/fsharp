@@ -720,8 +720,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 #if DESIGNER                
                 this.AddCATIDMapping(typeof<OAFSharpFileItem>, typeof<OAFSharpFileItem>.GUID)
 #endif
-                // The following are not specific to F# and as such we need a separate GUID (we simply used guidgen.exe to create new guids)
-
                 // This one we use the same as F# file nodes since both refer to files
                 this.AddCATIDMapping(typeof<FileNodeProperties>, typeof<FSharpFileNodeProperties>.GUID)
                 this.AddCATIDMapping(typeof<ProjectConfigProperties>, typeof<ProjectConfigProperties>.GUID)
