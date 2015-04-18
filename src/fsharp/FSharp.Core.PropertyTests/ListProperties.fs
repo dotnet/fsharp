@@ -47,9 +47,6 @@ let ListMapFold<'a> (xs : list<'a>) mapF foldF state =
     state' = (xs |> List.fold foldF state)
 
 type ListProperties =
-//    static member ``Reverse of a reverse of a int list gives the original list``(xs:list<int>) = 
-//        List.rev(xs) = xs
-      
     static member ListContainsInt xs x = ListContains<int> xs x
     static member ListDistinctInt xs = ListDistinct<int> xs
     static member ListDistinctByInt xs = ListDistinctBy<int> xs
@@ -72,9 +69,9 @@ type ListProperties =
     static member ListDistinctFloat xs = ListDistinct<float> xs
     static member ListDistinctByFloat xs = ListDistinctBy<float> xs
     static member ListIndexedFloat xs = ListIndexed<float> xs
-   // static member ListPairwiseFloat xs = ListPairwise<float> xs
+    static member ListPairwiseFloat xs = ListPairwise<NormalFloat> xs
     static member ListSplitAtFloat xs x = ListSplitAt<float> xs x
-   // static member ListSplitIntoFloat xs x = ListSplitInto<float> xs x
+    static member ListSplitIntoFloat xs x = ListSplitInto<NormalFloat> xs x
     static member ListMapFoldFloat xs mapF foldF state = ListMapFold<float> xs mapF foldF state
 
 
