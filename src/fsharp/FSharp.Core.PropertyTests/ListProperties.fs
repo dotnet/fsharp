@@ -181,3 +181,28 @@ let ``List properties`` () =
 [<Test>]
 let ``modules consistency`` () =
     Check.QuickThrowOnFailureAll<CollectionModulesConsistency>()
+
+let sortByStable<'a when 'a : comparison> (xs : 'a []) =
+    let indexed = xs |> Seq.indexed
+    let sorted = indexed |> Seq.sortBy snd
+    sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+
+let sortByStableArray<'a when 'a : comparison> (xs : 'a []) =
+    let indexed = xs |> Seq.indexed |> Seq.toArray
+    let sorted = indexed |> Array.sortBy snd
+    sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+
+let sortByStableList<'a when 'a : comparison> (xs : 'a []) =
+    let indexed = xs |> Seq.indexed |> Seq.toList
+    let sorted = indexed |> List.sortBy snd
+    sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+
+let sortByStableInt xs = sortByStable<int> xs
+let sortByStableArrayInt xs = sortByStableArray<int> xs
+let sortByStableListInt xs = sortByStableList<int> xs
+
+[<Test>]
+let ``sortBy stable`` () = 
+    Check.QuickThrowOnFailure(sortByStableInt)
+    Check.QuickThrowOnFailure(sortByStableListInt)
+    Check.QuickThrowOnFailure(sortByStableArrayInt)
