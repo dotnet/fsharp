@@ -72,6 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArrayProperties.fs" />
+    <Compile Include="ListProperties.fs" />
     <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
     <CustomCopyLocal Include="FSharp.Core.PropertyTests.dll.config">
       <TargetFilename>FSharp.Core.PropertyTests.dll.config</TargetFilename>
