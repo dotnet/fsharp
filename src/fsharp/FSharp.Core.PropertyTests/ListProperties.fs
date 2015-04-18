@@ -74,6 +74,15 @@ type ListProperties =
     static member ListSplitIntoFloat xs x = ListSplitInto<NormalFloat> xs x
     static member ListMapFoldFloat xs mapF foldF state = ListMapFold<float> xs mapF foldF state
 
+    static member ``sort behaves like sortby id``(xs:float list) =   
+          let a = List.sortBy id xs |> Seq.toArray 
+          let b = List.sort xs |> Seq.toArray
+          let result = ref true
+          for i in 0 .. a.Length - 1 do
+            if a.[i] <> b.[i] then
+                if System.Double.IsNaN a.[i] <> System.Double.IsNaN b.[i] then
+                    result := false
+          !result          
 
 [<Test>]
 let ``List properties`` () =
