@@ -1298,7 +1298,7 @@ and OpHasEffect g op =
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref,n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet -> false
-    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable
+    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || HasFSharpAttribute g g.attrib_AllowNullLiteralAttribute rfref.Tycon.Attribs
     | TOp.ValFieldGetAddr _rfref  -> true (* check *)
     | TOp.LValueOp (LGetAddr,lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _
