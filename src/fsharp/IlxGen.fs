@@ -1075,12 +1075,12 @@ let MergePropertyDefs m ilPropertyDefs =
 //-------------------------------------------------------------------------- 
 
 /// Information collected imperatively for each type definition 
-type TypeDefBuilder(tdef) = 
+type TypeDefBuilder(tdef, nestedProvidedTypes) = 
     let gmethods   = new ResizeArray<ILMethodDef>(0)
     let gfields    = new ResizeArray<ILFieldDef>(0)
     let gproperties : Dictionary<PropKey,(int * ILPropertyDef)> = new Dictionary<_,_>(3,HashIdentity.Structural)
     let gevents    = new ResizeArray<ILEventDef>(0)
-    let gnested    = new TypeDefsBuilder()
+    let gnested    = new TypeDefsBuilder(nestedProvidedTypes)
     
     member b.Close() = 
         { tdef with 
@@ -1107,9 +1107,16 @@ type TypeDefBuilder(tdef) =
         | None -> gmethods.Add(mkILClassCtor (mkMethodBody (false,emptyILLocals,1,nonBranchingInstrsToCode instrs,tag)))
 
 
-and TypeDefsBuilder() = 
+and TypeDefsBuilder(nestedProvidedTypes:(string list * (ILTypeRef * ILTypeDef)) list) as this = 
     let tdefs : Internal.Utilities.Collections.HashMultiMap<string, (int * (TypeDefBuilder * bool))> = HashMultiMap(0, HashIdentity.Structural)
     let mutable countDown = System.Int32.MaxValue 
+
+    // Add the provided types at this level and defer the rest
+    //  for when those nested type defs are defined
+    let deferredProvidedTypes = nestedProvidedTypes |> List.filter (fun (encl, _) -> not encl.IsEmpty)
+    do
+        for (encl, (_, tdef)) in nestedProvidedTypes do
+            if encl.IsEmpty then this.AddTypeDef(tdef, false, false)
 
     member b.Close() = 
         //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order. 
@@ -1139,12 +1146,18 @@ and TypeDefsBuilder() =
 
     member b.AddTypeDef(tdef:ILTypeDef, eliminateIfEmpty, addAtEnd) = 
         let idx = if addAtEnd then (countDown <- countDown - 1; countDown) else tdefs.Count
-        tdefs.Add (tdef.Name, (idx, (new TypeDefBuilder(tdef), eliminateIfEmpty)))
+        let pt =
+            deferredProvidedTypes
+            |> List.choose (fun (encl, pt) ->
+                match encl with
+                | nm :: tl when nm = tdef.Name -> Some (tl, pt)
+                | _ -> None)
+        tdefs.Add (tdef.Name, (idx, (new TypeDefBuilder(tdef, pt), eliminateIfEmpty)))
 
 /// Assembly generation buffers 
-type AssemblyBuilder(cenv:cenv) as mgbuf = 
+type AssemblyBuilder(cenv:cenv, providedTypes:(ILTypeRef * ILTypeDef) list) as mgbuf = 
     // The Abstract IL table of types 
-    let gtdefs= new TypeDefsBuilder() 
+    let gtdefs= new TypeDefsBuilder(providedTypes |> List.map (fun (tref, tdef) -> (tref.Enclosing, (tref, tdef)))) 
     // The definitions of top level values, as quotations. 
     let mutable reflectedDefinitions : System.Collections.Generic.Dictionary<Tast.Val,(string * int * Expr)> = System.Collections.Generic.Dictionary(HashIdentity.Reference)
     // A memoization table for generating value types for big constant arrays  
@@ -6660,12 +6673,12 @@ type IlxGenResults =
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 
-let GenerateCode (cenv, eenv, TAssembly fileImpls, assemAttribs, moduleAttribs) =
+let GenerateCode (cenv, eenv, TAssembly fileImpls, assemAttribs, moduleAttribs, providedTypes) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlxGen)
 
     // Generate the implementations into the mgbuf 
-    let mgbuf= new AssemblyBuilder(cenv)
+    let mgbuf= new AssemblyBuilder(cenv, providedTypes)
     let eenv = { eenv with cloc = CompLocForFragment cenv.opts.fragName cenv.viewCcu }
     
     // Generate the PrivateImplementationDetails type
@@ -6872,7 +6885,7 @@ type IlxAssemblyGenerator(amap: Import.ImportMap, tcGlobals: TcGlobals, tcVal : 
         ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedAssembly)
 
     /// Generate ILX code for an assembly fragment
-    member __.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) = 
+    member __.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs, providedTypes) = 
         let cenv : cenv = 
             { g=tcGlobals
               TcVal = tcVal
@@ -6882,7 +6895,7 @@ type IlxAssemblyGenerator(amap: Import.ImportMap, tcGlobals: TcGlobals, tcVal : 
               casApplied                             = casApplied
               intraAssemblyInfo                      = intraAssemblyInfo
               opts                                   = codeGenOpts }
-        GenerateCode (cenv, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
+        GenerateCode (cenv, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs, providedTypes)
 
     /// Invert the compilation of the given value and clear the storage of the value
     member __.ClearGeneratedValue (ctxt, v) = ClearGeneratedValue ctxt tcGlobals ilxGenEnv v

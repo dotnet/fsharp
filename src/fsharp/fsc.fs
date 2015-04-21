@@ -1528,22 +1528,15 @@ module StaticLinker =
                         | Some provAssemStaticLinkInfo -> yield (importedBinary,provAssemStaticLinkInfo) ]
 #endif
         if tcConfig.compilingFslib && tcConfig.compilingFslib20.IsSome then 
-            (fun ilxMainModule -> LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig, ilGlobals, ilxMainModule))
+            [], (fun ilxMainModule -> LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig, ilGlobals, ilxMainModule))
           
         elif not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
 #if EXTENSIONTYPING
              && providerGeneratedAssemblies.IsEmpty 
 #endif
              then 
-            (fun ilxMainModule -> ilxMainModule)
+            [], (fun ilxMainModule -> ilxMainModule)
         else 
-            (fun ilxMainModule  ->
-              ReportTime tcConfig "Find assembly references";
-
-              let dependentILModules = FindDependentILModulesForStaticLinking (tcConfig, tcImports,ilxMainModule)
-
-              ReportTime tcConfig "Static link";
-
 #if EXTENSIONTYPING
               Morphs.enablemorphCustomAttributeData()
               let providerGeneratedILModules =  FindProviderGeneratedILModules (tcImports, providerGeneratedAssemblies) 
@@ -1572,7 +1565,6 @@ module StaticLinker =
                       (ccu,ilOrigScopeRef,ilModule))
 
               // Relocate provider generated type definitions into the expected shape for the [<Generate>] declarations in an assembly
-              let providerGeneratedILModules, ilxMainModule = 
                   // Build a dictionary of all remapped IL type defs 
                   let ilOrigTyRefsForProviderGeneratedTypesToRelocate = 
                       let rec walk acc (ProviderGeneratedType(ilOrigTyRef,_,xs) as node) = List.fold walk ((ilOrigTyRef,node)::acc) xs 
@@ -1617,40 +1609,6 @@ module StaticLinker =
                       [ for (ProviderGeneratedType(_, ilTgtTyRef, _) as node) in tcImports.ProviderGeneratedTypeRoots  do
                            yield (ilTgtTyRef, buildRelocatedGeneratedType node) ]
                   
-                  // Implant all the generated type definitions into the ilxMainModule (generating a new ilxMainModule)
-                  let ilxMainModule = 
-
-                      /// Split the list into left, middle and right parts at the first element satisfying 'p'. If no element matches return
-                      /// 'None' for the middle part.
-                      let trySplitFind p xs = 
-                          let rec loop xs acc = 
-                              match xs with 
-                              | [] -> List.rev acc, None, [] 
-                              | h::t -> if p h then List.rev acc, Some h, t else loop t (h::acc)
-                          loop xs []
-
-                      /// Implant the (nested) type definition 'td' at path 'enc' in 'tdefs'. 
-                      let rec implantTypeDef isNested (tdefs: ILTypeDefs) (enc:string list) (td: ILTypeDef) = 
-                          match enc with 
-                          | [] -> addILTypeDef td tdefs
-                          | h::t -> 
-                               let tdefs = tdefs.AsList
-                               let (ltdefs,htd,rtdefs) = 
-                                   match tdefs |> trySplitFind (fun td -> td.Name = h) with 
-                                   | (ltdefs,None,rtdefs) -> 
-                                       let fresh = mkILSimpleClass ilGlobals (h, (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public), emptyILMethods, emptyILFields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny)
-                                       (ltdefs, fresh, rtdefs)
-                                   | (ltdefs, Some htd, rtdefs) -> 
-                                       (ltdefs, htd, rtdefs)
-                               let htd = { htd with NestedTypes = implantTypeDef true htd.NestedTypes t td }
-                               mkILTypeDefs (ltdefs @ [htd] @ rtdefs)
-
-                      let newTypeDefs = 
-                          (ilxMainModule.TypeDefs, generatedILTypeDefs) ||> List.fold (fun acc (ilTgtTyRef,td) -> 
-                              if debugStaticLinking then printfn "implanting '%s' at '%s'" td.Name ilTgtTyRef.QualifiedName 
-                              implantTypeDef false acc ilTgtTyRef.Enclosing td) 
-                      { ilxMainModule with TypeDefs = newTypeDefs } 
-                  
                   // Remove any ILTypeDefs from the provider generated modules if they have been relocated because of a [<Generate>] declaration.
                   let providerGeneratedILModules = 
                       providerGeneratedILModules |> List.map (fun (ccu,ilOrigScopeRef,ilModule) -> 
@@ -1665,12 +1623,17 @@ module StaticLinker =
                               rw [] ilModule.TypeDefs
                           (ccu, { ilModule with TypeDefs = ilTypeDefsAfterRemovingRelocatedTypes }))
 
-                  providerGeneratedILModules, ilxMainModule
-             
               Morphs.disablemorphCustomAttributeData()
 #else
               let providerGeneratedILModules = []
+            let generatedILTypeDefs = []
 #endif
+            generatedILTypeDefs, (fun ilxMainModule  ->
+              ReportTime tcConfig "Find assembly references";
+
+              let dependentILModules = FindDependentILModulesForStaticLinking (tcConfig, tcImports,ilxMainModule)
+
+              ReportTime tcConfig "Static link";
 
               // Glue all this stuff into ilxMainModule 
               let ilxMainModule,rewriteExternalRefsToLocalRefs = 
@@ -1941,7 +1904,7 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     let ilGlobals = tcGlobals.ilg
     if tcConfig.standalone && generatedCcu.UsesFSharp20PlusQuotations then    
         error(Error(FSComp.SR.fscQuotationLiteralsStaticLinking0(),rangeStartup));  
-    let staticLinker = StaticLinker.StaticLink (tcConfig,tcImports,ilGlobals)
+    let providedTypes, staticLinker = StaticLinker.StaticLink (tcConfig,tcImports,ilGlobals)
 
     ReportTime tcConfig "TAST -> ILX";
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind  (BuildPhase.IlxGen)
@@ -1951,7 +1914,7 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
     // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
     let netFxHasSerializableAttribute = tcImports.SystemRuntimeContainsType "System.SerializableAttribute"
-    let codegenResults = GenerateIlxCode (IlWriteBackend, false, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, netFxHasSerializableAttribute, ilxGenerator)
+    let codegenResults = GenerateIlxCode (IlWriteBackend, false, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, netFxHasSerializableAttribute, ilxGenerator, providedTypes)
     let casApplied = new Dictionary<Stamp,bool>()
     let securityAttrs,topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list

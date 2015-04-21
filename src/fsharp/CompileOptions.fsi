@@ -85,7 +85,7 @@ val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * str
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxGen.IlxAssemblyGenerator
 
-val GenerateIlxCode : IlxGen.IlxGenBackend * bool * bool * TcConfig * TypeChecker.TopAttribs * TypedAssembly * string * bool * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
+val GenerateIlxCode : IlxGen.IlxGenBackend * bool * bool * TcConfig * TypeChecker.TopAttribs * TypedAssembly * string * bool * IlxGen.IlxAssemblyGenerator * (ILTypeRef * ILTypeDef) list -> IlxGen.IlxGenResults
 #endif
 
 // Used during static linking
