@@ -29,6 +29,17 @@
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
             </When>
+            <When Condition="'$(AssemblyName)' == 'FSharp.Core.PropertyTests'">
+              <PropertyGroup>
+                <OtherFlags Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">$(OtherFlags) --version:4.4.0.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.4.0.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable7'">$(OtherFlags) --version:3.7.4.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:3.47.4.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable78'">$(OtherFlags) --version:3.78.4.9055</OtherFlags>
+                <OtherFlags Condition="'$(TargetFramework)' == 'portable259'">$(OtherFlags) --version:3.259.4.9055</OtherFlags>
+                <StrongNames>false</StrongNames>
+              </PropertyGroup>
+            </When>            
             <Otherwise>
               <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
                 <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
@@ -101,7 +112,10 @@
     <NUnitVersion>2.6.4</NUnitVersion>
     <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
-    <NunitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NunitToolsLibDir>
+    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NUnitToolsLibDir>
+    <FsCheckVersion>1.0.4</FsCheckVersion>
+    <FsCheckFullVersion>1.0.4.0</FsCheckFullVersion>
+    <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\net45\</FsCheckLibDir>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
