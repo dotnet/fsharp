@@ -2840,59 +2840,14 @@ o A positive infinity is considered greater than all other values, but equal to 
 *)
 open System
 
-let nan1 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
-let nan2 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
+(* ----- NaN tests for DOUBLE ----- *)
 
-do printf "checking floating point relational operators\n"
-let _ = check "d3wiojd30a" ((Double.NaN > Double.NaN)) false
-check "d3wiojd30a" (if (Double.NaN > Double.NaN) then "a" else "b") "b"
-check "d3wiojd30b" ((Double.NaN >= Double.NaN)) false
-check "d3wiojd30b" (if (Double.NaN >= Double.NaN) then "a" else "b") "b"
-check "d3wiojd30c" ((Double.NaN < Double.NaN)) false
-check "d3wiojd30c" (if (Double.NaN < Double.NaN) then "a" else "b") "b"
-check "d3wiojd30d" ((Double.NaN <= Double.NaN)) false
-check "d3wiojd30d" (if (Double.NaN <= Double.NaN) then "a" else "b") "b"
-check "d3wiojd30e" ((Double.NaN = Double.NaN)) false
-check "d3wiojd30e" (if (Double.NaN = Double.NaN) then "a" else "b") "b"
-check "d3wiojd30q" ((Double.NaN <> Double.NaN)) true
-check "d3wiojd30w" ((Double.NaN > 1.0)) false
-check "d3wiojd30e" ((Double.NaN >= 1.0)) false
-check "d3wiojd30r" ((Double.NaN < 1.0)) false
-check "d3wiojd30t" ((Double.NaN <= 1.0)) false
-check "d3wiojd30y" ((Double.NaN = 1.0)) false
-check "d3wiojd30u" ((Double.NaN <> 1.0)) true
-check "d3wiojd30i" ((1.0 > Double.NaN)) false
-check "d3wiojd30o" ((1.0 >= Double.NaN)) false
-check "d3wiojd30p" ((1.0 < Double.NaN)) false
-check "d3wiojd30a" ((1.0 <= Double.NaN)) false
-check "d3wiojd30s" ((1.0 = Double.NaN)) false
-check "d3wiojd30d" ((1.0 <> Double.NaN)) true
-check "d3wiojd30a" ((nan1 > Double.NaN)) false
-check "d3wiojd30b" ((nan1 >= nan2)) false
-check "d3wiojd30c" ((nan1 < nan2)) false
-check "d3wiojd30d" ((nan1 <= nan2)) false
-check "d3wiojd30e" ((nan1 = nan2)) false
-check "d3wiojd30q" ((nan1 <> nan2)) true
-check "d3wiojd30w" ((nan1 > 1.0)) false
-check "d3wiojd30e" ((nan1 >= 1.0)) false
-check "d3wiojd30r" ((nan1 < 1.0)) false
-check "d3wiojd30t" ((nan1 <= 1.0)) false
-check "d3wiojd30y" ((nan1 = 1.0)) false
-check "d3wiojd30u" ((nan1 <> 1.0)) true
-check "d3wiojd30i" ((1.0 > nan2)) false
-check "d3wiojd30o" ((1.0 >= nan2)) false
-check "d3wiojd30p" ((1.0 < nan2)) false
-check "d3wiojd30a" ((1.0 <= nan2)) false
-check "d3wiojd30s" ((1.0 = nan2)) false
-check "d3wiojd30d" ((1.0 <> nan2)) true
-check "d3wiojd30f" ((Double.NegativeInfinity = Double.NegativeInfinity)) true
-check "d3wiojd30g" ((Double.NegativeInfinity < Double.PositiveInfinity)) true
-check "d3wiojd30h" ((Double.NegativeInfinity > Double.PositiveInfinity)) false
-check "d3wiojd30j" ((Double.NegativeInfinity <= Double.NegativeInfinity)) true
+module DoubleNaN =
+    let nan1 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
+    let nan2 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
 
-module SameTestsUsingNonStructuralComparison1 = 
-    open NonStructuralComparison
-
+    do printf "checking floating point relational operators\n"
+    let _ = check "d3wiojd30a" ((Double.NaN > Double.NaN)) false
     check "d3wiojd30a" (if (Double.NaN > Double.NaN) then "a" else "b") "b"
     check "d3wiojd30b" ((Double.NaN >= Double.NaN)) false
     check "d3wiojd30b" (if (Double.NaN >= Double.NaN) then "a" else "b") "b"
@@ -2938,10 +2893,99 @@ module SameTestsUsingNonStructuralComparison1 =
     check "d3wiojd30h" ((Double.NegativeInfinity > Double.PositiveInfinity)) false
     check "d3wiojd30j" ((Double.NegativeInfinity <= Double.NegativeInfinity)) true
 
+    check "D1nancompare01" (0 = (compare Double.NaN Double.NaN)) true
+    check "D1nancompare02" (0 = (compare Double.NaN nan1)) true
+    check "D1nancompare03" (0 = (compare nan1 Double.NaN)) true
+    check "D1nancompare04" (0 = (compare nan1 nan1)) true
+    check "D1nancompare05" (1 = (compare 1. Double.NaN)) true
+    check "D1nancompare06" (1 = (compare 0. Double.NaN)) true
+    check "D1nancompare07" (1 = (compare -1. Double.NaN)) true
+    check "D1nancompare08" (1 = (compare Double.NegativeInfinity Double.NaN)) true
+    check "D1nancompare09" (1 = (compare Double.PositiveInfinity Double.NaN)) true
+    check "D1nancompare10" (1 = (compare Double.MaxValue Double.NaN)) true
+    check "D1nancompare11" (1 = (compare Double.MinValue Double.NaN)) true
+    check "D1nancompare12" (-1 = (compare Double.NaN 1.)) true
+    check "D1nancompare13" (-1 = (compare Double.NaN 0.)) true
+    check "D1nancompare14" (-1 = (compare Double.NaN -1.)) true
+    check "D1nancompare15" (-1 = (compare Double.NaN Double.NegativeInfinity)) true
+    check "D1nancompare16" (-1 = (compare Double.NaN Double.PositiveInfinity)) true
+    check "D1nancompare17" (-1 = (compare Double.NaN Double.MaxValue)) true
+    check "D1nancompare18" (-1 = (compare Double.NaN Double.MinValue)) true
 
-module FloatingPointStructured = 
+module DoubleNaNNonStructuralComparison1 = 
+    open NonStructuralComparison
+    let nan1 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
+    let nan2 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
+    
+    check "d3wiojd30a" (if (Double.NaN > Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30b" ((Double.NaN >= Double.NaN)) false
+    check "d3wiojd30b" (if (Double.NaN >= Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30c" ((Double.NaN < Double.NaN)) false
+    check "d3wiojd30c" (if (Double.NaN < Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30d" ((Double.NaN <= Double.NaN)) false
+    check "d3wiojd30d" (if (Double.NaN <= Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30e" ((Double.NaN = Double.NaN)) false
+    check "d3wiojd30e" (if (Double.NaN = Double.NaN) then "a" else "b") "b"
+    check "d3wiojd30q" ((Double.NaN <> Double.NaN)) true
+    check "d3wiojd30w" ((Double.NaN > 1.0)) false
+    check "d3wiojd30e" ((Double.NaN >= 1.0)) false
+    check "d3wiojd30r" ((Double.NaN < 1.0)) false
+    check "d3wiojd30t" ((Double.NaN <= 1.0)) false
+    check "d3wiojd30y" ((Double.NaN = 1.0)) false
+    check "d3wiojd30u" ((Double.NaN <> 1.0)) true
+    check "d3wiojd30i" ((1.0 > Double.NaN)) false
+    check "d3wiojd30o" ((1.0 >= Double.NaN)) false
+    check "d3wiojd30p" ((1.0 < Double.NaN)) false
+    check "d3wiojd30a" ((1.0 <= Double.NaN)) false
+    check "d3wiojd30s" ((1.0 = Double.NaN)) false
+    check "d3wiojd30d" ((1.0 <> Double.NaN)) true
+    check "d3wiojd30a" ((nan1 > Double.NaN)) false
+    check "d3wiojd30b" ((nan1 >= nan2)) false
+    check "d3wiojd30c" ((nan1 < nan2)) false
+    check "d3wiojd30d" ((nan1 <= nan2)) false
+    check "d3wiojd30e" ((nan1 = nan2)) false
+    check "d3wiojd30q" ((nan1 <> nan2)) true
+    check "d3wiojd30w" ((nan1 > 1.0)) false
+    check "d3wiojd30e" ((nan1 >= 1.0)) false
+    check "d3wiojd30r" ((nan1 < 1.0)) false
+    check "d3wiojd30t" ((nan1 <= 1.0)) false
+    check "d3wiojd30y" ((nan1 = 1.0)) false
+    check "d3wiojd30u" ((nan1 <> 1.0)) true
+    check "d3wiojd30i" ((1.0 > nan2)) false
+    check "d3wiojd30o" ((1.0 >= nan2)) false
+    check "d3wiojd30p" ((1.0 < nan2)) false
+    check "d3wiojd30a" ((1.0 <= nan2)) false
+    check "d3wiojd30s" ((1.0 = nan2)) false
+    check "d3wiojd30d" ((1.0 <> nan2)) true
+    check "d3wiojd30f" ((Double.NegativeInfinity = Double.NegativeInfinity)) true
+    check "d3wiojd30g" ((Double.NegativeInfinity < Double.PositiveInfinity)) true
+    check "d3wiojd30h" ((Double.NegativeInfinity > Double.PositiveInfinity)) false
+    check "d3wiojd30j" ((Double.NegativeInfinity <= Double.NegativeInfinity)) true
+
+    check "D2nancompare01" (0 = (compare Double.NaN Double.NaN)) true
+    check "D2nancompare02" (0 = (compare Double.NaN nan1)) true
+    check "D2nancompare03" (0 = (compare nan1 Double.NaN)) true
+    check "D2nancompare04" (0 = (compare nan1 nan1)) true
+    check "D2nancompare05" (1 = (compare 1. Double.NaN)) true
+    check "D2nancompare06" (1 = (compare 0. Double.NaN)) true
+    check "D2nancompare07" (1 = (compare -1. Double.NaN)) true
+    check "D2nancompare08" (1 = (compare Double.NegativeInfinity Double.NaN)) true
+    check "D2nancompare09" (1 = (compare Double.PositiveInfinity Double.NaN)) true
+    check "D2nancompare10" (1 = (compare Double.MaxValue Double.NaN)) true
+    check "D2nancompare11" (1 = (compare Double.MinValue Double.NaN)) true
+    check "D2nancompare12" (-1 = (compare Double.NaN 1.)) true
+    check "D2nancompare13" (-1 = (compare Double.NaN 0.)) true
+    check "D2nancompare14" (-1 = (compare Double.NaN -1.)) true
+    check "D2nancompare15" (-1 = (compare Double.NaN Double.NegativeInfinity)) true
+    check "D2nancompare16" (-1 = (compare Double.NaN Double.PositiveInfinity)) true
+    check "D2nancompare17" (-1 = (compare Double.NaN Double.MaxValue)) true
+    check "D2nancompare18" (-1 = (compare Double.NaN Double.MinValue)) true
+
+module DoubleNaNStructured = 
     type www = W of float
-
+    let nan1 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
+    let nan2 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
+    
     do printf "checking floating point relational operators on structured data\n"
     // NOTE: SPECIFICATION: The relational operators work differently when applied to
     // floats embedded in structured data than when applied to raw floats. 
@@ -2970,10 +3014,29 @@ module FloatingPointStructured =
     let _ = check "d3wiojd3xx" ((W Double.NegativeInfinity > W Double.PositiveInfinity)) false
     let _ = check "d3wiojd31z" ((W Double.NegativeInfinity <= W Double.NegativeInfinity)) true
 
+    let _ = check "D3nancompare01" (0 = (compare (W Double.NaN) (W Double.NaN))) true
+    let _ = check "D3nancompare02" (0 = (compare (W Double.NaN) (W nan1))) true
+    let _ = check "D3nancompare03" (0 = (compare (W nan1) (W Double.NaN))) true
+    let _ = check "D3nancompare04" (0 = (compare (W nan1) (W nan1))) true
+    let _ = check "D3nancompare05" (1 = (compare (W 1.) (W Double.NaN))) true
+    let _ = check "D3nancompare06" (1 = (compare (W 0.) (W Double.NaN))) true
+    let _ = check "D3nancompare07" (1 = (compare (W -1.) (W Double.NaN))) true
+    let _ = check "D3nancompare08" (1 = (compare (W Double.NegativeInfinity) (W Double.NaN))) true
+    let _ = check "D3nancompare09" (1 = (compare (W Double.PositiveInfinity) (W Double.NaN))) true
+    let _ = check "D3nancompare10" (1 = (compare (W Double.MaxValue) (W Double.NaN))) true
+    let _ = check "D3nancompare11" (1 = (compare (W Double.MinValue) (W Double.NaN))) true
+    let _ = check "D3nancompare12" (-1 = (compare (W Double.NaN) (W 1.))) true
+    let _ = check "D3nancompare13" (-1 = (compare (W Double.NaN) (W 0.))) true
+    let _ = check "D3nancompare14" (-1 = (compare (W Double.NaN) (W -1.))) true
+    let _ = check "D3nancompare15" (-1 = (compare (W Double.NaN) (W Double.NegativeInfinity))) true
+    let _ = check "D3nancompare16" (-1 = (compare (W Double.NaN) (W Double.PositiveInfinity))) true
+    let _ = check "D3nancompare17" (-1 = (compare (W Double.NaN) (W Double.MaxValue))) true
+    let _ = check "D3nancompare18" (-1 = (compare (W Double.NaN) (W Double.MinValue))) true
 
-module FloatingPointStructuredPoly = 
+module DoubleNaNStructuredPoly = 
     type 'a www = W of 'a
-
+    let nan1 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
+    let nan2 = (let r = ref Double.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0))
     do printf "checking floating point relational operators on polymorphic structured data\n"
 
     let _ = check "d3wiojd32q" ((W Double.NaN > W Double.NaN)) false
@@ -3000,7 +3063,271 @@ module FloatingPointStructuredPoly =
     let _ = check "d3wiojd32x" ((W Double.NegativeInfinity > W Double.PositiveInfinity)) false
     let _ = check "d3wiojd32c" ((W Double.NegativeInfinity <= W Double.NegativeInfinity)) true
 
+    let _ = check "D4nancompare01" (0 = (compare (W Double.NaN) (W Double.NaN))) true
+    let _ = check "D4nancompare02" (0 = (compare (W Double.NaN) (W nan1))) true
+    let _ = check "D4nancompare03" (0 = (compare (W nan1) (W Double.NaN))) true
+    let _ = check "D4nancompare04" (0 = (compare (W nan1) (W nan1))) true
+    let _ = check "D4nancompare05" (1 = (compare (W 1.) (W Double.NaN))) true
+    let _ = check "D4nancompare06" (1 = (compare (W 0.) (W Double.NaN))) true
+    let _ = check "D4nancompare07" (1 = (compare (W -1.) (W Double.NaN))) true
+    let _ = check "D4nancompare08" (1 = (compare (W Double.NegativeInfinity) (W Double.NaN))) true
+    let _ = check "D4nancompare09" (1 = (compare (W Double.PositiveInfinity) (W Double.NaN))) true
+    let _ = check "D4nancompare10" (1 = (compare (W Double.MaxValue) (W Double.NaN))) true
+    let _ = check "D4nancompare11" (1 = (compare (W Double.MinValue) (W Double.NaN))) true
+    let _ = check "D4nancompare12" (-1 = (compare (W Double.NaN) (W 1.))) true
+    let _ = check "D4nancompare13" (-1 = (compare (W Double.NaN) (W 0.))) true
+    let _ = check "D4nancompare14" (-1 = (compare (W Double.NaN) (W -1.))) true
+    let _ = check "D4nancompare15" (-1 = (compare (W Double.NaN) (W Double.NegativeInfinity))) true
+    let _ = check "D4nancompare16" (-1 = (compare (W Double.NaN) (W Double.PositiveInfinity))) true
+    let _ = check "D4nancompare17" (-1 = (compare (W Double.NaN) (W Double.MaxValue))) true
+    let _ = check "D4nancompare18" (-1 = (compare (W Double.NaN) (W Double.MinValue))) true
 
+(* ----- NaN tests for SINGLE ----- *)
+
+module SingleNaN =
+    let nan1 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+    let nan2 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+
+    do printf "checking floating point relational operators\n"
+    let _ = check "d3wiojd30a" ((Single.NaN > Single.NaN)) false
+    check "d3wiojd30a" (if (Single.NaN > Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30b" ((Single.NaN >= Single.NaN)) false
+    check "d3wiojd30b" (if (Single.NaN >= Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30c" ((Single.NaN < Single.NaN)) false
+    check "d3wiojd30c" (if (Single.NaN < Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30d" ((Single.NaN <= Single.NaN)) false
+    check "d3wiojd30d" (if (Single.NaN <= Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30e" ((Single.NaN = Single.NaN)) false
+    check "d3wiojd30e" (if (Single.NaN = Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30q" ((Single.NaN <> Single.NaN)) true
+    check "d3wiojd30w" ((Single.NaN > 1.0f)) false
+    check "d3wiojd30e" ((Single.NaN >= 1.0f)) false
+    check "d3wiojd30r" ((Single.NaN < 1.0f)) false
+    check "d3wiojd30t" ((Single.NaN <= 1.0f)) false
+    check "d3wiojd30y" ((Single.NaN = 1.0f)) false
+    check "d3wiojd30u" ((Single.NaN <> 1.0f)) true
+    check "d3wiojd30i" ((1.0f > Single.NaN)) false
+    check "d3wiojd30o" ((1.0f >= Single.NaN)) false
+    check "d3wiojd30p" ((1.0f < Single.NaN)) false
+    check "d3wiojd30a" ((1.0f <= Single.NaN)) false
+    check "d3wiojd30s" ((1.0f = Single.NaN)) false
+    check "d3wiojd30d" ((1.0f <> Single.NaN)) true
+    check "d3wiojd30a" ((nan1 > Single.NaN)) false
+    check "d3wiojd30b" ((nan1 >= nan2)) false
+    check "d3wiojd30c" ((nan1 < nan2)) false
+    check "d3wiojd30d" ((nan1 <= nan2)) false
+    check "d3wiojd30e" ((nan1 = nan2)) false
+    check "d3wiojd30q" ((nan1 <> nan2)) true
+    check "d3wiojd30w" ((nan1 > 1.0f)) false
+    check "d3wiojd30e" ((nan1 >= 1.0f)) false
+    check "d3wiojd30r" ((nan1 < 1.0f)) false
+    check "d3wiojd30t" ((nan1 <= 1.0f)) false
+    check "d3wiojd30y" ((nan1 = 1.0f)) false
+    check "d3wiojd30u" ((nan1 <> 1.0f)) true
+    check "d3wiojd30i" ((1.0f > nan2)) false
+    check "d3wiojd30o" ((1.0f >= nan2)) false
+    check "d3wiojd30p" ((1.0f < nan2)) false
+    check "d3wiojd30a" ((1.0f <= nan2)) false
+    check "d3wiojd30s" ((1.0f = nan2)) false
+    check "d3wiojd30d" ((1.0f <> nan2)) true
+    check "d3wiojd30f" ((Single.NegativeInfinity = Single.NegativeInfinity)) true
+    check "d3wiojd30g" ((Single.NegativeInfinity < Single.PositiveInfinity)) true
+    check "d3wiojd30h" ((Single.NegativeInfinity > Single.PositiveInfinity)) false
+    check "d3wiojd30j" ((Single.NegativeInfinity <= Single.NegativeInfinity)) true
+
+    check "S1nancompare01" (0 = (compare Single.NaN Single.NaN)) true
+    check "S1nancompare02" (0 = (compare Single.NaN nan1)) true
+    check "S1nancompare03" (0 = (compare nan1 Single.NaN)) true
+    check "S1nancompare04" (0 = (compare nan1 nan1)) true
+    check "S1nancompare05" (1 = (compare 1.f Single.NaN)) true
+    check "S1nancompare06" (1 = (compare 0.f Single.NaN)) true
+    check "S1nancompare07" (1 = (compare -1.f Single.NaN)) true
+    check "S1nancompare08" (1 = (compare Single.NegativeInfinity Single.NaN)) true
+    check "S1nancompare09" (1 = (compare Single.PositiveInfinity Single.NaN)) true
+    check "S1nancompare10" (1 = (compare Single.MaxValue Single.NaN)) true
+    check "S1nancompare11" (1 = (compare Single.MinValue Single.NaN)) true
+    check "S1nancompare12" (-1 = (compare Single.NaN 1.f)) true
+    check "S1nancompare13" (-1 = (compare Single.NaN 0.f)) true
+    check "S1nancompare14" (-1 = (compare Single.NaN -1.f)) true
+    check "S1nancompare15" (-1 = (compare Single.NaN Single.NegativeInfinity)) true
+    check "S1nancompare16" (-1 = (compare Single.NaN Single.PositiveInfinity)) true
+    check "S1nancompare17" (-1 = (compare Single.NaN Single.MaxValue)) true
+    check "S1nancompare18" (-1 = (compare Single.NaN Single.MinValue)) true
+
+module SingleNaNNonStructuralComparison1 = 
+    open NonStructuralComparison
+    
+    let nan1 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+    let nan2 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+    
+    check "d3wiojd30a" (if (Single.NaN > Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30b" ((Single.NaN >= Single.NaN)) false
+    check "d3wiojd30b" (if (Single.NaN >= Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30c" ((Single.NaN < Single.NaN)) false
+    check "d3wiojd30c" (if (Single.NaN < Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30d" ((Single.NaN <= Single.NaN)) false
+    check "d3wiojd30d" (if (Single.NaN <= Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30e" ((Single.NaN = Single.NaN)) false
+    check "d3wiojd30e" (if (Single.NaN = Single.NaN) then "a" else "b") "b"
+    check "d3wiojd30q" ((Single.NaN <> Single.NaN)) true
+    check "d3wiojd30w" ((Single.NaN > 1.0f)) false
+    check "d3wiojd30e" ((Single.NaN >= 1.0f)) false
+    check "d3wiojd30r" ((Single.NaN < 1.0f)) false
+    check "d3wiojd30t" ((Single.NaN <= 1.0f)) false
+    check "d3wiojd30y" ((Single.NaN = 1.0f)) false
+    check "d3wiojd30u" ((Single.NaN <> 1.0f)) true
+    check "d3wiojd30i" ((1.0f > Single.NaN)) false
+    check "d3wiojd30o" ((1.0f >= Single.NaN)) false
+    check "d3wiojd30p" ((1.0f < Single.NaN)) false
+    check "d3wiojd30a" ((1.0f <= Single.NaN)) false
+    check "d3wiojd30s" ((1.0f = Single.NaN)) false
+    check "d3wiojd30d" ((1.0f <> Single.NaN)) true
+    check "d3wiojd30a" ((nan1 > Single.NaN)) false
+    check "d3wiojd30b" ((nan1 >= nan2)) false
+    check "d3wiojd30c" ((nan1 < nan2)) false
+    check "d3wiojd30d" ((nan1 <= nan2)) false
+    check "d3wiojd30e" ((nan1 = nan2)) false
+    check "d3wiojd30q" ((nan1 <> nan2)) true
+    check "d3wiojd30w" ((nan1 > 1.0f)) false
+    check "d3wiojd30e" ((nan1 >= 1.0f)) false
+    check "d3wiojd30r" ((nan1 < 1.0f)) false
+    check "d3wiojd30t" ((nan1 <= 1.0f)) false
+    check "d3wiojd30y" ((nan1 = 1.0f)) false
+    check "d3wiojd30u" ((nan1 <> 1.0f)) true
+    check "d3wiojd30i" ((1.0f > nan2)) false
+    check "d3wiojd30o" ((1.0f >= nan2)) false
+    check "d3wiojd30p" ((1.0f < nan2)) false
+    check "d3wiojd30a" ((1.0f <= nan2)) false
+    check "d3wiojd30s" ((1.0f = nan2)) false
+    check "d3wiojd30d" ((1.0f <> nan2)) true
+    check "d3wiojd30f" ((Single.NegativeInfinity = Single.NegativeInfinity)) true
+    check "d3wiojd30g" ((Single.NegativeInfinity < Single.PositiveInfinity)) true
+    check "d3wiojd30h" ((Single.NegativeInfinity > Single.PositiveInfinity)) false
+    check "d3wiojd30j" ((Single.NegativeInfinity <= Single.NegativeInfinity)) true
+
+    check "S2nancompare01" (0 = (compare Single.NaN Single.NaN)) true
+    check "S2nancompare02" (0 = (compare Single.NaN nan1)) true
+    check "S2nancompare03" (0 = (compare nan1 Single.NaN)) true
+    check "S2nancompare04" (0 = (compare nan1 nan1)) true
+    check "S2nancompare05" (1 = (compare 1.f Single.NaN)) true
+    check "S2nancompare06" (1 = (compare 0.f Single.NaN)) true
+    check "S2nancompare07" (1 = (compare -1.f Single.NaN)) true
+    check "S2nancompare08" (1 = (compare Single.NegativeInfinity Single.NaN)) true
+    check "S2nancompare09" (1 = (compare Single.PositiveInfinity Single.NaN)) true
+    check "S2nancompare10" (1 = (compare Single.MaxValue Single.NaN)) true
+    check "S2nancompare11" (1 = (compare Single.MinValue Single.NaN)) true
+    check "S2nancompare12" (-1 = (compare Single.NaN 1.f)) true
+    check "S2nancompare13" (-1 = (compare Single.NaN 0.f)) true
+    check "S2nancompare14" (-1 = (compare Single.NaN -1.f)) true
+    check "S2nancompare15" (-1 = (compare Single.NaN Single.NegativeInfinity)) true
+    check "S2nancompare16" (-1 = (compare Single.NaN Single.PositiveInfinity)) true
+    check "S2nancompare17" (-1 = (compare Single.NaN Single.MaxValue)) true
+    check "S2nancompare18" (-1 = (compare Single.NaN Single.MinValue)) true
+
+module SingleNaNStructured = 
+    type www = W of single
+
+    let nan1 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+    let nan2 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+    
+    do printf "checking floating point relational operators on structured data\n"
+    // NOTE: SPECIFICATION: The relational operators work differently when applied to
+    // floats embedded in structured data than when applied to raw floats. 
+
+    let _ = check "d3wiojd31q" ((W Single.NaN > W Single.NaN)) false
+    let _ = check "d3wiojd31w" ((W Single.NaN >= W Single.NaN)) false
+    let _ = check "d3wiojd31e" ((W Single.NaN < W Single.NaN)) false
+    let _ = check "d3wiojd31r" ((W Single.NaN <= W Single.NaN)) false
+    let _ = check "d3wiojd31ty" ((W Single.NaN = W Single.NaN)) false
+    let _ = check "d3wiojd31y" ((W Single.NaN <> W Single.NaN)) true
+    let _ = check "d3wiojd31dy" (0 = compare (W Single.NaN) (W Single.NaN)) true
+    let _ = check "d3wiojd31u" ((W Single.NaN > W 1.0f)) false
+    let _ = check "d3wiojd31i" ((W Single.NaN >= W 1.0f)) false
+    let _ = check "d3wiojd31o" ((W Single.NaN < W 1.0f)) false
+    let _ = check "d3wiojd31p" ((W Single.NaN <= W 1.0f)) false
+    let _ = check "d3wiojd31a" ((W Single.NaN = W 1.0f)) false
+    let _ = check "d3wiojd31s" ((W Single.NaN <> W 1.0f)) true
+    let _ = check "d3wiojd31d" ((W 1.0f > W Single.NaN)) false
+    let _ = check "d3wiojd31f" ((W 1.0f >= W Single.NaN)) false
+    let _ = check "d3wiojd31g" ((W 1.0f < W Single.NaN)) false
+    let _ = check "d3wiojd31h" ((W 1.0f <= W Single.NaN)) false
+    let _ = check "d3wiojd31j" ((W 1.0f = W Single.NaN)) false
+    let _ = check "d3wiojd31k" ((W 1.0f <> W Single.NaN)) true
+    let _ = check "d3wiojd31l" ((W Single.NegativeInfinity = W Single.NegativeInfinity)) true
+    let _ = check "d3wiojd31c" ((W Single.NegativeInfinity < W Single.PositiveInfinity)) true
+    let _ = check "d3wiojd3xx" ((W Single.NegativeInfinity > W Single.PositiveInfinity)) false
+    let _ = check "d3wiojd31z" ((W Single.NegativeInfinity <= W Single.NegativeInfinity)) true
+
+    let _ = check "S3nancompare01" (0 = (compare (W Single.NaN) (W Single.NaN))) true
+    let _ = check "S3nancompare02" (0 = (compare (W Single.NaN) (W nan1))) true
+    let _ = check "S3nancompare03" (0 = (compare (W nan1) (W Single.NaN))) true
+    let _ = check "S3nancompare04" (0 = (compare (W nan1) (W nan1))) true
+    let _ = check "S3nancompare05" (1 = (compare (W 1.f) (W Single.NaN))) true
+    let _ = check "S3nancompare06" (1 = (compare (W 0.f) (W Single.NaN))) true
+    let _ = check "S3nancompare07" (1 = (compare (W -1.f) (W Single.NaN))) true
+    let _ = check "S3nancompare08" (1 = (compare (W Single.NegativeInfinity) (W Single.NaN))) true
+    let _ = check "S3nancompare09" (1 = (compare (W Single.PositiveInfinity) (W Single.NaN))) true
+    let _ = check "S3nancompare10" (1 = (compare (W Single.MaxValue) (W Single.NaN))) true
+    let _ = check "S3nancompare11" (1 = (compare (W Single.MinValue) (W Single.NaN))) true
+    let _ = check "S3nancompare12" (-1 = (compare (W Single.NaN) (W 1.f))) true
+    let _ = check "S3nancompare13" (-1 = (compare (W Single.NaN) (W 0.f))) true
+    let _ = check "S3nancompare14" (-1 = (compare (W Single.NaN) (W -1.f))) true
+    let _ = check "S3nancompare15" (-1 = (compare (W Single.NaN) (W Single.NegativeInfinity))) true
+    let _ = check "S3nancompare16" (-1 = (compare (W Single.NaN) (W Single.PositiveInfinity))) true
+    let _ = check "S3nancompare17" (-1 = (compare (W Single.NaN) (W Single.MaxValue))) true
+    let _ = check "S3nancompare18" (-1 = (compare (W Single.NaN) (W Single.MinValue))) true
+
+module SingleNaNStructuredPoly = 
+    type 'a www = W of 'a
+
+    let nan1 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+    let nan2 = (let r = ref Single.NaN in (if sprintf "Hello" = "Hello" then !r else 0.0f))
+    
+    do printf "checking floating point relational operators on polymorphic structured data\n"
+
+    let _ = check "d3wiojd32q" ((W Single.NaN > W Single.NaN)) false
+    let _ = check "d3wiojd32w" ((W Single.NaN >= W Single.NaN)) false
+    let _ = check "d3wiojd32e" ((W Single.NaN < W Single.NaN)) false
+    let _ = check "d3wiojd32r" ((W Single.NaN <= W Single.NaN)) false
+    let _ = check "d3wiojd32t" ((W Single.NaN = W Single.NaN)) false
+    let _ = check "d3wiojd32dt" ((W Single.NaN).Equals(W Single.NaN)) true
+    let _ = check "d3wiojd32y" ((W Single.NaN <> W Single.NaN)) true
+    let _ = check "d3wiojd32u" ((W Single.NaN > W 1.0f)) false
+    let _ = check "d3wiojd32i" ((W Single.NaN >= W 1.0f)) false
+    let _ = check "d3wiojd32o" ((W Single.NaN < W 1.0f)) false
+    let _ = check "d3wiojd32p" ((W Single.NaN <= W 1.0f)) false
+    let _ = check "d3wiojd32a" ((W Single.NaN = W 1.0f)) false
+    let _ = check "d3wiojd32s" ((W Single.NaN <> W 1.0f)) true
+    let _ = check "d3wiojd32d" ((W 1.0f > W Single.NaN)) false
+    let _ = check "d3wiojd32f" ((W 1.0f >= W Single.NaN)) false
+    let _ = check "d3wiojd32g" ((W 1.0f < W Single.NaN)) false
+    let _ = check "d3wiojd32h" ((W 1.0f <= W Single.NaN)) false
+    let _ = check "d3wiojd32j" ((W 1.0f = W Single.NaN)) false
+    let _ = check "d3wiojd32k" ((W 1.0f <> W Single.NaN)) true
+    let _ = check "d3wiojd32l" ((W Single.NegativeInfinity = W Single.NegativeInfinity)) true
+    let _ = check "d3wiojd32z" ((W Single.NegativeInfinity < W Single.PositiveInfinity)) true
+    let _ = check "d3wiojd32x" ((W Single.NegativeInfinity > W Single.PositiveInfinity)) false
+    let _ = check "d3wiojd32c" ((W Single.NegativeInfinity <= W Single.NegativeInfinity)) true
+
+    let _ = check "S4nancompare01" (0 = (compare (W Single.NaN) (W Single.NaN))) true
+    let _ = check "S4nancompare02" (0 = (compare (W Single.NaN) (W nan1))) true
+    let _ = check "S4nancompare03" (0 = (compare (W nan1) (W Single.NaN))) true
+    let _ = check "S4nancompare04" (0 = (compare (W nan1) (W nan1))) true
+    let _ = check "S4nancompare05" (1 = (compare (W 1.f) (W Single.NaN))) true
+    let _ = check "S4nancompare06" (1 = (compare (W 0.f) (W Single.NaN))) true
+    let _ = check "S4nancompare07" (1 = (compare (W -1.f) (W Single.NaN))) true
+    let _ = check "S4nancompare08" (1 = (compare (W Single.NegativeInfinity) (W Single.NaN))) true
+    let _ = check "S4nancompare09" (1 = (compare (W Single.PositiveInfinity) (W Single.NaN))) true
+    let _ = check "S4nancompare10" (1 = (compare (W Single.MaxValue) (W Single.NaN))) true
+    let _ = check "S4nancompare11" (1 = (compare (W Single.MinValue) (W Single.NaN))) true
+    let _ = check "S4nancompare12" (-1 = (compare (W Single.NaN) (W 1.f))) true
+    let _ = check "S4nancompare13" (-1 = (compare (W Single.NaN) (W 0.f))) true
+    let _ = check "S4nancompare14" (-1 = (compare (W Single.NaN) (W -1.f))) true
+    let _ = check "S4nancompare15" (-1 = (compare (W Single.NaN) (W Single.NegativeInfinity))) true
+    let _ = check "S4nancompare16" (-1 = (compare (W Single.NaN) (W Single.PositiveInfinity))) true
+    let _ = check "S4nancompare17" (-1 = (compare (W Single.NaN) (W Single.MaxValue))) true
+    let _ = check "S4nancompare18" (-1 = (compare (W Single.NaN) (W Single.MinValue))) true
+    
 module MoreStructuralEqHashCompareNaNChecks = 
     let test398275413() =
         let floats = [1.0; 0.0; System.Double.NaN; System.Double.NegativeInfinity; System.Double.PositiveInfinity; nan] in
