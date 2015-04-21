@@ -114,5 +114,21 @@ module BasicAnalysisTests =
                         complexDataConstructionFunction t1l t1k (complexDataConstructionFunction t1r k t2)
                 | _ -> failwith "veryComplexDataConstructionFunction"
             else complexDataConstructionFunction t1 k t2
+            
+    type NullNotPossible(i:int) =
+        member __.X = i   // no side effects, non-nullable
+
+    [<AllowNullLiteral>]
+    type NullPossible(i:int) =
+        member __.X = i   // yes side effects, nullable
+        
+    type DerivedFromNullPossible(i:int) =
+        inherit NullPossible(i)
+        member __.Y = i   // no side effects, non-nullable
+        
+    [<AllowNullLiteral>]
+    type DerivedFromNullPossibleAlsoNullPossible(i:int) =
+        inherit NullPossible(i)
+        member __.Y = i   // yes side effects, nullable
 
 printfn "Test run"

@@ -48,3 +48,11 @@ function simpleLibraryUse19 at line 66 causes side effects or may not terminate
 function complexDataAnalysisFunction at line 73 causes no side effects
 function complexDataConstructionFunction at line 81 causes side effects or may not terminate
 function veryComplexDataConstructionFunction at line 90 causes side effects or may not terminate
+function ( .ctor ) at line 118 causes side effects or may not terminate
+function X at line 119 causes no side effects
+function ( .ctor ) at line 122 causes side effects or may not terminate
+function X at line 123 causes side effects or may not terminate
+function ( .ctor ) at line 125 causes side effects or may not terminate
+function Y at line 127 causes no side effects
+function ( .ctor ) at line 130 causes side effects or may not terminate
+function Y at line 132 causes side effects or may not terminate
