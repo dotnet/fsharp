@@ -288,6 +288,8 @@ type OptimizationSettings =
     member x.InlineLambdas () = x.localOpt ()  
     /// eliminate unused bindings with no effect 
     member x.EliminateUnusedBindings () = x.localOpt () 
+    /// eliminate try around expr with no effect 
+    member x.EliminateTryCatchAndTryFinally () = false // deemed too risky, given tiny overhead of including try/catch. See https://github.com/Microsoft/visualfsharp/pull/376
     /// eliminate first part of seq if no effect 
     member x.EliminateSequential () = x.localOpt () 
     /// determine branches in pattern matching
@@ -1298,7 +1300,7 @@ and OpHasEffect g op =
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref,n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet -> false
-    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || HasFSharpAttribute g g.attrib_AllowNullLiteralAttribute rfref.Tycon.Attribs
+    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some(true))
     | TOp.ValFieldGetAddr _rfref  -> true (* check *)
     | TOp.LValueOp (LGetAddr,lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _
@@ -2137,8 +2139,17 @@ and OptimizeTryFinally cenv env (spTry,spFinally,e1,e2,m,ty) =
           HasEffect = e1info.HasEffect || e2info.HasEffect;
           MightMakeCriticalTailcall = false; // no tailcalls from inside in try/finally
           Info = UnknownValue } 
-    mkTryFinally cenv.g (e1',e2',m,ty,spTry,spFinally), 
-    info
+    (* try-finally, so no effect means no exception can be raised, so just sequence the finally *)
+    if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
+        let sp = 
+            match spTry with 
+            | SequencePointAtTry _ -> SequencePointsAtSeq 
+            | SequencePointInBodyOfTry -> SequencePointsAtSeq 
+            | NoSequencePointAtTry -> SuppressSequencePointOnExprOfSequential
+        Expr.Sequential(e1',e2',ThenDoSeq,sp,m),info 
+    else
+        mkTryFinally cenv.g (e1',e2',m,ty,spTry,spFinally), 
+        info
 
 //-------------------------------------------------------------------------
 // Optimize/analyze a try/catch construct.
@@ -2147,17 +2158,21 @@ and OptimizeTryFinally cenv env (spTry,spFinally,e1,e2,m,ty) =
 and OptimizeTryCatch cenv env (e1,vf,ef,vh,eh,m,ty,spTry,spWith) =
     if verboseOptimizations then dprintf "OptimizeTryCatch\n";
     let e1',e1info = OptimizeExpr cenv env e1    
-    let envinner = BindInternalValToUnknown cenv vf (BindInternalValToUnknown cenv vh env)
-    let ef',efinfo = OptimizeExpr cenv envinner ef 
-    let eh',ehinfo = OptimizeExpr cenv envinner eh 
-    let info = 
-        { TotalSize = e1info.TotalSize + efinfo.TotalSize+ ehinfo.TotalSize  + tryCatchSize;
-          FunctionSize = e1info.FunctionSize + efinfo.FunctionSize+ ehinfo.FunctionSize  + tryCatchSize;
-          HasEffect = e1info.HasEffect || efinfo.HasEffect || ehinfo.HasEffect;
-          MightMakeCriticalTailcall = false;
-          Info = UnknownValue } 
-    mkTryWith cenv.g (e1',vf,ef',vh,eh',m,ty,spTry,spWith), 
-    info
+    // try-catch, so no effect means no exception can be raised, so discard the catch 
+    if cenv.settings.EliminateTryCatchAndTryFinally () && not e1info.HasEffect then 
+        e1',e1info 
+    else
+        let envinner = BindInternalValToUnknown cenv vf (BindInternalValToUnknown cenv vh env)
+        let ef',efinfo = OptimizeExpr cenv envinner ef 
+        let eh',ehinfo = OptimizeExpr cenv envinner eh 
+        let info = 
+            { TotalSize = e1info.TotalSize + efinfo.TotalSize+ ehinfo.TotalSize  + tryCatchSize;
+              FunctionSize = e1info.FunctionSize + efinfo.FunctionSize+ ehinfo.FunctionSize  + tryCatchSize;
+              HasEffect = e1info.HasEffect || efinfo.HasEffect || ehinfo.HasEffect;
+              MightMakeCriticalTailcall = false;
+              Info = UnknownValue } 
+        mkTryWith cenv.g (e1',vf,ef',vh,eh',m,ty,spTry,spWith), 
+        info
 
 //-------------------------------------------------------------------------
 // Optimize/analyze a while loop

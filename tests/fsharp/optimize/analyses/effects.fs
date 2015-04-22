@@ -116,19 +116,40 @@ module BasicAnalysisTests =
             else complexDataConstructionFunction t1 k t2
             
     type NullNotPossible(i:int) =
-        member __.X = i   // no side effects, non-nullable
+        member __.X = i   // no effects
+        abstract member A : int
+        default __.A = i  // no effects
+
+    [<AllowNullLiteral(false)>]
+    type NullNotPossibleAttr(i:int) =
+        member __.X = i   // no effects
+        abstract member A : int
+        default __.A = i  // no effects
 
     [<AllowNullLiteral>]
     type NullPossible(i:int) =
-        member __.X = i   // yes side effects, nullable
+        member __.X = i   // yes effects
+        abstract member A : int
+        default __.A = i  // yes effects
         
     type DerivedFromNullPossible(i:int) =
         inherit NullPossible(i)
-        member __.Y = i   // no side effects, non-nullable
-        
+        member __.Y = i   // no effects
+        member __.Z = base.X   // yes effects
+        override __.A = i  // no effects
+      
+    [<AllowNullLiteral(false)>]
+    type DerivedFromNullPossibleAttrFalse(i:int) =
+        inherit NullPossible(i)
+        member __.Y = i   // no effects
+        member __.Z = base.X   // yes effects
+        override __.A = i  // no effects
+
     [<AllowNullLiteral>]
     type DerivedFromNullPossibleAlsoNullPossible(i:int) =
         inherit NullPossible(i)
-        member __.Y = i   // yes side effects, nullable
+        member __.Y = i   // yes effects
+        member __.Z = base.X   // yes effects
+        override __.A = i  // yes effects
 
 printfn "Test run"

@@ -50,9 +50,22 @@ function complexDataConstructionFunction at line 81 causes side effects or may n
 function veryComplexDataConstructionFunction at line 90 causes side effects or may not terminate
 function ( .ctor ) at line 118 causes side effects or may not terminate
 function X at line 119 causes no side effects
-function ( .ctor ) at line 122 causes side effects or may not terminate
-function X at line 123 causes side effects or may not terminate
-function ( .ctor ) at line 125 causes side effects or may not terminate
-function Y at line 127 causes no side effects
+function A at line 121 causes no side effects
+function ( .ctor ) at line 124 causes side effects or may not terminate
+function X at line 125 causes no side effects
+function A at line 127 causes no side effects
 function ( .ctor ) at line 130 causes side effects or may not terminate
-function Y at line 132 causes side effects or may not terminate
+function X at line 131 causes side effects or may not terminate
+function A at line 133 causes side effects or may not terminate
+function ( .ctor ) at line 135 causes side effects or may not terminate
+function Y at line 137 causes no side effects
+function Z at line 138 causes side effects or may not terminate
+function A at line 139 causes no side effects
+function ( .ctor ) at line 142 causes side effects or may not terminate
+function Y at line 144 causes no side effects
+function Z at line 145 causes side effects or may not terminate
+function A at line 146 causes no side effects
+function ( .ctor ) at line 149 causes side effects or may not terminate
+function Y at line 151 causes side effects or may not terminate
+function Z at line 152 causes side effects or may not terminate
+function A at line 153 causes side effects or may not terminate
