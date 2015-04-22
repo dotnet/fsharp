@@ -5213,12 +5213,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else if (op == VSADDITEMOPERATION.VSADDITEMOP_OPENFILE)
             {
-                // When called via automation API, there seem to always be exactly one element in the array
-                string file = files[0];
-                HierarchyNode n = this.NodeFromItemId(itemIdLoc);
-                string relativeFolder = Path.GetDirectoryName(n.Url);
-                string relPath = PackageUtilities.MakeRelativeIfRooted(Path.Combine(relativeFolder, Path.GetFileName(file)), this.BaseURI);
-                MoveFileToBottomIfNoOtherPendingMove(relPath);
+                foreach (string file in files)
+                {
+                    HierarchyNode n = this.NodeFromItemId(itemIdLoc);
+                    string relativeFolder = Path.GetDirectoryName(n.Url);
+                    string relPath = PackageUtilities.MakeRelativeIfRooted(Path.Combine(relativeFolder, Path.GetFileName(file)), this.BaseURI);
+                    MoveFileToBottomIfNoOtherPendingMove(relPath);
+                }
             }
             else if (op == VSADDITEMOPERATION.VSADDITEMOP_LINKTOFILE)
             {
