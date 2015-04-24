@@ -73,7 +73,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
            | Some ty -> TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1 ty) ||
 
            (isInterfaceTy g ty1 &&
-            ty2 |> GetImmediateInterfacesOfType g amap m 
+            ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
                 |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
 
 
@@ -129,7 +129,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
          | None -> false
          | Some ty -> TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce ty
          end ||
-         ty2 |> GetImmediateInterfacesOfType g amap m 
+         ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
              |> List.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce))
                    
 
@@ -1993,7 +1993,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader) isImp
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
     if not (isAppTy g ty2) then None else
-    let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType g amap m ty2)
+    let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
     supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
     
 

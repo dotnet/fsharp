@@ -1369,7 +1369,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 
             let typ = generalizedTyconRef (mkLocalTyconRef tycon)
-            let immediateInterfaces = GetImmediateInterfacesOfType cenv.g cenv.amap m typ
+            let immediateInterfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap m typ
             let interfaces = 
               [ for ty in immediateInterfaces do
                     yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
