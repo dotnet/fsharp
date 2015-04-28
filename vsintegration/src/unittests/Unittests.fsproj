@@ -55,14 +55,18 @@
     <Compile Include="Tests.LanguageService.TimeStamp.fs" />
     <Compile Include="Tests.LanguageService.ErrorList.fs" />
     <Compile Include="Tests.LanguageService.ErrorRecovery.fs" />
+    <Compile Include="Tests.RoseTree.fs" />
+    <Compile Include="Tests.PathUtils.fs" />
     <Compile Include="Tests.ProjectSystem.Configs.fs" />
     <Compile Include="Tests.ProjectSystem.Miscellaneous.fs" />
     <Compile Include="Tests.ProjectSystem.MultiTargeting.fs" />
     <Compile Include="Tests.ProjectSystem.ProjectItems.fs" />
     <Compile Include="Tests.ProjectSystem.Project.fs" />
+    <Compile Include="Tests.ProjectSystem.MSBuildUtilities.fs" />
     <Compile Include="Tests.ProjectSystem.References.fs" />
     <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
+    <Compile Include="Tests.ProjectSystem.ProjectTree.fs" />
     <CustomCopyLocal Include="Unittests.dll.config">
         <TargetFilename>Unittests.dll.config</TargetFilename>
     </CustomCopyLocal>

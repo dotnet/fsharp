@@ -38,8 +38,11 @@
       <Link>fsiCommands.vsct</Link>
     </None>
     <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="RoseTree.fs" />
+    <Compile Include="ProjectTypes.fs" />
     <Compile Include="..\..\Common.fs" />
     <Compile Include="ProjectPrelude.fs" />
+    <Compile Include="ProjectTree.fs" />
     <Compile Include="MSBuildUtilities.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalFileSystemUtils.fsi" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalFileSystemUtils.fs" />
