@@ -13982,7 +13982,7 @@ module EstablishTypeDefinitionCores = begin
             let hasCLIMutable = HasFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute attrs
             
             let hasStructLayoutAttr = HasFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
-            let hasAllowNullLiteralAttr = HasFSharpAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs
+            let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some(true)
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
