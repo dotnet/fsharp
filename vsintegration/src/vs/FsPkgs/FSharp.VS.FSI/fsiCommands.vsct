@@ -222,7 +222,6 @@
          Here we bind it in the Editor context of the standard TextEditor.
          Ideally, we would bind it for F# only editor.
     -->
-    <KeyBinding guid ="guidInteractive" id ="cmdidDebugSelection" editor="GUID_TextEditorFactory" key1="D" mod1="Alt" key2="VK_RETURN" mod2="Alt"  />
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
 
     <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
