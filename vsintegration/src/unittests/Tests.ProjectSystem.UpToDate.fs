@@ -59,7 +59,7 @@ type UpToDate() =
             File.AppendAllText(embedPath, "some embedded resource")
 
             Assert.IsFalse(config.IsUpToDate(logger, true))
-            project.Build(configNameDebug, output, "Build") |> ignore
+            project.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
             // None items should not affect up-to-date (unless captured by well-known items, e.g. App.config)
@@ -111,7 +111,7 @@ type UpToDate() =
 
             project.SetConfiguration(config.ConfigCanonicalName);
             Assert.IsFalse(config.IsUpToDate(logger, true))
-            project.Build(configNameDebug, output, "Build") |> ignore
+            project.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
             for path in [verPath; keyPath] do
@@ -146,7 +146,7 @@ type UpToDate() =
             File.AppendAllText(absFilePath, "printfn \"hello\"")
 
             Assert.IsFalse(config.IsUpToDate(logger, true))
-            project.Build(configNameDebug, output, "Build") |> ignore
+            project.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
             // touch proj file
@@ -177,7 +177,7 @@ type UpToDate() =
             let config1 = project1.ConfigProvider.GetProjectConfiguration(configNameDebug)
 
             Assert.IsFalse(config1.IsUpToDate(logger, true))
-            project1.Build(configNameDebug, output, "Build") |> ignore
+            project1.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(config1.IsUpToDate(logger, true))
 
             let output1 = Path.Combine(project1.ProjectFolder, "bin\\debug", project1.OutputFileName)
@@ -196,7 +196,7 @@ type UpToDate() =
                 let startTime = DateTime.Now
 
                 Assert.IsFalse(config2.IsUpToDate(logger, true))
-                project2.Build(configNameDebug, output, "Build") |> ignore
+                project2.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
                 Assert.IsTrue(config2.IsUpToDate(logger, true))
 
                 // reference is updated
@@ -234,7 +234,7 @@ type UpToDate() =
             File.AppendAllText(sourcePath, "printfn \"hello\"")
 
             Assert.IsFalse(config.IsUpToDate(logger, true))
-            project.Build(configNameDebug, output, "Build") |> ignore
+            project.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
             let startTime = DateTime.Now
@@ -283,25 +283,25 @@ type UpToDate() =
             Assert.IsFalse(debugConfigAnyCPU.IsUpToDate(logger, true))
             Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
-            project.Build(configNameDebugx86, output, "Build") |> ignore
+            project.Build(configNameDebugx86, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
             Assert.IsFalse(releaseConfigx86.IsUpToDate(logger, true))
             Assert.IsFalse(debugConfigAnyCPU.IsUpToDate(logger, true))
             Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
-            project.Build(configNameReleasex86, output, "Build") |> ignore
+            project.Build(configNameReleasex86, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
             Assert.IsTrue(releaseConfigx86.IsUpToDate(logger, true))
             Assert.IsFalse(debugConfigAnyCPU.IsUpToDate(logger, true))
             Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
-            project.Build(configNameDebugAnyCPU, output, "Build") |> ignore
+            project.Build(configNameDebugAnyCPU, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
             Assert.IsTrue(releaseConfigx86.IsUpToDate(logger, true))
             Assert.IsTrue(debugConfigAnyCPU.IsUpToDate(logger, true))
             Assert.IsFalse(releaseConfigAnyCPU.IsUpToDate(logger, true))
 
-            project.Build(configNameReleaseAnyCPU, output, "Build") |> ignore
+            project.Build(configNameReleaseAnyCPU, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(debugConfigx86.IsUpToDate(logger, true))
             Assert.IsTrue(releaseConfigx86.IsUpToDate(logger, true))
             Assert.IsTrue(debugConfigAnyCPU.IsUpToDate(logger, true))
