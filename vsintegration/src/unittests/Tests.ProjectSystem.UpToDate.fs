@@ -214,6 +214,9 @@ type UpToDate() =
     [<Test>]
     member public this.OutputFiles () =
         this.MakeProjectAndDo(["file1.fs"], [], @"
+               <ItemGroup>
+                   <None Include=""App.config"" />
+               </ItemGroup>
                <PropertyGroup>
                    <DocumentationFile>bin\Debug\Test.XML</DocumentationFile>
                    <DebugSymbols>true</DebugSymbols>
@@ -224,14 +227,17 @@ type UpToDate() =
             let output = VsMocks.vsOutputWindowPane(ref [])
             let logger = OutputWindowLogger.CreateUpToDateCheckLogger(output)
             let sourcePath = Path.Combine(project.ProjectFolder, "file1.fs")
+            let appConfigPath = Path.Combine(project.ProjectFolder, "App.config")
 
             let exeObjPath = Path.Combine(project.ProjectFolder, "obj\\x86\\debug", project.OutputFileName)
             let exeBinpath = Path.Combine(project.ProjectFolder, "bin\\debug\\", project.OutputFileName)
             let pdbObjPath = Regex.Replace(exeObjPath, "exe$", "pdb")
             let pdbBinPath = Regex.Replace(exeBinpath, "exe$", "pdb")
             let xmlDocPath = Regex.Replace(exeBinpath, "exe$", "xml")
+            let exeConfigPath = Regex.Replace(exeBinpath, "exe$", "exe.config")
 
             File.AppendAllText(sourcePath, "printfn \"hello\"")
+            File.AppendAllText(appConfigPath, """<?xml version="1.0" encoding="utf-8" ?><configuration></configuration>""")
 
             Assert.IsFalse(config.IsUpToDate(logger, true))
             project.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
@@ -239,7 +245,7 @@ type UpToDate() =
 
             let startTime = DateTime.Now
 
-            for path in [exeObjPath; exeBinpath; pdbObjPath; pdbBinPath; xmlDocPath] do
+            for path in [exeObjPath; exeBinpath; pdbObjPath; pdbBinPath; xmlDocPath; exeConfigPath] do
                 printfn "Testing output %s" path
 
                 // touch file
