@@ -20,6 +20,12 @@ module internal ExtensionTyping =
         val mutable displayLSTypeProviderSecurityDialogBlockingUI : (string->unit) option
         val mutable theMostRecentFileNameWeChecked : string option
 
+    module internal ApprovalsChecking =
+
+        val isAlwaysTrust : unit -> bool
+
+        val setAlwaysTrust : bool -> unit
+
     module internal ApprovalIO =
 
         val partiallyCanonicalizeFileName : string -> string

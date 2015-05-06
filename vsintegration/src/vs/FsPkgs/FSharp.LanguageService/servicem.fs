@@ -2061,7 +2061,11 @@ type FSharpPackage() as self =
                 // the 'displayLSTypeProviderSecurityDialogBlockingUI' callback is run async to the background typecheck, so after the user has interacted with the dialog, request a re-typecheck
                 TypeProviderSecurityGlobals.invalidationCallback() 
 
-            Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some showDialog
+            let unlessAlwaysTrustShowDialog path =
+                if not (Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalsChecking.isAlwaysTrust ())
+                then showDialog path
+
+            Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some unlessAlwaysTrustShowDialog
 
             self.RegisterForIdleTime()
             box language
