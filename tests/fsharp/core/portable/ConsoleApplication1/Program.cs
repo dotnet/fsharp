@@ -28,6 +28,7 @@ namespace PortableTestEntry
             Run("Core_controlMailBox", () => { var x = Core_controlMailBox.aa; });
             Run("Core_controlStackOverflow", () => { var x = Core_controlStackOverflow.aa; });
             Run("Core_csext", () => { var x = Core_csext.aa; });
+            Run("Core_forexpression", () => { var x = Core_forexpression.aa; });
             Run("Core_innerpoly", () => { var x = Core_innerpoly.aa; });
             Run("Core_int32", () => { var x = Core_int32.aa; });
             Run("Core_lazy", () => { var x = Core_lazy.aa; });
