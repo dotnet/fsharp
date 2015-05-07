@@ -100,6 +100,17 @@ type RoundTrip() =
                              CompileItem @"A\qux.fs"]
         this.``FsprojRoundtrip.PositiveTest``(MSBuildItems origItems, MSBuildItems expectedItems)
 
+    [<Test>]
+    member public this.``FsprojRoundTrip.Regression.FoldersWithSameName``() =
+        let items = MSBuildItems [CompileItem @"First\Second\bar.fs"
+                                  CompileItem @"Second\qux.fs"]
+        this.``FsprojRoundtrip.PositiveTest``(items, items)
+
+    [<Test>]
+    member public this.``FsprojRoundTrip.Regression.FoldersWithSameName2``() =
+        let items = MSBuildItems [CompileItem @"First\First\bar.fs"]
+        this.``FsprojRoundtrip.PositiveTest``(items, items)
+
     member this.``Fsproj.NegativeTest``(items : MSBuildItems) =
         DoWithTempFile "Test.fsproj" (fun file ->
             File.AppendAllText(file, TheTests.SimpleFsprojText([], [], items.ToString()))
