@@ -520,6 +520,10 @@
     <value>Using a Type Provider from a source that is unknown or not trusted can expose your computer to security threats, as it will run under the privileges of the current user.</value>
     <comment>Tools-Options-F# tools-Type Providers: overall description</comment>
   </data>
+  <data name="TPTOP_AlwaysTrust" xml:space="preserve">
+    <value>Always trust type providers</value>
+    <comment>Tools-Options-F# tools-Type Providers: always trust type providers description</comment>
+  </data>
   <data name="TPTOP_Trusted" xml:space="preserve">
     <value>Trusted</value>
     <comment>Tools-Options-F# tools-Type Providers: column header</comment>

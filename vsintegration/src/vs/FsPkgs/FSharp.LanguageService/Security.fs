@@ -124,7 +124,7 @@ type internal TypeProviderSecurityDialog =
         sp.Children.Add(buttonPanel) |> ignore
 
         let doNotShowAgain = ref false
-        let doNotShowAgainCheckbox = new CheckBox(Content="Do not show this message again")
+        let doNotShowAgainCheckbox = new CheckBox(Content=Strings.GetString "TPSEC_DoNotShowAgain")
         doNotShowAgainCheckbox.Click.Add(fun ea ->
             let checkbox = ea.Source :?> CheckBox
             doNotShowAgain := checkbox.IsChecked.HasValue && checkbox.IsChecked.Value)

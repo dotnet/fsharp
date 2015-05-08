@@ -305,7 +305,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 System.Windows.Controls.DockPanel.SetDock(grid, System.Windows.Controls.Dock.Top)
                 grid
 
-            let doNotShowAgainCheckbox = new CheckBox(Content="Always trust type providers")
+            let doNotShowAgainCheckbox = new CheckBox(Content=FSharpSR.GetString "TPTOP_AlwaysTrust")
             System.Windows.Controls.DockPanel.SetDock(doNotShowAgainCheckbox, System.Windows.Controls.Dock.Top)
             doNotShowAgainCheckbox.DataContext <- tptop
             doNotShowAgainCheckbox.SetBinding(CheckBox.IsCheckedProperty, "AlwaysTrust") |> ignore

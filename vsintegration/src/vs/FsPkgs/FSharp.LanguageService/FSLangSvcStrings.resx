@@ -160,6 +160,10 @@
     <value>Project using type provider:</value>
     <comment>dialog label - project causing dialog</comment>
   </data>
+  <data name="TPSEC_DoNotShowAgain" xml:space="preserve">
+    <value>Always Enable and do not show this message again</value>
+    <comment>dialog label - do not show again checkbox text</comment>
+  </data>
   <data name="TPSEC_PublisherInfo" xml:space="preserve">
     <value>Publisher information:</value>
     <comment>dialog label - publisher info of type provider assembly</comment>
