@@ -27,10 +27,10 @@ set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
 set _tmp=%4
 if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
 
-rem set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
+set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
-set REDUCED_RUNTIME=1
+set REDUCED_RUNTIME=
 if "%REDUCED_RUNTIME%" == "1" set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
 
 rem Set this to 1 in order to use an external compiler host process
@@ -47,7 +47,7 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
-if /I "%2" == "fsharpqacrosstarget" (goto :FSHARPQA)
+if /I "%2" == "fsharpqacrosstarget01" (goto :FSHARPQA)
 if /I "%2" == "compilerunit" (
    set compilerunitsuffix=net40
    goto :COMPILERUNIT
@@ -164,8 +164,13 @@ set PATH=%PATH%;%CORDIR%
 if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Req20 
 
 
-if /I "%2" == "fsharpqacrosstarget" (
-   set ISCFLAGS=-g --optimize+ --noframework -r "%FSCOREDLLVPREVPATH%" -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r System -r System.Runtime -r System.Xml -r System.Data -r System.Web -r System.Core -r System.Numerics
+if /I "%2" == "fsharpqacrosstarget01" (
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r System -r System.Runtime -r System.Xml -r System.Data -r System.Web -r System.Core -r System.Numerics
+   )
+
+if /I "%2" == "fsharpqacrosstarget02" (
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r System -r System.Runtime -r System.Xml -r System.Data -r System.Web -r System.Core -r System.Numerics
+   set SIMULATOR_PIPE="%FSCBINPATH%\fsi.exe" "%~dp0\fsharpqa\testenv\bin\ExecAssembly.fsx"
 )
 
 set RESULTFILE=FSharpQA_Results.log
