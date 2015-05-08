@@ -309,6 +309,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             System.Windows.Controls.DockPanel.SetDock(doNotShowAgainCheckbox, System.Windows.Controls.Dock.Top)
             doNotShowAgainCheckbox.DataContext <- tptop
             doNotShowAgainCheckbox.SetBinding(CheckBox.IsCheckedProperty, "AlwaysTrust") |> ignore
+            doNotShowAgainCheckbox.Margin <- new Windows.Thickness(0.0, 4.0, 0.0, 6.0)
 
             panel.Children.Add(iconAndTextGrid) |> ignore
             panel.Children.Add(doNotShowAgainCheckbox) |> ignore
