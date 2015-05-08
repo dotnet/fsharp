@@ -123,6 +123,15 @@ type internal TypeProviderSecurityDialog =
         buttonPanel.Children.Add(disableButton) |> ignore
         sp.Children.Add(buttonPanel) |> ignore
 
+        let doNotShowAgain = ref false
+        let doNotShowAgainCheckbox = new CheckBox(Content=Strings.GetString "TPSEC_DoNotShowAgain")
+        doNotShowAgainCheckbox.Click.Add(fun ea ->
+            let checkbox = ea.Source :?> CheckBox
+            doNotShowAgain := checkbox.IsChecked.HasValue && checkbox.IsChecked.Value)
+        let doNotShowAgainPanel = new StackPanel(Orientation = Orientation.Horizontal, HorizontalAlignment=System.Windows.HorizontalAlignment.Left)
+        doNotShowAgainPanel.Children.Add(doNotShowAgainCheckbox) |> ignore
+        sp.Children.Add(doNotShowAgainPanel) |> ignore
+
         let separator = new System.Windows.Controls.Separator()
         separator.Margin <- new System.Windows.Thickness(0.0, 8.0, 0.0, 0.0)
         sp.Children.Add(separator) |> ignore
@@ -163,13 +172,16 @@ type internal TypeProviderSecurityDialog =
         di.WindowStartupLocation <- System.Windows.WindowStartupLocation.CenterOwner
         di.Loaded.Add (fun _ -> System.Windows.Input.Keyboard.Focus(disableButton) |> ignore)
         di.ShowModal() |> ignore
-        let approval =
-            if !enabled then
-                Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(assem)
-            else
-                Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(assem)
-        Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus None approval
-        // invalidate any language service caching
-        TypeProviderSecurityGlobals.invalidationCallback()
+        if !doNotShowAgain
+        then Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalsChecking.setAlwaysTrust true
+        else
+            let approval =
+                if !enabled then
+                    Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(assem)
+                else
+                    Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(assem)
+            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus None approval
+            // invalidate any language service caching
+            TypeProviderSecurityGlobals.invalidationCallback()
                 
         

@@ -99,6 +99,27 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         member this.Assem with get() = assem
         member this.FileName with get() = fileName
 
+    type ViewModelBase() =
+        let propertyChanged = new Event<_, _>()
+ 
+        interface INotifyPropertyChanged with
+            [<CLIEvent>]
+            member x.PropertyChanged = propertyChanged.Publish
+
+        member x.OnPropertyChanged(propertyName) =
+            propertyChanged.Trigger(x, PropertyChangedEventArgs(propertyName))
+
+    type TPTOP() =
+        inherit ViewModelBase()
+
+        let mutable alwaysTrust = false
+
+        member x.AlwaysTrust 
+            with get() = alwaysTrust 
+            and set(b) = 
+                alwaysTrust <- b
+                x.OnPropertyChanged("AlwaysTrust")
+
     [<ComVisible(true)>]
     [<CLSCompliant(false)>]
     [<Guid("4B7954C1-7D80-4FB6-8C18-2567DF5735F9")>]
@@ -161,6 +182,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     dgrow.MoveFocus(new System.Windows.Input.TraversalRequest(System.Windows.Input.FocusNavigationDirection.Next)) |> ignore
                 )
 
+            let tptop = TPTOP()
+
             pageActivatedEvent.Add(fun () ->
                 let approvals = Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReadApprovalsFile None
                 let initialApprovals = [|
@@ -177,8 +200,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 let backingStore = new System.Collections.ObjectModel.ObservableCollection<_>( initialApprovals ) // create backing store for UI
                 grid.ItemsSource <- backingStore
 
+                tptop.AlwaysTrust <- Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalsChecking.isAlwaysTrust ()
+
                 let rec pageCloseLogic = new System.Windows.RoutedEventHandler(fun _ _ ->
                     try
+                        Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalsChecking.setAlwaysTrust (tptop.AlwaysTrust)
+
                         // make lists of tuples for structural equality test
                         let finalVals = backingStore |> Seq.map (fun x -> x.FileName, x.IsTrusted) |> Seq.toList
                         if finalVals <> initVals then
@@ -278,7 +305,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 System.Windows.Controls.DockPanel.SetDock(grid, System.Windows.Controls.Dock.Top)
                 grid
 
+            let doNotShowAgainCheckbox = new CheckBox(Content=FSharpSR.GetString "TPTOP_AlwaysTrust")
+            System.Windows.Controls.DockPanel.SetDock(doNotShowAgainCheckbox, System.Windows.Controls.Dock.Top)
+            doNotShowAgainCheckbox.DataContext <- tptop
+            doNotShowAgainCheckbox.SetBinding(CheckBox.IsCheckedProperty, "AlwaysTrust") |> ignore
+            doNotShowAgainCheckbox.Margin <- new Windows.Thickness(0.0, 4.0, 0.0, 6.0)
+
             panel.Children.Add(iconAndTextGrid) |> ignore
+            panel.Children.Add(doNotShowAgainCheckbox) |> ignore
             panel.Children.Add(grid) |> ignore
             panel.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, System.Windows.SystemColors.ControlBrushKey)
             this.Child <- panel

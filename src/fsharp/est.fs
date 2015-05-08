@@ -31,6 +31,8 @@ module internal ExtensionTyping =
         /// The absolute path name to where approvals are stored
         let ApprovalsAbsoluteFileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), @"Microsoft\VisualStudio\12.0\type-providers.txt")
 
+        let AlwaysTrustAbsoluteFileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), @"Microsoft\VisualStudio\12.0\always-trust-type-providers.lock")
+
         /// Canonicalize the name of a type provider component
         let partiallyCanonicalizeFileName fn = 
             (new FileInfo(fn)).FullName // avoid some trivialities like double backslashes or spaces before slashes (but preserves others like casing distinctions), see also bug 206595
@@ -80,6 +82,24 @@ module internal ExtensionTyping =
                         retryCount <- retryCount + 1
                         System.Threading.Thread.Sleep(SLEEP_PER_TRY)
             result
+
+        let existsAlwaysTrustFile () =
+            File.Exists(AlwaysTrustAbsoluteFileName)
+
+        let createAlwaysTrustFile () =
+            if not (existsAlwaysTrustFile ())
+            then TryDoWithFileStreamUnderExclusiveLockWithRetryFor500ms (AlwaysTrustAbsoluteFileName, ignore)
+
+        let deleteAlwaysTrustFile () =
+            let rec deleteIt retryCount path =
+                try
+                    if existsAlwaysTrustFile ()
+                    then System.IO.File.Delete(path)
+                with
+                    | :? IOException when retryCount > 0 -> 
+                        System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(100.0))
+                        deleteIt (retryCount - 1) path
+            deleteIt 5 AlwaysTrustAbsoluteFileName
 
         /// Try to do an operation on the type-provider approvals file
         let DoWithApprovalsFile (fileStreamOpt : FileStream option) f =
@@ -194,6 +214,14 @@ module internal ExtensionTyping =
             )
 
     module internal ApprovalsChecking =
+
+        let isAlwaysTrust () =
+            ApprovalIO.existsAlwaysTrustFile ()
+
+        let setAlwaysTrust enabled =
+            if enabled
+            then ApprovalIO.createAlwaysTrustFile ()
+            else ApprovalIO.deleteAlwaysTrustFile ()
 
         let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, approvals : ApprovalIO.TypeProviderApprovalStatus list, popupDialogCallback : (string->unit) option) : bool =
             let partiallyCanonicalizedFileName = ApprovalIO.partiallyCanonicalizeFileName runTimeAssemblyFileName
@@ -350,6 +378,8 @@ module internal ExtensionTyping =
 #if TYPE_PROVIDER_SECURITY
             if not validateTypeProviders then 
                 true  // if not validating, then everything is ok
+            elif ApprovalsChecking.isAlwaysTrust () then
+                true  // is ok too
             else
                 // pick the PS dialog if available (if so, we are definitely being called from a 'Build' from the PS), else use the LS one if available
                 let dialog = match displayPSTypeProviderSecurityDialogBlockingUI with
