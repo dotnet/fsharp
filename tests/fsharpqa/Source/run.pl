@@ -83,7 +83,7 @@ my $TAILFLAGS = $ENV{TAILFLAGS};
 # Check for any global compiler flags
 my $ISCFLAGS = $ENV{ISCFLAGS};
 unless( defined($ISCFLAGS) ){
-  $ISCFLAGS = "-g --optimize";
+  $ISCFLAGS = " ";
 }
 
 # Filter out flags that don't make sense in FSI (e.g. --standalone)
