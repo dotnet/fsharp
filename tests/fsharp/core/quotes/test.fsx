@@ -2684,6 +2684,29 @@ module NestedQuotations =
 
     runAll()
 
+module ExtensionMembersWithSameName = 
+    let check nm a b = if not (a = b) then printfn "%s failed, expected %A, got %A" nm b a
+    open FSharp.Quotations
+    type System.Object with
+        [<ReflectedDefinition>]
+        member this.Add(x) = x
+        [<ReflectedDefinition>]
+        member this.Add(x, y) = x + y
+
+    let runAll () =
+        match  <@ obj().Add(2) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf094" text "Some Lambda (this, Lambda (x, x))"
+        | _ -> ()
+
+        match  <@ obj().Add(2,3) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf095" (m.GetParameters().Length) 3
+        | _ -> ()
+
+    runAll()
 
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
