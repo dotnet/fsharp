@@ -166,11 +166,13 @@ if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTA
 
 if /I "%2" == "fsharpqacrosstarget01" (
    set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r System -r System.Runtime -r System.Xml -r System.Data -r System.Web -r System.Core -r System.Numerics
-   )
+   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
+)
 
 if /I "%2" == "fsharpqacrosstarget02" (
    set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r System -r System.Runtime -r System.Xml -r System.Data -r System.Web -r System.Core -r System.Numerics
    set SIMULATOR_PIPE="%FSCBINPATH%\fsi.exe" "%~dp0\fsharpqa\testenv\bin\ExecAssembly.fsx"
+   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
 )
 
 set RESULTFILE=FSharpQA_Results.log
