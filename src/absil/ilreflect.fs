@@ -1659,20 +1659,20 @@ let typeAttributesOfTypeEncoding x =
 
 
 let typeAttributesOfTypeLayout cenv emEnv x = 
-    let attr p = 
+    let attr x p = 
       if p.Size =None && p.Pack = None then None
       else 
         Some(convCustomAttr cenv emEnv  
                (IL.mkILCustomAttribute cenv.ilg
                   (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.StructLayoutAttribute"), 
                    [mkILNonGenericValueTy (mkILTyRef (cenv.ilg.traits.ScopeRef,"System.Runtime.InteropServices.LayoutKind")) ],
-                   [ ILAttribElem.Int32 0x02 ],
+                   [ ILAttribElem.Int32 x ],
                    (p.Pack |> Option.toList |> List.map (fun x -> ("Pack", cenv.ilg.typ_int32, false, ILAttribElem.Int32 (int32 x))))  @
                    (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_int32, false, ILAttribElem.Int32 x)))))) in
     match x with 
     | ILTypeDefLayout.Auto         -> TypeAttributes.AutoLayout,None
-    | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout,(attr p)
-    | ILTypeDefLayout.Sequential p -> TypeAttributes.SequentialLayout, (attr p)
+    | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout,(attr 0x02 p)
+    | ILTypeDefLayout.Sequential p -> TypeAttributes.SequentialLayout, (attr 0x00 p)
 
 
 //----------------------------------------------------------------------------
