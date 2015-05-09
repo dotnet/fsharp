@@ -728,7 +728,7 @@ let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
     for i = 0 to inMap.Count - 1 do
       let n = inMap.Get i
       if not (inMap.IsLinked n) then 
-        warning(Error(FSComp.SR.pickleMissingDefinition i inMap.Name ilscope.QualifiedName, range0))
+        warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
         // Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" 
 #endif
 
