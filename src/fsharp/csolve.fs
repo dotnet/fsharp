@@ -1157,7 +1157,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                                    IsRecdFieldAccessible amap m AccessibleFromEverywhere rfinfo.RecdFieldRef &&
                                    not rfinfo.LiteralValue.IsSome && 
                                    not rfinfo.RecdField.IsCompilerGenerated -> 
-                            Some (TTraitSolvedRecdProp (rfinfo, isSetProp))
+                            Some (TTraitSolvedRecdProp (rfinfo, isSetProp), rfinfo.FieldType)
                         | _ -> None)
                   match props with 
                   | [ prop ] -> Some prop
@@ -1210,9 +1210,9 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                   CollectThenUndo (fun trace -> ResolveOverloading csenv (WithTrace(trace)) nm ndeep true (0,0) AccessibleFromEverywhere calledMethGroup false (Some rty))  
 
               match recdPropSearch, methOverloadResult with 
-              | Some a, None -> 
-                  // OK, the constraint is solved by a record property
-                  ResultD a
+              | Some (sln, rty2), None -> 
+                  // OK, the constraint is solved by a record property. Assert that the return types match.
+                  SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty rty2 ++ (fun () -> ResultD sln)
               | None, Some (calledMeth:CalledMeth<_>) -> 
                   // OK, the constraint is solved. 
                   // Re-run without undo to commit the inference equations. Throw errors away 
