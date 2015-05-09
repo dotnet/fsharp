@@ -2785,6 +2785,12 @@ sub get_env_file
 		if (/^\s*(\w+)\s*=/)
 		{
 		    my $var = uc($1);
+            
+            if($var =~ /^FSIMODE$/)
+            {
+                $sublist[$envnum][1] = $sublist[$envnum][1] . ",FSI";
+            }
+            
 		    $sublist[$envnum][4]{$var} = $';
 		    if ($' =~ /%(\w+)%/)
 		    {
