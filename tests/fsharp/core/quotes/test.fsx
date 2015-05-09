@@ -2685,8 +2685,7 @@ module NestedQuotations =
     runAll()
 
 module ExtensionMembersWithSameName = 
-    let check nm a b = if not (a = b) then printfn "%s failed, expected %A, got %A" nm b a
-    open FSharp.Quotations
+
     type System.Object with
         [<ReflectedDefinition>]
         member this.Add(x) = x
