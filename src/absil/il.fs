@@ -4688,7 +4688,7 @@ type ILTypeSigParser(tstring : string) =
         let ilty = x.ParseType()
         ILAttribElem.Type(Some(ilty))
 
-let decodeILAttribData ilg (ca: ILAttribute) scope = 
+let decodeILAttribData ilg (ca: ILAttribute) = 
     let bytes = ca.Data
     let sigptr = 0
     let bb0,sigptr = sigptr_get_byte bytes sigptr
@@ -4781,15 +4781,19 @@ let decodeILAttribData ilg (ca: ILAttribute) scope =
       let et,sigptr = sigptr_get_u8 bytes sigptr
       // We have a named value 
       let ty,sigptr = 
-        // REVIEW: Post-M3, consider removing the restriction for scope - it's unnecessary
-        // because you can reconstruct scope using the qualified name from the CA Blob
-        if (0x50 = (int et) || 0x55 = (int et)) && Option.isSome scope then
+        if (0x50 = (int et) || 0x55 = (int et)) then
             let qualified_tname,sigptr = sigptr_get_serstring bytes sigptr
-            // we're already getting the qualified name from the binary blob
-            // if we don't split out the unqualified name from the qualified name,
-            // we'll write the qualified assembly reference string twice to the binary blob
-            let unqualified_tname = qualified_tname.Split([|','|]).[0]
-            let scoref = Option.get scope                    
+            let unqualified_tname, rest = 
+                let pieces = qualified_tname.Split(',')
+                if pieces.Length > 1 then 
+                    pieces.[0], Some (String.concat "," pieces.[1..])
+                else 
+                    pieces.[0], None
+            let scoref = 
+                match rest with 
+                | Some aname -> ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName(System.Reflection.AssemblyName(aname)))        
+                | None -> ilg.traits.ScopeRef
+
             let tref = mkILTyRef (scoref,unqualified_tname)
             let tspec = mkILNonGenericTySpec tref
             ILType.Value(tspec),sigptr            
