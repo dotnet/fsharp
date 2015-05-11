@@ -39,6 +39,17 @@ module ExtraTopLevelOperators =
             t.[RuntimeHelpers.StructBox(k)] <- v
         let d = (t :> IDictionary<_,_>)
         let c = (t :> ICollection<_>)
+
+        let dictEnumerator (a: System.Collections.Generic.IEnumerator<System.Collections.DictionaryEntry>) =
+            { new System.Collections.IDictionaryEnumerator with
+                member x.Current = a.Current :> obj
+                member x.Entry = a.Current
+                member x.Key = x.Entry.Key
+                member x.Value = x.Entry.Value
+                member x.MoveNext () = a.MoveNext()
+                member x.Reset () = a.Reset()
+            }
+
         // Give a read-only view of the dictionary
         { new IDictionary<'Key, 'T> with 
                 member s.Item 
@@ -108,7 +119,8 @@ module ExtraTopLevelOperators =
                 member s.Add(k,v) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
                 member s.Contains(k) = d.ContainsKey(RuntimeHelpers.StructBox(k :?> 'Key))
                 member s.GetEnumerator() = 
-                    ((c |> Seq.map (fun (KeyValue(k,v)) -> System.Collections.DictionaryEntry(k.Value,v))) :> System.Collections.IDictionary).GetEnumerator()
+                    (c |> Seq.map (fun (KeyValue(k,v)) -> System.Collections.DictionaryEntry(k.Value,v))).GetEnumerator()
+                    |> dictEnumerator
 
                 member s.Remove(k) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : unit) 
                 member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
