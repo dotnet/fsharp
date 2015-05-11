@@ -115,6 +115,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TASK</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_READONLY_COLLECTIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_MONITOR_REPORTS_LOCKTAKEN</DefineConstants>
@@ -170,6 +171,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_READONLY_COLLECTIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_GET_HASH_CODE_HELPER</DefineConstants>
@@ -525,6 +527,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_READONLY_COLLECTIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LAZY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TUPLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD</DefineConstants>

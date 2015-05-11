@@ -81,6 +81,30 @@ module ExtraTopLevelOperators =
                     let key = RuntimeHelpers.StructBox(k)
                     if d.ContainsKey(key) then (r <- d.[key]; true) else false
                 member s.Remove(k : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
+#if FX_NO_READONLY_COLLECTIONS
+#else
+          interface IReadOnlyDictionary<'Key, 'T> with 
+                member s.Item 
+                    with get x = d.[RuntimeHelpers.StructBox(x)]
+                member s.Keys = 
+                    let keys = d.Keys
+                    { new IEnumerable<'Key> with
+                            member s.GetEnumerator() = (keys |> Seq.map (fun v -> v.Value)).GetEnumerator()
+                      interface System.Collections.IEnumerable with
+                            member s.GetEnumerator() = ((keys |> Seq.map (fun v -> v.Value)) :> System.Collections.IEnumerable).GetEnumerator() }
+                    
+                member s.Values =
+                    { new IEnumerable<'T> with
+                            member s.GetEnumerator() = d.Values.GetEnumerator()
+                      interface System.Collections.IEnumerable with
+                            member s.GetEnumerator() = (d.Values :> System.Collections.IEnumerable).GetEnumerator() }
+                member s.ContainsKey(k) = d.ContainsKey(RuntimeHelpers.StructBox(k))
+                member s.TryGetValue(k,r) = 
+                    let key = RuntimeHelpers.StructBox(k)
+                    if d.ContainsKey(key) then (r <- d.[key]; true) else false
+          interface IReadOnlyCollection<KeyValuePair<'Key, 'T>> with         
+                member s.Count = c.Count
+#endif
           interface System.Collections.IDictionary with 
                 member s.IsReadOnly = true
                 member s.IsFixedSize = true
