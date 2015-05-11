@@ -30,13 +30,13 @@ if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
 set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
-set REDUCED_RUNTIME=
+set REDUCED_RUNTIME=1
 if "%REDUCED_RUNTIME%" == "1" set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
 
 rem Set this to 1 in order to use an external compiler host process
 rem    This only has an effect when running the FSHARPQA tests, but can
 rem    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
-set HOSTED_COMPILER=
+set HOSTED_COMPILER=1
 
 rem path to fsc.exe which will be used by tests
 set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
@@ -165,12 +165,12 @@ if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTA
 
 
 if /I "%2" == "fsharpqacrosstarget01" (
-   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r System -r System.Runtime -r System.Xml -r System.Data -r System.Web -r System.Core -r System.Numerics
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
 )
 
 if /I "%2" == "fsharpqacrosstarget02" (
-   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r %WINDIR%\Microsoft.NET\Framework\v4.0.30319\mscorlib.dll -r System -r System.Runtime -r System.Xml -r System.Data -r System.Web -r System.Core -r System.Numerics
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
    set SIMULATOR_PIPE="%FSCBINPATH%\fsi.exe" "%~dp0\fsharpqa\testenv\bin\ExecAssembly.fsx"
    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
 )

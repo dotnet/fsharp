@@ -9,9 +9,9 @@ type TestType(arg1 : int, arg2 : int) =
     
     new (sarg1 : string, sarg2 : string) = TestType(Int32.Parse(sarg1), Int32.Parse(sarg2))
     
-    new (x : int list) = TestType((List.item 0 x), (List.item 1 x))
+    new (x : int list) = TestType((List.nth x 0), (List.nth x 1))
 
-    new (x : string list) = TestType((List.item 0 x), (List.item 1 x))
+    new (x : string list) = TestType((List.nth x 0), (List.nth x 1))
 
 let test1 = new TestType(1, 1)
 if test1.Value <> 2 then exit 1
