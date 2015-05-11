@@ -70,6 +70,53 @@ module ExtraTopLevelOperators =
                     let key = RuntimeHelpers.StructBox(k)
                     if d.ContainsKey(key) then (r <- d.[key]; true) else false
                 member s.Remove(k : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
+          interface System.Collections.IDictionary with 
+                member s.IsReadOnly = true
+                member s.IsFixedSize = true
+                member s.IsSynchronized = true
+                member s.Item 
+                    with get x = d.[RuntimeHelpers.StructBox(x :?> 'Key)] :> obj
+                    and  set x v = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+                member s.Keys = 
+                    let keys = d.Keys
+                    { new System.Collections.ICollection with
+                          member s.CopyTo(arr,i) = 
+                              let mutable n = 0 
+                              for k in keys do 
+                                  arr.SetValue(k.Value,i+n)
+                                  n <- n + 1
+                          member s.IsSynchronized = true
+                          member s.SyncRoot = s :> obj
+                          member s.Count = keys.Count
+                      interface System.Collections.IEnumerable with
+                            member s.GetEnumerator() = ((keys |> Seq.map (fun v -> v.Value)) :> System.Collections.IEnumerable).GetEnumerator() }
+                    
+                member s.Values = 
+                    { new System.Collections.ICollection with
+                          member s.CopyTo(arr,i) = 
+                              let mutable n = 0 
+                              for k in d.Values do 
+                                  arr.SetValue(k,i+n)
+                                  n <- n + 1
+                          member s.IsSynchronized = true
+                          member s.SyncRoot = s :> obj
+                          member s.Count = d.Values.Count
+                      interface System.Collections.IEnumerable with
+                            member s.GetEnumerator() = (d.Values :> System.Collections.IEnumerable).GetEnumerator() }
+                member s.Count = c.Count
+                member s.SyncRoot = s :> obj
+                member s.Add(k,v) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
+                member s.Contains(k) = d.ContainsKey(RuntimeHelpers.StructBox(k :?> 'Key))
+                member s.GetEnumerator() = 
+                    ((c |> Seq.map (fun (KeyValue(k,v)) -> System.Collections.DictionaryEntry(k.Value,v))) :> System.Collections.IDictionary).GetEnumerator()
+
+                member s.Remove(k) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : unit) 
+                member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
+                member s.CopyTo(arr,i) = 
+                    let mutable n = 0 
+                    for (KeyValue(k,v)) in c do 
+                        arr.SetValue(System.Collections.DictionaryEntry(k.Value,v),i+n)
+                        n <- n + 1
           interface ICollection<KeyValuePair<'Key, 'T>> with 
                 member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                 member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
