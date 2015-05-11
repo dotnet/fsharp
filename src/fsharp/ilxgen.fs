@@ -5800,7 +5800,7 @@ and CreatePermissionSets g amap eenv (securityAttributes : Attrib list) =
         let tref = tcref.CompiledRepresentationForNamedType
         let ilattr = GenAttr amap g eenv attr
         let _, ilNamedArgs = 
-            match TryDecodeILAttribute g tref (Some(tref.Scope)) (mkILCustomAttrs [ilattr]) with
+            match TryDecodeILAttribute g tref (mkILCustomAttrs [ilattr]) with
             | Some(ae,na) -> ae, na
             | _ -> [],[]
         let setArgs = ilNamedArgs |> List.map (fun (n,ilt,_,ilae) -> (n,ilt,ilae))
