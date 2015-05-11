@@ -1194,7 +1194,7 @@ val mkLdelem : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Analyze attribute sets 
 //------------------------------------------------------------------------- 
 
-val TryDecodeILAttribute   : TcGlobals -> ILTypeRef -> ILScopeRef option -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+val TryDecodeILAttribute   : TcGlobals -> ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 val TryFindILAttribute : Env.BuiltinAttribInfo -> ILAttributes -> bool
 val TryFindILAttributeOpt : Env.BuiltinAttribInfo option -> ILAttributes -> bool
 

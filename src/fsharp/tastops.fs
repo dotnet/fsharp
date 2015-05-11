@@ -2515,7 +2515,7 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // results of attribute lookups in the TAST
 let HasILAttribute tref (attrs: ILAttributes) = List.exists (isILAttrib tref) attrs.AsList
 
-let TryDecodeILAttribute g tref scope (attrs: ILAttributes) = 
+let TryDecodeILAttribute g tref (attrs: ILAttributes) = 
     attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
@@ -2583,7 +2583,7 @@ let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref,_) as args) (tcref:T
         | None -> None
 #endif
     | ILTypeMetadata (_,tdef) -> 
-        match TryDecodeILAttribute g atref (Some(atref.Scope)) tdef.CustomAttrs with 
+        match TryDecodeILAttribute g atref tdef.CustomAttrs with 
         | Some attr -> f1 attr
         | _ -> None
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
