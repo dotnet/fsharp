@@ -313,7 +313,22 @@ if ($targetType == TARGET_EXE) {
       RunCommand("Marking exe with /LARGEADDRESSAWARE...","editbin.exe /LARGEADDRESSAWARE $targetName");
   }
 
-  $ExitCode = RunCommand("Running","$ENV{SIMULATOR_PIPE} $targetName $param");
+  my $sim = "";
+  if (defined($ENV{SIMULATOR_PIPE})) {
+    # replace known tokens
+    $_ = $ENV{SIMULATOR_PIPE};
+    s/^\$FSC_PIPE/$FSC_PIPE/;
+    s/^\$FSI_PIPE/$FSI_PIPE/;
+    s/^\$FSI32_PIPE/$FSI32_PIPE/;
+    s/\$ISCFLAGS/$ISCFLAGS/;
+    s/^\$CSC_PIPE/$CSC_PIPE/;
+    s/^\$VBC_PIPE/$VBC_PIPE/;
+    s/\$PLATFORM/$ENV{PLATFORM}/;
+    
+    $sim = $_;
+  }
+
+  $ExitCode = RunCommand("Running","$sim $targetName $param");
   my($DeltaTime) = time() - $StartTime;
 
   LogTime($Sources, $CompileTime, $DeltaTime) if ($TimeTests);

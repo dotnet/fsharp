@@ -44,6 +44,12 @@ xcopy /Y %~dp0\fsharpqa\testenv\src\diff\bin\%1\* %~dp0\fsharpqa\testenv\bin  ||
 %_msbuildexe% %~dp0\fsharpqa\testenv\src\HostedCompilerServer\HostedCompilerServer.fsproj /p:Configuration=%1 /t:Build  || goto :error
 xcopy /Y %~dp0\fsharpqa\testenv\src\HostedCompilerServer\bin\%1\* %~dp0\fsharpqa\testenv\bin  || goto :error
 
+%_msbuildexe% %~dp0\fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj /p:Configuration=%1 /t:Build /p:Platform=x86  || goto :error
+xcopy /IY %~dp0\fsharpqa\testenv\src\ExecAssembly\bin\%1\* %~dp0\fsharpqa\testenv\bin\x86  || goto :error
+
+%_msbuildexe% %~dp0\fsharpqa\testenv\src\ExecAssembly\ExecAssembly.fsproj /p:Configuration=%1 /t:Build /p:Platform=x64  || goto :error
+xcopy /IY %~dp0\fsharpqa\testenv\src\ExecAssembly\bin\%1\* %~dp0\fsharpqa\testenv\bin\AMD64  || goto :error
+
 if exist %~dp0\..\%1\net40\bin (
     xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.sigdata %~dp0\fsharpqa\testenv\bin  || goto :error
     xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.optdata %~dp0\fsharpqa\testenv\bin  || goto :error

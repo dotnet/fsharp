@@ -172,7 +172,8 @@ if /I "%2" == "fsharpqacrosstarget01" (
 
 if /I "%2" == "fsharpqacrosstarget02" (
    set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
-   set SIMULATOR_PIPE="%FSCBINPATH%\fsi.exe" "%~dp0\fsharpqa\testenv\bin\ExecAssembly.fsx"
+   set PLATFORM=%OSARCH%
+   set SIMULATOR_PIPE="%~dp0\fsharpqa\testenv\bin\$PLATFORM\ExecAssembly.exe"
    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,NoCrossCrossVer,FSI
 )
 
