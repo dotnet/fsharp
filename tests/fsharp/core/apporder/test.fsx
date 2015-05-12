@@ -6,7 +6,7 @@ module Core_apporder
 #light
 let failures = ref false
 let report_failure (s) = 
-  stderr.WriteLine ("NO: " + s); failures := true; failwith ""
+  stderr.WriteLine ("NO: " + s); failures := true
 let test s b = if b then () else report_failure(s) 
 
 (* TEST SUITE FOR Int32 *)
@@ -15,7 +15,7 @@ let out r (s:string) = r := !r @ [s]
 
 let check s v1 v2 = 
     if v1 = v2 then printfn "%s: OK" s
-    else printfn "%s: FAILED, expected %A, got %A" s v2 v1
+    else report_failure (sprintf "%s: FAILED, expected %A, got %A" s v2 v1)
 
 module CheckMutationOfArgumentValuesInOtherArguments = 
     let test1232() = 
