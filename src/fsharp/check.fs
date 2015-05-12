@@ -1073,7 +1073,7 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
 
             let check skipValCheck nm = 
                 if not skipValCheck && 
-                   v.IsModuleBinding &&
+                   v.IsModuleBinding && 
                    tcref.ModuleOrNamespaceType.AllValsByLogicalName.ContainsKey(nm) && 
                    not (valEq tcref.ModuleOrNamespaceType.AllValsByLogicalName.[nm] v) then
                     
@@ -1205,9 +1205,9 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None,AccessibleFromSomewhere) cenv.g cenv.amap m typ
 
-        let getHash (hash:Dictionary<string,_>) nm =
+        let getHash (hash:Dictionary<string,_>) nm = 
              if hash.ContainsKey(nm) then hash.[nm] else []
-
+         
         // precompute methods grouped by MethInfo.LogicalName
         let hashOfImmediateMeths = 
                 let h = new Dictionary<string, _>()
