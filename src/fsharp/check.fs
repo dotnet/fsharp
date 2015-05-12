@@ -353,13 +353,9 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
         let visitTypar (env,tp) = 
           if not (env.boundTypars.ContainsKey tp) then 
              if tp.IsCompilerGenerated then 
-               warning(Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScopeAnon(),m))
+               errorR (Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScopeAnon(),m))
              else
-               warning(Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScope(tp.DisplayName),m))
-             //match tp.Rigidity with 
-             //| TyparRigidity.Rigid -> warning(Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScope(tp.),m))
-             //| _ -> warning(Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScope(mtext),m))
-             
+               errorR (Error(FSComp.SR.checkNotSufficientlyGenericBecauseOfScope(tp.DisplayName),m))
 
         let visitTyconRef tcref = 
             if not permitByrefs && isByrefLikeTyconRef cenv.g tcref then 
