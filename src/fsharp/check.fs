@@ -1205,7 +1205,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
         let getHash (hash:Dictionary<string,_>) nm = 
              if hash.ContainsKey(nm) then hash.[nm] else []
-         
+        
         // precompute methods grouped by MethInfo.LogicalName
         let hashOfImmediateMeths = 
                 let h = new Dictionary<string, _>()
