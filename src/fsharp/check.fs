@@ -1070,13 +1070,15 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
                 | _ -> true (* not hiddenRepr *)
 
             let kind = (if v.IsMember then "member" else "value")
+
             let check skipValCheck nm = 
                 if not skipValCheck && 
-                   v.IsModuleBinding && 
+                   v.IsModuleBinding &&
                    tcref.ModuleOrNamespaceType.AllValsByLogicalName.ContainsKey(nm) && 
                    not (valEq tcref.ModuleOrNamespaceType.AllValsByLogicalName.[nm] v) then
                     
                     error(Duplicate(kind,v.DisplayName,v.Range));
+
 
 #if CASES_IN_NESTED_CLASS
                 if tcref.IsUnionTycon && nm = "Cases" then 
@@ -1124,6 +1126,18 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
             check false v.CoreDisplayName
             check false v.DisplayName
             check false v.CompiledName
+
+            // Check if an F# extension member clashes
+            if v.IsExtensionMember then 
+                tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
+                    if v2.IsExtensionMember && not (valEq v v2) && v.CompiledName = v2.CompiledName then
+                        let minfo1 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
+                        let minfo2 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
+                        if tyconRefEq cenv.g v.MemberApparentParent v2.MemberApparentParent && 
+                           MethInfosEquivByNameAndSig EraseAll true cenv.g cenv.amap v.Range minfo1 minfo2 then 
+                            errorR(Duplicate(kind,v.DisplayName,v.Range)))
+
+
 
             // Properties get 'get_X', only if there are no args
             // Properties get 'get_X'
@@ -1191,9 +1205,9 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None,AccessibleFromSomewhere) cenv.g cenv.amap m typ
 
-        let getHash (hash:Dictionary<string,_>) nm = 
+        let getHash (hash:Dictionary<string,_>) nm =
              if hash.ContainsKey(nm) then hash.[nm] else []
-        
+
         // precompute methods grouped by MethInfo.LogicalName
         let hashOfImmediateMeths = 
                 let h = new Dictionary<string, _>()
