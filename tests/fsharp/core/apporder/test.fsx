@@ -930,6 +930,192 @@ module MemberAppOrder =
     check "cwkneccewi" state [3;2;5;4]
     check "nvroirv" (sprintf "%d %d %d %d %d" foo.A foo.B foo.X foo.Y foo.Z) "4 5 3 2 99"
 
+type RecordWithInts = 
+    { A : int
+      B : int
+      C : int }
+
+module OrderOfRecordInitialisation = 
+
+    let expected =  
+        { A = 1
+          B = 2
+          C = 3 }
+
+    let ShouldInitialzeInGivenOrder1 = 
+        let order = ref ""
+        let actual =
+          { A = let _ = order := !order + "1" in 1
+            B = let _ = order := !order + "2" in 2
+            C = let _ = order := !order + "3" in 3 }
+
+        check "cnclewlecp2" expected actual
+        check "ceiewoi" "123" !order
+
+    let ShouldInitialzeInGivenOrder2 = 
+        let order = ref ""
+        let actual =
+          { A = let _ = order := !order + "1" in 1
+            C = let _ = order := !order + "2" in 3
+            B = let _ = order := !order + "3" in 2 }
+
+        check "cd33289e0ewn1" expected actual
+        check "ewlknewv90we2" "123" !order
+
+    let ShouldInitialzeInGivenOrder3 = 
+        let order = ref ""
+        let actual =
+          { B = let _ = order := !order + "1" in 2
+            A = let _ = order := !order + "2" in 1
+            C = let _ = order := !order + "3" in 3 }
+
+        check "cewekcjnwe3" expected actual
+        check "cewekcjnwe4" "123" !order
+
+
+    let ShouldInitialzeInGivenOrder4 = 
+        let order = ref ""
+        let actual =
+          { B = let _ = order := !order + "1" in 2
+            C = let _ = order := !order + "2" in 3
+            A = let _ = order := !order + "3" in 1 }
+
+        check "cewekcjnwe5" expected actual
+        check "cewekcjnwe6" "123" !order
+
+
+    let ShouldInitialzeInGivenOrder5 = 
+        let order = ref ""
+        let actual =
+          { C = let _ = order := !order + "1" in 3
+            A = let _ = order := !order + "2" in 1
+            B = let _ = order := !order + "3" in 2 }
+
+        check "cewekcjnwe7" expected actual
+        check "cewekcjnwe8" "123" !order
+
+
+    let ShouldInitialzeInGivenOrder6 = 
+        let order = ref ""
+        let actual =
+          { C = let _ = order := !order + "1" in 3
+            B = let _ = order := !order + "2" in 2
+            A = let _ = order := !order + "3" in 1 }
+
+        check "cewekcjnwe9" expected actual
+        check "cewekcjnwe10" "123" !order
+
+
+type RecordWithDifferentTypes = 
+    { A : int
+      B : string
+      C : float
+      D : RecordWithInts }
+
+
+module RecordInitialisationWithDifferentTxpes = 
+
+    let expected =  
+        { A = 1
+          B = "2"
+          C = 3.0
+          D = 
+            { A = 4
+              B = 5
+              C = 6 }}
+
+
+    let ShouldInitialzeInGivenOrder1 = 
+        let order = ref ""
+        let actual =
+          { A = let _ = order := !order + "1" in 1
+            B = let _ = order := !order + "2" in "2"
+            C = let _ = order := !order + "3" in 3.0
+            D = let _ = order := !order + "4" in 
+                              { A = let _ = order := !order + "5" in 4
+                                B = let _ = order := !order + "6" in 5
+                                C = let _ = order := !order + "7" in 6 } }
+
+        check "cewekcjnwe11" expected actual
+        check "cewekcjnwe12" "1234567" !order
+
+
+    let ShouldInitialzeInGivenOrder2 = 
+        let order = ref ""
+        let actual =
+          { A = let _ = order := !order + "1" in 1            
+            C = let _ = order := !order + "2" in 3.0
+            D = let _ = order := !order + "3" in 
+                              { A = let _ = order := !order + "4" in 4
+                                B = let _ = order := !order + "5" in 5
+                                C = let _ = order := !order + "6" in 6 }
+                                
+            B = let _ = order := !order + "7" in "2" }
+
+        check "cewekcjnwe13" expected actual
+        check "cewekcjnwe14" "1234567" !order
+
+
+    let ShouldInitialzeInGivenOrder3 = 
+        let order = ref ""
+        let actual =
+          { A = let _ = order := !order + "1" in 1            
+            C = let _ = order := !order + "2" in 3.0
+            B = let _ = order := !order + "3" in "2"
+            D = let _ = order := !order + "4" in 
+                              { A = let _ = order := !order + "5" in 4
+                                B = let _ = order := !order + "6" in 5
+                                C = let _ = order := !order + "7" in 6 } }
+
+        check "cewekcjnwe15" expected actual
+        check "cewekcjnwe16" "1234567" !order
+
+
+
+    let ShouldInitialzeInGivenOrder4 = 
+        let order = ref ""
+        let actual =
+          { B = let _ = order := !order + "1" in "2"
+            A = let _ = order := !order + "2" in 1            
+            C = let _ = order := !order + "3" in 3.0            
+            D = let _ = order := !order + "4" in 
+                              { A = let _ = order := !order + "5" in 4
+                                B = let _ = order := !order + "6" in 5
+                                C = let _ = order := !order + "7" in 6 } }
+
+        check "cewekcjnwe17" expected actual
+        check "cewekcjnwe18" "1234567" !order
+
+
+    let ShouldInitialzeInGivenOrder5 = 
+        let order = ref ""
+        let actual =
+          { D = let _ = order := !order + "1" in 
+                              { A = let _ = order := !order + "2" in 4
+                                B = let _ = order := !order + "3" in 5
+                                C = let _ = order := !order + "4" in 6 } 
+            B = let _ = order := !order + "5" in "2"
+            C = let _ = order := !order + "6" in 3.0
+            A = let _ = order := !order + "7" in 1 }
+
+        check "cewekcjnwe19" expected actual
+        check "cewekcjnwe20" "1234567" !order
+
+
+    let ShouldInitialzeInGivenOrder6 = 
+        let order = ref ""
+        let actual =
+          { D = let _ = order := !order + "1" in 
+                              { A = let _ = order := !order + "2" in 4
+                                B = let _ = order := !order + "3" in 5
+                                C = let _ = order := !order + "4" in 6 } 
+            A = let _ = order := !order + "5" in 1
+            B = let _ = order := !order + "6" in "2"
+            C = let _ = order := !order + "7" in 3.0 }
+
+        check "cewekcjnwe21" expected actual
+        check "cewekcjnwe22" "1234567" !order
+
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 
