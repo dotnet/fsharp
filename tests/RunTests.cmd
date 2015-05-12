@@ -25,7 +25,7 @@ if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
 set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
 set _tmp=%4
-if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
+if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
 
 set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
