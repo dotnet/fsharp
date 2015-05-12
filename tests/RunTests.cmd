@@ -164,10 +164,16 @@ set PATH=%PATH%;%CORDIR%
 
 if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Req20 
 
+set RESULTFILE=FSharpQA_Results.log
+set FAILFILE=FSharpQA_Failures.log
+set FAILENV=FSharpQA_Failures
 
 if /I "%2" == "fsharpqadowntarget" (
    set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
+   set RESULTFILE=FSharpQADownTarget_Results.log
+   set FAILFILE=FSharpQADownTarget_Failures.log
+   set FAILENV=FSharpQADownTarget_Failures
 )
 
 if /I "%2" == "fsharpqaredirect" (
@@ -175,11 +181,10 @@ if /I "%2" == "fsharpqaredirect" (
    set PLATFORM=%OSARCH%
    set SIMULATOR_PIPE="%~dp0\fsharpqa\testenv\bin\$PLATFORM\ExecAssembly.exe"
    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
+   set RESULTFILE=FSharpQARedirect_Results.log
+   set FAILFILE=FSharpQARedirect_Failures.log
+   set FAILENV=FSharpQARedirect_Failures
 )
-
-set RESULTFILE=FSharpQA_Results.log
-set FAILFILE=FSharpQA_Failures.log
-set FAILENV=FSharpQA_Failures
 
 where.exe perl > NUL 2> NUL 
 if errorlevel 1 (
