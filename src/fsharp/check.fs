@@ -1070,7 +1070,6 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
                 | _ -> true (* not hiddenRepr *)
 
             let kind = (if v.IsMember then "member" else "value")
-
             let check skipValCheck nm = 
                 if not skipValCheck && 
                    v.IsModuleBinding && 
@@ -1078,7 +1077,6 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
                    not (valEq tcref.ModuleOrNamespaceType.AllValsByLogicalName.[nm] v) then
                     
                     error(Duplicate(kind,v.DisplayName,v.Range));
-
 
 #if CASES_IN_NESTED_CLASS
                 if tcref.IsUnionTycon && nm = "Cases" then 
