@@ -1341,3 +1341,5 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3183,ppparsUnexpectedToken,"Unexpected token '%s' in preprocessor expression"
 3184,ppparsIncompleteExpression,"Incomplete preprocessor expression"
 3185,ppparsMissingToken,"Missing token '%s' in preprocessor expression"
+3186,checkNotSufficientlyGenericBecauseOfScope,"Type inference caused the type variable %s to escape its scope. Consider adding an explicit type parameter declaration or adjusting your code to be less generic."
+3187,checkNotSufficientlyGenericBecauseOfScopeAnon,"Type inference caused an inference type variable to escape its scope. Consider adding type annotations to make your code less generic."
