@@ -47,8 +47,8 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
-if /I "%2" == "fsharpqacrosstarget01" (goto :FSHARPQA)
-if /I "%2" == "fsharpqacrosstarget02" (goto :FSHARPQA)
+if /I "%2" == "fsharpqadowntarget" (goto :FSHARPQA)
+if /I "%2" == "fsharpqaredirect" (goto :FSHARPQA)
 if /I "%2" == "compilerunit" (
    set compilerunitsuffix=net40
    goto :COMPILERUNIT
@@ -165,16 +165,16 @@ set PATH=%PATH%;%CORDIR%
 if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Req20 
 
 
-if /I "%2" == "fsharpqacrosstarget01" (
+if /I "%2" == "fsharpqadowntarget" (
    set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
 )
 
-if /I "%2" == "fsharpqacrosstarget02" (
+if /I "%2" == "fsharpqaredirect" (
    set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
    set PLATFORM=%OSARCH%
    set SIMULATOR_PIPE="%~dp0\fsharpqa\testenv\bin\$PLATFORM\ExecAssembly.exe"
-   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,NoCrossCrossVer,FSI
+   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
 )
 
 set RESULTFILE=FSharpQA_Results.log

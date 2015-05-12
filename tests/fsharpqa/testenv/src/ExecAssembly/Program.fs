@@ -2,6 +2,17 @@
 open System.Security
 open System.Security.Permissions
 
+(*
+   This program loads a specified .NET exe and runs it in a dedicated appdomain.
+   Useful for 2 types of tests:
+   - The exe is build against .NET 2
+     - Use this to force it to run in .NET 4+ environment
+   - The exe is built against an earlier version of FSharp.Core
+     - Use this to force it to run with binding to latest FSharp.Core
+     
+  Usage: ExecAssembly <path to exe> [optional args for exe]
+*)
+
 [<EntryPoint>]
 let main args =
     let setup = AppDomainSetup(ApplicationBase = Environment.CurrentDirectory)
