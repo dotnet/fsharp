@@ -16,8 +16,11 @@ let appdomain = System.AppDomain.CreateDomain("F# targeting NetFx 4.0", null, se
 // Set the assembly to be loaded and executed. It will be a command line argument...
 let assemblyundertest = fsi.CommandLineArgs.[1]
 
+// capture the arguments that should be passed to the exe itself
+let exeArgs = fsi.CommandLineArgs.[2..]
+
 // Execute the assembly
-let rv = appdomain.ExecuteAssembly(assemblyundertest);
+let rv = appdomain.ExecuteAssembly(assemblyundertest, exeArgs);
 
 // Return exit code to the automation harness
 exit rv
