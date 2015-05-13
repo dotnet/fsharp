@@ -121,7 +121,7 @@ module ExtraTopLevelOperators =
                                   arr.SetValue(k.Value,i+n)
                                   n <- n + 1
                           member s.IsSynchronized = true
-                          member s.SyncRoot = s :> obj
+                          member s.SyncRoot = (t :> System.Collections.ICollection).SyncRoot
                           member s.Count = keys.Count
                       interface System.Collections.IEnumerable with
                             member s.GetEnumerator() = ((keys |> Seq.map (fun v -> v.Value)) :> System.Collections.IEnumerable).GetEnumerator() }
@@ -134,12 +134,12 @@ module ExtraTopLevelOperators =
                                   arr.SetValue(k,i+n)
                                   n <- n + 1
                           member s.IsSynchronized = true
-                          member s.SyncRoot = s :> obj
+                          member s.SyncRoot = (t :> System.Collections.ICollection).SyncRoot
                           member s.Count = d.Values.Count
                       interface System.Collections.IEnumerable with
                             member s.GetEnumerator() = (d.Values :> System.Collections.IEnumerable).GetEnumerator() }
                 member s.Count = c.Count
-                member s.SyncRoot = s :> obj
+                member s.SyncRoot = (t :> System.Collections.ICollection).SyncRoot
                 member s.Add(k,v) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
                 member s.Contains(k) = d.ContainsKey(RuntimeHelpers.StructBox(k :?> 'Key))
                 member s.GetEnumerator() = 
