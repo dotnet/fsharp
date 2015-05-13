@@ -82,16 +82,16 @@ call tests\BuildTestTools.cmd release
 @echo on
 pushd tests
 
-call RunTests.cmd release fsharp Smoke NO_CI
+call RunTests.cmd release fsharp Smoke
 @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
 
-call RunTests.cmd release fsharpqa Smoke NO_CI
+call RunTests.cmd release fsharpqa Smoke
 @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
 
-call RunTests.cmd release fsharpqadowntarget NO_CI
+call RunTests.cmd release fsharpqadowntarget
 @if ERRORLEVEL 1 type testresults\fsharpqadowntarget_failures.log && echo Error: 'RunTests.cmd release fsharpqadowntarget' failed && goto :failure
 
-call RunTests.cmd release fsharpqaredirect NO_CI
+call RunTests.cmd release fsharpqaredirect
 @if ERRORLEVEL 1 type testresults\fsharpqaredirect_failures.log && echo Error: 'RunTests.cmd release fsharpqaredirect' failed && goto :failure
 
 call RunTests.cmd release compilerunit

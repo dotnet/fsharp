@@ -27,6 +27,8 @@ set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
 set _tmp=%4
 if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
 
+if /I "%APPVEYOR_CI%" == "1" (set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI)
+
 set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
