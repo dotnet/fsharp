@@ -1744,8 +1744,11 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     if not isInCommandLineMode // you can use devenv to build from the command-line, and if command-line mode, then we ought not pop up any UI
                        then
                             try
+                                let typeProviders = ResizeArray<_>()
+
                                 // Popup type provider security dialog, if needed:
                                 let dialog (typeProviderRunTimeAssemblyFileName) =
+                                    typeProviders.Add typeProviderRunTimeAssemblyFileName
                                     let pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
                                     UIThread.RunSync(fun() ->
                                         let projectName = Path.GetFileNameWithoutExtension(x.ProjectFile)
@@ -1753,12 +1756,31 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                     )
                                 let argv = Array.append flags sources  // flags + sources = entire command line
                                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
+
+                                let isTypeProvider assemblyPath =
+                                    let samePath path =
+                                        0 = (String.Compare(path, assemblyPath, StringComparison.OrdinalIgnoreCase))
+                                        
+                                    typeProviders |> Seq.exists samePath
+                                
+                                let updateTypeProviderAssembliesFlag () =
+                                    let assemblies =
+                                        this.GetReferenceContainer().EnumReferences()
+                                        |> seq
+                                        |> Seq.choose (function :? AssemblyReferenceNode as x -> Some x | _ -> None)
+                                        |> Seq.map (fun assemblyNode -> assemblyNode, isTypeProvider assemblyNode.Url)
+
+                                    assemblies
+                                    |> Seq.iter (fun (assemblyRef, isTP) -> assemblyRef.IsTypeProvider <- isTP)
+
                                 Microsoft.FSharp.Compiler.Driver.runFromCommandLineToImportingAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
                                             { new Microsoft.FSharp.Compiler.ErrorLogger.Exiter with 
                                                 member x.Exit(n) = 
+                                                    updateTypeProviderAssembliesFlag |> UIThread.RunSync
                                                     match n with
                                                     | 0 -> raise ExitedOk
                                                     | _ -> raise ExitedWithError } )
+
                             with
                             | ExitedOk -> ()  // we expect this
                             | ExitedWithError -> () // this can happen if compiling fails very early in the process, e.g. 'no inputs specified' or various other errors.  it is ok to ignore this failure.

@@ -500,6 +500,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             PFX = 50,
             [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SNK")]
             SNK = 51,
+            TypeProviderAssembly = Audio,
 
             ImageLast = 51
         }

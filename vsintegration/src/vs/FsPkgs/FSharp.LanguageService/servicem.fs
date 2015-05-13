@@ -2054,6 +2054,7 @@ type FSharpPackage() as self =
                     match language.LanguageServiceState.Artifacts.TryFindOwningProject((ServiceProvider language.GetService).Rdt, filename) with
                     | Some owningProjectSite ->
                         let projectName = Path.GetFileNameWithoutExtension(owningProjectSite.ProjectFileName())
+                        //TODO Set icon of type provider
                         TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, null, projectName, typeProviderRunTimeAssemblyFileName, pubInfo) 
                     | None -> 
                         TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, filename, null, typeProviderRunTimeAssemblyFileName, pubInfo) 
