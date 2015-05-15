@@ -1749,7 +1749,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                 // Popup type provider security dialog, if needed:
                                 let dialog (typeProviderRunTimeAssemblyFileName) =
                                     typeProviders.Add typeProviderRunTimeAssemblyFileName
-                                    let _pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
                                     UIThread.RunSync(fun() ->
                                         let _projectName = Path.GetFileNameWithoutExtension(x.ProjectFile)
                                         ()

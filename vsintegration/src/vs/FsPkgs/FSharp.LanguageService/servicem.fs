@@ -2044,7 +2044,6 @@ type FSharpPackage() as self =
             language.SetSite(self)
             language.Initialize()
             Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some(fun (typeProviderRunTimeAssemblyFileName) ->
-                let _pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
                 let filename = 
                     match Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked with
                     | None -> assert false; ""  // this should never happen
