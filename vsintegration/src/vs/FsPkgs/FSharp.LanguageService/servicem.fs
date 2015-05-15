@@ -2055,6 +2055,7 @@ type FSharpPackage() as self =
                     | Some owningProjectSite ->
                         let _projectName = Path.GetFileNameWithoutExtension(owningProjectSite.ProjectFileName())
                         //TODO Set icon of type provider
+                        let _setIconOf = typeProviderRunTimeAssemblyFileName
                         () 
                     | None -> 
                         () 
