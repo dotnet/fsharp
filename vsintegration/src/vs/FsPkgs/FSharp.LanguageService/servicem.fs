@@ -2043,7 +2043,6 @@ type FSharpPackage() as self =
             let language = new FSharpLanguageService()
             language.SetSite(self)
             language.Initialize()
-            TypeProviderSecurityGlobals.invalidationCallback <- fun () -> language.LanguageServiceState.InteractiveChecker.InvalidateAll()
             Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some(fun (typeProviderRunTimeAssemblyFileName) ->
                 let pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
                 let filename = 
@@ -2059,8 +2058,6 @@ type FSharpPackage() as self =
                     | None -> 
                         TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, filename, null, typeProviderRunTimeAssemblyFileName, pubInfo) 
                     )
-                // the 'displayLSTypeProviderSecurityDialogBlockingUI' callback is run async to the background typecheck, so after the user has interacted with the dialog, request a re-typecheck
-                TypeProviderSecurityGlobals.invalidationCallback() 
                 )
             self.RegisterForIdleTime()
             box language

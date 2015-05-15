@@ -4160,7 +4160,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         CheckDisposed()
 
 #if EXTENSIONTYPING
-        let tpApprovals = ExtensionTyping.ApprovalIO.ReadApprovalsFile(None)
+        let tpApprovals = []
 #else
         let tpApprovals = []
 #endif

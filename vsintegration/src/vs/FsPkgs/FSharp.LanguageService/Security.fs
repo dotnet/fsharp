@@ -18,12 +18,6 @@ open Internal.Utilities.Debug
 
 open System.Windows.Controls
 
-module internal TypeProviderSecurityGlobals =
-    //+++GLOBAL STATE
-    // This is poked with a value once, when the LS first initializes (Servicem.fs: CreateService).
-    // It is a convenient way for the LS or the PS to invalidate all LS cached results when the set of approved TPs changes.
-    let mutable invalidationCallback = Unchecked.defaultof<unit -> unit>
-
 // TODO these are currently named A/B like the spec, but choose better names
 /// There are two dialogs, which we refer to as A and B
 ///  - A: file in editor buffer needs TP reference (may be from project, or a script file)
@@ -169,7 +163,5 @@ type internal TypeProviderSecurityDialog =
             else
                 Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(assem)
         Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus None approval
-        // invalidate any language service caching
-        TypeProviderSecurityGlobals.invalidationCallback()
                 
         

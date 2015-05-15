@@ -193,8 +193,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                             Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(a.FileName)
                                     Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus (Some file) app)
                             )
-                            // invalidate any language service caching
-                            TypeProviderSecurityGlobals.invalidationCallback()
                     finally
                         grid.Unloaded.RemoveHandler(pageCloseLogic)
                     )
@@ -1753,8 +1751,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                         let projectName = Path.GetFileNameWithoutExtension(x.ProjectFile)
                                         TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.B, null, projectName, typeProviderRunTimeAssemblyFileName, pubInfo) 
                                     )
-                                    // the 'dialog' callback is run async to the background typecheck, so after the user has interacted with the dialog, request a re-typecheck
-                                    TypeProviderSecurityGlobals.invalidationCallback()  
                                 let argv = Array.append flags sources  // flags + sources = entire command line
                                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
                                 Microsoft.FSharp.Compiler.Driver.runFromCommandLineToImportingAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
