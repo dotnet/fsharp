@@ -92,13 +92,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 ////////
 
-    type TPTOPData(assemName : string, fileName : string) =
-        let assem = sprintf "%s, %s" assemName fileName
-        let mutable isTrusted = false
-        member this.IsTrusted with get() = isTrusted and set(b) = isTrusted <- b
-        member this.Assem with get() = assem
-        member this.FileName with get() = fileName
-
     [<ComVisible(true)>]
     [<CLSCompliant(false)>]
     [<Guid("4B7954C1-7D80-4FB6-8C18-2567DF5735F9")>]
