@@ -62,25 +62,6 @@ module internal ExtensionTyping =
             file.Lock(0L, 0L)
             f file
 
-        /// Try to perform the operation on a stream obtained by opening a file, using an exclusive lock,
-        /// retrying 5 times with 100ms sleeps in between. Throw System.IO.IOException if it fails after that.
-        let TryDoWithFileStreamUnderExclusiveLockWithRetryFor500ms(filename, f) =
-            let SLEEP_PER_TRY = 100
-            let MAX_TRIES = 5
-            let mutable retryCount = 0
-            let mutable ok = false
-            let mutable result = Unchecked.defaultof<_>
-            while not(ok) do
-                try
-                    let r = TryDoWithFileStreamUnderExclusiveLock(filename, f)
-                    ok <- true
-                    result <- r
-                with
-                    | :? IOException when retryCount < MAX_TRIES -> 
-                        retryCount <- retryCount + 1
-                        System.Threading.Thread.Sleep(SLEEP_PER_TRY)
-            result
-
     module internal ApprovalsChecking =
 
         let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, approvals : ApprovalIO.TypeProviderApprovalStatus list, popupDialogCallback : (string->unit) option) : bool =
