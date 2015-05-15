@@ -326,35 +326,32 @@ type X() =
     [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.Approvals.ErrorWhenNotApproved`` () =
-        try
-            use _guard = this.UsingNewVS()
-            ClearAllTypeProviderApprovals()                
-            let solution = this.CreateSolution()
-            let project = CreateProject(solution,"testproject")
-            this.AddAssemblyReference(project,System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
-            let file1 = AddFileFromText(project,"File1.fs", ["type foo = N1.T<"])
-            let file1 = OpenFile(project,"File1.fs")
-            MoveCursorToEndOfMarker(file1,"t")
-            let errs = GetSquigglesAtCursor(file1)
-            if not(errs |> List.exists (fun (sev,msg) -> 
-                        sev=Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning 
-                        && msg.Contains("is not trusted and will not be loaded for security reasons. This may cause subsequent build errors."))) then
-                Assert.Fail "did not find expected squiggle"
-            if errs.Length <> 1 then
-                Assert.Fail(sprintf "found extra squiggles; all are %A" errs)
-            // if multiple files are open, they all get the warning
-            let file2 = AddFileFromText(project,"File2.fs", ["let x = 3"])
-            let file2 = OpenFile(project,"File2.fs")
-            MoveCursorToEndOfMarker(file2,"l")
-            let errs = GetSquigglesAtCursor(file2)
-            if not(errs |> List.exists (fun (sev,msg) -> 
-                        sev=Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning 
-                        && msg.Contains("is not trusted and will not be loaded for security reasons. This may cause subsequent build errors."))) then
-                Assert.Fail "did not find expected squiggle"
-            if errs.Length <> 1 then
-                Assert.Fail(sprintf "found extra squiggles; all are %A" errs)
-        finally
-            ApproveAllMockTypeProviders()
+        use _guard = this.UsingNewVS()
+        ClearAllTypeProviderApprovals()                
+        let solution = this.CreateSolution()
+        let project = CreateProject(solution,"testproject")
+        this.AddAssemblyReference(project,System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
+        let file1 = AddFileFromText(project,"File1.fs", ["type foo = N1.T<"])
+        let file1 = OpenFile(project,"File1.fs")
+        MoveCursorToEndOfMarker(file1,"t")
+        let errs = GetSquigglesAtCursor(file1)
+        if not(errs |> List.exists (fun (sev,msg) -> 
+                    sev=Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning 
+                    && msg.Contains("is not trusted and will not be loaded for security reasons. This may cause subsequent build errors."))) then
+            Assert.Fail "did not find expected squiggle"
+        if errs.Length <> 1 then
+            Assert.Fail(sprintf "found extra squiggles; all are %A" errs)
+        // if multiple files are open, they all get the warning
+        let file2 = AddFileFromText(project,"File2.fs", ["let x = 3"])
+        let file2 = OpenFile(project,"File2.fs")
+        MoveCursorToEndOfMarker(file2,"l")
+        let errs = GetSquigglesAtCursor(file2)
+        if not(errs |> List.exists (fun (sev,msg) -> 
+                    sev=Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning 
+                    && msg.Contains("is not trusted and will not be loaded for security reasons. This may cause subsequent build errors."))) then
+            Assert.Fail "did not find expected squiggle"
+        if errs.Length <> 1 then
+            Assert.Fail(sprintf "found extra squiggles; all are %A" errs)
 
     [<Test>]
     [<Category("TypeProvider")>]
