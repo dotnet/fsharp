@@ -40,22 +40,6 @@ module internal ExtensionTyping =
             assert (partiallyCanonicalizeFileName fn = fn)
             fn
 
-        /// Represents the approvals status for one type provider
-        [<RequireQualifiedAccess>]
-        type TypeProviderApprovalStatus =
-            | NotTrusted of string
-            | Trusted of string
-
-            member this.FileName = 
-                match this with
-                | NotTrusted(fn) -> verifyIsPartiallyCanonicalized fn
-                | Trusted(fn) -> verifyIsPartiallyCanonicalized fn
-
-            member this.isTrusted = 
-                match this with
-                | NotTrusted _ -> false
-                | Trusted _ -> true
-
     module internal ApprovalsChecking =
 
         let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =
@@ -186,9 +170,6 @@ module internal ExtensionTyping =
     let GetTypeProvidersOfAssembly
             (displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
              validateTypeProviders:bool, 
-#if TYPE_PROVIDER_SECURITY
-             _approvals : ApprovalIO.TypeProviderApprovalStatus list, 
-#endif
              runTimeAssemblyFileName:string, 
              ilScopeRefOfRuntimeAssembly:ILScopeRef,
              designTimeAssemblyNameString:string, 

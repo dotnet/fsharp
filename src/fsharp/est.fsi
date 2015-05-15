@@ -27,12 +27,6 @@ module internal ExtensionTyping =
         /// location of approvals data file, e.g. C:\Users\username\AppData\Local\Microsoft\VisualStudio\14.0\type-providers.txt
         val ApprovalsAbsoluteFileName  : string
 
-        [<RequireQualifiedAccess>]
-        type TypeProviderApprovalStatus =
-            /// NotTrusted(absoluteFileName)
-            | NotTrusted of string
-            /// Trusted(absoluteFileName)
-            | Trusted of string
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
@@ -64,9 +58,6 @@ module internal ExtensionTyping =
     val GetTypeProvidersOfAssembly : 
           displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option 
           * validateTypeProviders: bool 
-#if TYPE_PROVIDER_SECURITY
-          * ApprovalIO.TypeProviderApprovalStatus list 
-#endif
           * runtimeAssemblyFilename: string 
           * ilScopeRefOfRuntimeAssembly:ILScopeRef
           * designerAssemblyName: string 
