@@ -2044,7 +2044,7 @@ type FSharpPackage() as self =
             language.SetSite(self)
             language.Initialize()
             Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some(fun (typeProviderRunTimeAssemblyFileName) ->
-                let pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
+                let _pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
                 let filename = 
                     match Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked with
                     | None -> assert false; ""  // this should never happen
@@ -2053,11 +2053,11 @@ type FSharpPackage() as self =
                     // need to access the RDT on the UI thread
                     match language.LanguageServiceState.Artifacts.TryFindOwningProject((ServiceProvider language.GetService).Rdt, filename) with
                     | Some owningProjectSite ->
-                        let projectName = Path.GetFileNameWithoutExtension(owningProjectSite.ProjectFileName())
+                        let _projectName = Path.GetFileNameWithoutExtension(owningProjectSite.ProjectFileName())
                         //TODO Set icon of type provider
-                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, null, projectName, typeProviderRunTimeAssemblyFileName, pubInfo) 
+                        () 
                     | None -> 
-                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, filename, null, typeProviderRunTimeAssemblyFileName, pubInfo) 
+                        () 
                     )
                 )
             self.RegisterForIdleTime()

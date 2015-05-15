@@ -46,7 +46,6 @@
     <Compile Include="XmlDocumentation.fsi" />
     <Compile Include="XmlDocumentation.fs" />
     <Compile Include="GetVerifiedPublisherInfo.fs" />
-    <Compile Include="Security.fs" />
     <Compile Include="Servicem.fsi" />
     <Compile Include="Servicem.fs" />
   </ItemGroup>

@@ -1749,10 +1749,10 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                 // Popup type provider security dialog, if needed:
                                 let dialog (typeProviderRunTimeAssemblyFileName) =
                                     typeProviders.Add typeProviderRunTimeAssemblyFileName
-                                    let pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
+                                    let _pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
                                     UIThread.RunSync(fun() ->
-                                        let projectName = Path.GetFileNameWithoutExtension(x.ProjectFile)
-                                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.B, null, projectName, typeProviderRunTimeAssemblyFileName, pubInfo) 
+                                        let _projectName = Path.GetFileNameWithoutExtension(x.ProjectFile)
+                                        ()
                                     )
                                 let argv = Array.append flags sources  // flags + sources = entire command line
                                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
