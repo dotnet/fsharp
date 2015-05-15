@@ -30,9 +30,6 @@ module internal VsOpsUtils =
     let GetOutputWindowPaneLines(vs : VisualStudio) = vs.VsOps.GetOutputWindowPaneLines(vs)
     let CloseSolution(soln : OpenSolution)             = soln.VS.VsOps.CloseSolution(soln)
 
-    let AddTypeProviderApprovedForDevelopment(assemblyFileName: string) = 
-        ()
-
     let ClearAllTypeProviderApprovals() = 
         ()
 
