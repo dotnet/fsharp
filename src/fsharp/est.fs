@@ -56,12 +56,6 @@ module internal ExtensionTyping =
                 | NotTrusted _ -> false
                 | Trusted _ -> true
 
-        /// Try to perform the operation on a stream obtained by opening a file, using an exclusive lock
-        let TryDoWithFileStreamUnderExclusiveLock(filename, f) =
-            use file = File.Open(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite)
-            file.Lock(0L, 0L)
-            f file
-
     module internal ApprovalsChecking =
 
         let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, approvals : ApprovalIO.TypeProviderApprovalStatus list, popupDialogCallback : (string->unit) option) : bool =
