@@ -28,9 +28,6 @@ module internal ExtensionTyping =
 
     module internal ApprovalIO =
 
-        /// The absolute path name to where approvals are stored
-        let ApprovalsAbsoluteFileName = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), @"Microsoft\VisualStudio\12.0\type-providers.txt")
-
         /// Canonicalize the name of a type provider component
         let partiallyCanonicalizeFileName fn = 
             (new FileInfo(fn)).FullName // avoid some trivialities like double backslashes or spaces before slashes (but preserves others like casing distinctions), see also bug 206595

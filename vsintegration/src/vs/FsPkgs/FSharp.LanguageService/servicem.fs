@@ -1311,7 +1311,7 @@ type internal LanguageServiceState() =
                 // We may have missed a file change event for a dependent file (e.g. after the user added a project reference, he might immediately build that project, but 
                 // we haven't yet started listening for changes to that file on disk - the call to SetDependencyFiles() below starts listening).  This can only happen if 
                 // the set of dependencies has changed (otherwise we were _already_ listening and would not have missed the event)...
-                let anyDependenciesChanged = source.SetDependencyFiles(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ApprovalsAbsoluteFileName :: untypedParse.DependencyFiles())
+                let anyDependenciesChanged = source.SetDependencyFiles(untypedParse.DependencyFiles())
                 // .. so if dependencies have changed, and we may have missed an event, let's behave as though this typecheck is failing and the file still needs to be re-type-checked
                 if anyDependenciesChanged then
                     req.ResultClearsDirtinessOfFile <- false

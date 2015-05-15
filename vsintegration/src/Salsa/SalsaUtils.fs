@@ -34,8 +34,7 @@ module internal VsOpsUtils =
         ()
 
     let ClearAllTypeProviderApprovals() = 
-        if System.IO.File.Exists(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ApprovalsAbsoluteFileName) then
-            System.IO.File.Delete(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ApprovalsAbsoluteFileName)
+        ()
 
     let CreateProject(solution : OpenSolution, projectname) = 
         solution.VS.VsOps.CreateProject(solution,projectname)

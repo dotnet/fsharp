@@ -24,9 +24,6 @@ module internal ExtensionTyping =
 
         val partiallyCanonicalizeFileName : string -> string
 
-        /// location of approvals data file, e.g. C:\Users\username\AppData\Local\Microsoft\VisualStudio\14.0\type-providers.txt
-        val ApprovalsAbsoluteFileName  : string
-
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
