@@ -26,17 +26,6 @@ module internal ExtensionTyping =
         // It would be complicated to plumb this info through end-to-end, so we use a global.  Since the LS only checks one file at a time, it is safe from race conditions.
         let mutable theMostRecentFileNameWeChecked = None : string option
 
-    module internal ApprovalIO =
-
-        /// Canonicalize the name of a type provider component
-        let partiallyCanonicalizeFileName fn = 
-            (new FileInfo(fn)).FullName // avoid some trivialities like double backslashes or spaces before slashes (but preserves others like casing distinctions), see also bug 206595
-
-        /// Check a type provider component name is partially canonicalized
-        let verifyIsPartiallyCanonicalized fn =
-            assert (partiallyCanonicalizeFileName fn = fn)
-            fn
-
     module internal ApprovalsChecking =
 
         let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =

@@ -20,10 +20,6 @@ module internal ExtensionTyping =
         val mutable displayLSTypeProviderSecurityDialogBlockingUI : (string->unit) option
         val mutable theMostRecentFileNameWeChecked : string option
 
-    module internal ApprovalIO =
-
-        val partiallyCanonicalizeFileName : string -> string
-
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
