@@ -1566,13 +1566,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                             try
                                 let typeProviders = ResizeArray<_>()
 
-                                // Popup type provider security dialog, if needed:
-                                let dialog (typeProviderRunTimeAssemblyFileName) =
-                                    typeProviders.Add typeProviderRunTimeAssemblyFileName
-                                    UIThread.RunSync(fun() ->
-                                        let _projectName = Path.GetFileNameWithoutExtension(x.ProjectFile)
-                                        ()
-                                    )
                                 let argv = Array.append flags sources  // flags + sources = entire command line
                                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
 
@@ -1592,7 +1585,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                     assemblies
                                     |> Seq.iter (fun (assemblyRef, isTP) -> assemblyRef.IsTypeProvider <- isTP)
 
-                                Microsoft.FSharp.Compiler.Driver.runFromCommandLineToImportingAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
+                                Microsoft.FSharp.Compiler.Driver.runFromCommandLineToImportingAssemblies(typeProviders.Add, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
                                             { new Microsoft.FSharp.Compiler.ErrorLogger.Exiter with 
                                                 member x.Exit(n) = 
                                                     updateTypeProviderAssembliesFlag |> UIThread.RunSync
