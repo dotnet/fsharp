@@ -26,7 +26,6 @@ module internal VsOpsUtils =
     val CloseSolution                     : OpenSolution -> unit
 
     /// pass absolute filename
-    val ClearAllTypeProviderApprovals : unit -> unit
 
     val CreateProject                     : OpenSolution * string -> OpenProject
     /// Add a new file not in any particulare project.

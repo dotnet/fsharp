@@ -327,7 +327,6 @@ type X() =
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.Approvals.ErrorWhenNotApproved`` () =
         use _guard = this.UsingNewVS()
-        ClearAllTypeProviderApprovals()                
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         this.AddAssemblyReference(project,System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))

@@ -30,9 +30,6 @@ module internal VsOpsUtils =
     let GetOutputWindowPaneLines(vs : VisualStudio) = vs.VsOps.GetOutputWindowPaneLines(vs)
     let CloseSolution(soln : OpenSolution)             = soln.VS.VsOps.CloseSolution(soln)
 
-    let ClearAllTypeProviderApprovals() = 
-        ()
-
     let CreateProject(solution : OpenSolution, projectname) = 
         solution.VS.VsOps.CreateProject(solution,projectname)
     let NewFile(vs : VisualStudio, filename,lines) = 
