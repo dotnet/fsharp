@@ -162,16 +162,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 )
 
             pageActivatedEvent.Add(fun () ->
-                let approvals = Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReadApprovalsFile None
-                let initialApprovals = [|
-                    for app in approvals do
-                        match app with
-                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(fileName) ->
-                            let assemName = Path.GetFileNameWithoutExtension(fileName)
-                            yield new TPTOPData(assemName, fileName, IsTrusted=true)
-                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(fileName) ->
-                            let assemName = Path.GetFileNameWithoutExtension(fileName)
-                            yield new TPTOPData(assemName, fileName, IsTrusted=false)
+                let initialApprovals : TPTOPData array = [|
                     |]
                 let initVals = initialApprovals |> Seq.map (fun x -> x.FileName, x.IsTrusted) |> Seq.toList  // make an immutable copy
                 let backingStore = new System.Collections.ObjectModel.ObservableCollection<_>( initialApprovals ) // create backing store for UI

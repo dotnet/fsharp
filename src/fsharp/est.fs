@@ -110,54 +110,6 @@ module internal ExtensionTyping =
                     TryDoWithFileStreamUnderExclusiveLockWithRetryFor500ms(ApprovalsAbsoluteFileName, f)
             | Some fs -> f fs
 
-        /// Read all TP approval data.  does not throw, will swallow exceptions and return empty list if there's trouble.
-        let ReadApprovalsFile fileStreamOpt =
-            try
-                DoWithApprovalsFile fileStreamOpt (fun file ->
-                    file.Seek(0L, SeekOrigin.Begin) |> ignore
-                    let sr = new StreamReader(file, System.Text.Encoding.UTF8)  // Note: we use 'let', not 'use' here, as closing the reader would close the file, and we don't want that
-                    let lines = 
-                            let text = sr.ReadToEnd()
-                            text.Split([| System.Environment.NewLine |], StringSplitOptions.RemoveEmptyEntries)
-                            |> Array.filter (fun s -> not(s.StartsWith("#")))
-                    let result = ResizeArray<TypeProviderApprovalStatus>()
-                    let mutable bad = false
-                    for s in lines do
-                        if s.StartsWith("NOT_TRUSTED ") then
-                            let partiallyCanonicalizedFileName = partiallyCanonicalizeFileName(s.Substring(12))
-                            match result |> Seq.tryFind (fun r -> String.Compare(r.FileName, partiallyCanonicalizedFileName, StringComparison.CurrentCultureIgnoreCase) = 0) with
-                            | None ->
-                                result.Add(TypeProviderApprovalStatus.NotTrusted(partiallyCanonicalizedFileName))
-                            | Some r ->  // there is another line of the file with the same filename
-                                if r.isTrusted then
-                                    bad <- true  // if conflicting status, then declare the file to be bad; if just duplicating same info, is ok
-                        elif s.StartsWith("TRUSTED ") then
-                            let partiallyCanonicalizedFileName = partiallyCanonicalizeFileName(s.Substring(8))
-                            match result |> Seq.tryFind (fun r -> String.Compare(r.FileName, partiallyCanonicalizedFileName, StringComparison.CurrentCultureIgnoreCase) = 0) with
-                            | None ->
-                                result.Add(TypeProviderApprovalStatus.Trusted(partiallyCanonicalizedFileName))
-                            | Some r ->  // there is another line of the file with the same filename
-                                if not r.isTrusted then
-                                    bad <- true  // if conflicting status, then declare the file to be bad; if just duplicating same info, is ok
-                        else
-                            bad <- true
-
-                    if bad then
-                        // The file is corrupt, just delete it 
-                        file.SetLength(0L)
-                        result.Clear()
-                        try 
-                            failwith "approvals file is corrupt, deleting"  // just to produce a first-chance exception for debugging
-                        with 
-                            _ -> ()
-                    result |> List.ofSeq)
-            with
-                | :? System.IO.IOException ->
-                    []
-                | e ->
-                    System.Diagnostics.Debug.Assert(false, e.ToString())  // what other exceptions might occur?
-                    []
-
         /// Append one piece of TP approval info.  may throw if trouble with file IO.
         let AppendApprovalStatus fileStreamOpt (status:TypeProviderApprovalStatus) =
             let ok,line = 

@@ -36,9 +36,6 @@ module internal ExtensionTyping =
 
         /// Try to do an operation on the type-provider approvals file
         val DoWithApprovalsFile : FileStream option -> (FileStream -> 'a) -> 'a
-
-        /// Read all TP approval data.  does not throw, will swallow exceptions and return empty list if there's trouble.
-        val ReadApprovalsFile : FileStream option -> TypeProviderApprovalStatus list
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
