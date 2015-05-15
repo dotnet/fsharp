@@ -81,26 +81,6 @@ module internal ExtensionTyping =
                         System.Threading.Thread.Sleep(SLEEP_PER_TRY)
             result
 
-        /// Append one piece of TP approval info.  may throw if trouble with file IO.
-        let AppendApprovalStatus _fileStreamOpt (status:TypeProviderApprovalStatus) =
-            let ok,_line = 
-                let partiallyCanonicalizedFileName = partiallyCanonicalizeFileName status.FileName
-                match status with
-                | TypeProviderApprovalStatus.NotTrusted(_) -> 
-                    if Path.IsInvalidPath(partiallyCanonicalizedFileName) then 
-                        assert(false)
-                        false, ""
-                    else
-                        true, "NOT_TRUSTED "+partiallyCanonicalizedFileName
-                | TypeProviderApprovalStatus.Trusted(_) -> 
-                    if Path.IsInvalidPath(partiallyCanonicalizedFileName) then 
-                        assert(false)
-                        false, ""
-                    else
-                        true, "TRUSTED "+partiallyCanonicalizedFileName
-            if ok then
-                ()
-
     module internal ApprovalsChecking =
 
         let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, approvals : ApprovalIO.TypeProviderApprovalStatus list, popupDialogCallback : (string->unit) option) : bool =
