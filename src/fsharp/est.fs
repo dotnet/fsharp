@@ -58,27 +58,17 @@ module internal ExtensionTyping =
 
     module internal ApprovalsChecking =
 
-        let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, approvals : ApprovalIO.TypeProviderApprovalStatus list, popupDialogCallback : (string->unit) option) : bool =
-            let partiallyCanonicalizedFileName = ApprovalIO.partiallyCanonicalizeFileName runTimeAssemblyFileName
-
-            match approvals |> List.tryFind (function 
-                                | ApprovalIO.TypeProviderApprovalStatus.Trusted(s) -> String.Compare(partiallyCanonicalizedFileName,s,StringComparison.CurrentCultureIgnoreCase)=0 
-                                | ApprovalIO.TypeProviderApprovalStatus.NotTrusted(s) -> String.Compare(partiallyCanonicalizedFileName,s,StringComparison.CurrentCultureIgnoreCase)=0) with
-            | Some(ApprovalIO.TypeProviderApprovalStatus.Trusted _) -> true
-            | Some(ApprovalIO.TypeProviderApprovalStatus.NotTrusted _) -> false
-            | None -> 
-                // This assembly is unknown. If we're in VS, pop up the dialog
-                match popupDialogCallback with
-                | None -> ()
-                | Some callback -> 
-                    // The callback had UI thread affinity.  But this code path runs as part of the VS background interactive checker, which must never block on the UI
-                    // thread (or else it may deadlock, see bug 380608).  
-                    System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
-                        // the callback will pop up the dialog
-                        callback(runTimeAssemblyFileName)
-                    ) |> ignore
-                // Behave like a 'NotTrusted'.  If the user trusts the assembly via the UI in a moment, the callback is responsible for requesting a re-typecheck.
-                false
+        let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =
+            // This assembly is unknown. If we're in VS, pop up the dialog
+            match popupDialogCallback with
+            | None -> ()
+            | Some callback -> 
+                // The callback had UI thread affinity.  But this code path runs as part of the VS background interactive checker, which must never block on the UI
+                // thread (or else it may deadlock, see bug 380608).  
+                System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
+                    // the callback will pop up the dialog
+                    callback(runTimeAssemblyFileName)
+                ) |> ignore
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
@@ -197,7 +187,7 @@ module internal ExtensionTyping =
             (displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
              validateTypeProviders:bool, 
 #if TYPE_PROVIDER_SECURITY
-             approvals, 
+             _approvals : ApprovalIO.TypeProviderApprovalStatus list, 
 #endif
              runTimeAssemblyFileName:string, 
              ilScopeRefOfRuntimeAssembly:ILScopeRef,
@@ -218,10 +208,8 @@ module internal ExtensionTyping =
                 let dialog = match displayPSTypeProviderSecurityDialogBlockingUI with
                              | None -> GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
                              | _    -> displayPSTypeProviderSecurityDialogBlockingUI
-                let r = ApprovalsChecking.DiscoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, approvals, dialog)
-                if not r then
-                    warning(Error(FSComp.SR.etTypeProviderNotApproved(runTimeAssemblyFileName), m))
-                r
+                ApprovalsChecking.DiscoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, dialog)
+                true
 #else
             true
 #endif
