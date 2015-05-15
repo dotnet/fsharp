@@ -26,19 +26,6 @@ module internal ExtensionTyping =
         // It would be complicated to plumb this info through end-to-end, so we use a global.  Since the LS only checks one file at a time, it is safe from race conditions.
         let mutable theMostRecentFileNameWeChecked = None : string option
 
-    module internal ApprovalsChecking =
-
-        let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =
-            // This assembly is unknown. If we're in VS, pop up the dialog
-            match popupDialogCallback with
-            | None -> ()
-            | Some callback -> 
-                // The callback had UI thread affinity.  But this code path runs as part of the VS background interactive checker, which must never block on the UI
-                // thread (or else it may deadlock, see bug 380608).  
-                System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
-                    // the callback will pop up the dialog
-                    callback(runTimeAssemblyFileName)
-                ) |> ignore
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
@@ -175,7 +162,20 @@ module internal ExtensionTyping =
                 let dialog = match displayPSTypeProviderSecurityDialogBlockingUI with
                              | None -> GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
                              | _    -> displayPSTypeProviderSecurityDialogBlockingUI
-                ApprovalsChecking.DiscoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, dialog)
+
+                let discoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =
+                    // This assembly is unknown. If we're in VS, pop up the dialog
+                    match popupDialogCallback with
+                    | None -> ()
+                    | Some callback -> 
+                        // The callback had UI thread affinity.  But this code path runs as part of the VS background interactive checker, which must never block on the UI
+                        // thread (or else it may deadlock, see bug 380608).  
+                        System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
+                            // the callback will pop up the dialog
+                            callback(runTimeAssemblyFileName)
+                        ) |> ignore
+
+                discoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, dialog)
                 true
 #else
             true
