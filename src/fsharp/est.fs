@@ -81,38 +81,9 @@ module internal ExtensionTyping =
                         System.Threading.Thread.Sleep(SLEEP_PER_TRY)
             result
 
-        /// Try to do an operation on the type-provider approvals file
-        let DoWithApprovalsFile (fileStreamOpt : FileStream option) f =
-            match fileStreamOpt with
-            | None -> 
-                if not(FileSystem.SafeExists(ApprovalsAbsoluteFileName)) then
-                    assert(fileStreamOpt = None)
-                    let directoryName = Path.GetDirectoryName(ApprovalsAbsoluteFileName)
-                    if not(Directory.Exists(directoryName)) then
-                        Directory.CreateDirectory(directoryName) |> ignore // this creates multiple directory levels if needed
-                    TryDoWithFileStreamUnderExclusiveLockWithRetryFor500ms(ApprovalsAbsoluteFileName, fun file ->
-                        let text = 
-#if DEBUG
-                            String.Join(System.Environment.NewLine, 
-                               ["""# This file is normally edited by Visual Studio, via Tools\Options\F# Tools\Type Provider Approvals"""
-                                """# or by referencing a Type Provider from F# code for the first time."""
-                                """# Each line should be one of these general forms:"""
-                                """#     NOT_TRUSTED c:\path\filename.dll"""
-                                """#     TRUSTED c:\path\filename.dll"""
-                                """# Lines starting with a '#' are ignored as comments.""" ]) + System.Environment.NewLine
-#else
-                            ""
-#endif
-                        let bytes = System.Text.Encoding.UTF8.GetBytes(text)
-                        file.Write(bytes, 0, bytes.Length)
-                        f file)
-                else
-                    TryDoWithFileStreamUnderExclusiveLockWithRetryFor500ms(ApprovalsAbsoluteFileName, f)
-            | Some fs -> f fs
-
         /// Append one piece of TP approval info.  may throw if trouble with file IO.
-        let AppendApprovalStatus fileStreamOpt (status:TypeProviderApprovalStatus) =
-            let ok,line = 
+        let AppendApprovalStatus _fileStreamOpt (status:TypeProviderApprovalStatus) =
+            let ok,_line = 
                 let partiallyCanonicalizedFileName = partiallyCanonicalizeFileName status.FileName
                 match status with
                 | TypeProviderApprovalStatus.NotTrusted(_) -> 
@@ -128,11 +99,7 @@ module internal ExtensionTyping =
                     else
                         true, "TRUSTED "+partiallyCanonicalizedFileName
             if ok then
-                DoWithApprovalsFile fileStreamOpt (fun file ->
-                    let bytes = System.Text.Encoding.UTF8.GetBytes(line + System.Environment.NewLine)
-                    file.Seek(0L, SeekOrigin.End) |> ignore
-                    file.Write(bytes, 0, bytes.Length)
-                    )
+                ()
 
     module internal ApprovalsChecking =
 

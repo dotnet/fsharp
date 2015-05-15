@@ -173,17 +173,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // make lists of tuples for structural equality test
                         let finalVals = backingStore |> Seq.map (fun x -> x.FileName, x.IsTrusted) |> Seq.toList
                         if finalVals <> initVals then
-                            // they changed something, rewrite the file
-                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.DoWithApprovalsFile None (fun file ->
-                                file.SetLength(0L) // delete the file
-                                backingStore |> Seq.iter (fun a -> 
-                                    let _app = 
-                                        if a.IsTrusted then 
-                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(a.FileName)
-                                        else
-                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(a.FileName)
-                                    () )
-                            )
+                            ()
                     finally
                         grid.Unloaded.RemoveHandler(pageCloseLogic)
                     )

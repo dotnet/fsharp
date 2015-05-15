@@ -33,9 +33,6 @@ module internal ExtensionTyping =
             | NotTrusted of string
             /// Trusted(absoluteFileName)
             | Trusted of string
-
-        /// Try to do an operation on the type-provider approvals file
-        val DoWithApprovalsFile : FileStream option -> (FileStream -> 'a) -> 'a
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
