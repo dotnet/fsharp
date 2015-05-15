@@ -186,12 +186,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.DoWithApprovalsFile None (fun file ->
                                 file.SetLength(0L) // delete the file
                                 backingStore |> Seq.iter (fun a -> 
-                                    let app = 
+                                    let _app = 
                                         if a.IsTrusted then 
                                             Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(a.FileName)
                                         else
                                             Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(a.FileName)
-                                    Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus (Some file) app)
+                                    () )
                             )
                     finally
                         grid.Unloaded.RemoveHandler(pageCloseLogic)

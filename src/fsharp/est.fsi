@@ -39,9 +39,6 @@ module internal ExtensionTyping =
 
         /// Read all TP approval data.  does not throw, will swallow exceptions and return empty list if there's trouble.
         val ReadApprovalsFile : FileStream option -> TypeProviderApprovalStatus list
-
-        /// Replace one piece of TP approval info (or append it, if this is a new filename).  may throw if trouble with file IO.
-        val ReplaceApprovalStatus : FileStream option -> TypeProviderApprovalStatus -> unit
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string

@@ -182,17 +182,6 @@ module internal ExtensionTyping =
                     file.Write(bytes, 0, bytes.Length)
                     )
 
-        /// Replace one piece of TP approval info.  May throw if trouble with file IO.
-        let ReplaceApprovalStatus fileStreamOpt (status : TypeProviderApprovalStatus) =
-            let partiallyCanonicalizedFileName = partiallyCanonicalizeFileName status.FileName
-            DoWithApprovalsFile fileStreamOpt (fun file ->
-                let priorApprovals = ReadApprovalsFile(Some file)
-                let keepers = priorApprovals |> List.filter (fun app -> String.Compare(app.FileName, partiallyCanonicalizedFileName, StringComparison.CurrentCultureIgnoreCase) <> 0)
-                file.SetLength(0L) // delete file
-                keepers |> List.iter (AppendApprovalStatus (Some file))
-                AppendApprovalStatus (Some file) status
-            )
-
     module internal ApprovalsChecking =
 
         let DiscoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, approvals : ApprovalIO.TypeProviderApprovalStatus list, popupDialogCallback : (string->unit) option) : bool =
