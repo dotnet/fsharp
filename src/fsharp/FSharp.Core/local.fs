@@ -441,17 +441,16 @@ module internal List =
             truncateToFreshConsTail cons2 (count-1) t
 
     let truncate count list =
-        if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
         match list with
         | [] -> list
         | _ :: ([] as nil) -> if count > 0 then list else nil
         | h::t ->
-            if count = 0 then []
+            if count <= 0 then []
             else
                 let cons = freshConsNoTail h
                 truncateToFreshConsTail cons (count-1) t
                 cons
-           
+
     let rec unfoldToFreshConsTail cons f s =
         match f s with
         | None -> setFreshConsTail cons []

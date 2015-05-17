@@ -815,7 +815,8 @@ type ListModule02() =
         Assert.AreEqual([], List.truncate 1 [])
 
         // negative count
-        CheckThrowsArgumentException(fun() -> List.truncate -1 [1..5] |> ignore)
+        Assert.AreEqual([], List.truncate -1 [1..5])
+        Assert.AreEqual([], List.truncate System.Int32.MinValue [1..5])
 
         ()
 

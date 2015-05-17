@@ -981,7 +981,6 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// <returns>The result array.</returns>
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
-        /// <exception cref="System.ArgumentException">Thrown when the count is negative.</exception>
         [<CompiledName("Truncate")>]
         val truncate: count:int -> array:'T[] -> 'T[]
 

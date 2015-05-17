@@ -778,7 +778,6 @@ namespace Microsoft.FSharp.Collections
         /// <param name="count">The maximum number of items to return.</param>
         /// <param name="array">The input list.</param>
         /// <returns>The result list.</returns>
-        /// <exception cref="System.ArgumentException">Thrown when the count is negative.</exception>
         [<CompiledName("Truncate")>]
         val truncate: count:int -> list:'T list -> 'T list
 
