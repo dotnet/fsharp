@@ -5807,51 +5807,41 @@ let permute (sigma:int[]) (data:'T[]) =
   
 let rec existsR a b pred = if a<=b then pred a || existsR (a+1) b pred else false
 
-let mapFoldListi f z xs =
-    let rec fmapi f i z l = 
-        match l with 
-        | []    -> z,[]
-        | x::xs -> let z,x  = f i z x
-                   let z,xs = fmapi f (i+1) z xs
-                   z,x::xs   
-    fmapi f 0 z xs
-
-/// Given expr = xi = [| x0; ... xN |]
-/// Given sigma a permutation to apply to the xi.
-/// Return (bindings',expr') such that:
-///   (a) xi are permutated under sigma, xi -> position sigma(i).
-///------
-/// Motivation:
-///   opt.fs    - put record field assignments in order under known effect information
-///   ilxgen.fs - put record field assignments in order if necessary (no optimisations)
-///               under unknown-effect information.
-let permuteExpr (sigma:int[]) (expr: Expr[]) (typ: TType[]) (names:string[]) =
+// Given a permutation for record fields, work out the highest entry that we must lift out
+// of a record initialization. Lift out xi if xi goes to position that will be preceded by an expr with an effect 
+// that originally followed xi.  If one entry gets lifted then everything before it also gets lifted.
+let liftAllBefore sigma = 
     let invSigma = inversePerm sigma
-    let liftPosition i =
-        // Lift out xi if      
-        //    LC2: xi goes to position that will be preceded by
-        //         an expr with an effect that originally followed xi
-        let i' = sigma.[i]
-        existsR 0 (i' - 1) (fun j' -> invSigma.[j'] > i)
-   
-    let rewrite i rbinds (xi:Expr) =
-        if liftPosition i then
-            let tmpv,tmpe = mkCompGenLocal xi.Range names.[i] typ.[i]
-            let bind = mkCompGenBind tmpv xi
-            bind :: rbinds,tmpe
+
+    let lifted = 
+        [ for i in 0 .. sigma.Length - 1 do 
+            let i' = sigma.[i]
+            if existsR 0 (i' - 1) (fun j' -> invSigma.[j'] > i)  then 
+                    yield i ]
+
+    if lifted.IsEmpty then 0 else List.max lifted + 1
+
+
+///  Put record field assignments in order.
+//
+let permuteExprList (sigma:int[]) (exprs: Expr list) (typ: TType list) (names:string list) =
+    let typ,names = (Array.ofList typ, Array.ofList names)
+
+    let liftLim = liftAllBefore sigma 
+
+    let rewrite rbinds (i, expri:Expr) =
+        if i < liftLim then
+            let tmpvi,tmpei = mkCompGenLocal expri.Range names.[i] typ.[i]
+            let bindi = mkCompGenBind tmpvi expri
+            tmpei, bindi :: rbinds
         else
-            rbinds,xi
+            expri, rbinds
  
-    let xis = Array.toList expr
-    let rbinds,xis = mapFoldListi rewrite [] xis
-    let binds = List.rev rbinds
-    let expr  = permute sigma (Array.ofList xis)
-    binds,expr
+    let newExprs, reversedBinds = List.mapFold rewrite [] (exprs |> List.mapi (fun i x -> (i,x)))
+    let binds = List.rev reversedBinds
+    let reorderedExprs  = permute sigma (Array.ofList newExprs)
+    binds,Array.toList reorderedExprs
     
-let permuteExprList (sigma:int array) (expr: Expr list) (typ: TType list)  (names:string list) =
-    let binds,expr = permuteExpr sigma (Array.ofList expr) (Array.ofList typ)  (Array.ofList names)
-    binds,Array.toList expr
-  
 //-------------------------------------------------------------------------
 // Build record expressions...
 //------------------------------------------------------------------------- 
