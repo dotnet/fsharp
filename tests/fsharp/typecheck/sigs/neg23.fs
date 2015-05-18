@@ -155,3 +155,15 @@ module PositiveTests =
         let y2 : int -> int = c.M2 (3,4)
         let y3 : int * int -> int -> int = c.M2
 
+
+type Frame = 
+  class 
+  end
+module X =
+  type Frame with
+    member frame.GroupRowsBy(key) = ()
+    member frame.GroupRowsBy(key) = ()
+    
+    // Up to erasure
+    member this.Foo (x:int->int) = printfn "method 1"
+    member this.Foo (x:FSharpFunc<int,int>) = printfn "method 2"
