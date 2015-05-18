@@ -68,7 +68,7 @@
     {
     } // end of method C::A2
 
-    .method family specialname rtspecialname 
+    .method public specialname rtspecialname 
             instance void  .ctor() cil managed
     {
       // Code size       10 (0xa)
