@@ -2052,10 +2052,7 @@ type FSharpPackage() as self =
                     // need to access the RDT on the UI thread
                     match language.LanguageServiceState.Artifacts.TryFindOwningProject((ServiceProvider language.GetService).Rdt, filename) with
                     | Some owningProjectSite ->
-                        let _projectName = Path.GetFileNameWithoutExtension(owningProjectSite.ProjectFileName())
-                        //TODO Set icon of type provider
-                        let _setIconOf = typeProviderRunTimeAssemblyFileName
-                        () 
+                        owningProjectSite.AssemblyReferenceIsTypeProvider typeProviderRunTimeAssemblyFileName
                     | None -> 
                         () 
                     )

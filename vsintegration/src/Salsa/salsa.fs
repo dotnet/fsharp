@@ -317,6 +317,7 @@ module internal Salsa =
           member this.IsTypeResolutionValid = true
           member this.TargetFrameworkMoniker = ""
           member this.LoadTime = new System.DateTime(2000,1,1)
+          member this.AssemblyReferenceIsTypeProvider(_) = ()
         
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 

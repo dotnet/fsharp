@@ -136,6 +136,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
             member ips.IsTypeResolutionValid = true
             member ips.LoadTime = inner.LoadTime 
+            member ips.AssemblyReferenceIsTypeProvider (assemblyPath) = inner.AssemblyReferenceIsTypeProvider(assemblyPath)
 
 
     type internal ProjectSiteOptionLifetimeState =
@@ -1756,6 +1757,15 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     member this.IsTypeResolutionValid = true
                     member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member this.LoadTime = creationTime
+                    member this.AssemblyReferenceIsTypeProvider(assemblyPath: string) =
+                        let samePath path =
+                            0 = (String.Compare(path, assemblyPath, StringComparison.OrdinalIgnoreCase))
+                                
+                        x.GetReferenceContainer().EnumReferences()
+                        |> seq
+                        |> Seq.choose (function :? AssemblyReferenceNode as x -> Some x | _ -> None)
+                        |> Seq.tryFind (fun (ar: AssemblyReferenceNode) -> samePath ar.Url)
+                        |> Option.iter (fun assemblyRef -> assemblyRef.IsTypeProvider <- true)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1785,6 +1795,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     member this.IsTypeResolutionValid = true
                     member this.TargetFrameworkMoniker = targetFrameworkMoniker
                     member this.LoadTime = creationTime
+                    member this.AssemblyReferenceIsTypeProvider(_) = ()
                 }
 
             // let the language service ask us questions
