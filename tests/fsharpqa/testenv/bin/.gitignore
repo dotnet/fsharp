@@ -3,3 +3,5 @@ FSharp.Core.*
 HostedCompilerServer.*
 ILComparer.*
 diff.*
+x86
+AMD64
