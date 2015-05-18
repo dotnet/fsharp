@@ -5682,7 +5682,11 @@ and GenAttribArg amap g eenv x (ilArgTy:ILType) =
 
     match x,ilArgTy with 
 
-    (* Detect standard constants *)
+    // Detect 'null' used for an array argument
+    | Expr.Const(Const.Zero,_,_),ILType.Array  _ -> 
+        ILAttribElem.Null
+
+    // Detect standard constants 
     | Expr.Const(c,m,_),_ -> 
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")

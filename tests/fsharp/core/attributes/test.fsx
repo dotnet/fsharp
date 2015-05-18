@@ -1299,6 +1299,28 @@ module AttributeTestsOnExtensionProperties =
     check "vwlnwer-0wreknj4" (test3()) "Equals: [||], GetHashCode: [||], GetType: [||], Object.get_ExtensionMethod: [|Inline|], Object.get_Item: [|Inline|], Object.set_Item: [|Inline|], ToString: [||]"
 
 
+module ParamArrayNullAttribute = 
+    open System
+
+    type Attr([<ParamArray>] pms: obj[]) =
+      inherit Attribute()
+      override x.ToString() = sprintf "Attr(%A)" pms
+
+    [<Attr(null)>]
+    let f () = ()
+
+    let test3() = 
+        match <@ f() @> with
+        | Quotations.Patterns.Call(_, m, _) ->
+            m.GetCustomAttributes(typeof<Attr>, false)
+            |> Seq.map (fun x -> x.ToString())
+            |> String.concat ", "
+        | _ -> failwith "unreachable 3"
+
+    check "vwcewecioj9" (test3()) "Attr(<null>)"
+ 
+
+
 (*-------------------------------------------------------------------------
 !* Test passed?
  *------------------------------------------------------------------------- *)
