@@ -939,7 +939,8 @@ type ArrayModule2() =
         CheckThrowsArgumentNullException(fun() -> Array.truncate 1 null |> ignore)
 
         // negative count
-        CheckThrowsArgumentException(fun() -> Array.truncate -1 [|1..5|] |> ignore)
+        Assert.AreEqual([| |], Array.truncate -1 [|1..5|])
+        Assert.AreEqual([| |], Array.truncate System.Int32.MinValue [|1..5|])
 
         ()
 

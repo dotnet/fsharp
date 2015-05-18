@@ -1001,8 +1001,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Truncate")>]
         let truncate count (array:'T[]) =
             checkNonNull "array" array
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            if count = 0 then empty
+            if count <= 0 then empty
             else
                 let len = array.Length
                 let count' = Operators.min count len
