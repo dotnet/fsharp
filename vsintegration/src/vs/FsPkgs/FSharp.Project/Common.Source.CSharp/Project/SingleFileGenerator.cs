@@ -34,7 +34,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Overloadde ctor.
         /// </summary>
         /// <param name="ProjectNode">The associated project</param>
-        /*internal, but public for FSharp.Project.dll*/ public SingleFileGenerator(ProjectNode projectMgr)
+        public SingleFileGenerator(ProjectNode projectMgr)
         {
             this.projectMgr = projectMgr;
         }
@@ -90,7 +90,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Invokes the specified generator
         /// </summary>
         /// <param name="fileNode">The node on which to invoke the generator.</param>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void InvokeGenerator(FileNode fileNode)
+        public virtual void InvokeGenerator(FileNode fileNode)
         {
             if (fileNode == null)
             {
@@ -206,7 +206,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// with "." for the directory in which the file is located.
         /// </summary>
         /// <returns>Returns the computed name space</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual string ComputeNamespace(string projectItemPath)
+        public virtual string ComputeNamespace(string projectItemPath)
         {
             if (String.IsNullOrEmpty(projectItemPath))
             {
@@ -237,7 +237,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="size">size of the data</param>
         /// <param name="fileName">Name of the file to update or create</param>
         /// <returns>full path of the file</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual string UpdateGeneratedCodeFile(FileNode fileNode, byte[] data, int size, string fileName)
+        public virtual string UpdateGeneratedCodeFile(FileNode fileNode, byte[] data, int size, string fileName)
         {
             string filePath = Path.Combine(Path.GetDirectoryName(fileNode.GetMkDocument()), fileName);
             IVsRunningDocumentTable rdt = this.projectMgr.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;

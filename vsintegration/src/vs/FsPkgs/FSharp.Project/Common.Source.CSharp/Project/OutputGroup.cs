@@ -37,7 +37,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Get the project configuration object associated with this output group
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Cfg")]
-        public /*protected, but public for FSharp.Project.dll*/ ProjectConfig ProjectCfg
+        public ProjectConfig ProjectCfg
         {
             get { return projectCfg; }
         }
@@ -45,7 +45,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Get the project object that produces this output group.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ ProjectNode Project
+        public ProjectNode Project
         {
             get { return project; }
         }
@@ -54,7 +54,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets the msbuild target name which is assciated to the outputgroup.
         /// ProjectNode defines a static collection of output group names and their associated MsBuild target
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ string TargetName
+        public string TargetName
         {
             get { return targetName; }
         }
@@ -114,7 +114,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region virtual methods
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Refresh()
+        public virtual void Refresh()
         {
             // Let MSBuild know which configuration we are working with
             project.SetConfiguration(projectCfg.ConfigCanonicalName);

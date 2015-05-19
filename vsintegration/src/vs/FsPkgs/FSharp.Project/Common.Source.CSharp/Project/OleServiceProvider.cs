@@ -227,7 +227,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The method that does the cleanup.
         /// </summary>
         /// <param name="disposing"></param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Dispose(bool disposing)
+        public virtual void Dispose(bool disposing)
         {
             // Everybody can go here.
             if (!this.isDisposed)

@@ -357,7 +357,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="itemId">The id of the node.</param>
         /// <returns>true if the node acceots drag operation.</returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual bool CanTargetNodeAcceptDrop(uint itemId)
+        public virtual bool CanTargetNodeAcceptDrop(uint itemId)
         {
             HierarchyNode targetNode = NodeFromItemId(itemId);
             if (targetNode is ReferenceContainerNode || targetNode is ReferenceNode)
@@ -527,7 +527,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="itemId">Item ID where to start walking the hierarchy</param>
         /// <param name="targetNode">Node to start adding to</param>
         /// <param name="addSiblings">Typically false on first call and true after that</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void WalkSourceProjectAndAdd(IVsHierarchy sourceHierarchy, uint itemId, HierarchyNode targetNode, bool addSiblings)
+        public virtual void WalkSourceProjectAndAdd(IVsHierarchy sourceHierarchy, uint itemId, HierarchyNode targetNode, bool addSiblings)
         {
             // Before we start the walk, add the current node
             object variant = null;
@@ -580,7 +580,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="name">Name of the item being added</param>
         /// <param name="targetPath">Path of the item being added</param>
         /// <returns>Node that was added</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual HierarchyNode AddNodeIfTargetExistInStorage(HierarchyNode parentNode, string name, string targetPath)
+        public virtual HierarchyNode AddNodeIfTargetExistInStorage(HierarchyNode parentNode, string name, string targetPath)
         {
             HierarchyNode newNode = parentNode;
             // If the file/directory exist, add a node for it
@@ -606,7 +606,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Handle the Cut operation to the clipboard
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override int CutToClipboard()
+        public override int CutToClipboard()
         {
             int returnValue = (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
             try
@@ -644,7 +644,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Handle the Copy operation to the clipboard
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override int CopyToClipboard()
+        public override int CopyToClipboard()
         {
             int returnValue = (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
             try
@@ -686,7 +686,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Handle the Paste operation to a targetNode
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override int PasteFromClipboard(HierarchyNode targetNode)
+        public override int PasteFromClipboard(HierarchyNode targetNode)
         {
             int returnValue = (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
 
@@ -745,7 +745,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Determines if the paste command should be allowed.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool AllowPasteCommand()
+        public override bool AllowPasteCommand()
         {
             IOleDataObject dataObject = null;
             try
@@ -780,7 +780,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Register/Unregister for Clipboard events for the UiHierarchyWindow (solution explorer)
         /// </summary>
         /// <param name="register">true for register, false for unregister</param>
-        public /*protected, but public for FSharp.Project.dll*/ override void RegisterClipboardNotifications(bool register)
+        public override void RegisterClipboardNotifications(bool register)
         {
             // Get the UiHierarchy window clipboard helper service
             IVsUIHierWinClipboardHelper clipboardHelper = (IVsUIHierWinClipboardHelper)GetService(typeof(SVsUIHierWinClipboardHelper));
@@ -942,7 +942,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public void CleanupSelectionDataObject(bool dropped, bool cut, bool moved)
+        public void CleanupSelectionDataObject(bool dropped, bool cut, bool moved)
         {
             this.CleanupSelectionDataObject(dropped, cut, moved, false);
         }
@@ -952,7 +952,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         ///  to determine whether we need to clean up the source nodes or not. If
         ///  justCleanup is set, it only does the cleanup work.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public void CleanupSelectionDataObject(bool dropped, bool cut, bool moved, bool justCleanup)
+        public void CleanupSelectionDataObject(bool dropped, bool cut, bool moved, bool justCleanup)
         {
             if (this.ItemsDraggedOrCutOrCopied == null || this.ItemsDraggedOrCutOrCopied.Count == 0)
             {
@@ -1057,7 +1057,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="projectRef"></param>
         /// <param name="targetNode"></param>
-        /*internal, but public for FSharp.Project.dll*/
         private bool AddFileToNodeFromProjectReference(string projectRef, HierarchyNode targetNode)
         {
             if (String.IsNullOrEmpty(projectRef))

@@ -219,7 +219,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         #region overridden methods
 
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
 #if SINGLE_FILE_GENERATOR
             ISingleFileGenerator generator = this.CreateSingleFileGenerator();
@@ -373,7 +373,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Delete the item corresponding to the specified path from storage.
         /// </summary>
         /// <param name="path"></param>
-        public /*protected, but public for FSharp.Project.dll*/ override void DeleteFromStorage(string path)
+        public override void DeleteFromStorage(string path)
         {
             if (FSSafe.File.SafeExists(path))
             {
@@ -385,7 +385,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Rename the underlying document based on the change the user just made to the edit label.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ int SetEditLabel(string label, string relativePath)
+        public int SetEditLabel(string label, string relativePath)
         {
             int returnValue = VSConstants.S_OK;
             uint oldId = this.ID;
@@ -461,7 +461,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// node delegate to the project and a folder/project node to itself.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override HierarchyNode GetDragTargetHandlerNode()
+        public override HierarchyNode GetDragTargetHandlerNode()
         {
             Debug.Assert(this.ProjectMgr != null, " The project manager is null for the filenode");
             HierarchyNode handlerNode = this;
@@ -472,7 +472,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return handlerNode;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        public override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             if (this.ProjectMgr == null || this.ProjectMgr.IsClosed)
             {
@@ -574,7 +574,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
 
-        public /*protected, but public for FSharp.Project.dll*/ override void DoDefaultAction()
+        public override void DoDefaultAction()
         {
             CCITracing.TraceCall();
             FileDocumentManager manager = this.GetDocumentManager() as FileDocumentManager;
@@ -588,7 +588,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="docData">A pointer to the document in the rdt</param>
         /// <param name="newFilePath">The new file path to the document</param>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override int AfterSaveItemAs(IntPtr docData, string newFilePath)
+        public override int AfterSaveItemAs(IntPtr docData, string newFilePath)
         {
             if (String.IsNullOrEmpty(newFilePath))
             {
@@ -694,7 +694,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Determines if this is node a valid node for painting the default file icon.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanShowDefaultIcon()
+        public override bool CanShowDefaultIcon()
         {
             string moniker = this.GetMkDocument();
 
@@ -726,7 +726,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="showMessage">true if user should be presented for UI in case the file is not present</param>
         /// <returns>true if file is on disk</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual bool IsFileOnDisk(bool showMessage)
+        public virtual bool IsFileOnDisk(bool showMessage)
         {
             bool fileExist = IsFileOnDisk(this.Url);
 
@@ -749,7 +749,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="path">Url representing the file</param>
         /// <returns>True if the file exist</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual bool IsFileOnDisk(string path)
+        public virtual bool IsFileOnDisk(string path)
         {
             return FSSafe.File.SafeExists(path);
         }
@@ -762,7 +762,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="newParentId">The new parent id of the item.</param>
         /// <returns>The newly added FileNode.</returns>
         /// <remarks>While a new node will be used to represent the item, the underlying MSBuild item will be the same and as a result file properties saved in the project file will not be lost.</remarks>
-        public /*protected, but public for FSharp.Project.dll*/ virtual FileNode RenameFileNode(string oldFileName, string newFileName, uint newParentId)
+        public virtual FileNode RenameFileNode(string oldFileName, string newFileName, uint newParentId)
         {
             if (string.Compare(oldFileName, newFileName, StringComparison.Ordinal) == 0)
             {
@@ -874,7 +874,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Rename all childnodes
         /// </summary>
         /// <param name="parentNode">The newly added Parent node.</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void RenameChildNodes(FileNode parentNode)
+        public virtual void RenameChildNodes(FileNode parentNode)
         {
             foreach (HierarchyNode child in GetChildNodes())
             {
@@ -914,7 +914,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="fileThatFailed"> The file that failed to be renamed.</param>
         /// <param name="originalFileName">The original filenamee</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void RecoverFromRenameFailure(string fileThatFailed, string originalFileName)
+        public virtual void RecoverFromRenameFailure(string fileThatFailed, string originalFileName)
         {
             // TODO does this do anything useful?  did it ever change in the first place?
             if (this.ItemNode != null && !String.IsNullOrEmpty(originalFileName))
@@ -924,7 +924,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             if (deleteOperation == __VSDELETEITEMOPERATION.DELITEMOP_DeleteFromStorage)
             {
@@ -938,7 +938,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="oldName">Previous name in storage</param>
         /// <param name="newName">New name in storage</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void RenameInStorage(string oldName, string newName)
+        public virtual void RenameInStorage(string oldName, string newName)
         {
             File.Move(oldName, newName);
         }
@@ -948,7 +948,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// factory method for creating single file generators.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual ISingleFileGenerator CreateSingleFileGenerator()
+        public virtual ISingleFileGenerator CreateSingleFileGenerator()
         {
             return new SingleFileGenerator(this.ProjectMgr);
         }
@@ -962,7 +962,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="flags">The flags that are associated to the files.</param>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Scc")]
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "scc")]
-        public /*protected, but public for FSharp.Project.dll*/ override void GetSccSpecialFiles(string sccFile, IList<string> files, IList<tagVsSccFilesFlags> flags)
+        public override void GetSccSpecialFiles(string sccFile, IList<string> files, IList<tagVsSccFilesFlags> flags)
         {
             if (this.ExcludeNodeFromScc)
             {
@@ -992,7 +992,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Get's called to rename the eventually running document this hierarchyitem points to
         /// </summary>
         /// returns FALSE if the doc can not be renamed
-        /*internal, but public for FSharp.Project.dll*/
         public bool RenameDocument(string oldName, string newName)
         {
             IVsRunningDocumentTable pRDT = this.GetService(typeof(IVsRunningDocumentTable)) as IVsRunningDocumentTable;
@@ -1129,7 +1128,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="sender">FileNode sending it</param>
         /// <param name="e">Node event args</param>
-        /*internal, but public for FSharp.Project.dll*/
         internal virtual void OnCustomToolChanged(object sender, HierarchyNodeEventArgs e)
         {
             this.RunGenerator();
@@ -1140,7 +1138,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="sender">FileNode sending it</param>
         /// <param name="e">Node event args</param>
-        /*internal, but public for FSharp.Project.dll*/
         internal virtual void OnCustomToolNameSpaceChanged(object sender, HierarchyNodeEventArgs e)
         {
             this.RunGenerator();
@@ -1153,7 +1150,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Runs a generator.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/
         public void RunGenerator()
         {
             ISingleFileGenerator generator = this.CreateSingleFileGenerator();

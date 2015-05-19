@@ -32,7 +32,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region properties
-        public /*protected, but public for FSharp.Project.dll*/ HierarchyNode Node
+        public HierarchyNode Node
         {
             get
             {
@@ -42,7 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
         
         #region ctors
-        public /*protected, but public for FSharp.Project.dll*/ DocumentManager(HierarchyNode node)
+        public DocumentManager(HierarchyNode node)
         {
             this.node = node;
         }
@@ -145,7 +145,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Get document properties from RDT
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public void GetDocInfo(
+        public void GetDocInfo(
             out bool isOpen,     // true if the doc is opened
             out bool isDirty,    // true if the doc is dirty
             out bool isOpenedByUs, // true if opened by our project
@@ -186,7 +186,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ string GetOwnerCaption()
+        public string GetOwnerCaption()
         {
             Debug.Assert(this.node != null, "No node has been initialized for the document manager");
 
@@ -196,7 +196,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return (pvar as string);
         }
         
-        public /*protected, but public for FSharp.Project.dll*/ void CloseWindowFrame(ref IVsWindowFrame windowFrame)
+        public void CloseWindowFrame(ref IVsWindowFrame windowFrame)
         {
             if (windowFrame != null)
             {
@@ -211,7 +211,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ string GetFullPathForDocument()
+        public string GetFullPathForDocument()
         {
             string fullPath = String.Empty;
 

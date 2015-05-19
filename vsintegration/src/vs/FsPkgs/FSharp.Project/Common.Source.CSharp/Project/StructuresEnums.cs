@@ -356,14 +356,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// True if the project is added to the solution after the solution is opened. false if the project is added to the solution while the solution is being opened.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        /*internal, but public for FSharp.Project.dll*/ public bool Added
+        public bool Added
         {
             get { return this.added; }
         }
         #endregion
 
         #region ctor
-        /*internal, but public for FSharp.Project.dll*/ public AfterProjectFileOpenedEventArgs(bool added)
+        public AfterProjectFileOpenedEventArgs(bool added)
         {
             this.added = added;
         }
@@ -381,14 +381,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// true if the project was removed from the solution before the solution was closed. false if the project was removed from the solution while the solution was being closed.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        /*internal, but public for FSharp.Project.dll*/ public bool Removed
+        public bool Removed
         {
             get { return this.removed; }
         }
         #endregion
 
         #region ctor
-        /*internal, but public for FSharp.Project.dll*/ public BeforeProjectFileClosedEventArgs(bool removed)
+        public BeforeProjectFileClosedEventArgs(bool removed)
         {
             this.removed = removed;
         }
@@ -402,7 +402,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         private HierarchyNode child;
 
-        /*internal, but public for FSharp.Project.dll*/ public HierarchyNodeEventArgs(HierarchyNode child)
+        public HierarchyNodeEventArgs(HierarchyNode child)
         {
             this.child = child;
         }
@@ -440,7 +440,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="fileName">File name that was changed on disk.</param>
         /// <param name="id">The item id of the file that was changed on disk.</param>
-        /*internal, but public for FSharp.Project.dll*/ public FileChangedOnDiskEventArgs(string fileName, uint id, _VSFILECHANGEFLAGS flag)
+        public FileChangedOnDiskEventArgs(string fileName, uint id, _VSFILECHANGEFLAGS flag)
         {
             this.fileName = fileName;
             this.itemID = id;
@@ -451,7 +451,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets the file name that was changed on disk.
         /// </summary>
         /// <value>The file that was changed on disk.</value>
-        /*internal, but public for FSharp.Project.dll*/ public string FileName
+        public string FileName
         {
             get
             {
@@ -463,7 +463,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets item id of the file that has changed
         /// </summary>
         /// <value>The file that was changed on disk.</value>
-        /*internal, but public for FSharp.Project.dll*/ public uint ItemID
+        public uint ItemID
         {
             get
             {
@@ -475,7 +475,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The reason while the file has chnaged on disk.
         /// </summary>
         /// <value>The reason while the file has chnaged on disk.</value>
-        /*internal, but public for FSharp.Project.dll*/ public _VSFILECHANGEFLAGS FileChangeFlag
+        public _VSFILECHANGEFLAGS FileChangeFlag
         {
             get
             {
@@ -500,7 +500,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Constructs a new event args.
         /// </summary>
         /// <param name="hierarchy">The hierarchy that has changed its configuration.</param>
-        /*internal, but public for FSharp.Project.dll*/ public ActiveConfigurationChangedEventArgs(IVsHierarchy hierarchy)
+        public ActiveConfigurationChangedEventArgs(IVsHierarchy hierarchy)
         {
             this.hierarchy = hierarchy;
         }
@@ -508,7 +508,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The hierarchy whose configuration has changed 
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public IVsHierarchy Hierarchy
+        public IVsHierarchy Hierarchy
         {
             get
             {
@@ -527,7 +527,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private string oldValue;
         private string newValue;
 
-        /*internal, but public for FSharp.Project.dll*/ public ProjectPropertyChangedArgs(string propertyName, string oldValue, string newValue)
+        public ProjectPropertyChangedArgs(string propertyName, string oldValue, string newValue)
         {
             this.propertyName = propertyName;
             this.oldValue = oldValue;

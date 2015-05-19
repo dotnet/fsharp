@@ -25,14 +25,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private Guid packageGuid;
 
-        /*internal, but public for FSharp.Project.dll*/ public const string DefaultProjectExtension = "DefaultProjectExtension";
-        /*internal, but public for FSharp.Project.dll*/ public const string WizardsTemplatesDir = "WizardsTemplatesDir";
-        /*internal, but public for FSharp.Project.dll*/ public const string ProjectTemplatesDir = "ProjectTemplatesDir";
-        /*internal, but public for FSharp.Project.dll*/ public const string Package = "Package";
+        public const string DefaultProjectExtension = "DefaultProjectExtension";
+        public const string WizardsTemplatesDir = "WizardsTemplatesDir";
+        public const string ProjectTemplatesDir = "ProjectTemplatesDir";
+        public const string Package = "Package";
 
 
 
-        /*internal, but public for FSharp.Project.dll*/ public string DefaultProjectExtensionValue
+        public string DefaultProjectExtensionValue
         {
             get
             {
@@ -44,7 +44,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public string ProjectTemplatesDirValue
+        public string ProjectTemplatesDirValue
         {
             get
             {
@@ -56,7 +56,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public string WizardTemplatesDirValue
+        public string WizardTemplatesDirValue
         {
             get
             {
@@ -68,7 +68,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public Guid PackageGuidValue
+        public Guid PackageGuidValue
         {
             get
             {
@@ -86,7 +86,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// 
         /// You can pass in a string such as: "Windows\Console Application"
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public string GetVsTemplateFile(string templateFile)
+        public string GetVsTemplateFile(string templateFile)
         {
             // First see if this use the vstemplate model
             if (!String.IsNullOrEmpty(DefaultProjectExtensionValue))
@@ -118,7 +118,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return null;
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public static RegisteredProjectType CreateRegisteredProjectType(Guid projectTypeGuid)
+        public static RegisteredProjectType CreateRegisteredProjectType(Guid projectTypeGuid)
         {
             RegisteredProjectType registederedProjectType = null;
 

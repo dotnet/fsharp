@@ -122,7 +122,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="configName">The name of the configuration.</param>
         /// <param name="platformName">The name of the platform.</param>
         /// <returns>true if successfull.</returns>
-        /*internal, but public for FSharp.Project.dll*/
         internal static bool TrySplitConfigurationCanonicalName(string canonicalName, out string configName, out string platformName)
         {
             // TODO rationalize this code with callers and ProjectNode.OnHandleConfigurationRelatedGlobalProperties, ProjectNode.TellMSBuildCurrentSolutionConfiguration, etc
@@ -184,10 +183,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IVsCfgBrowseObject
     {
         #region constants
-        /*internal, but public for FSharp.Project.dll*/ public const string Debug = "Debug";
-        /*internal, but public for FSharp.Project.dll*/ public const string Release = "Release";
-        /*internal, but public for FSharp.Project.dll*/ public const string AnyCPU = "AnyCPU";
-        /*internal, but public for FSharp.Project.dll*/ public const string AnyCPU32BitPreferred = "AnyCPU32BitPreferred";
+        public const string Debug = "Debug";
+        public const string Release = "Release";
+        public const string AnyCPU = "AnyCPU";
+        public const string AnyCPU32BitPreferred = "AnyCPU32BitPreferred";
         public const string Any_CPU = "Any CPU";
 
         #endregion
@@ -614,7 +613,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ IList<OutputGroup> OutputGroups
+        public IList<OutputGroup> OutputGroups
         {
             get
             {
@@ -665,7 +664,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region methods
-        public /*protected, but public for FSharp.Project.dll*/ virtual OutputGroup CreateOutputGroup(ProjectNode project, KeyValuePair<string, string> group)
+        public virtual OutputGroup CreateOutputGroup(ProjectNode project, KeyValuePair<string, string> group)
         {
             OutputGroup outputGroup = new OutputGroup(group.Key, group.Value, project, this);
             return outputGroup;
@@ -787,7 +786,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="storageType">Project file or user file</param>
         /// <returns>0 = not dirty</returns>
-        /*internal, but public for FSharp.Project.dll*/ public int IsFlavorDirty(_PersistStorageType storageType)
+        public int IsFlavorDirty(_PersistStorageType storageType)
         {
             int isDirty = 0;
             if (this.flavoredCfg != null && this.flavoredCfg is IPersistXMLFragment)
@@ -804,7 +803,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="storageType">Project file or user file</param>
         /// <param name="fragment">Fragment that the flavor wants to save</param>
         /// <returns>HRESULT</returns>
-        /*internal, but public for FSharp.Project.dll*/ public int GetXmlFragment(Guid flavor, _PersistStorageType storageType, out string fragment)
+        public int GetXmlFragment(Guid flavor, _PersistStorageType storageType, out string fragment)
         {
             fragment = null;
             int hr = VSConstants.S_OK;

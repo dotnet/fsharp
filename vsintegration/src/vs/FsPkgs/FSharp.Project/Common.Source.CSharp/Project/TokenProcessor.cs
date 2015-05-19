@@ -263,7 +263,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="c">Character to validate</param>
         /// <returns>true if successful false otherwise</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "c")]
-        public /*protected, but public for FSharp.Project.dll*/ bool IsValidIdentifierChar(char c)
+        public bool IsValidIdentifierChar(char c)
         {
             if ((c >= 'a') && (c <= 'z'))
             {
@@ -291,7 +291,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="c">Start character</param>
         /// <returns>true if successful false otherwise</returns>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "c")]
-        public /*protected, but public for FSharp.Project.dll*/ bool IsValidIdentifierStartChar(char c)
+        public bool IsValidIdentifierStartChar(char c)
         {
             if (!IsValidIdentifierChar(c))
             {

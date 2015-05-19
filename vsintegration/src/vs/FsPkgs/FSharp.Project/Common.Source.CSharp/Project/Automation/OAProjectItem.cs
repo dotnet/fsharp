@@ -28,7 +28,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         #endregion
 
         #region properties
-        public /*protected, but public for FSharp.Project.dll*/ T Node
+        public T Node
         {
             get
             {
@@ -39,7 +39,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Returns the automation project
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ OAProject Project
+        public OAProject Project
         {
             get
             {

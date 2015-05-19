@@ -54,12 +54,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region overridden methods
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             return new FolderNodeProperties(this);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override void DeleteFromStorage(string path)
+        public override void DeleteFromStorage(string path)
         {
             this.DeleteFolder(path);
         }
@@ -182,7 +182,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="files">The list of files to be placed under source control.</param>
         /// <param name="flags">The flags that are associated to the files.</param>
-        public /*protected, but public for FSharp.Project.dll*/ override void GetSccFiles(System.Collections.Generic.IList<string> files, System.Collections.Generic.IList<tagVsSccFilesFlags> flags)
+        public override void GetSccFiles(System.Collections.Generic.IList<string> files, System.Collections.Generic.IList<tagVsSccFilesFlags> flags)
         {
             return;
         }
@@ -195,7 +195,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="flags">The flags that are associated to the files.</param>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Scc")]
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "scc")]
-        public /*protected, but public for FSharp.Project.dll*/ override void GetSccSpecialFiles(string sccFile, IList<string> files, IList<tagVsSccFilesFlags> flags)
+        public override void GetSccSpecialFiles(string sccFile, IList<string> files, IList<tagVsSccFilesFlags> flags)
         {
             if (this.ExcludeNodeFromScc)
             {
@@ -232,7 +232,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Recursevily walks the folder nodes and redraws the state icons
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void UpdateSccStateIcons()
+        public override void UpdateSccStateIcons()
         {
             for (HierarchyNode child = this.FirstChild; child != null; child = child.NextSibling)
             {
@@ -275,7 +275,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             if (deleteOperation == __VSDELETEITEMOPERATION.DELITEMOP_DeleteFromStorage)
             {

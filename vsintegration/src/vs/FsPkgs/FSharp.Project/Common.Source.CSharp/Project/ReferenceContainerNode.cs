@@ -33,7 +33,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     public class ReferenceContainerNode : HierarchyNode, IReferenceContainer
     {
         #region fields
-        /*internal, but public for FSharp.Project.dll*/ public const string ReferencesNodeVirtualName = "References";
+        public const string ReferencesNodeVirtualName = "References";
         private List<ProjectReferenceNode> projectReferencesWithEnabledCaching = new List<ProjectReferenceNode>();
         #endregion
         
@@ -51,7 +51,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             ProjectFileConstants.Reference,
             ProjectFileConstants.COMReference
         };
-        public /*protected, but public for FSharp.Project.dll*/ virtual string[] SupportedReferenceTypes
+        public virtual string[] SupportedReferenceTypes
         {
             get { return supportedReferenceTypes; }
         }
@@ -93,7 +93,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
         private Automation.OAReferences references;
-        /*internal, but public for FSharp.Project.dll*/ public override object Object
+        public override object Object
         {
             get
             {
@@ -149,7 +149,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// References node cannot be dragged.
         /// </summary>
         /// <returns>A stringbuilder.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ override StringBuilder PrepareSelectedNodesForClipBoard()
+        public override StringBuilder PrepareSelectedNodesForClipBoard()
         {
             return null;
         }
@@ -157,7 +157,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Not supported.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override int ExcludeFromProject()
+        public override int ExcludeFromProject()
         {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
@@ -209,7 +209,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        public override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             if (cmdGroup == VsMenus.guidStandardCommandSet2K)
             {
@@ -237,7 +237,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             return false;
         }
@@ -246,7 +246,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines whether this node is valid node for painting the refererences icon.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanShowDefaultIcon()
+        public override bool CanShowDefaultIcon()
         {
             if (!String.IsNullOrEmpty(this.VirtualNodeName))
             {
@@ -546,7 +546,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Create a Project to Project reference given a VSCOMPONENTSELECTORDATA structure
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual ProjectReferenceNode CreateProjectReferenceNode(VSCOMPONENTSELECTORDATA selectorData)
+        public virtual ProjectReferenceNode CreateProjectReferenceNode(VSCOMPONENTSELECTORDATA selectorData)
         {
             return new ProjectReferenceNode(this.ProjectMgr, selectorData.bstrTitle, selectorData.bstrFile, selectorData.bstrProjRef);
         }
@@ -694,7 +694,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Creates a com reference node from a selector data.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual ComReferenceNode CreateComReferenceNode(Microsoft.VisualStudio.Shell.Interop.VSCOMPONENTSELECTORDATA selectorData)
+        public virtual ComReferenceNode CreateComReferenceNode(Microsoft.VisualStudio.Shell.Interop.VSCOMPONENTSELECTORDATA selectorData)
         {
             ComReferenceNode node = new ComReferenceNode(this.ProjectMgr, selectorData);
             return node;

@@ -25,7 +25,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public abstract class ReferenceNode : HierarchyNode
     {
-        public /*protected, but public for FSharp.Project.dll*/ delegate void CannotAddReferenceErrorMessage();
+        public delegate void CannotAddReferenceErrorMessage();
 
         #region ctors
         /// <summary>
@@ -77,7 +77,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region overridden methods
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             return new ReferenceNodeProperties(this);
         }
@@ -124,7 +124,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Not supported.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override int ExcludeFromProject()
+        public override int ExcludeFromProject()
         {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
@@ -133,12 +133,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// References node cannot be dragged.
         /// </summary>
         /// <returns>A stringbuilder.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ override StringBuilder PrepareSelectedNodesForClipBoard()
+        public override StringBuilder PrepareSelectedNodesForClipBoard()
         {
             return null;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override void DoDefaultAction()
+        public override void DoDefaultAction()
         {
             this.ShowObjectBrowser();
         }
@@ -183,7 +183,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.QueryStatusOnNode(cmdGroup, cmd, pCmdText, ref result);
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        public override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             if (cmdGroup == VsMenus.guidStandardCommandSet2K)
             {
@@ -254,7 +254,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Refreshes a reference by re-resolving it and redrawing the icon.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/
         internal virtual void RefreshReference(BuildResult buildResult)
         {
             this.ResolveReference(buildResult);
@@ -264,7 +263,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Resolves references.
         /// </summary>
-        internal /*protected, but public for FSharp.Project.dll*/ virtual void ResolveReference(BuildResult buildResult)
+        internal virtual void ResolveReference(BuildResult buildResult)
         {
 
         }
@@ -273,7 +272,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Validates that a reference can be added.
         /// </summary>
         /// <returns>Success if the reference can be added.</returns>
-        internal /*protected, but public for FSharp.Project.dll*/ virtual AddReferenceCheckResult CheckIfCanAddReference()
+        internal virtual AddReferenceCheckResult CheckIfCanAddReference()
         {
             // When this method is called this refererence has not yet been added to the hierarchy, only instantiated.
             ReferenceNode existingNode;
@@ -290,7 +289,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Checks if a reference is already added. The method parses all references and compares the Url.
         /// </summary>
         /// <returns>true if the assembly has already been added.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual bool IsAlreadyAdded(out ReferenceNode existingNode)
+        public virtual bool IsAlreadyAdded(out ReferenceNode existingNode)
         {
             ReferenceContainerNode referencesFolder = this.ProjectMgr.FindChild(ReferenceContainerNode.ReferencesNodeVirtualName) as ReferenceContainerNode;
             Debug.Assert(referencesFolder != null, "Could not find the References node");
@@ -315,7 +314,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the Guid to use to set VSOJBECTINFO.pguidLib for the call to IVsObjBrowser.NavigateTo
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual Guid GetBrowseLibraryGuid()
+        public virtual Guid GetBrowseLibraryGuid()
         {
             return Guid.Empty;
         }
@@ -329,7 +328,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Shows the Object Browser
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual int ShowObjectBrowser()
+        public virtual int ShowObjectBrowser()
         {
             if (!CanShowUrlInOnObjectBrowser())
             {
@@ -371,7 +370,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return returnValue;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             if (deleteOperation == __VSDELETEITEMOPERATION.DELITEMOP_RemoveFromProject)
             {
@@ -380,7 +379,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return false;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ abstract void BindReferenceData();
+        public abstract void BindReferenceData();
 
         #endregion
 
