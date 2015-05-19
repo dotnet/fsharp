@@ -45,7 +45,8 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
        ("|||", "op_BitwiseOr");
        ("^^^", "op_ExclusiveOr");
        ("<<<", "op_LeftShift");
-       ("~~~", "op_LogicalNot");
+       ("!!!", "op_LogicalNot");
+       ("~~~", "op_OnesComplement");
        (">>>", "op_RightShift");
        ("~+", "op_UnaryPlus");
        ("~-", "op_UnaryNegation");

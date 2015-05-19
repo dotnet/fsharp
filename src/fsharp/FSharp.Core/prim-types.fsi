@@ -1945,10 +1945,15 @@ namespace Microsoft.FSharp.Core
         /// <returns>The result of the operation.</returns>
         val inline (>>>) : value:^T -> shift:int32 -> ^T when ^T : (static member (>>>) : ^T * int32 -> ^T) and default ^T : int
         
-        /// <summary>Overloaded bitwise-NOT operator</summary>
+        /// <summary>Overloaded bitwise not operator</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The result of the operation.</returns>
         val inline (~~~)  : value:^T -> ^T         when ^T : (static member (~~~) : ^T         -> ^T) and default ^T : int
+        
+        /// <summary>Overloaded logical-NOT operator</summary>
+        /// <param name="value">The input value.</param>
+        /// <returns>The result of the operation.</returns>
+        val inline (!!!)  : value:^T -> ^T         when ^T : (static member (!!!) : ^T         -> ^T) and default ^T : bool
         
         /// <summary>Overloaded prefix-plus operator</summary>
         /// <param name="value">The input value.</param>

@@ -1069,12 +1069,27 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty g.int32_ty ++ (fun () -> 
           ResultD TTraitBuiltIn)
 
-      | _,_,false,("op_LogicalNot" | "op_OnesComplement"),[argty] 
+      | _,_,false,"op_OnesComplement",[argty] 
           when isIntegerOrIntegerEnumTy g argty  ->
 
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
           SolveDimensionlessNumericType csenv ndeep m2 trace argty ++ (fun () -> 
           ResultD TTraitBuiltIn))
+
+      | _,_,false,"op_LogicalNot",[argty] 
+          when // op_LogicalNot only solvable to a boolean type in F# 4.0+4.4.0.0 and after, indicated by the fact that 
+               // the ones-complement operator does not exists in the FSharp.Core library
+               (g.bitwise_unary_ones_complement_vref.TryDeref.IsSome && isBoolTy g argty) || 
+               // op_LogicalNot only solvable to a integer type in F# 3.x and before, indicated by the fact that 
+               // the ones-complement operator does not exist in the referenced FSharp.Core library
+               (g.bitwise_unary_ones_complement_vref.TryDeref.IsNone && isIntegerOrIntegerEnumTy g argty)  ->
+
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
+             if isBoolTy g argty then 
+                 ResultD TTraitBuiltIn
+             else
+                 SolveDimensionlessNumericType csenv ndeep m2 trace argty ++ (fun () -> 
+                 ResultD TTraitBuiltIn))
 
       | _,_,false,("Abs"),[argty] 
           when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty ->

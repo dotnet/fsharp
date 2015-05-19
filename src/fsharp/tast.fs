@@ -374,7 +374,6 @@ type EntityFlags(flags:int64) =
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits =                         (flags       &&&  ~~~0b00000000100L)
 
-
 #if DEBUG
 assert (sizeof<ValFlags> = 8)
 assert (sizeof<EntityFlags> = 8)

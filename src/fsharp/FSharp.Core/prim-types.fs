@@ -4089,7 +4089,7 @@ namespace Microsoft.FSharp.Core
         
         [<NoDynamicInvocation>]
         let inline (~~~) (x: ^T) : ^T = 
-             (^T: (static member (~~~) : ^T -> ^T) (x))
+             (^T: (static member op_OnesComplement : ^T -> ^T) (x))
              when ^T : int32      = (# "not" x : int32 #)
              when ^T : int64      = (# "not" x : int64 #)
              when ^T : uint64     = (# "not" x : uint64 #)
@@ -4100,6 +4100,12 @@ namespace Microsoft.FSharp.Core
              when ^T : uint16     = (# "conv.u2" (# "not" x : uint32 #) : uint16 #)
              when ^T : sbyte      = (# "conv.i1" (# "not" x : int32  #) : sbyte #)
              when ^T : byte       = (# "conv.u1" (# "not" x : uint32 #) : byte #)
+
+
+        [<NoDynamicInvocation>]
+        let inline (!!!) (x: ^T) : ^T = 
+             (^T: (static member op_LogicalNot : ^T -> ^T) (x))
+             when ^T : bool      = (# "ceq" x false : bool #)
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
