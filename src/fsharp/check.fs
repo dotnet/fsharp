@@ -142,7 +142,8 @@ let BindTypar env (tp:Typar) =
          boundTyparNames = tp.Name :: env.boundTyparNames
          boundTypars = env.boundTypars.Add (tp, ()) } 
 
-let BindTypars env (tps:Typar list) = 
+let BindTypars g env (tps:Typar list) = 
+    let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     if isNil tps then env else
     // Here we mutate to provide better names for generalized type parameters 
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
@@ -188,7 +189,7 @@ let BindVals cenv vs = List.iter (BindVal cenv) vs
 // approx walk of type
 //--------------------------------------------------------------------------
 
-let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitByrefsOfByrefsOpt,visitTraitSolutionOpt, visitTyparOpt) as f) env typ =
+let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitByrefsOfByrefsOpt,visitTraitSolutionOpt, visitTyparOpt) as f) g env typ =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
     // This means we walk _all_ the constraints _everywhere_ in a type, including
     // those attached to _solved_ type variables. This is used by PostTypecheckSemanticChecks to detect uses of
@@ -212,23 +213,23 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitByrefsOfByrefsOpt,visitTr
 
     match typ with
     | TType_forall (tps,body) -> 
-        let env = BindTypars env tps
-        CheckTypeDeep f env body;           
-        tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep f env))
+        let env = BindTypars g env tps
+        CheckTypeDeep f g env body;           
+        tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep f g env))
 
     | TType_measure _          -> ()
     | TType_app (tcref,tinst) -> 
         match visitTyconRefOpt with 
         | Some visitTyconRef -> visitTyconRef tcref 
         | None -> ()
-        CheckTypesDeep f env tinst
+        CheckTypesDeep f g env tinst
         match visitByrefsOfByrefsOpt with 
         | Some visitByrefsOfByrefs -> visitByrefsOfByrefs (tcref, tinst)
         | None -> ()
 
-    | TType_ucase (_,tinst) -> CheckTypesDeep f env tinst
-    | TType_tuple typs        -> CheckTypesDeep f env typs
-    | TType_fun (s,t)         -> CheckTypeDeep f env s; CheckTypeDeep f env t
+    | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
+    | TType_tuple typs        -> CheckTypesDeep f g env typs
+    | TType_fun (s,t)         -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
     | TType_var tp            -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
@@ -236,16 +237,16 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitByrefsOfByrefsOpt,visitTr
               | Some visitTypar -> 
                     visitTypar (env,tp)
 
-and CheckTypesDeep f env tys = List.iter (CheckTypeDeep f env) tys
+and CheckTypesDeep f g env tys = List.iter (CheckTypeDeep f g env) tys
 
-and CheckTypeConstraintDeep f env x =
+and CheckTypeConstraintDeep f g env x =
      match x with 
-     | TyparConstraint.CoercesTo(ty,_) -> CheckTypeDeep f env ty
-     | TyparConstraint.MayResolveMember(traitInfo,_) -> CheckTraitInfoDeep f env traitInfo
-     | TyparConstraint.DefaultsTo(_,ty,_) -> CheckTypeDeep f env ty
-     | TyparConstraint.SimpleChoice(tys,_) -> CheckTypesDeep f env tys
-     | TyparConstraint.IsEnum(uty,_) -> CheckTypeDeep f env uty
-     | TyparConstraint.IsDelegate(aty,bty,_) -> CheckTypeDeep f env aty; CheckTypeDeep f env bty
+     | TyparConstraint.CoercesTo(ty,_) -> CheckTypeDeep f g env ty
+     | TyparConstraint.MayResolveMember(traitInfo,_) -> CheckTraitInfoDeep f g env traitInfo
+     | TyparConstraint.DefaultsTo(_,ty,_) -> CheckTypeDeep f g env ty
+     | TyparConstraint.SimpleChoice(tys,_) -> CheckTypesDeep f g env tys
+     | TyparConstraint.IsEnum(uty,_) -> CheckTypeDeep f g env uty
+     | TyparConstraint.IsDelegate(aty,bty,_) -> CheckTypeDeep f g env aty; CheckTypeDeep f g env bty
      | TyparConstraint.SupportsComparison _ 
      | TyparConstraint.SupportsEquality _ 
      | TyparConstraint.SupportsNull _ 
@@ -253,10 +254,10 @@ and CheckTypeConstraintDeep f env x =
      | TyparConstraint.IsUnmanaged _
      | TyparConstraint.IsReferenceType _ 
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
-and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) env (TTrait(typs,_,_,argtys,rty,soln))  = 
-    CheckTypesDeep f env typs; 
-    CheckTypesDeep f env argtys; 
-    Option.iter (CheckTypeDeep f env) rty;
+and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs,_,_,argtys,rty,soln))  = 
+    CheckTypesDeep f g env typs; 
+    CheckTypesDeep f g env argtys; 
+    Option.iter (CheckTypeDeep f g env) rty;
     match visitTraitSolutionOpt, !soln with 
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
@@ -266,7 +267,7 @@ and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) env (TTrait(typs,_
 //--------------------------------------------------------------------------
 
 let CheckForByrefLikeType cenv env typ check = 
-    CheckTypeDeep (ignore, Some (fun tcref -> if isByrefLikeTyconRef cenv.g tcref then check()), None, None, None) env typ
+    CheckTypeDeep (ignore, Some (fun tcref -> if isByrefLikeTyconRef cenv.g tcref then check()), None, None, None) cenv.g env typ
 
 
 //--------------------------------------------------------------------------
@@ -341,7 +342,7 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
                 if isLessAccessible tyconAcc valAcc then
                     errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
 
-        CheckTypeDeep (visitType, None, None, None, None) env ty 
+        CheckTypeDeep (visitType, None, None, None, None) cenv.g env ty 
 
 //--------------------------------------------------------------------------
 // check type instantiations
@@ -372,7 +373,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
                     | Some tcref ->  
                         if isByrefLikeTyconRef cenv.g tcref then 
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalStringOfType cenv.denv ty), m)) 
-                CheckTypesDeep (visitType, None, None, None, None) env tinst
+                CheckTypesDeep (visitType, None, None, None, None) cenv.g env tinst
 
         let visitTraitSolution info = 
             match info with 
@@ -383,7 +384,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
                    cenv.potentialUnboundUsesOfVals <- cenv.potentialUnboundUsesOfVals.Add(vref.Stamp,m)
             | _ -> ()
 
-        CheckTypeDeep (ignore, Some visitTyconRef, Some visitByrefsOfByrefs, Some visitTraitSolution, Some visitTypar) env ty
+        CheckTypeDeep (ignore, Some visitTyconRef, Some visitByrefsOfByrefs, Some visitTraitSolution, Some visitTypar) cenv.g env ty
 
 
 /// Check types occuring in TAST (like CheckType) and additionally reject any byrefs.
@@ -580,7 +581,6 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
 
 
     | Expr.App(f,fty,tyargs,argsl,m) ->
-        // dprintfn "NO BASE VAL USE"
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckTypePermitByrefs cenv env m fty;
         CheckTypeInstPermitByrefs cenv env m tyargs;
@@ -625,7 +625,7 @@ and CheckMethods cenv env baseValOpt l =
     l |> List.iter (CheckMethod cenv env baseValOpt) 
 
 and CheckMethod cenv env baseValOpt (TObjExprMethod(_,attribs,tps,vs,e,m)) = 
-    let env = BindTypars env tps 
+    let env = BindTypars cenv.g env tps 
     let vs = List.concat vs
     CheckAttribs cenv env attribs;
     CheckNoReraise cenv None e;
@@ -765,14 +765,14 @@ and CheckLambdas memInfo cenv env inlined topValInfo alwaysCheckNoReraise e m et
     // as a .NET method with precisely the corresponding argument counts. 
     match e with
     | Expr.TyChoose(tps,e1,m)  -> 
-        let env = BindTypars env tps
+        let env = BindTypars cenv.g env tps
         CheckLambdas memInfo cenv env inlined topValInfo alwaysCheckNoReraise e1 m ety      
 
     | Expr.Lambda (_,_,_,_,_,m,_)  
     | Expr.TyLambda(_,_,_,m,_) ->
 
         let tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty = destTopLambda cenv.g cenv.amap topValInfo (e, ety) in
-        let env = BindTypars env tps 
+        let env = BindTypars cenv.g env tps 
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
         let syntacticArgs = thisAndBase @ restArgs
@@ -1193,7 +1193,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 #endif
     let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
     let m = tycon.Range 
-    let env = BindTypars env (tycon.Typars(m))
+    let env = BindTypars cenv.g env (tycon.Typars(m))
     CheckAttribs cenv env tycon.Attribs;
 
     if cenv.reportErrors then begin
