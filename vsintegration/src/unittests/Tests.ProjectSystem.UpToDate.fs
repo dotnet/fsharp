@@ -367,7 +367,7 @@ type ``UpToDate PreserveNewest`` () =
 
         let ``a newer version of output file is ok`` =
             let u, logs = test ("before.doc", Some before) ("after.doc", Some now)
-            Assert.True(u)
+            Assert.IsTrue(u)
             logs |> AssertEqual []
 
         let ``stale output file -> not up-to-date and log`` =
