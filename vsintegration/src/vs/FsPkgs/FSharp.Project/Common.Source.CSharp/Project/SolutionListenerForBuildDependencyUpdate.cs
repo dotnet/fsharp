@@ -29,13 +29,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class SolutionListenerForBuildDependencyUpdate : SolutionListener
     {
-        #region ctors
         public SolutionListenerForBuildDependencyUpdate(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
-        #endregion
 
-        #region overridden methods
         /// <summary>
         /// Update build dependency list if solution is fully loaded
         /// </summary>
@@ -77,9 +74,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-        #endregion
 
-        #region Helper methods
         /// <summary>
         /// Update dependency list
         /// </summary>
@@ -173,9 +168,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             NestedProjectBuildDependency dependency = new NestedProjectBuildDependency(nestedProject);
             projectContainer.AddBuildDependency(dependency);
         }
-
-        #endregion
-
     }
 }
 #endif

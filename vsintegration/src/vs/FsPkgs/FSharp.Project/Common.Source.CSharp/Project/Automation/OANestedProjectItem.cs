@@ -21,11 +21,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OANestedProjectItem : OAProjectItem<NestedProjectNode>
     {
-        #region fields
         EnvDTE.Project nestedProject = null;
-        #endregion
 
-        #region ctors
         internal OANestedProjectItem(OAProject project, NestedProjectNode node)
             : base(project, node)
         {
@@ -36,9 +33,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        #endregion
-
-        #region overridden methods
         /// <summary>
         /// Returns the collection of project items defined in the nested project
         /// </summary>
@@ -64,7 +58,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return this.nestedProject;
             }
         }
-        #endregion
     }
 }
 #endif

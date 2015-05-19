@@ -22,7 +22,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public class OutputGroup : IVsOutputGroup2
     {
-        #region fields
         private ProjectConfig projectCfg;
         private ProjectNode project;
 
@@ -30,9 +29,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private Output keyOutput = null;
         private string name;
         private string targetName;
-        #endregion
 
-        #region properties
         /// <summary>
         /// Get the project configuration object associated with this output group
         /// </summary>
@@ -84,10 +81,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
  
-        #endregion
-
-        #region ctors
-
         /// <summary>
         /// Constructor for IVSOutputGroup2 implementation
         /// </summary>
@@ -111,9 +104,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             project = projectManager;
             projectCfg = configuration;
         }
-        #endregion
 
-        #region virtual methods
         public /*protected, but public for FSharp.Project.dll*/ virtual void Refresh()
         {
             // Let MSBuild know which configuration we are working with
@@ -163,18 +154,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             keyOutput = null;
         }
-        #endregion
 
-        #region event handlers
         private void OnProjectPropertyChanged(object sender, ProjectPropertyChangedArgs args)
         {
             // In theory here we should decide if we have to invalidate the group according with the kind of property
             // that is changed.
             InvalidateGroup();
         }
-        #endregion
-
-        #region IVsOutputGroup2 Members
 
         public virtual int get_CanonicalName(out string pbstrCanonicalName)
         {
@@ -284,7 +270,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             pvar = project.GetProjectProperty(pszProperty);
             return VSConstants.S_OK;
         }
-
-        #endregion
     }
 }

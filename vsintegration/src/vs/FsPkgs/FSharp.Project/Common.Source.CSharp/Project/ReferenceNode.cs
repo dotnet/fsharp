@@ -27,28 +27,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         public /*protected, but public for FSharp.Project.dll*/ delegate void CannotAddReferenceErrorMessage();
 
-        #region ctors
-        /// <summary>
-        /// constructor for the ReferenceNode
-        /// </summary>
         internal ReferenceNode(ProjectNode root, ProjectElement element)
             : base(root, element)
         {
             this.ExcludeNodeFromScc = true;
         }
 
-        /// <summary>
-        /// constructor for the ReferenceNode
-        /// </summary>
         internal ReferenceNode(ProjectNode root)
             : base(root)
         {
             this.ExcludeNodeFromScc = true;
         }
 
-        #endregion
-
-        #region overridden properties
         public override int MenuCommandId
         {
             get { return VsMenus.IDM_VS_CTXT_REFERENCE; }
@@ -74,9 +64,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return String.Empty;
             }
         }
-        #endregion
 
-        #region overridden methods
         public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
         {
             return new ReferenceNodeProperties(this);
@@ -204,10 +192,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
 
         }
-
-        #endregion
-
-        #region  methods
 
         /// <summary>
         /// If this is a managed assembly that has been resolved, its simple name.  Else if this is project reference, the filename (sans path/extension).  Else string.Empty.
@@ -381,9 +365,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         public /*protected, but public for FSharp.Project.dll*/ abstract void BindReferenceData();
-
-        #endregion
-
     }
 
     internal class AddReferenceCheckResult

@@ -27,17 +27,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false)]
     public class TokenProcessor
     {
-        #region fields
         // Internal fields
         private ArrayList tokenlist;
 
-
-        #endregion
-
-        #region Initialization
-        /// <summary>
-        /// Constructor
-        /// </summary>
         public TokenProcessor()
         {
             tokenlist = new ArrayList();
@@ -81,9 +73,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             tokenlist.Add(new DeleteToken(tokenToDelete));
         }
-        #endregion
 
-        #region TokenProcessing
         /// <summary>
         /// For all known token, replace token with correct value
         /// </summary>
@@ -158,9 +148,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             buffer = System.Text.RegularExpressions.Regex.Replace(buffer, regularExp, rpBetweenToken.TokenReplacement);
         }
 
-        #endregion
-
-        #region Guid generators
         /// <summary>
         /// Generates a string representation of a guid with the following format:
         /// 0x01020304, 0x0506, 0x0708, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10
@@ -250,9 +237,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return ResultingStr.ToString();
         }
-        #endregion
 
-        #region Helper Methods
         /// <summary>
         /// This function will accept a subset of the characters that can create an
         /// identifier name: there are other unicode char that can be inside the name, but
@@ -370,8 +355,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return result.ToString();
         }
-        #endregion
-
     }
 
     /// <summary>

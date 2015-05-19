@@ -29,12 +29,6 @@ module internal Hooks =
 
     // This should be called from the Package ctor, to do unsited initialisation.
     let fsiConsoleWindowPackageCtorUnsited (this:Package) =        
-(*      // "Proffer the service"
-        let serviceContainer = this :> IServiceContainer
-        let langService = new FsiLanguageService()
-        langService.SetSite(this)        
-        serviceContainer.AddService(typeof<FsiLanguageService>,langService,true)
-*)
 
         // This seems an alternative to the boiler plate proffering above. Gives delayed creation?
         let callback  = fsiServiceCreatorCallback(this)

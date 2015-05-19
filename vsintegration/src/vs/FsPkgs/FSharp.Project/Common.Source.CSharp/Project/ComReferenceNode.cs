@@ -35,7 +35,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [ DllImport( "oleaut32.dll", CharSet = CharSet.Unicode, PreserveSig = false )]
         private static extern void LoadTypeLibEx(string strTypeLibName, RegKind regKind, [ MarshalAs( UnmanagedType.Interface )] out object typeLib );
 
-        #region fields
         private string typeName;
         private Guid typeGuid;
         private string projectRelativeFilePath;
@@ -43,9 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private string minorVersionNumber;
         private string majorVersionNumber;
         private readonly int lcid;
-        #endregion
 
-        #region properties
         public override string Caption
         {
             get { return this.typeName; }
@@ -115,12 +112,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return comReference;
             }
         }
-        #endregion
 
-        #region ctors
-        /// <summary>
-        /// Constructor for the ComReferenceNode. 
-        /// </summary>
         internal ComReferenceNode(ProjectNode root, ProjectElement element)
             : base(root, element)
         {
@@ -213,9 +205,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-
-        #region methods
         /// <summary>
         /// Links a reference node to the project and hierarchy.
         /// </summary>
@@ -380,7 +369,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-
-        #endregion
     }
 }

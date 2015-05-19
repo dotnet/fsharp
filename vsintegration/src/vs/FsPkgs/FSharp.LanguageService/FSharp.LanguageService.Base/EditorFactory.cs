@@ -21,7 +21,6 @@ using System.Diagnostics;
 #if NEVER
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
-    /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory"]/*' />
     /// <summary>
     /// You must inherit from this class and simply add a [ComVisible] and 
     /// [GuidAttribute] and then specify the EditorFactoryGuid, EditorFactoryGuid 
@@ -34,37 +33,31 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         Microsoft.VisualStudio.Shell.Package package;
         IServiceProvider site;
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GUID_VsBufferDetectLangSID;"]/*' />
         public static readonly Guid GuidVSBufferDetectLangSid = new Guid(0x17F375AC, 0xC814, 0x11D1, 0x88, 0xAD, 0x00, 0x00, 0xF8, 0x75, 0x79, 0xD2);
 
         __PROMPTONLOADFLAGS promptFlags = __PROMPTONLOADFLAGS.codepageNoPrompt;
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.EditorInfo"]/*' />
         public class EditorInfo {
             private string name;
             private Guid guid;
             private int priority;
             private EditorInfo next;
 
-            /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.EditorInfo.Name"]/*' />
             public string Name {
                 get { return name; }
                 set { name = value; }
             }
 
-            /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.EditorInfo.Guid"]/*' />
             public Guid Guid {
                 get { return guid; }
                 set { guid = value; }
             }
 
-            /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.EditorInfo.Priority"]/*' />
             public int Priority {
                 get { return priority; }
                 set { priority = value; }
             }
 
-            /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.EditorInfo.Next"]/*' />
             public EditorInfo Next {
                 get { return next; }
                 set { next = value; }
@@ -80,16 +73,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         // all known extensions under HKLM\Software\Microsoft\Visual Studio\9.0\Language Services\Extensions
         static StringDictionary languageExtensions; // string -> language service guid.
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.EditorFactory"]/*' />
         public EditorFactory(Microsoft.VisualStudio.Shell.Package package) {
             this.package = package;
             this.site = package;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.EditorFactory"]/*' />
         public EditorFactory() { }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.Finalize"]/*' />
         ~EditorFactory() {
             site = null;
 #if LANGTRACE
@@ -97,22 +87,18 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 #endif
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetSite"]/*' />
         protected IServiceProvider GetSite() {
             return this.site;
         }
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetPackage"]/*' />
         protected Microsoft.VisualStudio.Shell.Package GetPackage() {
             return this.package;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.IsRegisteredExtension"]/*' />
         /// <summary>Returns true if the given extension is one of our registered extensions</summary>
         public virtual bool IsRegisteredExtension(string extension) {
             return GetEditorExtensions().ContainsKey(extension);
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetExtensions"]/*' />
         /// <summary>Return list of file extensions registered for this editor factory under 
         /// HKLM\Software\Microsoft\Visual Studio\9.0\Editors\\{" + this.GetType().GUID.ToString() + "}\\Extensions
         /// </summary>
@@ -121,14 +107,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return (string[])list.ToArray(typeof(string));
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetLanguageService"]/*' />
         /// <summary>Returns the guid of the language service registered for this file extension
         /// HKLM\Software\Microsoft\Visual Studio\9.0\Language Services\Extensions</summary>
         public virtual string GetLanguageService(string fileExtension) {
             return GetLanguageExtensions(this.site)[fileExtension] as string;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.WithEncoding"]/*' />
         public virtual __PROMPTONLOADFLAGS CodePagePrompt {
             get { return this.promptFlags; }
             set { this.promptFlags = value; }
@@ -140,12 +124,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         // Return your language service Guid here, this is used to set the language service on the 
         // IVsTextLines buffer returned from CreateEditorInstance.
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetLanguageServiceGuid"]/*' />
         public virtual Guid GetLanguageServiceGuid() {
             return Guid.Empty;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetRegisteredEditor"]/*' />
         /// <summary>Returns the guid of the highest priority editor registered for this extension.
         /// This will also pick up user defined file extension to editor associations</summary>
         public virtual Guid GetRegisteredEditor(string extension) {
@@ -156,7 +138,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return Guid.Empty;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetRegisteredEditor"]/*' />
         /// <summary>Returns the guid of the highest priority editor registered for this extension.
         /// This will also pick up user defined file extension to editor associations.
         /// You can then access all registered editors via the .Next property.</summary>
@@ -165,7 +146,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return (EditorInfo)GetEditors(this.site)[key];
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.GetUserDefinedEditor"]/*' />
         /// <summary>Returns the guid of the editor that the user has defined for this file extension or
         /// Guid.Empty if none is found</summary>
         public Guid GetUserDefinedEditor(string extension) {
@@ -209,7 +189,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.IsOurFileFormat"]/*' />
         // This method is called when the user has not explicitly requested your editor
         // and if the file extension doesn't match an explicit extension you registered,
         // and if you have registered the extension "*" to determine if this file is 
@@ -219,9 +198,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return true;
         }
 
-        #region IVsEditorFactory
-
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.CreateEditorInstance"]/*' />
         /// <summary>
         /// This method checks to see if the specified file is one that your editor supports
         /// and if so, creates the core text editor and associated your language service 
@@ -391,7 +367,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return hr;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.CreateEditorView"]/*' />
         /// <summary>Return docView IUnknown COM object.</summary>
         public virtual IntPtr CreateEditorView(string moniker, IVsTextLines buffer, string physicalView, out string editorCaption, out Guid cmdUI) {
             Type tcw = typeof(IVsCodeWindow);
@@ -411,7 +386,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return docView;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.MapLogicalView"]/*' />
         /// <devdoc>The default implementation supports LOGVIEWID_Code, LOGVIEWID_TextView,
         /// LOGVIEWID_Debugging, and LOGVIEWID_Primary returning null for
         /// the physicalView string.</devdoc>
@@ -428,7 +402,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.E_NOTIMPL;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.SetSite"]/*' />
         public virtual int SetSite(Microsoft.VisualStudio.OLE.Interop.IServiceProvider psp) {
             this.site = new ServiceProvider(psp);
             return NativeMethods.S_OK;
@@ -599,13 +572,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return map;
         }
 
-        /// <include file='doc\EditorFactory.uex' path='docs/doc[@for="EditorFactory.Close"]/*' />
         public virtual int Close() {
             this.site = null;
             this.package = null;
             return NativeMethods.S_OK;
         }
-        #endregion
     }
 }
 #endif

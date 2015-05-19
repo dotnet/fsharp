@@ -581,7 +581,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem {
                 return s.ToString();
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF.SetText"]/*' />
             /// <devdoc>
             /// Accessing the text of this structure is very cumbersome.  Instead, you may
             /// use this method to access an integer pointer of the structure.
@@ -752,7 +751,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem {
             
             // Parse the incoming XML with respect to the CodeModel XML schema and
             // use the result to regenerate the body of the function.
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IMethodXML.SetXML"]/*' />
             [PreserveSig]
             int SetXML (string pszXML);
             

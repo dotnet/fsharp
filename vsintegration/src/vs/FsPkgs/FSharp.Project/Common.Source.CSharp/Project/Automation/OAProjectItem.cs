@@ -22,12 +22,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
          where T : HierarchyNode
     {
 
-        #region fields
         private T node;
         private OAProject project;
-        #endregion
 
-        #region properties
         public /*protected, but public for FSharp.Project.dll*/ T Node
         {
             get
@@ -46,17 +43,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return this.project;
             }
         }
-        #endregion
 
-        #region ctors
         internal OAProjectItem(OAProject project, T node)
         {
             this.node = node;
             this.project = project;
         }
-        #endregion
-
-        #region EnvDTE.ProjectItem
 
         /// <summary>
         /// Gets the requested Extender if it is available for this object
@@ -298,9 +290,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        /// <summary>
-        /// Gets or sets the name of the object.
-        /// </summary>
         public virtual string Name
         {
             get
@@ -489,7 +478,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
             throw new NotImplementedException();
         }
-
-        #endregion
     }
 }

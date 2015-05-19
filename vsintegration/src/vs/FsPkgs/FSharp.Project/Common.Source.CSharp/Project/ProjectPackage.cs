@@ -22,14 +22,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false)]
     public abstract class ProjectPackage : Microsoft.VisualStudio.Shell.Package
     {
-        #region fields
         /// <summary>
         /// This is the place to register all the solution listeners.
         /// </summary>
         private List<SolutionListener> solutionListeners = new List<SolutionListener>();
-        #endregion
 
-        #region properties
         /// <summary>
         /// Add your listener to this list. They should be added in the overridden Initialize befaore calling the base.
         /// </summary>
@@ -40,9 +37,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.solutionListeners;
             }
         }
-        #endregion
 
-        #region methods
         protected override void Initialize()
         {
             base.Initialize();
@@ -80,6 +75,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 base.Dispose(disposing);
             }
         }
-        #endregion
     }
 }

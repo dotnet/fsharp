@@ -48,7 +48,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IVsSetTargetFrameworkWorkerCallback,
         IVsProjectResources,
         IDisposable
-    //, IVsBuildStatusCallback 
     {
 
         // for good debugger experience
@@ -56,7 +55,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return string.Format("\"{0}\" ({1})", this.Caption, this.GetType());
         }
-        #region nested types
+
         /// <summary>
         /// DropEffect as defined in oleidl.h
         /// </summary>
@@ -67,9 +66,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Move = 2,
             Link = 4
         };
-        #endregion
 
-        #region Events
         internal event EventHandler<HierarchyNodeEventArgs> OnChildAdded
         {
             add { onChildAdded += value; }
@@ -80,18 +77,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             add { onChildRemoved += value; }
             remove { onChildRemoved -= value; }
         }
-        #endregion
 
-        #region static/const fields
         public static readonly Guid SolutionExplorer = new Guid(EnvDTE.Constants.vsWindowKindSolutionExplorer);
         public const int NoImage = -1;
 #if DEBUG
         /*Available only in debug build for FSharp.Project.dll*/ 
         public static int LastTracedProperty = 0;
 #endif
-        #endregion
 
-        #region fields
         private EventSinkCollection hierarchyEventSinks = new EventSinkCollection();
         private ProjectNode projectMgr;
         private ProjectElement itemNode;
@@ -115,44 +108,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private List<HierarchyNode> itemsDraggedOrCutOrCopied;
         private bool sourceDraggedOrCutOrCopied;
 
-        /// <summary>
-        /// Has the object been disposed.
-        /// </summary>
-        /// <devremark>We will not specify a property for isDisposed, rather it is expected that the a private flag is defined
-        /// on all subclasses. We do not want get in a situation where the base class's dipose is not called because a child sets the flag through the property.</devremark>
         private bool isDisposed;
-        #endregion
 
-        #region abstract properties
-        /// <summary>
-        /// The URL of the node.
-        /// </summary>
-        /// <value></value>
         public abstract string Url
         {
             get;
         }
 
-        /// <summary>
-        /// The Caption of the node.
-        /// </summary>
-        /// <value></value>
         public abstract string Caption
         {
             get;
         }
 
-        /// <summary>
-        /// The item type guid associated to a node.
-        /// </summary>
-        /// <value></value>
         public abstract Guid ItemTypeGuid
         {
             get;
         }
-        #endregion
-
-        #region virtual properties
 
         public virtual bool IsNonMemberItem
         {
@@ -266,9 +237,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get { return this; }
         }
-        #endregion
-
-        #region properties
 
         internal OleServiceProvider OleServiceProvider
         {
@@ -490,9 +458,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.itemsDraggedOrCutOrCopied;
             }
         }
-        #endregion
-
-        #region ctors
 
         internal HierarchyNode()
         {
@@ -526,9 +491,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             : this(root, new ProjectElement(root, null, true))
         {
         }
-        #endregion
 
-        #region virtual methods
         /// <summary>
         /// Creates an object derived from NodeProperties that will be used to expose properties
         /// spacific for this object to the property browser.
@@ -1399,7 +1362,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return shell.ShowContextMenu(0, ref menuGroup, menuId, pnts, (Microsoft.VisualStudio.OLE.Interop.IOleCommandTarget)this);
         }
 
-        #region initiation of command execution
         /// <summary>
         /// Handles command execution.
         /// </summary>
@@ -1671,9 +1633,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return returnValue;
         }
 
-        #endregion
-
-        #region query command handling
         /// <summary>
         /// Handles menus originating from IOleCommandTarget.
         /// </summary>
@@ -2025,7 +1984,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return queryResult;
         }
 
-        #endregion
         public /*protected, but public for FSharp.Project.dll*/ virtual bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             return this.ProjectMgr.CanProjectDeleteItems;
@@ -2306,9 +2264,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return;
         }
-        #endregion
-
-        #region public methods
 
         public void OnItemAdded(HierarchyNode parent, HierarchyNode child)
         {
@@ -2536,10 +2491,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return this.projectMgr.Site.GetService(type);
         }
 
-
-        #endregion
-
-        #region IDisposable
         /// <summary>
         /// The IDispose interface Dispose method for disposing the object determinastically.
         /// </summary>
@@ -2548,10 +2499,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.Dispose(true);
             GC.SuppressFinalize(this);
         }
-
-        #endregion
-
-        #region IVsHierarchy methods
 
         public virtual int AdviseHierarchyEvents(IVsHierarchyEvents sink, out uint cookie)
         {
@@ -2761,9 +2708,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
-
-        #region IVsUIHierarchy methods
 
         public virtual int ExecCommand(uint itemId, ref Guid guidCmdGroup, uint nCmdId, uint nCmdExecOpt, IntPtr pvain, IntPtr p)
         {
@@ -2774,7 +2718,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return this.QueryStatusSelection(guidCmdGroup, cCmds, cmds, pCmdText, CommandOrigin.UiHierarchy);
         }
-        #endregion
 
         /// <summary>
         /// Determines whether the hierarchy item changed. 
@@ -2935,7 +2878,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return returnCode;
         }
 
-        #region IVsPersistHierarchyItem2 methods
 #if IMPLEMENT_IVSPERSISTHIERARCHYITEM2
         /// <summary>
         /// Flag indicating that changes to a file can be ignored when item is saved or reloaded. 
@@ -2997,12 +2939,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
         public virtual int ReloadItem(uint itemId, uint reserved)
         {
-        #region precondition
             if (this.ProjectMgr == null || this.ProjectMgr.IsClosed)
             {
                 return VSConstants.E_FAIL;
             }
-            #endregion
 
             HierarchyNode n = this.ProjectMgr.NodeFromItemId(itemId);
             if (n != null)
@@ -3015,9 +2955,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 #endif
-        #endregion
 
-        #region IOleCommandTarget methods
         /// <summary>
         /// CommandTarget.Exec is called for most major operations if they are NOT UI based. Otherwise IVSUInode::exec is called first
         /// </summary>
@@ -3034,9 +2972,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return this.QueryStatusSelection(guidCmdGroup, cCmds, prgCmds, pCmdText, CommandOrigin.OleCommandTarget);
         }
-        #endregion
-
-        #region IVsHierarchyDeleteHandler methods
 
         public virtual int DeleteItem(uint delItemOp, uint itemId)
         {
@@ -3091,9 +3026,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-        #endregion
-
-        #region IVsHierarchyDropDataSource2 methods
 
         public virtual int GetDropInfo(out uint pdwOKEffects, out Microsoft.VisualStudio.OLE.Interop.IDataObject ppDataObject, out IDropSource ppDropSource)
         {
@@ -3114,9 +3046,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             fCancelDrop = 0;
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
-
-        #region IVsHierarchyDropDataTarget methods
 
         public virtual int DragEnter(Microsoft.VisualStudio.OLE.Interop.IDataObject pDataObject, uint grfKeyState, uint itemid, ref uint pdwEffect)
         {
@@ -3137,9 +3066,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
-        #region helper methods
         /*internal, but public for FSharp.Project.dll*/ public HierarchyNode FindChild(string name)
         {
             if (String.IsNullOrEmpty(name))
@@ -3194,7 +3121,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.itemsDraggedOrCutOrCopied = new List<HierarchyNode>();
         }
-        #endregion
 
         // Support for multitargeting.
 
@@ -3380,9 +3306,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-
-        #region IVsProjectResources methods
-
         private int CreateResourceDocDataHelper(FileNode f, uint itemidResource, out IVsPersistDocData persistDocData, out IVsTextLines textLines)
         {
             int hr = VSConstants.E_FAIL;
@@ -3512,7 +3435,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             throw new NotImplementedException();
         }
-
-        #endregion
     }
 }

@@ -8,19 +8,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     public partial class ProjectNode
     {
-        #region fields
         private EventHandler<ProjectPropertyChangedArgs> projectPropertiesListeners;
-        #endregion
 
-        #region events
         internal event EventHandler<ProjectPropertyChangedArgs> OnProjectPropertyChanged
         {
             add { projectPropertiesListeners += value; }
             remove { projectPropertiesListeners -= value; }
         }
-        #endregion
 
-        #region methods
         internal void RaiseProjectPropertyChanged(string propertyName, string oldValue, string newValue)
         {
             if (null != projectPropertiesListeners)
@@ -28,7 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 projectPropertiesListeners(this, new ProjectPropertyChangedArgs(propertyName, oldValue, newValue));
             }
         }
-        #endregion
     }
 
 }

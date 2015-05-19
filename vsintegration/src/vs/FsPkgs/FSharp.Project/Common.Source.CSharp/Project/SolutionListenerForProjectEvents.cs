@@ -27,7 +27,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class SolutionListenerForProjectEvents : SolutionListener, IProjectEvents
     {
-        #region events
         /// <summary>
         /// Event raised just after the project file opened.
         /// </summary>
@@ -37,16 +36,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Event raised before the project file closed.
         /// </summary>
         public event EventHandler<BeforeProjectFileClosedEventArgs> BeforeProjectFileClosed;
-        #endregion
 
-        #region ctor
         /*internal, but public for FSharp.Project.dll*/ public SolutionListenerForProjectEvents(IServiceProvider serviceProvider)
             : base(serviceProvider)
         {
         }
-        #endregion
 
-        #region overridden methods
         public override int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
         {
             IProjectEventsListener projectEventListener = hierarchy as IProjectEventsListener;
@@ -68,9 +63,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-        #endregion
 
-        #region helpers
         /// <summary>
         /// Raises after project file opened event.
         /// </summary>
@@ -102,5 +95,4 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
     }
-    #endregion
 }

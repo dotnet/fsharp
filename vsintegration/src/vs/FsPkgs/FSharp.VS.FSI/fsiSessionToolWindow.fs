@@ -105,7 +105,6 @@ type internal FsiToolWindow() as this =
 
     // Remove: after next submit (passing through SD)       
     // vsTextManager did not seem to yield current selection...
-    // let vsTextManager  = Util.CreateObjectT<VsTextManagerClass,VsTextManager> provider
 
     // The IP sample called GetService() to obtain the LanguageService.
     let fsiLangService = provider.GetService(typeof<FsiLanguageService>) |> unbox : FsiLanguageService
@@ -477,20 +476,6 @@ type internal FsiToolWindow() as this =
 
     let onMLSend (sender:obj) (e:EventArgs) =       
         sendSelectionToFSI(false)
-(*
-        // Remove: after next submit (passing through SD)       
-        // The below did not work, so move to use Automatic API via DTE above...        
-        let vsTextManager  = Util.CreateObjectT<VsTextManagerClass,VsTextManager> provider
-        let res,view = vsTextManager.GetActiveView(0(*<--fMustHaveFocus=0/1*),null) // 
-        if res = VSConstants.S_OK then
-            let span = Array.zeroCreate<TextSpan> 1
-            view.GetSelectionSpan(span) |> throwOnFailure0
-            let span = span.[0]
-            let text = view.GetTextStream(span.iStartLine,span.iStartIndex,span.iEndLine,span.iEndIndex) |> throwOnFailure1
-            Windows.Forms.MessageBox.Show("EXEC:\n" + text) |> ignore
-        else        
-            Windows.Forms.MessageBox.Show("Could not find the 'active text view', error code = " + sprintf "0x%x" res) |> ignore
-*)
         
     /// Handle UP and DOWN. Cycle history.    
     let onHistory (sender:obj) (e:EventArgs) =

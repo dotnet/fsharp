@@ -382,8 +382,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         , IVsDesignTimeAssemblyResolution
         , IVsProjectUpgrade
     {
-        #region nested types
-
         /// <summary>
         /// This class stores mapping from ids -> objects. Uses as a replacement of EventSinkCollection (ESC)
         /// Operations:
@@ -515,16 +513,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             DoNotTriggerTrackerEvents = 2
         }
 
-        #endregion
-
-        #region constants
         /// <summary>
         /// The user file extension.
         /// </summary>
         /*internal, but public for FSharp.Project.dll*/ public const string PerUserFileExtension = ".user";
-        #endregion
 
-        #region fields
         /// <summary>
         /// List of output groups names and their associated target
         /// </summary>
@@ -569,7 +562,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private Microsoft.Build.Evaluation.Project buildProject;
 
         // TODO cache an instance for perf; but be sure not to be stale (correctness)
-        //private ProjectInstance projectInstance;
         private BuildActionConverter buildActionConverter = new BuildActionConverter();
 
         private ConfigProvider configProvider;
@@ -689,11 +681,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// </summary>
 		private ProjectPackage package;
 
-        // Has the object been disposed.
         private bool isDisposed;
-        #endregion
 
-        #region abstract properties
         /// <summary>
         /// This Guid must match the Guid you registered under
         /// HKLM\Software\Microsoft\VisualStudio\%version%\Projects.
@@ -735,9 +724,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-
-        #region virtual properties
         /// <summary>
         /// This is the project instance guid that is peristed in the project file
         /// </summary>
@@ -761,9 +747,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
-
-        #region properties
 
         /// <summary>
         /// Denotes if FSharp.Core reference is relying on TargetFSharpCore property
@@ -778,7 +761,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return MSBuildProject.GetStaticAndVisibleItemsInOrder(this.buildProject); }
         }
 
-        #region overridden properties
         public override int MenuCommandId
         {
             get
@@ -843,10 +825,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-
-        #endregion
-
-        #region virtual properties
 
         public virtual string ErrorString
         {
@@ -957,8 +935,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.showProjectInSolutionPage = value;
             }
         }
-
-        #endregion
 
         public bool IsInBatchUpdate
         {
@@ -1365,9 +1341,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 				this.package = value;
 			}
 		}
-		#endregion
-
-        #region ctor
 
         protected ProjectNode()
         {
@@ -1375,9 +1348,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             myExtensibilityEventsHelper = new ExtensibilityEventsHelper(this);
             this.Initialize();
         }
-        #endregion
 
-        #region overridden methods
         public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
         {
             return new ProjectNodeProperties(this);
@@ -1676,10 +1647,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return Path.Combine(this.BaseURI.AbsoluteUrl, this.filename);
         }
 
-        /// <summary>
-        /// Disposes the project node object.
-        /// </summary>
-        /// <param name="disposing">Flag determining ehether it was deterministic or non deterministic clean up.</param>
         protected override void Dispose(bool disposing)
         {
             if (this.isDisposed)
@@ -1951,8 +1918,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return null;
         }
 
-        #endregion
-
         public void UpdateValueOfCanUseTargetFSharpCoreReferencePropertyIfNecessary(ReferenceNode node)
         {
             // property is already set, not need to make one more check
@@ -1965,8 +1930,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 ProjectMgr.CanUseTargetFSharpCoreReference = true;
             }
         }
-
-        #region virtual methods
 
         /// <summary>
         /// Executes a wizard.
@@ -4360,8 +4323,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             MSBuildProject.SetGlobalProperty(this.buildProject, GlobalProperty.Platform.ToString(), configCanonicalName.MSBuildPlatform);
         }
 
-        #endregion
-
         public void BeginBatchUpdate()
         {
             // refresh current state
@@ -4444,7 +4405,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return String.Empty;
         }
 
-#region non-virtual methods
         private void TellMSBuildCurrentSolutionConfiguration()
         {
             var canonicalCfgNameOpt = FetchCurrentConfigurationName();
@@ -4985,9 +4945,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-#endregion
-
-#region IVsGetCfgProvider Members
         //=================================================================================
 
         public virtual int GetCfgProvider(out IVsCfgProvider p)
@@ -4997,18 +4954,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             p = this.ConfigProvider;
             return (p == null ? VSConstants.E_NOTIMPL : VSConstants.S_OK);
         }
-#endregion
-
-#region IPersist Members
 
         public int GetClassID(out Guid clsid)
         {
             clsid = this.ProjectGuid;
             return VSConstants.S_OK;
         }
-#endregion
-
-#region IPersistFileFormat Members
 
         int IPersistFileFormat.GetClassID(out Guid clsid)
         {
@@ -5158,9 +5109,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // TODO: turn file watcher back on.
             return VSConstants.S_OK;
         }
-#endregion
-
-#region IVsProject3 Members
 
         /// <summary>
         /// Callback from the additem dialog. Deals with adding new and existing items
@@ -5875,9 +5823,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return hr;
         }
 
-#endregion
-
-#region IVsProjectBuidSystem Members
         public virtual int SetHostObject(string targetName, string taskName, object hostObject)
         {
             Debug.Assert(targetName != null && taskName != null && this.buildProject != null && this.buildProject.Targets != null);
@@ -5935,10 +5880,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-#endregion
-
-#region IVsComponentUser methods
-
         /// <summary>
         /// Add Components to the Project.
         /// Used by the environment to add components specified by the user in the Component Selector dialog 
@@ -5975,9 +5916,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return VSConstants.S_OK;
         }
-#endregion
 
-#region IVsDependencyProvider Members
         public int EnumDependencies(out IVsEnumDependencies enumDependencies)
         {
             enumDependencies = new EnumDependencies(this.buildDependencyList);
@@ -5990,9 +5929,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-#endregion
-
-#region IVsSccProject2 Members
         /// <summary>
         /// This method is called to determine which files should be placed under source control for a given VSITEMID within this hierarchy.
         /// </summary>
@@ -6160,10 +6096,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-#endregion
-
-#region IVsProjectSpecialFiles Members
-
 
         /// <summary>
         /// Allows you to query the project for special files and optionally create them. 
@@ -6224,10 +6156,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.E_NOTIMPL;
         }
 
-#endregion
-
-#region IAggregatedHierarchy Members
-
         /// <summary>
         /// Get the inner object of an aggregated hierarchy
         /// </summary>
@@ -6236,10 +6164,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return this;
         }
-
-#endregion
-
-#region IBuildDependencyUpdate Members
 
         public virtual IVsBuildDependency[] BuildDependencies
         {
@@ -6275,9 +6199,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-#endregion
-
-#region IReferenceDataProvider Members
         /// <summary>
         /// Returns the reference container node.
         /// </summary>
@@ -6287,17 +6208,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return this.FindChild(ReferenceContainerNode.ReferencesNodeVirtualName) as IReferenceContainer;
         }
 
-#endregion
-
-#region IProjectEventsListener Members
         public bool IsProjectEventsListener
         {
             get { return this.isProjectEventsListener; }
             set { this.isProjectEventsListener = value; }
         }
-#endregion
-
-#region IProjectEventsProvider Members
 
         /// <summary>
         /// Defines the provider for the project events
@@ -6321,10 +6236,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-
-#endregion
-
-#region IVsAggregatableProject Members
 
         /// <summary>
         /// Retrieve the list of project GUIDs that are aggregated together to make this project.
@@ -6406,10 +6317,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.E_NOTIMPL;
         }
 
-#endregion
-
-#region IVsProjectFlavorCfgProvider Members
-
         int IVsProjectFlavorCfgProvider.CreateProjectFlavorCfg(IVsCfg pBaseProjectCfg, out IVsProjectFlavorCfg ppFlavorCfg)
         {
             // Our config object is also our IVsProjectFlavorCfg object
@@ -6417,10 +6324,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-
-#endregion
-
-#region IVsBuildPropertyStorage Members
 
         /// <summary>
         /// Get the property of an item
@@ -6528,9 +6431,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-#endregion
-
-        #region IVsProjectUpgrade
         public int UpgradeProject(uint grfUpgradeFlags)
         {
             var hasTargetFramework = IsTargetFrameworkInstalled();
@@ -6541,9 +6441,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // VSConstants.OLE_E_PROMPTSAVECANCELLED causes the shell to leave project unloaded
             return hasTargetFramework ? VSConstants.S_OK : VSConstants.OLE_E_PROMPTSAVECANCELLED;
         }
-        #endregion
-
-        #region private helper methods
 
         /// <summary>
         /// Initialize projectNode
@@ -6845,8 +6742,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             element[id] = xmlText;
         }
-
-#endregion
 
         public bool IsProjectOpened { get { return this.projectOpened;  } }
         internal ExtensibilityEventsHelper ExtensibilityEventsHelper 

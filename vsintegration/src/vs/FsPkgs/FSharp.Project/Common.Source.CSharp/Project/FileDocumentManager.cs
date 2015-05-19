@@ -27,15 +27,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal class FileDocumentManager : DocumentManager
     {
-        #region ctors
-
         public FileDocumentManager(FileNode node)
             : base(node)
         {
         }
-        #endregion
-
-        #region overriden methods
 
         /// <summary>
         /// Open a file using the standard editor
@@ -71,9 +66,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return this.Open(newFile, openWith, editorFlags, ref editorType, physicalView, ref logicalView, docDataExisting, out windowFrame, windowFrameAction);
         }
 
-        #endregion
-
-        #region public methods
         /// <summary>
         /// Open a file in a document window with a std editor
         /// </summary>
@@ -142,9 +134,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return returnValue;
         }
 
-        #endregion
-
-        #region virtual methods
         /// <summary>
         /// Open a file in a document window
         /// </summary>
@@ -161,10 +150,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Guid editorType = Guid.Empty;
             return this.Open(newFile, openWith, 0, ref editorType, null, ref logicalView, docDataExisting, out windowFrame, windowFrameAction);
         }
-
-        #endregion
-
-        #region helper methods
 
         private int Open(bool newFile, bool openWith, uint editorFlags, ref Guid editorType, string physicalView, ref Guid logicalView, IntPtr docDataExisting, out IVsWindowFrame windowFrame, WindowFrameShowAction windowFrameAction)
         {
@@ -270,8 +255,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return returnValue;
         }
-
-
-        #endregion
     }
 }

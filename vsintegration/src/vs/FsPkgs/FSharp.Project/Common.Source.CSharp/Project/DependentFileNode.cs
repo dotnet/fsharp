@@ -30,21 +30,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public class DependentFileNode : FileNode
     {
-        #region fields
         /// <summary>
         /// Defines if the node has a name relation to its parent node
         /// e.g. Form1.ext and Form1.resx are name related (until first occurence of extention separator)
         /// </summary>
-        #endregion
-
-        #region Properties
         public override int ImageIndex
         {
             get { return (this.CanShowDefaultIcon() ? (int)ProjectNode.ImageName.DependentFile : (int) ProjectNode.ImageName.MissingFile); }
         }
-        #endregion
 
-        #region ctor
         /// <summary>
         /// Constructor for the DependentFileNode
         /// </summary>
@@ -57,9 +51,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
 
-        #endregion
-
-        #region overridden methods
         /// <summary>
         /// Disable rename
         /// </summary>
@@ -143,8 +134,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.Parent.ReDraw(UIHierarchyElement.SccState);
             }
         }
-        #endregion
-
     }
 }
 #endif

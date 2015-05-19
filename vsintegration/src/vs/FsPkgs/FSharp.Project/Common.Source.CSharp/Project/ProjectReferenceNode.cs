@@ -24,8 +24,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public class ProjectReferenceNode : ReferenceNode
     {
-        #region fieds
-
         /// <summary>
         /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
         /// i.e. project A references project B when target framework version for B is higher that for A
@@ -66,10 +64,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private bool enableCaching;
         private string cachedReferencedProjectOutputPath;
-
-        #endregion
-
-        #region properties
 
         internal bool EnableCaching
         {
@@ -505,9 +499,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return projectReference;
             }
         }
-        #endregion
 
-        #region ctors
         /// <summary>
         /// Constructor for the ReferenceNode. It is called when the project is reloaded, when the project element representing the refernce exists. 
         /// </summary>
@@ -544,9 +536,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// constructor for the ProjectReferenceNode
-        /// </summary>
         internal ProjectReferenceNode(ProjectNode root, string referencedProjectName, string projectPath, string projectReference)
             : base(root)
         {
@@ -603,9 +592,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.buildDependency = new BuildDependency(this.ProjectMgr, this.referencedProjectGuid);
 
         }
-        #endregion
 
-        #region methods
         public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
         {
             return new ProjectReferencesProperties(this);
@@ -901,8 +888,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return string.Format(CultureInfo.CurrentCulture, SR.GetString(SR.ProjectReferencesDifferentFramework, CultureInfo.CurrentUICulture), referencedProjectName, currentFrameworkName.Identifier, otherFrameworkName.Identifier);
         }
-
-        #endregion
 
         enum FrameworkCompatibility
         {
