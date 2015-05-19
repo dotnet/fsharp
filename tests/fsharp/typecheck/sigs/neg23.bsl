@@ -38,3 +38,11 @@ neg23.fs(92,18,92,21): typecheck error FS0439: The method 'X04' has curried argu
 neg23.fs(110,21,110,22): typecheck error FS0439: The method 'F' has curried arguments but has the same name as another method in this type. Methods with curried arguments cannot be overloaded. Consider using a method taking tupled arguments.
 
 neg23.fs(113,21,113,22): typecheck error FS0439: The method 'F' has curried arguments but has the same name as another method in this type. Methods with curried arguments cannot be overloaded. Consider using a method taking tupled arguments.
+
+neg23.fs(164,18,164,29): typecheck error FS0037: Two members called 'GroupRowsBy' have the same signature
+
+neg23.fs(165,18,165,29): typecheck error FS0037: Two members called 'GroupRowsBy' have the same signature
+
+neg23.fs(168,17,168,20): typecheck error FS0037: Two members called 'Foo' have the same signature
+
+neg23.fs(169,17,169,20): typecheck error FS0037: Two members called 'Foo' have the same signature

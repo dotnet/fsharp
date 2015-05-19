@@ -12743,6 +12743,14 @@ module TyconBindingChecking = begin
         // Post letrec env 
         let envFinal = AddLocalTyconRefs false g cenv.amap scopem tcrefsWithCSharpExtensionMembers envInitial
         let envFinal = AddLocalVals cenv.tcSink scopem prelimRecValues envFinal
+        let envFinal = 
+             let ctorVals = 
+                 [ for (TyconBindingsPassBGroup(_tcref, defnBs)) in defnsBs do
+                      for defnB in defnBs do
+                        match defnB with
+                        | PassBIncrClassCtor (incrClassCtorLhs, _) -> yield incrClassCtorLhs.InstanceCtorVal
+                        | _ -> ()  ]
+             AddLocalVals cenv.tcSink scopem ctorVals envFinal
 
         binds,envFinal,tpenv
 

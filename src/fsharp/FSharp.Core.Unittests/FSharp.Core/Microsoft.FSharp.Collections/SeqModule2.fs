@@ -1533,6 +1533,11 @@ type SeqModule2() =
         
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.truncate 1 null |> ignore)
+
+        // negative count
+        VerifySeqsEqual Seq.empty <| Seq.truncate -1 (seq [1;2;4;5;7])
+        VerifySeqsEqual Seq.empty <| Seq.truncate System.Int32.MinValue (seq [1;2;4;5;7])
+
         ()
         
     [<Test>]

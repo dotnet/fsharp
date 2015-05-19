@@ -25,7 +25,9 @@ if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
 set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
 set _tmp=%4
-if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
+if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
+
+if /I "%APPVEYOR_CI%" == "1" (set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI)
 
 set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
@@ -47,6 +49,8 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
+if /I "%2" == "fsharpqadowntarget" (goto :FSHARPQA)
+if /I "%2" == "fsharpqaredirect" (goto :FSHARPQA)
 if /I "%2" == "compilerunit" (
    set compilerunitsuffix=net40
    goto :COMPILERUNIT
@@ -165,6 +169,24 @@ if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTA
 set RESULTFILE=FSharpQA_Results.log
 set FAILFILE=FSharpQA_Failures.log
 set FAILENV=FSharpQA_Failures
+
+if /I "%2" == "fsharpqadowntarget" (
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
+   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
+   set RESULTFILE=FSharpQADownTarget_Results.log
+   set FAILFILE=FSharpQADownTarget_Failures.log
+   set FAILENV=FSharpQADownTarget_Failures
+)
+
+if /I "%2" == "fsharpqaredirect" (
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
+   set PLATFORM=%OSARCH%
+   set SIMULATOR_PIPE="%~dp0\fsharpqa\testenv\bin\$PLATFORM\ExecAssembly.exe"
+   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
+   set RESULTFILE=FSharpQARedirect_Results.log
+   set FAILFILE=FSharpQARedirect_Failures.log
+   set FAILENV=FSharpQARedirect_Failures
+)
 
 where.exe perl > NUL 2> NUL 
 if errorlevel 1 (

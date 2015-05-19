@@ -120,7 +120,7 @@ type internal MSBuildUtilities() =
                 // push folder
                 Inc(curPathParts)
                 curPathParts.Add(pathParts.[curPathParts.Count]) // e.g. transition from A\ to A\D\E\bar.fs
-                if not(alreadyRenderedFolders.Add(curPathParts)) && throwIfCannotRender then
+                if not(alreadyRenderedFolders.Add(new List<string>(curPathParts))) && throwIfCannotRender then
                     raise <| new InvalidOperationException(String.Format(FSharpSR.GetString(FSharpSR.ProjectRenderFolderMultiple), projectNode.ProjectFile, bi.Include))
             Inc(curPathParts)
             if bi.ItemType = ProjectFileConstants.Folder then

@@ -723,13 +723,12 @@ let pickleObjWithDanglingCcus file g scope p x =
   
 #endif
     
-#if DEBUG
 let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
     for i = 0 to inMap.Count - 1 do
       let n = inMap.Get i
       if not (inMap.IsLinked n) then 
-        System.Diagnostics.Debug.Assert(false, sprintf "*** unpickle: osgn %d in table %s with IL scope %s had no matching declaration (was not fixed up)\nPlease report this warning. (Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" i inMap.Name ilscope.QualifiedName)
-#endif
+        warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
+        // Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" 
 
 let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef) u (phase2bytes:byte[]) =
     let st2 = 
@@ -776,13 +775,11 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef) u (phase2by
              ifile=file 
              iILModule = iILModule }
         let res = u st1
-#if DEBUG
 #if LAZY_UNPICKLE
 #else
         check ilscope st1.itycons;
         check ilscope st1.ivals;
         check ilscope st1.itypars;
-#endif
 #endif
         res
 

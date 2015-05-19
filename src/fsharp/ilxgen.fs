@@ -5291,14 +5291,6 @@ and GenMethodForBinding
        let ilMethTypars = ilTypars |> List.drop mspec.EnclosingType.GenericArgs.Length
        if memberInfo.MemberFlags.MemberKind = MemberKind.Constructor then 
            assert (isNil ilMethTypars)
-
-           // Constructors in abstract classes become protected
-           let access = 
-               if HasFSharpAttribute cenv.g cenv.g.attrib_AbstractClassAttribute v.MemberApparentParent.Attribs then 
-                   ILMemberAccess.Family
-               else 
-                   access
-
            let mdef = mkILCtor (access,ilParams,ilMethodBody) 
            let mdef = { mdef with CustomAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated) }; 
            EmitTheMethodDef mdef
@@ -5690,7 +5682,11 @@ and GenAttribArg amap g eenv x (ilArgTy:ILType) =
 
     match x,ilArgTy with 
 
-    (* Detect standard constants *)
+    // Detect 'null' used for an array argument
+    | Expr.Const(Const.Zero,_,_),ILType.Array  _ -> 
+        ILAttribElem.Null
+
+    // Detect standard constants 
     | Expr.Const(c,m,_),_ -> 
         let tynm = ilArgTy.TypeSpec.Name
         let isobj = (tynm = "System.Object")

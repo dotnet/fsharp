@@ -1001,7 +1001,7 @@ let ConvMethodBase cenv env (methName, v:Val) =
     let parentTyconR = ConvTyconRef cenv v.TopValActualParent m 
 
     match v.MemberInfo with 
-    | Some(vspr) when not v.IsExtensionMember -> 
+    | Some vspr when not v.IsExtensionMember -> 
 
         let vref = mkLocalValRef v
         let tps,argInfos,retTy,_ = GetTypeOfMemberInMemberForm cenv.g vref 
@@ -1028,6 +1028,22 @@ let ConvMethodBase cenv env (methName, v:Val) =
                   methRetType  = methRetTypeR;
                   methName     = methName;
                   numGenericArgs=numGenericArgs }
+
+    | _ when v.IsExtensionMember -> 
+
+        let tps,argInfos,retTy,_ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value v.Type v.Range
+        let argTys = argInfos |> List.concat |> List.map fst 
+        let envinner = BindFormalTypars env tps 
+        let methArgTypesR = ConvTypes cenv envinner m argTys 
+        let methRetTypeR = ConvReturnType cenv envinner m retTy
+        let numGenericArgs = tps.Length
+
+        QP.MethodBaseData.Method 
+          { methParent   = parentTyconR
+            methArgTypes = methArgTypesR
+            methRetType  = methRetTypeR
+            methName     = methName
+            numGenericArgs=numGenericArgs }
     | _ ->
 
         QP.MethodBaseData.ModuleDefn
