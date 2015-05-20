@@ -173,31 +173,28 @@ module internal ExtensionTyping =
         discoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, dialog)
 #endif
         let providerSpecs = 
-            if true then 
-                try
-                    let designTimeAssemblyName = 
-                        try
-                            Some (AssemblyName designTimeAssemblyNameString)
-                        with :? ArgumentException ->
-                            errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runTimeAssemblyFileName,designTimeAssemblyNameString),m))
-                            None
+            try
+                let designTimeAssemblyName = 
+                    try
+                        Some (AssemblyName designTimeAssemblyNameString)
+                    with :? ArgumentException ->
+                        errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runTimeAssemblyFileName,designTimeAssemblyNameString),m))
+                        None
 
-                    [ match designTimeAssemblyName,resolutionEnvironment.outputFile with
-                      | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
-                          ()
-                      | Some _, _ ->
-                          for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName,designTimeAssemblyNameString,m) do
-                            let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
-                            match box resolver with 
-                            | null -> ()
-                            | _ -> yield (resolver,ilScopeRefOfRuntimeAssembly)
-                      |   None, _ -> 
-                          () ]
+                [ match designTimeAssemblyName,resolutionEnvironment.outputFile with
+                  | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
+                      ()
+                  | Some _, _ ->
+                      for t in GetTypeProviderImplementationTypes (runTimeAssemblyFileName,designTimeAssemblyNameString,m) do
+                        let resolver = CreateTypeProvider (t, runTimeAssemblyFileName, resolutionEnvironment, isInvalidationSupported, isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m)
+                        match box resolver with 
+                        | null -> ()
+                        | _ -> yield (resolver,ilScopeRefOfRuntimeAssembly)
+                  |   None, _ -> 
+                      () ]
 
-                with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(NumberedError((e.Number,e.ContextualErrorMessage),m)) )                        
-                    []
-            else
+            with :? TypeProviderError as tpe ->
+                tpe.Iter(fun e -> errorR(NumberedError((e.Number,e.ContextualErrorMessage),m)) )                        
                 []
 
         let providers = Tainted<_>.CreateAll(providerSpecs)
