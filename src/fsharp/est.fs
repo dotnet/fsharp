@@ -152,10 +152,10 @@ module internal ExtensionTyping =
              systemRuntimeAssemblyVersion : System.Version,
              m:range) =         
 
-        let ok = 
+        let _ok = 
 #if TYPE_PROVIDER_SECURITY
             if false then 
-                true  // if not validating, then everything is ok
+                ()  // if not validating, then everything is ok
             else
                 // pick the PS dialog if available (if so, we are definitely being called from a 'Build' from the PS), else use the LS one if available
                 let dialog = match displayPSTypeProviderSecurityDialogBlockingUI with
@@ -175,12 +175,12 @@ module internal ExtensionTyping =
                         ) |> ignore
 
                 discoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, dialog)
-                true
+                ()
 #else
-            true
+            ()
 #endif
         let providerSpecs = 
-            if ok then 
+            if true then 
                 try
                     let designTimeAssemblyName = 
                         try
@@ -209,7 +209,7 @@ module internal ExtensionTyping =
 
         let providers = Tainted<_>.CreateAll(providerSpecs)
 
-        ok,providers
+        true,providers
 
     let unmarshal (t:Tainted<_>) = t.PUntaintNoFailure id
 
