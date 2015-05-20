@@ -142,7 +142,6 @@ module internal ExtensionTyping =
 
     let GetTypeProvidersOfAssembly
             (displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
-             validateTypeProviders:bool, 
              runTimeAssemblyFileName:string, 
              ilScopeRefOfRuntimeAssembly:ILScopeRef,
              designTimeAssemblyNameString:string, 
@@ -155,7 +154,7 @@ module internal ExtensionTyping =
 
         let ok = 
 #if TYPE_PROVIDER_SECURITY
-            if not validateTypeProviders then 
+            if false then 
                 true  // if not validating, then everything is ok
             else
                 // pick the PS dialog if available (if so, we are definitely being called from a 'Build' from the PS), else use the LS one if available
