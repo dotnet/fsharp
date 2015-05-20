@@ -141,7 +141,7 @@ module internal ExtensionTyping =
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
     let GetTypeProvidersOfAssembly
-            (displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
+            (_displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
              runTimeAssemblyFileName:string, 
              ilScopeRefOfRuntimeAssembly:ILScopeRef,
              designTimeAssemblyNameString:string, 
@@ -152,26 +152,6 @@ module internal ExtensionTyping =
              systemRuntimeAssemblyVersion : System.Version,
              m:range) =         
 
-#if TYPE_PROVIDER_SECURITY
-        // pick the PS dialog if available (if so, we are definitely being called from a 'Build' from the PS), else use the LS one if available
-        let dialog = match displayPSTypeProviderSecurityDialogBlockingUI with
-                     | None -> GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
-                     | _    -> displayPSTypeProviderSecurityDialogBlockingUI
-
-        let discoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =
-            // This assembly is unknown. If we're in VS, pop up the dialog
-            match popupDialogCallback with
-            | None -> ()
-            | Some callback -> 
-                // The callback had UI thread affinity.  But this code path runs as part of the VS background interactive checker, which must never block on the UI
-                // thread (or else it may deadlock, see bug 380608).  
-                System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
-                    // the callback will pop up the dialog
-                    callback(runTimeAssemblyFileName)
-                ) |> ignore
-
-        discoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, dialog)
-#endif
         let providerSpecs = 
             try
                 let designTimeAssemblyName = 
