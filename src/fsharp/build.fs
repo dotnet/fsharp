@@ -3853,7 +3853,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       yield ExtensionTyping.GetTypeProvidersOfAssembly(displayPSTypeProviderSecurityDialogBlockingUI, 
                                                                        fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, tcImports.SystemRuntimeContainsType, systemRuntimeAssemblyVersion, m) ]
-            let wasApproved = true
             let providers = providers |> List.concat
 
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
@@ -3871,7 +3870,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 
             match providers with
             | [] -> 
-                if wasApproved then
+                if true then
                     warning(Error(FSComp.SR.etHostingAssemblyFoundWithoutHosts(fileNameOfRuntimeAssembly,typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName),m)); 
             | _ -> 
 
