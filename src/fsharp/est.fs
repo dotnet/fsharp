@@ -199,7 +199,7 @@ module internal ExtensionTyping =
 
         let providers = Tainted<_>.CreateAll(providerSpecs)
 
-        true,providers
+        providers
 
     let unmarshal (t:Tainted<_>) = t.PUntaintNoFailure id
 

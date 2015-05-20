@@ -58,7 +58,7 @@ module internal ExtensionTyping =
           * isInteractive: bool
           * systemRuntimeContainsType : (string -> bool)
           * systemRuntimeAssemblyVersion : System.Version
-          * range -> bool * Tainted<ITypeProvider> list
+          * range -> Tainted<ITypeProvider> list
 
     /// Given an extension type resolver, supply a human-readable name suitable for error messages.
     val DisplayNameOfTypeProvider : Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> * range -> string

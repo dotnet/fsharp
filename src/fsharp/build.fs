@@ -3853,8 +3853,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       yield ExtensionTyping.GetTypeProvidersOfAssembly(displayPSTypeProviderSecurityDialogBlockingUI, 
                                                                        fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, tcImports.SystemRuntimeContainsType, systemRuntimeAssemblyVersion, m) ]
-            let wasApproved = providers |> List.forall (fun (ok,_) -> ok)
-            let providers = providers |> List.map snd |> List.concat
+            let wasApproved = true
+            let providers = providers |> List.concat
 
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.
