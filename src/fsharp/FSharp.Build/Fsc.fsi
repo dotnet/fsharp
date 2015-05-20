@@ -46,7 +46,6 @@ type Fsc = class
              member TreatWarningsAsErrors : bool with get,set
              member Utf8Output : bool with get,set
              member VisualStudioStyleErrors : bool with get,set
-             member ValidateTypeProviders : bool with get,set
              member LCID : string with get,set
              member WarningLevel : string with get,set
              member WarningsAsErrors : string with get,set

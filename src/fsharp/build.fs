@@ -1941,7 +1941,6 @@ type TcConfigBuilder =
 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
-      mutable validateTypeProviders: bool
       mutable utf8output : bool
       mutable flatErrors: bool
 
@@ -2101,11 +2100,6 @@ type TcConfigBuilder =
           linkResources = []
           showFullPaths =false
           errorStyle = ErrorStyle.DefaultErrors
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
-          validateTypeProviders = true
-#else
-          validateTypeProviders = false
-#endif
 
           utf8output = false
           flatErrors = false
@@ -2568,7 +2562,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.linkResources  = data.linkResources
     member x.showFullPaths  = data.showFullPaths
     member x.errorStyle  = data.errorStyle
-    member x.validateTypeProviders  = data.validateTypeProviders
     member x.utf8output  = data.utf8output
     member x.flatErrors = data.flatErrors
     member x.maxErrors  = data.maxErrors

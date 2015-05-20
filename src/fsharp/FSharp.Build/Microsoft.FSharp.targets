@@ -180,7 +180,6 @@ this file.
               ToolPath="$(FscToolPath)"
               TreatWarningsAsErrors="$(TreatWarningsAsErrors)"
               Utf8Output="$(Utf8Output)"
-              ValidateTypeProviders="$(ValidateTypeProviders)"
               VersionFile="$(VersionFile)"
               VisualStudioStyleErrors="$(VisualStudioStyleErrors)"
               WarningLevel="$(WarningLevel)"

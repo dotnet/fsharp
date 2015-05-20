@@ -289,7 +289,6 @@ type TcConfigBuilder =
       mutable linkResources : string list
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
-      mutable validateTypeProviders : bool
       mutable utf8output : bool
       mutable flatErrors : bool
       mutable maxErrors : int
@@ -434,7 +433,6 @@ type TcConfig =
     member linkResources : string list
     member showFullPaths : bool
     member errorStyle : ErrorStyle
-    member validateTypeProviders : bool
     member utf8output : bool
     member flatErrors : bool
 
