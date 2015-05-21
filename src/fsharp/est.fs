@@ -141,8 +141,7 @@ module internal ExtensionTyping =
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
     let GetTypeProvidersOfAssembly
-            (_displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
-             runTimeAssemblyFileName:string, 
+            (runTimeAssemblyFileName:string, 
              ilScopeRefOfRuntimeAssembly:ILScopeRef,
              designTimeAssemblyNameString:string, 
              resolutionEnvironment:ResolutionEnvironment, 

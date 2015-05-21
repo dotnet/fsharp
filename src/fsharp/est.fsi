@@ -49,8 +49,7 @@ module internal ExtensionTyping =
 
     /// Find and instantiate the set of ITypeProvider components for the given assembly reference
     val GetTypeProvidersOfAssembly : 
-          displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option 
-          * runtimeAssemblyFilename: string 
+          runtimeAssemblyFilename: string 
           * ilScopeRefOfRuntimeAssembly:ILScopeRef
           * designerAssemblyName: string 
           * ResolutionEnvironment 
