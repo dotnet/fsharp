@@ -4166,14 +4166,14 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     tcImports.PrepareToImportReferencedIlDll m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
             dllinfo,phase2
 
-    member tcImports.RegisterAndImportReferencedAssemblies (displayPSTypeProviderSecurityDialogBlockingUI, nms:AssemblyResolution list) =
+    member tcImports.RegisterAndImportReferencedAssemblies (nms:AssemblyResolution list) =
         CheckDisposed()
 
         let dllinfos,phase2s = 
            nms |> List.map 
                     (fun nm ->
                         try
-                            tcImports.RegisterAndPrepareToImportReferencedDll displayPSTypeProviderSecurityDialogBlockingUI nm
+                            tcImports.RegisterAndPrepareToImportReferencedDll None nm
                         with e ->
                             error(Error(FSComp.SR.buildProblemReadingAssembly(nm.fusionName, e.Message),nm.originalReference.Range)))
                |> List.unzip
@@ -4182,7 +4182,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
       
     member tcImports.DoRegisterAndImportReferencedAssemblies(nms) = 
         CheckDisposed()
-        tcImports.RegisterAndImportReferencedAssemblies(None,nms) |> ignore
+        tcImports.RegisterAndImportReferencedAssemblies(nms) |> ignore
 
     member tcImports.ImplicitLoadIfAllowed (m, assemblyName, lookupOnly) = 
         CheckDisposed()
@@ -4291,7 +4291,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     | None -> tcConfig.ResolveLibWithDirectories loadFailureAction r
             match resolution with
             | Some resolution ->
-                match frameworkTcImports.RegisterAndImportReferencedAssemblies(None, [resolution]) with
+                match frameworkTcImports.RegisterAndImportReferencedAssemblies([resolution]) with
                 | (_, [ResolvedImportedAssembly(ccu)]) -> Some ccu
                 | _        -> 
                     match loadFailureAction with
@@ -4328,7 +4328,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     match resolvedAssemblyRef with 
                     | Some coreLibraryResolution -> 
                         //printfn "coreLibraryResolution = '%s'" coreLibraryResolution.resolvedPath
-                        match frameworkTcImports.RegisterAndImportReferencedAssemblies(None, [coreLibraryResolution]) with
+                        match frameworkTcImports.RegisterAndImportReferencedAssemblies([coreLibraryResolution]) with
                         | (_, [ResolvedImportedAssembly(fslibCcuInfo) ]) -> fslibCcuInfo
                         | _ -> 
                             error(InternalError("BuildFrameworkTcImports: no successful import of "+coreLibraryResolution.resolvedPath,coreLibraryResolution.originalReference.Range))
@@ -4436,7 +4436,7 @@ let RequireDLL (tcImports:TcImports) tcEnv m file =
         | ResolvedImportedAssembly(ccuinfo) -> ccuinfo
         | UnresolvedImportedAssembly(assemblyName) -> error(Error(FSComp.SR.buildCouldNotResolveAssemblyRequiredByFile(assemblyName,file),m))
     let resolutions = CommitOperationResult(tcImports.TryResolveAssemblyReference(AssemblyReference(m,file),ResolveAssemblyReferenceMode.ReportErrors))
-    let dllinfos,ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(None, resolutions)
+    let dllinfos,ccuinfos = tcImports.RegisterAndImportReferencedAssemblies(resolutions)
     let ccuinfos = ccuinfos |> List.map RequireResolved
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
