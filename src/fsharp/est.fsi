@@ -13,14 +13,6 @@ module internal ExtensionTyping =
     open Microsoft.FSharp.Compiler.AbstractIL.IL
     open Microsoft.FSharp.Compiler.Range
 
-#if TYPE_PROVIDER_SECURITY
-    // These global variables are used by the VS language service for the type provider security dialog
-    module internal GlobalsTheLanguageServiceCanPoke =
-        //+++ GLOBAL STATE
-        val mutable displayLSTypeProviderSecurityDialogBlockingUI : (string->unit) option
-
-#endif
-
     type TypeProviderDesignation = TypeProviderDesignation of string
 
     /// Raised when a type provider has thrown an exception.    

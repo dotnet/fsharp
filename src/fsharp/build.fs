@@ -3850,7 +3850,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 #if TYPE_PROVIDER_SECURITY
             for _ in providerAssemblies do
                 // pick the PS dialog if available (if so, we are definitely being called from a 'Build' from the PS), else use the LS one if available
-                let _dialog = GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
+                let _dialog = None
                 ()
 #endif
 

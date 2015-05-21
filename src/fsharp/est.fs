@@ -17,14 +17,6 @@ module internal ExtensionTyping =
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
     open Internal.Utilities.FileSystem
 
-#if TYPE_PROVIDER_SECURITY
-    module internal GlobalsTheLanguageServiceCanPoke =
-        //+++ GLOBAL STATE
-        // This is the LS dialog, it is only poked once, when the LS is first constructed.  It lives here so the compiler can invoke it at the right moment in time.
-        let mutable displayLSTypeProviderSecurityDialogBlockingUI = None : (string -> unit) option
-
-#endif
-
     type TypeProviderDesignation = TypeProviderDesignation of string
 
     exception ProvidedTypeResolution of range * System.Exception 

@@ -2043,7 +2043,6 @@ type FSharpPackage() as self =
             let language = new FSharpLanguageService()
             language.SetSite(self)
             language.Initialize()
-            Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- None
             self.RegisterForIdleTime()
             box language
         | _ -> null
