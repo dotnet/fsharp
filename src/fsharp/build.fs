@@ -3849,23 +3849,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
 #if TYPE_PROVIDER_SECURITY
             for _ in providerAssemblies do
-                let runTimeAssemblyFileName = fileNameOfRuntimeAssembly
                 // pick the PS dialog if available (if so, we are definitely being called from a 'Build' from the PS), else use the LS one if available
-                let dialog = GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
-                
-                let discoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =
-                    // This assembly is unknown. If we're in VS, pop up the dialog
-                    match popupDialogCallback with
-                    | None -> ()
-                    | Some callback -> 
-                        // The callback had UI thread affinity.  But this code path runs as part of the VS background interactive checker, which must never block on the UI
-                        // thread (or else it may deadlock, see bug 380608).  
-                        System.Threading.ThreadPool.QueueUserWorkItem(fun _ ->
-                            // the callback will pop up the dialog
-                            callback(runTimeAssemblyFileName)
-                        ) |> ignore
-                
-                discoverIfIsApprovedAndPopupDialogIfUnknown(runTimeAssemblyFileName, dialog)
+                let _dialog = GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
+                ()
 #endif
 
             let providers = 
