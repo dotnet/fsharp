@@ -500,9 +500,6 @@
   <data name="AddReferenceDialogTitle" xml:space="preserve">
     <value>Add Reference</value>
   </data>
-  <data name="6004" xml:space="preserve">
-    <value>Type Providers</value>
-  </data>
   <data name="6005" xml:space="preserve">
     <value>Change path and command line arguments passed to the F# Interactive</value>
   </data>

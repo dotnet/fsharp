@@ -90,21 +90,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             let getConfigExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,config,_) -> config
             let getPriorityExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,_,priority) -> priority
 
-////////
-
-    [<ComVisible(true)>]
-    [<CLSCompliant(false)>]
-    [<Guid("4B7954C1-7D80-4FB6-8C18-2567DF5735F9")>]
-    type TypeProviderToolsOptionsPage() =
-        inherit DialogPage()
-        let pageActivated = new Event<_>()
-        let host = new System.Windows.Forms.Integration.ElementHost()
-        override this.OnActivate(e) = base.OnActivate(e); pageActivated.Trigger()
-        [<Browsable(false)>]
-        [<DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>]
-        override this.Window with get() : System.Windows.Forms.IWin32Window = upcast host
-
-
 //////////////////////
 
     // An IProjectSite object with hot-swappable inner implementation
@@ -210,10 +195,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
     <Registry Name="Package" Value="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}" Type="string" />
   </Registry>
 *)
-        [<ProvideOptionPage(typeof<TypeProviderToolsOptionsPage>,
-                            "F# Tools", "F# Type Provider Approvals",   // category/sub-category on Tools>Options...
-                            6000s,      6004s,           // resource id for localisation of the above 
-                            false)>]                     // true = supports automation
         [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
                             (* NOTE: search for FSHARP-TOOLS-INTERACTIVE-LINK *)                            
                             (* NOTE: the cat/sub-cat names appear in an error message in sessions.ml, fix up any changes there *)
