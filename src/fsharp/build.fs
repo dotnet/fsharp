@@ -4180,9 +4180,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let ccuinfos = (List.collect (fun phase2 -> phase2()) phase2s) 
         dllinfos,ccuinfos
       
-    member tcImports.DoRegisterAndImportReferencedAssemblies(displayPSTypeProviderSecurityDialogBlockingUI,nms) = 
+    member tcImports.DoRegisterAndImportReferencedAssemblies(nms) = 
         CheckDisposed()
-        tcImports.RegisterAndImportReferencedAssemblies(displayPSTypeProviderSecurityDialogBlockingUI,nms) |> ignore
+        tcImports.RegisterAndImportReferencedAssemblies(None,nms) |> ignore
 
     member tcImports.ImplicitLoadIfAllowed (m, assemblyName, lookupOnly) = 
         CheckDisposed()
@@ -4195,7 +4195,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 match foundFile with 
                 | OkResult (warns, res) -> 
                      ReportWarnings warns
-                     tcImports.DoRegisterAndImportReferencedAssemblies(None,res)
+                     tcImports.DoRegisterAndImportReferencedAssemblies(res)
                      true
                 | ErrorResult (_warns, _err) -> 
                     // Throw away warnings and errors - this is speculative loading
@@ -4305,7 +4305,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let sysCcu = ccuInitializer.EndLoadingSystemRuntime(state, resolveAssembly)
 
         // Load the rest of the framework DLLs all at once (they may be mutually recursive)
-        frameworkTcImports.DoRegisterAndImportReferencedAssemblies (None, tcResolutions.GetAssemblyResolutions())
+        frameworkTcImports.DoRegisterAndImportReferencedAssemblies (tcResolutions.GetAssemblyResolutions())
 
         let fslibCcu = 
             if tcConfig.compilingFslib then 
@@ -4399,7 +4399,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let tcResolutions = TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig,nonFrameworkReferences,knownUnresolved)
         let references = tcResolutions.GetAssemblyResolutions()
         let tcImports = new TcImports(tcConfigP,tcResolutions,Some baseTcImports, Some tcGlobals.ilg)
-        tcImports.DoRegisterAndImportReferencedAssemblies(None, references)
+        tcImports.DoRegisterAndImportReferencedAssemblies(references)
         tcImports.ReportUnresolvedAssemblyReferences(knownUnresolved)
         tcImports
       
