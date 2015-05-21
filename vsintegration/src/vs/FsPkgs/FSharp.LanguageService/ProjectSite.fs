@@ -37,8 +37,6 @@ type internal IProjectSite =
     abstract TargetFrameworkMoniker : string
     /// timestamp the site was last loaded
     abstract LoadTime : System.DateTime 
-    /// 
-    abstract AssemblyReferenceIsTypeProvider : string -> unit
 
   [<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("ad98f020-bad0-0000-0000-abc037459871")>]
  type internal IProvideProjectSite =

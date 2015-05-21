@@ -51,7 +51,6 @@ module internal ProjectSiteOptions =
             override this.IsTypeResolutionValid = not(checkOptions.IsIncompleteTypeCheckEnvironment)
             override this.TargetFrameworkMoniker = ""
             override this.LoadTime = checkOptions.LoadTime
-            override this.AssemblyReferenceIsTypeProvider(_) = ()
           interface IHaveCheckOptions with
             override this.OriginalCheckOptions() = checkOptions
         } 
@@ -81,7 +80,6 @@ module OrphanFileProjectSite =
             override this.IsTypeResolutionValid = not enableStandaloneFileIntellisense
             override this.TargetFrameworkMoniker = ""
             override this.LoadTime = new System.DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
-            override this.AssemblyReferenceIsTypeProvider(_) = ()
         }
     
 /// Information about projects, open files and other active artifacts in visual studio
