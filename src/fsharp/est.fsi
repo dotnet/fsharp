@@ -18,7 +18,6 @@ module internal ExtensionTyping =
     module internal GlobalsTheLanguageServiceCanPoke =
         //+++ GLOBAL STATE
         val mutable displayLSTypeProviderSecurityDialogBlockingUI : (string->unit) option
-        val mutable theMostRecentFileNameWeChecked : string option
 
 #endif
 

@@ -22,9 +22,6 @@ module internal ExtensionTyping =
         //+++ GLOBAL STATE
         // This is the LS dialog, it is only poked once, when the LS is first constructed.  It lives here so the compiler can invoke it at the right moment in time.
         let mutable displayLSTypeProviderSecurityDialogBlockingUI = None : (string -> unit) option
-        // This is poked by the LS (service.fs:UntypedParseImpl) and read later when the LS dialog pops up (code in servicem.fs:CreateService), called via displayLSTypeProviderSecurityDialogBlockingUI.
-        // It would be complicated to plumb this info through end-to-end, so we use a global.  Since the LS only checks one file at a time, it is safe from race conditions.
-        let mutable theMostRecentFileNameWeChecked = None : string option
 
 #endif
 

@@ -2044,10 +2044,7 @@ type FSharpPackage() as self =
             language.SetSite(self)
             language.Initialize()
             Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some(fun (typeProviderRunTimeAssemblyFileName) ->
-                let filename = 
-                    match Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked with
-                    | None -> assert false; ""  // this should never happen
-                    | Some fn -> fn
+                let filename = ""
                 UIThread.RunSync(fun() ->
                     // need to access the RDT on the UI thread
                     match language.LanguageServiceState.Artifacts.TryFindOwningProject((ServiceProvider language.GetService).Rdt, filename) with
