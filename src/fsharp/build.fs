@@ -3851,9 +3851,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             for _ in providerAssemblies do
                 let runTimeAssemblyFileName = fileNameOfRuntimeAssembly
                 // pick the PS dialog if available (if so, we are definitely being called from a 'Build' from the PS), else use the LS one if available
-                let dialog = match None with
-                             | None -> GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
-                             | _    -> None
+                let dialog = GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI
                 
                 let discoverIfIsApprovedAndPopupDialogIfUnknown (runTimeAssemblyFileName : string, popupDialogCallback : (string->unit) option) : unit =
                     // This assembly is unknown. If we're in VS, pop up the dialog
