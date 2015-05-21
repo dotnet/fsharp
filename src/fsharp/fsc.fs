@@ -302,7 +302,7 @@ type DefaultLoggerProvider() =
 // Rather than have the PS re-code that logic, it re-uses the existing code in the very front end of the compiler that parses the command-line and imports the referenced assemblies.
 // This code used to be in fsc.exe.  The PS only references FSharp.LanguageService.Compiler, so this code moved from fsc.exe to FS.C.S.dll so that the PS can re-use it.
 // A great deal of the logic of this function is repeated in fsi.fs, so maybe should refactor fsi.fs to call into this as well.
-let getTcImportsFromCommandLine(displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option,
+let getTcImportsFromCommandLine(typeProviderAssemblyFound : (string->unit) option,
                                 argv : string[], 
                                 defaultFSharpBinariesDir : string, 
                                 directoryBuildingFrom : string, 
@@ -491,7 +491,7 @@ let getTcImportsFromCommandLine(displayPSTypeProviderSecurityDialogBlockingUI : 
             if not tcConfig.continueAfterParseFailure then 
                 abortOnError(errorLogger, tcConfig, exiter)
 
-            match displayPSTypeProviderSecurityDialogBlockingUI with
+            match typeProviderAssemblyFound with
             | None -> ()
             | Some dialog ->
                 tcImports.GetImportedAssemblies()
@@ -518,7 +518,7 @@ let getTcImportsFromCommandLine(displayPSTypeProviderSecurityDialogBlockingUI : 
     tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger
 
 // only called from the project system, as a way to run the front end of the compiler far enough to determine if there are type provider assemblies
-let runFromCommandLineToImportingAssemblies(displayPSTypeProviderSecurityDialogBlockingUI : (string -> unit),
+let runFromCommandLineToImportingAssemblies(typeProviderAssemblyFound : (string -> unit),
                                             argv : string[], 
                                             defaultFSharpBinariesDir : string, 
                                             directoryBuildingFrom : string, 
@@ -527,7 +527,7 @@ let runFromCommandLineToImportingAssemblies(displayPSTypeProviderSecurityDialogB
     use d = new DelayedDisposables() // ensure that any resources that can be allocated in getTcImportsFromCommandLine will be correctly disposed
 
     let tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger = 
-            getTcImportsFromCommandLine(Some displayPSTypeProviderSecurityDialogBlockingUI, argv, defaultFSharpBinariesDir, directoryBuildingFrom, None, (fun _ -> ()), 
+            getTcImportsFromCommandLine(Some typeProviderAssemblyFound, argv, defaultFSharpBinariesDir, directoryBuildingFrom, None, (fun _ -> ()), 
                     (fun tcConfigB -> 
                         // (kind of abusing this lambda for an unintended purpose, but this is a convenient and correctly-timed place to poke the tcConfigB)
                         tcConfigB.importAllReferencesOnly <- true // stop after importing assemblies (do not typecheck, we don't need typechecking)
@@ -543,7 +543,7 @@ let runFromCommandLineToImportingAssemblies(displayPSTypeProviderSecurityDialogB
                     DefaultLoggerProvider(), // this function always use default set of loggers
                     d)
 
-    // we don't care about the result, we just called 'getTcImportsFromCommandLine' to have the effect of invoke displayPSTypeProviderSecurityDialogBlockingUI 
+    // we don't care about the result, we just called 'getTcImportsFromCommandLine' to have the effect of invoke typeProviderAssemblyFound 
     ignore(tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger)
 
 
