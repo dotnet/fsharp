@@ -103,17 +103,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<Browsable(false)>]
         [<DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>]
         override this.Window with get() : System.Windows.Forms.IWin32Window = upcast host
-        static member FindVisualChildByName<'T when 'T :> System.Windows.DependencyObject and 'T : null>(parent : System.Windows.DependencyObject, name : string) : 'T =
-            let mutable result = null
-            for i in 0 .. System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent)-1 do
-                if obj.ReferenceEquals(result,null) then
-                    let child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i)
-                    let controlName = child.GetValue(System.Windows.Controls.Control.NameProperty) :?> string
-                    if controlName = name then
-                        result <- child :?> 'T
-                    else
-                        result <- TypeProviderToolsOptionsPage.FindVisualChildByName<'T>(child, name)
-            result
 
 
 //////////////////////
