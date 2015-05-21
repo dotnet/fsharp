@@ -2043,17 +2043,7 @@ type FSharpPackage() as self =
             let language = new FSharpLanguageService()
             language.SetSite(self)
             language.Initialize()
-            Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some(fun (typeProviderRunTimeAssemblyFileName) ->
-                let filename = ""
-                UIThread.RunSync(fun() ->
-                    // need to access the RDT on the UI thread
-                    match language.LanguageServiceState.Artifacts.TryFindOwningProject((ServiceProvider language.GetService).Rdt, filename) with
-                    | Some owningProjectSite ->
-                        owningProjectSite.AssemblyReferenceIsTypeProvider typeProviderRunTimeAssemblyFileName
-                    | None -> 
-                        () 
-                    )
-                )
+            Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- None
             self.RegisterForIdleTime()
             box language
         | _ -> null
