@@ -8,7 +8,7 @@ open Microsoft.FSharp.Compiler.Env
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TypeChecker
 
-/// the F# project system calls this to pop up type provider security dialog if needed
+/// the F# project system calls this to determine if there are type provider assemblies
 val internal runFromCommandLineToImportingAssemblies : (string -> unit) * string[] * string * string * Exiter -> unit
 
 #if NO_COMPILER_BACKEND

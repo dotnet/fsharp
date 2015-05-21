@@ -317,7 +317,11 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 #if DESIGNER                
                 this.RegisterEditorFactory(new EditorFactory(this))
 #endif
-                this.GetService(typeof<FSharpLanguageService>) |> ignore  // ensure the LS has been initialized, as we'll need TypeProviderSecurityGlobals global state for e.g. Tools\Options
+                // was used to ensure the LS has been initialized, because the TypeProviderSecurityGlobals 
+                // global state was needed for e.g. Tools\Options
+                //TODO the TypeProviderSecurityGlobals does not exists anymore, remove the initialization?
+                this.GetService(typeof<FSharpLanguageService>) |> ignore  
+
                 // FSI-LINKAGE-POINT: sited init
                 let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
