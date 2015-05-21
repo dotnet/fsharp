@@ -1534,21 +1534,19 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     if not isInCommandLineMode // you can use devenv to build from the command-line, and if command-line mode, then we ought not pop up any UI
                        then
                             try
-                                let typeProviders = ResizeArray<_>()
-
                                 let argv = Array.append flags sources  // flags + sources = entire command line
                                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
-
-                                let isTypeProvider assemblyPath =
-                                    let samePath path =
-                                        0 = (String.Compare(path, assemblyPath, StringComparison.OrdinalIgnoreCase))
-                                        
-                                    typeProviders |> Seq.exists samePath
                                 
+                                let typeProviders = ResizeArray<_>()
+
                                 let updateTypeProviderAssembliesFlag () =
+                                    let isTypeProvider assemblyPath =
+                                        let samePath path =
+                                            0 = (String.Compare(path, assemblyPath, StringComparison.OrdinalIgnoreCase))
+                                        typeProviders |> Seq.exists samePath
+
                                     let assemblies =
-                                        this.GetReferenceContainer().EnumReferences()
-                                        |> seq
+                                        this.GetReferenceContainer().EnumReferences() |> seq
                                         |> Seq.choose (function :? AssemblyReferenceNode as x -> Some x | _ -> None)
                                         |> Seq.map (fun assemblyNode -> assemblyNode, isTypeProvider assemblyNode.Url)
 
