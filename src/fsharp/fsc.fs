@@ -57,9 +57,8 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// This code has logic for a prefix of the compile that is also used by the project system to do the front-end
-// logic that starts at command-line arguments and gets as far as importing all references (used for deciding
-// to pop up the type provider security dialog).
+// This code has logic used by the project system to do the front-end logic that starts at command-line arguments 
+// and gets as far as importing all references (used for deciding the icon, normal or typeProvider, of the assembly).
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //----------------------------------------------------------------------------
@@ -299,7 +298,7 @@ type DefaultLoggerProvider() =
     inherit ErrorLoggerProvider()
     override this.CreateErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter) = ConsoleErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter)
 
-// The project system needs to be able to somehow crack open assemblies to look for type providers in order to pop up the security dialog when necessary when a user does 'Build'.
+// The project system needs to be able to somehow crack open assemblies to look for type providers in order to update the assembly reference icon when a user does 'Build'.
 // Rather than have the PS re-code that logic, it re-uses the existing code in the very front end of the compiler that parses the command-line and imports the referenced assemblies.
 // This code used to be in fsc.exe.  The PS only references FSharp.LanguageService.Compiler, so this code moved from fsc.exe to FS.C.S.dll so that the PS can re-use it.
 // A great deal of the logic of this function is repeated in fsi.fs, so maybe should refactor fsi.fs to call into this as well.
@@ -518,7 +517,7 @@ let getTcImportsFromCommandLine(displayPSTypeProviderSecurityDialogBlockingUI : 
                     
     tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger
 
-// only called from the project system, as a way to run the front end of the compiler far enough to determine if we need to pop up the dialog (and do so if necessary)
+// only called from the project system, as a way to run the front end of the compiler far enough to determine if there are type provider assemblies
 let runFromCommandLineToImportingAssemblies(displayPSTypeProviderSecurityDialogBlockingUI : (string -> unit),
                                             argv : string[], 
                                             defaultFSharpBinariesDir : string, 
@@ -544,7 +543,7 @@ let runFromCommandLineToImportingAssemblies(displayPSTypeProviderSecurityDialogB
                     DefaultLoggerProvider(), // this function always use default set of loggers
                     d)
 
-    // we don't care about the result, we just called 'getTcImportsFromCommandLine' to have the effect of popping up the dialog if the TP is unknown
+    // we don't care about the result, we just called 'getTcImportsFromCommandLine' to have the effect of invoke displayPSTypeProviderSecurityDialogBlockingUI 
     ignore(tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger)
 
 
