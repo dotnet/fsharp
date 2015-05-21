@@ -483,7 +483,7 @@ let getTcImportsFromCommandLine(displayPSTypeProviderSecurityDialogBlockingUI : 
 
             ReportTime tcConfig "Import non-system references"
             let tcGlobals,tcImports =  
-                let tcImports = TcImports.BuildNonFrameworkTcImports(displayPSTypeProviderSecurityDialogBlockingUI,tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
+                let tcImports = TcImports.BuildNonFrameworkTcImports(None,tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
                 tcGlobals,tcImports
 
             // register tcImports to be disposed in future
@@ -491,6 +491,13 @@ let getTcImportsFromCommandLine(displayPSTypeProviderSecurityDialogBlockingUI : 
 
             if not tcConfig.continueAfterParseFailure then 
                 abortOnError(errorLogger, tcConfig, exiter)
+
+            match displayPSTypeProviderSecurityDialogBlockingUI with
+            | None -> ()
+            | Some dialog ->
+                tcImports.GetImportedAssemblies()
+                |> List.filter (fun ia -> not (ia.TypeProviders |> List.isEmpty))
+                |> List.iter (fun ia -> ia.FSharpViewOfMetadata.FileName |> Option.iter dialog)
 
             if tcConfig.importAllReferencesOnly then exiter.Exit 0 
 
