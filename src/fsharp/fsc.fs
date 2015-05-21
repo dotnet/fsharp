@@ -491,12 +491,16 @@ let getTcImportsFromCommandLine(typeProviderAssemblyFound : (string->unit) optio
             if not tcConfig.continueAfterParseFailure then 
                 abortOnError(errorLogger, tcConfig, exiter)
 
+#if EXTENSIONTYPING
             match typeProviderAssemblyFound with
             | None -> ()
             | Some dialog ->
                 tcImports.GetImportedAssemblies()
                 |> List.filter (fun ia -> not (ia.TypeProviders |> List.isEmpty))
                 |> List.iter (fun ia -> ia.FSharpViewOfMetadata.FileName |> Option.iter dialog)
+#else
+            ignore typeProviderAssemblyFound
+#endif
 
             if tcConfig.importAllReferencesOnly then exiter.Exit 0 
 
