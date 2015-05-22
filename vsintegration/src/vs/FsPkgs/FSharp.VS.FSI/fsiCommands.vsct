@@ -223,6 +223,7 @@
          Ideally, we would bind it for F# only editor.
     -->
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
+    <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" editor="GUID_TextEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
 
     <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
     <KeyBinding guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow"    editor="guidVSStd97" key1="F" mod1="Control Alt"  />
@@ -294,6 +295,7 @@
 
     <GuidSymbol name="guidVSStd11" value="{D63DB1F0-404E-4B21-9648-CA8D99245EC3}" >
       <IDSymbol name="cmdidExecuteSelectionInInteractive" value ="0x018"/>
+      <IDSymbol name="cmdidExecuteLineInInteractive" value ="0x019"/>
       <IDSymbol name="cmdidInteractiveSessionInterrupt" value ="0x01A"/>
       <IDSymbol name="cmdidInteractiveSessionRestart" value ="0x01B"/>
     </GuidSymbol>
