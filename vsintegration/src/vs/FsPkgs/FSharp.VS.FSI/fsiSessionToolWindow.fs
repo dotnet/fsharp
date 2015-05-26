@@ -74,16 +74,15 @@ module internal Locals =
 open Util
 open Locals
 
-// consumed by C#, so enum types used instead of unions
 type internal FsiDebuggerState =
-    | NotRunning = 0
-    | AttachedToFSI = 1
-    | AttachedNotToFSI = 2
+    | NotRunning
+    | AttachedToFSI
+    | AttachedNotToFSI
 
 type internal FsiEditorSendAction =
-    | ExecuteSelection = 0
-    | ExecuteLine = 1
-    | DebugSelection = 2
+    | ExecuteSelection
+    | ExecuteLine
+    | DebugSelection
 
 [<Guid("dee22b65-9761-4a26-8fb2-759b971d6dfc")>] //REVIEW: double check fresh guid! IIRC it is.
 type internal FsiToolWindow() as this = 
@@ -568,7 +567,13 @@ type internal FsiToolWindow() as this =
 
         executeTextNoHistory interaction
 
-    let sendSelectionToFSI selectLine dbgBreak =
+    let sendSelectionToFSI action =
+        let dbgBreak,selectLine = 
+            match action with
+            | ExecuteSelection -> false, false
+            | ExecuteLine -> false, true
+            | DebugSelection -> true, false
+
         try
             let dte = provider.GetService(typeof<DTE>) :?> DTE        
             let activeD = dte.ActiveDocument            
@@ -591,15 +596,15 @@ type internal FsiToolWindow() as this =
                  // Example errors include no active document.
 
     let onMLSendSelection (sender:obj) (e:EventArgs) =       
-        sendSelectionToFSI false false
+        sendSelectionToFSI ExecuteSelection
 
     let onMLSendLine (sender:obj) (e:EventArgs) =       
-        sendSelectionToFSI true false
+        sendSelectionToFSI ExecuteLine
 
     let onMLDebugSelection (sender:obj) (e:EventArgs) = 
         if checkDebuggability () then
             attachDebugger ()
-        sendSelectionToFSI false true
+        sendSelectionToFSI DebugSelection
 
     /// Handle UP and DOWN. Cycle history.    
     let onHistory (sender:obj) (e:EventArgs) =

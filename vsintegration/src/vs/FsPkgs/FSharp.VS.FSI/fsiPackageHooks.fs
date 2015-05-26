@@ -75,10 +75,9 @@ module internal Hooks =
     let OnMLSend (this:Package) (action : FsiEditorSendAction) (sender:obj) (e:EventArgs) =
         withFSIToolWindow this (fun window ->
             match action with
-            | FsiEditorSendAction.ExecuteSelection -> window.MLSendSelection(sender, e)
-            | FsiEditorSendAction.ExecuteLine -> window.MLSendLine(sender, e)
-            | FsiEditorSendAction.DebugSelection -> window.MLDebugSelection(sender, e)
-            | _ -> ignore () // appease 'missing match case' warning
+            | ExecuteSelection -> window.MLSendSelection(sender, e)
+            | ExecuteLine -> window.MLSendLine(sender, e)
+            | DebugSelection -> window.MLDebugSelection(sender, e)
         )
 
     let AddReferencesToFSI (this:Package) references =
