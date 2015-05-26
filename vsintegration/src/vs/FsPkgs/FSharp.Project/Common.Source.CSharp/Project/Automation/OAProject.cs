@@ -24,9 +24,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     {
         #region fields
         private ProjectNode project;
-#if UNUSED_NESTED_PROJECTS
-        Automation.OASolutionFolder<ProjectContainerNode> solutionFolder;
-#endif
         EnvDTE.ConfigurationManager configurationManager;
         #endregion
 
@@ -41,13 +38,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         internal OAProject(ProjectNode project)
         {
             this.project = project;
-
-#if UNUSED_NESTED_PROJECTS
-            if (project is ProjectContainerNode)
-            {
-                this.solutionFolder = new Automation.OASolutionFolder<ProjectContainerNode>((ProjectContainerNode)project);
-            }
-#endif
         }
         #endregion
 

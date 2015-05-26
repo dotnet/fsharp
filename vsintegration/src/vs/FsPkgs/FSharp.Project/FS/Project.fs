@@ -1262,16 +1262,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
                 (newNode :> LinkedFileNode)
 
-#if UNUSED_DEPENDENT_FILES
-            override x.CreateDependentFileNode(item:ProjectElement ) =
-                let node = base.CreateDependentFileNode(item)
-                if (null <> node) then 
-                    let includ = item.GetMetadata(ProjectFileConstants.Include)
-                    if (FSharpProjectNode.IsCompilingFSharpFile(includ)) then 
-                        node.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
-                node
-#endif
-
             /// Creates the format list for the open file dialog
             /// <param name="formatlist">The formatlist to return</param>
             override x.GetFormatList(formatlist:byref<string> ) =
@@ -2458,11 +2448,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
       [<CLSCompliant(false)>]
       [<Guid("9D8E1EFB-1F18-4E2F-8C67-77328A274718")>]
       public FSharpFileNodeProperties internal (node:HierarchyNode) = 
-#if SINGLE_FILE_GENERATOR
-        inherit SingleFileGeneratorNodeProperties(node)
-#else
         inherit FileNodeProperties(node)
-#endif
 
         [<Browsable(false)>]
         member x.Url = "file:///" + x.Node.Url
@@ -2593,10 +2579,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
             override x.CreatePropertiesObject() =
                 let properties = new FSharpFileNodeProperties(x)
-#if SINGLE_FILE_GENERATOR
-                properties.OnCustomToolChanged.AddHandler(EventHandler<_>(fun sender args -> x.OnCustomToolChanged(sender,args)))
-                properties.OnCustomToolNameSpaceChanged.AddHandler(EventHandler<_>(fun sender args -> x.OnCustomToolNameSpaceChanged(sender,args)))
-#endif
                 (properties :> NodeProperties)
            
             member x.DisposeSelectionListener() = 
@@ -3111,11 +3093,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                             hr <- hier.ParseCanonicalName((document :?> string), &itemid)
                             match projMgr.NodeFromItemId(itemid) with 
                             | :? FSharpFileNode as node -> 
-#if SINGLE_FILE_GENERATOR
-                                node.RunGenerator()
-#else
                                 ignore(node)
-#endif
                             | _ -> 
                                 ()
                 hr

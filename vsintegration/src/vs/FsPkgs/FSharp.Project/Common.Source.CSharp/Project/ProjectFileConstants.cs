@@ -186,9 +186,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     internal static class DefaultSortOrderNode
     {
         public const int HierarchyNode = 1000;
-#if UNUSED_NESTED_PROJECTS
-        public const int NestedProjectNode = 200;
-#endif
         public const int ReferenceContainerNode = 300;
     }
 

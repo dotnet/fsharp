@@ -37,9 +37,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     public abstract class HierarchyNode :
         IVsUIHierarchy,
         IVsPersistHierarchyItem,
-#if IMPLEMENT_IVSPERSISTHIERARCHYITEM2
-        IVsPersistHierarchyItem2,
-#endif
         Microsoft.VisualStudio.OLE.Interop.IOleCommandTarget,
         IVsHierarchyDropDataSource2,
         IVsHierarchyDropDataSource,
@@ -2188,11 +2185,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             files.Add(this.GetMkDocument());
 
-#if UNUSED_DEPENDENT_FILES
-            tagVsSccFilesFlags flagsToAdd = (this.firstChild != null && (this.firstChild is DependentFileNode)) ? tagVsSccFilesFlags.SFF_HasSpecialFiles : tagVsSccFilesFlags.SFF_NoFlags;
-#else
             tagVsSccFilesFlags flagsToAdd = tagVsSccFilesFlags.SFF_NoFlags;
-#endif
 
             flags.Add(flagsToAdd);
         }
@@ -2230,36 +2223,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public /*protected, but public for FSharp.Project.dll*/ virtual void DeleteFromStorage(string path)
         {
         }
-
-#if IMPLEMENT_IVSPERSISTHIERARCHYITEM2
-        /// <summary>
-        /// Determines whether a file change should be ignored or not.
-        /// </summary>
-        /// <param name="ignoreFlag">Flag indicating whether or not to ignore changes (true to ignore changes).</param>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual int IgnoreItemFileChanges(bool ignoreFlag)
-        {
-            return VSConstants.E_NOTIMPL;
-        }
-
-        /// <summary>
-        /// Called to determine whether a project item is reloadable. 
-        /// </summary>
-        /// <returns>True if the project item is reloadable.</returns>
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Reloadable")]
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual bool IsItemReloadable()
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// Reloads an item.
-        /// </summary>
-        /// <param name="reserved">Reserved parameter defined at the IVsPersistHierarchyItem2::ReloadItem parameter.</param>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual int ReloadItem(uint reserved)
-        {
-            return VSConstants.E_NOTIMPL;
-        }
-#endif
 
         /// <summary>
         /// Handle the Copy operation to the clipboard
@@ -2934,88 +2897,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return returnCode;
         }
-
-        #region IVsPersistHierarchyItem2 methods
-#if IMPLEMENT_IVSPERSISTHIERARCHYITEM2
-        /// <summary>
-        /// Flag indicating that changes to a file can be ignored when item is saved or reloaded. 
-        /// </summary>
-        /// <param name="itemId">Specifies the item id from VSITEMID.</param>
-        /// <param name="ignoreFlag">Flag indicating whether or not to ignore changes (1 to ignore, 0 to stop ignoring).</param>
-        /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-        public virtual int IgnoreItemFileChanges(uint itemId, int ignoreFlag)
-        {
-            if (this.ProjectMgr == null || this.ProjectMgr.IsClosed)
-            {
-                return VSConstants.E_FAIL;
-            }
-
-            HierarchyNode n = this.ProjectMgr.NodeFromItemId(itemId);
-            if (n != null)
-            {
-                return n.IgnoreItemFileChanges(ignoreFlag == 0 ? false : true);
-            }
-            else
-            {
-                return VSConstants.E_INVALIDARG;
-            }
-        }
-
-        /// <summary>
-        /// Called to determine whether a project item is reloadable before calling ReloadItem. 
-        /// </summary>
-        /// <param name="itemId">Item identifier of an item in the hierarchy. Valid values are VSITEMID_NIL, VSITEMID_ROOT and VSITEMID_SELECTION.</param>
-        /// <param name="isReloadable">A flag indicating that the project item is reloadable (1 for reloadable, 0 for non-reloadable).</param>
-        /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
-        [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Reloadable")]
-        public virtual int IsItemReloadable(uint itemId, out int isReloadable)
-        {
-            isReloadable = 0;
-
-            if (this.ProjectMgr == null || this.ProjectMgr.IsClosed)
-            {
-                return VSConstants.E_FAIL;
-            }
-
-            HierarchyNode n = this.ProjectMgr.NodeFromItemId(itemId);
-            if (n != null)
-            {
-                isReloadable = (n.IsItemReloadable()) ? 1 : 0;
-                return VSConstants.S_OK;
-            }
-            else
-            {
-                return VSConstants.E_INVALIDARG;
-            }
-        }
-
-        /// <summary>
-        /// Called to reload a project item. 
-        /// </summary>
-        /// <param name="itemId">Specifies itemid from VSITEMID.</param>
-        /// <param name="reserved">Reserved.</param>
-        /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code. </returns>
-        public virtual int ReloadItem(uint itemId, uint reserved)
-        {
-        #region precondition
-            if (this.ProjectMgr == null || this.ProjectMgr.IsClosed)
-            {
-                return VSConstants.E_FAIL;
-            }
-            #endregion
-
-            HierarchyNode n = this.ProjectMgr.NodeFromItemId(itemId);
-            if (n != null)
-            {
-                return n.ReloadItem(reserved);
-            }
-            else
-            {
-                return VSConstants.E_INVALIDARG;
-            }
-        }
-#endif
-        #endregion
 
         #region IOleCommandTarget methods
         /// <summary>
