@@ -811,12 +811,12 @@ type ListModule02() =
         Assert.AreEqual(["str1";"str2"], List.truncate 2 ["str1";"str2";"str3"])
 
         // empty list
-        Assert.AreEqual([], List.truncate 0 [])
-        Assert.AreEqual([], List.truncate 1 [])
+        Assert.AreEqual(([] : int list), List.truncate 0 ([] : int list))
+        Assert.AreEqual(([] : int list), List.truncate 1 ([] : int list))
 
         // negative count
-        Assert.AreEqual([], List.truncate -1 [1..5])
-        Assert.AreEqual([], List.truncate System.Int32.MinValue [1..5])
+        Assert.AreEqual(([] : int list), List.truncate -1 [1..5])
+        Assert.AreEqual(([] : int list), List.truncate System.Int32.MinValue [1..5])
 
         ()
 
@@ -984,7 +984,7 @@ type ListModule02() =
         {
           InputList = [1..10]
           WindowSize = 25
-          ExpectedList = []
+          ExpectedList = ([] : int list list)
           Exception = None
         } |> testWindowed
         {
@@ -994,15 +994,15 @@ type ListModule02() =
           Exception = None
         } |> testWindowed
         {
-          InputList = []
+          InputList = ([] : int list)
           WindowSize = 2
-          ExpectedList = []
+          ExpectedList = ([] : int list list)
           Exception = None
         } |> testWindowed
         {
           InputList = [1..10]
           WindowSize = 0
-          ExpectedList =  []
+          ExpectedList =  ([] : int list list)
           Exception = Some typeof<ArgumentException>
         } |> testWindowed
 
