@@ -47,26 +47,26 @@
         <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
         <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
         <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition="'$(VisualStudioVersion)' != '12.0'" />
-        <Reference Include="Microsoft.VisualStudio.Threading" />
+        <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-        <Reference Include="Microsoft.VisualStudio.Shell.Design" />
+        <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
         <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
         <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
         <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
         <Reference Include="Microsoft.VisualStudio.TextManager.Interop.10.0.dll" />
         <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
         <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-        <Reference Include="Microsoft.VisualStudio.CoreUtility" />
-        <Reference Include="Microsoft.VisualStudio.Text.Data" />
-        <Reference Include="Microsoft.VisualStudio.Text.Logic" />
-        <Reference Include="Microsoft.VisualStudio.Text.UI" />
-        <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf" />
-        <Reference Include="Microsoft.VisualStudio.ComponentModelHost" />
-        <Reference Include="Microsoft.VisualStudio.Editor" />
+        <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+        <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+        <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+        <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+        <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+        <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+        <Reference Include="Microsoft.VisualStudio.Editor, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
         <Reference Include="mscorlib" />
         <Reference Include="System"/>
         <Reference Include="PresentationFramework"/>
