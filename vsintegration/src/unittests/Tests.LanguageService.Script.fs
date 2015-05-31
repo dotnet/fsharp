@@ -1629,16 +1629,30 @@ type ScriptTests() as this =
         let totalDisposalsMeth = providerCounters.GetMethod("GetTotalDisposals")
         Assert.IsNotNull(totalDisposalsMeth, "totalDisposalsMeth should not be null")
 
+        let providerCounters2 = providerAssembly.GetType("Microsoft.FSharp.TypeProvider.Emit.GlobalCountersForInvalidation")
+        Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
+        let totalInvaldiationHandlersAddedMeth = providerCounters2.GetMethod("GetInvalidationHandlersAdded")
+        Assert.IsNotNull(totalInvaldiationHandlersAddedMeth, "totalInvaldiationHandlersAddedMeth should not be null")
+        let totalInvaldiationHandlersRemovedMeth = providerCounters2.GetMethod("GetInvalidationHandlersRemoved")
+        Assert.IsNotNull(totalInvaldiationHandlersRemovedMeth, "totalInvaldiationHandlersRemovedMeth should not be null")
+
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
+        let totalInvaldiationHandlersAdded() = totalInvaldiationHandlersAddedMeth.Invoke(null, [| |]) :?> int
+        let totalInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
          
         let startCreations = totalCreations()
         let startDisposals = totalDisposals()
+        let startInvaldiationHandlersAdded = totalInvaldiationHandlersAdded()
+        let startInvaldiationHandlersRemoved =  totalInvaldiationHandlersRemoved()
         let countCreations() = totalCreations() - startCreations
         let countDisposals() = totalDisposals() - startDisposals
+        let countInvaldiationHandlersAdded() = totalInvaldiationHandlersAdded() - startInvaldiationHandlersAdded
+        let countInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemoved() - startInvaldiationHandlersRemoved
 
         Assert.IsTrue(startCreations >= startDisposals, "Check0")
+        Assert.IsTrue(startInvaldiationHandlersAdded >= startInvaldiationHandlersRemoved, "Check0")
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
@@ -1662,20 +1676,25 @@ type ScriptTests() as this =
             Assert.IsTrue(countDisposals() < i, "Check1, countDisposals() < i, iteration " + string i)
             Assert.IsTrue(countCreations() >= countDisposals(), "Check2, countCreations() >= countDisposals(), iteration " + string i)
             Assert.IsTrue(countCreations() = i, "Check3, countCreations() = i, iteration " + string i)
+            Assert.IsTrue(countInvaldiationHandlersAdded() = i, "Check3b, countInvaldiationHandlersAdded() = i, iteration " + string i)
             if not clearing then 
                 // By default we hold 3 build incrementalBuilderCache entries and 5 typeCheckInfo entries, so if we're not clearing
                 // there should be some roots to project builds still present
                 if i >= 3 then 
                     Assert.IsTrue(i >= countDisposals() + 3, "Check4a, i >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string (countDisposals()))
+                    Assert.IsTrue(i >= countInvaldiationHandlersRemoved() + 3, "Check4a2, i >= countInvaldiationHandlersRemoved() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string (countDisposals()))
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
             if clearing then 
                 ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
                 Assert.IsTrue((i = countDisposals()), "Check4b, countCreations() = countDisposals(), iteration " + string i)
+                Assert.IsTrue((i = countInvaldiationHandlersRemoved()), "Check4b2, countCreations() = countInvaldiationHandlersRemoved(), iteration " + string i)
         
         Assert.IsTrue(countCreations() = 50, "Check5, at end, countCreations() = 50")
+        Assert.IsTrue(countInvaldiationHandlersAdded() = 50, "Check5, at end, countCreations() = 50")
         ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
-        Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 when clearing")
+        Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 after explicit clearing")
+        Assert.IsTrue(countInvaldiationHandlersRemoved() = 50, "Check5, at end, countInvaldiationHandlersRemoved() = 50 after explicit cleraring")
 
     [<Test>]
     [<Category("TypeProvider")>]

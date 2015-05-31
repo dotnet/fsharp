@@ -3875,7 +3875,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             
             // Add the invalidation signal handlers to each provider
             for provider in providers do 
-                provider.PUntaint((fun tp -> tp.Invalidate.Add(fun _ -> invalidateCcu.Trigger ("The provider '" + fileNameOfRuntimeAssembly + "' reported a change"))), m)
+                provider.PUntaint((fun tp -> 
+                    let handler = tp.Invalidate.Subscribe(fun _ -> invalidateCcu.Trigger ("The provider '" + fileNameOfRuntimeAssembly + "' reported a change"))  
+                    tcImports.AttachDisposeAction(fun () -> try handler.Dispose() with _ -> ())), m)  
                 
             match providers with
             | [] -> 
