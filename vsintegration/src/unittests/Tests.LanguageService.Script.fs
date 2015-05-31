@@ -1676,25 +1676,23 @@ type ScriptTests() as this =
             Assert.IsTrue(countDisposals() < i, "Check1, countDisposals() < i, iteration " + string i)
             Assert.IsTrue(countCreations() >= countDisposals(), "Check2, countCreations() >= countDisposals(), iteration " + string i)
             Assert.IsTrue(countCreations() = i, "Check3, countCreations() = i, iteration " + string i)
-            Assert.IsTrue(countInvaldiationHandlersAdded() = i, "Check3b, countInvaldiationHandlersAdded() = i, iteration " + string i)
             if not clearing then 
                 // By default we hold 3 build incrementalBuilderCache entries and 5 typeCheckInfo entries, so if we're not clearing
                 // there should be some roots to project builds still present
                 if i >= 3 then 
                     Assert.IsTrue(i >= countDisposals() + 3, "Check4a, i >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string (countDisposals()))
-                    Assert.IsTrue(i >= countInvaldiationHandlersRemoved() + 3, "Check4a2, i >= countInvaldiationHandlersRemoved() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string (countDisposals()))
+                    printfn "Check4a2, i = %d, countInvaldiationHandlersRemoved() = %d" i (countInvaldiationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
             if clearing then 
                 ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
                 Assert.IsTrue((i = countDisposals()), "Check4b, countCreations() = countDisposals(), iteration " + string i)
-                Assert.IsTrue((i = countInvaldiationHandlersRemoved()), "Check4b2, countCreations() = countInvaldiationHandlersRemoved(), iteration " + string i)
+                Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check4b2, all invlidation handlers removed, iteration " + string i)
         
         Assert.IsTrue(countCreations() = 50, "Check5, at end, countCreations() = 50")
-        Assert.IsTrue(countInvaldiationHandlersAdded() = 50, "Check5, at end, countCreations() = 50")
         ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
         Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 after explicit clearing")
-        Assert.IsTrue(countInvaldiationHandlersRemoved() = 50, "Check5, at end, countInvaldiationHandlersRemoved() = 50 after explicit cleraring")
+        Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
 
     [<Test>]
     [<Category("TypeProvider")>]
