@@ -4150,7 +4150,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // REVIEW/TODO: shall we abandon accessing automation here and just look at MSBuild state?
                     EnvDTE.Project automationObject = this.GetAutomationObject() as EnvDTE.Project;
                     ConfigCanonicalName currentConfigName;
-                    if (Utilities.TryGetActiveConfigurationAndPlatform(this.Site, InteropSafeIVsHierarchy, out currentConfigName))
+                    if (Utilities.TryGetActiveConfigurationAndPlatform(this.Site, this.ProjectIDGuid, out currentConfigName))
                     {
                         if (currentConfigName == configCanonicalName) return;
                     }
@@ -4346,7 +4346,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             ConfigCanonicalName configCanonicalName;
-            if (!Utilities.TryGetActiveConfigurationAndPlatform(this.Site, InteropSafeIVsHierarchy, out configCanonicalName))
+            if (!Utilities.TryGetActiveConfigurationAndPlatform(this.Site, this.ProjectIDGuid, out configCanonicalName))
             {
                 throw new InvalidOperationException();
             }

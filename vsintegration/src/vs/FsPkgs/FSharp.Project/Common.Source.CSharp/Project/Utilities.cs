@@ -940,20 +940,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="configuration">The name of the active configuration.</param>
         /// <param name="platform">The name of the platform.</param>
         /// <returns>true if successfull.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, IVsHierarchy hierarchy, out ConfigCanonicalName configCanonicalName)
+        /*internal, but public for FSharp.Project.dll*/ public static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, Guid projectId, out ConfigCanonicalName configCanonicalName)
         {
             if (serviceProvider == null)
             {
                 throw new ArgumentNullException("serviceProvider");
             }
 
-            if (hierarchy == null)
-            {
-                throw new ArgumentNullException("hierarchy");
-            }
-            
-
-            IVsSolutionBuildManager2 solutionBuildManager = serviceProvider.GetService(typeof(SVsSolutionBuildManager)) as IVsSolutionBuildManager2;
+            IVsSolutionBuildManager5 solutionBuildManager = serviceProvider.GetService(typeof(SVsSolutionBuildManager)) as IVsSolutionBuildManager5;
 
             if (solutionBuildManager == null)
             {
@@ -961,17 +955,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return false;
             }
 
-            IVsProjectCfg[] activeConfigs = new IVsProjectCfg[1];
-            ErrorHandler.ThrowOnFailure(solutionBuildManager.FindActiveProjectCfg(IntPtr.Zero, IntPtr.Zero, hierarchy, activeConfigs));
-
-            IVsProjectCfg activeCfg = activeConfigs[0];
-
-            // Can it be that the activeCfg is null?
-            System.Diagnostics.Debug.Assert(activeCfg != null, "Cannot find the active configuration");
-
             string canonicalName;
-            ErrorHandler.ThrowOnFailure(activeCfg.get_CanonicalName(out canonicalName));
+            ErrorHandler.ThrowOnFailure(solutionBuildManager.FindActiveProjectCfgName(projectId, out canonicalName));
+
             configCanonicalName = new ConfigCanonicalName(canonicalName);
+
             return true;
         }
 
