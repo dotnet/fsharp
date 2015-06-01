@@ -2137,7 +2137,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 if GetCaption(pHierProj) = GetCaption(projNode.InteropSafeIVsHierarchy) then
                     // This code matches what ProjectNode.SetConfiguration would do; that method cannot be called during a build, but at this
                     // current moment in time, it is 'safe' to do this update.
-                    let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.InteropSafeIVsHierarchy)
+                    let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.ProjectIDGuid)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Configuration, currentConfigName.ConfigName)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
                     projNode.UpdateMSBuildState()
