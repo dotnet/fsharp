@@ -1029,7 +1029,7 @@ type ListModule02() =
                 if windowSize <= 0 then
                     CheckThrowsArgumentException (fun () -> List.windowed windowSize [1..arraySize] |> ignore)
                 elif arraySize < windowSize then
-                    Assert.AreEqual(([] : int[] list), List.windowed windowSize [1..arraySize])
+                    Assert.AreEqual(([] : int list list), List.windowed windowSize [1..arraySize])
                 else
                     Assert.AreEqual(expectedLists.[arraySize, windowSize], List.windowed windowSize [1..arraySize])
 
