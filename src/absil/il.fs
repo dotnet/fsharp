@@ -75,18 +75,16 @@ let rec splitNamespaceAux (nm:string) =
 
 /// Global State. All namespace splits ever seen
 // ++GLOBAL MUTABLE STATE
-let memoizeNamespaceTable = new Dictionary<string,string list>(10)
+let private memoizeNamespaceTable = new Dictionary<string,string list>(10)
 
 //  ++GLOBAL MUTABLE STATE
-let memoizeNamespaceRightTable = new Dictionary<string,string option * string>(100)
-
+let private memoizeNamespaceRightTable = new Dictionary<string,string option * string>(100)
 
 let splitNamespace nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceTable.TryGetValue(nm,&res)
+    let ok, res = memoizeNamespaceTable.TryGetValue(nm)
     if ok then res else
     let x = splitNamespaceAux nm
-    (memoizeNamespaceTable.[nm] <- x; x)
+    lock memoizeNamespaceTable (fun () -> memoizeNamespaceTable.[nm] <- x; x)
 
 let splitNamespaceMemoized nm = splitNamespace nm
 
@@ -95,12 +93,10 @@ let memoizeNamespaceArrayTable =
     Dictionary<string,string[]>(10)
 
 let splitNamespaceToArray nm =
-    let mutable res = Unchecked.defaultof<_>
-    let ok = memoizeNamespaceArrayTable.TryGetValue(nm,&res)
+    let ok, res = memoizeNamespaceArrayTable.TryGetValue(nm)
     if ok then res else
     let x = Array.ofList (splitNamespace nm)
-    (memoizeNamespaceArrayTable.[nm] <- x; x)
-
+    lock memoizeNamespaceArrayTable (fun () -> memoizeNamespaceArrayTable.[nm] <- x; x)
 
 let splitILTypeName (nm:string) = 
     match nm.LastIndexOf '.' with
@@ -315,9 +311,9 @@ let sha1HashBytes s = SHA1.sha1HashBytes s
 // THis is because many allocations of these small lists appear in memory logs.
 //
 // The "obviouos" step is to use arrays instead of lists. However, this is routinely and surprisingly disappointing.  
-// As a result, we haven’t enabled the use of arrays: we had expected this change to give a perf gain, 
+// As a result, we havenï¿½t enabled the use of arrays: we had expected this change to give a perf gain, 
 // but it does not!  It even gives a small perf loss. We've tried this approach on several other occasions 
-// for other data structures and each time been surprised that there’s no perf gain. It's possible that
+// for other data structures and each time been surprised that thereï¿½s no perf gain. It's possible that
 // arrays-of-references are just not as fast as we expect here: either the runtime check on assignment 
 // into the array, or some kind of write barrier may be degrading performance. 
 //
@@ -2140,9 +2136,9 @@ let labelsOfCode code = accLabelsOfCode [] code
 From the ECMA spec:
 
 There are only two ways to enter a try block from outside its lexical body:
- - Branching to or falling into the try block’s first instruction. The branch may be made using a 37
+ - Branching to or falling into the try blockï¿½s first instruction. The branch may be made using a 37
 conditional branch, an unconditional branch, or a leave instruction. 38
- - Using a leave instruction from that try’s catch block. In this case, correct CIL code may 39
+ - Using a leave instruction from that tryï¿½s catch block. In this case, correct CIL code may 39
 branch to any instruction within the try block, not just its first instruction, so long as that 40
 branch target is not protected by yet another try, nested withing the first 
 *)
@@ -2575,9 +2571,9 @@ let mkNormalCallconstraint (ty,mspec) = I_callconstraint (Normalcall, ty, mspec,
 let mkNormalNewobj mspec =  I_newobj (mspec, None)
 
 /// Comment on common object cache sizes:
-/// mkLdArg - I can’t imagine any IL method we generate needing more than this
-/// mkLdLoc - I tried 256, and there were LdLoc allocations left, so I upped it o 512. I didn’t check again.
-/// mkStLoc - it should be the same as LdLoc  (where there’s a LdLoc there must be a StLoc)
+/// mkLdArg - I canï¿½t imagine any IL method we generate needing more than this
+/// mkLdLoc - I tried 256, and there were LdLoc allocations left, so I upped it o 512. I didnï¿½t check again.
+/// mkStLoc - it should be the same as LdLoc  (where thereï¿½s a LdLoc there must be a StLoc)
 /// mkLdcInt32 - just a guess
 
 let ldargs = [| for i in 0 .. 128 -> I_ldarg (uint16 i) |]
@@ -4529,13 +4525,13 @@ let addFieldNeverAttrs ilg (fdef:ILFieldDef) = {fdef with CustomAttrs = add_neve
 
 
 // PermissionSet is a 'blob' having the following format:
-// • A byte containing a period (.).
-// • A compressed int32 containing the number of attributes encoded in the blob.
-// • An array of attributes each containing the following:
+// ï¿½ A byte containing a period (.).
+// ï¿½ A compressed int32 containing the number of attributes encoded in the blob.
+// ï¿½ An array of attributes each containing the following:
 // o A String, which is the fully-qualified type name of the attribute. (Strings are encoded
 // as a compressed int to indicate the size followed by an array of UTF8 characters.)
 // o A set of properties, encoded as the named arguments to a custom attribute would be (as
-// in §23.3, beginning with NumNamed).
+// in ï¿½23.3, beginning with NumNamed).
 let mkPermissionSet (ilg: ILGlobals) (action,attributes: list<(ILTypeRef * (string * ILType * ILAttribElem) list)>) = 
     let bytes = 
         [| yield (byte '.');
@@ -4588,9 +4584,9 @@ type ILTypeSigParser(tstring : string) =
     // mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
     //
     // Note that 
-    //   • Since we're only reading valid IL, we assume that the signature is properly formed
-    //   • For type parameters, if the type is non-local, it will be wrapped in brackets ([])
-    //   • Still needs testing with jagged arrays and byref parameters
+    //   ï¿½ Since we're only reading valid IL, we assume that the signature is properly formed
+    //   ï¿½ For type parameters, if the type is non-local, it will be wrapped in brackets ([])
+    //   ï¿½ Still needs testing with jagged arrays and byref parameters
     member private x.ParseType() =
 
         // Does the type name start with a leading '['?  If so, ignore it
