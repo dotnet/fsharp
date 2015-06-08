@@ -326,7 +326,7 @@ module internal List =
            
       
     let init count f = 
-        if count < 0 then  invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+        if count < 0 then  invalidArg "count" (Resources.inputMustBeNonNegative ())
         if count = 0 then [] 
         else 
             let res = freshConsNoTail (f 0)
@@ -343,7 +343,7 @@ module internal List =
             takeFreshConsTail cons2 (n - 1) xs
  
     let take n l =
-        if n < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+        if n < 0 then invalidArg "count" (Resources.inputMustBeNonNegative ())
         if n = 0 then [] else 
         match l with
         | [] -> raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
@@ -750,7 +750,7 @@ module internal Array =
         (# "newarr !0" type ('T) count : 'T array #)
 
     let inline init (count:int) (f: int -> 'T) = 
-        if count < 0 then invalidArg "count" LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString
+        if count < 0 then invalidArg "count" (Resources.inputMustBeNonNegative ())
         let arr = (zeroCreateUnchecked count : 'T array)  
         for i = 0 to count - 1 do 
             arr.[i] <- f i

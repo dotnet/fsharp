@@ -1161,7 +1161,7 @@ namespace Microsoft.FSharp.Collections
         let reduce f (source : seq<'T>)  = 
             checkNonNull "source" source
             use e = source.GetEnumerator() 
-            if not (e.MoveNext()) then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            if not (e.MoveNext()) then invalidArg "source" (Resources.inputSequenceEmpty ())
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable state = e.Current 
             while e.MoveNext() do
@@ -1265,7 +1265,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             let arr = toArray source
             match arr.Length with
-            | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | 0 -> invalidArg "source" (Resources.inputSequenceEmpty ())
             | len ->
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
@@ -1601,7 +1601,7 @@ namespace Microsoft.FSharp.Collections
                 acc <- Checked.(+) acc e.Current
                 count <- count + 1
             if count = 0 then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             LanguagePrimitives.DivideByInt< (^a) > acc count
 
         [<CompiledName("AverageBy")>]
@@ -1614,7 +1614,7 @@ namespace Microsoft.FSharp.Collections
                 acc <- Checked.(+) acc (f e.Current)
                 count <- count + 1
             if count = 0 then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             LanguagePrimitives.DivideByInt< (^U) > acc count
             
         [<CompiledName("Min")>]
@@ -1622,7 +1622,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let mutable acc = e.Current
             while e.MoveNext() do
                 let curr = e.Current 
@@ -1635,7 +1635,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             let mutable accv = first
@@ -1653,7 +1653,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             while e.MoveNext() do
@@ -1669,7 +1669,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let mutable acc = e.Current
             while e.MoveNext() do
                 let curr = e.Current 
@@ -1682,7 +1682,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             let mutable accv = first
@@ -1701,7 +1701,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             while e.MoveNext() do
@@ -1772,7 +1772,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if (e.MoveNext()) then e.Current
-            else invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            else invalidArg "source" (Resources.inputSequenceEmpty ())
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
@@ -1799,7 +1799,7 @@ namespace Microsoft.FSharp.Collections
                 while (e.MoveNext()) do res <- e.Current
                 res
             else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (Resources.inputSequenceEmpty ())
 
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
@@ -1823,7 +1823,7 @@ namespace Microsoft.FSharp.Collections
                 else
                     v
             else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (Resources.inputSequenceEmpty ())
 
         [<CompiledName("Reverse")>]
         let rev source =

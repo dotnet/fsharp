@@ -637,6 +637,23 @@ namespace System
 #else   
 #endif
 
+namespace Microsoft.FSharp.Core
+
+    open System
+    open Microsoft.FSharp.Core
+
+    module SharedResources =
+        let GetString name = SR.GetString name
+
+    [<RequireQualifiedAccess>]
+    module internal Resources =
+
+        let inline addressOpNotFirstClass () = SharedResources.GetString "addressOpNotFirstClass"
+        let inline noNegateMinValue () = SharedResources.GetString "noNegateMinValue"
+        let inline inputSequenceEmpty () = SharedResources.GetString "inputSequenceEmpty"
+        let inline inputArrayEmpty () = SharedResources.GetString "arrayWasEmpty"
+        let inline inputMustBeNonNegative () = SharedResources.GetString "inputMustBeNonNegative"
+
 
 namespace Microsoft.FSharp.Core
 
@@ -659,12 +676,12 @@ namespace Microsoft.FSharp.Core
 
         module (* internal *) ErrorStrings =
             // inline functions cannot call GetString, so we must make these bits public
-            let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
-            let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
+            let AddressOpNotFirstClassString = SR.GetString("addressOpNotFirstClass")
+            let NoNegateMinValueString = SR.GetString("noNegateMinValue")
             // needs to be public to be visible from inline function 'average' and others
-            let InputSequenceEmptyString = SR.GetString(SR.inputSequenceEmpty) 
+            let InputSequenceEmptyString = SR.GetString("inputSequenceEmpty") 
             // needs to be public to be visible from inline function 'average' and others
-            let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
+            let InputArrayEmptyString = SR.GetString("arrayWasEmpty") 
             // needs to be public to be visible from inline function 'average' and others
             let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
             
@@ -687,13 +704,13 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             let inline (~&)  (x : 'T) : 'T byref     = 
                 ignore x // pretend the variable is used
-                let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = System.ArgumentException(Resources.addressOpNotFirstClass ()) 
                 (# "throw" (e :> System.Exception) : 'T byref #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (x : 'T) : nativeptr<'T> = 
                 ignore x // pretend the variable is used
-                let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = System.ArgumentException(Resources.addressOpNotFirstClass ()) 
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
           
         
@@ -5521,7 +5538,7 @@ namespace Microsoft.FSharp.Core
                     let x : nativeint = retype x in 
                     if x >= 0n then x else 
                     let res = -x in 
-                    if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
+                    if res < 0n then raise (System.OverflowException(Resources.noNegateMinValue ()))
                     res
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
