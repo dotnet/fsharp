@@ -650,7 +650,7 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
     //-------------------------------------------------------------------------
-    // The main aim here is to bootsrap the definition of structural hashing 
+    // The main aim here is to bootstrap the definition of structural hashing 
     // and comparison.  Calls to these form part of the auto-generated 
     // code for each new datatype.
 
