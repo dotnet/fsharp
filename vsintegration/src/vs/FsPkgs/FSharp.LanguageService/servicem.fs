@@ -1992,6 +1992,11 @@ module Setup =
                 context.RemoveKey(providerRegKey())
 #endif
 
+// Workaround to access non-public settings persistence type.
+// GetService( ) with this will work as long as the GUID matches the real type.
+[<Guid("9B164E40-C3A2-4363-9BC5-EB4039DEF653")>]
+type internal SVsSettingsPersistenceManager = class end
+
 [<Guid("871D2A70-12A2-4e42-9440-425DD92A4116")>]
 type FSharpPackage() as self =
     inherit Package()
@@ -2016,11 +2021,31 @@ type FSharpPackage() as self =
     let callback = new ServiceCreatorCallback(CreateIfEnabled)
     
     let mutable mgr : IOleComponentManager = null
+
+    let fsharpSpecificProfileSettings =
+        [| "TextEditor.F#.Insert Tabs", box false
+           "TextEditor.F#.Brace Completion", box true
+           "TextEditor.F#.Indent Style", box 1u |]
     
     override self.Initialize() =
         UIThread.CaptureSynchronizationContext()
+        self.EstablishDefaultSettingsIfMissing()
         (self :> IServiceContainer).AddService(typeof<FSharpLanguageService>, callback, true)
         base.Initialize()
+
+    /// In case custom VS profile settings for F# are not applied, explicitly set them here.
+    /// e.g. 'keep tabs' is the text editor default, but F# requires 'insert spaces'.
+    /// We specify our customizations in the General profile for VS, but we have found that in some cases
+    /// those customizations are incorrectly ignored.
+    member private this.EstablishDefaultSettingsIfMissing() =
+        let settingsManager = this.GetService(typeof<SVsSettingsPersistenceManager>) :?> Microsoft.VisualStudio.Settings.ISettingsManager
+        for settingName,defaultValue in fsharpSpecificProfileSettings do
+            // Only take action if the setting has no current custom value
+            // If cloud-synced settings have already been applied or the user has made an explicit change, do nothing
+            match settingsManager.TryGetValue(settingName) with
+            | Microsoft.VisualStudio.Settings.GetValueResult.Missing, _ ->
+                settingsManager.SetValueAsync(settingName, defaultValue, false) |> ignore
+            | _ -> ()
 
     member self.RegisterForIdleTime() =
         mgr <- (self.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager)
