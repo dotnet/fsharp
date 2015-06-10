@@ -2039,6 +2039,9 @@ type FSharpPackage() as self =
     /// We specify our customizations in the General profile for VS, but we have found that in some cases
     /// those customizations are incorrectly ignored.
     member private this.EstablishDefaultSettingsIfMissing() =
+#if VS_VERSION_DEV12
+        ()  // ISettingsManager only implemented for VS 14.0+
+#else
         match this.GetService(typeof<SVsSettingsPersistenceManager>) with
         | :? Microsoft.VisualStudio.Settings.ISettingsManager as settingsManager ->
             for settingName,defaultValue in fsharpSpecificProfileSettings do
@@ -2049,6 +2052,7 @@ type FSharpPackage() as self =
                     settingsManager.SetValueAsync(settingName, defaultValue, false) |> ignore
                 | _ -> ()
         | _ -> ()
+#endif
 
     member self.RegisterForIdleTime() =
         mgr <- (self.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager)
