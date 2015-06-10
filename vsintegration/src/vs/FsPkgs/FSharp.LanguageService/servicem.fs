@@ -2025,6 +2025,7 @@ type FSharpPackage() as self =
     let fsharpSpecificProfileSettings =
         [| "TextEditor.F#.Insert Tabs", box false
            "TextEditor.F#.Brace Completion", box true
+           "TextEditor.F#.Make URLs Hot", box false
            "TextEditor.F#.Indent Style", box 1u |]
     
     override self.Initialize() =
@@ -2038,14 +2039,16 @@ type FSharpPackage() as self =
     /// We specify our customizations in the General profile for VS, but we have found that in some cases
     /// those customizations are incorrectly ignored.
     member private this.EstablishDefaultSettingsIfMissing() =
-        let settingsManager = this.GetService(typeof<SVsSettingsPersistenceManager>) :?> Microsoft.VisualStudio.Settings.ISettingsManager
-        for settingName,defaultValue in fsharpSpecificProfileSettings do
-            // Only take action if the setting has no current custom value
-            // If cloud-synced settings have already been applied or the user has made an explicit change, do nothing
-            match settingsManager.TryGetValue(settingName) with
-            | Microsoft.VisualStudio.Settings.GetValueResult.Missing, _ ->
-                settingsManager.SetValueAsync(settingName, defaultValue, false) |> ignore
-            | _ -> ()
+        match this.GetService(typeof<SVsSettingsPersistenceManager>) with
+        | :? Microsoft.VisualStudio.Settings.ISettingsManager as settingsManager ->
+            for settingName,defaultValue in fsharpSpecificProfileSettings do
+                // Only take action if the setting has no current custom value
+                // If cloud-synced settings have already been applied or the user has made an explicit change, do nothing
+                match settingsManager.TryGetValue(settingName) with
+                | Microsoft.VisualStudio.Settings.GetValueResult.Missing, _ ->
+                    settingsManager.SetValueAsync(settingName, defaultValue, false) |> ignore
+                | _ -> ()
+        | _ -> ()
 
     member self.RegisterForIdleTime() =
         mgr <- (self.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager)
