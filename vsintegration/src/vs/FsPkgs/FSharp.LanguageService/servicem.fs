@@ -2022,12 +2022,14 @@ type FSharpPackage() as self =
     
     let mutable mgr : IOleComponentManager = null
 
+#if !VS_VERSION_DEV12
     let fsharpSpecificProfileSettings =
         [| "TextEditor.F#.Insert Tabs", box false
            "TextEditor.F#.Brace Completion", box true
            "TextEditor.F#.Make URLs Hot", box false
            "TextEditor.F#.Indent Style", box 1u |]
-    
+#endif
+
     override self.Initialize() =
         UIThread.CaptureSynchronizationContext()
         self.EstablishDefaultSettingsIfMissing()
