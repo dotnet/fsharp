@@ -1160,7 +1160,7 @@ namespace Microsoft.FSharp.Collections
         let reduce f (source : seq<'T>)  = 
             checkNonNull "source" source
             use e = source.GetEnumerator() 
-            if not (e.MoveNext()) then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            if not (e.MoveNext()) then invalidArg "source" (SR.GetString(SR.inputSequenceEmpty));
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable state = e.Current 
             while e.MoveNext() do
@@ -1264,7 +1264,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             let arr = toArray source
             match arr.Length with
-            | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | 0 -> invalidArg "source" (SR.GetString(SR.inputSequenceEmpty))
             | len ->
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
@@ -1734,7 +1734,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if (e.MoveNext()) then e.Current
-            else invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            else invalidArg "source" (SR.GetString(SR.inputSequenceEmpty))
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
@@ -1761,7 +1761,7 @@ namespace Microsoft.FSharp.Collections
                 while (e.MoveNext()) do res <- e.Current
                 res
             else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (SR.GetString(SR.inputSequenceEmpty))
 
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
@@ -1785,7 +1785,7 @@ namespace Microsoft.FSharp.Collections
                 else
                     v
             else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (SR.GetString(SR.inputSequenceEmpty))
 
         [<CompiledName("Reverse")>]
         let rev source =

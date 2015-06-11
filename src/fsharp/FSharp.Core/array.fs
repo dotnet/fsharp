@@ -204,7 +204,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Head")>]
         let head (array : 'T[]) =
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString else array.[0]
+            if array.Length = 0 then invalidArg "array" (SR.GetString(SR.arrayWasEmpty)) else array.[0]
 
         [<CompiledName("Copy")>]
         let copy (array: 'T[]) =
@@ -754,7 +754,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             let len = array.Length
             if len = 0 then 
-                invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+                invalidArg "array" (SR.GetString(SR.arrayWasEmpty))
             else 
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 let mutable res = array.[0]
@@ -766,7 +766,7 @@ namespace Microsoft.FSharp.Collections
         let reduceBack f (array : _[]) = 
             checkNonNull "array" array
             let len = array.Length
-            if len = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if len = 0 then invalidArg "array" (SR.GetString(SR.arrayWasEmpty))
             else foldSubRight f array 0 (len - 2) array.[len - 1]
 
         [<CompiledName("SortInPlaceWith")>]
@@ -995,7 +995,7 @@ namespace Microsoft.FSharp.Collections
         let exactlyOne (array:'T[]) =
             checkNonNull "array" array
             if array.Length = 1 then array.[0]
-            elif array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            elif array.Length = 0 then invalidArg "array" (SR.GetString(SR.inputSequenceEmpty))
             else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
 
         [<CompiledName("Truncate")>]

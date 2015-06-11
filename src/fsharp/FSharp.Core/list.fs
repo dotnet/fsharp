@@ -605,7 +605,7 @@ namespace Microsoft.FSharp.Collections
         let exactlyOne (source : list<_>) =
             match source with
             | [x] -> x
-            | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString            
+            | []  -> invalidArg "source" (SR.GetString(SR.inputSequenceEmpty))
             | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
 
         [<CompiledName("Truncate")>]
