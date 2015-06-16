@@ -30,6 +30,29 @@ let ``append is consistent`` () =
     Check.QuickThrowOnFailure append<string>
     Check.QuickThrowOnFailure append<NormalFloat>
 
+let averageFloat (xs : NormalFloat []) =
+    let xs = xs |> Array.map float
+    let s = run (fun () -> xs |> Seq.average)
+    let l = run (fun () -> xs |> List.ofArray |> List.average)
+    let a = run (fun () -> xs |> Array.average)
+    s = a && l = a
+
+[<Test>]
+let ``average is consistent`` () =
+    Check.QuickThrowOnFailure averageFloat
+
+let averageBy (xs : float []) f =
+    let xs = xs |> Array.map float
+    let f x = (f x : NormalFloat) |> float
+    let s = run (fun () -> xs |> Seq.averageBy f)
+    let l = run (fun () -> xs |> List.ofArray |> List.averageBy f)
+    let a = run (fun () -> xs |> Array.averageBy f)
+    s = a && l = a
+
+[<Test>]
+let ``averageBy is consistent`` () =
+    Check.QuickThrowOnFailure averageBy
+
 let contains<'a when 'a : equality> (xs : 'a []) x  =
     let s = xs |> Seq.contains x
     let l = xs |> List.ofArray |> List.contains x
@@ -53,6 +76,18 @@ let ``choose is consistent`` () =
     Check.QuickThrowOnFailure contains<int>
     Check.QuickThrowOnFailure contains<string>
     Check.QuickThrowOnFailure contains<float>
+
+let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
+    let s = run (fun () -> xs |> Seq.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
+    let l = run (fun () -> xs |> List.ofArray |> List.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
+    let a = run (fun () -> xs |> Array.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
+    s = a && l = a
+
+[<Test>]
+let ``chunkBySize is consistent`` () =
+    Check.QuickThrowOnFailure chunkBySize<int>
+    Check.QuickThrowOnFailure chunkBySize<string>
+    Check.QuickThrowOnFailure chunkBySize<NormalFloat>
 
 let collect<'a> (xs : 'a []) f  =
     let s = xs |> Seq.collect f
@@ -113,27 +148,3 @@ let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<int>
     Check.QuickThrowOnFailure sort<string>
     Check.QuickThrowOnFailure sort<NormalFloat>
-
-        
-let averageFloat (xs : NormalFloat []) =
-    let xs = xs |> Array.map float
-    let s = run (fun () -> xs |> Seq.average)
-    let l = run (fun () -> xs |> List.ofArray |> List.average)
-    let a = run (fun () -> xs |> Array.average)
-    s = a && l = a
-
-[<Test>]
-let ``average is consistent`` () =
-    Check.QuickThrowOnFailure averageFloat
-
-let averageBy (xs : float []) f =
-    let xs = xs |> Array.map float
-    let f x = (f x : NormalFloat) |> float
-    let s = run (fun () -> xs |> Seq.averageBy f)
-    let l = run (fun () -> xs |> List.ofArray |> List.averageBy f)
-    let a = run (fun () -> xs |> Array.averageBy f)
-    s = a && l = a
-
-[<Test>]
-let ``averageBy is consistent`` () =
-    Check.QuickThrowOnFailure averageBy
