@@ -20,7 +20,7 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :eof
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
-.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages
+.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\NuGet.Config
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
 :: Build
