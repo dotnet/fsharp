@@ -11,13 +11,6 @@ type PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>(value:string) =
 type Format<'Printer,'State,'Residue,'Result> = PrintfFormat<'Printer,'State,'Residue,'Result>
 type Format<'Printer,'State,'Residue,'Result,'Tuple> = PrintfFormat<'Printer,'State,'Residue,'Result,'Tuple>
 
-#if FX_RESHAPED_REFLECTION
-
-open Microsoft.FSharp.Core.PrimReflectionAdapters
-open Microsoft.FSharp.Core.ReflectionAdapters
-
-#endif
-
 module internal PrintfImpl =
 
     /// Basic idea of implementation:
@@ -42,13 +35,21 @@ module internal PrintfImpl =
     /// 2. we can make combinable parts independent from particular printf implementation. Thus final result can be cached and shared. 
     /// i.e when first calll to printf "%s %s" will trigger creation of the specialization. Subsequent calls will pick existing specialization
     open System
-    open System.IO
+
     open System.Collections.Generic
     open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Collections
     open LanguagePrimitives.IntrinsicOperators
+#if FX_RESHAPED_REFLECTION
+
+    open Microsoft.FSharp.Core.PrimReflectionAdapters
+    open Microsoft.FSharp.Core.ReflectionAdapters
+
+#endif
+
+    open System.IO
     
     [<Flags>]
     type FormatFlags = 

@@ -2056,7 +2056,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncRead(buffer: byte[],?offset,?count) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
                 protectedPrimitiveWithResync (fun ({ aux = aux } as args) ->
                     TaskHelpers.continueWith(stream.ReadAsync(buffer, offset, count, aux.token), args)
@@ -2080,7 +2080,7 @@ namespace Microsoft.FSharp.Control
             member stream.AsyncWrite(buffer:byte[], ?offset:int, ?count:int) =
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FX_NO_BEGINEND_READWRITE
                 // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the WriteAsync task
                 protectedPrimitiveWithResync ( fun ({ aux = aux} as args) ->
                     TaskHelpers.continueWithUnit(stream.WriteAsync(buffer, offset, count, aux.token), args)
