@@ -166,9 +166,8 @@
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <TargetFrameworkProfile>Windows5.0</TargetFrameworkProfile>                           <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
+    <TargetFrameworkProfile>profile7</TargetFrameworkProfile>                            <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
   </PropertyGroup>
 
@@ -218,7 +217,6 @@
     <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
@@ -255,7 +253,6 @@
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
@@ -294,7 +291,6 @@
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
@@ -331,7 +327,6 @@
     <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
@@ -724,14 +719,14 @@
     
     <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
-    <!-- fix this to be not hacky -->
-    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00040\lib\</BuildToolsDir>
+    <!-- fix this to be not so unfortunate looking -->
+    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00053\lib\</BuildToolsDir>
 
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
 
-    <DnxVersion Condition="'$(OsEnvironment)'!='Unix'">1.0.0-beta5-11580</DnxVersion>
-    <DnxVersion Condition="'$(OsEnvironment)'=='Unix'">1.0.0-beta5-11624</DnxVersion>
+    <DnxVersion Condition="'$(OsEnvironment)'!='Unix'">1.0.0-beta6-12032</DnxVersion>
+    <DnxVersion Condition="'$(OsEnvironment)'=='Unix'">1.0.0-beta5-12077</DnxVersion>
     <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'!='Unix'">dnx-coreclr-win-x86.$(DnxVersion)</DnxPackageName>
     <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'=='Unix'">dnx-mono.$(DnxVersion)</DnxPackageName>
 
@@ -823,6 +818,6 @@
     </ItemGroup>
   </Target>
   <Target Name="BeforeBuild" BeforeTargets="Build">
-    <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
+    <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
   </Target>
 </Project>
