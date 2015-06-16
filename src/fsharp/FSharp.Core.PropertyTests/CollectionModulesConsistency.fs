@@ -103,4 +103,24 @@ let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<int>
     Check.QuickThrowOnFailure sort<string>
     Check.QuickThrowOnFailure sort<NormalFloat>
-    
+
+type Result<'a> = 
+| Success of 'a
+| Error of string
+
+let run f = 
+    try
+        Success(f())
+    with
+    | exn -> Error exn.Message
+        
+let averageFloat (xs : NormalFloat []) =
+    let xs = xs |> Array.map float
+    let s = run (fun () -> xs |> Seq.average)
+    let l = run (fun () -> xs |> List.ofArray |> List.average)
+    let a = run (fun () -> xs |> Array.average)
+    s = a && l = a
+
+[<Test>]
+let ``average is consistent`` () =
+    Check.QuickThrowOnFailure averageFloat    
