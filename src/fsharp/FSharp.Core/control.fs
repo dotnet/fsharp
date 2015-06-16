@@ -729,7 +729,7 @@ namespace Microsoft.FSharp.Control
                     )
                     
         let startThreadWithTrampoline (trampolineHolder:TrampolineHolder) (f : unit -> FakeUnitValue) =
-#if FX_NO_THREADPOOL
+#if FX_THREADPOOL
                 if not (ThreadPool.QueueUserWorkItem((waitCallbackForQueueWorkItemWithTrampoline trampolineHolder), f |> box)) then
                     failwith "failed to queue user work item"
                 FakeUnit
