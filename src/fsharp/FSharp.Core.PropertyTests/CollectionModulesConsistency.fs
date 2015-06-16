@@ -8,6 +8,16 @@ open System.Collections.Generic
 open NUnit.Framework
 open FsCheck
 
+type Result<'a> = 
+| Success of 'a
+| Error of string
+
+let run f = 
+    try
+        Success(f())
+    with
+    | exn -> Error exn.Message
+
 let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.append xs2 
     let l = xs |> List.append xs2
@@ -104,15 +114,6 @@ let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<string>
     Check.QuickThrowOnFailure sort<NormalFloat>
 
-type Result<'a> = 
-| Success of 'a
-| Error of string
-
-let run f = 
-    try
-        Success(f())
-    with
-    | exn -> Error exn.Message
         
 let averageFloat (xs : NormalFloat []) =
     let xs = xs |> Array.map float
@@ -123,4 +124,16 @@ let averageFloat (xs : NormalFloat []) =
 
 [<Test>]
 let ``average is consistent`` () =
-    Check.QuickThrowOnFailure averageFloat    
+    Check.QuickThrowOnFailure averageFloat
+
+let averageBy (xs : float []) f =
+    let xs = xs |> Array.map float
+    let f x = (f x : NormalFloat) |> float
+    let s = run (fun () -> xs |> Seq.averageBy f)
+    let l = run (fun () -> xs |> List.ofArray |> List.averageBy f)
+    let a = run (fun () -> xs |> Array.averageBy f)
+    s = a && l = a
+
+[<Test>]
+let ``averageBy is consistent`` () =
+    Check.QuickThrowOnFailure averageBy
