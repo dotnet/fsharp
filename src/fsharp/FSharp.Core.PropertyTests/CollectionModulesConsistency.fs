@@ -36,7 +36,7 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
     let s = xs |> Seq.choose f
     let l = xs |> List.ofArray |> List.choose f
     let a = xs |> Array.choose f
-    Seq.toArray s = a &&  List.toArray l = a
+    Seq.toArray s = a && List.toArray l = a
 
 [<Test>]
 let ``choose is consistent`` () =
@@ -48,7 +48,7 @@ let collect<'a> (xs : 'a []) f  =
     let s = xs |> Seq.collect f
     let l = xs |> List.ofArray |> List.collect (fun x -> f x |> List.ofArray)
     let a = xs |> Array.collect f
-    Seq.toArray s = a &&  List.toArray l = a
+    Seq.toArray s = a && List.toArray l = a
 
 [<Test>]
 let ``collect is consistent`` () =
@@ -72,7 +72,7 @@ let concat<'a when 'a : equality> (xs : 'a [][]) =
     let s = xs |> Seq.concat
     let l = xs |> List.ofArray |> List.map List.ofArray |> List.concat
     let a = xs |> Array.concat
-    Seq.toArray s = a &&  List.toArray l = a
+    Seq.toArray s = a && List.toArray l = a
 
 [<Test>]
 let ``concat is consistent`` () =
@@ -84,11 +84,23 @@ let countBy<'a> (xs : 'a []) f =
     let s = xs |> Seq.countBy f
     let l = xs |> List.ofArray |> List.countBy f
     let a = xs |> Array.countBy f
-    Seq.toArray s = a &&  List.toArray l = a
+    Seq.toArray s = a && List.toArray l = a
 
 [<Test>]
 let ``countBy is consistent`` () =
     Check.QuickThrowOnFailure countBy<int>
     Check.QuickThrowOnFailure countBy<string>
     Check.QuickThrowOnFailure countBy<float>
+
+let sort<'a when 'a : comparison> (xs : 'a []) =
+    let s = xs |> Seq.sort 
+    let l = xs |> List.ofArray |> List.sort
+    let a = xs |> Array.sort
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``sort is consistent`` () =
+    Check.QuickThrowOnFailure sort<int>
+    Check.QuickThrowOnFailure sort<string>
+    Check.QuickThrowOnFailure sort<NormalFloat>
     
