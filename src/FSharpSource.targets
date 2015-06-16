@@ -168,7 +168,6 @@
     <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_THREADPOOL</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_USE_SYSTEMTYPECODE</DefineConstants>
     <TargetFrameworkProfile>Windows5.0</TargetFrameworkProfile>                           <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
   </PropertyGroup>
