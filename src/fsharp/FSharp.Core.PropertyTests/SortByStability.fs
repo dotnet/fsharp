@@ -8,15 +8,17 @@ open System.Collections.Generic
 open NUnit.Framework
 open FsCheck
 
+let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+
 let sortByStableSeq<'a when 'a : comparison> (xs : 'a []) =
     let indexed = xs |> Seq.indexed
     let sorted = indexed |> Seq.sortBy snd
-    sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+    isStable sorted
 
 let sortByStableList<'a when 'a : comparison> (xs : 'a []) =
     let indexed = xs |> Seq.indexed |> Seq.toList
     let sorted = indexed |> List.sortBy snd
-    sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+    isStable sorted
 
 [<Test>]
 let ``Seq.sortBy is stable`` () =
