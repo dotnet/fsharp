@@ -275,6 +275,19 @@ let ``fold is consistent`` () =
     Check.QuickThrowOnFailure fold<float,int>
     Check.QuickThrowOnFailure fold<float,string>
 
+let foldBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
+    let s = run (fun () -> Seq.foldBack f xs start)
+    let l = run (fun () -> List.foldBack f (xs |> List.ofArray) start)
+    let a = run (fun () -> Array.foldBack f xs start)
+    s = a && l = a
+
+[<Test>]
+let ``foldBack is consistent`` () =
+    Check.QuickThrowOnFailure foldBack<int,int>
+    Check.QuickThrowOnFailure foldBack<string,string>
+    Check.QuickThrowOnFailure foldBack<float,int>
+    Check.QuickThrowOnFailure foldBack<float,string>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
