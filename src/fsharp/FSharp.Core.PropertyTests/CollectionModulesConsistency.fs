@@ -288,6 +288,18 @@ let ``foldBack is consistent`` () =
     Check.QuickThrowOnFailure foldBack<float,int>
     Check.QuickThrowOnFailure foldBack<float,string>
 
+let indexed<'a when 'a : equality> (xs : 'a []) =
+    let s = xs |> Seq.indexed
+    let l = xs |> List.ofArray |> List.indexed
+    let a = xs |> Array.indexed
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``indexed is consistent`` () =
+    Check.QuickThrowOnFailure indexed<int>
+    Check.QuickThrowOnFailure indexed<string>
+    Check.QuickThrowOnFailure indexed<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
