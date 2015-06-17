@@ -137,6 +137,18 @@ let ``countBy is consistent`` () =
     Check.QuickThrowOnFailure countBy<string>
     Check.QuickThrowOnFailure countBy<float>
 
+let distinct<'a when 'a : comparison> (xs : 'a []) =
+    let s = xs |> Seq.distinct 
+    let l = xs |> List.ofArray |> List.distinct
+    let a = xs |> Array.distinct
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``distinct is consistent`` () =
+    Check.QuickThrowOnFailure distinct<int>
+    Check.QuickThrowOnFailure distinct<string>
+    Check.QuickThrowOnFailure distinct<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
