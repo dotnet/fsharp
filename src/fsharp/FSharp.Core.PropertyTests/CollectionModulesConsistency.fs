@@ -262,6 +262,19 @@ let ``findIndexBack is consistent`` () =
     Check.QuickThrowOnFailure findIndexBack<string>
     Check.QuickThrowOnFailure findIndexBack<NormalFloat>
 
+let fold<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
+    let s = run (fun () -> xs |> Seq.fold f start)
+    let l = run (fun () -> xs |> List.ofArray |> List.fold f start)
+    let a = run (fun () -> xs |> Array.fold f start)
+    s = a && l = a
+
+[<Test>]
+let ``fold is consistent`` () =
+    Check.QuickThrowOnFailure fold<int,int>
+    Check.QuickThrowOnFailure fold<string,string>
+    Check.QuickThrowOnFailure fold<float,int>
+    Check.QuickThrowOnFailure fold<float,string>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
