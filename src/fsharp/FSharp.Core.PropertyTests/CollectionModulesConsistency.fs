@@ -172,3 +172,15 @@ let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<int>
     Check.QuickThrowOnFailure sort<string>
     Check.QuickThrowOnFailure sort<NormalFloat>
+
+let splitInto<'a when 'a : equality> (xs : 'a []) count =
+    let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
+    let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
+    let a = run (fun () -> xs |> Array.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
+    s = a && l = a
+
+[<Test>]
+let ``splitInto is consistent`` () =
+    Check.QuickThrowOnFailure splitInto<int>
+    Check.QuickThrowOnFailure splitInto<string>
+    Check.QuickThrowOnFailure splitInto<NormalFloat>
