@@ -7,6 +7,7 @@ open System.Collections.Generic
 
 open NUnit.Framework
 open FsCheck
+open Utils
 
 let chunkBySize_and_collect<'a when 'a : equality> (xs : 'a list) size =
     size > 0 ==> (lazy
@@ -109,6 +110,32 @@ let ``find and exists work similar`` () =
     Check.QuickThrowOnFailure find_and_exists<string>
     Check.QuickThrowOnFailure find_and_exists<NormalFloat>
 
+let findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
+    let a = 
+        try
+            List.findBack f xs |> ignore
+            true
+        with
+        | _ -> false
+    let b = List.exists f xs
+    a = b
+
+[<Test>]
+let ``findBack and exists work similar`` () =   
+    Check.QuickThrowOnFailure findBack_and_exists<int>
+    Check.QuickThrowOnFailure findBack_and_exists<string>
+    Check.QuickThrowOnFailure findBack_and_exists<NormalFloat>
+
+let findBack_and_find<'a when 'a : comparison>  (xs : list<'a>) predicate =
+    let a = run (fun () -> xs |> List.findBack predicate)
+    let b = run (fun () -> xs |> List.rev |> List.find predicate)
+    a = b
+
+[<Test>]
+let ``findBack and find work in reverse`` () =   
+    Check.QuickThrowOnFailure findBack_and_find<int>
+    Check.QuickThrowOnFailure findBack_and_find<string>
+    Check.QuickThrowOnFailure findBack_and_find<NormalFloat>
 
 let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
     let a = List.distinct xs

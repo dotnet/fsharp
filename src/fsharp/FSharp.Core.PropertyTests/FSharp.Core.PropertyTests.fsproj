@@ -71,6 +71,7 @@
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Utils.fs" />
     <Compile Include="ListProperties.fs" />
     <Compile Include="SeqProperties.fs" />
     <Compile Include="ArrayProperties.fs" />

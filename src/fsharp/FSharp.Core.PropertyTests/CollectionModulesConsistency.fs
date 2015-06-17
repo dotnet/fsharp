@@ -7,22 +7,7 @@ open System.Collections.Generic
 
 open NUnit.Framework
 open FsCheck
-
-type Result<'a> = 
-| Success of 'a
-| Error of string
-
-let run f = 
-    try
-        Success(f())
-    with
-    | exn -> Error(exn.Message)
-
-let runAndCheckErrorType f = 
-    try
-        Success(f())
-    with
-    | exn -> Error(exn.GetType().ToString())
+open Utils
 
 let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.append xs2 
