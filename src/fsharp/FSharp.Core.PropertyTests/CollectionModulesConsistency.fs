@@ -191,6 +191,18 @@ let ``except is consistent`` () =
     Check.QuickThrowOnFailure except<string>
     Check.QuickThrowOnFailure except<NormalFloat>
 
+let exists<'a when 'a : equality> (xs : 'a []) f =
+    let s = xs |> Seq.exists f
+    let l = xs |> List.ofArray |> List.exists f
+    let a = xs |> Array.exists f
+    s = a && l = a
+
+[<Test>]
+let ``exists is consistent`` () =
+    Check.QuickThrowOnFailure exists<int>
+    Check.QuickThrowOnFailure exists<string>
+    Check.QuickThrowOnFailure exists<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
