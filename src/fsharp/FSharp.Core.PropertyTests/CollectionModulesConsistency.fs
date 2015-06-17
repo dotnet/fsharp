@@ -322,6 +322,18 @@ let ``foldBack2 is consistent`` () =
     Check.QuickThrowOnFailure foldBack2<float,float,int>
     Check.QuickThrowOnFailure foldBack2<float,float,string>
 
+let forall<'a when 'a : equality> (xs : 'a []) f =
+    let s = xs |> Seq.forall f
+    let l = xs |> List.ofArray |> List.forall f
+    let a = xs |> Array.forall f
+    s = a && l = a
+
+[<Test>]
+let ``forall is consistent`` () =
+    Check.QuickThrowOnFailure forall<int>
+    Check.QuickThrowOnFailure forall<string>
+    Check.QuickThrowOnFailure forall<NormalFloat>
+
 let indexed<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.indexed
     let l = xs |> List.ofArray |> List.indexed
