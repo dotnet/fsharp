@@ -384,6 +384,18 @@ let ``indexed is consistent`` () =
     Check.QuickThrowOnFailure indexed<string>
     Check.QuickThrowOnFailure indexed<NormalFloat>
 
+let init<'a when 'a : equality> count f =
+    let s = run (fun () -> Seq.init count f |> Seq.toArray)
+    let l = run (fun () -> List.init count f |> Seq.toArray)
+    let a = run (fun () -> Array.init count f)
+    s = a && l = a
+
+[<Test>]
+let ``init is consistent`` () =
+    Check.QuickThrowOnFailure init<int>
+    Check.QuickThrowOnFailure init<string>
+    Check.QuickThrowOnFailure init<NormalFloat>
+
 let item<'a when 'a : equality> (xs : 'a []) index =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.item index)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.item index)
