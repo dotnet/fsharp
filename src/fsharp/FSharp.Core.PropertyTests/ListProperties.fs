@@ -93,6 +93,22 @@ let ``filter and except work similar`` () =
     Check.QuickThrowOnFailure filter_and_except<string>
     Check.QuickThrowOnFailure filter_and_except<NormalFloat>
 
+let find_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
+    let a = 
+        try
+            List.find f xs |> ignore
+            true
+        with
+        | _ -> false
+    let b = List.exists f xs
+    a = b
+
+[<Test>]
+let ``find and exists work similar`` () =   
+    Check.QuickThrowOnFailure find_and_exists<int>
+    Check.QuickThrowOnFailure find_and_exists<string>
+    Check.QuickThrowOnFailure find_and_exists<NormalFloat>
+
 
 let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
     let a = List.distinct xs
