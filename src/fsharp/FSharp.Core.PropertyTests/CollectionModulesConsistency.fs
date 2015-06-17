@@ -179,6 +179,18 @@ let ``exactlyOne is consistent`` () =
     Check.QuickThrowOnFailure exactlyOne<string>
     Check.QuickThrowOnFailure exactlyOne<NormalFloat>
 
+let except<'a when 'a : equality> (xs : 'a []) (itemsToExclude: 'a []) =
+    let s = xs |> Seq.except itemsToExclude
+    let l = xs |> List.ofArray |> List.except itemsToExclude
+    let a = xs |> Array.except itemsToExclude
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``except is consistent`` () =
+    Check.QuickThrowOnFailure except<int>
+    Check.QuickThrowOnFailure except<string>
+    Check.QuickThrowOnFailure except<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
