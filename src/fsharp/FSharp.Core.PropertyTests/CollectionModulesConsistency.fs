@@ -300,6 +300,18 @@ let ``indexed is consistent`` () =
     Check.QuickThrowOnFailure indexed<string>
     Check.QuickThrowOnFailure indexed<NormalFloat>
 
+let item<'a when 'a : equality> (xs : 'a []) index =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.item index)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.item index)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.item index)
+    s = a && l = a
+
+[<Test>]
+let ``item is consistent`` () =
+    Check.QuickThrowOnFailure item<int>
+    Check.QuickThrowOnFailure item<string>
+    Check.QuickThrowOnFailure item<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort

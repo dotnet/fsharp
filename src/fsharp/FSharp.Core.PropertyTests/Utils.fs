@@ -17,3 +17,9 @@ let runAndCheckErrorType f =
         Success(f())
     with
     | exn -> Error(exn.GetType().ToString())
+
+let runAndCheckIfAnyError f = 
+    try
+        Success(f())
+    with
+    | exn -> Error("")
