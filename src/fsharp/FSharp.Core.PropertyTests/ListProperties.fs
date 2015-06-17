@@ -33,3 +33,23 @@ let sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
 [<Test>]
 let ``sort behaves like sortby id`` () =   
     Check.QuickThrowOnFailure sort_and_sortby
+
+let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
+    let a = List.distinct xs
+    let b = Set.ofList xs
+
+    let result = ref (a.Length = b.Count)
+    for x in a do
+        if Set.contains x b |> not then
+            result := false
+
+    for x in b do
+        if List.exists ((=) x) a |> not then
+            result := false
+    !result
+
+[<Test>]
+let ``distinct creates same elements like a set`` () =
+    Check.QuickThrowOnFailure distinct_works_like_set<int>
+    Check.QuickThrowOnFailure distinct_works_like_set<string>
+    Check.QuickThrowOnFailure distinct_works_like_set<NormalFloat>
