@@ -120,6 +120,17 @@ let ``find and exists work similar`` () =
     Check.QuickThrowOnFailure find_and_exists<string>
     Check.QuickThrowOnFailure find_and_exists<NormalFloat>
 
+let exists_and_forall<'a when 'a : comparison>  (xs : list<'a>) (F (_, predicate)) =
+    let a = List.forall (predicate >> not) xs
+    let b = List.exists predicate xs
+    a = not b
+
+[<Test>]
+let ``exists and forall are dual`` () =   
+    Check.QuickThrowOnFailure exists_and_forall<int>
+    Check.QuickThrowOnFailure exists_and_forall<string>
+    Check.QuickThrowOnFailure exists_and_forall<NormalFloat>
+
 let findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
