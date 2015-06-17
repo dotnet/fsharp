@@ -217,12 +217,6 @@ let ``exists2 is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure exists2<string>
     Check.QuickThrowOnFailure exists2<NormalFloat>
 
-let sort<'a when 'a : comparison> (xs : 'a []) =
-    let s = xs |> Seq.sort 
-    let l = xs |> List.ofArray |> List.sort
-    let a = xs |> Array.sort
-    Seq.toArray s = a && List.toArray l = a
-
 let filter<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.filter predicate
     let l = xs |> List.ofArray |> List.filter predicate
@@ -234,6 +228,24 @@ let ``filter is consistent`` () =
     Check.QuickThrowOnFailure filter<int>
     Check.QuickThrowOnFailure filter<string>
     Check.QuickThrowOnFailure filter<NormalFloat>
+
+let find<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = run (fun () -> xs |> Seq.find predicate)
+    let l = run (fun () -> xs |> List.ofArray |> List.find predicate)
+    let a = run (fun () -> xs |> Array.find predicate)
+    s = a && l = a
+
+[<Test>]
+let ``find is consistent`` () =
+    Check.QuickThrowOnFailure find<int>
+    Check.QuickThrowOnFailure find<string>
+    Check.QuickThrowOnFailure find<NormalFloat>
+
+let sort<'a when 'a : comparison> (xs : 'a []) =
+    let s = xs |> Seq.sort 
+    let l = xs |> List.ofArray |> List.sort
+    let a = xs |> Array.sort
+    Seq.toArray s = a && List.toArray l = a
 
 [<Test>]
 let ``sort is consistent`` () =
