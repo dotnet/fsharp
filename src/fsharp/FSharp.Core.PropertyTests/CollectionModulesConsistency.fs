@@ -223,6 +223,18 @@ let sort<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.sort
     Seq.toArray s = a && List.toArray l = a
 
+let filter<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = xs |> Seq.filter predicate
+    let l = xs |> List.ofArray |> List.filter predicate
+    let a = xs |> Array.filter predicate
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``filter is consistent`` () =
+    Check.QuickThrowOnFailure filter<int>
+    Check.QuickThrowOnFailure filter<string>
+    Check.QuickThrowOnFailure filter<NormalFloat>
+
 [<Test>]
 let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<int>
