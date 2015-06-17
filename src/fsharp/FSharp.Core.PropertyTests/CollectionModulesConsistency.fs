@@ -238,10 +238,10 @@ let ``findBack is consistent`` () =
     Check.QuickThrowOnFailure findBack<string>
     Check.QuickThrowOnFailure findBack<NormalFloat>
 
-let findIndex<'a when 'a : equality> (xs : 'a []) index =
-    let s = run (fun () -> xs |> Seq.findIndex index)
-    let l = run (fun () -> xs |> List.ofArray |> List.findIndex index)
-    let a = run (fun () -> xs |> Array.findIndex index)
+let findIndex<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = run (fun () -> xs |> Seq.findIndex predicate)
+    let l = run (fun () -> xs |> List.ofArray |> List.findIndex predicate)
+    let a = run (fun () -> xs |> Array.findIndex predicate)
     s = a && l = a
 
 [<Test>]
@@ -250,10 +250,10 @@ let ``findIndex is consistent`` () =
     Check.QuickThrowOnFailure findIndex<string>
     Check.QuickThrowOnFailure findIndex<NormalFloat>
 
-let findIndexBack<'a when 'a : equality> (xs : 'a []) index =
-    let s = run (fun () -> xs |> Seq.findIndexBack index)
-    let l = run (fun () -> xs |> List.ofArray |> List.findIndexBack index)
-    let a = run (fun () -> xs |> Array.findIndexBack index)
+let findIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = run (fun () -> xs |> Seq.findIndexBack predicate)
+    let l = run (fun () -> xs |> List.ofArray |> List.findIndexBack predicate)
+    let a = run (fun () -> xs |> Array.findIndexBack predicate)
     s = a && l = a
 
 [<Test>]

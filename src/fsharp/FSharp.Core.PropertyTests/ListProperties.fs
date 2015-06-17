@@ -137,6 +137,20 @@ let ``findBack and find work in reverse`` () =
     Check.QuickThrowOnFailure findBack_and_find<string>
     Check.QuickThrowOnFailure findBack_and_find<NormalFloat>
 
+let findIndexBack_and_findIndex<'a when 'a : comparison>  (xs : list<'a>) (F (_, predicate)) =
+    let a = run (fun () -> xs |> List.findIndex predicate)
+    let b = run (fun () -> xs |> List.rev |> List.findIndexBack predicate)
+    match a,b with
+    | Success a, Success b -> a = (xs.Length - b - 1)
+    | _ -> a = b
+
+[<Test>]
+let ``findIndexBack and findIndex work in reverse`` () =
+    Check.QuickThrowOnFailure findIndexBack_and_findIndex<int>
+    Check.QuickThrowOnFailure findIndexBack_and_findIndex<string>
+    Check.QuickThrowOnFailure findIndexBack_and_findIndex<NormalFloat>
+
+
 let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
     let a = List.distinct xs
     let b = Set.ofList xs
