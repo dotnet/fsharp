@@ -53,3 +53,25 @@ let ``distinct creates same elements like a set`` () =
     Check.QuickThrowOnFailure distinct_works_like_set<int>
     Check.QuickThrowOnFailure distinct_works_like_set<string>
     Check.QuickThrowOnFailure distinct_works_like_set<NormalFloat>
+
+let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+
+let sortByStable<'a when 'a : comparison> (xs : 'a []) =
+    let indexed = xs |> Seq.indexed |> Seq.toList
+    let sorted = indexed |> List.sortBy snd
+    isStable sorted
+    
+[<Test>]
+let ``List.sortBy is stable`` () =
+    Check.QuickThrowOnFailure sortByStable<int>
+    Check.QuickThrowOnFailure sortByStable<string>
+
+let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
+    let indexed = xs |> Seq.indexed |> Seq.toList
+    let sorted = indexed |> List.distinctBy snd
+    isStable sorted
+    
+[<Test>]
+let ``List.distinctBy is stable`` () =
+    Check.QuickThrowOnFailure distinctByStable<int>
+    Check.QuickThrowOnFailure distinctByStable<string>
