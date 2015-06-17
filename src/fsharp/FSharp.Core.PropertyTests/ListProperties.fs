@@ -50,15 +50,6 @@ let ``splitInto is reversable with collect`` () =
     Check.QuickThrowOnFailure splitInto_and_collect<string>
     Check.QuickThrowOnFailure splitInto_and_collect<NormalFloat>
 
-let sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
-    let a = List.sortBy id xs |> Seq.toArray 
-    let b = List.sort xs |> Seq.toArray
-    let result = ref true
-    for i in 0 .. a.Length - 1 do
-        if a.[i] <> b.[i] then
-            if System.Double.IsNaN a.[i] <> System.Double.IsNaN b.[i] then
-                result := false
-    !result 
 
 [<Test>]
 let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``() =
@@ -77,9 +68,31 @@ let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``
 
     Check.QuickThrowOnFailure prop
 
+let sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
+    let a = List.sortBy id xs |> Seq.toArray 
+    let b = List.sort xs |> Seq.toArray
+    let result = ref true
+    for i in 0 .. a.Length - 1 do
+        if a.[i] <> b.[i] then
+            if System.Double.IsNaN a.[i] <> System.Double.IsNaN b.[i] then
+                result := false
+    !result 
+
 [<Test>]
 let ``sort behaves like sortby id`` () =   
     Check.QuickThrowOnFailure sort_and_sortby
+
+let filter_and_except<'a when 'a : comparison>  (xs : list<'a>) (itemsToExclude : Set<'a>) =
+    let a = List.filter (fun x -> Set.contains x itemsToExclude |> not) xs |> List.distinct
+    let b = List.except itemsToExclude xs
+    a = b
+
+[<Test>]
+let ``filter and except work similar`` () =   
+    Check.QuickThrowOnFailure filter_and_except<int>
+    Check.QuickThrowOnFailure filter_and_except<string>
+    Check.QuickThrowOnFailure filter_and_except<NormalFloat>
+
 
 let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
     let a = List.distinct xs
