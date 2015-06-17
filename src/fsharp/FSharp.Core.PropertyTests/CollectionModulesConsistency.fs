@@ -250,6 +250,18 @@ let ``findIndex is consistent`` () =
     Check.QuickThrowOnFailure findIndex<string>
     Check.QuickThrowOnFailure findIndex<NormalFloat>
 
+let findIndexBack<'a when 'a : equality> (xs : 'a []) index =
+    let s = run (fun () -> xs |> Seq.findIndexBack index)
+    let l = run (fun () -> xs |> List.ofArray |> List.findIndexBack index)
+    let a = run (fun () -> xs |> Array.findIndexBack index)
+    s = a && l = a
+
+[<Test>]
+let ``findIndexBack is consistent`` () =
+    Check.QuickThrowOnFailure findIndexBack<int>
+    Check.QuickThrowOnFailure findIndexBack<string>
+    Check.QuickThrowOnFailure findIndexBack<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
