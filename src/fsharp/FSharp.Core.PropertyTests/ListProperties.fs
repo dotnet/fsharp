@@ -8,6 +8,17 @@ open System.Collections.Generic
 open NUnit.Framework
 open FsCheck
 
+let chunkBySize_and_collect<'a when 'a : equality> (xs : 'a list) size =
+    size > 0 ==> (lazy
+        let a = List.chunkBySize size xs
+        let b = List.collect id a
+        b = xs)
+
+[<Test>]
+let ``chunkBySize is reversable with collect`` () =
+    Check.QuickThrowOnFailure chunkBySize_and_collect<int>
+    Check.QuickThrowOnFailure chunkBySize_and_collect<string>
+    Check.QuickThrowOnFailure chunkBySize_and_collect<NormalFloat>
 
 let sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
     let a = List.sortBy id xs |> Seq.toArray 
