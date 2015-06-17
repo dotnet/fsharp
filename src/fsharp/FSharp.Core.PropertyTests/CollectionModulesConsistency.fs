@@ -241,6 +241,18 @@ let ``find is consistent`` () =
     Check.QuickThrowOnFailure find<string>
     Check.QuickThrowOnFailure find<NormalFloat>
 
+let findBack<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = run (fun () -> xs |> Seq.findBack predicate)
+    let l = run (fun () -> xs |> List.ofArray |> List.findBack predicate)
+    let a = run (fun () -> xs |> Array.findBack predicate)
+    s = a && l = a
+
+[<Test>]
+let ``findBack is consistent`` () =
+    Check.QuickThrowOnFailure findBack<int>
+    Check.QuickThrowOnFailure findBack<string>
+    Check.QuickThrowOnFailure findBack<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
