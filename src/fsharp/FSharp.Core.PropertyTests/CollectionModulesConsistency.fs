@@ -334,6 +334,20 @@ let ``forall is consistent`` () =
     Check.QuickThrowOnFailure forall<string>
     Check.QuickThrowOnFailure forall<NormalFloat>
 
+let forall2<'a when 'a : equality> (xs':('a*'a) []) f =    
+    let xs = Array.map fst xs'
+    let xs2 = Array.map snd xs'
+    let s = runAndCheckErrorType (fun () -> Seq.forall2 f xs xs2)
+    let l = runAndCheckErrorType (fun () -> List.forall2 f (List.ofSeq xs) (List.ofSeq xs2))
+    let a = runAndCheckErrorType (fun () -> Array.forall2 f (Array.ofSeq xs) (Array.ofSeq xs2))
+    s = a && l = a
+    
+[<Test>]
+let ``forall2 is consistent for collections with equal length`` () =
+    Check.QuickThrowOnFailure forall2<int>
+    Check.QuickThrowOnFailure forall2<string>
+    Check.QuickThrowOnFailure forall2<NormalFloat>
+
 let indexed<'a when 'a : equality> (xs : 'a []) =
     let s = xs |> Seq.indexed
     let l = xs |> List.ofArray |> List.indexed
