@@ -51,6 +51,16 @@ let ``splitInto is reversable with collect`` () =
     Check.QuickThrowOnFailure splitInto_and_collect<string>
     Check.QuickThrowOnFailure splitInto_and_collect<NormalFloat>
 
+let indexed_and_zip<'a when 'a : equality> (xs : 'a list) =
+    let a = [0..xs.Length-1]
+    let b = List.indexed xs
+    b = List.zip a xs
+
+[<Test>]
+let ``indexed is adding correct indexes`` () =
+    Check.QuickThrowOnFailure indexed_and_zip<int>
+    Check.QuickThrowOnFailure indexed_and_zip<string>
+    Check.QuickThrowOnFailure indexed_and_zip<NormalFloat>
 
 [<Test>]
 let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``() =
