@@ -203,6 +203,20 @@ let ``exists is consistent`` () =
     Check.QuickThrowOnFailure exists<string>
     Check.QuickThrowOnFailure exists<NormalFloat>
 
+let exists2<'a when 'a : equality> (xs':('a*'a) []) f =    
+    let xs = Array.map fst xs'
+    let xs2 = Array.map snd xs'
+    let s = runAndCheckErrorType (fun () -> Seq.exists2 f xs xs2)
+    let l = runAndCheckErrorType (fun () -> List.exists2 f (List.ofSeq xs) (List.ofSeq xs2))
+    let a = runAndCheckErrorType (fun () -> Array.exists2 f (Array.ofSeq xs) (Array.ofSeq xs2))
+    s = a && l = a
+    
+[<Test>]
+let ``exists2 is consistent for collections with equal length`` () =
+    Check.QuickThrowOnFailure exists2<int>
+    Check.QuickThrowOnFailure exists2<string>
+    Check.QuickThrowOnFailure exists2<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
