@@ -274,6 +274,18 @@ let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<string>
     Check.QuickThrowOnFailure sort<NormalFloat>
 
+let sortDescending<'a when 'a : comparison> (xs : 'a []) =
+    let s = xs |> Seq.sortDescending 
+    let l = xs |> List.ofArray |> List.sortDescending
+    let a = xs |> Array.sortDescending
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``sortDescending is consistent`` () =
+    Check.QuickThrowOnFailure sortDescending<int>
+    Check.QuickThrowOnFailure sortDescending<string>
+    Check.QuickThrowOnFailure sortDescending<NormalFloat>
+
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
