@@ -149,6 +149,18 @@ let ``distinct is consistent`` () =
     Check.QuickThrowOnFailure distinct<string>
     Check.QuickThrowOnFailure distinct<NormalFloat>
 
+let distinctBy<'a when 'a : equality> (xs : 'a []) f =
+    let s = xs |> Seq.distinctBy f
+    let l = xs |> List.ofArray |> List.distinctBy f
+    let a = xs |> Array.distinctBy f
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``distinctBy is consistent`` () =
+    Check.QuickThrowOnFailure distinctBy<int>
+    Check.QuickThrowOnFailure distinctBy<string>
+    Check.QuickThrowOnFailure distinctBy<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
