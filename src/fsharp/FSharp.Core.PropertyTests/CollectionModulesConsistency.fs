@@ -275,6 +275,23 @@ let ``fold is consistent`` () =
     Check.QuickThrowOnFailure fold<float,int>
     Check.QuickThrowOnFailure fold<float,string>
 
+let fold2<'a,'b,'c when 'c : equality> (xs': ('a*'b)[]) f (start:'c) =
+    let xs = xs' |> Array.map fst
+    let xs2 = xs' |> Array.map snd
+    let s = run (fun () -> Seq.fold2 f start xs xs2)
+    let l = run (fun () -> List.fold2 f start (List.ofArray xs) (List.ofArray xs2))
+    let a = run (fun () -> Array.fold2 f start xs xs2)
+    s = a && l = a
+
+[<Test>]
+let ``fold2 is consistent`` () =
+    Check.QuickThrowOnFailure fold2<int,int,int>
+    Check.QuickThrowOnFailure fold2<string,string,string>
+    Check.QuickThrowOnFailure fold2<string,int,string>
+    Check.QuickThrowOnFailure fold2<string,float,int>
+    Check.QuickThrowOnFailure fold2<float,float,int>
+    Check.QuickThrowOnFailure fold2<float,float,string>
+
 let foldBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
     let s = run (fun () -> Seq.foldBack f xs start)
     let l = run (fun () -> List.foldBack f (xs |> List.ofArray) start)
