@@ -61,6 +61,23 @@ let sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
     !result 
 
 [<Test>]
+let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``() =
+    let prop (a: _ list) (PositiveInt count') =
+        let count = min a.Length count'
+        match a |> List.splitInto count' |> Seq.toList with
+        | [] -> a = []
+        | h :: [] -> (a.Length = 1 || count = 1) && h = a
+        | chunks ->
+            let lastChunk = chunks |> List.last
+            let lastLength = lastChunk |> List.length
+
+            chunks.Length = count
+            &&
+            chunks |> List.forall (fun c -> List.length c = lastLength || List.length c = lastLength + 1)
+
+    Check.QuickThrowOnFailure prop
+
+[<Test>]
 let ``sort behaves like sortby id`` () =   
     Check.QuickThrowOnFailure sort_and_sortby
 
