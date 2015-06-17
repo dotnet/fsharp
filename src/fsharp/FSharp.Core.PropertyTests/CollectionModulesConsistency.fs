@@ -354,6 +354,18 @@ let indexed<'a when 'a : equality> (xs : 'a []) =
     let a = xs |> Array.indexed
     Seq.toArray s = a && List.toArray l = a
 
+let groupBy<'a when 'a : equality> (xs : 'a []) f =
+    let s = run (fun () -> xs |> Seq.groupBy f |> Seq.toArray |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
+    let l = run (fun () -> xs |> List.ofArray |> List.groupBy f |> Seq.toArray |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
+    let a = run (fun () -> xs |> Array.groupBy f |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
+    s = a && l = a
+
+[<Test>]
+let ``groupBy is consistent`` () =
+    Check.QuickThrowOnFailure groupBy<int>
+    Check.QuickThrowOnFailure groupBy<string>
+    Check.QuickThrowOnFailure groupBy<NormalFloat>
+
 [<Test>]
 let ``indexed is consistent`` () =
     Check.QuickThrowOnFailure indexed<int>
