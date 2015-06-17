@@ -16,7 +16,13 @@ let run f =
     try
         Success(f())
     with
-    | exn -> Error exn.Message
+    | exn -> Error(exn.Message)
+
+let runAndCheckErrorType f = 
+    try
+        Success(f())
+    with
+    | exn -> Error(exn.GetType().ToString())
 
 let append<'a when 'a : equality> (xs : list<'a>) (xs2 : list<'a>) =
     let s = xs |> Seq.append xs2 
@@ -160,6 +166,18 @@ let ``distinctBy is consistent`` () =
     Check.QuickThrowOnFailure distinctBy<int>
     Check.QuickThrowOnFailure distinctBy<string>
     Check.QuickThrowOnFailure distinctBy<NormalFloat>
+
+let exactlyOne<'a when 'a : comparison> (xs : 'a []) =
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.exactlyOne)
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.exactlyOne)
+    let a = runAndCheckErrorType (fun () -> xs |> Array.exactlyOne)
+    s = a && l = a
+
+[<Test>]
+let ``exactlyOne is consistent`` () =
+    Check.QuickThrowOnFailure exactlyOne<int>
+    Check.QuickThrowOnFailure exactlyOne<string>
+    Check.QuickThrowOnFailure exactlyOne<NormalFloat>
 
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
