@@ -348,12 +348,6 @@ let ``forall2 is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure forall2<string>
     Check.QuickThrowOnFailure forall2<NormalFloat>
 
-let indexed<'a when 'a : equality> (xs : 'a []) =
-    let s = xs |> Seq.indexed
-    let l = xs |> List.ofArray |> List.indexed
-    let a = xs |> Array.indexed
-    Seq.toArray s = a && List.toArray l = a
-
 let groupBy<'a when 'a : equality> (xs : 'a []) f =
     let s = run (fun () -> xs |> Seq.groupBy f |> Seq.toArray |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
     let l = run (fun () -> xs |> List.ofArray |> List.groupBy f |> Seq.toArray |> Array.map (fun (x,xs) -> x,xs |> Seq.toArray))
@@ -365,6 +359,24 @@ let ``groupBy is consistent`` () =
     Check.QuickThrowOnFailure groupBy<int>
     Check.QuickThrowOnFailure groupBy<string>
     Check.QuickThrowOnFailure groupBy<NormalFloat>
+
+let head<'a when 'a : equality> (xs : 'a []) =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.head)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.head)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.head)
+    s = a && l = a
+
+[<Test>]
+let ``head is consistent`` () =
+    Check.QuickThrowOnFailure head<int>
+    Check.QuickThrowOnFailure head<string>
+    Check.QuickThrowOnFailure head<NormalFloat>
+
+let indexed<'a when 'a : equality> (xs : 'a []) =
+    let s = xs |> Seq.indexed
+    let l = xs |> List.ofArray |> List.indexed
+    let a = xs |> Array.indexed
+    Seq.toArray s = a && List.toArray l = a
 
 [<Test>]
 let ``indexed is consistent`` () =
