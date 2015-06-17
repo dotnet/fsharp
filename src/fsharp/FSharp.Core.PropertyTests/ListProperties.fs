@@ -171,6 +171,17 @@ let ``distinct creates same elements like a set`` () =
     Check.QuickThrowOnFailure distinct_works_like_set<string>
     Check.QuickThrowOnFailure distinct_works_like_set<NormalFloat>
 
+let sort_and_sortDescending<'a when 'a : comparison>  (xs : list<'a>) =
+    let a = run (fun () -> xs |> List.sort)
+    let b = run (fun () -> xs |> List.sortDescending |> List.rev)
+    a = b
+
+[<Test>]
+let ``sort and sortDescending work in reverse`` () =   
+    Check.QuickThrowOnFailure sort_and_sortDescending<int>
+    Check.QuickThrowOnFailure sort_and_sortDescending<string>
+    Check.QuickThrowOnFailure sort_and_sortDescending<NormalFloat>
+
 let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
 
 let sortByStable<'a when 'a : comparison> (xs : 'a []) =
