@@ -20,6 +20,24 @@ let ``chunkBySize is reversable with collect`` () =
     Check.QuickThrowOnFailure chunkBySize_and_collect<string>
     Check.QuickThrowOnFailure chunkBySize_and_collect<NormalFloat>
 
+[<Test>]
+let ``chunkBySize produces chunks exactly of size `chunkSize`, except the last one, which can be smaller, but not empty``() =
+    let prop (a: _ list) (PositiveInt chunkSize) =   
+        match a |> List.chunkBySize chunkSize |> Seq.toList with
+        | [] -> a = []
+        | h :: [] -> h.Length <= chunkSize
+        | chunks ->
+            let lastChunk = chunks |> List.last
+            let headChunks = chunks |> Seq.take (chunks.Length - 1) |> Seq.toList
+
+            headChunks |> List.forall (List.length >> (=) chunkSize)
+            &&
+            lastChunk <> []
+            &&
+            lastChunk.Length <= chunkSize
+
+    Check.QuickThrowOnFailure prop
+
 let splitInto_and_collect<'a when 'a : equality> (xs : 'a list) count =
     count > 0 ==> (lazy
         let a = List.splitInto count xs
