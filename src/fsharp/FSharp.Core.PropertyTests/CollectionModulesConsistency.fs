@@ -494,6 +494,18 @@ let ``last is consistent`` () =
     Check.QuickThrowOnFailure last<string>
     Check.QuickThrowOnFailure last<NormalFloat>
 
+let length<'a when 'a : equality> (xs : 'a []) =
+    let s = xs |> Seq.length
+    let l = xs |> List.ofArray |> List.length
+    let a = xs |> Array.length
+    s = a && l = a
+
+[<Test>]
+let ``length is consistent`` () =
+    Check.QuickThrowOnFailure length<int>
+    Check.QuickThrowOnFailure length<string>
+    Check.QuickThrowOnFailure length<float>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
