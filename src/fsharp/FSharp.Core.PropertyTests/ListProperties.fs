@@ -148,6 +148,18 @@ let ``head fails when list isEmpty`` () =
     Check.QuickThrowOnFailure head_and_isEmpty<string>
     Check.QuickThrowOnFailure head_and_isEmpty<NormalFloat>
 
+let length_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
+    let a = List.length xs = 0
+    let b = List.isEmpty xs
+
+    a = b
+
+[<Test>]
+let ``list isEmpty if and only if length is 0`` () =   
+    Check.QuickThrowOnFailure length_and_isEmpty<int>
+    Check.QuickThrowOnFailure length_and_isEmpty<string>
+    Check.QuickThrowOnFailure length_and_isEmpty<NormalFloat>
+
 let findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
