@@ -482,6 +482,18 @@ let ``iteri looks at every element exactly once and in order - consistenly over 
     Check.QuickThrowOnFailure iteri<string>
     Check.QuickThrowOnFailure iteri<NormalFloat>
 
+let last<'a when 'a : equality> (xs : 'a []) =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.last)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.last)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.last)
+    s = a && l = a
+
+[<Test>]
+let ``last is consistent`` () =
+    Check.QuickThrowOnFailure last<int>
+    Check.QuickThrowOnFailure last<string>
+    Check.QuickThrowOnFailure last<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
