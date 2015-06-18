@@ -460,6 +460,28 @@ let ``iter2 looks at every element exactly once and in order - consistenly over 
     Check.QuickThrowOnFailure iter2<string>
     Check.QuickThrowOnFailure iter2<NormalFloat>
 
+let iteri<'a when 'a : equality> (xs : 'a []) f' =
+    let list = System.Collections.Generic.List<'a>()
+    let indices = System.Collections.Generic.List<int>()
+    let f i x =
+        list.Add x
+        indices.Add i
+        f' i x
+
+    let s = xs |> Seq.iteri f
+    let l = xs |> List.ofArray |> List.iteri f
+    let a =  xs |> Array.iteri f
+
+    let xs = Seq.toList xs
+    list |> Seq.toList = (xs @ xs @ xs) &&
+      indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
+
+[<Test>]
+let ``iteri looks at every element exactly once and in order - consistenly over all collections`` () =
+    Check.QuickThrowOnFailure iteri<int>
+    Check.QuickThrowOnFailure iteri<string>
+    Check.QuickThrowOnFailure iteri<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
