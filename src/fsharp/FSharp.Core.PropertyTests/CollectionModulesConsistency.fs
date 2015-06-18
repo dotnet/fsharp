@@ -540,6 +540,29 @@ let ``map2 looks at every element exactly once and in order - consistenly over a
     Check.QuickThrowOnFailure map2<string>
     Check.QuickThrowOnFailure map2<NormalFloat>
 
+let map3<'a when 'a : equality> (xs' : ('a*'a*'a) []) f' =
+    let xs = xs' |> Array.map  (fun (x,y,z) -> x)
+    let xs2 = xs' |> Array.map (fun (x,y,z) -> y)
+    let xs3 = xs' |> Array.map (fun (x,y,z) -> z)
+    let list = System.Collections.Generic.List<'a*'a*'a>()
+    let f x y z =
+        list.Add <| (x,y,z)
+        f' x y z
+
+    let s = Seq.map3 f xs xs2 xs3
+    let l = List.map3 f (xs |> List.ofArray) (xs2 |> List.ofArray) (xs3 |> List.ofArray)
+    let a = Array.map3 f xs xs2 xs3
+
+    let xs = Seq.toList xs'
+    Seq.toArray s = a && List.toArray l = a &&
+      list |> Seq.toList = (xs @ xs @ xs)
+
+[<Test>]
+let ``map3 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+    Check.QuickThrowOnFailure map3<int>
+    Check.QuickThrowOnFailure map3<string>
+    Check.QuickThrowOnFailure map3<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
