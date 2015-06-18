@@ -506,6 +506,18 @@ let ``length is consistent`` () =
     Check.QuickThrowOnFailure length<string>
     Check.QuickThrowOnFailure length<float>
 
+let map<'a when 'a : equality> (xs : 'a []) f =
+    let s = xs |> Seq.map f
+    let l = xs |> List.ofArray |> List.map f
+    let a = xs |> Array.map f
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``map is consistent`` () =
+    Check.QuickThrowOnFailure map<int>
+    Check.QuickThrowOnFailure map<string>
+    Check.QuickThrowOnFailure map<float>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
