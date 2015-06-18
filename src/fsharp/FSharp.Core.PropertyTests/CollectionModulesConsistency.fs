@@ -420,6 +420,25 @@ let ``item is consistent`` () =
     Check.QuickThrowOnFailure item<string>
     Check.QuickThrowOnFailure item<NormalFloat>
 
+let iter<'a when 'a : equality> (xs : 'a []) f' =
+    let list = System.Collections.Generic.List<'a>()
+    let f x =
+        list.Add x
+        f' x
+
+    let s = xs |> Seq.iter f
+    let l = xs |> List.ofArray |> List.iter f
+    let a =  xs |> Array.iter f
+
+    let xs = Seq.toList xs
+    list |> Seq.toList = (xs @ xs @ xs)
+
+[<Test>]
+let ``iter looks at every element exactly once and in order - consistenly over all collections`` () =
+    Check.QuickThrowOnFailure iter<int>
+    Check.QuickThrowOnFailure iter<string>
+    Check.QuickThrowOnFailure iter<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
