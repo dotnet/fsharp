@@ -396,6 +396,18 @@ let ``init is consistent`` () =
     Check.QuickThrowOnFailure init<string>
     Check.QuickThrowOnFailure init<NormalFloat>
 
+let isEmpty<'a when 'a : equality> (xs : 'a []) =
+    let s = xs |> Seq.isEmpty
+    let l = xs |> List.ofArray |> List.isEmpty
+    let a = xs |> Array.isEmpty
+    s = a && l = a
+
+[<Test>]
+let ``isEmpty is consistent`` () =
+    Check.QuickThrowOnFailure isEmpty<int>
+    Check.QuickThrowOnFailure isEmpty<string>
+    Check.QuickThrowOnFailure isEmpty<NormalFloat>
+
 let item<'a when 'a : equality> (xs : 'a []) index =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.item index)
     let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.item index)
