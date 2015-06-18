@@ -148,6 +148,18 @@ let ``head fails when list isEmpty`` () =
     Check.QuickThrowOnFailure head_and_isEmpty<string>
     Check.QuickThrowOnFailure head_and_isEmpty<NormalFloat>
 
+let head_and_last<'a when 'a : comparison>  (xs : list<'a>) =
+    let a = run (fun () -> xs |> List.rev |> List.last)
+    let b = run (fun () -> List.head xs)
+
+    a = b
+
+[<Test>]
+let ``head is the same as last of a reversed list`` () =   
+    Check.QuickThrowOnFailure head_and_last<int>
+    Check.QuickThrowOnFailure head_and_last<string>
+    Check.QuickThrowOnFailure head_and_last<NormalFloat>
+
 let length_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
     let a = List.length xs = 0
     let b = List.isEmpty xs
