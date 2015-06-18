@@ -488,6 +488,30 @@ let sort<'a when 'a : comparison> (xs : 'a []) =
     let a = xs |> Array.sort
     Seq.toArray s = a && List.toArray l = a
 
+let iteri2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
+    let xs = xs' |> Array.map fst
+    let xs2 = xs' |> Array.map snd
+    let list = System.Collections.Generic.List<'a*'a>()
+    let indices = System.Collections.Generic.List<int>()
+    let f i x y =
+        list.Add <| (x,y)
+        indices.Add i
+        f' x y
+
+    let s = Seq.iteri2 f xs xs2
+    let l = List.iteri2 f (xs |> List.ofArray) (xs2 |> List.ofArray)
+    let a = Array.iteri2 f xs xs2
+
+    let xs = Seq.toList xs'
+    list |> Seq.toList = (xs @ xs @ xs) &&
+      indices |> Seq.toList = ([0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
+
+[<Test>]
+let ``iteri2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+    Check.QuickThrowOnFailure iteri2<int>
+    Check.QuickThrowOnFailure iteri2<string>
+    Check.QuickThrowOnFailure iteri2<NormalFloat>
+
 [<Test>]
 let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<int>
