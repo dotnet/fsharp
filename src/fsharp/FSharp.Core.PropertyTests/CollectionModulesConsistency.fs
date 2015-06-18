@@ -518,6 +518,28 @@ let ``map is consistent`` () =
     Check.QuickThrowOnFailure map<string>
     Check.QuickThrowOnFailure map<float>
 
+let map2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
+    let xs = xs' |> Array.map fst
+    let xs2 = xs' |> Array.map snd
+    let list = System.Collections.Generic.List<'a*'a>()
+    let f x y =
+        list.Add <| (x,y)
+        f' x y
+
+    let s = Seq.map2 f xs xs2
+    let l = List.map2 f (xs |> List.ofArray) (xs2 |> List.ofArray)
+    let a = Array.map2 f xs xs2
+
+    let xs = Seq.toList xs'    
+    Seq.toArray s = a && List.toArray l = a &&
+      list |> Seq.toList = (xs @ xs @ xs)
+
+[<Test>]
+let ``map2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+    Check.QuickThrowOnFailure map2<int>
+    Check.QuickThrowOnFailure map2<string>
+    Check.QuickThrowOnFailure map2<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
