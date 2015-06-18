@@ -160,6 +160,18 @@ let ``head is the same as last of a reversed list`` () =
     Check.QuickThrowOnFailure head_and_last<string>
     Check.QuickThrowOnFailure head_and_last<NormalFloat>
 
+let head_and_item<'a when 'a : comparison>  (xs : list<'a>) =
+    let a = runAndCheckErrorType (fun () -> xs |> List.item 0)
+    let b = runAndCheckErrorType (fun () -> List.head xs)
+
+    a = b
+
+[<Test>]
+let ``head is the same as item 0`` () =   
+    Check.QuickThrowOnFailure head_and_item<int>
+    Check.QuickThrowOnFailure head_and_item<string>
+    Check.QuickThrowOnFailure head_and_item<NormalFloat>
+
 let length_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
     let a = List.length xs = 0
     let b = List.isEmpty xs
