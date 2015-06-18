@@ -131,6 +131,23 @@ let ``exists and forall are dual`` () =
     Check.QuickThrowOnFailure exists_and_forall<string>
     Check.QuickThrowOnFailure exists_and_forall<NormalFloat>
 
+let head_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
+    let a = 
+        try
+            List.head xs |> ignore
+            true
+        with
+        | _ -> false
+    let b = List.isEmpty xs
+
+    a = not b
+
+[<Test>]
+let ``head fails when list isEmpty`` () =   
+    Check.QuickThrowOnFailure head_and_isEmpty<int>
+    Check.QuickThrowOnFailure head_and_isEmpty<string>
+    Check.QuickThrowOnFailure head_and_isEmpty<NormalFloat>
+
 let findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
