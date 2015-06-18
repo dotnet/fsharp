@@ -439,6 +439,27 @@ let ``iter looks at every element exactly once and in order - consistenly over a
     Check.QuickThrowOnFailure iter<string>
     Check.QuickThrowOnFailure iter<NormalFloat>
 
+let iter2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
+    let xs = xs' |> Array.map fst
+    let xs2 = xs' |> Array.map snd
+    let list = System.Collections.Generic.List<'a*'a>()
+    let f x y =
+        list.Add <| (x,y)
+        f' x y
+
+    let s = Seq.iter2 f xs xs2
+    let l = List.iter2 f (xs |> List.ofArray) (xs2 |> List.ofArray)
+    let a = Array.iter2 f xs xs2
+
+    let xs = Seq.toList xs'
+    list |> Seq.toList = (xs @ xs @ xs)
+
+[<Test>]
+let ``iter2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+    Check.QuickThrowOnFailure iter2<int>
+    Check.QuickThrowOnFailure iter2<string>
+    Check.QuickThrowOnFailure iter2<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
