@@ -184,6 +184,21 @@ let ``list isEmpty if and only if length is 0`` () =
     Check.QuickThrowOnFailure length_and_isEmpty<string>
     Check.QuickThrowOnFailure length_and_isEmpty<NormalFloat>
 
+let mapi_and_map<'a when 'a : comparison>  (xs : list<'a>) f =
+    let indices = System.Collections.Generic.List<int>()
+    let f' i x =
+        indices.Add i
+        f x
+    let a = List.map f xs
+    let b = List.mapi f' xs
+
+    a = b && (Seq.toList indices = [0..xs.Length-1])
+
+[<Test>]
+let ``mapi behaves like map with correct order`` () =   
+    Check.QuickThrowOnFailure mapi_and_map<int>
+    Check.QuickThrowOnFailure mapi_and_map<string>
+    Check.QuickThrowOnFailure mapi_and_map<NormalFloat>
 
 let mapFold_and_map_and_fold<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
     let f s x = 
