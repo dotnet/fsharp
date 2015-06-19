@@ -204,6 +204,15 @@ let minBy_and_maxBy (xs : list<int>) f =
 let ``minBy is opposite of maxBy`` () =   
     Check.QuickThrowOnFailure minBy_and_maxBy
 
+let minBy_and_min (xs : list<int>) =
+    let a = run (fun () -> List.minBy id xs)
+    let b = run (fun () -> xs |> List.min)
+
+    a = b
+
+[<Test>]
+let ``minBy id is same as min`` () =   
+    Check.QuickThrowOnFailure minBy_and_min
 
 let min_and_sort<'a when 'a : comparison>  (xs : list<'a>) =
     let a = runAndCheckErrorType (fun () -> List.min xs)
