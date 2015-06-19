@@ -625,6 +625,31 @@ let ``mapi is consistent`` () =
     Check.QuickThrowOnFailure mapi<string>
     Check.QuickThrowOnFailure mapi<float>
 
+let mapi2<'a when 'a : equality> (xs' : ('a*'a) []) f' =
+    let xs = xs' |> Array.map fst
+    let xs2 = xs' |> Array.map snd
+    let list = System.Collections.Generic.List<'a*'a>()
+    let indices = System.Collections.Generic.List<int>()
+    let f i x y =
+        indices.Add i
+        list.Add <| (x,y)
+        f' x y
+
+    let s = Seq.mapi2 f xs xs2
+    let l = List.mapi2 f (xs |> List.ofArray) (xs2 |> List.ofArray)
+    let a = Array.mapi2 f xs xs2
+
+    let xs = Seq.toList xs'    
+    Seq.toArray s = a && List.toArray l = a &&
+      list |> Seq.toList = (xs @ xs @ xs) &&
+      (Seq.toList indices = [0..xs.Length-1] @ [0..xs.Length-1] @ [0..xs.Length-1])
+
+[<Test>]
+let ``mapi2 looks at every element exactly once and in order - consistenly over all collections when size is equal`` () =
+    Check.QuickThrowOnFailure mapi2<int>
+    Check.QuickThrowOnFailure mapi2<string>
+    Check.QuickThrowOnFailure mapi2<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
