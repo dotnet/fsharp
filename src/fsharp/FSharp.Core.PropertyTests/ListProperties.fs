@@ -202,6 +202,23 @@ let ``mapFold works like map + fold`` () =
     Check.QuickThrowOnFailure mapFold_and_map_and_fold<string>
     Check.QuickThrowOnFailure mapFold_and_map_and_fold<NormalFloat>
 
+let mapFoldBack_and_map_and_foldBack<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
+    let f x s = 
+        let x' = mapF x
+        let s' = foldF x' s
+        x',s'
+
+    let a,ar = List.mapFoldBack f xs start
+    let b = xs |> List.map mapF 
+    let br = List.foldBack foldF b start
+    a = b && ar = br
+
+[<Test>]
+let ``mapFoldBack works like map + foldBack`` () =   
+    Check.QuickThrowOnFailure mapFoldBack_and_map_and_foldBack<int>
+    Check.QuickThrowOnFailure mapFoldBack_and_map_and_foldBack<string>
+    Check.QuickThrowOnFailure mapFoldBack_and_map_and_foldBack<NormalFloat>
+
 let findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
