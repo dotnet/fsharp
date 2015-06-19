@@ -650,6 +650,18 @@ let ``mapi2 looks at every element exactly once and in order - consistenly over 
     Check.QuickThrowOnFailure mapi2<string>
     Check.QuickThrowOnFailure mapi2<NormalFloat>
 
+let max<'a when 'a : comparison> (xs : 'a []) =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.max)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.max)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.max)
+    s = a && l = a
+
+[<Test>]
+let ``max is consistent`` () =
+    Check.QuickThrowOnFailure max<int>
+    Check.QuickThrowOnFailure max<string>
+    Check.QuickThrowOnFailure max<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
