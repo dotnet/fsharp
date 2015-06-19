@@ -151,6 +151,8 @@ type ArrayModule() =
         Assert.IsTrue([| [|1..4|]; [|5..8|] |] = Array.chunkBySize 4 [|1..8|])
         Assert.IsTrue([| [|1..4|]; [|5..8|]; [|9..10|] |] = Array.chunkBySize 4 [|1..10|])
         Assert.IsTrue([| [|1|]; [|2|]; [|3|]; [|4|] |] = Array.chunkBySize 1 [|1..4|])
+        Assert.IsTrue([| [|1..3|]; [|4|] |] = Array.chunkBySize 3 [|1..4|])
+        Assert.IsTrue([| [|1..5|]; [|6..10|]; [|11..12|] |] = Array.chunkBySize 5 [|1..12|])
 
         // string Seq
         Assert.IsTrue([| [|"a"; "b"|]; [|"c";"d"|]; [|"e"|] |] = Array.chunkBySize 2 [|"a";"b";"c";"d";"e"|])
