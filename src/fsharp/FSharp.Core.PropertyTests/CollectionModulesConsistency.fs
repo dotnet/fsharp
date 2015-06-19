@@ -698,6 +698,19 @@ let ``minBy is consistent`` () =
     Check.QuickThrowOnFailure minBy<string>
     Check.QuickThrowOnFailure minBy<NormalFloat>
 
+let pairwise<'a when 'a : comparison> (xs : 'a []) =
+    let s = run (fun () -> xs |> Seq.pairwise |> Seq.toArray)
+    let l = run (fun () -> xs |> List.ofArray |> List.pairwise |> List.toArray)
+    let a = run (fun () -> xs |> Array.pairwise)
+    s = a && l = a
+
+[<Test>]
+let ``pairwise is consistent`` () =
+    Check.QuickThrowOnFailure pairwise<int>
+    Check.QuickThrowOnFailure pairwise<string>
+    Check.QuickThrowOnFailure pairwise<NormalFloat>
+
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
