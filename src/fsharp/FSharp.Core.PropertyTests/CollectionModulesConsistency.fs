@@ -661,6 +661,18 @@ let ``max is consistent`` () =
     Check.QuickThrowOnFailure max<int>
     Check.QuickThrowOnFailure max<string>
     Check.QuickThrowOnFailure max<NormalFloat>
+ 
+let min<'a when 'a : comparison> (xs : 'a []) =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.min)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.min)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.min)
+    s = a && l = a
+
+[<Test>]
+let ``min is consistent`` () =
+    Check.QuickThrowOnFailure min<int>
+    Check.QuickThrowOnFailure min<string>
+    Check.QuickThrowOnFailure min<NormalFloat>
 
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
