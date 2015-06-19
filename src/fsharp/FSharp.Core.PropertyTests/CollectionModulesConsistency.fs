@@ -661,6 +661,18 @@ let ``max is consistent`` () =
     Check.QuickThrowOnFailure max<int>
     Check.QuickThrowOnFailure max<string>
     Check.QuickThrowOnFailure max<NormalFloat>
+
+let maxBy<'a when 'a : comparison> (xs : 'a []) f =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.maxBy f)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.maxBy f)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.maxBy f)
+    s = a && l = a
+
+[<Test>]
+let ``maxBy is consistent`` () =
+    Check.QuickThrowOnFailure maxBy<int>
+    Check.QuickThrowOnFailure maxBy<string>
+    Check.QuickThrowOnFailure maxBy<NormalFloat>
  
 let min<'a when 'a : comparison> (xs : 'a []) =
     let s = runAndCheckIfAnyError (fun () -> xs |> Seq.min)
