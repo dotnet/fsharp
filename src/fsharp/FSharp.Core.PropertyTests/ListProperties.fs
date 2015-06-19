@@ -184,7 +184,7 @@ let ``list isEmpty if and only if length is 0`` () =
     Check.QuickThrowOnFailure length_and_isEmpty<string>
     Check.QuickThrowOnFailure length_and_isEmpty<NormalFloat>
 
-let min_and_max<'a when 'a : comparison>  (xs : list<int>) =
+let min_and_max (xs : list<int>) =
     let a = run (fun () -> List.min xs)
     let b = run (fun () -> xs |> List.map ((*) -1) |> List.max |> fun x -> -x)
 
@@ -192,7 +192,19 @@ let min_and_max<'a when 'a : comparison>  (xs : list<int>) =
 
 [<Test>]
 let ``min is opposite of max`` () =   
-    Check.QuickThrowOnFailure min_and_max<int>
+    Check.QuickThrowOnFailure min_and_max
+
+let min_and_sort<'a when 'a : comparison>  (xs : list<'a>) =
+    let a = runAndCheckErrorType (fun () -> List.min xs)
+    let b = runAndCheckErrorType (fun () -> xs |> List.sort |> List.head)
+
+    a = b
+
+[<Test>]
+let ``head element after sort is min element`` () =   
+    Check.QuickThrowOnFailure min_and_sort<int>
+    Check.QuickThrowOnFailure min_and_sort<string>
+    Check.QuickThrowOnFailure min_and_sort<NormalFloat>
 
 let mapi_and_map<'a when 'a : comparison>  (xs : list<'a>) f =
     let indices = System.Collections.Generic.List<int>()
