@@ -686,6 +686,18 @@ let ``min is consistent`` () =
     Check.QuickThrowOnFailure min<string>
     Check.QuickThrowOnFailure min<NormalFloat>
 
+let minBy<'a when 'a : comparison> (xs : 'a []) f =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.minBy f)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.minBy f)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.minBy f)
+    s = a && l = a
+
+[<Test>]
+let ``minBy is consistent`` () =
+    Check.QuickThrowOnFailure minBy<int>
+    Check.QuickThrowOnFailure minBy<string>
+    Check.QuickThrowOnFailure minBy<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
