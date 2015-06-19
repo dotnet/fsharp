@@ -194,6 +194,17 @@ let min_and_max (xs : list<int>) =
 let ``min is opposite of max`` () =   
     Check.QuickThrowOnFailure min_and_max
 
+let minBy_and_maxBy (xs : list<int>) f =
+    let a = run (fun () -> List.minBy f xs)
+    let b = run (fun () -> xs |> List.map ((*) -1) |> List.maxBy f |> fun x -> -x)
+
+    a = b
+
+[<Test>]
+let ``minBy is opposite of maxBy`` () =   
+    Check.QuickThrowOnFailure minBy_and_maxBy
+
+
 let min_and_sort<'a when 'a : comparison>  (xs : list<'a>) =
     let a = runAndCheckErrorType (fun () -> List.min xs)
     let b = runAndCheckErrorType (fun () -> xs |> List.sort |> List.head)
