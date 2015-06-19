@@ -184,6 +184,24 @@ let ``list isEmpty if and only if length is 0`` () =
     Check.QuickThrowOnFailure length_and_isEmpty<string>
     Check.QuickThrowOnFailure length_and_isEmpty<NormalFloat>
 
+
+let mapFold_and_map_and_fold<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
+    let f s x = 
+        let x' = mapF x
+        let s' = foldF s x'
+        x',s'
+
+    let a,ar = xs |> List.mapFold f start
+    let b = xs |> List.map mapF 
+    let br = b |> List.fold foldF start
+    a = b && ar = br
+
+[<Test>]
+let ``mapFold works like map + fold`` () =   
+    Check.QuickThrowOnFailure mapFold_and_map_and_fold<int>
+    Check.QuickThrowOnFailure mapFold_and_map_and_fold<string>
+    Check.QuickThrowOnFailure mapFold_and_map_and_fold<NormalFloat>
+
 let findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
