@@ -226,6 +226,26 @@ let ``head element after sort is min element`` () =
     Check.QuickThrowOnFailure min_and_sort<string>
     Check.QuickThrowOnFailure min_and_sort<NormalFloat>
 
+let pairwise<'a when 'a : comparison>  (xs : list<'a>) =
+    let xs' = List.pairwise xs 
+    let f = xs' |> List.map fst
+    let s = xs' |> List.map snd
+    let a = List.length xs'
+    let b = List.length xs
+
+    if xs = [] then 
+        xs' = []
+    else 
+        a = b - 1 &&
+          f = (xs |> List.rev |> List.tail |> List.rev) && // all elements but last one
+          s = (xs |> List.tail) // all elements but first one
+
+[<Test>]
+let ``pairwise works as expected`` () =   
+    Check.QuickThrowOnFailure pairwise<int>
+    Check.QuickThrowOnFailure pairwise<string>
+    Check.QuickThrowOnFailure pairwise<NormalFloat>
+
 let mapi_and_map<'a when 'a : comparison>  (xs : list<'a>) f =
     let indices = System.Collections.Generic.List<int>()
     let f' i x =
