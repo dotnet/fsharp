@@ -613,6 +613,18 @@ let ``mapFold2 is consistent`` () =
     Check.QuickThrowOnFailure mapFoldBack<string>
     Check.QuickThrowOnFailure mapFoldBack<NormalFloat>
 
+let mapi<'a when 'a : equality> (xs : 'a []) f =
+    let s = xs |> Seq.mapi f
+    let l = xs |> List.ofArray |> List.mapi f
+    let a = xs |> Array.mapi f
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``mapi is consistent`` () =
+    Check.QuickThrowOnFailure mapi<int>
+    Check.QuickThrowOnFailure mapi<string>
+    Check.QuickThrowOnFailure mapi<float>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
