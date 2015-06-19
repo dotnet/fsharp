@@ -563,6 +563,19 @@ let ``map3 looks at every element exactly once and in order - consistenly over a
     Check.QuickThrowOnFailure map3<string>
     Check.QuickThrowOnFailure map3<NormalFloat>
 
+let mapFold<'a when 'a : equality> (xs : 'a []) f start =
+    let s,sr = xs |> Seq.mapFold f start
+    let l,lr = xs |> List.ofArray |> List.mapFold f start
+    let a,ar = xs |> Array.mapFold f start
+    Seq.toArray s = a && List.toArray l = a &&
+      sr = lr && sr = ar
+
+[<Test>]
+let ``mapFold is consistent`` () =
+    Check.QuickThrowOnFailure mapFold<int>
+    Check.QuickThrowOnFailure mapFold<string>
+    Check.QuickThrowOnFailure mapFold<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
