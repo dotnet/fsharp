@@ -710,6 +710,17 @@ let ``pairwise is consistent`` () =
     Check.QuickThrowOnFailure pairwise<string>
     Check.QuickThrowOnFailure pairwise<NormalFloat>
 
+let permute<'a when 'a : comparison> (xs : 'a []) f =
+    let s = run (fun () -> xs |> Seq.permute f |> Seq.toArray)
+    let l = run (fun () -> xs |> List.ofArray |> List.permute f |> List.toArray)
+    let a = run (fun () -> xs |> Array.permute f)
+    s = a && l = a
+
+[<Test>]
+let ``permute is consistent`` () =
+    Check.QuickThrowOnFailure permute<int>
+    Check.QuickThrowOnFailure permute<string>
+    Check.QuickThrowOnFailure permute<NormalFloat>
 
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
