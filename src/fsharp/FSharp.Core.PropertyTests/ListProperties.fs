@@ -246,6 +246,37 @@ let ``pairwise works as expected`` () =
     Check.QuickThrowOnFailure pairwise<string>
     Check.QuickThrowOnFailure pairwise<NormalFloat>
 
+let permute<'a when 'a : comparison>  (xs' : list<int*'a>) =
+    let xs = List.map snd xs'
+ 
+    let permutations = 
+        List.map fst xs'
+        |> List.indexed
+        |> List.sortBy snd
+        |> List.map fst
+        |> List.indexed
+        |> dict
+
+    let permutation x = permutations.[x]
+
+
+    match run (fun () -> xs |> List.indexed |> List.permute permutation) with
+    | Success s ->         
+        let originals = s |> List.map fst
+        let rs = s |> List.map snd
+        for o in originals do
+            let x' = xs |> List.item o
+            let x = rs |> List.item (permutation o)
+            Assert.AreEqual(x',x)
+        true
+    | _ -> true
+
+[<Test>]
+let ``permute works as expected`` () =   
+    Check.QuickThrowOnFailure permute<int>
+    Check.QuickThrowOnFailure permute<string>
+    Check.QuickThrowOnFailure permute<NormalFloat>
+
 let mapi_and_map<'a when 'a : comparison>  (xs : list<'a>) f =
     let indices = System.Collections.Generic.List<int>()
     let f' i x =
