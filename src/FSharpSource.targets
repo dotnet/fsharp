@@ -745,6 +745,8 @@
     <DnuRestoreCommand>"$(DnuToolPath)"</DnuRestoreCommand>
     <DnuRestoreCommand>$(DnuRestoreCommand) restore</DnuRestoreCommand>
     <DnuRestoreCommand>$(DnuRestoreCommand) --packages "$(PackagesDir.TrimEnd('/').TrimEnd('\\'))"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-corefx/"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-buildtools"</DnuRestoreCommand>
 
     <!-- Current version of DNX does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
