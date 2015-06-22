@@ -64,9 +64,9 @@ let choose<'a when 'a : equality> (xs : 'a []) f  =
 
 [<Test>]
 let ``choose is consistent`` () =
-    Check.QuickThrowOnFailure contains<int>
-    Check.QuickThrowOnFailure contains<string>
-    Check.QuickThrowOnFailure contains<float>
+    Check.QuickThrowOnFailure choose<int>
+    Check.QuickThrowOnFailure choose<string>
+    Check.QuickThrowOnFailure choose<float>
 
 let chunkBySize<'a when 'a : equality> (xs : 'a []) size =
     let s = run (fun () -> xs |> Seq.chunkBySize size |> Seq.map Seq.toArray |> Seq.toArray)
