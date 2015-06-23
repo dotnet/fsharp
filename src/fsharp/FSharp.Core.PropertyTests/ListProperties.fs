@@ -152,6 +152,19 @@ let ``skip and take gives the list`` () =
     Check.QuickThrowOnFailure skip_and_take<string>
     Check.QuickThrowOnFailure skip_and_take<NormalFloat>
 
+let skipWhile_and_takeWhile<'a when 'a : comparison>  (xs : list<'a>) f =
+    if xs <> [] then
+        let s = List.skipWhile f xs
+        let t = List.skipWhile f xs
+        xs = t @ s
+    else true
+
+[<Test>]
+let ``skipWhile and takeWhile gives the list`` () =   
+    Check.QuickThrowOnFailure skipWhile_and_takeWhile<int>
+    Check.QuickThrowOnFailure skipWhile_and_takeWhile<string>
+    Check.QuickThrowOnFailure skipWhile_and_takeWhile<NormalFloat>
+
 let find_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
