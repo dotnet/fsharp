@@ -844,6 +844,18 @@ let ``skip is consistent`` () =
     Check.QuickThrowOnFailure skip<string>
     Check.QuickThrowOnFailure skip<NormalFloat>
 
+let skipWhile<'a when 'a : equality> (xs : 'a []) f =
+    let s = runAndCheckIfAnyError (fun () -> Seq.skipWhile f xs |> Seq.toArray)
+    let l = runAndCheckIfAnyError (fun () -> List.skipWhile f (Seq.toList xs) |> List.toArray)
+    let a = runAndCheckIfAnyError (fun () -> Array.skipWhile f xs)
+    s = a && l = a
+
+[<Test>]
+let ``skipWhile is consistent`` () =
+    Check.QuickThrowOnFailure skipWhile<int>
+    Check.QuickThrowOnFailure skipWhile<string>
+    Check.QuickThrowOnFailure skipWhile<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
