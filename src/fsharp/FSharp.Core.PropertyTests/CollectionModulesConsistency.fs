@@ -807,6 +807,19 @@ let ``scan is consistent`` () =
     Check.QuickThrowOnFailure scan<float,int>
     Check.QuickThrowOnFailure scan<float,string>
 
+let scanBack<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
+    let s = run (fun () -> Seq.scanBack f xs start |> Seq.toArray)
+    let l = run (fun () -> List.scanBack f (xs |> List.ofArray) start |> Seq.toArray)
+    let a = run (fun () -> Array.scanBack f xs start)
+    s = a && l = a
+
+[<Test>]
+let ``scanBack is consistent`` () =
+    Check.QuickThrowOnFailure scanBack<int,int>
+    Check.QuickThrowOnFailure scanBack<string,string>
+    Check.QuickThrowOnFailure scanBack<float,int>
+    Check.QuickThrowOnFailure scanBack<float,string>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
