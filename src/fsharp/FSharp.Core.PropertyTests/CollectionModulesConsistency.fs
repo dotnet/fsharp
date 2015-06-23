@@ -937,6 +937,16 @@ let ``sortByDescending actually sorts (but is inconsistent in regards of stabili
     Check.QuickThrowOnFailure sortByDescending<string,int>
     Check.QuickThrowOnFailure sortByDescending<NormalFloat,int>
 
+let sum (xs : int []) =
+    let s = run (fun () -> xs |> Seq.sum)
+    let l = run (fun () -> xs |> Array.toList |> List.sum)
+    let a = run (fun () -> xs |> Array.sum)
+    s = a && l = a
+
+[<Test>]
+let ``sum is consistent`` () =
+    Check.QuickThrowOnFailure sum
+
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
