@@ -329,6 +329,22 @@ let ``reduce works like fold with given seed`` () =
     Check.QuickThrowOnFailure reduce_and_fold<string>
     Check.QuickThrowOnFailure reduce_and_fold<NormalFloat>
 
+let scan_and_fold<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
+    let ar : 'a list = List.scan f seed xs
+    let f' (l,c) x =
+        let c' = f c x
+        c'::l,c'
+
+    let br,_ = List.fold f' ([],seed) xs
+    ar = seed :: (List.rev br)
+
+
+[<Test>]
+let ``scan works like fold but returns intermediate values`` () =
+    Check.QuickThrowOnFailure scan_and_fold<int>
+    Check.QuickThrowOnFailure scan_and_fold<string>
+    Check.QuickThrowOnFailure scan_and_fold<NormalFloat>
+
 let reduceBack_and_foldBack<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
     match xs with
     | [] -> List.foldBack f xs seed = seed
