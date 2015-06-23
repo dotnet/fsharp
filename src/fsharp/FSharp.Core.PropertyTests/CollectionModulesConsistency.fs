@@ -970,3 +970,15 @@ let ``splitInto is consistent`` () =
     Check.QuickThrowOnFailure splitInto<int>
     Check.QuickThrowOnFailure splitInto<string>
     Check.QuickThrowOnFailure splitInto<NormalFloat>
+
+let tail<'a when 'a : equality> (xs : 'a []) =
+    let s = runAndCheckIfAnyError (fun () -> xs |> Seq.tail |> Seq.toArray)
+    let l = runAndCheckIfAnyError (fun () -> xs |> List.ofArray |> List.tail |> Seq.toArray)
+    let a = runAndCheckIfAnyError (fun () -> xs |> Array.tail)
+    s = a && l = a
+
+[<Test>]
+let ``tail is consistent`` () =
+    Check.QuickThrowOnFailure tail<int>
+    Check.QuickThrowOnFailure tail<string>
+    Check.QuickThrowOnFailure tail<NormalFloat>
