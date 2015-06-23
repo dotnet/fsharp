@@ -782,6 +782,18 @@ let ``replicate is consistent`` () =
     Check.QuickThrowOnFailure replicate<string>
     Check.QuickThrowOnFailure replicate<NormalFloat>
 
+let rev<'a when 'a : equality> (xs : 'a []) =
+    let s = Seq.rev xs |> Seq.toArray
+    let l = xs |> List.ofArray |> List.rev |> List.toArray
+    let a = Array.rev xs
+    s = a && l = a
+
+[<Test>]
+let ``rev is consistent`` () =
+    Check.QuickThrowOnFailure rev<int>
+    Check.QuickThrowOnFailure rev<string>
+    Check.QuickThrowOnFailure rev<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
