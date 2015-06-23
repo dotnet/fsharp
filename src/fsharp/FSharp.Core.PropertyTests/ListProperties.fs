@@ -335,8 +335,8 @@ let scan_and_fold<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
         let c' = f c x
         c'::l,c'
 
-    let br,_ = List.fold f' ([],seed) xs
-    ar = seed :: (List.rev br)
+    let br,_ = List.fold f' ([seed],seed) xs
+    ar = List.rev br
 
 
 [<Test>]
@@ -344,6 +344,22 @@ let ``scan works like fold but returns intermediate values`` () =
     Check.QuickThrowOnFailure scan_and_fold<int>
     Check.QuickThrowOnFailure scan_and_fold<string>
     Check.QuickThrowOnFailure scan_and_fold<NormalFloat>
+
+let scanBack_and_foldBack<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
+    let ar : 'a list = List.scanBack f xs seed
+    let f' x (l,c) =
+        let c' = f x c
+        c'::l,c'
+
+    let br,_ = List.foldBack f' xs ([seed],seed)
+    ar = br
+
+
+[<Test>]
+let ``scanBack works like foldBack but returns intermediate values`` () =
+    Check.QuickThrowOnFailure scanBack_and_foldBack<int>
+    Check.QuickThrowOnFailure scanBack_and_foldBack<string>
+    Check.QuickThrowOnFailure scanBack_and_foldBack<NormalFloat>
 
 let reduceBack_and_foldBack<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
     match xs with
