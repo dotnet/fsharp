@@ -746,6 +746,17 @@ let ``pick is consistent`` () =
     Check.QuickThrowOnFailure pick<string>
     Check.QuickThrowOnFailure pick<NormalFloat>
 
+let reduce<'a when 'a : equality> (xs : 'a []) f =
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.reduce f)
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.reduce f)
+    let a = runAndCheckErrorType (fun () -> xs |> Array.reduce f)
+    s = a && l = a
+
+[<Test>]
+let ``reduce is consistent`` () =
+    Check.QuickThrowOnFailure reduce<int>
+    Check.QuickThrowOnFailure reduce<string>
+    Check.QuickThrowOnFailure reduce<NormalFloat>
 
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
