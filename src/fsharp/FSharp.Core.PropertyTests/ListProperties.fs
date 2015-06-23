@@ -155,7 +155,7 @@ let ``skip and take gives the list`` () =
 let skipWhile_and_takeWhile<'a when 'a : comparison>  (xs : list<'a>) f =
     if xs <> [] then
         let s = List.skipWhile f xs
-        let t = List.skipWhile f xs
+        let t = List.takeWhile f xs
         xs = t @ s
     else true
 
