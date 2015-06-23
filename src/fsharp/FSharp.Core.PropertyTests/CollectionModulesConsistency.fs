@@ -758,6 +758,18 @@ let ``reduce is consistent`` () =
     Check.QuickThrowOnFailure reduce<string>
     Check.QuickThrowOnFailure reduce<NormalFloat>
 
+let reduceBack<'a when 'a : equality> (xs : 'a []) f =
+    let s = runAndCheckErrorType (fun () -> xs |> Seq.reduceBack f)
+    let l = runAndCheckErrorType (fun () -> xs |> List.ofArray |> List.reduceBack f)
+    let a = runAndCheckErrorType (fun () -> xs |> Array.reduceBack f)
+    s = a && l = a
+
+[<Test>]
+let ``reduceBack is consistent`` () =
+    Check.QuickThrowOnFailure reduceBack<int>
+    Check.QuickThrowOnFailure reduceBack<string>
+    Check.QuickThrowOnFailure reduceBack<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
