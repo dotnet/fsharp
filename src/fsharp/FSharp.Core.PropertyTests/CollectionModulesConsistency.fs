@@ -1006,3 +1006,15 @@ let ``takeWhile is consistent`` () =
     Check.QuickThrowOnFailure takeWhile<int>
     Check.QuickThrowOnFailure takeWhile<string>
     Check.QuickThrowOnFailure takeWhile<NormalFloat>
+
+let truncate<'a when 'a : equality> (xs : 'a []) count =
+    let s = runAndCheckIfAnyError (fun () -> Seq.truncate count xs |> Seq.toArray)
+    let l = runAndCheckIfAnyError (fun () -> List.truncate count (Seq.toList xs) |> List.toArray)
+    let a = runAndCheckIfAnyError (fun () -> Array.truncate count xs)
+    s = a && l = a
+
+[<Test>]
+let ``truncate is consistent`` () =
+    Check.QuickThrowOnFailure truncate<int>
+    Check.QuickThrowOnFailure truncate<string>
+    Check.QuickThrowOnFailure truncate<NormalFloat>
