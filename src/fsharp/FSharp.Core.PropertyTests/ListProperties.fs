@@ -415,6 +415,19 @@ let ``findBack and find work in reverse`` () =
     Check.QuickThrowOnFailure findBack_and_find<string>
     Check.QuickThrowOnFailure findBack_and_find<NormalFloat>
 
+let rev<'a when 'a : comparison>  (xs : list<'a>) =
+    let list = System.Collections.Generic.List<_>()
+    for x in xs do
+        list.Insert(0,x)
+
+    xs |> List.rev |> List.rev = xs && Seq.toList list = List.rev xs
+
+[<Test>]
+let ``rev reverses a list`` () =   
+    Check.QuickThrowOnFailure rev<int>
+    Check.QuickThrowOnFailure rev<string>
+    Check.QuickThrowOnFailure rev<NormalFloat>
+
 let findIndexBack_and_findIndex<'a when 'a : comparison>  (xs : list<'a>) (F (_, predicate)) =
     let a = run (fun () -> xs |> List.findIndex predicate)
     let b = run (fun () -> xs |> List.rev |> List.findIndexBack predicate)
