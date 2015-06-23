@@ -104,6 +104,18 @@ let ``filter and except work similar`` () =
     Check.QuickThrowOnFailure filter_and_except<string>
     Check.QuickThrowOnFailure filter_and_except<NormalFloat>
 
+
+let choose_and_pick<'a when 'a : comparison>  (xs : list<'a>) predicate =
+    let a = runAndCheckIfAnyError (fun () -> List.choose predicate xs |> List.head)
+    let b = runAndCheckIfAnyError (fun () -> List.pick predicate xs)
+    a = b
+
+[<Test>]
+let ``pick works like choose + head`` () =   
+    Check.QuickThrowOnFailure choose_and_pick<int>
+    Check.QuickThrowOnFailure choose_and_pick<string>
+    Check.QuickThrowOnFailure choose_and_pick<NormalFloat>
+
 let find_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
