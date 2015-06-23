@@ -994,3 +994,15 @@ let ``take is consistent`` () =
     Check.QuickThrowOnFailure take<int>
     Check.QuickThrowOnFailure take<string>
     Check.QuickThrowOnFailure take<NormalFloat>
+
+let takeWhile<'a when 'a : equality> (xs : 'a []) f =
+    let s = runAndCheckIfAnyError (fun () -> Seq.takeWhile f xs |> Seq.toArray)
+    let l = runAndCheckIfAnyError (fun () -> List.takeWhile f (Seq.toList xs) |> List.toArray)
+    let a = runAndCheckIfAnyError (fun () -> Array.takeWhile f xs)
+    s = a && l = a
+
+[<Test>]
+let ``takeWhile is consistent`` () =
+    Check.QuickThrowOnFailure takeWhile<int>
+    Check.QuickThrowOnFailure takeWhile<string>
+    Check.QuickThrowOnFailure takeWhile<NormalFloat>
