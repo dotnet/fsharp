@@ -832,6 +832,18 @@ let ``singleton is consistent`` () =
     Check.QuickThrowOnFailure singleton<string>
     Check.QuickThrowOnFailure singleton<NormalFloat>
 
+let skip<'a when 'a : equality> (xs : 'a []) count =
+    let s = runAndCheckIfAnyError (fun () -> Seq.skip count xs |> Seq.toArray)
+    let l = runAndCheckIfAnyError (fun () -> List.skip count (Seq.toList xs) |> List.toArray)
+    let a = runAndCheckIfAnyError (fun () -> Array.skip count xs)
+    s = a && l = a
+
+[<Test>]
+let ``skip is consistent`` () =
+    Check.QuickThrowOnFailure skip<int>
+    Check.QuickThrowOnFailure skip<string>
+    Check.QuickThrowOnFailure skip<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
