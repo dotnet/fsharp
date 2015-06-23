@@ -982,3 +982,15 @@ let ``tail is consistent`` () =
     Check.QuickThrowOnFailure tail<int>
     Check.QuickThrowOnFailure tail<string>
     Check.QuickThrowOnFailure tail<NormalFloat>
+
+let take<'a when 'a : equality> (xs : 'a []) count =
+    let s = runAndCheckIfAnyError (fun () -> Seq.take count xs |> Seq.toArray)
+    let l = runAndCheckIfAnyError (fun () -> List.take count (Seq.toList xs) |> List.toArray)
+    let a = runAndCheckIfAnyError (fun () -> Array.take count xs)
+    s = a && l = a
+
+[<Test>]
+let ``take is consistent`` () =
+    Check.QuickThrowOnFailure take<int>
+    Check.QuickThrowOnFailure take<string>
+    Check.QuickThrowOnFailure take<NormalFloat>
