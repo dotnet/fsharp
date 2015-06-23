@@ -386,6 +386,18 @@ let ``replicate creates n instances of the given element`` () =
     Check.QuickThrowOnFailure replicate<string>
     Check.QuickThrowOnFailure replicate<NormalFloat>
 
+let singleton_and_replicate<'a when 'a : comparison> (x:'a) (count:NonNegativeInt) =
+    let count = int count
+    let xs = List.replicate count x
+    let ys = [for i in 1..count -> List.singleton x] |> List.concat
+    xs = ys
+
+[<Test>]
+let ``singleton can be used to replicate`` () =
+    Check.QuickThrowOnFailure singleton_and_replicate<int>
+    Check.QuickThrowOnFailure singleton_and_replicate<string>
+    Check.QuickThrowOnFailure singleton_and_replicate<NormalFloat>
+
 let mapFold_and_map_and_fold<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
     let f s x = 
         let x' = mapF x
