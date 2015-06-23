@@ -947,6 +947,18 @@ let sum (xs : int []) =
 let ``sum is consistent`` () =
     Check.QuickThrowOnFailure sum
 
+let sumBy<'a> (xs : 'a []) (f:'a -> int) =
+    let s = run (fun () -> xs |> Seq.sumBy f)
+    let l = run (fun () -> xs |> Array.toList |> List.sumBy f)
+    let a = run (fun () -> xs |> Array.sumBy f)
+    s = a && l = a
+
+[<Test>]
+let ``sumBy is consistent`` () =
+    Check.QuickThrowOnFailure sumBy<int>
+    Check.QuickThrowOnFailure sumBy<string>
+    Check.QuickThrowOnFailure sumBy<float>
+
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
