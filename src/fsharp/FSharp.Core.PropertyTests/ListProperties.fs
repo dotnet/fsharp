@@ -329,6 +329,20 @@ let ``reduce works like fold with given seed`` () =
     Check.QuickThrowOnFailure reduce_and_fold<string>
     Check.QuickThrowOnFailure reduce_and_fold<NormalFloat>
 
+let reduceBack_and_foldBack<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
+    match xs with
+    | [] -> List.foldBack f xs seed = seed
+    | _ ->
+        let ar = List.foldBack f xs seed
+        let br = List.reduceBack f (xs @ [seed])
+        ar = br
+
+[<Test>]
+let ``reduceBack works like foldBack with given seed`` () =
+    Check.QuickThrowOnFailure reduceBack_and_foldBack<int>
+    Check.QuickThrowOnFailure reduceBack_and_foldBack<string>
+    Check.QuickThrowOnFailure reduceBack_and_foldBack<NormalFloat>
+
 let mapFold_and_map_and_fold<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
     let f s x = 
         let x' = mapF x
