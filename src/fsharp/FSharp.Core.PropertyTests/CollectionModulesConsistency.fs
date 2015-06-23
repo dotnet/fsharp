@@ -734,6 +734,19 @@ let ``permute is consistent`` () =
     Check.QuickThrowOnFailure permute<string>
     Check.QuickThrowOnFailure permute<NormalFloat>
 
+let pick<'a when 'a : comparison> (xs : 'a []) f =
+    let s = run (fun () -> xs |> Seq.pick f)
+    let l = run (fun () -> xs |> List.ofArray |> List.pick f)
+    let a = run (fun () -> xs |> Array.pick f)
+    s = a && l = a
+
+[<Test>]
+let ``pick is consistent`` () =
+    Check.QuickThrowOnFailure pick<int>
+    Check.QuickThrowOnFailure pick<string>
+    Check.QuickThrowOnFailure pick<NormalFloat>
+
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
