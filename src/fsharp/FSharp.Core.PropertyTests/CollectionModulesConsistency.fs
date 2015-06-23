@@ -794,6 +794,19 @@ let ``rev is consistent`` () =
     Check.QuickThrowOnFailure rev<string>
     Check.QuickThrowOnFailure rev<NormalFloat>
 
+let scan<'a,'b when 'b : equality> (xs : 'a []) f (start:'b) =
+    let s = run (fun () -> xs |> Seq.scan f start |> Seq.toArray)
+    let l = run (fun () -> xs |> List.ofArray |> List.scan f start |> Seq.toArray)
+    let a = run (fun () -> xs |> Array.scan f start)
+    s = a && l = a
+
+[<Test>]
+let ``scan is consistent`` () =
+    Check.QuickThrowOnFailure scan<int,int>
+    Check.QuickThrowOnFailure scan<string,string>
+    Check.QuickThrowOnFailure scan<float,int>
+    Check.QuickThrowOnFailure scan<float,string>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
