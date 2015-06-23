@@ -884,6 +884,31 @@ let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
     Check.QuickThrowOnFailure sortBy<string,int>
     Check.QuickThrowOnFailure sortBy<NormalFloat,int>
 
+let sortWith<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'a -> int) =
+    let dict = System.Collections.Generic.Dictionary<_,_>()
+    let f x y = 
+        if x = y then 0 else
+        if x = Unchecked.defaultof<_> && y <> Unchecked.defaultof<_> then -1 else
+        if y = Unchecked.defaultof<_> && x <> Unchecked.defaultof<_> then 1 else
+        let r = f x y |> sign // only use one side
+        if x < y then r else r * -1
+
+    let s = xs |> Seq.sortWith f
+    let l = xs |> List.ofArray |> List.sortWith f
+    let a = xs |> Array.sortWith f
+    let isSorted sorted = sorted |> Seq.pairwise |> Seq.forall (fun (a,b) -> f a b <= 0 || a = b)
+
+    isSorted s && isSorted l && isSorted a &&
+        haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
+
+[<Test>]
+let ``sortWith actually sorts (but is inconsistent in regards of stability)`` () =
+    Check.QuickThrowOnFailure sortWith<int,int>
+    Check.QuickThrowOnFailure sortWith<int,string>
+    Check.QuickThrowOnFailure sortWith<string,string>
+    Check.QuickThrowOnFailure sortWith<string,int>
+    Check.QuickThrowOnFailure sortWith<NormalFloat,int>
+
 let sortDescending<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sortDescending 
     let l = xs |> List.ofArray |> List.sortDescending
