@@ -560,3 +560,12 @@ let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
 let ``List.distinctBy is stable`` () =
     Check.QuickThrowOnFailure distinctByStable<int>
     Check.QuickThrowOnFailure distinctByStable<string>
+    
+[<Test>]
+let ``List.sum calculates the sum`` () =
+    let sum (xs : int list) =
+        let s = List.sum xs
+        let r = ref 0
+        for x in xs do r := !r + x    
+        s = !r
+    Check.QuickThrowOnFailure sum
