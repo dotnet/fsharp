@@ -543,6 +543,16 @@ let ``List.sortBy is stable`` () =
     Check.QuickThrowOnFailure sortByStable<int>
     Check.QuickThrowOnFailure sortByStable<string>
 
+let sortWithStable<'a when 'a : comparison> (xs : 'a []) =
+    let indexed = xs |> Seq.indexed |> Seq.toList
+    let sorted = indexed |> List.sortWith (fun x y -> compare (snd x) (snd y))
+    isStable sorted
+    
+[<Test>]
+let ``List.sortWithStable is stable`` () =
+    Check.QuickThrowOnFailure sortWithStable<int>
+    Check.QuickThrowOnFailure sortWithStable<string>
+
 let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
     let indexed = xs |> Seq.indexed |> Seq.toList
     let sorted = indexed |> List.distinctBy snd
