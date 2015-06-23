@@ -921,6 +921,22 @@ let ``sortDescending is consistent`` () =
     Check.QuickThrowOnFailure sortDescending<string>
     Check.QuickThrowOnFailure sortDescending<NormalFloat>
 
+let sortByDescending<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
+    let s = xs |> Seq.sortByDescending f
+    let l = xs |> List.ofArray |> List.sortByDescending f
+    let a = xs |> Array.sortByDescending f
+
+    isSorted (Seq.map f s |> Seq.rev) && isSorted (Seq.map f l |> Seq.rev) && isSorted (Seq.map f a |> Seq.rev) &&
+      haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
+
+[<Test>]
+let ``sortByDescending actually sorts (but is inconsistent in regards of stability)`` () =
+    Check.QuickThrowOnFailure sortByDescending<int,int>
+    Check.QuickThrowOnFailure sortByDescending<int,string>
+    Check.QuickThrowOnFailure sortByDescending<string,string>
+    Check.QuickThrowOnFailure sortByDescending<string,int>
+    Check.QuickThrowOnFailure sortByDescending<NormalFloat,int>
+
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
