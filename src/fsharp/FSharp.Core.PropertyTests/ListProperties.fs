@@ -485,6 +485,20 @@ let ``findIndexBack and findIndex work in reverse`` () =
     Check.QuickThrowOnFailure findIndexBack_and_findIndex<string>
     Check.QuickThrowOnFailure findIndexBack_and_findIndex<NormalFloat>
 
+let skip_and_skipWhile<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegativeInt) =
+    let count = int count
+    count <= xs.Length ==> (lazy 
+        let ys = List.indexed xs
+        let a = runAndCheckErrorType (fun () -> List.skip count ys)
+        let b = runAndCheckErrorType (fun () -> List.skipWhile (fun (p,_) -> p < count) ys)
+
+        a = b)
+
+[<Test>]
+let ``skip and skipWhile are consistent`` () =   
+    Check.QuickThrowOnFailure skip_and_skipWhile<int>
+    Check.QuickThrowOnFailure skip_and_skipWhile<string>
+    Check.QuickThrowOnFailure skip_and_skipWhile<NormalFloat>
 
 let distinct_works_like_set<'a when 'a : comparison> (xs : 'a list) =
     let a = List.distinct xs
