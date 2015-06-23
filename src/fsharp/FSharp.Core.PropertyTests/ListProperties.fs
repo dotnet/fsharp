@@ -138,6 +138,20 @@ let ``head and tail gives the list`` () =
     Check.QuickThrowOnFailure head_and_tail<string>
     Check.QuickThrowOnFailure head_and_tail<NormalFloat>
 
+let skip_and_take<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegativeInt) =
+    let count = int count
+    if xs <> [] && count <= xs.Length then
+        let s = List.skip count xs
+        let t = List.take count xs
+        xs = t @ s
+    else true
+
+[<Test>]
+let ``skip and take gives the list`` () =   
+    Check.QuickThrowOnFailure skip_and_take<int>
+    Check.QuickThrowOnFailure skip_and_take<string>
+    Check.QuickThrowOnFailure skip_and_take<NormalFloat>
+
 let find_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
