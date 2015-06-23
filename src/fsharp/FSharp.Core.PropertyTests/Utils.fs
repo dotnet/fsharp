@@ -23,3 +23,9 @@ let runAndCheckIfAnyError f =
         Success(f())
     with
     | exn -> Error("")
+
+
+let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+
+let isSorted sorted = sorted |> Seq.pairwise |> Seq.forall (fun (a,b) -> a <= b)
+let haveSameElements xs ys = xs |> Seq.forall (fun x -> ys |> Seq.exists ((=) x)) && xs |> Seq.forall (fun y -> xs |> Seq.exists ((=) y))

@@ -531,8 +531,6 @@ let ``sort and sortDescending work in reverse`` () =
     Check.QuickThrowOnFailure sort_and_sortDescending<string>
     Check.QuickThrowOnFailure sort_and_sortDescending<NormalFloat>
 
-let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
-
 let sortByStable<'a when 'a : comparison> (xs : 'a []) =
     let indexed = xs |> Seq.indexed |> Seq.toList
     let sorted = indexed |> List.sortBy snd

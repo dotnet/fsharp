@@ -7,8 +7,7 @@ open System.Collections.Generic
 
 open NUnit.Framework
 open FsCheck
-
-let isStable sorted = sorted |> Seq.pairwise |> Seq.forall (fun ((ia, a),(ib, b)) -> if a = b then ia < ib else true)
+open Utils
 
 let sortByStable<'a when 'a : comparison> (xs : 'a []) =
     let indexed = xs |> Seq.indexed

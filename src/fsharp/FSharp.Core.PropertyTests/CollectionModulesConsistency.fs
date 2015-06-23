@@ -868,6 +868,22 @@ let ``sort is consistent`` () =
     Check.QuickThrowOnFailure sort<string>
     Check.QuickThrowOnFailure sort<NormalFloat>
 
+let sortBy<'a,'b when 'a : comparison and 'b : comparison> (xs : 'a []) (f:'a -> 'b) =
+    let s = xs |> Seq.sortBy f
+    let l = xs |> List.ofArray |> List.sortBy f
+    let a = xs |> Array.sortBy f
+
+    isSorted (Seq.map f s) && isSorted (Seq.map f l) && isSorted (Seq.map f a) &&
+      haveSameElements s xs && haveSameElements l xs && haveSameElements a xs
+
+[<Test>]
+let ``sortBy actually sorts (but is inconsistent in regards of stability)`` () =
+    Check.QuickThrowOnFailure sortBy<int,int>
+    Check.QuickThrowOnFailure sortBy<int,string>
+    Check.QuickThrowOnFailure sortBy<string,string>
+    Check.QuickThrowOnFailure sortBy<string,int>
+    Check.QuickThrowOnFailure sortBy<NormalFloat,int>
+
 let sortDescending<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sortDescending 
     let l = xs |> List.ofArray |> List.sortDescending
