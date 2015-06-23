@@ -820,6 +820,18 @@ let ``scanBack is consistent`` () =
     Check.QuickThrowOnFailure scanBack<float,int>
     Check.QuickThrowOnFailure scanBack<float,string>
 
+let singleton<'a when 'a : equality> (x : 'a) =
+    let s = Seq.singleton x |> Seq.toArray
+    let l = List.singleton x |> List.toArray
+    let a = Array.singleton x
+    s = a && l = a
+
+[<Test>]
+let ``singleton is consistent`` () =
+    Check.QuickThrowOnFailure singleton<int>
+    Check.QuickThrowOnFailure singleton<string>
+    Check.QuickThrowOnFailure singleton<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
