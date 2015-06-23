@@ -126,6 +126,18 @@ let ``pick works like choose + head`` () =
     Check.QuickThrowOnFailure choose_and_pick<string>
     Check.QuickThrowOnFailure choose_and_pick<NormalFloat>
 
+let head_and_tail<'a when 'a : comparison>  (xs : list<'a>) =
+    xs <> [] ==> (lazy
+        let h = List.head xs
+        let t = List.tail xs
+        xs = h :: t)
+
+[<Test>]
+let ``head and tail gives the list`` () =   
+    Check.QuickThrowOnFailure head_and_tail<int>
+    Check.QuickThrowOnFailure head_and_tail<string>
+    Check.QuickThrowOnFailure head_and_tail<NormalFloat>
+
 let find_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
     let a = 
         try
