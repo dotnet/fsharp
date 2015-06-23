@@ -152,6 +152,20 @@ let ``skip and take gives the list`` () =
     Check.QuickThrowOnFailure skip_and_take<string>
     Check.QuickThrowOnFailure skip_and_take<NormalFloat>
 
+let truncate_and_take<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegativeInt) =
+    let count = int count
+    if xs <> [] && count <= xs.Length then
+        let a = List.take (min count xs.Length) xs
+        let b = List.truncate count xs
+        a = b
+    else true
+
+[<Test>]
+let ``truncate and take work similar`` () =   
+    Check.QuickThrowOnFailure truncate_and_take<int>
+    Check.QuickThrowOnFailure truncate_and_take<string>
+    Check.QuickThrowOnFailure truncate_and_take<NormalFloat>
+
 let skipWhile_and_takeWhile<'a when 'a : comparison>  (xs : list<'a>) f =
     if xs <> [] then
         let s = List.skipWhile f xs
