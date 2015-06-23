@@ -315,6 +315,20 @@ let ``mapi behaves like map with correct order`` () =
     Check.QuickThrowOnFailure mapi_and_map<string>
     Check.QuickThrowOnFailure mapi_and_map<NormalFloat>
 
+let reduce_and_fold<'a when 'a : comparison> (xs : list<'a>) seed (F (_, f)) =
+    match xs with
+    | [] -> List.fold f seed xs = seed
+    | _ ->
+        let ar = xs |> List.fold f seed
+        let br = seed :: xs  |> List.reduce f
+        ar = br
+
+[<Test>]
+let ``reduce works like fold with given seed`` () =
+    Check.QuickThrowOnFailure reduce_and_fold<int>
+    Check.QuickThrowOnFailure reduce_and_fold<string>
+    Check.QuickThrowOnFailure reduce_and_fold<NormalFloat>
+
 let mapFold_and_map_and_fold<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
     let f s x = 
         let x' = mapF x
