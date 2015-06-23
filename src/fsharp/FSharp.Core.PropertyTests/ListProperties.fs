@@ -569,3 +569,14 @@ let ``List.sum calculates the sum`` () =
         for x in xs do r := !r + x    
         s = !r
     Check.QuickThrowOnFailure sum
+
+let sumBy<'a> (xs : 'a list) (f:'a -> int) =
+    let s = xs |> List.map f |> List.sum
+    let r = List.sumBy f xs
+    r = s
+
+[<Test>]
+let ``List.sumBy calculates the sum of the mapped list`` () =
+    Check.QuickThrowOnFailure sumBy<int>
+    Check.QuickThrowOnFailure sumBy<string> 
+    Check.QuickThrowOnFailure sumBy<float>
