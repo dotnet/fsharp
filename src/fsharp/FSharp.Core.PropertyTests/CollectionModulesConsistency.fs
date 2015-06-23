@@ -770,6 +770,18 @@ let ``reduceBack is consistent`` () =
     Check.QuickThrowOnFailure reduceBack<string>
     Check.QuickThrowOnFailure reduceBack<NormalFloat>
 
+let replicate<'a when 'a : equality> x count =
+    let s = runAndCheckIfAnyError (fun () -> Seq.replicate count x |> Seq.toArray)
+    let l = runAndCheckIfAnyError (fun () -> List.replicate count x |> List.toArray)
+    let a = runAndCheckIfAnyError (fun () -> Array.replicate count x)
+    s = a && l = a
+
+[<Test>]
+let ``replicate is consistent`` () =
+    Check.QuickThrowOnFailure replicate<int>
+    Check.QuickThrowOnFailure replicate<string>
+    Check.QuickThrowOnFailure replicate<NormalFloat>
+
 let sort<'a when 'a : comparison> (xs : 'a []) =
     let s = xs |> Seq.sort 
     let l = xs |> List.ofArray |> List.sort
