@@ -1668,12 +1668,72 @@ namespace Microsoft.FSharp.Core
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
                     override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
 
+            type private EquivalenceRelation = class end
+            type private PartialEquivalenceRelation = class end
+            type private UnknownEquivalenceRelation = class end
+
+            type GenericSpecializeEquals<'a>() =
+                static let generalize (func:Func<'aa,'aa,bool>) =
+                    match box func with
+                    | :? Func<'a, 'a, bool> as f -> f
+                    | _ -> raise (Exception "invalid logic")
+
+                static let _func =
+                    match typeof<'a> with
+                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun (a:bool)      b -> a.Equals b))
+                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun (a:sbyte)     b -> a.Equals b))
+                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun (a:int16)     b -> a.Equals b))
+                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun (a:int32)     b -> a.Equals b))
+                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun (a:int64)     b -> a.Equals b))
+                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun (a:byte)      b -> a.Equals b))
+                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun (a:uint16)    b -> a.Equals b))
+                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun (a:uint32)    b -> a.Equals b))
+                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun (a:uint64)    b -> a.Equals b))
+                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun (a:nativeint) b -> a.Equals b))
+                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun (a:unativeint)b -> a.Equals b))
+                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun (a:char)      b -> a.Equals b))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun (a:string)    b -> System.String.Equals(a,b)))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun (a:decimal)   b -> System.Decimal.op_Equality(a,b)))
+                    | _ -> null
+                            
+                static member Func = _func
+
+            type GenericSpecializeEqualsWithRelation<'relation, 'a>() =
+                static let generalize (func:Func<'aa,'aa,bool>) =
+                    match box func with
+                    | :? Func<'a, 'a, bool> as f -> f
+                    | _ -> raise (Exception "invalid logic")
+
+                static let _func =
+                    let relationBasedFunc =
+                        match typeof<'relation> with
+                        | r when r.Equals typeof<UnknownEquivalenceRelation> -> null
+                        | r when r.Equals typeof<PartialEquivalenceRelation> ->
+                            match typeof<'a> with
+                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (a:float)   b -> a.Equals b))
+                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (a:float32) b -> a.Equals b))
+                            | _ -> null
+                        | r when r.Equals typeof<EquivalenceRelation> ->
+                            match typeof<'a> with
+                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (a:float)   b -> if not (a.Equals a) && not (b.Equals b) then true else a.Equals b))
+                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (a:float32) b -> if not (a.Equals a) && not (b.Equals b) then true else a.Equals b))
+                            | _ -> null
+                        | _ -> raise (Exception "invalid logic")
+
+                    match relationBasedFunc with
+                    | null -> GenericSpecializeEquals<'a>.Func
+                    | func -> func
+                            
+                static member Func = _func
+
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                GenericEqualityObj false fsEqualityComparerNoHashingPER ((box x), (box y))
+                match GenericSpecializeEqualsWithRelation<PartialEquivalenceRelation,_>.Func with
+                | null -> GenericEqualityObj false fsEqualityComparerNoHashingPER ((box x), (box y))
+                | func -> func.Invoke (x, y)
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1682,7 +1742,9 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                GenericEqualityObj true fsEqualityComparerNoHashingER ((box x), (box y))
+                match GenericSpecializeEqualsWithRelation<EquivalenceRelation,_>.Func with
+                | null -> GenericEqualityObj true fsEqualityComparerNoHashingER ((box x), (box y))
+                | func -> func.Invoke (x, y)
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1690,7 +1752,9 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                comp.Equals((box x),(box y))
+                match GenericSpecializeEqualsWithRelation<UnknownEquivalenceRelation,_>.Func with
+                | null -> comp.Equals((box x),(box y))
+                | func -> func.Invoke (x, y)
                 
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
@@ -1877,6 +1941,34 @@ namespace Microsoft.FSharp.Core
                   | _ -> 
                      HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
 
+            type GenericSpecializeHash<'a>() =
+                static let generalize (func:Func<'aa,int>) =
+                    match box func with
+                    | :? Func<'a,int> as f -> f
+                    | _ -> raise (Exception "invalid logic")
+
+                static let _func =
+                    match typeof<'a> with
+                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_>(fun (a:bool)       -> a.GetHashCode()))
+                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_>(fun (a:sbyte)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_>(fun (a:int16)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_>(fun (a:int32)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_>(fun (a:int64)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_>(fun (a:byte)       -> a.GetHashCode()))
+                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_>(fun (a:uint16)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_>(fun (a:uint32)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_>(fun (a:uint64)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_>(fun (a:nativeint)  -> a.GetHashCode()))
+                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_>(fun (a:unativeint) -> a.GetHashCode()))
+                    | t when t.Equals typeof<char>       -> generalize (Func<_,_>(fun (a:char)       -> a.GetHashCode()))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_>(fun (a:string)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_>(fun (a:decimal)    -> a.GetHashCode()))
+                    | t when t.Equals typeof<float>      -> generalize (Func<_,_>(fun (a:float)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<float32>    -> generalize (Func<_,_>(fun (a:float32)    -> a.GetHashCode()))
+                    | _ -> null
+                            
+                static member Func = _func
+
             // Core implementation of structural hashing, corresponds to pseudo-code in the 
             // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
             // Arrays are structurally hashed through a separate technique.
@@ -1928,10 +2020,16 @@ namespace Microsoft.FSharp.Core
             //
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
-            let GenericHashIntrinsic x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box(x))
+            let GenericHashIntrinsic x = 
+                match GenericSpecializeHash.Func with
+                | null -> GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x)
+                | func -> func.Invoke x
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
-            let LimitedGenericHashIntrinsic limit x = GenericHashParamObj (CountLimitedHasherPER(limit)) (box(x))
+            let LimitedGenericHashIntrinsic limit x =
+                match GenericSpecializeHash.Func with
+                | null -> GenericHashParamObj (CountLimitedHasherPER limit) (box x)
+                | func -> func.Invoke x
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -1941,7 +2039,9 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                GenericHashParamObj iec (box(x))
+                match GenericSpecializeHash.Func with
+                | null -> GenericHashParamObj iec (box x)
+                | func -> func.Invoke x
                 
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
