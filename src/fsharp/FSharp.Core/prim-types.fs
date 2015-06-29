@@ -1185,6 +1185,32 @@ namespace Microsoft.FSharp.Core
 
             /// The unique object for comparing values in ER mode (where "0" is returned when NaNs are compared)
             let fsComparerER = GenericComparer(false) 
+
+            type GenericSpecializeCompareTo<'a>() =
+                static let generalize (func:Func<'aa,'aa,int>) =
+                    match box func with
+                    | :? Func<'a, 'a, int> as f -> f
+                    | _ -> raise (Exception "invalid logic")
+
+                static let _func =
+                    match typeof<'a> with
+                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun (x:bool)      y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun (x:sbyte)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun (x:int16)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun (x:int32)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun (x:int64)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun (x:nativeint) y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun (x:byte)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun (x:uint16)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun (x:uint32)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun (x:uint64)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun (x:unativeint)y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun (x:char)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun (x:string)    y -> System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun (x:decimal)   y -> System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))))
+                    | _ -> null
+                            
+                static member Func = _func
                     
             /// Compare two values of the same generic type, using "comp".
             //
@@ -1193,7 +1219,9 @@ namespace Microsoft.FSharp.Core
             // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
             // cases where it is known how a particular type implements generic comparison.
             let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                comp.Compare(box x, box y)
+                match GenericSpecializeCompareTo<'T>.Func with
+                | null -> comp.Compare (box x, box y)
+                | f -> f.Invoke (x, y)
 
             /// Compare two values of the same generic type, in either PER or ER mode, but include static optimizations
             /// for various well-known cases.
