@@ -1680,20 +1680,20 @@ namespace Microsoft.FSharp.Core
 
                 static let _func =
                     match typeof<'a> with
-                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun (a:bool)      b -> a.Equals b))
-                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun (a:sbyte)     b -> a.Equals b))
-                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun (a:int16)     b -> a.Equals b))
-                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun (a:int32)     b -> a.Equals b))
-                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun (a:int64)     b -> a.Equals b))
-                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun (a:byte)      b -> a.Equals b))
-                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun (a:uint16)    b -> a.Equals b))
-                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun (a:uint32)    b -> a.Equals b))
-                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun (a:uint64)    b -> a.Equals b))
-                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun (a:nativeint) b -> a.Equals b))
-                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun (a:unativeint)b -> a.Equals b))
-                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun (a:char)      b -> a.Equals b))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun (a:string)    b -> System.String.Equals(a,b)))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun (a:decimal)   b -> System.Decimal.op_Equality(a,b)))
+                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun (x:bool)      y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun (x:sbyte)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun (x:int16)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun (x:int32)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun (x:int64)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun (x:byte)      y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun (x:uint16)    y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun (x:uint32)    y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun (x:uint64)    y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun (x:nativeint) y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun (x:unativeint)y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun (x:char)      y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun (x:string)    y -> System.String.Equals(x,y)))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun (x:decimal)   y -> System.Decimal.op_Equality(x,y)))
                     | _ -> null
                             
                 static member Func = _func
@@ -1710,13 +1710,13 @@ namespace Microsoft.FSharp.Core
                         | r when r.Equals typeof<UnknownEquivalenceRelation> -> null
                         | r when r.Equals typeof<PartialEquivalenceRelation> ->
                             match typeof<'a> with
-                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (a:float)   b -> a.Equals b))
-                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (a:float32) b -> a.Equals b))
+                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (x:float)   y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (x:float32) y -> (# "ceq" x y : bool #)))
                             | _ -> null
                         | r when r.Equals typeof<EquivalenceRelation> ->
                             match typeof<'a> with
-                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (a:float)   b -> if not (a.Equals a) && not (b.Equals b) then true else a.Equals b))
-                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (a:float32) b -> if not (a.Equals a) && not (b.Equals b) then true else a.Equals b))
+                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (x:float)   y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (x:float32) y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
                             | _ -> null
                         | _ -> raise (Exception "invalid logic")
 
