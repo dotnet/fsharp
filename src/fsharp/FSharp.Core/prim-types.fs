@@ -1941,30 +1941,55 @@ namespace Microsoft.FSharp.Core
                   | _ -> 
                      HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
 
+
+            // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
+            // for fallback to that funciton. 
             type GenericSpecializeHash<'a>() =
-                static let generalize (func:Func<'aa,int>) =
+                static let generalize (func:Func<IEqualityComparer,'aa,int>) =
                     match box func with
-                    | :? Func<'a,int> as f -> f
+                    | :? Func<IEqualityComparer,'a,int> as f -> f
                     | _ -> raise (Exception "invalid logic")
 
                 static let _func =
                     match typeof<'a> with
-                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_>(fun (a:bool)       -> a.GetHashCode()))
-                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_>(fun (a:sbyte)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_>(fun (a:int16)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_>(fun (a:int32)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_>(fun (a:int64)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_>(fun (a:byte)       -> a.GetHashCode()))
-                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_>(fun (a:uint16)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_>(fun (a:uint32)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_>(fun (a:uint64)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_>(fun (a:nativeint)  -> a.GetHashCode()))
-                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_>(fun (a:unativeint) -> a.GetHashCode()))
-                    | t when t.Equals typeof<char>       -> generalize (Func<_,_>(fun (a:char)       -> a.GetHashCode()))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_>(fun (a:string)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_>(fun (a:decimal)    -> a.GetHashCode()))
-                    | t when t.Equals typeof<float>      -> generalize (Func<_,_>(fun (a:float)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<float32>    -> generalize (Func<_,_>(fun (a:float32)    -> a.GetHashCode()))
+                    | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
+                        // I could do something here, but I doubt it would have any real performance impact
+                        null
+
+                    | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
+                        (Func<_,_,_>(fun ec (a:'a) ->
+                            match box a with
+                            | null -> 0
+                            | :? IStructuralEquatable as se -> se.GetHashCode ec
+                            | _ -> raise (Exception "invalid logic")))
+
+                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun _ (a:bool)       -> a.GetHashCode()))
+                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun _ (a:sbyte)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun _ (a:int16)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun _ (a:int32)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun _ (a:int64)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun _ (a:byte)       -> a.GetHashCode()))
+                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun _ (a:uint16)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun _ (a:uint32)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun _ (a:uint64)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun _ (a:nativeint)  -> a.GetHashCode()))
+                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun _ (a:unativeint) -> a.GetHashCode()))
+                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun _ (a:char)       -> a.GetHashCode()))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun _ (a:string)     -> a.GetHashCode()))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun _ (a:decimal)    -> a.GetHashCode()))
+                    | t when t.Equals typeof<float>      -> generalize (Func<_,_,_>(fun _ (a:float)      -> a.GetHashCode()))
+                    | t when t.Equals typeof<float32>    -> generalize (Func<_,_,_>(fun _ (a:float32)    -> a.GetHashCode()))
+
+                    | t when t.IsValueType ->
+                        (Func<_,_,_>(fun ec (a:'a) ->
+                            (box a).GetHashCode ()))
+#if FX_ATLEAST_40
+                    | t when t.IsSealed -> // only sealed as a derived class might inherit from IStructuralEquatable
+                        (Func<_,_,_>(fun ec (a:'a) ->
+                            match box a with
+                            | null -> 0
+                            | o -> o.GetHashCode ()))
+#endif
                     | _ -> null
                             
                 static member Func = _func
@@ -2021,15 +2046,17 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic x = 
+                let iec = fsEqualityComparerUnlimitedHashingPER
                 match GenericSpecializeHash.Func with
-                | null -> GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x)
-                | func -> func.Invoke x
+                | null -> GenericHashParamObj iec (box x)
+                | func -> func.Invoke (iec, x)
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit x =
+                let iec = CountLimitedHasherPER limit
                 match GenericSpecializeHash.Func with
-                | null -> GenericHashParamObj (CountLimitedHasherPER limit) (box x)
-                | func -> func.Invoke x
+                | null -> GenericHashParamObj iec (box x)
+                | func -> func.Invoke (iec, x)
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -2041,7 +2068,7 @@ namespace Microsoft.FSharp.Core
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
                 match GenericSpecializeHash.Func with
                 | null -> GenericHashParamObj iec (box x)
-                | func -> func.Invoke x
+                | func -> func.Invoke (iec, x)
                 
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
