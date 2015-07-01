@@ -1537,7 +1537,9 @@ let readStringHeapOption   ctxt idx = if idx = 0 then None else Some (readString
 let emptyByteArray: byte[] = [||]
 let readBlobHeapUncached ctxtH idx = 
     let ctxt = getHole ctxtH
-    if idx < 0 || idx >= ctxt.blobsStreamSize then emptyByteArray
+    // valid index lies in range [1..streamSize)
+    // NOTE: idx cannot be 0 - Blob\String heap has first empty element that is one byte 0
+    if idx <= 0 || idx >= ctxt.blobsStreamSize then emptyByteArray
     else seekReadBlob ctxt.is (ctxt.blobsStreamPhysicalLoc + idx) 
 let readBlobHeap        ctxt idx = ctxt.readBlobHeap idx 
 let readBlobHeapOption ctxt idx = if idx = 0 then None else Some (readBlobHeap ctxt idx) 
