@@ -903,7 +903,9 @@ namespace Microsoft.FSharp.Core
         let anyToStringShowingNull x = anyToString "null" x
 
         module HashCompare = 
-        
+            open System.Reflection
+            open System.Linq.Expressions
+
             //-------------------------------------------------------------------------
             // LangaugePrimitives.HashCompare: Physical Equality
             //------------------------------------------------------------------------- 
@@ -1703,7 +1705,7 @@ namespace Microsoft.FSharp.Core
             type private PartialEquivalenceRelation = class end
             type private UnknownEquivalenceRelation = class end
 
-            type GenericSpecializeEquals<'a>() =
+            type GenericSpecializeEquals_Pass1<'a>() =
                 static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
                     match box func with
                     | :? Func<IEqualityComparer,'a, 'a, bool> as f -> f
@@ -1729,43 +1731,102 @@ namespace Microsoft.FSharp.Core
                             
                 static member Func = _func
 
+            type GenericSpecializeEquals_Pass3<'a>() =
+                static let _func =
+                    match typeof<'a> with
+                    | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
+                        // I could do something here, but I doubt it would have any real performance impact
+                        null
+
+                    | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
+                        let ec = Expression.Parameter typeof<IEqualityComparer>
+                        let a = Expression.Parameter typeof<'a>
+                        let b = Expression.Parameter typeof<'a>
+                        let lambda = Expression.Lambda<_> (Expression.Call (Expression.Convert (a, typeof<IStructuralEquatable>), "Equals", [||], (Expression.Convert (b, typeof<obj>)), ec), ec, a, b)
+                        lambda.Compile ()
+
+                    | t when t.IsValueType && typeof<IEquatable<'a>>.IsAssignableFrom t ->
+                        let ec = Expression.Parameter typeof<IEqualityComparer>
+                        let a = Expression.Parameter typeof<'a>
+                        let b = Expression.Parameter typeof<'a>
+                        let lambda = Expression.Lambda<_> (Expression.Call (Expression.Convert (a, typeof<IEquatable<'a>>), "Equals", [||], b), ec, a, b)
+                        lambda.Compile ()
+
+                    | t when t.IsValueType ->
+                        let ec = Expression.Parameter typeof<IEqualityComparer>
+                        let a = Expression.Parameter typeof<'a>
+                        let b = Expression.Parameter typeof<'a>
+                        let lambda = Expression.Lambda<_> (Expression.Call (a, "Equals", [||], Expression.Convert (b, typeof<obj>)), ec, a, b)
+                        lambda.Compile ()
+
+                    | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
+                        (Func<_,_,_,_>(fun ec (a:'a) (b:'a) ->
+                            match box a, box b with
+                            | null, null -> true
+                            | null, _    -> false
+                            | _,    null -> false
+                            | :? IStructuralEquatable as se, boxedb -> se.Equals (boxedb, ec)
+                            | _ -> raise (Exception "invalid logic")))
+
+#if FX_ATLEAST_40
+                    | t when t.IsSealed -> // only sealed as a derived class might inherit from IStructuralEquatable
+                        Func<_,_,_,_>(fun ec (a:'a) (b:'a) ->
+                            match box a, box b with
+                            | null, null -> true
+                            | null, _    -> false
+                            | _,    null -> false
+                            | a, b -> a.Equals b)
+#endif
+                    | _ -> null
+                            
+                static member Func = _func
+
             type GenericSpecializeEqualsWithRelation<'relation, 'a>() =
                 static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
                     match box func with
                     | :? Func<IEqualityComparer,'a, 'a, bool> as f -> f
                     | _ -> raise (Exception "invalid logic")
 
-                static let _specialized =
-                    let relationBasedFunc =
-                        match typeof<'relation> with
-                        | r when r.Equals typeof<UnknownEquivalenceRelation> -> null
-                        | r when r.Equals typeof<PartialEquivalenceRelation> ->
-                            match typeof<'a> with
-                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> (# "ceq" x y : bool #)))
-                            | _ -> null
-                        | r when r.Equals typeof<EquivalenceRelation> ->
-                            match typeof<'a> with
-                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                            | _ -> null
-                        | _ -> raise (Exception "invalid logic")
+                static let pass0 =
+                    match typeof<'relation> with
+                    | r when r.Equals typeof<UnknownEquivalenceRelation> -> null
+                    | r when r.Equals typeof<PartialEquivalenceRelation> ->
+                        match typeof<'a> with
+                        | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> (# "ceq" x y : bool #)))
+                        | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> (# "ceq" x y : bool #)))
+                        | _ -> null
+                    | r when r.Equals typeof<EquivalenceRelation> ->
+                        match typeof<'a> with
+                        | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                        | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                        | _ -> null
+                    | _ -> raise (Exception "invalid logic")
 
-                    match relationBasedFunc with
-                    | null -> GenericSpecializeEquals<'a>.Func
-                    | func -> func
+                static let pass1 =
+                    match pass0 with
+                    | null -> GenericSpecializeEquals_Pass1<'a>.Func
+                    | f -> f
 
-                static let _func =
-                    match _specialized with
+                static let pass2 =
+                    match pass1, typeof<'relation> with
+                    | null, r when r.Equals typeof<UnknownEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> comp.Equals (box x, box y))
+                    | f, _ -> f
+
+                static let pass3 =
+                    match pass2 with
+                    | null -> GenericSpecializeEquals_Pass3<'a>.Func
+                    | f -> f
+
+                static let pass4 =
+                    match pass3 with
                     | null ->
                         match typeof<'relation> with
-                        | r when r.Equals typeof<UnknownEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> comp.Equals (box x, box y))
                         | r when r.Equals typeof<PartialEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj false comp ((box x), (box y)))
-                        | r when r.Equals typeof<EquivalenceRelation>        -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj true comp ((box x), (box y)))
+                        | r when r.Equals typeof<EquivalenceRelation>        -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj true  comp ((box x), (box y)))
                         | _ -> raise (Exception "invalid logic")                    
                     | f -> f
                             
-                static member Func = _func
+                static member Func = pass4
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -2035,8 +2096,11 @@ namespace Microsoft.FSharp.Core
                     | t when t.Equals typeof<float32>    -> generalize (Func<_,_,_>(fun _ (a:float32)    -> a.GetHashCode()))
 
                     | t when t.IsValueType ->
-                        (Func<_,_,_>(fun ec (a:'a) ->
-                            (box a).GetHashCode ()))
+                        let ec = Expression.Parameter typeof<IEqualityComparer>
+                        let a = Expression.Parameter typeof<'a>
+                        let lambda = Expression.Lambda<_> (Expression.Call(a, "GetHashCode", [||]), ec, a)
+                        lambda.Compile ()
+
 #if FX_ATLEAST_40
                     | t when t.IsSealed -> // only sealed as a derived class might inherit from IStructuralEquatable
                         (Func<_,_,_>(fun ec (a:'a) ->
