@@ -1187,28 +1187,33 @@ namespace Microsoft.FSharp.Core
             let fsComparerER = GenericComparer(false) 
 
             type GenericSpecializeCompareTo<'a>() =
-                static let generalize (func:Func<'aa,'aa,int>) =
+                static let generalize (func:Func<IComparer,'aa,'aa,int>) =
                     match box func with
-                    | :? Func<'a, 'a, int> as f -> f
+                    | :? Func<IComparer,'a,'a,int> as f -> f
                     | _ -> raise (Exception "invalid logic")
 
-                static let _func =
+                static let _specialized =
                     match typeof<'a> with
-                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun (x:bool)      y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun (x:sbyte)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun (x:int16)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun (x:int32)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun (x:int64)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun (x:nativeint) y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun (x:byte)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun (x:uint16)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun (x:uint32)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun (x:uint64)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun (x:unativeint)y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun (x:char)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun (x:string)    y -> System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun (x:decimal)   y -> System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))))
+                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_,_>(fun _ (x:bool)      y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_,_>(fun _ (x:sbyte)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_,_>(fun _ (x:int16)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_,_>(fun _ (x:int32)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_,_>(fun _ (x:int64)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_,_>(fun _ (x:nativeint) y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_,_>(fun _ (x:byte)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_,_>(fun _ (x:uint16)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_,_>(fun _ (x:uint32)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_,_>(fun _ (x:uint64)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_,_>(fun _ (x:unativeint)y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_,_>(fun _ (x:char)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_,_>(fun _ (x:string)    y -> System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_,_>(fun _ (x:decimal)   y -> System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))))
                     | _ -> null
+
+                static let _func = 
+                    match _specialized with
+                    | null -> Func<_,_,_,_>(fun (comp:IComparer) x y -> comp.Compare (box x, box y))
+                    | f -> f
                             
                 static member Func = _func
                     
@@ -1219,9 +1224,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
             // cases where it is known how a particular type implements generic comparison.
             let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                match GenericSpecializeCompareTo<'T>.Func with
-                | null -> comp.Compare (box x, box y)
-                | f -> f.Invoke (x, y)
+                GenericSpecializeCompareTo<'T>.Func.Invoke (comp, x, y)
 
             /// Compare two values of the same generic type, in either PER or ER mode, but include static optimizations
             /// for various well-known cases.
@@ -1701,56 +1704,66 @@ namespace Microsoft.FSharp.Core
             type private UnknownEquivalenceRelation = class end
 
             type GenericSpecializeEquals<'a>() =
-                static let generalize (func:Func<'aa,'aa,bool>) =
+                static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
                     match box func with
-                    | :? Func<'a, 'a, bool> as f -> f
+                    | :? Func<IEqualityComparer,'a, 'a, bool> as f -> f
                     | _ -> raise (Exception "invalid logic")
 
                 static let _func =
                     match typeof<'a> with
-                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun (x:bool)      y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun (x:sbyte)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun (x:int16)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun (x:int32)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun (x:int64)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun (x:byte)      y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun (x:uint16)    y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun (x:uint32)    y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun (x:uint64)    y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun (x:nativeint) y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun (x:unativeint)y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun (x:char)      y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun (x:string)    y -> System.String.Equals(x,y)))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun (x:decimal)   y -> System.Decimal.op_Equality(x,y)))
+                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_,_>(fun _ (x:bool)      y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_,_>(fun _ (x:sbyte)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_,_>(fun _ (x:int16)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_,_>(fun _ (x:int32)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_,_>(fun _ (x:int64)     y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_,_>(fun _ (x:byte)      y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_,_>(fun _ (x:uint16)    y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_,_>(fun _ (x:uint32)    y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_,_>(fun _ (x:uint64)    y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_,_>(fun _ (x:nativeint) y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_,_>(fun _ (x:unativeint)y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_,_>(fun _ (x:char)      y -> (# "ceq" x y : bool #)))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_,_>(fun _ (x:string)    y -> System.String.Equals(x,y)))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_,_>(fun _ (x:decimal)   y -> System.Decimal.op_Equality(x,y)))
                     | _ -> null
                             
                 static member Func = _func
 
             type GenericSpecializeEqualsWithRelation<'relation, 'a>() =
-                static let generalize (func:Func<'aa,'aa,bool>) =
+                static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
                     match box func with
-                    | :? Func<'a, 'a, bool> as f -> f
+                    | :? Func<IEqualityComparer,'a, 'a, bool> as f -> f
                     | _ -> raise (Exception "invalid logic")
 
-                static let _func =
+                static let _specialized =
                     let relationBasedFunc =
                         match typeof<'relation> with
                         | r when r.Equals typeof<UnknownEquivalenceRelation> -> null
                         | r when r.Equals typeof<PartialEquivalenceRelation> ->
                             match typeof<'a> with
-                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (x:float)   y -> (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (x:float32) y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> (# "ceq" x y : bool #)))
                             | _ -> null
                         | r when r.Equals typeof<EquivalenceRelation> ->
                             match typeof<'a> with
-                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_>(fun (x:float)   y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_>(fun (x:float32) y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
                             | _ -> null
                         | _ -> raise (Exception "invalid logic")
 
                     match relationBasedFunc with
                     | null -> GenericSpecializeEquals<'a>.Func
                     | func -> func
+
+                static let _func =
+                    match _specialized with
+                    | null ->
+                        match typeof<'relation> with
+                        | r when r.Equals typeof<UnknownEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> comp.Equals (box x, box y))
+                        | r when r.Equals typeof<PartialEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj false comp ((box x), (box y)))
+                        | r when r.Equals typeof<EquivalenceRelation>        -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj true comp ((box x), (box y)))
+                        | _ -> raise (Exception "invalid logic")                    
+                    | f -> f
                             
                 static member Func = _func
 
@@ -1759,9 +1772,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                match GenericSpecializeEqualsWithRelation<PartialEquivalenceRelation,_>.Func with
-                | null -> GenericEqualityObj false fsEqualityComparerNoHashingPER ((box x), (box y))
-                | func -> func.Invoke (x, y)
+                GenericSpecializeEqualsWithRelation<PartialEquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingPER, x, y)
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1770,9 +1781,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                match GenericSpecializeEqualsWithRelation<EquivalenceRelation,_>.Func with
-                | null -> GenericEqualityObj true fsEqualityComparerNoHashingER ((box x), (box y))
-                | func -> func.Invoke (x, y)
+                GenericSpecializeEqualsWithRelation<EquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingER, x, y)
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1780,9 +1789,7 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                match GenericSpecializeEqualsWithRelation<UnknownEquivalenceRelation,_>.Func with
-                | null -> comp.Equals((box x),(box y))
-                | func -> func.Invoke (x, y)
+                GenericSpecializeEqualsWithRelation<UnknownEquivalenceRelation,_>.Func.Invoke (comp, x, y)
                 
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
@@ -1969,6 +1976,25 @@ namespace Microsoft.FSharp.Core
                   | _ -> 
                      HashCombine 10 (x.GetLength(0)) (x.GetLength(1)) 
 
+            // Core implementation of structural hashing, corresponds to pseudo-code in the 
+            // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
+            // Arrays are structurally hashed through a separate technique.
+            //
+            // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
+            let rec GenericHashParamObj (iec : System.Collections.IEqualityComparer) (x: obj) : int =
+                  match x with 
+                  | null -> 0 
+                  | (:? System.Array as a) -> 
+                      match a with 
+                      | :? (obj[]) as oa -> GenericHashObjArray iec oa 
+                      | :? (byte[]) as ba -> GenericHashByteArray ba 
+                      | :? (int[]) as ba -> GenericHashInt32Array ba 
+                      | :? (int64[]) as ba -> GenericHashInt64Array ba 
+                      | _ -> GenericHashArbArray iec a 
+                  | :? IStructuralEquatable as a ->    
+                      a.GetHashCode(iec)
+                  | _ -> 
+                      x.GetHashCode()
 
             // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
             // for fallback to that funciton. 
@@ -1978,7 +2004,7 @@ namespace Microsoft.FSharp.Core
                     | :? Func<IEqualityComparer,'a,int> as f -> f
                     | _ -> raise (Exception "invalid logic")
 
-                static let _func =
+                static let _specialized =
                     match typeof<'a> with
                     | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
                         // I could do something here, but I doubt it would have any real performance impact
@@ -2019,29 +2045,13 @@ namespace Microsoft.FSharp.Core
                             | o -> o.GetHashCode ()))
 #endif
                     | _ -> null
+
+                static let _func =
+                    match _specialized with
+                    | null -> Func<_,_,_>(fun iec o -> GenericHashParamObj iec (box o))
+                    | f -> f
                             
                 static member Func = _func
-
-            // Core implementation of structural hashing, corresponds to pseudo-code in the 
-            // F# Language spec.  Searches for the IStructuralHash interface, otherwise uses GetHashCode().
-            // Arrays are structurally hashed through a separate technique.
-            //
-            // "iec" is either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or a CountLimitedHasherPER.
-            let rec GenericHashParamObj (iec : System.Collections.IEqualityComparer) (x: obj) : int =
-                  match x with 
-                  | null -> 0 
-                  | (:? System.Array as a) -> 
-                      match a with 
-                      | :? (obj[]) as oa -> GenericHashObjArray iec oa 
-                      | :? (byte[]) as ba -> GenericHashByteArray ba 
-                      | :? (int[]) as ba -> GenericHashInt32Array ba 
-                      | :? (int64[]) as ba -> GenericHashInt64Array ba 
-                      | _ -> GenericHashArbArray iec a 
-                  | :? IStructuralEquatable as a ->    
-                      a.GetHashCode(iec)
-                  | _ -> 
-                      x.GetHashCode()
-
 
             /// Fill in the implementation of CountLimitedHasherPER
             type CountLimitedHasherPER with
@@ -2075,16 +2085,12 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic x = 
                 let iec = fsEqualityComparerUnlimitedHashingPER
-                match GenericSpecializeHash.Func with
-                | null -> GenericHashParamObj iec (box x)
-                | func -> func.Invoke (iec, x)
+                GenericSpecializeHash.Func.Invoke (iec, x)
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit x =
                 let iec = CountLimitedHasherPER limit
-                match GenericSpecializeHash.Func with
-                | null -> GenericHashParamObj iec (box x)
-                | func -> func.Invoke (iec, x)
+                GenericSpecializeHash.Func.Invoke (iec, x)
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -2094,9 +2100,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                match GenericSpecializeHash.Func with
-                | null -> GenericHashParamObj iec (box x)
-                | func -> func.Invoke (iec, x)
+                GenericSpecializeHash.Func.Invoke (iec, x)
                 
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
