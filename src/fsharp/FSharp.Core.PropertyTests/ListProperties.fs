@@ -102,7 +102,18 @@ let filter_and_except<'a when 'a : comparison>  (xs : list<'a>) (itemsToExclude 
 let ``filter and except work similar`` () =   
     Check.QuickThrowOnFailure filter_and_except<int>
     Check.QuickThrowOnFailure filter_and_except<string>
-    Check.QuickThrowOnFailure filter_and_except<NormalFloat>
+    Check.QuickThrowOnFailure filter_and_except<NormalFloat>    
+
+let filter_and_where<'a when 'a : comparison>  (xs : list<'a>) predicate =
+    let a = List.filter predicate xs
+    let b = List.where predicate xs
+    a = b
+
+[<Test>]
+let ``filter and where work similar`` () =   
+    Check.QuickThrowOnFailure filter_and_where<int>
+    Check.QuickThrowOnFailure filter_and_where<string>
+    Check.QuickThrowOnFailure filter_and_where<NormalFloat>
 
 let find_and_pick<'a when 'a : comparison>  (xs : list<'a>) predicate =
     let a = runAndCheckIfAnyError (fun () -> List.find predicate xs)
