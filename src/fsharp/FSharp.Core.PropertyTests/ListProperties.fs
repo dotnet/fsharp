@@ -261,7 +261,6 @@ let ``head is the same as item 0`` () =
     Check.QuickThrowOnFailure head_and_item<string>
     Check.QuickThrowOnFailure head_and_item<NormalFloat>
 
-
 let item_and_tryItem<'a when 'a : comparison>  (xs : list<'a>) pos =
     let a = runAndCheckErrorType (fun () -> xs |> List.item pos)
     let b = List.tryItem pos xs
@@ -275,6 +274,20 @@ let ``tryItem is safe item`` () =
     Check.QuickThrowOnFailure item_and_tryItem<int>
     Check.QuickThrowOnFailure item_and_tryItem<string>
     Check.QuickThrowOnFailure item_and_tryItem<NormalFloat>
+
+let last_and_tryLast<'a when 'a : comparison>  (xs : list<'a>) =
+    let a = runAndCheckErrorType (fun () -> xs |> List.last)
+    let b = List.tryLast xs
+
+    match a with
+    | Success a -> b.Value = a
+    | _ -> b = None
+
+[<Test>]
+let ``tryLast is safe last`` () =   
+    Check.QuickThrowOnFailure last_and_tryLast<int>
+    Check.QuickThrowOnFailure last_and_tryLast<string>
+    Check.QuickThrowOnFailure last_and_tryLast<NormalFloat>
 
 let length_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
     let a = List.length xs = 0
