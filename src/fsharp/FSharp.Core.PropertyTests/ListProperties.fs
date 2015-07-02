@@ -142,6 +142,15 @@ let ``two zips can be used for zip3`` () =
     Check.QuickThrowOnFailure zip_and_zip3<string>
     Check.QuickThrowOnFailure zip_and_zip3<NormalFloat>
 
+let zip_and_unzip<'a when 'a : equality> (xs' : ('a*'a) list) =
+    let xs,xs2 = List.unzip xs'
+    List.zip xs xs2 = xs'
+
+[<Test>]
+let ``zip can be reversed with unzip`` () =
+    Check.QuickThrowOnFailure zip_and_unzip<int>
+    Check.QuickThrowOnFailure zip_and_unzip<string>
+    Check.QuickThrowOnFailure zip_and_unzip<NormalFloat>
 
 [<Test>]
 let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``() =
