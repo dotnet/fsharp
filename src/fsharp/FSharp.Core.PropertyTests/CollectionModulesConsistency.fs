@@ -1090,3 +1090,15 @@ let ``tryItem is consistent`` () =
     Check.QuickThrowOnFailure tryItem<int>
     Check.QuickThrowOnFailure tryItem<string>
     Check.QuickThrowOnFailure tryItem<NormalFloat>
+
+let tryLast<'a when 'a : equality> (xs : 'a []) =
+    let s = xs |> Seq.tryLast
+    let l = xs |> List.ofArray |> List.tryLast
+    let a = xs |> Array.tryLast
+    s = a && l = a
+
+[<Test>]
+let ``tryLast is consistent`` () =
+    Check.QuickThrowOnFailure tryLast<int>
+    Check.QuickThrowOnFailure tryLast<string>
+    Check.QuickThrowOnFailure tryLast<NormalFloat>
