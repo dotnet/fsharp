@@ -1102,3 +1102,15 @@ let ``tryLast is consistent`` () =
     Check.QuickThrowOnFailure tryLast<int>
     Check.QuickThrowOnFailure tryLast<string>
     Check.QuickThrowOnFailure tryLast<NormalFloat>
+
+let tryPick<'a when 'a : comparison> (xs : 'a []) f =
+    let s = xs |> Seq.tryPick f
+    let l = xs |> List.ofArray |> List.tryPick f
+    let a = xs |> Array.tryPick f
+    s = a && l = a
+
+[<Test>]
+let ``tryPick is consistent`` () =
+    Check.QuickThrowOnFailure tryPick<int>
+    Check.QuickThrowOnFailure tryPick<string>
+    Check.QuickThrowOnFailure tryPick<NormalFloat>
