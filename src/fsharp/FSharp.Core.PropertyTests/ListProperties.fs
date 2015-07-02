@@ -33,6 +33,19 @@ let ``windowed returns list with correct length`` () =
     Check.QuickThrowOnFailure windowed_and_length<string>
     Check.QuickThrowOnFailure windowed_and_length<NormalFloat>
 
+let windowed_and_order<'a when 'a : equality> (listsize:PositiveInt) size =
+    size > 1 ==> (lazy
+        let xs = [1..(int listsize)]
+
+        List.windowed size xs
+        |> List.forall (fun w -> w = List.sort w))
+
+[<Test>]
+let ``windowed returns succeeding elements`` () =
+    Check.QuickThrowOnFailure windowed_and_order<int>
+    Check.QuickThrowOnFailure windowed_and_order<string>
+    Check.QuickThrowOnFailure windowed_and_order<NormalFloat>
+
 let windowed_and_pairwise<'a when 'a : equality> (xs : 'a list) =
     let a = List.windowed 2 xs
     let b = List.pairwise xs |> List.map (fun (x,y) -> [x;y])
