@@ -99,6 +99,22 @@ let ``indexed is adding correct indexes`` () =
     Check.QuickThrowOnFailure indexed_and_zip<string>
     Check.QuickThrowOnFailure indexed_and_zip<NormalFloat>
 
+let zip_and_zip3<'a when 'a : equality> (xs' : ('a*'a*'a) list) =
+    let xs = List.map (fun (x,y,z) -> x) xs'
+    let xs2 = List.map (fun (x,y,z) -> y) xs'
+    let xs3 = List.map (fun (x,y,z) -> z) xs'
+
+    let a = List.zip3 xs xs2 xs3
+    let b = List.zip (List.zip xs xs2) xs3 |> List.map (fun ((a,b),c) -> a,b,c)
+    a = b
+
+[<Test>]
+let ``two zips can be used for zip3`` () =
+    Check.QuickThrowOnFailure zip_and_zip3<int>
+    Check.QuickThrowOnFailure zip_and_zip3<string>
+    Check.QuickThrowOnFailure zip_and_zip3<NormalFloat>
+
+
 [<Test>]
 let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``() =
     let prop (a: _ list) (PositiveInt count') =
