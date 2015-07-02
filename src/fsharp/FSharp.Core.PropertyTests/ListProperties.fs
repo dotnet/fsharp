@@ -21,6 +21,18 @@ let ``chunkBySize is reversable with collect`` () =
     Check.QuickThrowOnFailure chunkBySize_and_collect<string>
     Check.QuickThrowOnFailure chunkBySize_and_collect<NormalFloat>
 
+let windowed_and_length<'a when 'a : equality> (xs : 'a list) size =
+    size > 0 ==> (lazy
+        List.windowed size xs
+        |> List.forall (fun x -> x.Length = size))
+
+
+[<Test>]
+let ``windowed returns list with correct length`` () =
+    Check.QuickThrowOnFailure windowed_and_length<int>
+    Check.QuickThrowOnFailure windowed_and_length<string>
+    Check.QuickThrowOnFailure windowed_and_length<NormalFloat>
+
 let windowed_and_pairwise<'a when 'a : equality> (xs : 'a list) =
     let a = List.windowed 2 xs
     let b = List.pairwise xs |> List.map (fun (x,y) -> [x;y])
