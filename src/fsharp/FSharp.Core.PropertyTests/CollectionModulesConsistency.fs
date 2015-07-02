@@ -1160,3 +1160,17 @@ let ``windowed is consistent`` () =
     Check.QuickThrowOnFailure windowed<int>
     Check.QuickThrowOnFailure windowed<string>
     Check.QuickThrowOnFailure windowed<NormalFloat>
+
+let zip<'a when 'a : equality> (xs':('a*'a) []) =    
+    let xs = Array.map fst xs'
+    let xs2 = Array.map snd xs'
+    let s = runAndCheckErrorType (fun () -> Seq.zip xs xs2 |> Seq.toArray)
+    let l = runAndCheckErrorType (fun () -> List.zip (List.ofSeq xs) (List.ofSeq xs2) |> List.toArray)
+    let a = runAndCheckErrorType (fun () -> Array.zip (Array.ofSeq xs) (Array.ofSeq xs2))
+    s = a && l = a
+    
+[<Test>]
+let ``zip is consistent for collections with equal length`` () =
+    Check.QuickThrowOnFailure zip<int>
+    Check.QuickThrowOnFailure zip<string>
+    Check.QuickThrowOnFailure zip<NormalFloat>
