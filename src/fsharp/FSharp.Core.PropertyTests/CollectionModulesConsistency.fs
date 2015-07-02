@@ -1030,3 +1030,15 @@ let ``tryFind is consistent`` () =
     Check.QuickThrowOnFailure tryFind<int>
     Check.QuickThrowOnFailure tryFind<string>
     Check.QuickThrowOnFailure tryFind<NormalFloat>
+
+let tryFindBack<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = xs |> Seq.tryFindBack predicate
+    let l = xs |> List.ofArray |> List.tryFindBack predicate
+    let a = xs |> Array.tryFindBack predicate
+    s = a && l = a
+
+[<Test>]
+let ``tryFindBack is consistent`` () =
+    Check.QuickThrowOnFailure tryFindBack<int>
+    Check.QuickThrowOnFailure tryFindBack<string>
+    Check.QuickThrowOnFailure tryFindBack<NormalFloat>
