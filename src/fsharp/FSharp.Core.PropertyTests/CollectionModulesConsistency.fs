@@ -972,6 +972,18 @@ let ``sumBy is consistent`` () =
     Check.QuickThrowOnFailure sumBy<string>
     Check.QuickThrowOnFailure sumBy<float>
 
+let splitAt<'a when 'a : equality> (xs : 'a []) index =
+    // no seq version
+    let l = run (fun () -> xs |> List.ofArray |> List.splitAt index |> fun (a,b) -> List.toArray a,List.toArray b)
+    let a = run (fun () -> xs |> Array.splitAt index)
+    l = a
+
+[<Test>]
+let ``splitAt is consistent`` () =
+    Check.QuickThrowOnFailure splitAt<int>
+    Check.QuickThrowOnFailure splitAt<string>
+    Check.QuickThrowOnFailure splitAt<NormalFloat>
+
 let splitInto<'a when 'a : equality> (xs : 'a []) count =
     let s = run (fun () -> xs |> Seq.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
     let l = run (fun () -> xs |> List.ofArray |> List.splitInto count |> Seq.map Seq.toArray |> Seq.toArray)
