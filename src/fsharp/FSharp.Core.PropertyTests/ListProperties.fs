@@ -261,6 +261,21 @@ let ``head is the same as item 0`` () =
     Check.QuickThrowOnFailure head_and_item<string>
     Check.QuickThrowOnFailure head_and_item<NormalFloat>
 
+
+let item_and_tryItem<'a when 'a : comparison>  (xs : list<'a>) pos =
+    let a = runAndCheckErrorType (fun () -> xs |> List.item pos)
+    let b = List.tryItem pos xs
+
+    match a with
+    | Success a -> b.Value = a
+    | _ -> b = None
+
+[<Test>]
+let ``tryItem is safe item`` () =   
+    Check.QuickThrowOnFailure item_and_tryItem<int>
+    Check.QuickThrowOnFailure item_and_tryItem<string>
+    Check.QuickThrowOnFailure item_and_tryItem<NormalFloat>
+
 let length_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
     let a = List.length xs = 0
     let b = List.isEmpty xs
