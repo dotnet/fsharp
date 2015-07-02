@@ -1174,3 +1174,18 @@ let ``zip is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure zip<int>
     Check.QuickThrowOnFailure zip<string>
     Check.QuickThrowOnFailure zip<NormalFloat>
+
+let zip3<'a when 'a : equality> (xs':('a*'a*'a) []) =    
+    let xs = Array.map (fun (x,y,z) -> x) xs'
+    let xs2 = Array.map (fun (x,y,z) -> y) xs'
+    let xs3 = Array.map (fun (x,y,z) -> z) xs'
+    let s = runAndCheckErrorType (fun () -> Seq.zip3 xs xs2 xs3 |> Seq.toArray)
+    let l = runAndCheckErrorType (fun () -> List.zip3 (List.ofSeq xs) (List.ofSeq xs2) (List.ofSeq xs3) |> List.toArray)
+    let a = runAndCheckErrorType (fun () -> Array.zip3 (Array.ofSeq xs) (Array.ofSeq xs2) (Array.ofSeq xs3))
+    s = a && l = a
+    
+[<Test>]
+let ``zip3 is consistent for collections with equal length`` () =
+    Check.QuickThrowOnFailure zip3<int>
+    Check.QuickThrowOnFailure zip3<string>
+    Check.QuickThrowOnFailure zip3<NormalFloat>
