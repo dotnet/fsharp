@@ -1054,3 +1054,15 @@ let ``tryFindIndex is consistent`` () =
     Check.QuickThrowOnFailure tryFindIndex<int>
     Check.QuickThrowOnFailure tryFindIndex<string>
     Check.QuickThrowOnFailure tryFindIndex<NormalFloat>
+
+let tryFindIndexBack<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = xs |> Seq.tryFindIndexBack predicate
+    let l = xs |> List.ofArray |> List.tryFindIndexBack predicate
+    let a = xs |> Array.tryFindIndexBack predicate
+    s = a && l = a
+
+[<Test>]
+let ``tryFindIndexBack is consistent`` () =
+    Check.QuickThrowOnFailure tryFindIndexBack<int>
+    Check.QuickThrowOnFailure tryFindIndexBack<string>
+    Check.QuickThrowOnFailure tryFindIndexBack<NormalFloat>
