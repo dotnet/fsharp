@@ -1174,6 +1174,18 @@ let ``unzip is consistent`` () =
     Check.QuickThrowOnFailure unzip<string>
     Check.QuickThrowOnFailure unzip<NormalFloat>
 
+let unzip3<'a when 'a : equality> (xs:('a*'a*'a) []) =       
+    // no seq version
+    let l = runAndCheckErrorType (fun () -> List.unzip3 (List.ofSeq xs) |> fun (a,b,c) -> List.toArray a, List.toArray b, List.toArray c)
+    let a = runAndCheckErrorType (fun () -> Array.unzip3 xs)
+    l = a
+    
+[<Test>]
+let ``unzip3 is consistent`` () =
+    Check.QuickThrowOnFailure unzip3<int>
+    Check.QuickThrowOnFailure unzip3<string>
+    Check.QuickThrowOnFailure unzip3<NormalFloat>
+
 let where<'a when 'a : equality> (xs : 'a []) predicate =
     let s = xs |> Seq.where predicate
     let l = xs |> List.ofArray |> List.where predicate
