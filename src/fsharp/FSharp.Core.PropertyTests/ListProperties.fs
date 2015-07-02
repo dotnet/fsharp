@@ -21,6 +21,18 @@ let ``chunkBySize is reversable with collect`` () =
     Check.QuickThrowOnFailure chunkBySize_and_collect<string>
     Check.QuickThrowOnFailure chunkBySize_and_collect<NormalFloat>
 
+let windowed_and_pairwise<'a when 'a : equality> (xs : 'a list) =
+    let a = List.windowed 2 xs
+    let b = List.pairwise xs |> List.map (fun (x,y) -> [x;y])
+
+    a = b
+
+[<Test>]
+let ``windowed 2 is like pairwise`` () =
+    Check.QuickThrowOnFailure windowed_and_pairwise<int>
+    Check.QuickThrowOnFailure windowed_and_pairwise<string>
+    Check.QuickThrowOnFailure windowed_and_pairwise<NormalFloat>
+
 [<Test>]
 let ``chunkBySize produces chunks exactly of size `chunkSize`, except the last one, which can be smaller, but not empty``() =
     let prop (a: _ list) (PositiveInt chunkSize) =   
