@@ -1739,24 +1739,27 @@ namespace Microsoft.FSharp.Core
                         null
 
                     | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
+                        let equals = typeof<IStructuralEquatable>.GetMethod "Equals"
                         let ec = Expression.Parameter typeof<IEqualityComparer>
                         let a = Expression.Parameter typeof<'a>
                         let b = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call (Expression.Convert (a, typeof<IStructuralEquatable>), "Equals", [||], (Expression.Convert (b, typeof<obj>)), ec), ec, a, b)
+                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, (Expression.Convert (b, typeof<obj>)), ec), ec, a, b)
                         lambda.Compile ()
 
                     | t when t.IsValueType && typeof<IEquatable<'a>>.IsAssignableFrom t ->
+                        let equals = typeof<IEquatable<'a>>.GetMethod "Equals"
                         let ec = Expression.Parameter typeof<IEqualityComparer>
                         let a = Expression.Parameter typeof<'a>
                         let b = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call (Expression.Convert (a, typeof<IEquatable<'a>>), "Equals", [||], b), ec, a, b)
+                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, b), ec, a, b)
                         lambda.Compile ()
 
                     | t when t.IsValueType ->
+                        let equals = typeof<obj>.GetMethod ("Equals", [|typeof<obj>|])
                         let ec = Expression.Parameter typeof<IEqualityComparer>
                         let a = Expression.Parameter typeof<'a>
                         let b = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call (a, "Equals", [||], Expression.Convert (b, typeof<obj>)), ec, a, b)
+                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, Expression.Convert (b, typeof<obj>)), ec, a, b)
                         lambda.Compile ()
 
                     | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
@@ -1969,10 +1972,10 @@ namespace Microsoft.FSharp.Core
                     
 
             /// The unique object for unlimited depth for hashing and ER semantics for equality.
-            let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER()
+            let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER() :> IEqualityComparer
 
             /// The unique object for unlimited depth for hashing and PER semantics for equality.
-            let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER()
+            let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER() :> IEqualityComparer
              
             let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
 
@@ -2421,8 +2424,8 @@ namespace Microsoft.FSharp.Core
         let inline PhysicalHash x           = HashCompare.PhysicalHashFast x
         
         let GenericComparer = HashCompare.fsComparerER :> System.Collections.IComparer
-        let GenericEqualityComparer = HashCompare.fsEqualityComparerUnlimitedHashingPER :> System.Collections.IEqualityComparer
-        let GenericEqualityERComparer = HashCompare.fsEqualityComparerUnlimitedHashingER :> System.Collections.IEqualityComparer
+        let GenericEqualityComparer = HashCompare.fsEqualityComparerUnlimitedHashingPER
+        let GenericEqualityERComparer = HashCompare.fsEqualityComparerUnlimitedHashingER
 
         let inline GenericHash x                = HashCompare.GenericHashFast x
         let inline GenericLimitedHash limit x   = HashCompare.GenericLimitedHashFast limit x
