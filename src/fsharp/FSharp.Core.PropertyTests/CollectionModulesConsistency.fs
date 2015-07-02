@@ -1114,3 +1114,25 @@ let ``tryPick is consistent`` () =
     Check.QuickThrowOnFailure tryPick<int>
     Check.QuickThrowOnFailure tryPick<string>
     Check.QuickThrowOnFailure tryPick<NormalFloat>
+
+let unfold<'a,'b when 'b : equality> f (start:'a) =
+    let f() =
+        let c = ref 0
+        fun x -> 
+            if !c > 100 then None else // prevent infinity seqs
+            c := !c + 1
+            f x
+
+    
+    let s : 'b [] = Seq.unfold (f()) start |> Seq.toArray
+    let l = List.unfold (f()) start |> List.toArray
+    let a = Array.unfold (f()) start
+    s = a && l = a
+
+
+[<Test>]
+let ``unfold is consistent`` () =
+    Check.QuickThrowOnFailure unfold<int,int>
+    Check.QuickThrowOnFailure unfold<string,string>
+    Check.QuickThrowOnFailure unfold<float,int>
+    Check.QuickThrowOnFailure unfold<float,string>
