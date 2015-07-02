@@ -138,6 +138,20 @@ let ``head and tail gives the list`` () =
     Check.QuickThrowOnFailure head_and_tail<string>
     Check.QuickThrowOnFailure head_and_tail<NormalFloat>
 
+let tryHead_and_tail<'a when 'a : comparison>  (xs : list<'a>) =
+    match xs with
+    | [] -> List.tryHead xs = None
+    | _ ->
+        let h = (List.tryHead xs).Value
+        let t = List.tail xs
+        xs = h :: t
+
+[<Test>]
+let ``tryHead and tail gives the list`` () =   
+    Check.QuickThrowOnFailure tryHead_and_tail<int>
+    Check.QuickThrowOnFailure tryHead_and_tail<string>
+    Check.QuickThrowOnFailure tryHead_and_tail<NormalFloat>
+
 let skip_and_take<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegativeInt) =
     let count = int count
     if xs <> [] && count <= xs.Length then
