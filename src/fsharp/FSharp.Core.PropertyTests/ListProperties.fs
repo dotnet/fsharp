@@ -523,6 +523,19 @@ let ``tryFindBack and tryFind work in reverse`` () =
     Check.QuickThrowOnFailure tryFindBack_and_tryFind<string>
     Check.QuickThrowOnFailure tryFindBack_and_tryFind<NormalFloat>
 
+let tryFindIndexBack_and_tryFindIndex<'a when 'a : comparison>  (xs : list<'a>) predicate =
+    let a = xs |> List.tryFindIndexBack predicate
+    let b = xs |> List.rev |> List.tryFindIndex predicate
+    match a,b with
+    | Some a, Some b -> a = (xs.Length - b - 1)
+    | _ -> a = b
+
+[<Test>]
+let ``tryFindIndexBack and tryIndexFind work in reverse`` () =   
+    Check.QuickThrowOnFailure tryFindIndexBack_and_tryFindIndex<int>
+    Check.QuickThrowOnFailure tryFindIndexBack_and_tryFindIndex<string>
+    Check.QuickThrowOnFailure tryFindIndexBack_and_tryFindIndex<NormalFloat>
+
 let rev<'a when 'a : comparison>  (xs : list<'a>) =
     let list = System.Collections.Generic.List<_>()
     for x in xs do
