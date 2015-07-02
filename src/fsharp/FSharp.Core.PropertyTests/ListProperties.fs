@@ -46,6 +46,22 @@ let ``windowed returns succeeding elements`` () =
     Check.QuickThrowOnFailure windowed_and_order<string>
     Check.QuickThrowOnFailure windowed_and_order<NormalFloat>
 
+let partition_and_sort<'a when 'a : comparison> (xs : 'a list) =
+    let rec qsort xs = 
+        match xs with
+        | [] -> []
+        | (x:'a)::xs -> 
+            let smaller,larger = List.partition (fun y -> y <= x) xs
+            qsort smaller @ [x] @ qsort larger
+
+    qsort xs = (List.sort xs)
+
+[<Test>]
+let ``partition can be used to sort`` () =
+    Check.QuickThrowOnFailure partition_and_sort<int>
+    Check.QuickThrowOnFailure partition_and_sort<string>
+    Check.QuickThrowOnFailure partition_and_sort<NormalFloat>
+
 let windowed_and_pairwise<'a when 'a : equality> (xs : 'a list) =
     let a = List.windowed 2 xs
     let b = List.pairwise xs |> List.map (fun (x,y) -> [x;y])
