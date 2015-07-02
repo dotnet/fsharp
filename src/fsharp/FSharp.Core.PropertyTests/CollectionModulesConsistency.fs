@@ -1148,3 +1148,15 @@ let ``where is consistent`` () =
     Check.QuickThrowOnFailure where<int>
     Check.QuickThrowOnFailure where<string>
     Check.QuickThrowOnFailure where<NormalFloat>
+
+let windowed<'a when 'a : equality> (xs : 'a []) windowSize =
+    let s = run (fun () -> xs |> Seq.windowed windowSize |> Seq.toArray |> Array.map Seq.toArray)
+    let l = run (fun () -> xs |> List.ofArray |> List.windowed windowSize |> List.toArray |> Array.map Seq.toArray)
+    let a = run (fun () -> xs |> Array.windowed windowSize)
+    s = a && l = a
+
+[<Test>]
+let ``windowed is consistent`` () =
+    Check.QuickThrowOnFailure windowed<int>
+    Check.QuickThrowOnFailure windowed<string>
+    Check.QuickThrowOnFailure windowed<NormalFloat>
