@@ -1136,3 +1136,15 @@ let ``unfold is consistent`` () =
     Check.QuickThrowOnFailure unfold<string,string>
     Check.QuickThrowOnFailure unfold<float,int>
     Check.QuickThrowOnFailure unfold<float,string>
+
+let where<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = xs |> Seq.where predicate
+    let l = xs |> List.ofArray |> List.where predicate
+    let a = xs |> Array.where predicate
+    Seq.toArray s = a && List.toArray l = a
+
+[<Test>]
+let ``where is consistent`` () =
+    Check.QuickThrowOnFailure where<int>
+    Check.QuickThrowOnFailure where<string>
+    Check.QuickThrowOnFailure where<NormalFloat>
