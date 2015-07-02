@@ -1078,3 +1078,15 @@ let ``tryHead is consistent`` () =
     Check.QuickThrowOnFailure tryHead<int>
     Check.QuickThrowOnFailure tryHead<string>
     Check.QuickThrowOnFailure tryHead<NormalFloat>
+
+let tryItem<'a when 'a : equality> (xs : 'a []) index =
+    let s = xs |> Seq.tryItem index
+    let l = xs |> List.ofArray |> List.tryItem index
+    let a = xs |> Array.tryItem index
+    s = a && l = a
+
+[<Test>]
+let ``tryItem is consistent`` () =
+    Check.QuickThrowOnFailure tryItem<int>
+    Check.QuickThrowOnFailure tryItem<string>
+    Check.QuickThrowOnFailure tryItem<NormalFloat>
