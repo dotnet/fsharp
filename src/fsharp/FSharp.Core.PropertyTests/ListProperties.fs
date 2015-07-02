@@ -275,6 +275,20 @@ let ``tryItem is safe item`` () =
     Check.QuickThrowOnFailure item_and_tryItem<string>
     Check.QuickThrowOnFailure item_and_tryItem<NormalFloat>
 
+let pick_and_tryPick<'a when 'a : comparison>  (xs : list<'a>) f =
+    let a = runAndCheckErrorType (fun () -> xs |> List.pick f)
+    let b = List.tryPick f xs
+
+    match a with
+    | Success a -> b.Value = a
+    | _ -> b = None
+
+[<Test>]
+let ``tryPick is safe pick`` () =   
+    Check.QuickThrowOnFailure pick_and_tryPick<int>
+    Check.QuickThrowOnFailure pick_and_tryPick<string>
+    Check.QuickThrowOnFailure pick_and_tryPick<NormalFloat>
+
 let last_and_tryLast<'a when 'a : comparison>  (xs : list<'a>) =
     let a = runAndCheckErrorType (fun () -> xs |> List.last)
     let b = List.tryLast xs
