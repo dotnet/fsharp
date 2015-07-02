@@ -1739,7 +1739,7 @@ namespace Microsoft.FSharp.Core
                         null
 
                     | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
-                        let equals = typeof<IStructuralEquatable>.GetMethod "Equals"
+                        let equals = typeof<IStructuralEquatable>.GetMethod ("Equals", [|typeof<obj>; typeof<IEqualityComparer>|])
                         let ec = Expression.Parameter typeof<IEqualityComparer>
                         let a = Expression.Parameter typeof<'a>
                         let b = Expression.Parameter typeof<'a>
@@ -1747,7 +1747,7 @@ namespace Microsoft.FSharp.Core
                         lambda.Compile ()
 
                     | t when t.IsValueType && typeof<IEquatable<'a>>.IsAssignableFrom t ->
-                        let equals = typeof<IEquatable<'a>>.GetMethod "Equals"
+                        let equals = typeof<IEquatable<'a>>.GetMethod ("Equals", [|typeof<'a>|])
                         let ec = Expression.Parameter typeof<IEqualityComparer>
                         let a = Expression.Parameter typeof<'a>
                         let b = Expression.Parameter typeof<'a>
