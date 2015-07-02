@@ -152,6 +152,16 @@ let ``zip and unzip are dual`` () =
     Check.QuickThrowOnFailure zip_and_unzip<string>
     Check.QuickThrowOnFailure zip_and_unzip<NormalFloat>
 
+let zip3_and_unzip3<'a when 'a : equality> (xs' : ('a*'a*'a) list) =
+    let xs,xs2,xs3 = List.unzip3 xs'
+    List.zip3 xs xs2 xs3 = xs'
+
+[<Test>]
+let ``zip3 and unzip3 are dual`` () =
+    Check.QuickThrowOnFailure zip3_and_unzip3<int>
+    Check.QuickThrowOnFailure zip3_and_unzip3<string>
+    Check.QuickThrowOnFailure zip3_and_unzip3<NormalFloat>
+
 [<Test>]
 let ``splitInto produces chunks exactly `count` chunks with equal size (+/- 1)``() =
     let prop (a: _ list) (PositiveInt count') =
