@@ -1018,3 +1018,15 @@ let ``truncate is consistent`` () =
     Check.QuickThrowOnFailure truncate<int>
     Check.QuickThrowOnFailure truncate<string>
     Check.QuickThrowOnFailure truncate<NormalFloat>
+
+let tryFind<'a when 'a : equality> (xs : 'a []) predicate =
+    let s = xs |> Seq.tryFind predicate
+    let l = xs |> List.ofArray |> List.tryFind predicate
+    let a = xs |> Array.tryFind predicate
+    s = a && l = a
+
+[<Test>]
+let ``tryFind is consistent`` () =
+    Check.QuickThrowOnFailure tryFind<int>
+    Check.QuickThrowOnFailure tryFind<string>
+    Check.QuickThrowOnFailure tryFind<NormalFloat>
