@@ -147,7 +147,7 @@ let zip_and_unzip<'a when 'a : equality> (xs' : ('a*'a) list) =
     List.zip xs xs2 = xs'
 
 [<Test>]
-let ``zip can be reversed with unzip`` () =
+let ``zip and unzip are dual`` () =
     Check.QuickThrowOnFailure zip_and_unzip<int>
     Check.QuickThrowOnFailure zip_and_unzip<string>
     Check.QuickThrowOnFailure zip_and_unzip<NormalFloat>
