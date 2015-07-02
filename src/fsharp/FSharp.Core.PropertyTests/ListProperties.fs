@@ -104,6 +104,18 @@ let ``splitInto is reversable with collect`` () =
     Check.QuickThrowOnFailure splitInto_and_collect<string>
     Check.QuickThrowOnFailure splitInto_and_collect<NormalFloat>
 
+let splitAt_and_append<'a when 'a : equality> (xs : 'a list) index =
+    (index >= 0 && index <= xs.Length) ==> (lazy
+        let a1,a2 = List.splitAt index xs
+        let b = List.append a1 a2
+        b = xs && a1.Length = index)
+
+[<Test>]
+let ``splitAt is reversable with append`` () =
+    Check.QuickThrowOnFailure splitAt_and_append<int>
+    Check.QuickThrowOnFailure splitAt_and_append<string>
+    Check.QuickThrowOnFailure splitAt_and_append<NormalFloat>
+
 let indexed_and_zip<'a when 'a : equality> (xs : 'a list) =
     let a = [0..xs.Length-1]
     let b = List.indexed xs
