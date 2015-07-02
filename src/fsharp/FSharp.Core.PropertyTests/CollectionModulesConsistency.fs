@@ -1066,3 +1066,15 @@ let ``tryFindIndexBack is consistent`` () =
     Check.QuickThrowOnFailure tryFindIndexBack<int>
     Check.QuickThrowOnFailure tryFindIndexBack<string>
     Check.QuickThrowOnFailure tryFindIndexBack<NormalFloat>
+
+let tryHead<'a when 'a : equality> (xs : 'a []) =
+    let s = xs |> Seq.tryHead
+    let l = xs |> List.ofArray |> List.tryHead
+    let a = xs |> Array.tryHead
+    s = a && l = a
+
+[<Test>]
+let ``tryHead is consistent`` () =
+    Check.QuickThrowOnFailure tryHead<int>
+    Check.QuickThrowOnFailure tryHead<string>
+    Check.QuickThrowOnFailure tryHead<NormalFloat>
