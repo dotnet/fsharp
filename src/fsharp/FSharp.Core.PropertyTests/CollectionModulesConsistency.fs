@@ -710,6 +710,19 @@ let ``pairwise is consistent`` () =
     Check.QuickThrowOnFailure pairwise<string>
     Check.QuickThrowOnFailure pairwise<NormalFloat>
 
+let partition<'a when 'a : comparison> (xs : 'a []) f =
+    // no seq version
+    let l1,l2 = xs |> List.ofArray |> List.partition f
+    let a1,a2 = xs |> Array.partition f
+    List.toArray l1 = a1 &&
+      List.toArray l2 = a2
+
+[<Test>]
+let ``partition is consistent`` () =
+    Check.QuickThrowOnFailure partition<int>
+    Check.QuickThrowOnFailure partition<string>
+    Check.QuickThrowOnFailure partition<NormalFloat>
+
 let permute<'a when 'a : comparison> (xs' : list<int*'a>) =
     let xs = List.map snd xs'
  
