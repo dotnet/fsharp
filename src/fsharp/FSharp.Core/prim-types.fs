@@ -1703,7 +1703,6 @@ namespace Microsoft.FSharp.Core
 
             type private EquivalenceRelation = class end
             type private PartialEquivalenceRelation = class end
-            type private UnknownEquivalenceRelation = class end
 
             type GenericSpecializeEquals_Pass1<'a>() =
                 static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
@@ -1792,7 +1791,6 @@ namespace Microsoft.FSharp.Core
 
                 static let pass0 =
                     match typeof<'relation> with
-                    | r when r.Equals typeof<UnknownEquivalenceRelation> -> null
                     | r when r.Equals typeof<PartialEquivalenceRelation> ->
                         match typeof<'a> with
                         | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> (# "ceq" x y : bool #)))
@@ -1811,17 +1809,12 @@ namespace Microsoft.FSharp.Core
                     | f -> f
 
                 static let pass2 =
-                    match pass1, typeof<'relation> with
-                    | null, r when r.Equals typeof<UnknownEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> comp.Equals (box x, box y))
-                    | f, _ -> f
-
-                static let pass3 =
-                    match pass2 with
+                    match pass1 with
                     | null -> GenericSpecializeEquals_Pass3<'a>.Func
                     | f -> f
 
-                static let pass4 =
-                    match pass3 with
+                static let pass3 =
+                    match pass2 with
                     | null ->
                         match typeof<'relation> with
                         | r when r.Equals typeof<PartialEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj false comp ((box x), (box y)))
@@ -1829,7 +1822,7 @@ namespace Microsoft.FSharp.Core
                         | _ -> raise (Exception "invalid logic")                    
                     | f -> f
                             
-                static member Func = pass4
+                static member Func = pass3
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -1852,9 +1845,16 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_equality_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
+            //
+            // <<manofstick>> I think the above compiler optimization is misplaced, as it means that you can end
+            // up with differing functionality of generic and non-generic types when the IStructuralEquatable
+            // this is doucmented here- https://github.com/Microsoft/visualfsharp/pull/513#issuecomment-117995410
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                GenericSpecializeEqualsWithRelation<UnknownEquivalenceRelation,_>.Func.Invoke (comp, x, y)
-                
+                match comp with
+                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingER)  -> GenericEqualityERIntrinsic x y
+                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingPER) -> GenericEqualityIntrinsic   x y
+                | c when obj.ReferenceEquals (c, EqualityComparer<'T>.Default)   -> EqualityComparer<'T>.Default.Equals (x, y)
+                | _ -> comp.Equals (box x, box y)
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
