@@ -1785,6 +1785,7 @@ namespace Microsoft.FSharp.Core
                 static member Func = _func
 
             let hasFSharpCompilerGeneratedEquality<'a> () =
+#if FX_ATLEAST_40
                 let rec tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
                     if not (interfaceType.IsAssignableFrom objectType) then null
                     else
@@ -1818,6 +1819,9 @@ namespace Microsoft.FSharp.Core
                     && isCompilerGeneratedInterfaceMethod typeof<'a> typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
                     && isCompilerGeneratedMethod typeof<'a> "Equals" [|typeof<obj>|] 
                 | _ -> false
+#else
+                false
+#endif
 
             type GenericSpecializeEqualsWithRelation<'relation, 'a>() =
                 static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
