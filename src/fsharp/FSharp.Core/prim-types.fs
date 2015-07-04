@@ -905,6 +905,7 @@ namespace Microsoft.FSharp.Core
         module HashCompare = 
             open System.Reflection
             open System.Linq.Expressions
+            open System.Runtime.CompilerServices
 
             //-------------------------------------------------------------------------
             // LangaugePrimitives.HashCompare: Physical Equality
@@ -1704,7 +1705,7 @@ namespace Microsoft.FSharp.Core
             type private EquivalenceRelation = class end
             type private PartialEquivalenceRelation = class end
 
-            type GenericSpecializeEquals_Pass1<'a>() =
+            type GenericSpecializeEquals_StandardTypes<'a>() =
                 static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
                     match box func with
                     | :? Func<IEqualityComparer,'a, 'a, bool> as f -> f
@@ -1724,13 +1725,13 @@ namespace Microsoft.FSharp.Core
                     | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_,_>(fun _ (x:nativeint) y -> (# "ceq" x y : bool #)))
                     | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_,_>(fun _ (x:unativeint)y -> (# "ceq" x y : bool #)))
                     | t when t.Equals typeof<char>       -> generalize (Func<_,_,_,_>(fun _ (x:char)      y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_,_>(fun _ (x:string)    y -> System.String.Equals(x,y)))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_,_>(fun _ (x:decimal)   y -> System.Decimal.op_Equality(x,y)))
+                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_,_>(fun _ (x:string)    y -> System.String.Equals((# "" x : string #),(# "" y : string #))))
+                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_,_>(fun _ (x:decimal)   y -> System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))))
                     | _ -> null
                             
                 static member Func = _func
 
-            type GenericSpecializeEquals_Pass3<'a>() =
+            type GenericSpecializeEquals_EqualityInterfaces<'a>() =
                 static let _func =
                     match typeof<'a> with
                     | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
@@ -1783,6 +1784,41 @@ namespace Microsoft.FSharp.Core
                             
                 static member Func = _func
 
+            let hasFSharpCompilerGeneratedEquality<'a> () =
+                let rec tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                    if not (interfaceType.IsAssignableFrom objectType) then null
+                    else
+                        let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
+                        let interfaceMap = objectType.GetInterfaceMap interfaceType
+                        let rec findTargetMethod index =
+                            if index = interfaceMap.InterfaceMethods.Length then null
+                            elif methodInfo.Equals (get interfaceMap.InterfaceMethods index) then (get interfaceMap.TargetMethods index)
+                            else findTargetMethod (index+1)
+                        findTargetMethod 0
+
+                let rec isCompilerGeneratedInterfaceMethod objectType interfaceType methodName methodArgTypes =
+                    match tryFindObjectsInterfaceMethod objectType interfaceType methodName methodArgTypes with
+                    | null -> false
+                    | m -> 
+                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                        | null -> false
+                        | _ -> true
+
+                let rec isCompilerGeneratedMethod (objectType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                    match objectType.GetMethod (methodName, methodArgTypes) with
+                    | null -> false
+                    | m ->
+                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                        | null -> false
+                        | _ -> true
+
+                match typeof<'a>.GetCustomAttribute typeof<CompilationMappingAttribute> with
+                | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
+                    isCompilerGeneratedInterfaceMethod typeof<'a> typeof<IEquatable<'a>> "Equals" [|typeof<'a>|]
+                    && isCompilerGeneratedInterfaceMethod typeof<'a> typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
+                    && isCompilerGeneratedMethod typeof<'a> "Equals" [|typeof<obj>|] 
+                | _ -> false
+
             type GenericSpecializeEqualsWithRelation<'relation, 'a>() =
                 static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
                     match box func with
@@ -1790,6 +1826,8 @@ namespace Microsoft.FSharp.Core
                     | _ -> raise (Exception "invalid logic")
 
                 static let pass0 =
+                    // the whole point of the Equivalence Relation stuff is to deal with floating point numbers, so
+                    // lets handle that situation first
                     match typeof<'relation> with
                     | r when r.Equals typeof<PartialEquivalenceRelation> ->
                         match typeof<'a> with
@@ -1804,25 +1842,48 @@ namespace Microsoft.FSharp.Core
                     | _ -> raise (Exception "invalid logic")
 
                 static let pass1 =
+                    // These do not require seperate versions based on equivalence relations, so defer to helper object
                     match pass0 with
-                    | null -> GenericSpecializeEquals_Pass1<'a>.Func
+                    | null -> GenericSpecializeEquals_StandardTypes<'a>.Func
                     | f -> f
 
                 static let pass2 =
                     match pass1 with
-                    | null -> GenericSpecializeEquals_Pass3<'a>.Func
+                    | null ->
+                        // if we are using the ER comparer, and we are a standard f# record or value type with compiler generated
+                        // equality operators, then we can avoid the boxing of IStructuralEquatable and just call the
+                        // IEquatable<'a>.Equals method.
+                        match typeof<'relation> with
+                        | r when r.Equals typeof<EquivalenceRelation> ->
+                            if hasFSharpCompilerGeneratedEquality<'a> () then
+                                let equals = typeof<IEquatable<'a>>.GetMethod ("Equals", [|typeof<'a>|])
+                                let ec = Expression.Parameter typeof<IEqualityComparer>
+                                let a = Expression.Parameter typeof<'a>
+                                let b = Expression.Parameter typeof<'a>
+                                let lambda = Expression.Lambda<_> (Expression.Call (a, equals, b), ec, a, b)
+                                lambda.Compile ()
+                            else null
+                        | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+                        | _ -> raise (Exception "invalid logic")
                     | f -> f
 
                 static let pass3 =
+                    // These do not require seperate versions based on equivalence relations, so defer to helper object
                     match pass2 with
+                    | null -> GenericSpecializeEquals_EqualityInterfaces<'a>.Func
+                    | f -> f
+
+                static let pass4 =
+                    match pass3 with
                     | null ->
+                        // and if none of that works, then just fall back to default behavious of GenericEqualityObj
                         match typeof<'relation> with
                         | r when r.Equals typeof<PartialEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj false comp ((box x), (box y)))
                         | r when r.Equals typeof<EquivalenceRelation>        -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj true  comp ((box x), (box y)))
                         | _ -> raise (Exception "invalid logic")                    
                     | f -> f
                             
-                static member Func = pass3
+                static member Func = pass4
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -2073,6 +2134,13 @@ namespace Microsoft.FSharp.Core
                     | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
                         // I could do something here, but I doubt it would have any real performance impact
                         null
+
+                    | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
+                        let equals = typeof<IStructuralEquatable>.GetMethod ("GetHashCode", [|typeof<IEqualityComparer>|])
+                        let ec = Expression.Parameter typeof<IEqualityComparer>
+                        let a = Expression.Parameter typeof<'a>
+                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, ec), ec, a)
+                        lambda.Compile ()
 
                     | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
                         (Func<_,_,_>(fun ec (a:'a) ->
