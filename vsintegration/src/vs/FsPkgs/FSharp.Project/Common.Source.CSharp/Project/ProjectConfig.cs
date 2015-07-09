@@ -1197,7 +1197,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int OpenOutputGroup(string szCanonicalName, out IVsOutputGroup ppIVsOutputGroup)
         {
             ppIVsOutputGroup = null;
-            // Search through our list of groups to find the one they are looking forgroupName
+            // Search through our list of groups to find the one they are looking for groupName
             foreach (OutputGroup group in OutputGroups)
             {
                 string groupName;
@@ -1458,7 +1458,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return null;
         }
 
-        internal bool GetUTDCheckInputs(ref HashSet<string> inputs)
+        internal bool GetUTDCheckInputs(HashSet<string> inputs)
         {
             // the project file itself
             inputs.Add(Utilities.CanonicalizeFileNameNoThrow(this.project.BuildProject.FullPath));
@@ -1527,8 +1527,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return true;
         }
 
-        internal bool GetUTDCheckOutputs(ref HashSet<string> outputs, HashSet<string> inputs)
+        internal void GetUTDCheckOutputs(HashSet<string> inputs, HashSet<string> outputs, out List<Tuple<string, string>> preserveNewestOutputs)
         {
+            preserveNewestOutputs = new List<Tuple<string, string>>();
+
             // Output groups give us the paths to the following outputs
             //   result EXE or DLL in "obj" dir
             //   PDB file in "obj" dir (if project is configured to create this)
@@ -1546,15 +1548,29 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var outputAssembly = this.project.GetOutputAssembly(this.ConfigCanonicalName);
             outputs.Add(Utilities.CanonicalizeFileNameNoThrow(outputAssembly));
 
+            bool isExe = outputAssembly.EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
+
             // final PDB path
             if (this.DebugSymbols &&
-                (outputAssembly.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || outputAssembly.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)))
+                (isExe || outputAssembly.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)))
             {
                 var pdbPath = outputAssembly.Remove(outputAssembly.Length - 4) + ".pdb";
                 outputs.Add(Utilities.CanonicalizeFileNameNoThrow(pdbPath));
             }
 
-            return true;
+            if (isExe)
+            {
+                var appConfig = inputs.FirstOrDefault(x => String.Compare(Path.GetFileName(x), "app.config", StringComparison.OrdinalIgnoreCase) == 0);
+                if (appConfig != null)
+                {
+                    // the app.config is not removed from the inputs to maintain 
+                    // the same behavior of a C# project:
+                    // When a app.config is changed, after the build, the project 
+                    // is not up-to-date until a rebuild
+                    var exeConfig = Utilities.CanonicalizeFileNameNoThrow(outputAssembly + ".config");
+                    preserveNewestOutputs.Add(Tuple.Create(appConfig, exeConfig));
+                }
+            }
         }
 
         // there is a well-known property users can specify that signals for UTD check to be disabled
@@ -1575,7 +1591,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // in batch build it is possible that config is out of sync.
             // in this case, don't assume we are up to date
             ConfigCanonicalName activeConfig = default(ConfigCanonicalName);
-            if(!Utilities.TryGetActiveConfigurationAndPlatform(ServiceProvider.GlobalProvider, this.project, out activeConfig) ||
+           
+            if(!Utilities.TryGetActiveConfigurationAndPlatform(ServiceProvider.GlobalProvider, this.project.ProjectIDGuid, out activeConfig) ||
                 activeConfig != this.ConfigCanonicalName)
             {
                 logger.WriteLine("Not up to date: active confic does not match project config. Active: {0} Project: {1}", activeConfig, this.ConfigCanonicalName);
@@ -1584,12 +1601,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             var inputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (!GetUTDCheckInputs(ref inputs))
+            if (!GetUTDCheckInputs(inputs))
                 return false;
 
             var outputs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (!GetUTDCheckOutputs(ref outputs, inputs))
-                return false;
+            List<Tuple<string, string>> preserveNewestOutputs;
+            GetUTDCheckOutputs(inputs, outputs, out preserveNewestOutputs);
 
             // determine the oldest output timestamp
             DateTime stalestOutputTime = DateTime.MaxValue.ToUniversalTime();
@@ -1625,12 +1642,47 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     freshestInputTime = timeStamp.Value;
             }
 
+            // check 1-1 Preserve Newest mappings
+            foreach (var kv in preserveNewestOutputs)
+            {
+                if (!IsUpToDatePreserveNewest(logger, TryGetLastWriteTimeUtc, kv.Item1, kv.Item2)) 
+                    return false;
+            }
+
             logger.WriteLine("Freshest input: {0}", freshestInputTime.ToLocalTime());
             logger.WriteLine("Stalest output: {0}", stalestOutputTime.ToLocalTime());
             logger.WriteLine("Up to date: {0}", freshestInputTime <= stalestOutputTime);
 
-            // if all outputs are younger than all inuts, we are up to date
+            // if all outputs are younger than all inputs, we are up to date
             return freshestInputTime <= stalestOutputTime;
+        }
+
+        public static bool IsUpToDatePreserveNewest(OutputWindowLogger logger, Func<string, OutputWindowLogger, DateTime?> tryGetLastWriteTimeUtc, string input, string output)
+        {
+            var inputTime = tryGetLastWriteTimeUtc(input, logger);
+            if (!inputTime.HasValue)
+            {
+                logger.WriteLine("Declaring project NOT up to date, can't find expected input {0}", input);
+                return false;
+            }
+
+            var outputTime = tryGetLastWriteTimeUtc(output, logger);
+            if (!outputTime.HasValue)
+            {
+                logger.WriteLine("Declaring project NOT up to date, can't find expected output {0}", output);
+                return false;
+            }
+
+            var inputTimeValue = inputTime.Value;
+            var outputTimeValue = outputTime.Value;
+
+            if (outputTimeValue < inputTimeValue)
+            {
+                logger.WriteLine("Declaring project NOT up to date, ouput {0} is stale", output);
+                return false;
+            }
+
+            return true;
         }
     }
 
@@ -1785,12 +1837,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             CCITracing.TraceCall();
             config.PrepareBuild(false);
 
-            int utdSupported = config.IsFastUpToDateCheckEnabled() ? 1 : 0;
+            // criteria (same as C# project system):
+            // - Fast UTD never enabled for package operations
+            // - Fast UTD always enabled for DTEE operations
+            // - Otherwise fast UTD enabled as long as it's not explicitly disabled by the project
+            bool utdSupported =
+                ((options & VSConstants.VSUTDCF_PACKAGE) == 0) &&
+                (((options & VSConstants.VSUTDCF_DTEEONLY) != 0) || config.IsFastUpToDateCheckEnabled());
+
+            int utdSupportedFlag = utdSupported ? 1 : 0;
 
             if (supported != null && supported.Length > 0)
-                supported[0] = utdSupported;
+                supported[0] = utdSupportedFlag;
             if (ready != null && ready.Length > 0)
-                ready[0] = utdSupported;
+                ready[0] = utdSupportedFlag;
+
             return VSConstants.S_OK;
         }
 

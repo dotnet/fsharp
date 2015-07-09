@@ -4383,6 +4383,8 @@ and encodeCustomAttrValue ilg ty c =
     match ty, c with 
     | ILType.Boxed tspec, _ when tspec.Name = tname_Object ->  
        [| yield! encodeCustomAttrElemTypeForObject c; yield! encodeCustomAttrPrimValue ilg c |]
+    | ILType.Array (shape, _), ILAttribElem.Null when shape = ILArrayShape.SingleDimensional ->  
+       [| yield! i32AsBytes 0xFFFFFFFF |]
     | ILType.Array (shape, elemType), ILAttribElem.Array (_,elems) when shape = ILArrayShape.SingleDimensional ->  
        [| yield! i32AsBytes elems.Length; for elem in elems do yield! encodeCustomAttrValue ilg elemType elem |]
     | _ -> 
@@ -4750,6 +4752,7 @@ let decodeILAttribData ilg (ca: ILAttribute) scope =
               parseVal ty sigptr 
       | ILType.Array(shape,elemTy) when shape = ILArrayShape.SingleDimensional ->  
           let n,sigptr = sigptr_get_i32 bytes sigptr
+          if n = 0xFFFFFFFF then ILAttribElem.Null,sigptr else
           let rec parseElems acc n sigptr = 
             if n = 0 then List.rev acc else
             let v,sigptr = parseVal elemTy sigptr

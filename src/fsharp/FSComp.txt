@@ -1139,6 +1139,7 @@ lexIndentOffForML,"Consider using a file with extension '.ml' or '.mli' instead"
 1242,parsMissingGreaterThan,"Unmatched '<'. Expected closing '>'"
 1243,parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString,"Unexpected quotation operator '<@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '<' and '@' characters."
 1244,parsErrorParsingAsOperatorName,"Attempted to parse this as an operator name, but failed"
+1245,lexInvalidUnicodeLiteral,"\U%s is not a valid Unicode character escape sequence"
 # Fsc.exe resource strings
 fscTooManyErrors,"Exiting - too many errors"
 2001,docfileNoXmlSuffix,"The documentation file has no .xml suffix"
@@ -1340,3 +1341,4 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3183,ppparsUnexpectedToken,"Unexpected token '%s' in preprocessor expression"
 3184,ppparsIncompleteExpression,"Incomplete preprocessor expression"
 3185,ppparsMissingToken,"Missing token '%s' in preprocessor expression"
+3186,pickleMissingDefinition,"An error occurred while reading the F# metadata node at position %d in table '%s' of assembly '%s'. The node had no matching declaration. Please report this warning. You may need to recompile the F# assembly you are using."

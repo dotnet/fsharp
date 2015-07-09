@@ -119,7 +119,7 @@
       <Button guid ="guidInteractive" id ="cmdidDebugSelection" priority ="0x106" type ="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_CODEWIN_LANGUAGE"/>
         <Strings>
-          <ButtonText>Debug in F# Interactive</ButtonText>
+          <ButtonText>Debug In Interactive</ButtonText>
           <CommandName>Interactive.Debug.Selection.Context</CommandName>
         </Strings>
        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
@@ -222,8 +222,8 @@
          Here we bind it in the Editor context of the standard TextEditor.
          Ideally, we would bind it for F# only editor.
     -->
-    <KeyBinding guid ="guidInteractive" id ="cmdidDebugSelection" editor="GUID_TextEditorFactory" key1="D" mod1="Alt" key2="VK_RETURN" mod2="Alt"  />
     <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteSelectionInInteractive" editor="GUID_TextEditorFactory" key1="VK_RETURN" mod1="Alt"  />
+    <KeyBinding guid ="guidVSStd11" id ="cmdidExecuteLineInInteractive" editor="GUID_TextEditorFactory" key1="VK_OEM_7" mod1="Alt"  />
 
     <!-- CRTL-ALT-F for FSI window - following similar bindings for "other windows" -->
     <KeyBinding guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow"    editor="guidVSStd97" key1="F" mod1="Control Alt"  />
@@ -295,6 +295,7 @@
 
     <GuidSymbol name="guidVSStd11" value="{D63DB1F0-404E-4B21-9648-CA8D99245EC3}" >
       <IDSymbol name="cmdidExecuteSelectionInInteractive" value ="0x018"/>
+      <IDSymbol name="cmdidExecuteLineInInteractive" value ="0x019"/>
       <IDSymbol name="cmdidInteractiveSessionInterrupt" value ="0x01A"/>
       <IDSymbol name="cmdidInteractiveSessionRestart" value ="0x01B"/>
     </GuidSymbol>

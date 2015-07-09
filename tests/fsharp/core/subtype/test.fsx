@@ -1696,6 +1696,16 @@ module RecordPropertyConstraintTests =
     check "ckjwnewk" (f8()) (System.TimeSpan.FromSeconds 2.0) // after mutation
     check "ckjwnewk" (f10()) "Gary"
 
+
+// See https://github.com/Microsoft/visualfsharp/issues/238
+module GenericPropertyConstraintSolvedByRecord = 
+
+    type hober<'a> = { foo : 'a }
+
+    let inline print_foo_memb x = box (^a : (member foo : 'b) x)
+
+    let v = print_foo_memb { foo=1 } 
+
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 

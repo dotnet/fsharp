@@ -2024,6 +2024,8 @@ let typecheckAndCompile(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProv
     |> main4
 
 let mainCompile (argv, bannerAlreadyPrinted, exiter:Exiter) = 
+    // Enabling batch latency mode currently overrides app config <gcConcurrent>.
+    // If batch mode is ever removed or changed, revisit use of <gcConcurrent>.
     System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     typecheckAndCompile(argv, bannerAlreadyPrinted, exiter, DefaultLoggerProvider())
 

@@ -50,8 +50,14 @@ type ImportMap =
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
 val internal ImportILTypeRef : ImportMap -> range -> ILTypeRef -> TyconRef
 
+/// Pre-check for ability to import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
+val internal CanImportILTypeRef : ImportMap -> range -> ILTypeRef -> bool
+
 /// Import an IL type as an F# type.
 val internal ImportILType : ImportMap -> range -> TType list -> ILType -> TType
+
+/// Pre-check for ability to import an IL type as an F# type.
+val internal CanImportILType : ImportMap -> range -> ILType -> bool
 
 #if EXTENSIONTYPING
 

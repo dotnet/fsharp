@@ -2684,6 +2684,44 @@ module NestedQuotations =
 
     runAll()
 
+module ExtensionMembersWithSameName = 
+
+    type System.Object with
+        [<ReflectedDefinition>]
+        member this.Add(x) = x
+        [<ReflectedDefinition>]
+        member this.Add(x, y) = x + y
+        [<ReflectedDefinition>]
+        static member SAdd(x) = x
+        [<ReflectedDefinition>]
+        static member SAdd(x, y) = x + y
+
+    let runAll () =
+        match  <@ obj().Add(2) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf094" text "Some Lambda (this, Lambda (x, x))"
+        | _ -> failwith "unexpected shape"
+
+        match  <@ obj().Add(2,3) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf095" (m.GetParameters().Length) 3
+        | _ -> failwith "unexpected shape"
+
+        match  <@ obj.SAdd(2) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf096" text "Some Lambda (x, x)"
+        | _ -> failwith "unexpected shape"
+
+        match  <@ obj.SAdd(2,3) @> with
+        | (Patterns.Call(_, m, _)) -> 
+            let text = m |> Expr.TryGetReflectedDefinition |> sprintf "%A"
+            check "clewwenf097" (m.GetParameters().Length) 2
+        | _ -> failwith "unexpected shape"
+
+    runAll()
 
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 

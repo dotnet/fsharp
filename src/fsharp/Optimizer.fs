@@ -293,7 +293,7 @@ type OptimizationSettings =
     /// eliminate unused bindings with no effect 
     member x.EliminateUnusedBindings () = x.localOpt () 
     /// eliminate try around expr with no effect 
-    member x.EliminateTryCatchAndTryFinally () = x.localOpt () 
+    member x.EliminateTryCatchAndTryFinally () = false // deemed too risky, given tiny overhead of including try/catch. See https://github.com/Microsoft/visualfsharp/pull/376
     /// eliminate first part of seq if no effect 
     member x.EliminateSequential () = x.localOpt () 
     /// determine branches in pattern matching
@@ -1320,7 +1320,7 @@ and OpHasEffect g op =
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref,n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet -> false
-    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable
+    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some(true))
     | TOp.ValFieldGetAddr _rfref  -> true (* check *)
     | TOp.LValueOp (LGetAddr,lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _

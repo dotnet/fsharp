@@ -584,7 +584,7 @@ namespace Microsoft.FSharp.Collections
                 let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunkCount : 'T[][]
                 for i = 0 to len / chunkSize - 1 do
                     res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked (i * chunkSize) chunkSize array
-                if len % chunkCount <> 0 then
+                if len % chunkSize <> 0 then
                     res.[chunkCount - 1] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked ((chunkCount - 1) * chunkSize) (len % chunkSize) array
                 res
 
@@ -1001,8 +1001,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Truncate")>]
         let truncate count (array:'T[]) =
             checkNonNull "array" array
-            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
-            if count = 0 then empty
+            if count <= 0 then empty
             else
                 let len = array.Length
                 let count' = Operators.min count len

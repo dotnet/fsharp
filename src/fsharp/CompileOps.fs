@@ -1566,9 +1566,12 @@ let DefaultBasicReferencesForOutOfProjectSources =
       // Note: this is not a partiuclarly good technique as it relying on the environment the compiler is executing in
       // to determine the default references. However, System.Core will only fail to load on machines with only .NET 2.0,
       // in which case the compiler will also be running as a .NET 2.0 process.
+      //
+      // NOTE: it seems this can now be removed now that .NET 4.x is minimally assumed when using this toolchain
       if (try System.Reflection.Assembly.Load "System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" |> ignore; true with _ -> false) then 
           yield "System.Core" 
 
+      yield "System.Runtime"
       yield "System.Web"
       yield "System.Web.Services"
       yield "System.Windows.Forms" ]
@@ -1595,6 +1598,7 @@ let SystemAssemblies primaryAssemblyName =
       yield "System.Web.Services"
       yield "System.Windows.Forms"
       yield "System.Core"
+      yield "System.Runtime"
       yield "System.Observable"
       yield "System.Numerics"] 
 
@@ -3859,7 +3863,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             
             // Add the invalidation signal handlers to each provider
             for provider in providers do 
-                provider.PUntaint((fun tp -> tp.Invalidate.Add(fun _ -> invalidateCcu.Trigger ("The provider '" + fileNameOfRuntimeAssembly + "' reported a change"))), m)
+                provider.PUntaint((fun tp -> 
+                    let handler = tp.Invalidate.Subscribe(fun _ -> invalidateCcu.Trigger ("The provider '" + fileNameOfRuntimeAssembly + "' reported a change"))  
+                    tcImports.AttachDisposeAction(fun () -> try handler.Dispose() with _ -> ())), m)  
                 
             match providers with
             | [] -> 

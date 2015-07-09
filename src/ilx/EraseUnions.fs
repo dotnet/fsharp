@@ -1037,13 +1037,6 @@ let rec convClassUnionDef cenv enc td cud =
     // The class can be abstract if each alternative is represented by a derived type
     let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
 
-    // If the class is abstract make the constructor used for the subclasses protected
-    let ctorMeths = 
-        if isAbstract then 
-            ctorMeths |> List.map (fun mdef -> {mdef with Access=ILMemberAccess.Assembly })
-        else   
-            ctorMeths
-
     let existingMeths = 
         td.Methods.AsList 
             // Filter out the F#-compiler supplied implementation of the get_Empty method. This is because we will replace

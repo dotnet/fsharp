@@ -1044,7 +1044,7 @@ let ReportTime (tcConfig:TcConfig) descr =
     | None -> ()
     | Some prevDescr ->
         if tcConfig.pause then 
-            dprintf "[done '%s', entering '%s'] press any key... " prevDescr descr;
+            dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr;
             System.Console.ReadLine() |> ignore;
         // Intentionally putting this right after the pause so a debugger can be attached.
         match tcConfig.simulateException with

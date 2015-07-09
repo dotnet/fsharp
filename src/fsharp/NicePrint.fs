@@ -1419,7 +1419,7 @@ module private TastDefinitionPrinting =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
             else 
-                GetImmediateInterfacesOfType g amap m ty |> List.map (fun ity -> wordL (if isInterfaceTy g ty then "inherit" else "interface") --- layoutType denv ity)
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (if isInterfaceTy g ty then "inherit" else "interface") --- layoutType denv ity)
 
         let props = 
             GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.Yes)  PreferOverrides m ty

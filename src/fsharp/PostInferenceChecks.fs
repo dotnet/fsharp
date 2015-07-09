@@ -1127,6 +1127,18 @@ let CheckTopBinding cenv env (TBind(v,e,_) as bind) =
             check false v.DisplayName
             check false v.CompiledName
 
+            // Check if an F# extension member clashes
+            if v.IsExtensionMember then 
+                tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
+                    if v2.IsExtensionMember && not (valEq v v2) && v.CompiledName = v2.CompiledName then
+                        let minfo1 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
+                        let minfo2 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
+                        if tyconRefEq cenv.g v.MemberApparentParent v2.MemberApparentParent && 
+                           MethInfosEquivByNameAndSig EraseAll true cenv.g cenv.amap v.Range minfo1 minfo2 then 
+                            errorR(Duplicate(kind,v.DisplayName,v.Range)))
+
+
+
             // Properties get 'get_X', only if there are no args
             // Properties get 'get_X'
             match v.ValReprInfo with 
@@ -1371,7 +1383,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 
             let typ = generalizedTyconRef (mkLocalTyconRef tycon)
-            let immediateInterfaces = GetImmediateInterfacesOfType cenv.g cenv.amap m typ
+            let immediateInterfaces = GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap m typ
             let interfaces = 
               [ for ty in immediateInterfaces do
                     yield! AllSuperTypesOfType cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes ty  ]
