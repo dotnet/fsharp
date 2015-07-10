@@ -213,34 +213,7 @@
                                                 '$(TargetFramework)' == 'sl3-wp' "/>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Collections\4.0.10-beta-22809\ref\any\System.Collections.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Collections.Concurrent\4.0.10-beta-22809\ref\any\System.Collections.Concurrent.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Console\4.0.0-beta-22809\ref\any\System.Console.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Diagnostics.Debug\4.0.10-beta-22809\ref\any\System.Diagnostics.Debug.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Diagnostics.Tools\4.0.0-beta-22809\ref\any\System.Diagnostics.Tools.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Globalization\4.0.10-beta-22809\ref\any\System.Globalization.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.IO\4.0.10-beta-22809\ref\any\System.IO.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Linq\4.0.0-beta-22809\ref\any\System.Linq.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Linq.Expressions\4.0.0-beta-22809\ref\any\System.Linq.Expressions.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Linq.Queryable\4.0.0-beta-23011\ref\dotnet\System.Linq.Queryable.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Net.Requests\4.0.0-beta-23011\ref\dotnet\System.Net.Requests.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Reflection\4.0.10-beta-22809\ref\any\System.Reflection.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Reflection.Emit\4.0.0-beta-23011\ref\dotnet\System.Reflection.Emit.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Reflection.Emit.ILGeneration\4.0.0-beta-23011\ref\dotnet\System.Reflection.Emit.ILGeneration.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Reflection.Extensions\4.0.0-beta-22809\ref\any\System.Reflection.Extensions.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Resources.ResourceManager\4.0.0-beta-22809\ref\any\System.Resources.ResourceManager.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Runtime\4.0.20-beta-22809\ref\any\System.Runtime.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Runtime.Extensions\4.0.10-beta-22809\ref\any\System.Runtime.Extensions.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Runtime.InteropServices\4.0.20-beta-22809\ref\any\System.Runtime.InteropServices.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Runtime.Numerics\4.0.0-beta-23011\ref\dotnet\System.Runtime.Numerics.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Text.Encoding\4.0.10-beta-22809\ref\any\System.Text.Encoding.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Text.RegularExpressions\4.0.10-beta-22809\lib\any\System.Text.RegularExpressions.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Threading\4.0.0-beta-22809\ref\any\System.Threading.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Threading.Tasks\4.0.10-beta-22809\ref\any\System.Threading.Tasks.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Threading.Tasks.Parallel\4.0.0-beta-22809\ref\any\System.Threading.Tasks.Parallel.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Threading.Thread\4.0.0-beta-22809\ref\any\System.Threading.Thread.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Threading.ThreadPool\4.0.10-beta-23011\ref\dotnet\System.Threading.ThreadPool.dll" />
-    <Reference Include="$(FSharpSourcesRoot)\..\packages\System.Threading.Timer\4.0.0-beta-23011\ref\dotnet\System.Threading.Timer.dll" />
+    <None Include="project.json" />
   </ItemGroup>
 
   <!-- References -->
