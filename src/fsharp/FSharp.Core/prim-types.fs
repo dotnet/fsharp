@@ -1889,13 +1889,17 @@ namespace Microsoft.FSharp.Core
                             
                 static member Func = pass4
 
+            // eliminate_tail_call_xxx are to elimate tail calls which are a problem with value types > 64 bits
+            // and the 64-bit JIT due to the amd64 calling convention which needs to do some magic.
+            let inline eliminate_tail_call_bool x = not (not (x))
+            let inline eliminate_tail_call_int x = 0 + x
+
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                // The "not (not (x))" is to elimate tail calls which are a problem with value types > 64 bits
-                not (not (GenericSpecializeEqualsWithRelation<PartialEquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingPER, x, y)))
+                eliminate_tail_call_bool (GenericSpecializeEqualsWithRelation<PartialEquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingPER, x, y))
 
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
@@ -1905,8 +1909,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                // The "not (not (x))" is to elimate tail calls which are a problem with value types > 64 bits
-                not (not (GenericSpecializeEqualsWithRelation<EquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingER, x, y)))
+                eliminate_tail_call_bool (GenericSpecializeEqualsWithRelation<EquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingER, x, y))
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1918,11 +1921,10 @@ namespace Microsoft.FSharp.Core
             // up with differing functionality of generic and non-generic types when the IStructuralEquatable
             // this is doucmented here- https://github.com/Microsoft/visualfsharp/pull/513#issuecomment-117995410
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                // The "not (not (x))" is to elimate tail calls which are a problem with value types > 64 bits
                 match comp with
-                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingER)  -> not (not (GenericEqualityERIntrinsic x y))
-                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingPER) -> not (not (GenericEqualityIntrinsic   x y))
-                | c when obj.ReferenceEquals (c, EqualityComparer<'T>.Default)   -> not (not (EqualityComparer<'T>.Default.Equals (x, y)))
+                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingER)  -> eliminate_tail_call_bool (GenericEqualityERIntrinsic x y)
+                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingPER) -> eliminate_tail_call_bool (GenericEqualityIntrinsic   x y)
+                | c when obj.ReferenceEquals (c, EqualityComparer<'T>.Default)   -> eliminate_tail_call_bool (EqualityComparer<'T>.Default.Equals (x, y))
                 | _ -> comp.Equals (box x, box y)
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
@@ -2228,14 +2230,12 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic x = 
                 let iec = fsEqualityComparerUnlimitedHashingPER
-                // The "((x)* -1)* -1" is to elimate tail calls which are a problem with value types > 64 bits
-                ((GenericSpecializeHash.Func.Invoke (iec, x))* -1)* -1
+                eliminate_tail_call_int (GenericSpecializeHash.Func.Invoke (iec, x))
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit x =
                 let iec = CountLimitedHasherPER limit
-                // The "((x)* -1)* -1" is to elimate tail calls which are a problem with value types > 64 bits
-                ((GenericSpecializeHash.Func.Invoke (iec, x))* -1)* -1
+                eliminate_tail_call_int (GenericSpecializeHash.Func.Invoke (iec, x))
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -2245,8 +2245,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                // The "((x)* -1)* -1" is to elimate tail calls which are a problem with value types > 64 bits
-                ((GenericSpecializeHash.Func.Invoke (iec, x))* -1)* -1
+                eliminate_tail_call_int (GenericSpecializeHash.Func.Invoke (iec, x))
                 
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
