@@ -1687,53 +1687,69 @@ namespace Microsoft.FSharp.Core
                         else i <- i + 1
                     res
 
+            type EqualityComparerInfo =
+            | PER = 0
+            | ER = 1
+
+            type IEqualityComparerInfo =
+                abstract Info : EqualityComparerInfo
 
             /// One of the two unique instances of System.Collections.IEqualityComparer. Implements PER semantics
             /// where equality on NaN returns "false".
             let fsEqualityComparerNoHashingPER = 
                 { new System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)  // PER Semantics
-                    override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
-                    
+                    override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing)))
+                  interface IEqualityComparerInfo with
+                    member __.Info = EqualityComparerInfo.PER }
+
             /// One of the two unique instances of System.Collections.IEqualityComparer. Implements ER semantics
             /// where equality on NaN returns "true".
             let fsEqualityComparerNoHashingER = 
                 { new System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
-                    override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
+                    override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing)))
+                  interface IEqualityComparerInfo with
+                    member __.Info = EqualityComparerInfo.ER }
 
             type private EquivalenceRelation = class end
             type private PartialEquivalenceRelation = class end
 
-            type GenericSpecializeEquals_StandardTypes<'a>() =
-                static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
-                    match box func with
-                    | :? Func<IEqualityComparer,'a, 'a, bool> as f -> f
-                    | _ -> raise (Exception "invalid logic")
+            type GenericSpecializeEqualsOther =
+            | ReferenceTypeStructuralEquality   = 0
+            | ReferenceTypeSealed               = 1
+            | GenericEqualityObj_ER             = 2 
+            | GenericEqualityObj_PER            = 3
 
-                static let _func =
-                    match typeof<'a> with
-                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_,_>(fun _ (x:bool)      y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_,_>(fun _ (x:sbyte)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_,_>(fun _ (x:int16)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_,_>(fun _ (x:int32)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_,_>(fun _ (x:int64)     y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_,_>(fun _ (x:byte)      y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_,_>(fun _ (x:uint16)    y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_,_>(fun _ (x:uint32)    y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_,_>(fun _ (x:uint64)    y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_,_>(fun _ (x:nativeint) y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_,_>(fun _ (x:unativeint)y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_,_>(fun _ (x:char)      y -> (# "ceq" x y : bool #)))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_,_>(fun _ (x:string)    y -> System.String.Equals((# "" x : string #),(# "" y : string #))))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_,_>(fun _ (x:decimal)   y -> System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))))
+            module GenericSpecializeEquals =
+                let standardTypes (ty:Type) : obj =
+                    match ty with
+                    | t when t.Equals typeof<bool>       -> upcast Func<IEqualityComparer,bool      ,bool      ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<sbyte>      -> upcast Func<IEqualityComparer,sbyte     ,sbyte     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<int16>      -> upcast Func<IEqualityComparer,int16     ,int16     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<int32>      -> upcast Func<IEqualityComparer,int32     ,int32     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<int64>      -> upcast Func<IEqualityComparer,int64     ,int64     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<byte>       -> upcast Func<IEqualityComparer,byte      ,byte      ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<uint16>     -> upcast Func<IEqualityComparer,uint16    ,uint16    ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<uint32>     -> upcast Func<IEqualityComparer,uint32    ,uint32    ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<uint64>     -> upcast Func<IEqualityComparer,uint64    ,uint64    ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<nativeint>  -> upcast Func<IEqualityComparer,nativeint ,nativeint ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<unativeint> -> upcast Func<IEqualityComparer,unativeint,unativeint,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<char>       -> upcast Func<IEqualityComparer,char      ,char      ,bool>(fun _ x y -> (# "ceq" x y : bool #))
+                    | t when t.Equals typeof<string>     -> upcast Func<IEqualityComparer,string    ,string    ,bool>(fun _ x y -> System.String.Equals((# "" x : string #),(# "" y : string #)))
+                    | t when t.Equals typeof<decimal>    -> upcast Func<IEqualityComparer,decimal   ,decimal   ,bool>(fun _ x y -> System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #)))
                     | _ -> null
-                            
-                static member Func = _func
 
-            type GenericSpecializeEquals_EqualityInterfaces<'a>() =
-                static let _func =
-                    match typeof<'a> with
+                let makeEquatableType ty =
+                    let equatableTypedef = typedefof<IEquatable<_>>
+                    equatableTypedef.MakeGenericType [|ty|]
+
+                let makeReturnType ty =
+                    let func4Typedef = typedefof<Func<_,_,_,_>>
+                    func4Typedef.MakeGenericType [| typeof<IEqualityComparer>; ty; ty; typeof<bool> |]
+
+                let equalityInterfaces (ty:Type) : obj =
+                    match ty with
                     | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
                         // I could do something here, but I doubt it would have any real performance impact
                         null
@@ -1741,153 +1757,172 @@ namespace Microsoft.FSharp.Core
                     | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
                         let equals = typeof<IStructuralEquatable>.GetMethod ("Equals", [|typeof<obj>; typeof<IEqualityComparer>|])
                         let ec = Expression.Parameter typeof<IEqualityComparer>
-                        let a = Expression.Parameter typeof<'a>
-                        let b = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, (Expression.Convert (b, typeof<obj>)), ec), ec, a, b)
-                        lambda.Compile ()
+                        let a = Expression.Parameter ty
+                        let b = Expression.Parameter ty
+                        let lambda = Expression.Lambda ((makeReturnType ty), Expression.Call (a, equals, (Expression.Convert (b, typeof<obj>)), ec), ec, a, b)
+                        upcast lambda.Compile ()
 
-                    | t when t.IsValueType && typeof<IEquatable<'a>>.IsAssignableFrom t ->
-                        let equals = typeof<IEquatable<'a>>.GetMethod ("Equals", [|typeof<'a>|])
+                    | t when t.IsValueType && (makeEquatableType ty).IsAssignableFrom t ->
+                        let equals = (makeEquatableType ty).GetMethod ("Equals", [|ty|])
                         let ec = Expression.Parameter typeof<IEqualityComparer>
-                        let a = Expression.Parameter typeof<'a>
-                        let b = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, b), ec, a, b)
-                        lambda.Compile ()
+                        let a = Expression.Parameter ty
+                        let b = Expression.Parameter ty
+                        let lambda = Expression.Lambda ((makeReturnType ty), Expression.Call (a, equals, b), ec, a, b)
+                        upcast lambda.Compile ()
 
                     | t when t.IsValueType ->
                         let equals = typeof<obj>.GetMethod ("Equals", [|typeof<obj>|])
                         let ec = Expression.Parameter typeof<IEqualityComparer>
-                        let a = Expression.Parameter typeof<'a>
-                        let b = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, Expression.Convert (b, typeof<obj>)), ec, a, b)
-                        lambda.Compile ()
+                        let a = Expression.Parameter ty
+                        let b = Expression.Parameter ty
+                        let lambda = Expression.Lambda ((makeReturnType ty), Expression.Call (a, equals, Expression.Convert (b, typeof<obj>)), ec, a, b)
+                        upcast lambda.Compile ()
 
                     | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
-                        (Func<_,_,_,_>(fun ec (a:'a) (b:'a) ->
-                            match box a, box b with
-                            | null, null -> true
-                            | null, _    -> false
-                            | _,    null -> false
-                            | :? IStructuralEquatable as se, boxedb -> se.Equals (boxedb, ec)
-                            | _ -> raise (Exception "invalid logic")))
+                        box GenericSpecializeEqualsOther.ReferenceTypeStructuralEquality
 
-#if FX_ATLEAST_40
+    #if FX_ATLEAST_40
                     | t when t.IsSealed -> // only sealed as a derived class might inherit from IStructuralEquatable
-                        Func<_,_,_,_>(fun ec (a:'a) (b:'a) ->
-                            match box a, box b with
-                            | null, null -> true
-                            | null, _    -> false
-                            | _,    null -> false
-                            | a, b -> a.Equals b)
-#endif
+                        box GenericSpecializeEqualsOther.ReferenceTypeSealed
+    #endif
                     | _ -> null
-                            
-                static member Func = _func
 
-            let hasFSharpCompilerGeneratedEquality<'a> () =
-#if FX_ATLEAST_40
-                let rec tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
-                    if not (interfaceType.IsAssignableFrom objectType) then null
-                    else
-                        let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
-                        let interfaceMap = objectType.GetInterfaceMap interfaceType
-                        let rec findTargetMethod index =
-                            if index = interfaceMap.InterfaceMethods.Length then null
-                            elif methodInfo.Equals (get interfaceMap.InterfaceMethods index) then (get interfaceMap.TargetMethods index)
-                            else findTargetMethod (index+1)
-                        findTargetMethod 0
+                let hasFSharpCompilerGeneratedEquality (ty:Type) =
+    #if FX_ATLEAST_40
+                    let rec tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                        if not (interfaceType.IsAssignableFrom objectType) then null
+                        else
+                            let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
+                            let interfaceMap = objectType.GetInterfaceMap interfaceType
+                            let rec findTargetMethod index =
+                                if index = interfaceMap.InterfaceMethods.Length then null
+                                elif methodInfo.Equals (get interfaceMap.InterfaceMethods index) then (get interfaceMap.TargetMethods index)
+                                else findTargetMethod (index+1)
+                            findTargetMethod 0
 
-                let rec isCompilerGeneratedInterfaceMethod objectType interfaceType methodName methodArgTypes =
-                    match tryFindObjectsInterfaceMethod objectType interfaceType methodName methodArgTypes with
-                    | null -> false
-                    | m -> 
-                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                    let rec isCompilerGeneratedInterfaceMethod objectType interfaceType methodName methodArgTypes =
+                        match tryFindObjectsInterfaceMethod objectType interfaceType methodName methodArgTypes with
                         | null -> false
-                        | _ -> true
+                        | m -> 
+                            match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                            | null -> false
+                            | _ -> true
 
-                let rec isCompilerGeneratedMethod (objectType:Type) (methodName:string) (methodArgTypes:array<Type>) =
-                    match objectType.GetMethod (methodName, methodArgTypes) with
-                    | null -> false
-                    | m ->
-                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                    let rec isCompilerGeneratedMethod (objectType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                        match objectType.GetMethod (methodName, methodArgTypes) with
                         | null -> false
-                        | _ -> true
+                        | m ->
+                            match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                            | null -> false
+                            | _ -> true
 
-                match typeof<'a>.GetCustomAttribute typeof<CompilationMappingAttribute> with
-                | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
-                    isCompilerGeneratedInterfaceMethod typeof<'a> typeof<IEquatable<'a>> "Equals" [|typeof<'a>|]
-                    && isCompilerGeneratedInterfaceMethod typeof<'a> typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
-                    && isCompilerGeneratedMethod typeof<'a> "Equals" [|typeof<obj>|] 
-                | _ -> false
-#else
-                false
-#endif
+                    match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
+                    | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
+                        isCompilerGeneratedInterfaceMethod ty (makeEquatableType ty) "Equals" [|ty|]
+                        && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
+                        && isCompilerGeneratedMethod ty "Equals" [|typeof<obj>|] 
+                    | _ -> false
+    #else
+                    ignore ty
+                    false
+    #endif
 
-            type GenericSpecializeEqualsWithRelation<'relation, 'a>() =
-                static let generalize (func:Func<IEqualityComparer,'aa,'aa,bool>) =
-                    match box func with
-                    | :? Func<IEqualityComparer,'a, 'a, bool> as f -> f
-                    | _ -> raise (Exception "invalid logic")
-
-                static let pass0 =
-                    // the whole point of the Equivalence Relation stuff is to deal with floating point numbers, so
-                    // lets handle that situation first
-                    match typeof<'relation> with
-                    | r when r.Equals typeof<PartialEquivalenceRelation> ->
-                        match typeof<'a> with
-                        | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> (# "ceq" x y : bool #)))
-                        | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> (# "ceq" x y : bool #)))
-                        | _ -> null
-                    | r when r.Equals typeof<EquivalenceRelation> ->
-                        match typeof<'a> with
-                        | t when t.Equals typeof<float>   -> generalize (Func<_,_,_,_>(fun _ (x:float)   y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                        | t when t.Equals typeof<float32> -> generalize (Func<_,_,_,_>(fun _ (x:float32) y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                        | _ -> null
-                    | _ -> raise (Exception "invalid logic")
-
-                static let pass1 =
-                    // These do not require seperate versions based on equivalence relations, so defer to helper object
-                    match pass0 with
-                    | null -> GenericSpecializeEquals_StandardTypes<'a>.Func
-                    | f -> f
-
-                static let pass2 =
-                    match pass1 with
-                    | null ->
-                        // if we are using the ER comparer, and we are a standard f# record or value type with compiler generated
-                        // equality operators, then we can avoid the boxing of IStructuralEquatable and just call the
-                        // IEquatable<'a>.Equals method.
-                        match typeof<'relation> with
+                let withRelation tyRelation ty : obj =
+                    let pass0 : obj =
+                        // the whole point of the Equivalence Relation stuff is to deal with floating point numbers, so
+                        // lets handle that situation first
+                        match tyRelation with
+                        | r when r.Equals typeof<PartialEquivalenceRelation> ->
+                            match ty with
+                            | t when t.Equals typeof<float>   -> upcast (Func<IEqualityComparer,float  ,float  ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32> -> upcast (Func<IEqualityComparer,float32,float32,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                            | _ -> null
                         | r when r.Equals typeof<EquivalenceRelation> ->
-                            if hasFSharpCompilerGeneratedEquality<'a> () then
-                                let equals = typeof<IEquatable<'a>>.GetMethod ("Equals", [|typeof<'a>|])
-                                let ec = Expression.Parameter typeof<IEqualityComparer>
-                                let a = Expression.Parameter typeof<'a>
-                                let b = Expression.Parameter typeof<'a>
-                                let lambda = Expression.Lambda<_> (Expression.Call (a, equals, b), ec, a, b)
-                                lambda.Compile ()
-                            else null
-                        | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+                            match ty with
+                            | t when t.Equals typeof<float>   -> upcast (Func<IEqualityComparer,float  ,float  ,bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32> -> upcast (Func<IEqualityComparer,float32,float32,bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | _ -> null
                         | _ -> raise (Exception "invalid logic")
-                    | f -> f
 
-                static let pass3 =
-                    // These do not require seperate versions based on equivalence relations, so defer to helper object
-                    match pass2 with
-                    | null -> GenericSpecializeEquals_EqualityInterfaces<'a>.Func
-                    | f -> f
+                    let pass1 =
+                        // These do not require seperate versions based on equivalence relations, so defer to helper object
+                        match pass0 with
+                        | null -> standardTypes ty
+                        | f -> f
 
-                static let pass4 =
-                    match pass3 with
-                    | null ->
-                        // and if none of that works, then just fall back to default behavious of GenericEqualityObj
-                        match typeof<'relation> with
-                        | r when r.Equals typeof<PartialEquivalenceRelation> -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj false comp ((box x), (box y)))
-                        | r when r.Equals typeof<EquivalenceRelation>        -> Func<_,_,_,_>(fun (comp:IEqualityComparer) x y -> GenericEqualityObj true  comp ((box x), (box y)))
-                        | _ -> raise (Exception "invalid logic")                    
-                    | f -> f
+                    let pass2 : obj =
+                        match pass1 with
+                        | null ->
+                            // if we are using the ER comparer, and we are a standard f# record or value type with compiler generated
+                            // equality operators, then we can avoid the boxing of IStructuralEquatable and just call the
+                            // IEquatable<'a>.Equals method.
+                            match tyRelation with
+                            | r when r.Equals typeof<EquivalenceRelation> ->
+                                if hasFSharpCompilerGeneratedEquality ty then
+                                    let equals = (makeEquatableType ty).GetMethod ("Equals", [|ty|])
+                                    let ec = Expression.Parameter typeof<IEqualityComparer>
+                                    let a = Expression.Parameter ty
+                                    let b = Expression.Parameter ty
+                                    let lambda = Expression.Lambda ((makeReturnType ty), Expression.Call (a, equals, b), ec, a, b)
+                                    upcast lambda.Compile ()
+                                else null
+                            | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+                            | _ -> raise (Exception "invalid logic")
+                        | f -> f
+
+                    let pass3 =
+                        // These do not require seperate versions based on equivalence relations, so defer to helper object
+                        match pass2 with
+                        | null -> equalityInterfaces ty
+                        | f -> f
+
+                    let pass4 =
+                        match pass3 with
+                        | null ->
+                            // and if none of that works, then just fall back to default behavious of GenericEqualityObj
+                            match tyRelation with
+                            | r when r.Equals typeof<PartialEquivalenceRelation> ->
+                                box GenericSpecializeEqualsOther.GenericEqualityObj_PER
+                            | r when r.Equals typeof<EquivalenceRelation>        ->
+                                box GenericSpecializeEqualsOther.GenericEqualityObj_ER
+                            | _ -> raise (Exception "invalid logic")                    
+                        | f -> f
+
+                    pass4
                             
-                static member Func = pass4
+                type Function<'relation, 'a>() =
+                    static let funcAsObj : obj  =
+                        match withRelation typeof<'relation> typeof<'a> with
+                        | null -> raise (Exception "invalid logic")
+                        | :? GenericSpecializeEqualsOther as t ->
+                            match t with
+                            | GenericSpecializeEqualsOther.ReferenceTypeStructuralEquality ->
+                                upcast Func<IEqualityComparer,'a,'a,bool>(fun ec a b ->
+                                    match box a, box b with
+                                    | null, null -> true
+                                    | null, _    -> false
+                                    | _,    null -> false
+                                    | :? IStructuralEquatable as se, boxedb -> se.Equals (boxedb, ec)
+                                    | _ -> raise (Exception "invalid logic"))
+                            | GenericSpecializeEqualsOther.ReferenceTypeSealed ->
+                                upcast Func<IEqualityComparer,'a,'a,bool>(fun ec a b ->
+                                    match box a, box b with
+                                    | null, null -> true
+                                    | null, _    -> false
+                                    | _,    null -> false
+                                    | a, b -> a.Equals b)
+                            | GenericSpecializeEqualsOther.GenericEqualityObj_ER ->
+                                upcast Func<IEqualityComparer,'a,'a,bool>(fun (comp:IEqualityComparer) x y ->
+                                    GenericEqualityObj true comp ((box x), (box y)))
+                            | GenericSpecializeEqualsOther.GenericEqualityObj_PER ->
+                                upcast Func<IEqualityComparer,'a,'a,bool>(fun (comp:IEqualityComparer) x y ->
+                                    GenericEqualityObj false comp ((box x), (box y)))
+                            | _ -> raise (Exception "invalid logic")
+                        | f -> f
+
+                    static let func : Func<IEqualityComparer,'a, 'a, bool> = unboxPrim funcAsObj
+
+                    static member Func = func
 
             // eliminate_tail_call_xxx are to elimate tail calls which are a problem with value types > 64 bits
             // and the 64-bit JIT due to the amd64 calling convention which needs to do some magic.
@@ -1899,9 +1934,8 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                eliminate_tail_call_bool (GenericSpecializeEqualsWithRelation<PartialEquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingPER, x, y))
+                eliminate_tail_call_bool (GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingPER, x, y))
 
-                
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
             // ER semantics is used for recursive calls when implementing .Equals(that) for structural data, see the code generated for record and union types in augment.fs
@@ -1909,7 +1943,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                eliminate_tail_call_bool (GenericSpecializeEqualsWithRelation<EquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingER, x, y))
+                eliminate_tail_call_bool (GenericSpecializeEquals.Function<EquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingER, x, y))
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1922,10 +1956,15 @@ namespace Microsoft.FSharp.Core
             // this is doucmented here- https://github.com/Microsoft/visualfsharp/pull/513#issuecomment-117995410
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
                 match comp with
-                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingER)  -> eliminate_tail_call_bool (GenericEqualityERIntrinsic x y)
-                | c when obj.ReferenceEquals (c, fsEqualityComparerNoHashingPER) -> eliminate_tail_call_bool (GenericEqualityIntrinsic   x y)
-                | c when obj.ReferenceEquals (c, EqualityComparer<'T>.Default)   -> eliminate_tail_call_bool (EqualityComparer<'T>.Default.Equals (x, y))
-                | _ -> comp.Equals (box x, box y)
+                | :? IEqualityComparerInfo as info ->
+                    match info.Info with
+                    | EqualityComparerInfo.ER  -> eliminate_tail_call_bool (GenericEqualityERIntrinsic x y)
+                    | EqualityComparerInfo.PER -> eliminate_tail_call_bool (GenericEqualityIntrinsic x y)
+                    | _ -> raise (Exception "invalid logic")
+                | c when obj.ReferenceEquals (c, EqualityComparer<'T>.Default)   ->
+                    eliminate_tail_call_bool (EqualityComparer<'T>.Default.Equals (x, y))
+                | _ ->
+                    eliminate_tail_call_bool (comp.Equals (box x, box y))
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -2032,15 +2071,17 @@ namespace Microsoft.FSharp.Core
                         new CountLimitedHasherPER(sz)
                 
                 interface IEqualityComparer 
+                interface IEqualityComparerInfo
 
             /// The implementation of IEqualityComparer, using unlimited depth for hashing and ER semantics for NaN equality.
             type UnlimitedHasherER() =
                 interface IEqualityComparer 
-                
+                interface IEqualityComparerInfo
+
             /// The implementation of IEqualityComparer, using unlimited depth for hashing and PER semantics for NaN equality.
             type UnlimitedHasherPER() =
                 interface IEqualityComparer
-                    
+                interface IEqualityComparerInfo
 
             /// The unique object for unlimited depth for hashing and ER semantics for equality.
             let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER() :> IEqualityComparer
@@ -2200,7 +2241,6 @@ namespace Microsoft.FSharp.Core
 
             /// Fill in the implementation of CountLimitedHasherPER
             type CountLimitedHasherPER with
-                
                 interface System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) =
                         GenericEqualityObj false iec (x,y)
@@ -2210,19 +2250,24 @@ namespace Microsoft.FSharp.Core
                             GenericHashParamObj iec  x
                         else
                             -1
+                interface IEqualityComparerInfo with
+                    member __.Info = EqualityComparerInfo.PER
                
             /// Fill in the implementation of UnlimitedHasherER
             type UnlimitedHasherER with
-                
                 interface System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)
                     override iec.GetHashCode(x:obj) = GenericHashParamObj iec  x
+                interface IEqualityComparerInfo with
+                    member __.Info = EqualityComparerInfo.ER
                    
             /// Fill in the implementation of UnlimitedHasherPER
             type UnlimitedHasherPER with
                 interface System.Collections.IEqualityComparer with
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)
                     override iec.GetHashCode(x:obj) = GenericHashParamObj iec x
+                interface IEqualityComparerInfo with
+                    member __.Info = EqualityComparerInfo.PER
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
