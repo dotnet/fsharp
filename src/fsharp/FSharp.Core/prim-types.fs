@@ -1716,8 +1716,10 @@ namespace Microsoft.FSharp.Core
             type private PartialEquivalenceRelation = class end
 
             type GenericSpecializeEqualsOther =
+#if FX_ATLEAST_40
+#else
             | ReferenceTypeStructuralEquality   = 0
-            | ReferenceTypeSealed               = 1
+#endif
             | GenericEqualityObj_ER             = 2 
             | GenericEqualityObj_PER            = 3
 
@@ -1749,14 +1751,38 @@ namespace Microsoft.FSharp.Core
                     func4Typedef.MakeGenericType [| typeof<IEqualityComparer>; ty; ty; typeof<bool> |]
 
 #if FX_ATLEAST_40 // Missing Delegate.CreateDelegate in portable47
-                let makeEquatableDelegate ty (def:Type) : obj =
-                    let concrete = def.MakeGenericType [|ty|]
+                let makeEquatableDelegate (ty:Type) (ct:Type) (def:Type) : obj =
+                    let concrete = def.MakeGenericType [|ct|]
                     let instance = Activator.CreateInstance concrete
                     upcast Delegate.CreateDelegate (makeReturnType ty, instance, "Equals")
 
                 let callStructualEqualityEquals (ec:IEqualityComparer) (x:#IStructuralEquatable) y = x.Equals (box y, ec)
                 let callEquatableEquals (x:#IEquatable<'a>) (y:'a) = x.Equals y
                     
+                type NullableStructualEquality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable>() =
+                    member __.Equals (ec:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                        match x.HasValue, y.HasValue with
+                        | false, false -> true
+                        | false, _
+                        | _, false -> false
+                        | _, _ -> callStructualEqualityEquals ec x.Value y.Value
+
+                type NullableEquatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a>>() =
+                    member __.Equals (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                        match x.HasValue, y.HasValue with
+                        | false, false -> true
+                        | false, _
+                        | _, false -> false
+                        | _, _ -> callEquatableEquals x.Value y.Value
+
+                type NullableEquals<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality>() =
+                    member __.Equals (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                        match x.HasValue, y.HasValue with
+                        | false, false -> true
+                        | false, _
+                        | _, false -> false
+                        | _, _ -> x.Value.Equals y.Value
+
                 type StructStructualEquality<'a when 'a : struct and 'a :> IStructuralEquatable>() =
                     member __.Equals (ec:IEqualityComparer, x:'a, y:'a) = callStructualEqualityEquals ec x y
 
@@ -1766,30 +1792,76 @@ namespace Microsoft.FSharp.Core
                 type StructEquals<'a when 'a : struct and 'a : equality>() =
                     member __.Equals (_:IEqualityComparer, x:'a, y:'a) = x.Equals y
 
+                type RefTypeStructualEquality<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable>() =
+                    member __.Equals (ec:IEqualityComparer, x:'a, y:'a) =
+                        match x, y with
+                        | null, null -> true
+                        | null, _
+                        | _, null -> false
+                        | _ -> callStructualEqualityEquals ec x y
+
+                type RefTypeEquatable<'a when 'a : not struct and 'a : null and 'a :> IEquatable<'a>>() =
+                    member __.Equals (_:IEqualityComparer, x:'a, y:'a) =
+                        match x, y with
+                        | null, null -> true
+                        | null, _
+                        | _, null -> false
+                        | _ -> callEquatableEquals x y
+
+                type RefTypeEquals<'a when 'a : not struct and 'a : null and 'a : equality>() =
+                    member __.Equals (_:IEqualityComparer, x:'a, y:'a) =
+                        match x, y with
+                        | null, null -> true
+                        | null, _
+                        | _, null -> false
+                        | _ ->  x.Equals y
+
                 [<Struct; NoComparison; CustomEquality>]
-                type DummyWithInterfaces =
+                type DummyStructInterfaces =
                     interface IStructuralEquatable with
                         member __.Equals (_,_) = raise (Exception "invalid logic")
                         member __.GetHashCode _ = raise (Exception "invalid logic")
 
-                    interface IEquatable<DummyWithInterfaces> with
+                    interface IEquatable<DummyStructInterfaces> with
+                        member __.Equals _ = raise (Exception "invalid logic")
+
+                //[<NoComparison; CustomEquality; AllowNullLiteral>]
+                [<AllowNullLiteral>]
+                type DummyRefTypeInterfaces() =
+                    interface IStructuralEquatable with
+                        member __.Equals (_,_) = raise (Exception "invalid logic")
+                        member __.GetHashCode _ = raise (Exception "invalid logic")
+
+                    interface IEquatable<DummyRefTypeInterfaces> with
                         member __.Equals _ = raise (Exception "invalid logic")
 #endif
                 let equalityInterfaces (ty:Type) : obj =
-                    let make = makeEquatableDelegate ty
-
+#if FX_ATLEAST_40
+                    let make = makeEquatableDelegate ty ty
+#endif
                     match ty with
                     | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
                         // I could do something here, but I doubt it would have any real performance impact
                         null
 
 #if FX_ATLEAST_40
-                    | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t -> make typedefof<StructStructualEquality<DummyWithInterfaces>>
-                    | t when t.IsValueType && (makeEquatableType ty).IsAssignableFrom t       -> make typedefof<StructEquatable<DummyWithInterfaces>>
-                    | t when t.IsValueType                                                    -> make typedefof<StructEquals<DummyWithInterfaces>>
+                    | t when t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) ->
+                        let nt = get (t.GetGenericArguments()) 0
+                        let make = makeEquatableDelegate ty nt 
+                        match nt with
+                        | nt when typeof<IStructuralEquatable>.IsAssignableFrom nt            -> make typedefof<NullableStructualEquality<DummyStructInterfaces>>
+                        | nt when (makeEquatableType nt).IsAssignableFrom nt                  -> make typedefof<NullableEquatable<DummyStructInterfaces>>
+                        | _                                                                   -> make typedefof<NullableEquals<DummyStructInterfaces>>
 
-                    | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
-                        box GenericSpecializeEqualsOther.ReferenceTypeStructuralEquality
+                    | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t -> make typedefof<StructStructualEquality<DummyStructInterfaces>>
+                    | t when t.IsValueType && (makeEquatableType t).IsAssignableFrom t        -> make typedefof<StructEquatable<DummyStructInterfaces>>
+                    | t when t.IsValueType                                                    -> make typedefof<StructEquals<DummyStructInterfaces>>
+
+                    | t when typeof<IStructuralEquatable>.IsAssignableFrom t                  -> make typedefof<RefTypeStructualEquality<DummyRefTypeInterfaces>>
+
+                     // only sealed as a derived class might inherit from IStructuralEquatable
+                    | t when t.IsSealed && (makeEquatableType ty).IsAssignableFrom t          -> make typedefof<RefTypeEquatable<DummyRefTypeInterfaces>>
+                    | t when t.IsSealed                                                       -> make typedefof<RefTypeEquals<DummyRefTypeInterfaces>>
 #else
                     | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
                         let equals = typeof<IStructuralEquatable>.GetMethod ("Equals", [|typeof<obj>; typeof<IEqualityComparer>|])
@@ -1817,10 +1889,6 @@ namespace Microsoft.FSharp.Core
 
                     | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
                         box GenericSpecializeEqualsOther.ReferenceTypeStructuralEquality
-#endif
-#if FX_ATLEAST_40
-                    | t when t.IsSealed -> // only sealed as a derived class might inherit from IStructuralEquatable
-                        box GenericSpecializeEqualsOther.ReferenceTypeSealed
 #endif
                     | _ -> null
 
@@ -1933,6 +2001,8 @@ namespace Microsoft.FSharp.Core
                         | null -> raise (Exception "invalid logic")
                         | :? GenericSpecializeEqualsOther as t ->
                             match t with
+#if FX_ATLEAST_40
+#else
                             | GenericSpecializeEqualsOther.ReferenceTypeStructuralEquality ->
                                 upcast Func<IEqualityComparer,'a,'a,bool>(fun ec a b ->
                                     match box a, box b with
@@ -1941,13 +2011,7 @@ namespace Microsoft.FSharp.Core
                                     | _,    null -> false
                                     | :? IStructuralEquatable as se, boxedb -> se.Equals (boxedb, ec)
                                     | _ -> raise (Exception "invalid logic"))
-                            | GenericSpecializeEqualsOther.ReferenceTypeSealed ->
-                                upcast Func<IEqualityComparer,'a,'a,bool>(fun ec a b ->
-                                    match box a, box b with
-                                    | null, null -> true
-                                    | null, _    -> false
-                                    | _,    null -> false
-                                    | a, b -> a.Equals b)
+#endif
                             | GenericSpecializeEqualsOther.GenericEqualityObj_ER ->
                                 upcast Func<IEqualityComparer,'a,'a,bool>(fun (comp:IEqualityComparer) x y ->
                                     GenericEqualityObj true comp ((box x), (box y)))
