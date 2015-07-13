@@ -1748,12 +1748,49 @@ namespace Microsoft.FSharp.Core
                     let func4Typedef = typedefof<Func<_,_,_,_>>
                     func4Typedef.MakeGenericType [| typeof<IEqualityComparer>; ty; ty; typeof<bool> |]
 
+#if FX_ATLEAST_40 // Missing Delegate.CreateDelegate in portable47
+                let makeEquatableDelegate ty (def:Type) : obj =
+                    let concrete = def.MakeGenericType [|ty|]
+                    let instance = Activator.CreateInstance concrete
+                    upcast Delegate.CreateDelegate (makeReturnType ty, instance, "Equals")
+
+                let callStructualEqualityEquals (ec:IEqualityComparer) (x:#IStructuralEquatable) y = x.Equals (box y, ec)
+                let callEquatableEquals (x:#IEquatable<'a>) (y:'a) = x.Equals y
+                    
+                type StructStructualEquality<'a when 'a : struct and 'a :> IStructuralEquatable>() =
+                    member __.Equals (ec:IEqualityComparer, x:'a, y:'a) = callStructualEqualityEquals ec x y
+
+                type StructEquatable<'a when 'a : struct and 'a :> IEquatable<'a>>() =
+                    member __.Equals (_:IEqualityComparer, x:'a, y:'a) = callEquatableEquals x y
+
+                type StructEquals<'a when 'a : struct and 'a : equality>() =
+                    member __.Equals (_:IEqualityComparer, x:'a, y:'a) = x.Equals y
+
+                [<Struct; NoComparison; CustomEquality>]
+                type DummyWithInterfaces =
+                    interface IStructuralEquatable with
+                        member __.Equals (_,_) = raise (Exception "invalid logic")
+                        member __.GetHashCode _ = raise (Exception "invalid logic")
+
+                    interface IEquatable<DummyWithInterfaces> with
+                        member __.Equals _ = raise (Exception "invalid logic")
+#endif
                 let equalityInterfaces (ty:Type) : obj =
+                    let make = makeEquatableDelegate ty
+
                     match ty with
                     | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
                         // I could do something here, but I doubt it would have any real performance impact
                         null
 
+#if FX_ATLEAST_40
+                    | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t -> make typedefof<StructStructualEquality<DummyWithInterfaces>>
+                    | t when t.IsValueType && (makeEquatableType ty).IsAssignableFrom t       -> make typedefof<StructEquatable<DummyWithInterfaces>>
+                    | t when t.IsValueType                                                    -> make typedefof<StructEquals<DummyWithInterfaces>>
+
+                    | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
+                        box GenericSpecializeEqualsOther.ReferenceTypeStructuralEquality
+#else
                     | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
                         let equals = typeof<IStructuralEquatable>.GetMethod ("Equals", [|typeof<obj>; typeof<IEqualityComparer>|])
                         let ec = Expression.Parameter typeof<IEqualityComparer>
@@ -1780,11 +1817,11 @@ namespace Microsoft.FSharp.Core
 
                     | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
                         box GenericSpecializeEqualsOther.ReferenceTypeStructuralEquality
-
-    #if FX_ATLEAST_40
+#endif
+#if FX_ATLEAST_40
                     | t when t.IsSealed -> // only sealed as a derived class might inherit from IStructuralEquatable
                         box GenericSpecializeEqualsOther.ReferenceTypeSealed
-    #endif
+#endif
                     | _ -> null
 
                 let hasFSharpCompilerGeneratedEquality (ty:Type) =
