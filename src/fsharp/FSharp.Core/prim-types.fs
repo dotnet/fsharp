@@ -1939,13 +1939,37 @@ namespace Microsoft.FSharp.Core
                         match tyRelation with
                         | r when r.Equals typeof<PartialEquivalenceRelation> ->
                             match ty with
-                            | t when t.Equals typeof<float>   -> upcast (Func<IEqualityComparer,float  ,float  ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<float32> -> upcast (Func<IEqualityComparer,float32,float32,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float>             -> upcast (Func<IEqualityComparer,float,            float,            bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IEqualityComparer,Nullable<float>,  Nullable<float>,  bool>(fun _ x y ->
+                                match x.HasValue, y.HasValue with
+                                | false, false -> true
+                                | false, _ 
+                                | _, false -> false
+                                | _ -> (# "ceq" x.Value y.Value : bool #)))
+                            | t when t.Equals typeof<float32>           -> upcast (Func<IEqualityComparer,float32,          float32,          bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IEqualityComparer,Nullable<float32>,Nullable<float32>,bool>(fun _ x y ->
+                                match x.HasValue, y.HasValue with
+                                | false, false -> true
+                                | false, _ 
+                                | _, false -> false
+                                | _ ->  (# "ceq" x.Value y.Value : bool #)))
                             | _ -> null
                         | r when r.Equals typeof<EquivalenceRelation> ->
                             match ty with
-                            | t when t.Equals typeof<float>   -> upcast (Func<IEqualityComparer,float  ,float  ,bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<float32> -> upcast (Func<IEqualityComparer,float32,float32,bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float>             -> upcast (Func<IEqualityComparer,float,            float,            bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IEqualityComparer,Nullable<float>,  Nullable<float>,  bool>(fun _ x y ->
+                                match x.HasValue, y.HasValue with
+                                | false, false -> true
+                                | false, _ 
+                                | _, false -> false
+                                | _ -> if not (# "ceq" x.Value x.Value : bool #) && not (# "ceq" y.Value y.Value : bool #) then true else (# "ceq" x.Value y.Value : bool #)))
+                            | t when t.Equals typeof<float32>           -> upcast (Func<IEqualityComparer,float32,          float32,          bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IEqualityComparer,Nullable<float32>,Nullable<float32>,bool>(fun _ x y ->
+                                match x.HasValue, y.HasValue with
+                                | false, false -> true
+                                | false, _ 
+                                | _, false -> false
+                                | _ -> if not (# "ceq" x.Value x.Value : bool #) && not (# "ceq" y.Value y.Value : bool #) then true else (# "ceq" x.Value y.Value : bool #)))
                             | _ -> null
                         | _ -> raise (Exception "invalid logic")
 
