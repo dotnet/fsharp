@@ -2278,73 +2278,6 @@ namespace Microsoft.FSharp.Core
                   | _ -> 
                       x.GetHashCode()
 
-            // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
-            // for fallback to that funciton. 
-            type GenericSpecializeHash<'a>() =
-                static let generalize (func:Func<IEqualityComparer,'aa,int>) =
-                    match box func with
-                    | :? Func<IEqualityComparer,'a,int> as f -> f
-                    | _ -> raise (Exception "invalid logic")
-
-                static let _specialized =
-                    match typeof<'a> with
-                    | t when t.IsArray || typeof<System.Array>.IsAssignableFrom t ->
-                        // I could do something here, but I doubt it would have any real performance impact
-                        null
-
-                    | t when t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t ->
-                        let equals = typeof<IStructuralEquatable>.GetMethod ("GetHashCode", [|typeof<IEqualityComparer>|])
-                        let ec = Expression.Parameter typeof<IEqualityComparer>
-                        let a = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call (a, equals, ec), ec, a)
-                        lambda.Compile ()
-
-                    | t when typeof<IStructuralEquatable>.IsAssignableFrom t ->
-                        (Func<_,_,_>(fun ec (a:'a) ->
-                            match box a with
-                            | null -> 0
-                            | :? IStructuralEquatable as se -> se.GetHashCode ec
-                            | _ -> raise (Exception "invalid logic")))
-
-                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_>(fun _ (a:bool)       -> a.GetHashCode()))
-                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_>(fun _ (a:sbyte)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_>(fun _ (a:int16)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_>(fun _ (a:int32)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_>(fun _ (a:int64)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_>(fun _ (a:byte)       -> a.GetHashCode()))
-                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_>(fun _ (a:uint16)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_>(fun _ (a:uint32)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_>(fun _ (a:uint64)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_>(fun _ (a:nativeint)  -> a.GetHashCode()))
-                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_>(fun _ (a:unativeint) -> a.GetHashCode()))
-                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_>(fun _ (a:char)       -> a.GetHashCode()))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_>(fun _ (a:string)     -> a.GetHashCode()))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_>(fun _ (a:decimal)    -> a.GetHashCode()))
-                    | t when t.Equals typeof<float>      -> generalize (Func<_,_,_>(fun _ (a:float)      -> a.GetHashCode()))
-                    | t when t.Equals typeof<float32>    -> generalize (Func<_,_,_>(fun _ (a:float32)    -> a.GetHashCode()))
-
-                    | t when t.IsValueType ->
-                        let ec = Expression.Parameter typeof<IEqualityComparer>
-                        let a = Expression.Parameter typeof<'a>
-                        let lambda = Expression.Lambda<_> (Expression.Call(a, "GetHashCode", [||]), ec, a)
-                        lambda.Compile ()
-
-#if FX_ATLEAST_40
-                    | t when t.IsSealed -> // only sealed as a derived class might inherit from IStructuralEquatable
-                        (Func<_,_,_>(fun ec (a:'a) ->
-                            match box a with
-                            | null -> 0
-                            | o -> o.GetHashCode ()))
-#endif
-                    | _ -> null
-
-                static let _func =
-                    match _specialized with
-                    | null -> Func<_,_,_>(fun iec o -> GenericHashParamObj iec (box o))
-                    | f -> f
-                            
-                static member Func = _func
-
             /// Fill in the implementation of CountLimitedHasherPER
             type CountLimitedHasherPER with
                 interface System.Collections.IEqualityComparer with
@@ -2375,18 +2308,138 @@ namespace Microsoft.FSharp.Core
                 interface IEqualityComparerInfo with
                     member __.Info = EqualityComparerInfo.PER
 
+#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
+
+            // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
+            // for fallback to that funciton. 
+            module GenericSpecializeHash =
+                let standardTypes (t:Type) : obj =
+                    if   t.Equals typeof<bool>       then box (Func<IEqualityComparer,bool      ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<float>      then box (Func<IEqualityComparer,float     ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<sbyte>      then box (Func<IEqualityComparer,sbyte     ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<int16>      then box (Func<IEqualityComparer,int16     ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<int32>      then box (Func<IEqualityComparer,int32     ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<int64>      then box (Func<IEqualityComparer,int64     ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<byte>       then box (Func<IEqualityComparer,byte      ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<uint16>     then box (Func<IEqualityComparer,uint16    ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<uint32>     then box (Func<IEqualityComparer,uint32    ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<uint64>     then box (Func<IEqualityComparer,uint64    ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<nativeint>  then box (Func<IEqualityComparer,nativeint ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<unativeint> then box (Func<IEqualityComparer,unativeint,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<char>       then box (Func<IEqualityComparer,char      ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<string>     then box (Func<IEqualityComparer,string    ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<decimal>    then box (Func<IEqualityComparer,decimal   ,int>(fun _ a -> a.GetHashCode()))
+                    elif t.Equals typeof<float32>    then box (Func<IEqualityComparer,float32   ,int>(fun _ a -> a.GetHashCode()))
+                    else null
+
+                let makeReturnType ty =
+                    let func3Typedef = typedefof<Func<_,_,_>>
+                    func3Typedef.MakeGenericType [| typeof<IEqualityComparer>; ty; typeof<int> |]
+
+                let makeGetHashCodeDelegate (ty:Type) (ct:Type) (def:Type) : obj =
+                    let concrete = def.MakeGenericType [|ct|]
+                    let instance = Activator.CreateInstance concrete
+                    upcast Delegate.CreateDelegate (makeReturnType ty, instance, "GetHashCode")
+
+                type Calls =
+                    static member StructualEqualityGetHashCode<'a when 'a :> IStructuralEquatable> (ec, x:'a) = x.GetHashCode (ec) 
+                    
+                type NullableStructualEquality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable>() =
+                    member __.GetHashCode (ec:IEqualityComparer, x:Nullable<'a>) =
+                        if x.HasValue then Calls.StructualEqualityGetHashCode<'a> (ec, x.Value)
+                        else 0
+
+                type NullableGetHashCode<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality>() =
+                    member __.GetHashCode (_:IEqualityComparer, x:Nullable<'a>) =
+                        if x.HasValue then x.Value.GetHashCode ()
+                        else 0
+
+                type StructStructualEquality<'a when 'a : struct and 'a :> IStructuralEquatable>() =
+                    member __.GetHashCode (ec:IEqualityComparer, x:'a) = Calls.StructualEqualityGetHashCode<'a> (ec, x)
+
+                type StructGetHashCode<'a when 'a : struct and 'a : equality>() =
+                    member __.GetHashCode (_:IEqualityComparer, x:'a) = x.GetHashCode ()
+
+                type RefTypeStructualEquality<'a when 'a : not struct and 'a :> IStructuralEquatable>() =
+                    member __.GetHashCode (ec:IEqualityComparer, x:'a) = Calls.StructualEqualityGetHashCode<'a> (ec, x)
+
+                type RefTypeGetHashCode<'a when 'a : not struct and 'a : equality>() =
+                    member __.GetHashCode (_:IEqualityComparer, x:'a) = x.GetHashCode ()
+
+                type RefTypeNullableStructualEquality<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable>() =
+                    member __.GetHashCode (ec:IEqualityComparer, x:'a) =
+                        match x with
+                        | null -> 0
+                        | _ -> Calls.StructualEqualityGetHashCode (ec, x)
+
+                type RefTypeNullableGetHashCode<'a when 'a : not struct and 'a : null and 'a : equality>() =
+                    member __.GetHashCode (_:IEqualityComparer, x:'a) =
+                        match x with
+                        | null -> 0
+                        | _ -> x.GetHashCode ()
+
+                type GenericHashParamObject<'a>() =
+                    member __.GetHashCode (iec:IEqualityComparer, x:'a) = GenericHashParamObj iec (box x)
+
+                let create (t:Type) : obj =
+                    let make = makeGetHashCodeDelegate t t
+
+                    let pass0 =
+                        if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
+                            // I could do something here, but I doubt it would have any real performance impact
+                            null
+
+                        elif t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                            let nt = get (t.GetGenericArguments()) 0
+                            let make = makeGetHashCodeDelegate t nt 
+                        
+                            if typeof<IStructuralEquatable>.IsAssignableFrom nt               then make typedefof<NullableStructualEquality<GenericSpecializeEquals.DummyStructInterfaces>>
+                            else                                                                   make typedefof<NullableGetHashCode<GenericSpecializeEquals.DummyStructInterfaces>>
+
+                        elif t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make typedefof<StructStructualEquality<GenericSpecializeEquals.DummyStructInterfaces>>
+                        elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make typedefof<RefTypeNullableStructualEquality<GenericSpecializeEquals.DummyRefTypeInterfaces>>
+                        else null
+
+                    let pass1 =
+                        match pass0 with
+                        | null -> standardTypes t
+                        | f -> f
+
+                    let pass2 =
+                        match pass1 with
+                        | null ->
+                            if t.IsValueType then make typedefof<StructGetHashCode<GenericSpecializeEquals.DummyStructInterfaces>>
+                            elif t.IsSealed  then make typedefof<RefTypeNullableGetHashCode<GenericSpecializeEquals.DummyRefTypeInterfaces>>
+                            else null
+                        | f -> f
+
+                    let pass3 =
+                        match pass2 with
+                        | null -> make typedefof<GenericHashParamObject<_>>
+                        | f -> f
+
+                    pass3
+                            
+                type Function<'a>() =
+                    static let func : Func<IEqualityComparer,'a, int> =
+                        match create typeof<'a> with
+                        | null -> raise (Exception "invalid logic")
+                        | f -> unboxPrim f
+
+                    static member Func = func
+
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic x = 
                 let iec = fsEqualityComparerUnlimitedHashingPER
-                eliminate_tail_call_int (GenericSpecializeHash.Func.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Invoke (iec, x))
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit x =
                 let iec = CountLimitedHasherPER limit
-                eliminate_tail_call_int (GenericSpecializeHash.Func.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Invoke (iec, x))
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -2396,7 +2449,29 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                eliminate_tail_call_int (GenericSpecializeHash.Func.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Invoke (iec, x))
+
+#else
+
+            /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
+            //
+            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on type "T".
+            let GenericHashIntrinsic x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box(x))
+
+            /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
+            let LimitedGenericHashIntrinsic limit x = GenericHashParamObj (CountLimitedHasherPER(limit)) (box(x))
+
+            /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
+            //
+            // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
+            // a CountLimitedHasherPER.
+            //
+            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on type "T".
+            let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
+                GenericHashParamObj iec (box(x))
+#endif
                 
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
