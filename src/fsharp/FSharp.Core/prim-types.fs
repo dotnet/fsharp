@@ -1794,15 +1794,6 @@ namespace Microsoft.FSharp.Core
                 type StructEquals<'a when 'a : struct and 'a : equality>() =
                     member __.Equals (_:IEqualityComparer, x:'a, y:'a) = x.Equals y
 
-                type RefTypeStructualEquality<'a when 'a : not struct and 'a :> IStructuralEquatable>() =
-                    member __.Equals (ec:IEqualityComparer, x:'a, y:'a) = Calls.StructualEqualityEquals (ec, x, y)
-
-                type RefTypeEquatable<'a when 'a : not struct and 'a :> IEquatable<'a>>() =
-                    member __.Equals (_:IEqualityComparer, x:'a, y:'a) = Calls.EquatableEquals (x, y)
-
-                type RefTypeEquals<'a when 'a : not struct and 'a : equality>() =
-                    member __.Equals (_:IEqualityComparer, x:'a, y:'a) = x.Equals y
-
                 type RefTypeNullableStructualEquality<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable>() =
                     member __.Equals (ec:IEqualityComparer, x:'a, y:'a) =
                         match x, y with
@@ -1851,10 +1842,6 @@ namespace Microsoft.FSharp.Core
                 let equalityInterfaces (t:Type) : obj =
                     let make = makeEquatableDelegate t t
 
-                    let notnull =
-                        let id = IntrinsicFunctions.getTypeInfo t
-                        id = IntrinsicFunctions.TypeNullnessSemantics_NullNotLiked || id = IntrinsicFunctions.TypeNullnessSemantics_NullNever
-
                     let equatable = makeEquatableType t
 
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
@@ -1873,13 +1860,10 @@ namespace Microsoft.FSharp.Core
                     elif t.IsValueType && equatable.IsAssignableFrom t                    then make typedefof<StructEquatable<DummyStructInterfaces>>
                     elif t.IsValueType                                                    then make typedefof<StructEquals<DummyStructInterfaces>>
 
-                    elif typeof<IStructuralEquatable>.IsAssignableFrom t && notnull       then make typedefof<RefTypeStructualEquality<DummyRefTypeInterfaces>>
                     elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make typedefof<RefTypeNullableStructualEquality<DummyRefTypeInterfaces>>
 
                     // only sealed as a derived class might inherit from IStructuralEquatable
-                    elif t.IsSealed && equatable.IsAssignableFrom t && notnull            then make typedefof<RefTypeEquatable<DummyRefTypeInterfaces>>
                     elif t.IsSealed && equatable.IsAssignableFrom t                       then make typedefof<RefTypeNullableEquatable<DummyRefTypeInterfaces>>
-                    elif t.IsSealed && notnull                                            then make typedefof<RefTypeEquals<DummyRefTypeInterfaces>>
                     elif t.IsSealed                                                       then make typedefof<RefTypeNullableEquals<DummyRefTypeInterfaces>>
 
                     else null
@@ -2387,7 +2371,7 @@ namespace Microsoft.FSharp.Core
                     let pass0 =
                         if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
                             // I could do something here, but I doubt it would have any real performance impact
-                            null
+                            make typedefof<GenericHashParamObject<_>>
 
                         elif t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
                             let nt = get (t.GetGenericArguments()) 0
