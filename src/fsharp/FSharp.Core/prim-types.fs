@@ -951,13 +951,14 @@ namespace Microsoft.FSharp.Core
             /// This type has two instances - fsComparerER and fsComparerThrow.
             ///   - fsComparerER  = ER semantics = no throw on NaN comparison = new GenericComparer(false) = GenericComparer = GenericComparison
             ///   - fsComparerPER  = PER semantics = local throw on NaN comparison = new GenericComparer(true) = LessThan/GreaterThan etc.
-            type GenericComparer(throwsOnPER:bool) = 
+            type ComparerType = 
+            | ER     = 0 
+            | PER_lt = 1
+            | PER_gt = 2
+            
+            type GenericComparer(comparerType:ComparerType) = 
                 interface System.Collections.IComparer 
-                member  c.ThrowsOnPER = throwsOnPER
-
-            /// The unique exception object that is thrown locally when NaNs are compared in PER mode (by fsComparerPER)
-            /// This exception should never be observed by user code.
-            let NaNException = new System.Exception()                                                 
+                member  c.ComparerType = comparerType
                     
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
@@ -982,17 +983,27 @@ namespace Microsoft.FSharp.Core
                    | (:? IStructuralComparable as x),_ ->
                        x.CompareTo(yobj,comp)
                    // Check for IComparable
-                   | (:? System.IComparable as x),_ -> 
-                       if comp.ThrowsOnPER then 
-                           match xobj,yobj with 
-                           | (:? float as x),(:? float as y) -> 
-                                if (System.Double.IsNaN x || System.Double.IsNaN y) then 
-                                    raise NaNException
-                           | (:? float32 as x),(:? float32 as y) -> 
-                                if (System.Single.IsNaN x || System.Single.IsNaN y) then 
-                                    raise NaNException
-                           | _ -> ()
-                       x.CompareTo(yobj)
+                   | (:? System.IComparable as x),_ ->
+                        if comp.ComparerType.Equals ComparerType.ER then
+                            x.CompareTo yobj
+                        else 
+                            let getNaNResult () =
+                                match comp.ComparerType with
+                                | ComparerType.PER_gt -> 2
+                                | ComparerType.PER_lt -> -2
+                                | _ -> raise (Exception "Invalid logic")
+
+                            match xobj, yobj with
+                            | (:? float as x), (:? float as y) -> 
+                                if System.Double.IsNaN x || System.Double.IsNaN y
+                                    then getNaNResult ()
+                                    else x.CompareTo y
+                            | (:? float32 as x), (:? float32 as y) -> 
+                                if System.Single.IsNaN x || System.Single.IsNaN y
+                                    then getNaNResult ()
+                                    else x.CompareTo y
+                            | _ -> x.CompareTo yobj
+
                    | (:? nativeint as x),(:? nativeint as y) -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
                    | (:? unativeint as x),(:? unativeint as y) -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
                    | _,(:? IStructuralComparable as yc) ->
@@ -1183,12 +1194,13 @@ namespace Microsoft.FSharp.Core
             type GenericComparer with
                 interface System.Collections.IComparer with
                     override c.Compare(x:obj,y:obj) = GenericCompare c (x,y)
-            
+
             /// The unique object for comparing values in PER mode (where local exceptions are thrown when NaNs are compared)
-            let fsComparerPER        = GenericComparer(true)  
+            let fsComparerPER_gt        = GenericComparer ComparerType.PER_gt
+            let fsComparerPER_lt        = GenericComparer ComparerType.PER_lt
 
             /// The unique object for comparing values in ER mode (where "0" is returned when NaNs are compared)
-            let fsComparerER = GenericComparer(false) 
+            let fsComparerER = GenericComparer ComparerType.ER
 
             type GenericSpecializeCompareTo<'a>() =
                 static let generalize (func:Func<IComparer,'aa,'aa,int>) =
@@ -1276,38 +1288,22 @@ namespace Microsoft.FSharp.Core
             /// Generic less-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericLessThanIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) 0 : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
-                    
+                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 0 : bool #)
             
             /// Generic greater-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) 0 : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
-            
+                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) 0 : bool #)
              
             /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) (-1) : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
-                    
-            
+                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) (-1) : bool #)
             
             /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
-                try
-                    (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER x y) 1 : bool #)
-                with
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e, NaNException) -> false
+                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 1 : bool #)
 
 
             /// Compare two values of the same generic type, in ER mode, with static optimizations 
@@ -1945,7 +1941,7 @@ namespace Microsoft.FSharp.Core
                         | _ -> raise (Exception "invalid logic")
 
                     let pass1 =
-                        // These do not require seperate versions based on equivalence relations, so defer to helper object
+                        // These do not require seperate versions based on equivalence relations; defer to helper 
                         match pass0 with
                         | null -> standardTypes ty
                         | f -> f
@@ -1968,7 +1964,7 @@ namespace Microsoft.FSharp.Core
                         | f -> f
 
                     let pass3 =
-                        // These do not require seperate versions based on equivalence relations, so defer to helper object
+                        // These do not require seperate versions based on equivalence relations, defer to helper
                         match pass2 with
                         | null -> equalityInterfaces ty
                         | f -> f
