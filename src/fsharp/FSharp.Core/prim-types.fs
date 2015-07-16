@@ -989,8 +989,8 @@ namespace Microsoft.FSharp.Core
                         else 
                             let getNaNResult () =
                                 match comp.ComparerType with
-                                | ComparerType.PER_gt -> 2
-                                | ComparerType.PER_lt -> -2
+                                | ComparerType.PER_gt -> -2
+                                | ComparerType.PER_lt -> 2
                                 | _ -> raise (Exception "Invalid logic")
 
                             match xobj, yobj with
@@ -1196,8 +1196,8 @@ namespace Microsoft.FSharp.Core
                     override c.Compare(x:obj,y:obj) = GenericCompare c (x,y)
 
             /// The unique object for comparing values in PER mode (where local exceptions are thrown when NaNs are compared)
-            let fsComparerPER_gt        = GenericComparer ComparerType.PER_gt
-            let fsComparerPER_lt        = GenericComparer ComparerType.PER_lt
+            let fsComparerPER_gt = GenericComparer ComparerType.PER_gt
+            let fsComparerPER_lt = GenericComparer ComparerType.PER_lt
 
             /// The unique object for comparing values in ER mode (where "0" is returned when NaNs are compared)
             let fsComparerER = GenericComparer ComparerType.ER
