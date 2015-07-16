@@ -955,7 +955,7 @@ namespace Microsoft.FSharp.Core
             | ER     = 0 
             | PER_lt = 1
             | PER_gt = 2
-            
+
             type GenericComparer(comparerType:ComparerType) = 
                 interface System.Collections.IComparer 
                 member  c.ComparerType = comparerType
@@ -1202,37 +1202,71 @@ namespace Microsoft.FSharp.Core
             /// The unique object for comparing values in ER mode (where "0" is returned when NaNs are compared)
             let fsComparerER = GenericComparer ComparerType.ER
 
-            type GenericSpecializeCompareTo<'a>() =
-                static let generalize (func:Func<IComparer,'aa,'aa,int>) =
-                    match box func with
-                    | :? Func<IComparer,'a,'a,int> as f -> f
-                    | _ -> raise (Exception "invalid logic")
+            // eliminate_tail_call_xxx are to elimate tail calls which are a problem with value types > 64 bits
+            // and the 64-bit JIT due to the amd64 calling convention which needs to do some magic.
+            let inline eliminate_tail_call_int x = 0 + x
+            let inline eliminate_tail_call_bool x =
+                // previously: not (not (x))
+                // but found that the following also removes tail calls, although this could obviously
+                // change if the fsharp optimizer is changed...
+                match x with
+                | true -> true
+                | false -> false
 
-                static let _specialized =
-                    match typeof<'a> with
-                    | t when t.Equals typeof<bool>       -> generalize (Func<_,_,_,_>(fun _ (x:bool)      y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<sbyte>      -> generalize (Func<_,_,_,_>(fun _ (x:sbyte)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<int16>      -> generalize (Func<_,_,_,_>(fun _ (x:int16)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<int32>      -> generalize (Func<_,_,_,_>(fun _ (x:int32)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<int64>      -> generalize (Func<_,_,_,_>(fun _ (x:int64)     y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<nativeint>  -> generalize (Func<_,_,_,_>(fun _ (x:nativeint) y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    | t when t.Equals typeof<byte>       -> generalize (Func<_,_,_,_>(fun _ (x:byte)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<uint16>     -> generalize (Func<_,_,_,_>(fun _ (x:uint16)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<uint32>     -> generalize (Func<_,_,_,_>(fun _ (x:uint32)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<uint64>     -> generalize (Func<_,_,_,_>(fun _ (x:uint64)    y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<unativeint> -> generalize (Func<_,_,_,_>(fun _ (x:unativeint)y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<char>       -> generalize (Func<_,_,_,_>(fun _ (x:char)      y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    | t when t.Equals typeof<string>     -> generalize (Func<_,_,_,_>(fun _ (x:string)    y -> System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))))
-                    | t when t.Equals typeof<decimal>    -> generalize (Func<_,_,_,_>(fun _ (x:decimal)   y -> System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))))
-                    | _ -> null
+#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
+            type private EquivalenceRelation = class end
+            type private PartialEquivalenceRelation = class end
 
-                static let _func = 
-                    match _specialized with
-                    | null -> Func<_,_,_,_>(fun (comp:IComparer) x y -> comp.Compare (box x, box y))
+            module GenericSpecializeCompareTo =
+                let standardTypes (t:Type) : obj =
+                    if   t.Equals typeof<bool>       then box (Func<IComparer,bool      ,bool      ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    elif t.Equals typeof<sbyte>      then box (Func<IComparer,sbyte     ,sbyte     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    elif t.Equals typeof<int16>      then box (Func<IComparer,int16     ,int16     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    elif t.Equals typeof<int32>      then box (Func<IComparer,int32     ,int32     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    elif t.Equals typeof<int64>      then box (Func<IComparer,int64     ,int64     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    elif t.Equals typeof<nativeint>  then box (Func<IComparer,nativeint ,nativeint ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
+                    elif t.Equals typeof<byte>       then box (Func<IComparer,byte      ,byte      ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    elif t.Equals typeof<uint16>     then box (Func<IComparer,uint16    ,uint16    ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    elif t.Equals typeof<uint32>     then box (Func<IComparer,uint32    ,uint32    ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    elif t.Equals typeof<uint64>     then box (Func<IComparer,uint64    ,uint64    ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    elif t.Equals typeof<unativeint> then box (Func<IComparer,unativeint,unativeint,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    elif t.Equals typeof<char>       then box (Func<IComparer,char      ,char      ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
+                    elif t.Equals typeof<string>     then box (Func<IComparer,string    ,string    ,int>(fun _ x y -> System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))))
+                    elif t.Equals typeof<decimal>    then box (Func<IComparer,decimal   ,decimal   ,int>(fun _ x y -> System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))))
+                    else null
+
+                let makeComparableType ty =
+                    let comparableTypedef = typedefof<IComparable<_>>
+                    comparableTypedef.MakeGenericType [|ty|]
+
+                let makeReturnType ty =
+                    let func4Typedef = typedefof<Func<_,_,_,_>>
+                    func4Typedef.MakeGenericType [| typeof<IComparer>; ty; ty; typeof<int> |]
+
+                let makeCompareDelegate (ty:Type) (ct:Type) (def:Type) : obj =
+                    let concrete = def.MakeGenericType [|ct|]
+                    let instance = Activator.CreateInstance concrete
+                    upcast Delegate.CreateDelegate (makeReturnType ty, instance, "Compare")
+
+                type GenericComparerObj<'a>() =
+                    member __.Compare (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
+
+                let withRelation (_tyRelation:Type) (ty:Type) : obj =
+                    let pass0 : obj =
+                        standardTypes ty
+
+                    match pass0 with
+                    | null -> makeCompareDelegate ty ty typedefof<GenericComparerObj<_>>
                     | f -> f
-                            
-                static member Func = _func
-                    
+
+                type Function<'relation, 'a>() =
+                    static let func : Func<IComparer,'a, 'a, int> =
+                        match withRelation typeof<'relation> typeof<'a> with
+                        | null -> raise (Exception "invalid logic")
+                        | f -> unboxPrim f
+
+                    static member Func = func
+
             /// Compare two values of the same generic type, using "comp".
             //
             // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
@@ -1240,8 +1274,83 @@ namespace Microsoft.FSharp.Core
             // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
             // cases where it is known how a particular type implements generic comparison.
             let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                GenericSpecializeCompareTo<'T>.Func.Invoke (comp, x, y)
+                match comp with
+                | :? GenericComparer as info ->
+                    match info.ComparerType with
+                    | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Invoke (comp, x, y))
+                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Invoke (comp, x, y))
+                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Invoke (comp, x, y))
+                    | _ -> raise (Exception "invalid logic")
+                | c when obj.ReferenceEquals (c, Comparer<'T>.Default)   ->
+                    eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
+                | _ ->
+                    eliminate_tail_call_int (comp.Compare (box x, box y))
 
+            /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
+            //
+            // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on "T".
+            let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
+                eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Invoke (fsComparerER, x, y))
+
+            /// Generic less-than. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericLessThanIntrinsic (x:'T) (y:'T) = 
+                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 0 : bool #)
+            
+            /// Generic greater-than. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
+                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) 0 : bool #)
+             
+            /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
+                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) (-1) : bool #)
+            
+            /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
+                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 1 : bool #)
+
+#else
+            /// Compare two values of the same generic type, using "comp".
+            //
+            // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
+            //
+            // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
+            // cases where it is known how a particular type implements generic comparison.
+            let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
+                comp.Compare(box x, box y)
+
+
+            /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
+            //
+            // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on "T".
+            let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
+                GenericComparisonWithComparerIntrinsic (fsComparerER :> IComparer) x y
+
+            /// Generic less-than. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericLessThanIntrinsic (x:'T) (y:'T) = 
+                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 0 : bool #)
+            
+            /// Generic greater-than. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
+                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) 0 : bool #)
+             
+            /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
+                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) (-1) : bool #)
+            
+            /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
+            /// the local exception that is thrown when NaN's are compared.
+            let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
+                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 1 : bool #)
+#endif
             /// Compare two values of the same generic type, in either PER or ER mode, but include static optimizations
             /// for various well-known cases.
             //
@@ -1277,33 +1386,6 @@ namespace Microsoft.FSharp.Core
                  when 'T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
 
 
-            /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
-            //
-            // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on "T".
-            let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
-                GenericComparisonWithComparerIntrinsic (fsComparerER :> IComparer) x y
-
-
-            /// Generic less-than. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericLessThanIntrinsic (x:'T) (y:'T) = 
-                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 0 : bool #)
-            
-            /// Generic greater-than. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
-                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) 0 : bool #)
-             
-            /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
-                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) (-1) : bool #)
-            
-            /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
-                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 1 : bool #)
 
 
             /// Compare two values of the same generic type, in ER mode, with static optimizations 
@@ -1709,21 +1791,8 @@ namespace Microsoft.FSharp.Core
                   interface IEqualityComparerInfo with
                     member __.Info = EqualityComparerInfo.ER }
 
-            // eliminate_tail_call_xxx are to elimate tail calls which are a problem with value types > 64 bits
-            // and the 64-bit JIT due to the amd64 calling convention which needs to do some magic.
-            let inline eliminate_tail_call_int x = 0 + x
-            let inline eliminate_tail_call_bool x =
-                // previously: not (not (x))
-                // but found that the following also removes tail calls, although this could obviously
-                // change if the fsharp optimizer is changed...
-                match x with
-                | true -> true
-                | false -> false
 
 #if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
-            type private EquivalenceRelation = class end
-            type private PartialEquivalenceRelation = class end
-
             module GenericSpecializeEquals =
                 let standardTypes (ty:Type) : obj =
                     match ty with
