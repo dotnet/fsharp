@@ -959,6 +959,12 @@ namespace Microsoft.FSharp.Core
             type GenericComparer(comparerType:ComparerType) = 
                 interface System.Collections.IComparer 
                 member  c.ComparerType = comparerType
+
+            let getPERNaNCompareToResult (comp:GenericComparer) =
+                match comp.ComparerType with
+                | ComparerType.PER_gt -> -2
+                | ComparerType.PER_lt -> 2
+                | _ -> raise (Exception "Invalid logic")
                     
             /// Implements generic comparison between two objects. This corresponds to the pseudo-code in the F#
             /// specification.  The treatment of NaNs is governed by "comp".
@@ -987,20 +993,14 @@ namespace Microsoft.FSharp.Core
                         if comp.ComparerType.Equals ComparerType.ER then
                             x.CompareTo yobj
                         else 
-                            let getNaNResult () =
-                                match comp.ComparerType with
-                                | ComparerType.PER_gt -> -2
-                                | ComparerType.PER_lt -> 2
-                                | _ -> raise (Exception "Invalid logic")
-
                             match xobj, yobj with
                             | (:? float as x), (:? float as y) -> 
                                 if System.Double.IsNaN x || System.Double.IsNaN y
-                                    then getNaNResult ()
+                                    then getPERNaNCompareToResult comp
                                     else x.CompareTo y
                             | (:? float32 as x), (:? float32 as y) -> 
                                 if System.Single.IsNaN x || System.Single.IsNaN y
-                                    then getNaNResult ()
+                                    then getPERNaNCompareToResult comp
                                     else x.CompareTo y
                             | _ -> x.CompareTo yobj
 
@@ -1395,8 +1395,91 @@ namespace Microsoft.FSharp.Core
                     override __.Equals _ = raise (Exception "invalid logic")
                     override __.GetHashCode () = raise (Exception "invalid logic")
 
+                let comparisonInterfaces (t:Type) : obj =
+                    let make = makeCompareDelegate t t
+
+                    let equatable = mos.makeComparableType t
+
+                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
+                        // I could do something here, but I doubt it would have any real performance impact
+                        null
+
+                    elif t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                        let nt = get (t.GetGenericArguments()) 0
+                        let make = makeCompareDelegate t nt 
+                        
+                        if typeof<IStructuralComparable>.IsAssignableFrom nt               then make typedefof<NullableStructual<DummyStructComparableInterfaces>>
+                        elif (mos.makeComparableType nt).IsAssignableFrom nt               then make typedefof<NullableComparable<DummyStructComparableInterfaces>>
+                        else                                                                   make typedefof<NullableCompare<DummyStructComparableInterfaces>>
+
+                    elif t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make typedefof<StructStructual<DummyStructComparableInterfaces>>
+                    elif t.IsValueType && equatable.IsAssignableFrom t                    then make typedefof<StructComparable<DummyStructComparableInterfaces>>
+                    elif t.IsValueType                                                    then make typedefof<StructCompare<DummyStructComparableInterfaces>>
+
+                    elif typeof<IStructuralComparable>.IsAssignableFrom t                  then make typedefof<RefTypeNullableStructual<DummyRefTypeComparableInterfaces>>
+
+                    // only sealed as a derived class might inherit from IStructuralComparable
+                    elif t.IsSealed && equatable.IsAssignableFrom t                       then make typedefof<RefTypeNullableComparable<DummyRefTypeComparableInterfaces>>
+                    elif t.IsSealed                                                       then make typedefof<RefTypeNullableCompare<DummyRefTypeComparableInterfaces>>
+
+                    else null
+
+
                 let withRelation (tyRelation:Type) (ty:Type) : obj =
-                    let pass0 : obj = null // TODO: deal with float
+                    let pass0 : obj =
+                        // the whole point of the Equivalence Relation stuff is to deal with floating point numbers, so
+                        // lets handle that situation first
+                        match tyRelation with
+                        | r when r.Equals typeof<PartialEquivalenceRelation> ->
+                            match ty with
+                            | t when t.Equals typeof<float>             -> upcast (Func<IComparer,float,            float,            int>(fun comp x y ->
+                                if System.Double.IsNaN x || System.Double.IsNaN y then
+                                    match comp with
+                                    | :? GenericComparer as comp -> getPERNaNCompareToResult comp
+                                    | _ -> raise (Exception "invalid logic")
+                                else x.CompareTo y))
+                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IComparer,Nullable<float>,  Nullable<float>,  int>(fun comp x y ->
+                                match x.HasValue, y.HasValue with
+                                | false, false -> 0
+                                | false, _ -> -1
+                                | _, false -> +1
+                                | _ ->
+                                    if System.Double.IsNaN x.Value || System.Double.IsNaN y.Value then
+                                        match comp with
+                                        | :? GenericComparer as comp -> getPERNaNCompareToResult comp
+                                        | _ -> raise (Exception "invalid logic")
+                                    else x.Value.CompareTo y.Value))
+                            | t when t.Equals typeof<float32>           -> upcast (Func<IComparer,float32,          float32,          int>(fun comp x y ->
+                                if System.Single.IsNaN x || System.Single.IsNaN y then
+                                    match comp with
+                                    | :? GenericComparer as comp -> getPERNaNCompareToResult comp
+                                    | _ -> raise (Exception "invalid logic")
+                                else x.CompareTo y))
+                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun comp x y ->
+                                if System.Single.IsNaN x.Value || System.Single.IsNaN y.Value then
+                                    match comp with
+                                    | :? GenericComparer as comp -> getPERNaNCompareToResult comp
+                                    | _ -> raise (Exception "invalid logic")
+                                else x.Value.CompareTo y.Value))
+                            | _ -> null
+                        | r when r.Equals typeof<EquivalenceRelation> ->
+                            match ty with
+                            | t when t.Equals typeof<float>             -> upcast (Func<IComparer,float,            float,            int>(fun _ x y -> x.CompareTo y))
+                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IComparer,Nullable<float>,  Nullable<float>,  int>(fun _ x y ->
+                                match x.HasValue, y.HasValue with
+                                | false, false -> 0
+                                | false, _ -> -1
+                                | _, false -> +1
+                                | _ -> x.Value.CompareTo y.Value))
+                            | t when t.Equals typeof<float32>           -> upcast (Func<IComparer,float32,          float32,          int>(fun _ x y -> x.CompareTo y))
+                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun _ x y ->
+                                match x.HasValue, y.HasValue with
+                                | false, false -> 0
+                                | false, _ -> -1
+                                | _, false -> +1
+                                | _ -> x.Value.CompareTo y.Value))
+                            | _ -> null
+                        | _ -> raise (Exception "invalid logic")
 
                     let pass1 =
                         match pass0 with
@@ -1420,9 +1503,18 @@ namespace Microsoft.FSharp.Core
                             | _ -> raise (Exception "invalid logic")
                         | f -> f
 
-                    match pass2 with
-                    | null -> makeCompareDelegate ty ty typedefof<GenericComparerObj<_>>
-                    | f -> f
+                    let pass3 =
+                        // These do not require seperate versions based on equivalence relations, defer to helper
+                        match pass2 with
+                        | null -> comparisonInterfaces ty
+                        | f -> f
+
+                    let pass4 = 
+                        match pass3 with
+                        | null -> makeCompareDelegate ty ty typedefof<GenericComparerObj<_>>
+                        | f -> f
+
+                    pass4
 
                 type Function<'relation, 'a>() =
                     static let func : Func<IComparer,'a, 'a, int> =
