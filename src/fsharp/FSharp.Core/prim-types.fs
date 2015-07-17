@@ -1214,20 +1214,101 @@ namespace Microsoft.FSharp.Core
                 | false -> false
 
 #if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
+            module Exemplars =
+                module Nullable =
+                    type StructualComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable>() =
+                        member __.CompareTo (ec:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _, _ -> x.Value.CompareTo (box y.Value, ec)
+
+                    type ComparableGeneric<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable<'a>>() =
+                        member __.CompareTo (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _, _ -> x.Value.CompareTo y.Value
+
+                    type Comparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable>() =
+                        member __.CompareTo (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _, _ -> x.Value.CompareTo (box y.Value)
+
+                module ValueType =
+                    type StructualComparable<'a when 'a : struct and 'a :> IStructuralComparable>() =
+                        member __.CompareTo (ec:IComparer, x:'a, y:'a) = x.CompareTo (box y, ec)
+
+                    type ComparableGeneric<'a when 'a : struct and 'a :> IComparable<'a>>() =
+                        member __.CompareTo (_:IComparer, x:'a, y:'a) = x.CompareTo y
+
+                    type Comparable<'a when 'a : struct and 'a :> IComparable>() =
+                        member __.CompareTo (_:IComparer, x:'a, y:'a) = x.CompareTo y
+
+                module RefType = 
+                    type StructualComparable<'a when 'a : not struct and 'a : null and 'a :> IStructuralComparable>() =
+                        member __.CompareTo (ec:IComparer, x:'a, y:'a) =
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ -> x.CompareTo (box y, ec)
+
+                    type ComparableGeneric<'a when 'a : not struct and 'a : null and 'a :> IComparable<'a>>() =
+                        member __.CompareTo (_:IComparer, x:'a, y:'a) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ -> x.CompareTo y
+
+                    type Comparable<'a when 'a : not struct and 'a : null and 'a :> IComparable>() =
+                        member __.CompareTo (_:IComparer, x:'a, y:'a) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ -> x.CompareTo y
+
+                module DummyTypes =
+                    let doNotEat () = raise (Exception "not for eating! these types only exist for getting typedef.")
+
+                    [<Struct; CustomComparison; CustomEquality>]
+                    type ValueTypeComparableInterfaces =
+                        interface IStructuralComparable                      with member __.CompareTo (_,_) = doNotEat ()
+                        interface IComparable<ValueTypeComparableInterfaces> with member __.CompareTo _     = doNotEat ()
+                        interface IComparable                                with member __.CompareTo _     = doNotEat ()
+                        override __.Equals _                                                                = doNotEat ()
+                        override __.GetHashCode ()                                                          = doNotEat ()
+
+                    [<AllowNullLiteral>]
+                    type RefTypeComparableInterfaces() =
+                        interface IStructuralComparable                    with member __.CompareTo (_,_) = doNotEat ()
+                        interface IComparable<RefTypeComparableInterfaces> with member __.CompareTo _     = doNotEat ()
+                        interface IComparable                              with member __.CompareTo _     = doNotEat ()
+                        override __.Equals _                                                              = doNotEat ()
+                        override __.GetHashCode ()                                                        = doNotEat ()
+
+                let nullableStructualComparable  = typedefof<Nullable. StructualComparable<   DummyTypes.ValueTypeComparableInterfaces>>
+                let nullableComparableGeneric    = typedefof<Nullable. ComparableGeneric<     DummyTypes.ValueTypeComparableInterfaces>>
+                let nullableComparable           = typedefof<Nullable. Comparable<            DummyTypes.ValueTypeComparableInterfaces>>
+                let valueTypeStructualComparable = typedefof<ValueType.StructualComparable<   DummyTypes.ValueTypeComparableInterfaces>>
+                let valueTypeComparableGeneric   = typedefof<ValueType.ComparableGeneric<     DummyTypes.ValueTypeComparableInterfaces>>
+                let valueTypeComparable          = typedefof<ValueType.Comparable<            DummyTypes.ValueTypeComparableInterfaces>>
+                let refTypeStructualComparable   = typedefof<RefType.  StructualComparable<   DummyTypes.RefTypeComparableInterfaces>>
+                let refTypeComparableGeneric     = typedefof<RefType.  ComparableGeneric<     DummyTypes.RefTypeComparableInterfaces>>
+                let refTypeComparable            = typedefof<RefType.  Comparable<            DummyTypes.RefTypeComparableInterfaces>>
+
             type private EquivalenceRelation = class end
             type private PartialEquivalenceRelation = class end
 
             module mos =
-                let makeEquatableType ty =
-                    let equatableTypedef = typedefof<IEquatable<_>>
-                    equatableTypedef.MakeGenericType [|ty|]
-
-                let makeComparableType ty =
-                    let comparableTypedef = typedefof<IComparable<_>>
-                    comparableTypedef.MakeGenericType [|ty|]
-
-                // TODO: Copy to a Comparable version
-                let rec tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                let rec private tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
                     if not (interfaceType.IsAssignableFrom objectType) then null
                     else
                         let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
@@ -1238,7 +1319,7 @@ namespace Microsoft.FSharp.Core
                             else findTargetMethod (index+1)
                         findTargetMethod 0
 
-                let rec isCompilerGeneratedInterfaceMethod objectType interfaceType methodName methodArgTypes =
+                let rec private isCompilerGeneratedInterfaceMethod objectType interfaceType methodName methodArgTypes =
                     match tryFindObjectsInterfaceMethod objectType interfaceType methodName methodArgTypes with
                     | null -> false
                     | m -> 
@@ -1246,13 +1327,17 @@ namespace Microsoft.FSharp.Core
                         | null -> false
                         | _ -> true
 
-                let rec isCompilerGeneratedMethod (objectType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                let rec private isCompilerGeneratedMethod (objectType:Type) (methodName:string) (methodArgTypes:array<Type>) =
                     match objectType.GetMethod (methodName, methodArgTypes) with
                     | null -> false
                     | m ->
                         match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
                         | null -> false
                         | _ -> true
+
+                let makeEquatableType ty =
+                    let equatableTypedef = typedefof<IEquatable<_>>
+                    equatableTypedef.MakeGenericType [|ty|]
 
                 let hasFSharpCompilerGeneratedEquality (ty:Type) =
                     match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
@@ -1261,6 +1346,10 @@ namespace Microsoft.FSharp.Core
                         && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
                         && isCompilerGeneratedMethod ty "Equals" [|typeof<obj>|] 
                     | _ -> false
+
+                let makeComparableType ty =
+                    let comparableTypedef = typedefof<IComparable<_>>
+                    comparableTypedef.MakeGenericType [|ty|]
 
                 let hasFSharpCompilerGeneratedComparison (ty:Type) =
                     match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
@@ -1274,8 +1363,79 @@ namespace Microsoft.FSharp.Core
                     let typedef = typedefof<'a>
                     typedef.MakeGenericType tys
 
+                let takeFirstNonNull items =
+                    let rec takeFirst idx =
+                        if idx = length items then raise (Exception "invalid logic")
+                        else
+                            let f = get items idx
+                            match f () with
+                            | null -> takeFirst (idx+1)
+                            | result -> result
+                    takeFirst 0
 
             module GenericSpecializeCompareTo =
+                let makeCompareReturnType ty =
+                    mos.makeGenericType<Func<_,_,_,_>> [| typeof<IComparer>; ty; ty; typeof<int> |]
+
+                let makeCompareDelegate (ty:Type) (ct:Type) (def:Type) : obj =
+                    let concrete = def.MakeGenericType [|ct|]
+                    let instance = Activator.CreateInstance concrete
+                    upcast Delegate.CreateDelegate (makeCompareReturnType ty, instance, "CompareTo")
+
+                let floatingPointTypes (tyRelation:Type) (ty:Type) =
+                    match tyRelation with
+                    | r when r.Equals typeof<PartialEquivalenceRelation> ->
+                        let getPERNaNResult (comp:IComparer) =
+                            match comp with
+                            | :? GenericComparer as comp -> getPERNaNCompareToResult comp
+                            | _ -> raise (Exception "invalid logic")
+
+                        match ty with
+                        | t when t.Equals typeof<float> -> box (Func<IComparer,float,float,int>(fun comp x y ->
+                            if System.Double.IsNaN x || System.Double.IsNaN y
+                                then getPERNaNResult comp
+                                else x.CompareTo y))
+                        | t when t.Equals typeof<float32> -> box (Func<IComparer,float32,float32,int>(fun comp x y ->
+                            if System.Single.IsNaN x || System.Single.IsNaN y
+                                then getPERNaNResult comp
+                                else x.CompareTo y))
+                        | t when t.Equals typeof<Nullable<float>> -> box (Func<IComparer,Nullable<float>,Nullable<float>,int>(fun comp x y ->
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ ->
+                                if System.Double.IsNaN x.Value || System.Double.IsNaN y.Value
+                                    then getPERNaNResult comp
+                                    else x.Value.CompareTo y.Value))
+                        | t when t.Equals typeof<Nullable<float32>> -> box (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun comp x y ->
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ ->
+                                if System.Single.IsNaN x.Value || System.Single.IsNaN y.Value
+                                    then getPERNaNResult comp
+                                    else x.Value.CompareTo y.Value))
+                        | _ -> null
+                    | r when r.Equals typeof<EquivalenceRelation> ->
+                        match ty with
+                        | t when t.Equals typeof<float>             -> box (Func<IComparer,float,            float,            int>(fun _ x y -> x.CompareTo y))
+                        | t when t.Equals typeof<float32>           -> box (Func<IComparer,float32,          float32,          int>(fun _ x y -> x.CompareTo y))
+                        | t when t.Equals typeof<Nullable<float>>   -> box (Func<IComparer,Nullable<float>,  Nullable<float>,  int>(fun _ x y ->
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ -> x.Value.CompareTo y.Value))
+                        | t when t.Equals typeof<Nullable<float32>> -> box (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun _ x y ->
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ -> x.Value.CompareTo y.Value))
+                        | _ -> null
+                    | _ -> raise (Exception "invalid logic")
 
                 let standardTypes (t:Type) : obj =
                     if   t.Equals typeof<bool>       then box (Func<IComparer,bool      ,bool      ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
@@ -1294,231 +1454,65 @@ namespace Microsoft.FSharp.Core
                     elif t.Equals typeof<decimal>    then box (Func<IComparer,decimal   ,decimal   ,int>(fun _ x y -> System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))))
                     else null
 
-                let makeCompareReturnType ty =
-                    mos.makeGenericType<Func<_,_,_,_>> [| typeof<IComparer>; ty; ty; typeof<int> |]
-
-                let makeCompareDelegate (ty:Type) (ct:Type) (def:Type) : obj =
-                    let concrete = def.MakeGenericType [|ct|]
-                    let instance = Activator.CreateInstance concrete
-                    upcast Delegate.CreateDelegate (makeCompareReturnType ty, instance, "Compare")
-
-                // TODO: Why do I have these? why not just access them directly?
-                type Calls =
-                    static member StructualCompare<'a when 'a :> IStructuralComparable> (ec, x:'a, y:'a) = x.CompareTo (box y, ec) 
-                    static member ComparableCompare<'a when 'a :> IComparable<'a>> (x:'a, y:'a) = x.CompareTo y
-                    
-                type NullableStructual<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable>() =
-                    member __.Compare (ec:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                        match x.HasValue, y.HasValue with
-                        | false, false -> 0
-                        | false, _ -> -1
-                        | _, false -> +1
-                        | _, _ -> Calls.StructualCompare<'a> (ec, x.Value, y.Value)
-
-                type NullableComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable<'a>>() =
-                    member __.Compare (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                        match x.HasValue, y.HasValue with
-                        | false, false -> 0
-                        | false, _ -> -1
-                        | _, false -> +1
-                        | _, _ -> Calls.ComparableCompare (x.Value, y.Value)
-
-                type NullableCompare<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable>() =
-                    member __.Compare (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                        match x.HasValue, y.HasValue with
-                        | false, false -> 0
-                        | false, _ -> -1
-                        | _, false -> +1
-                        | _, _ -> x.Value.CompareTo (box y.Value)
-
-                type StructStructual<'a when 'a : struct and 'a :> IStructuralComparable>() =
-                    member __.Compare (ec:IComparer, x:'a, y:'a) = Calls.StructualCompare (ec, x, y)
-
-                type StructComparable<'a when 'a : struct and 'a :> IComparable<'a>>() =
-                    member __.Compare (_:IComparer, x:'a, y:'a) = Calls.ComparableCompare (x, y)
-
-                type StructCompare<'a when 'a : struct and 'a :> IComparable>() =
-                    member __.Compare (_:IComparer, x:'a, y:'a) = x.CompareTo y
-
-                type RefTypeNullableStructual<'a when 'a : not struct and 'a : null and 'a :> IStructuralComparable>() =
-                    member __.Compare (ec:IComparer, x:'a, y:'a) =
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ -> Calls.StructualCompare (ec, x, y)
-
-                type RefTypeNullableComparable<'a when 'a : not struct and 'a : null and 'a :> IComparable<'a>>() =
-                    member __.Compare (_:IComparer, x:'a, y:'a) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ -> Calls.ComparableCompare (x, y)
-
-                type RefTypeNullableCompare<'a when 'a : not struct and 'a : null and 'a :> IComparable>() =
-                    member __.Compare (_:IComparer, x:'a, y:'a) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ -> x.CompareTo y
-
-                type GenericComparerObj<'a>() =
-                    member __.Compare (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
-
-                [<Struct; CustomComparison; CustomEquality>]
-                type DummyStructComparableInterfaces =
-                    interface IStructuralComparable with
-                        member __.CompareTo (_,_) = raise (Exception "invalid logic")
-
-                    interface IComparable<DummyStructComparableInterfaces> with
-                        member __.CompareTo _ = raise (Exception "invalid logic")
-
-                    interface IComparable with
-                        member __.CompareTo _ = raise (Exception "invalid logic")
-
-                    override __.Equals _ = raise (Exception "invalid logic")
-                    override __.GetHashCode () = raise (Exception "invalid logic")
-
-                [<AllowNullLiteral>]
-                type DummyRefTypeComparableInterfaces() =
-                    interface IStructuralComparable with
-                        member __.CompareTo (_,_) = raise (Exception "invalid logic")
-
-                    interface IComparable<DummyRefTypeComparableInterfaces> with
-                        member __.CompareTo _ = raise (Exception "invalid logic")
-
-                    interface IComparable with
-                        member __.CompareTo _ = raise (Exception "invalid logic")
-
-                    override __.Equals _ = raise (Exception "invalid logic")
-                    override __.GetHashCode () = raise (Exception "invalid logic")
+                let compilerGenerated tyRelation ty =
+                    match tyRelation with
+                    | r when r.Equals typeof<EquivalenceRelation> ->
+                        if mos.hasFSharpCompilerGeneratedComparison ty then
+                            if ty.IsValueType
+                                then makeCompareDelegate ty ty Exemplars.valueTypeComparableGeneric
+                                else makeCompareDelegate ty ty Exemplars.refTypeComparableGeneric
+                        else null
+                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+                    | _ -> raise (Exception "invalid logic")
 
                 let comparisonInterfaces (t:Type) : obj =
                     let make = makeCompareDelegate t t
 
-                    let equatable = mos.makeComparableType t
+                    let comparableGeneric = mos.makeComparableType t
 
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                        // I could do something here, but I doubt it would have any real performance impact
+                        // TODO: Future
                         null
 
                     elif t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
-                        let nt = get (t.GetGenericArguments()) 0
-                        let make = makeCompareDelegate t nt 
+                        let underlyingType = get (t.GetGenericArguments()) 0
+                        let make = makeCompareDelegate t underlyingType 
+                        let underlyingComparableGeneric = mos.makeComparableType underlyingType
                         
-                        if typeof<IStructuralComparable>.IsAssignableFrom nt               then make typedefof<NullableStructual<DummyStructComparableInterfaces>>
-                        elif (mos.makeComparableType nt).IsAssignableFrom nt               then make typedefof<NullableComparable<DummyStructComparableInterfaces>>
-                        else                                                                   make typedefof<NullableCompare<DummyStructComparableInterfaces>>
+                        if typeof<IStructuralComparable>.IsAssignableFrom underlyingType   then make Exemplars.nullableStructualComparable
+                        elif underlyingComparableGeneric.IsAssignableFrom underlyingType   then make Exemplars.nullableComparableGeneric
+                        else                                                                    make Exemplars.nullableComparable
 
-                    elif t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make typedefof<StructStructual<DummyStructComparableInterfaces>>
-                    elif t.IsValueType && equatable.IsAssignableFrom t                    then make typedefof<StructComparable<DummyStructComparableInterfaces>>
-                    elif t.IsValueType                                                    then make typedefof<StructCompare<DummyStructComparableInterfaces>>
+                    elif t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make Exemplars.valueTypeStructualComparable
+                    elif t.IsValueType && comparableGeneric.IsAssignableFrom t             then make Exemplars.valueTypeComparableGeneric
+                    elif t.IsValueType && typeof<IComparable>.IsAssignableFrom t           then make Exemplars.valueTypeComparable
 
-                    elif typeof<IStructuralComparable>.IsAssignableFrom t                  then make typedefof<RefTypeNullableStructual<DummyRefTypeComparableInterfaces>>
+                    elif typeof<IStructuralComparable>.IsAssignableFrom t                  then make Exemplars.refTypeStructualComparable
 
                     // only sealed as a derived class might inherit from IStructuralComparable
-                    elif t.IsSealed && equatable.IsAssignableFrom t                       then make typedefof<RefTypeNullableComparable<DummyRefTypeComparableInterfaces>>
-                    elif t.IsSealed                                                       then make typedefof<RefTypeNullableCompare<DummyRefTypeComparableInterfaces>>
+                    elif t.IsSealed && comparableGeneric.IsAssignableFrom t                then make Exemplars.refTypeComparableGeneric
+                    elif t.IsSealed && typeof<IComparable>.IsAssignableFrom t              then make Exemplars.refTypeComparable
 
                     else null
 
+                type GenericComparerObj<'a>() =
+                    member __.CompareTo (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
 
-                let withRelation (tyRelation:Type) (ty:Type) : obj =
-                    let pass0 : obj =
-                        // the whole point of the Equivalence Relation stuff is to deal with floating point numbers, so
-                        // lets handle that situation first
-                        match tyRelation with
-                        | r when r.Equals typeof<PartialEquivalenceRelation> ->
-                            match ty with
-                            | t when t.Equals typeof<float>             -> upcast (Func<IComparer,float,            float,            int>(fun comp x y ->
-                                if System.Double.IsNaN x || System.Double.IsNaN y then
-                                    match comp with
-                                    | :? GenericComparer as comp -> getPERNaNCompareToResult comp
-                                    | _ -> raise (Exception "invalid logic")
-                                else x.CompareTo y))
-                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IComparer,Nullable<float>,  Nullable<float>,  int>(fun comp x y ->
-                                match x.HasValue, y.HasValue with
-                                | false, false -> 0
-                                | false, _ -> -1
-                                | _, false -> +1
-                                | _ ->
-                                    if System.Double.IsNaN x.Value || System.Double.IsNaN y.Value then
-                                        match comp with
-                                        | :? GenericComparer as comp -> getPERNaNCompareToResult comp
-                                        | _ -> raise (Exception "invalid logic")
-                                    else x.Value.CompareTo y.Value))
-                            | t when t.Equals typeof<float32>           -> upcast (Func<IComparer,float32,          float32,          int>(fun comp x y ->
-                                if System.Single.IsNaN x || System.Single.IsNaN y then
-                                    match comp with
-                                    | :? GenericComparer as comp -> getPERNaNCompareToResult comp
-                                    | _ -> raise (Exception "invalid logic")
-                                else x.CompareTo y))
-                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun comp x y ->
-                                if System.Single.IsNaN x.Value || System.Single.IsNaN y.Value then
-                                    match comp with
-                                    | :? GenericComparer as comp -> getPERNaNCompareToResult comp
-                                    | _ -> raise (Exception "invalid logic")
-                                else x.Value.CompareTo y.Value))
-                            | _ -> null
-                        | r when r.Equals typeof<EquivalenceRelation> ->
-                            match ty with
-                            | t when t.Equals typeof<float>             -> upcast (Func<IComparer,float,            float,            int>(fun _ x y -> x.CompareTo y))
-                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IComparer,Nullable<float>,  Nullable<float>,  int>(fun _ x y ->
-                                match x.HasValue, y.HasValue with
-                                | false, false -> 0
-                                | false, _ -> -1
-                                | _, false -> +1
-                                | _ -> x.Value.CompareTo y.Value))
-                            | t when t.Equals typeof<float32>           -> upcast (Func<IComparer,float32,          float32,          int>(fun _ x y -> x.CompareTo y))
-                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun _ x y ->
-                                match x.HasValue, y.HasValue with
-                                | false, false -> 0
-                                | false, _ -> -1
-                                | _, false -> +1
-                                | _ -> x.Value.CompareTo y.Value))
-                            | _ -> null
-                        | _ -> raise (Exception "invalid logic")
+                let defaultCompare ty =
+                    makeCompareDelegate ty ty typedefof<GenericComparerObj<_>>
 
-                    let pass1 =
-                        match pass0 with
-                        | null -> standardTypes ty
-                        | f -> f
-
-                    let pass2 : obj =
-                        match pass1 with
-                        | null ->
-                            // if we are using the ER comparer, and we are a standard f# record or value type with compiler generated
-                            // comparison operators, then we can avoid the boxing of IStructuralEquatable and just call the
-                            // IComparable<'a>.Compare method.
-                            match tyRelation with
-                            | r when r.Equals typeof<EquivalenceRelation> ->
-                                if mos.hasFSharpCompilerGeneratedComparison ty then
-                                    if ty.IsValueType
-                                        then makeCompareDelegate ty ty typedefof<StructComparable<DummyStructComparableInterfaces>>
-                                        else makeCompareDelegate ty ty typedefof<RefTypeNullableComparable<DummyRefTypeComparableInterfaces>>
-                                else null
-                            | r when r.Equals typeof<PartialEquivalenceRelation> -> null
-                            | _ -> raise (Exception "invalid logic")
-                        | f -> f
-
-                    let pass3 =
-                        // These do not require seperate versions based on equivalence relations, defer to helper
-                        match pass2 with
-                        | null -> comparisonInterfaces ty
-                        | f -> f
-
-                    let pass4 = 
-                        match pass3 with
-                        | null -> makeCompareDelegate ty ty typedefof<GenericComparerObj<_>>
-                        | f -> f
-
-                    pass4
+                let createCompareDelegate (tyRelation:Type) (ty:Type) : obj =
+                    mos.takeFirstNonNull [|
+                        fun () -> floatingPointTypes tyRelation ty
+                        fun () -> standardTypes ty
+                        fun () -> compilerGenerated tyRelation ty
+                        fun () -> comparisonInterfaces ty
+                        fun () -> defaultCompare ty
+                    |]
 
                 type Function<'relation, 'a>() =
                     static let func : Func<IComparer,'a, 'a, int> =
-                        match withRelation typeof<'relation> typeof<'a> with
+                        match createCompareDelegate typeof<'relation> typeof<'a> with
                         | null -> raise (Exception "invalid logic")
                         | f -> unboxPrim f
 
@@ -2051,23 +2045,22 @@ namespace Microsoft.FSharp.Core
 
 #if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
             module GenericSpecializeEquals =
-                let standardTypes (ty:Type) : obj =
-                    match ty with
-                    | t when t.Equals typeof<bool>       -> upcast Func<IEqualityComparer,bool      ,bool      ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<sbyte>      -> upcast Func<IEqualityComparer,sbyte     ,sbyte     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<int16>      -> upcast Func<IEqualityComparer,int16     ,int16     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<int32>      -> upcast Func<IEqualityComparer,int32     ,int32     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<int64>      -> upcast Func<IEqualityComparer,int64     ,int64     ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<byte>       -> upcast Func<IEqualityComparer,byte      ,byte      ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<uint16>     -> upcast Func<IEqualityComparer,uint16    ,uint16    ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<uint32>     -> upcast Func<IEqualityComparer,uint32    ,uint32    ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<uint64>     -> upcast Func<IEqualityComparer,uint64    ,uint64    ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<nativeint>  -> upcast Func<IEqualityComparer,nativeint ,nativeint ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<unativeint> -> upcast Func<IEqualityComparer,unativeint,unativeint,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<char>       -> upcast Func<IEqualityComparer,char      ,char      ,bool>(fun _ x y -> (# "ceq" x y : bool #))
-                    | t when t.Equals typeof<string>     -> upcast Func<IEqualityComparer,string    ,string    ,bool>(fun _ x y -> System.String.Equals((# "" x : string #),(# "" y : string #)))
-                    | t when t.Equals typeof<decimal>    -> upcast Func<IEqualityComparer,decimal   ,decimal   ,bool>(fun _ x y -> System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #)))
-                    | _ -> null
+                let standardTypes (t:Type) : obj =
+                    if   t.Equals typeof<bool>       then box (Func<IEqualityComparer,bool      ,bool      ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<sbyte>      then box (Func<IEqualityComparer,sbyte     ,sbyte     ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<int16>      then box (Func<IEqualityComparer,int16     ,int16     ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<int32>      then box (Func<IEqualityComparer,int32     ,int32     ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<int64>      then box (Func<IEqualityComparer,int64     ,int64     ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<byte>       then box (Func<IEqualityComparer,byte      ,byte      ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<uint16>     then box (Func<IEqualityComparer,uint16    ,uint16    ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<uint32>     then box (Func<IEqualityComparer,uint32    ,uint32    ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<uint64>     then box (Func<IEqualityComparer,uint64    ,uint64    ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<nativeint>  then box (Func<IEqualityComparer,nativeint ,nativeint ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<unativeint> then box (Func<IEqualityComparer,unativeint,unativeint,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<char>       then box (Func<IEqualityComparer,char      ,char      ,bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                    elif t.Equals typeof<string>     then box (Func<IEqualityComparer,string    ,string    ,bool>(fun _ x y -> System.String.Equals((# "" x : string #),(# "" y : string #))))
+                    elif t.Equals typeof<decimal>    then box (Func<IEqualityComparer,decimal   ,decimal   ,bool>(fun _ x y -> System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))))
+                    else null
 
                 let makeEqualsReturnType ty =
                     mos.makeGenericType<Func<_,_,_,_>> [| typeof<IEqualityComparer>; ty; ty; typeof<bool> |]
@@ -2192,15 +2185,15 @@ namespace Microsoft.FSharp.Core
                         match tyRelation with
                         | r when r.Equals typeof<PartialEquivalenceRelation> ->
                             match ty with
-                            | t when t.Equals typeof<float>             -> upcast (Func<IEqualityComparer,float,            float,            bool>(fun _ x y -> (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IEqualityComparer,Nullable<float>,  Nullable<float>,  bool>(fun _ x y ->
+                            | t when t.Equals typeof<float>             -> box (Func<IEqualityComparer,float,            float,            bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32>           -> box (Func<IEqualityComparer,float32,          float32,          bool>(fun _ x y -> (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<Nullable<float>>   -> box (Func<IEqualityComparer,Nullable<float>,  Nullable<float>,  bool>(fun _ x y ->
                                 match x.HasValue, y.HasValue with
                                 | false, false -> true
                                 | false, _ 
                                 | _, false -> false
                                 | _ -> (# "ceq" x.Value y.Value : bool #)))
-                            | t when t.Equals typeof<float32>           -> upcast (Func<IEqualityComparer,float32,          float32,          bool>(fun _ x y -> (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IEqualityComparer,Nullable<float32>,Nullable<float32>,bool>(fun _ x y ->
+                            | t when t.Equals typeof<Nullable<float32>> -> box (Func<IEqualityComparer,Nullable<float32>,Nullable<float32>,bool>(fun _ x y ->
                                 match x.HasValue, y.HasValue with
                                 | false, false -> true
                                 | false, _ 
@@ -2209,15 +2202,15 @@ namespace Microsoft.FSharp.Core
                             | _ -> null
                         | r when r.Equals typeof<EquivalenceRelation> ->
                             match ty with
-                            | t when t.Equals typeof<float>             -> upcast (Func<IEqualityComparer,float,            float,            bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<Nullable<float>>   -> upcast (Func<IEqualityComparer,Nullable<float>,  Nullable<float>,  bool>(fun _ x y ->
+                            | t when t.Equals typeof<float>             -> box (Func<IEqualityComparer,float,            float,            bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<float32>           -> box (Func<IEqualityComparer,float32,          float32,          bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
+                            | t when t.Equals typeof<Nullable<float>>   -> box (Func<IEqualityComparer,Nullable<float>,  Nullable<float>,  bool>(fun _ x y ->
                                 match x.HasValue, y.HasValue with
                                 | false, false -> true
                                 | false, _ 
                                 | _, false -> false
                                 | _ -> if not (# "ceq" x.Value x.Value : bool #) && not (# "ceq" y.Value y.Value : bool #) then true else (# "ceq" x.Value y.Value : bool #)))
-                            | t when t.Equals typeof<float32>           -> upcast (Func<IEqualityComparer,float32,          float32,          bool>(fun _ x y -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)))
-                            | t when t.Equals typeof<Nullable<float32>> -> upcast (Func<IEqualityComparer,Nullable<float32>,Nullable<float32>,bool>(fun _ x y ->
+                            | t when t.Equals typeof<Nullable<float32>> -> box (Func<IEqualityComparer,Nullable<float32>,Nullable<float32>,bool>(fun _ x y ->
                                 match x.HasValue, y.HasValue with
                                 | false, false -> true
                                 | false, _ 
