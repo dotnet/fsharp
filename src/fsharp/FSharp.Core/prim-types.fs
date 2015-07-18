@@ -1218,6 +1218,7 @@ namespace Microsoft.FSharp.Core
                 type Calls =
                     static member StructuralEqualityEquals<'a when 'a :> IStructuralEquatable> (ec, x:'a, y:'a) = x.Equals (box y, ec) 
                     static member EquatableEquals<'a when 'a :> IEquatable<'a>> (x:'a, y:'a) = x.Equals y
+                    static member StructuralEqualityGetHashCode<'a when 'a :> IStructuralEquatable> (ec, x:'a) = x.GetHashCode (ec) 
 
                 module Nullable =
                     type StructuralComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable>() =
@@ -1251,12 +1252,20 @@ namespace Microsoft.FSharp.Core
                             | false, _ | _, false -> false
                             | _, _ -> Calls.StructuralEqualityEquals<'a> (ec, x.Value, y.Value)
 
-                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a>>() =
+                        member __.GetHashCode (ec:IEqualityComparer, x:Nullable<'a>) =
+                            if x.HasValue then Calls.StructuralEqualityGetHashCode<'a> (ec, x.Value)
+                            else 0
+
+                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a> and 'a : equality>() =
                         member __.Equals (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
                             match x.HasValue, y.HasValue with
                             | false, false -> true
                             | false, _ | _, false -> false
                             | _, _ -> Calls.EquatableEquals (x.Value, y.Value)
+
+                        member __.GetHashCode (_:IEqualityComparer, x:Nullable<'a>) =
+                            if x.HasValue then x.Value.GetHashCode ()
+                            else 0
 
                     type Equality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality>() =
                         member __.Equals (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
@@ -1277,12 +1286,14 @@ namespace Microsoft.FSharp.Core
 
                     type StructuralEquatable<'a when 'a : struct and 'a :> IStructuralEquatable>() =
                         member __.Equals (ec:IEqualityComparer, x:'a, y:'a) = Calls.StructuralEqualityEquals (ec, x, y)
+                        member __.GetHashCode (ec:IEqualityComparer, x:'a) = Calls.StructuralEqualityGetHashCode<'a> (ec, x)
 
                     type Equatable<'a when 'a : struct and 'a :> IEquatable<'a>>() =
                         member __.Equals (_:IEqualityComparer, x:'a, y:'a) = Calls.EquatableEquals (x, y)
 
                     type Equality<'a when 'a : struct and 'a : equality>() =
                         member __.Equals (_:IEqualityComparer, x:'a, y:'a) = x.Equals y
+                        member __.GetHashCode (_:IEqualityComparer, x:'a) = x.GetHashCode ()
 
                 module RefType = 
                     type StructuralComparable<'a when 'a : not struct and 'a : null and 'a :> IStructuralComparable>() =
@@ -1316,6 +1327,11 @@ namespace Microsoft.FSharp.Core
                             | null, _ | _, null -> false
                             | _, _ -> Calls.StructuralEqualityEquals (ec, x, y)
 
+                        member __.GetHashCode (ec:IEqualityComparer, x:'a) =
+                            match x with
+                            | null -> 0
+                            | _ -> Calls.StructuralEqualityGetHashCode (ec, x)
+
                     type Equatable<'a when 'a : not struct and 'a : null and 'a :> IEquatable<'a>>() =
                         member __.Equals (_:IEqualityComparer, x:'a, y:'a) = 
                             match x, y with
@@ -1329,6 +1345,11 @@ namespace Microsoft.FSharp.Core
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ -> x.Equals y
+
+                        member __.GetHashCode (_:IEqualityComparer, x:'a) =
+                            match x with
+                            | null -> 0
+                            | _ -> x.GetHashCode ()
 
                 module DummyTypes =
                     let doNotEat () = raise (Exception "not for eating! these types only exist for getting typedef.")
@@ -1543,16 +1564,21 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
+                type GenericComparerObj<'a>() =
+                    member __.CompareTo (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
+
+                let arrays (t:Type) : obj =
+                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
+                        // TODO: Future
+                        makeCompareDelegate t t typedefof<GenericComparerObj<_>>
+                    else null
+
                 let comparisonInterfaces (t:Type) : obj =
                     let make = makeCompareDelegate t t
 
                     let comparableGeneric = mos.makeComparableType t
 
-                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                        // TODO: Future
-                        null
-
-                    elif t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
                         let underlyingType = get (t.GetGenericArguments()) 0
                         let make = makeCompareDelegate t underlyingType 
                         let underlyingComparableGeneric = mos.makeComparableType underlyingType
@@ -1573,9 +1599,6 @@ namespace Microsoft.FSharp.Core
 
                     else null
 
-                type GenericComparerObj<'a>() =
-                    member __.CompareTo (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
-
                 let defaultCompare ty =
                     makeCompareDelegate ty ty typedefof<GenericComparerObj<_>>
 
@@ -1584,6 +1607,7 @@ namespace Microsoft.FSharp.Core
                         fun () -> floatingPointTypes tyRelation ty
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
+                        fun () -> arrays ty
                         fun () -> comparisonInterfaces ty
                         fun () -> defaultCompare ty
                     |]
@@ -2200,16 +2224,27 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
+                type GenericEqualityObj_ER<'a>() =
+                    member __.Equals (comp:IEqualityComparer, x:'a, y:'a) = GenericEqualityObj true comp (box x, box y)
+                        
+                type GenericEqualityObj_PER<'a>() =
+                    member __.Equals (comp:IEqualityComparer, x:'a, y:'a) = GenericEqualityObj false comp (box x, box y)
+
+                let arrays (tyRelation:Type) (t:Type) : obj =
+                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
+                        // TODO: Future; currently just returns default
+                        match tyRelation with
+                        | r when r.Equals typeof<PartialEquivalenceRelation> -> makeEquatableDelegate t t typedefof<GenericEqualityObj_PER<_>>
+                        | r when r.Equals typeof<EquivalenceRelation>        -> makeEquatableDelegate t t typedefof<GenericEqualityObj_ER<_>>
+                        | _ -> raise (Exception "invalid logic")
+                    else null
+
                 let equalityInterfaces (t:Type) : obj =
                     let make = makeEquatableDelegate t t
 
                     let equatable = mos.makeEquatableType t
 
-                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                        // I could do something here, but I doubt it would have any real performance impact
-                        null
-
-                    elif t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
                         let nt = get (t.GetGenericArguments()) 0
                         let make = makeEquatableDelegate t nt 
                         
@@ -2229,12 +2264,6 @@ namespace Microsoft.FSharp.Core
 
                     else null
 
-                type GenericEqualityObj_ER<'a>() =
-                    member __.Equals (comp:IEqualityComparer, x:'a, y:'a) = GenericEqualityObj true comp (box x, box y)
-                        
-                type GenericEqualityObj_PER<'a>() =
-                    member __.Equals (comp:IEqualityComparer, x:'a, y:'a) = GenericEqualityObj false comp (box x, box y)
-
                 let defaultEquality tyRelation ty =
                     match tyRelation with
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> makeEquatableDelegate ty ty typedefof<GenericEqualityObj_PER<_>>
@@ -2246,6 +2275,7 @@ namespace Microsoft.FSharp.Core
                         fun () -> floatingPointTypes tyRelation ty
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
+                        fun () -> arrays tyRelation ty
                         fun () -> equalityInterfaces ty
                         fun () -> defaultEquality tyRelation ty
                     |]
@@ -2562,6 +2592,14 @@ namespace Microsoft.FSharp.Core
             // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
             // for fallback to that funciton. 
             module GenericSpecializeHash =
+                let makeGetHashCodeReturnType ty =
+                    mos.makeGenericType<Func<_,_,_>> [| typeof<IEqualityComparer>; ty; typeof<int> |]
+
+                let makeGetHashCodeDelegate (ty:Type) (ct:Type) (def:Type) : obj =
+                    let concrete = def.MakeGenericType [|ct|]
+                    let instance = Activator.CreateInstance concrete
+                    upcast Delegate.CreateDelegate (makeGetHashCodeReturnType ty, instance, "GetHashCode")
+
                 let standardTypes (t:Type) : obj =
                     if   t.Equals typeof<bool>       then box (Func<IEqualityComparer,bool      ,int>(fun _ a -> a.GetHashCode()))
                     elif t.Equals typeof<float>      then box (Func<IEqualityComparer,float     ,int>(fun _ a -> a.GetHashCode()))
@@ -2581,96 +2619,51 @@ namespace Microsoft.FSharp.Core
                     elif t.Equals typeof<float32>    then box (Func<IEqualityComparer,float32   ,int>(fun _ a -> a.GetHashCode()))
                     else null
 
-                let makeGetHashCodeReturnType ty =
-                    mos.makeGenericType<Func<_,_,_>> [| typeof<IEqualityComparer>; ty; typeof<int> |]
-
-                let makeGetHashCodeDelegate (ty:Type) (ct:Type) (def:Type) : obj =
-                    let concrete = def.MakeGenericType [|ct|]
-                    let instance = Activator.CreateInstance concrete
-                    upcast Delegate.CreateDelegate (makeGetHashCodeReturnType ty, instance, "GetHashCode")
-
-                type Calls =
-                    static member StructuralEqualityGetHashCode<'a when 'a :> IStructuralEquatable> (ec, x:'a) = x.GetHashCode (ec) 
-                    
-                type NullableStructuralEquality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable>() =
-                    member __.GetHashCode (ec:IEqualityComparer, x:Nullable<'a>) =
-                        if x.HasValue then Calls.StructuralEqualityGetHashCode<'a> (ec, x.Value)
-                        else 0
-
-                type NullableGetHashCode<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality>() =
-                    member __.GetHashCode (_:IEqualityComparer, x:Nullable<'a>) =
-                        if x.HasValue then x.Value.GetHashCode ()
-                        else 0
-
-                type StructStructuralEquality<'a when 'a : struct and 'a :> IStructuralEquatable>() =
-                    member __.GetHashCode (ec:IEqualityComparer, x:'a) = Calls.StructuralEqualityGetHashCode<'a> (ec, x)
-
-                type StructGetHashCode<'a when 'a : struct and 'a : equality>() =
-                    member __.GetHashCode (_:IEqualityComparer, x:'a) = x.GetHashCode ()
-
-                type RefTypeStructuralEquality<'a when 'a : not struct and 'a :> IStructuralEquatable>() =
-                    member __.GetHashCode (ec:IEqualityComparer, x:'a) = Calls.StructuralEqualityGetHashCode<'a> (ec, x)
-
-                type RefTypeGetHashCode<'a when 'a : not struct and 'a : equality>() =
-                    member __.GetHashCode (_:IEqualityComparer, x:'a) = x.GetHashCode ()
-
-                type RefTypeNullableStructuralEquality<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable>() =
-                    member __.GetHashCode (ec:IEqualityComparer, x:'a) =
-                        match x with
-                        | null -> 0
-                        | _ -> Calls.StructuralEqualityGetHashCode (ec, x)
-
-                type RefTypeNullableGetHashCode<'a when 'a : not struct and 'a : null and 'a : equality>() =
-                    member __.GetHashCode (_:IEqualityComparer, x:'a) =
-                        match x with
-                        | null -> 0
-                        | _ -> x.GetHashCode ()
-
                 type GenericHashParamObject<'a>() =
                     member __.GetHashCode (iec:IEqualityComparer, x:'a) = GenericHashParamObj iec (box x)
 
-                let create (t:Type) : obj =
+                let arrays (t:Type) : obj =
+                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
+                        // I could do something here, but I doubt it would have any real performance impact
+                        makeGetHashCodeDelegate t t typedefof<GenericHashParamObject<_>>
+                    else null
+
+                let structualEquatable (t:Type): obj =
                     let make = makeGetHashCodeDelegate t t
 
-                    let pass0 =
-                        if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                            // I could do something here, but I doubt it would have any real performance impact
-                            make typedefof<GenericHashParamObject<_>>
-
-                        elif t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
-                            let nt = get (t.GetGenericArguments()) 0
-                            let make = makeGetHashCodeDelegate t nt 
+                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                        let nt = get (t.GetGenericArguments()) 0
+                        let make = makeGetHashCodeDelegate t nt 
                         
-                            if typeof<IStructuralEquatable>.IsAssignableFrom nt               then make typedefof<NullableStructuralEquality<Exemplars.DummyTypes.ValueTypeEquatableInterfaces>>
-                            else                                                                   make typedefof<NullableGetHashCode<Exemplars.DummyTypes.ValueTypeEquatableInterfaces>>
+                        if typeof<IStructuralEquatable>.IsAssignableFrom nt               then make Exemplars.nullableStructuralEquatable
+                        else                                                                   make Exemplars.nullableEquality
 
-                        elif t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make typedefof<StructStructuralEquality<Exemplars.DummyTypes.ValueTypeEquatableInterfaces>>
-                        elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make typedefof<RefTypeNullableStructuralEquality<Exemplars.DummyTypes.RefTypeEquatableInterfaces>>
-                        else null
+                    elif t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
+                    elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralEquatable
+                    else null
 
-                    let pass1 =
-                        match pass0 with
-                        | null -> standardTypes t
-                        | f -> f
+                let sealedTypes (t:Type): obj =
+                    let make = makeGetHashCodeDelegate t t
 
-                    let pass2 =
-                        match pass1 with
-                        | null ->
-                            if t.IsValueType then make typedefof<StructGetHashCode<Exemplars.DummyTypes.ValueTypeEquatableInterfaces>>
-                            elif t.IsSealed  then make typedefof<RefTypeNullableGetHashCode<Exemplars.DummyTypes.RefTypeEquatableInterfaces>>
-                            else null
-                        | f -> f
+                    if t.IsValueType then make Exemplars.valueTypeEquatable
+                    elif t.IsSealed  then make Exemplars.refTypeEquality
+                    else null
 
-                    let pass3 =
-                        match pass2 with
-                        | null -> make typedefof<GenericHashParamObject<_>>
-                        | f -> f
+                let defaultGetHashCode ty =
+                    makeGetHashCodeDelegate ty ty typedefof<GenericHashParamObject<_>>
 
-                    pass3
+                let createGetHashCodeDelegate (t:Type) : obj =
+                    mos.takeFirstNonNull [|
+                        fun () -> standardTypes t
+                        fun () -> arrays t
+                        fun () -> structualEquatable t
+                        fun () -> sealedTypes t
+                        fun () -> defaultGetHashCode t
+                    |]
                             
                 type Function<'a>() =
                     static let func : Func<IEqualityComparer,'a, int> =
-                        match create typeof<'a> with
+                        match createGetHashCodeDelegate typeof<'a> with
                         | null -> raise (Exception "invalid logic")
                         | f -> unboxPrim f
 
