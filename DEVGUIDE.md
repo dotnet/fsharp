@@ -85,7 +85,6 @@ Prior to a **Release** test run, you need to do **all** of these:
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
     msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-    msbuild src/fsharp-library-propertytests-build.proj  /p:Configuration=Release
     src\update.cmd release -ngen
     tests\BuildTestTools.cmd release 
 
