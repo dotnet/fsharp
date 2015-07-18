@@ -113,8 +113,8 @@
     <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
     <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NUnitToolsLibDir>
-    <FsCheckVersion>2.0.1</FsCheckVersion>
-    <FsCheckFullVersion>2.0.1.0</FsCheckFullVersion>
+    <FsCheckVersion>2.0.3</FsCheckVersion>
+    <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\net45\</FsCheckLibDir>
   </PropertyGroup>
 
