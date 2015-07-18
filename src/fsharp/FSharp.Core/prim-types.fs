@@ -1256,16 +1256,12 @@ namespace Microsoft.FSharp.Core
                             if x.HasValue then Calls.StructuralEqualityGetHashCode<'a> (ec, x.Value)
                             else 0
 
-                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a> and 'a : equality>() =
+                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a>>() =
                         member __.Equals (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
                             match x.HasValue, y.HasValue with
                             | false, false -> true
                             | false, _ | _, false -> false
                             | _, _ -> Calls.EquatableEquals (x.Value, y.Value)
-
-                        member __.GetHashCode (_:IEqualityComparer, x:Nullable<'a>) =
-                            if x.HasValue then x.Value.GetHashCode ()
-                            else 0
 
                     type Equality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality>() =
                         member __.Equals (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
@@ -1273,6 +1269,10 @@ namespace Microsoft.FSharp.Core
                             | false, false -> true
                             | false, _ | _, false -> false
                             | _, _ -> x.Value.Equals y.Value
+
+                        member __.GetHashCode (_:IEqualityComparer, x:Nullable<'a>) =
+                            if x.HasValue then x.Value.GetHashCode ()
+                            else 0
 
                 module ValueType =
                     type StructuralComparable<'a when 'a : struct and 'a :> IStructuralComparable>() =
@@ -1569,25 +1569,26 @@ namespace Microsoft.FSharp.Core
 
                 let arrays (t:Type) : obj =
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                        // TODO: Future
+                        // TODO: Future; for now just default back to previous functionality
                         makeCompareDelegate t t typedefof<GenericComparerObj<_>>
+                    else null
+
+                let nullableType (t:Type) : obj =
+                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                        let underlying = get (t.GetGenericArguments()) 0
+                        let comparableGeneric = mos.makeComparableType underlying
+                        let make = makeCompareDelegate t underlying
+                        
+                        if typeof<IStructuralComparable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralComparable
+                        elif comparableGeneric.IsAssignableFrom underlying           then make Exemplars.nullableComparableGeneric
+                        else                                                              make Exemplars.nullableComparable
                     else null
 
                 let comparisonInterfaces (t:Type) : obj =
                     let make = makeCompareDelegate t t
-
                     let comparableGeneric = mos.makeComparableType t
 
-                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
-                        let underlyingType = get (t.GetGenericArguments()) 0
-                        let make = makeCompareDelegate t underlyingType 
-                        let underlyingComparableGeneric = mos.makeComparableType underlyingType
-                        
-                        if typeof<IStructuralComparable>.IsAssignableFrom underlyingType   then make Exemplars.nullableStructuralComparable
-                        elif underlyingComparableGeneric.IsAssignableFrom underlyingType   then make Exemplars.nullableComparableGeneric
-                        else                                                                    make Exemplars.nullableComparable
-
-                    elif t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralComparable
+                    if   t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralComparable
                     elif t.IsValueType && comparableGeneric.IsAssignableFrom t             then make Exemplars.valueTypeComparableGeneric
                     elif t.IsValueType && typeof<IComparable>.IsAssignableFrom t           then make Exemplars.valueTypeComparable
 
@@ -1608,6 +1609,7 @@ namespace Microsoft.FSharp.Core
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
                         fun () -> arrays ty
+                        fun () -> nullableType ty
                         fun () -> comparisonInterfaces ty
                         fun () -> defaultCompare ty
                     |]
@@ -2232,27 +2234,29 @@ namespace Microsoft.FSharp.Core
 
                 let arrays (tyRelation:Type) (t:Type) : obj =
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                        // TODO: Future; currently just returns default
+                        // TODO: Future; for now just default back to previous functionality
                         match tyRelation with
                         | r when r.Equals typeof<PartialEquivalenceRelation> -> makeEquatableDelegate t t typedefof<GenericEqualityObj_PER<_>>
                         | r when r.Equals typeof<EquivalenceRelation>        -> makeEquatableDelegate t t typedefof<GenericEqualityObj_ER<_>>
                         | _ -> raise (Exception "invalid logic")
                     else null
 
+                let nullableType (t:Type) : obj =
+                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                        let underlying = get (t.GetGenericArguments()) 0
+                        let equatable = mos.makeEquatableType underlying
+                        let make = makeEquatableDelegate t underlying 
+                        
+                        if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralEquatable
+                        elif equatable.IsAssignableFrom underlying                  then make Exemplars.nullableEquatable
+                        else                                                             make Exemplars.nullableEquality
+                    else null
+
                 let equalityInterfaces (t:Type) : obj =
                     let make = makeEquatableDelegate t t
-
                     let equatable = mos.makeEquatableType t
 
-                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
-                        let nt = get (t.GetGenericArguments()) 0
-                        let make = makeEquatableDelegate t nt 
-                        
-                        if typeof<IStructuralEquatable>.IsAssignableFrom nt               then make Exemplars.nullableStructuralEquatable
-                        elif (mos.makeEquatableType nt).IsAssignableFrom nt               then make Exemplars.nullableEquatable
-                        else                                                                   make Exemplars.nullableEquality
-
-                    elif t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
+                    if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
                     elif t.IsValueType && equatable.IsAssignableFrom t                    then make Exemplars.valueTypeEquatable
                     elif t.IsValueType                                                    then make Exemplars.valueTypeEquality
 
@@ -2276,6 +2280,7 @@ namespace Microsoft.FSharp.Core
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
                         fun () -> arrays tyRelation ty
+                        fun () -> nullableType ty
                         fun () -> equalityInterfaces ty
                         fun () -> defaultEquality tyRelation ty
                     |]
@@ -2624,28 +2629,30 @@ namespace Microsoft.FSharp.Core
 
                 let arrays (t:Type) : obj =
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                        // I could do something here, but I doubt it would have any real performance impact
+                        // TODO: Future; for now just default back to previous functionality
                         makeGetHashCodeDelegate t t typedefof<GenericHashParamObject<_>>
+                    else null
+
+                let nullableType (t:Type) : obj =
+                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                        let underlying = get (t.GetGenericArguments()) 0
+                        let make = makeGetHashCodeDelegate t underlying 
+                        
+                        if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralEquatable
+                        else                                                             make Exemplars.nullableEquality
                     else null
 
                 let structualEquatable (t:Type): obj =
                     let make = makeGetHashCodeDelegate t t
 
-                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
-                        let nt = get (t.GetGenericArguments()) 0
-                        let make = makeGetHashCodeDelegate t nt 
-                        
-                        if typeof<IStructuralEquatable>.IsAssignableFrom nt               then make Exemplars.nullableStructuralEquatable
-                        else                                                                   make Exemplars.nullableEquality
-
-                    elif t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
+                    if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
                     elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralEquatable
                     else null
 
                 let sealedTypes (t:Type): obj =
                     let make = makeGetHashCodeDelegate t t
 
-                    if t.IsValueType then make Exemplars.valueTypeEquatable
+                    if t.IsValueType then make Exemplars.valueTypeEquality
                     elif t.IsSealed  then make Exemplars.refTypeEquality
                     else null
 
@@ -2656,6 +2663,7 @@ namespace Microsoft.FSharp.Core
                     mos.takeFirstNonNull [|
                         fun () -> standardTypes t
                         fun () -> arrays t
+                        fun () -> nullableType t
                         fun () -> structualEquatable t
                         fun () -> sealedTypes t
                         fun () -> defaultGetHashCode t
