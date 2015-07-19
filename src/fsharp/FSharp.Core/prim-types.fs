@@ -2965,13 +2965,14 @@ namespace Microsoft.FSharp.Core
 
 
             module TupleEquality =
+(*
                 let inline mask (n:int) (m:int) = (# "and" n m : int #)
                 let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
                 let inline opshr (x:int) (n:int) : int =  (# "shr" x (mask n 31) : int #)
                 let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
                 let inline combineTupleHashes (h1 : int) (h2 : int) = -1640531527 + (h2 + (opshl h1 6) + (opshr h1 2))
-
-                let inline cth a b = combineTupleHashes a b
+*)
+                let inline cth a b = TupleUtils.combineTupleHashes a b
 
                 type TupleEREqualityComparer<'a>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
@@ -2984,7 +2985,6 @@ namespace Microsoft.FSharp.Core
                     member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a>) = 
                         let a = (GenericHashWithComparerIntrinsic_inline iec x.Item1)
                         eliminate_tail_call_int a
-// TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
 
                 type TupleEREqualityComparer<'a,'b>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
@@ -3000,7 +3000,7 @@ namespace Microsoft.FSharp.Core
                     member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b>) =
                         let a = (GenericHashWithComparerIntrinsic_inline iec x.Item1)
                         let b = (GenericHashWithComparerIntrinsic_inline iec x.Item2) 
-                        eliminate_tail_call_int (cth (cth 0 a) b)
+                        eliminate_tail_call_int (cth a b)
 
                 type TupleEREqualityComparer<'a,'b,'c>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
@@ -3020,7 +3020,7 @@ namespace Microsoft.FSharp.Core
                         let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
                         let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
                         let c = GenericHashWithComparerIntrinsic_inline iec x.Item3 
-                        eliminate_tail_call_int (cth (cth (cth 0 a) b) c)
+                        eliminate_tail_call_int (cth (cth a b) c)
 
                 type TupleEREqualityComparer<'a,'b,'c,'d>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
@@ -3044,7 +3044,7 @@ namespace Microsoft.FSharp.Core
                         let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
                         let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
                         let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
-                        eliminate_tail_call_int (cth (cth (cth (cth 0 a) b) c) d)
+                        eliminate_tail_call_int (cth (cth a b) (cth c d))
 
                 type TupleEREqualityComparer<'a,'b,'c,'d,'e>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
@@ -3072,7 +3072,7 @@ namespace Microsoft.FSharp.Core
                         let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
                         let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
                         let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
-                        eliminate_tail_call_int (cth (cth (cth (cth (cth 0 a) b) c) d) e)
+                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) e)
 
                 type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
@@ -3104,7 +3104,7 @@ namespace Microsoft.FSharp.Core
                         let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
                         let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
                         let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
-                        eliminate_tail_call_int (cth (cth (cth (cth (cth (cth 0 a) b) c) d) e) f)
+                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth e f))
 
                 type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f,'g>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
@@ -3140,7 +3140,7 @@ namespace Microsoft.FSharp.Core
                         let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
                         let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
                         let g = GenericHashWithComparerIntrinsic_inline iec x.Item7
-                        eliminate_tail_call_int (cth (cth (cth (cth (cth (cth (cth 0 a) b) c) d) e) f) g)
+                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) g))
 
                 type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f,'g,'h>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
@@ -3180,7 +3180,7 @@ namespace Microsoft.FSharp.Core
                         let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
                         let g = GenericHashWithComparerIntrinsic_inline iec x.Item7
                         let h = GenericHashWithComparerIntrinsic_inline iec x.Rest
-                        eliminate_tail_call_int (cth (cth (cth (cth (cth (cth (cth (cth 0 a) b) c) d) e) f) g) h)
+                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
 
                 let makeTupleEqualityComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
                     let concrete = def.MakeGenericType types
