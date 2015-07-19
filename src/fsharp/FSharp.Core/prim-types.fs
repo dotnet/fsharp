@@ -1200,7 +1200,7 @@ namespace Microsoft.FSharp.Core
             let fsComparerPER_lt = GenericComparer ComparerType.PER_lt
 
             /// The unique object for comparing values in ER mode (where "0" is returned when NaNs are compared)
-            let fsComparerER = GenericComparer ComparerType.ER
+            let fsComparerER = GenericComparer ComparerType.ER :> System.Collections.IComparer
 
             // eliminate_tail_call_xxx are to elimate tail calls which are a problem with value types > 64 bits
             // and the 64-bit JIT due to the amd64 calling convention which needs to do some magic.
@@ -1481,6 +1481,17 @@ namespace Microsoft.FSharp.Core
                     let instance = Activator.CreateInstance concrete
                     upcast Delegate.CreateDelegate (makeCompareReturnType ty, instance, "CompareTo")
 
+                let mutable private tupleHandler = null
+                let addTupleHandler f =
+                    match box tupleHandler with
+                    | null -> tupleHandler <- f
+                    | _ -> raise (Exception "invalid logic")
+
+                let tuples tyRelation ty =
+                    match box tupleHandler with
+                    | :? (Type -> Type -> obj) as handler -> handler tyRelation ty
+                    | _ -> null
+
                 let floatingPointTypes (tyRelation:Type) (ty:Type) =
                     match tyRelation with
                     | r when r.Equals typeof<PartialEquivalenceRelation> ->
@@ -1605,6 +1616,7 @@ namespace Microsoft.FSharp.Core
 
                 let createCompareDelegate (tyRelation:Type) (ty:Type) : obj =
                     mos.takeFirstNonNull [|
+                        fun () -> tuples tyRelation ty
                         fun () -> floatingPointTypes tyRelation ty
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
@@ -1640,6 +1652,220 @@ namespace Microsoft.FSharp.Core
                     eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
                 | _ ->
                     eliminate_tail_call_int (comp.Compare (box x, box y))
+
+            module TupleComparers =
+                type TupleERComparer<'a>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1
+
+                type TupleERComparer<'a,'b>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2
+
+                type TupleERComparer<'a,'b,'c>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3
+
+                type TupleERComparer<'a,'b,'c,'d>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4
+
+                type TupleERComparer<'a,'b,'c,'d,'e>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5
+
+                type TupleERComparer<'a,'b,'c,'d,'e,'f>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item6 y.Item6
+
+                type TupleERComparer<'a,'b,'c,'d,'e,'f,'g>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item6 y.Item6 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item7 y.Item7
+
+                type TupleERComparer<'a,'b,'c,'d,'e,'f,'g,'h>() =
+                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
+                        match x, y with
+                        | null, null -> 0
+                        | null, _ -> -1
+                        | _, null -> +1
+                        | _, _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item6 y.Item6 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item7 y.Item7 with
+                            | x when x < 0 -> x
+                            | x when x > 0 -> x
+                            | _ ->
+                            GenericComparisonWithComparerIntrinsic fsComparerER x.Rest y.Rest
+
+                let makeTupleComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
+                    let concrete = def.MakeGenericType types
+                    let instance = Activator.CreateInstance concrete
+                    box (Delegate.CreateDelegate (GenericSpecializeCompareTo.makeCompareReturnType ty, instance, "CompareTo"))
+
+                let tuples (tyRelation:Type) (ty:Type) : obj =
+                    match tyRelation with
+                    | r when r.Equals typeof<EquivalenceRelation> ->
+                        if ty.IsGenericType then
+                            let tyDef = ty.GetGenericTypeDefinition ()
+                            let tyDefArgs = ty.GetGenericArguments ()
+                            if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_,_>>
+                            else null
+                        else null
+                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+                    | _ ->
+                        System.Console.WriteLine ("{0}", tyRelation)
+                        raise (Exception "invalid logic")
+
+                GenericSpecializeCompareTo.addTupleHandler (box tuples)
+                
 
             /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
             //
@@ -2976,7 +3202,7 @@ namespace Microsoft.FSharp.Core
         let inline PhysicalEquality x y     = HashCompare.PhysicalEqualityFast x y
         let inline PhysicalHash x           = HashCompare.PhysicalHashFast x
         
-        let GenericComparer = HashCompare.fsComparerER :> System.Collections.IComparer
+        let GenericComparer = HashCompare.fsComparerER
         let GenericEqualityComparer = HashCompare.fsEqualityComparerUnlimitedHashingPER
         let GenericEqualityERComparer = HashCompare.fsEqualityComparerUnlimitedHashingER
 
