@@ -49,7 +49,7 @@
       <Private>True</Private>
       <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'">
+    <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp' AND '$(TargetFramework)' != 'portable47'">
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
       <HintPath>$(FsCheckLibDir)\FsCheck.dll</HintPath>

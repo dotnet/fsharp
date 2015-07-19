@@ -5,6 +5,8 @@ module FSharp.Core.PropertyTests.Lists
 open System
 open System.Collections.Generic
 
+#if portable7 || portable78 || portable259
+
 open NUnit.Framework
 open FsCheck
 open Utils
@@ -824,3 +826,6 @@ let ``List.sumBy calculates the sum of the mapped list`` () =
     Check.QuickThrowOnFailure sumBy<int>
     Check.QuickThrowOnFailure sumBy<string> 
     Check.QuickThrowOnFailure sumBy<float>
+
+#else
+#endif

@@ -5,6 +5,8 @@ module FSharp.Core.PropertyTests.CollectionModulesConsistency
 open System
 open System.Collections.Generic
 
+#if portable7 || portable78 || portable259
+
 open NUnit.Framework
 open FsCheck
 open Utils
@@ -1238,3 +1240,6 @@ let ``zip3 is consistent for collections with equal length`` () =
     Check.QuickThrowOnFailure zip3<int>
     Check.QuickThrowOnFailure zip3<string>
     Check.QuickThrowOnFailure zip3<NormalFloat>
+
+#else
+#endif

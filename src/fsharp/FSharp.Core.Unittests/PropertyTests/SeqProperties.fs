@@ -5,6 +5,8 @@ module FSharp.Core.PropertyTests.SeqProperties
 open System
 open System.Collections.Generic
 
+#if portable7 || portable78 || portable259
+
 open NUnit.Framework
 open FsCheck
 open Utils
@@ -38,3 +40,6 @@ let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
 let ``Seq.distinctBy is stable`` () =
     Check.QuickThrowOnFailure distinctByStable<int>
     Check.QuickThrowOnFailure distinctByStable<string>
+
+#else
+#endif
