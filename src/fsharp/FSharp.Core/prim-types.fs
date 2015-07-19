@@ -1910,7 +1910,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
-                GenericComparisonWithComparerIntrinsic (fsComparerER :> IComparer) x y
+                GenericComparisonWithComparerIntrinsic fsComparerER x y
 
             /// Generic less-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
