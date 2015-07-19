@@ -1634,6 +1634,9 @@ namespace Microsoft.FSharp.Core
 
                     static member Func = func
 
+            let inline GenericComparisonWithERIntrinsic_inline (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
+                GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Invoke (comp, x, y)            
+
             /// Compare two values of the same generic type, using "comp".
             //
             // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
@@ -1644,7 +1647,7 @@ namespace Microsoft.FSharp.Core
                 match comp with
                 | :? GenericComparer as info ->
                     match info.ComparerType with
-                    | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Invoke (comp, x, y))
+                    | ComparerType.ER     -> eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline comp x y)
                     | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Invoke (comp, x, y))
                     | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Invoke (comp, x, y))
                     | _ -> raise (Exception "invalid logic")
@@ -1661,7 +1664,7 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1)
 
                 type TupleERComparer<'a,'b>() =
                     member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
@@ -1670,11 +1673,11 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2)
 
                 type TupleERComparer<'a,'b,'c>() =
                     member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
@@ -1683,15 +1686,15 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3)
 
                 type TupleERComparer<'a,'b,'c,'d>() =
                     member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
@@ -1700,19 +1703,19 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4)
 
                 type TupleERComparer<'a,'b,'c,'d,'e>() =
                     member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
@@ -1721,23 +1724,23 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5)
 
                 type TupleERComparer<'a,'b,'c,'d,'e,'f>() =
                     member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
@@ -1746,27 +1749,27 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item6 y.Item6
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6)
 
                 type TupleERComparer<'a,'b,'c,'d,'e,'f,'g>() =
                     member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
@@ -1775,31 +1778,31 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item6 y.Item6 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Item7 y.Item7
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item7 y.Item7)
 
                 type TupleERComparer<'a,'b,'c,'d,'e,'f,'g,'h>() =
                     member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
@@ -1808,35 +1811,35 @@ namespace Microsoft.FSharp.Core
                         | null, _ -> -1
                         | _, null -> +1
                         | _, _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item1 y.Item1 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item2 y.Item2 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item3 y.Item3 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item4 y.Item4 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item5 y.Item5 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item6 y.Item6 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            match GenericComparisonWithComparerIntrinsic fsComparerER x.Item7 y.Item7 with
+                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item7 y.Item7 with
                             | x when x < 0 -> x
                             | x when x > 0 -> x
                             | _ ->
-                            GenericComparisonWithComparerIntrinsic fsComparerER x.Rest y.Rest
+                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Rest y.Rest)
 
                 let makeTupleComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
                     let concrete = def.MakeGenericType types
@@ -1910,7 +1913,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
-                GenericComparisonWithComparerIntrinsic fsComparerER x y
+                GenericComparisonWithComparerIntrinsic fsComparerER)x y
 
             /// Generic less-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
@@ -2383,6 +2386,17 @@ namespace Microsoft.FSharp.Core
                     let instance = Activator.CreateInstance concrete
                     upcast Delegate.CreateDelegate (makeEqualsReturnType ty, instance, "Equals")
 
+                let mutable private tupleHandler = null
+                let addTupleHandler f =
+                    match box tupleHandler with
+                    | null -> tupleHandler <- f
+                    | _ -> raise (Exception "invalid logic")
+
+                let tuples tyRelation ty =
+                    match box tupleHandler with
+                    | :? (Type -> Type -> obj) as handler -> handler tyRelation ty
+                    | _ -> null
+
                 let floatingPointTypes (tyRelation:Type) (ty:Type) =
                     match tyRelation with
                     | r when r.Equals typeof<PartialEquivalenceRelation> ->
@@ -2502,6 +2516,7 @@ namespace Microsoft.FSharp.Core
 
                 let createEqualsDelegate (tyRelation:Type) (ty:Type) : obj =
                     mos.takeFirstNonNull [|
+                        fun () -> tuples tyRelation ty
                         fun () -> floatingPointTypes tyRelation ty
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
@@ -2526,6 +2541,11 @@ namespace Microsoft.FSharp.Core
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
                 eliminate_tail_call_bool (GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingPER, x, y))
 
+            // used also by the tuple equality comparers
+
+            let inline GenericEqualityERIntrinsic_inline (x : 'T) (y : 'T) : bool =
+                GenericSpecializeEquals.Function<EquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingER, x, y)
+
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
             // ER semantics is used for recursive calls when implementing .Equals(that) for structural data, see the code generated for record and union types in augment.fs
@@ -2533,7 +2553,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                eliminate_tail_call_bool (GenericSpecializeEquals.Function<EquivalenceRelation,_>.Func.Invoke (fsEqualityComparerNoHashingER, x, y))
+                eliminate_tail_call_bool (GenericEqualityERIntrinsic_inline x y)
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -2831,6 +2851,17 @@ namespace Microsoft.FSharp.Core
                     let instance = Activator.CreateInstance concrete
                     upcast Delegate.CreateDelegate (makeGetHashCodeReturnType ty, instance, "GetHashCode")
 
+                let mutable private tupleHandler = null
+                let addTupleHandler f =
+                    match box tupleHandler with
+                    | null -> tupleHandler <- f
+                    | _ -> raise (Exception "invalid logic")
+
+                let tuples ty =
+                    match box tupleHandler with
+                    | :? (Type -> obj) as handler -> handler ty
+                    | _ -> null
+
                 let standardTypes (t:Type) : obj =
                     if   t.Equals typeof<bool>       then box (Func<IEqualityComparer,bool      ,int>(fun _ a -> a.GetHashCode()))
                     elif t.Equals typeof<float>      then box (Func<IEqualityComparer,float     ,int>(fun _ a -> a.GetHashCode()))
@@ -2887,6 +2918,7 @@ namespace Microsoft.FSharp.Core
 
                 let createGetHashCodeDelegate (t:Type) : obj =
                     mos.takeFirstNonNull [|
+                        fun () -> tuples t
                         fun () -> standardTypes t
                         fun () -> arrays t
                         fun () -> nullableType t
@@ -2916,6 +2948,10 @@ namespace Microsoft.FSharp.Core
                 let iec = CountLimitedHasherPER limit
                 eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Invoke (iec, x))
 
+            // used by tuples
+            let inline GenericHashWithComparerIntrinsic_inline (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
+                GenericSpecializeHash.Function<_>.Func.Invoke (iec, x)
+
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
             // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
@@ -2924,7 +2960,276 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Invoke (iec, x))
+                eliminate_tail_call_int (GenericHashWithComparerIntrinsic_inline iec x)
+
+
+
+            module TupleEquality =
+                let inline mask (n:int) (m:int) = (# "and" n m : int #)
+                let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
+                let inline opshr (x:int) (n:int) : int =  (# "shr" x (mask n 31) : int #)
+                let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
+                let inline combineTupleHashes (h1 : int) (h2 : int) = -1640531527 + (h2 + (opshl h1 6) + (opshr h1 2))
+
+                let inline cth a b = combineTupleHashes a b
+
+                type TupleEREqualityComparer<'a>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            GenericEqualityERIntrinsic_inline x.Item1 y.Item1
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a>) = 
+                        let a = (GenericHashWithComparerIntrinsic_inline iec x.Item1)
+                        eliminate_tail_call_int a
+// TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
+
+                type TupleEREqualityComparer<'a,'b>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
+                            | false -> false
+                            | _ ->
+                            GenericEqualityERIntrinsic_inline x.Item2 y.Item2
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b>) =
+                        let a = (GenericHashWithComparerIntrinsic_inline iec x.Item1)
+                        let b = (GenericHashWithComparerIntrinsic_inline iec x.Item2) 
+                        eliminate_tail_call_int (cth (cth 0 a) b)
+
+                type TupleEREqualityComparer<'a,'b,'c>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
+                            | false -> false
+                            | _ ->
+                            GenericEqualityERIntrinsic_inline x.Item3 y.Item3
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c>) =
+                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
+                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
+                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3 
+                        eliminate_tail_call_int (cth (cth (cth 0 a) b) c)
+
+                type TupleEREqualityComparer<'a,'b,'c,'d>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
+                            | false -> false
+                            | _ ->
+                            GenericEqualityERIntrinsic_inline x.Item4 y.Item4
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>) =
+                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
+                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
+                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
+                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
+                        eliminate_tail_call_int (cth (cth (cth (cth 0 a) b) c) d)
+
+                type TupleEREqualityComparer<'a,'b,'c,'d,'e>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
+                            | false -> false
+                            | _ ->
+                            GenericEqualityERIntrinsic_inline x.Item5 y.Item5
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>) =
+                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
+                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
+                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
+                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
+                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
+                        eliminate_tail_call_int (cth (cth (cth (cth (cth 0 a) b) c) d) e)
+
+                type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item5 y.Item5 with
+                            | false -> false
+                            | _ ->
+                            GenericEqualityERIntrinsic_inline x.Item6 y.Item6
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>) =
+                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
+                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
+                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
+                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
+                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
+                        let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
+                        eliminate_tail_call_int (cth (cth (cth (cth (cth (cth 0 a) b) c) d) e) f)
+
+                type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f,'g>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item5 y.Item5 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item6 y.Item6 with
+                            | false -> false
+                            | _ ->
+                            GenericEqualityERIntrinsic_inline x.Item7 y.Item7
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) =
+                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
+                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
+                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
+                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
+                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
+                        let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
+                        let g = GenericHashWithComparerIntrinsic_inline iec x.Item7
+                        eliminate_tail_call_int (cth (cth (cth (cth (cth (cth (cth 0 a) b) c) d) e) f) g)
+
+                type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f,'g,'h>() =
+                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
+                        match x, y with
+                        | null, null -> true
+                        | null, _ | _, null -> false
+                        | _, _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item5 y.Item5 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item6 y.Item6 with
+                            | false -> false
+                            | _ ->
+                            match GenericEqualityERIntrinsic_inline x.Item7 y.Item7 with
+                            | false -> false
+                            | _ ->
+                            GenericEqualityERIntrinsic_inline x.Rest y.Rest
+
+                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) =
+                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
+                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
+                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
+                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
+                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
+                        let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
+                        let g = GenericHashWithComparerIntrinsic_inline iec x.Item7
+                        let h = GenericHashWithComparerIntrinsic_inline iec x.Rest
+                        eliminate_tail_call_int (cth (cth (cth (cth (cth (cth (cth (cth 0 a) b) c) d) e) f) g) h)
+
+                let makeTupleEqualityComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
+                    let concrete = def.MakeGenericType types
+                    let instance = Activator.CreateInstance concrete
+                    box (Delegate.CreateDelegate (GenericSpecializeEquals.makeEqualsReturnType ty, instance, "Equals"))
+
+                let tuplesEquals (tyRelation:Type) (ty:Type) : obj =
+                    match tyRelation with
+                    | r when r.Equals typeof<EquivalenceRelation> ->
+                        if ty.IsGenericType then
+                            let tyDef = ty.GetGenericTypeDefinition ()
+                            let tyDefArgs = ty.GetGenericArguments ()
+                            if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_,_>>
+                            else null
+                        else null
+                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+                    | _ ->
+                        System.Console.WriteLine ("{0}", tyRelation)
+                        raise (Exception "invalid logic")
+
+                let makeTupleGetHashCodeDelegate (ty:Type) (types:array<Type>) (def:Type) =
+                    let concrete = def.MakeGenericType types
+                    let instance = Activator.CreateInstance concrete
+                    box (Delegate.CreateDelegate (GenericSpecializeHash.makeGetHashCodeReturnType ty, instance, "GetHashCode"))
+
+                let tuplesGetHashCode (ty:Type) : obj =
+                    if ty.IsGenericType then
+                        let tyDef = ty.GetGenericTypeDefinition ()
+                        let tyDefArgs = ty.GetGenericArguments ()
+                        if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_>>
+                        elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_,_>>
+                        else null
+                    else null
+
+                GenericSpecializeEquals.addTupleHandler (box tuplesEquals)
+                GenericSpecializeHash.addTupleHandler (box tuplesGetHashCode)
 
 #else
 
