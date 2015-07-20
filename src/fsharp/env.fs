@@ -405,13 +405,14 @@ type public TcGlobals =
       bitwise_or_vref            : ValRef;
       bitwise_and_vref           : ValRef;
       bitwise_xor_vref           : ValRef;
-      bitwise_unary_not_vref     : ValRef;
+      bitwise_unary_logical_not_vref     : ValRef;
+      bitwise_unary_ones_complement_vref     : ValRef;
       bitwise_shift_left_vref    : ValRef;
       bitwise_shift_right_vref   : ValRef;
       unchecked_addition_vref    : ValRef;
       unchecked_unary_plus_vref  : ValRef;
       unchecked_unary_minus_vref : ValRef;
-      unchecked_unary_not_vref   : ValRef;
+      unchecked_unary_bool_not_vref   : ValRef;
       unchecked_subtraction_vref : ValRef;
       unchecked_multiply_vref    : ValRef;
       unchecked_defaultof_vref   : ValRef;
@@ -898,7 +899,8 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let bitwise_or_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_BitwiseOr"                         ,None                 ,None          ,[vara],     mk_binop_ty varaTy)  
   let bitwise_and_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_BitwiseAnd"                        ,None                 ,None          ,[vara],     mk_binop_ty varaTy)  
   let bitwise_xor_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_ExclusiveOr"                       ,None                 ,None          ,[vara],     mk_binop_ty varaTy)  
-  let bitwise_unary_not_info     = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LogicalNot"                        ,None                 ,None          ,[vara],     mk_unop_ty varaTy)  
+  let bitwise_unary_logical_not_info     = makeIntrinsicValRef(fslib_MFOperators_nleref,                     "op_LogicalNot"                        ,None                 ,None          ,[vara],     mk_unop_ty varaTy)  
+  let bitwise_unary_ones_complement_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                     "op_OnesComplement"                    ,None                 ,None          ,[vara],     mk_unop_ty varaTy)  
   let bitwise_shift_left_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_LeftShift"                         ,None                 ,None          ,[vara],     mk_shiftop_ty varaTy)  
   let bitwise_shift_right_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RightShift"                        ,None                 ,None          ,[vara],     mk_shiftop_ty varaTy)  
   let unchecked_addition_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Addition"                          ,None                 ,None          ,[vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
@@ -906,7 +908,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let unchecked_multiply_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Multiply"                          ,None                 ,None          ,[vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
   let unchecked_unary_plus_info  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryPlus"                         ,None                 ,None          ,[vara],     mk_unop_ty varaTy)  
   let unchecked_unary_minus_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryNegation"                     ,None                 ,None          ,[vara],     mk_unop_ty varaTy)  
-  let unchecked_unary_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  ,None                 ,Some "Not"    ,[],     mk_unop_ty bool_ty)  
+  let unchecked_unary_bool_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  ,None                 ,Some "Not"    ,[],     mk_unop_ty bool_ty)  
 
   let raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                ,None                 ,Some "Raise"  ,[vara],([[mkSysNonGenericTy sys "Exception"]],varaTy))  
   let reraise_info               = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "reraise"                              ,None                 ,Some "Reraise",[vara],     ([[unit_ty]],varaTy))
@@ -1321,13 +1323,14 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     bitwise_or_vref            = ValRefForIntrinsic bitwise_or_info;
     bitwise_and_vref           = ValRefForIntrinsic bitwise_and_info;
     bitwise_xor_vref           = ValRefForIntrinsic bitwise_xor_info;
-    bitwise_unary_not_vref     = ValRefForIntrinsic bitwise_unary_not_info;
+    bitwise_unary_logical_not_vref     = ValRefForIntrinsic bitwise_unary_logical_not_info;
+    bitwise_unary_ones_complement_vref     = ValRefForIntrinsic bitwise_unary_ones_complement_info;
     bitwise_shift_left_vref    = ValRefForIntrinsic bitwise_shift_left_info;
     bitwise_shift_right_vref   = ValRefForIntrinsic bitwise_shift_right_info;
     unchecked_addition_vref    = ValRefForIntrinsic unchecked_addition_info;
     unchecked_unary_plus_vref  = ValRefForIntrinsic unchecked_unary_plus_info;
     unchecked_unary_minus_vref = ValRefForIntrinsic unchecked_unary_minus_info;
-    unchecked_unary_not_vref = ValRefForIntrinsic unchecked_unary_not_info;
+    unchecked_unary_bool_not_vref = ValRefForIntrinsic unchecked_unary_bool_not_info;
     unchecked_subtraction_vref = ValRefForIntrinsic unchecked_subtraction_info;
     unchecked_multiply_vref    = ValRefForIntrinsic unchecked_multiply_info;
     unchecked_defaultof_vref    = ValRefForIntrinsic unchecked_defaultof_info;

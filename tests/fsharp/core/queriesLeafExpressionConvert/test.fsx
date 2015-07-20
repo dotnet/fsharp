@@ -83,6 +83,14 @@ module LeafExpressionEvaluationTests =
     checkEval "2ver9ewv9" (<@ 0x001 ||| 0x100 @>) (0x001 ||| 0x100)
     checkEval "2ver9ewvq" (<@ 0x011 ^^^ 0x110 @>) (0x011 ^^^ 0x110)
     checkEval "2ver9ewvw" (<@ ~~~0x011 @>) (~~~0x011)
+    checkEval "2ver9ewve" (<@ ~~~0I @>) (~~~0I)
+    checkEval "2ver9ewvr1" (<@ ~~~1I @>) (~~~1I)
+    check "2ver9ewvr2" ~~~1I -2I
+    check "2ver9ewvr3" ~~~0I -1I
+    check "2ver9ewvr4" !!!true false
+    check "2ver9ewvr5" !!!false true
+    checkEval "2ver9ewvr6" (<@ !!!true @>) !!!true
+    checkEval "2ver9ewvr7" (<@ !!!false @>) !!!false
 
     let _ = 1
     checkEval "2ver9ewve" (<@ () @>) ()

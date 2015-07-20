@@ -7534,8 +7534,9 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
         | UnopExpr g (vref,arg) 
              when (valRefEq g vref g.unchecked_unary_minus_vref ||
                    valRefEq g vref g.unchecked_unary_plus_vref ||
-                   valRefEq g vref g.unchecked_unary_not_vref ||
-                   valRefEq g vref g.bitwise_unary_not_vref ||
+                   valRefEq g vref g.unchecked_unary_bool_not_vref ||
+                   valRefEq g vref g.bitwise_unary_logical_not_vref ||
+                   valRefEq g vref g.bitwise_unary_ones_complement_vref ||
                    valRefEq g vref g.enum_vref)
              -> checkExpr vrefs arg
         // compare, =, <>, +, -, <, >, <=, >=, <<<, >>>, &&&

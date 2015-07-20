@@ -316,6 +316,7 @@ module LeafExpressionConverter =
     let (|BitwiseOrQ|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x ||| y))
     let (|BitwiseXorQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> x ^^^ y))
     let (|BitwiseNotQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> ~~~ x))
+    let (|LogicalNotQ|_|)      = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> !!! x))
     let (|CheckedNeg|_|)       = (|SpecificCallToMethod|_|) (methodhandleof (fun x -> Checked.( ~-) x))
     let (|CheckedPlusQ|_|)     = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> Checked.( + ) x y))
     let (|CheckedMinusQ|_|)    = (|SpecificCallToMethod|_|) (methodhandleof (fun (x,y) -> Checked.( - ) x y))
@@ -531,6 +532,7 @@ module LeafExpressionConverter =
             | LessQ      (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.LessThan           
             | LessEqQ    (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.LessThanOrEqual    
             | NotQ       (_, _, [x1])   -> Expression.Not(ConvExprToLinqInContext env x1)                                   |> asExpr
+            | LogicalNotQ (_, _, [x1])   -> Expression.Not(ConvExprToLinqInContext env x1)                                   |> asExpr
 
             | StaticEqualsQ    (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.Equal              
             | StaticNotEqQ     (_, _,[x1;x2]) -> transBinOp env false x1 x2 false Expression.NotEqual           
