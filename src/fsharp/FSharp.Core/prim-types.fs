@@ -1674,8 +1674,7 @@ namespace Microsoft.FSharp.Core
                         | _, null -> +1
                         | _, _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2)
 
@@ -1687,12 +1686,10 @@ namespace Microsoft.FSharp.Core
                         | _, null -> +1
                         | _, _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3)
 
@@ -1704,16 +1701,13 @@ namespace Microsoft.FSharp.Core
                         | _, null -> +1
                         | _, _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4)
 
@@ -1725,20 +1719,16 @@ namespace Microsoft.FSharp.Core
                         | _, null -> +1
                         | _, _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5)
 
@@ -1750,24 +1740,19 @@ namespace Microsoft.FSharp.Core
                         | _, null -> +1
                         | _, _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6)
 
@@ -1779,28 +1764,22 @@ namespace Microsoft.FSharp.Core
                         | _, null -> +1
                         | _, _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item7 y.Item7)
 
@@ -1812,32 +1791,25 @@ namespace Microsoft.FSharp.Core
                         | _, null -> +1
                         | _, _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item7 y.Item7 with
-                            | x when x < 0 -> x
-                            | x when x > 0 -> x
+                            | x when x <> 0 -> x
                             | _ ->
                             eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Rest y.Rest)
 
