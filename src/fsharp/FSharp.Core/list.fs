@@ -41,22 +41,37 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
-        [<CompiledName("CountBy")>]
-        let countBy projection (list:'T list) =
-            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,int>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =
+            let dict = Dictionary comparer
             let rec loop srcList  =
                 match srcList with
                 | [] -> ()
                 | h::t ->
-                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection h)
+                    let key = projection h
                     let mutable prev = 0
                     if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
                     loop t
             loop list
             let mutable result = []
             for group in dict do
-                result <- (group.Key.Value, group.Value) :: result
+                result <- (getKey group.Key, group.Value) :: result
             result |> rev
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let countByValueType (projection:'T->'Key) (list:'T list) = countByImpl HashIdentity.Structural<'Key> projection id list
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let countByRefType   (projection:'T->'Key) (list:'T list) = countByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) list
+
+        [<CompiledName("CountBy")>]
+        let countBy (projection:'T->'Key) (list:'T list) =
+#if FX_ATLEAST_40
+            if typeof<'Key>.IsValueType
+                then countByValueType projection list
+                else countByRefType   projection list
+#else
+            countByRefType projection source
+#endif
 
         [<CompiledName("Map")>]
         let map f list = Microsoft.FSharp.Primitives.Basics.List.map f list
