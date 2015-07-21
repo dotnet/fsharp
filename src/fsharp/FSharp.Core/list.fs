@@ -449,7 +449,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
-        let groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Previously this was 1, but I think this is rather stingy, considering that we are alreadying paying

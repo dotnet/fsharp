@@ -172,7 +172,7 @@ namespace Microsoft.FSharp.Collections
 
             Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
 
-        let countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (array:'T[]) =
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (array:'T[]) =
             let dict = Dictionary comparer
 
             // Build the groupings
@@ -423,7 +423,7 @@ namespace Microsoft.FSharp.Collections
             let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i+1))
             loop 0
 
-        let groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (array: 'T[]) =
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (array: 'T[]) =
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Previously this was 1, but I think this is rather stingy, considering that we are alreadying paying
