@@ -70,7 +70,7 @@ namespace Microsoft.FSharp.Collections
                 then countByValueType projection list
                 else countByRefType   projection list
 #else
-            countByRefType projection source
+            countByRefType projection list
 #endif
 
         [<CompiledName("Map")>]
@@ -492,7 +492,7 @@ namespace Microsoft.FSharp.Collections
                 then groupByValueType keyf list
                 else groupByRefType   keyf list
 #else
-            groupByRefType keyf source
+            groupByRefType keyf list
 #endif
 
         [<CompiledName("Partition")>]
