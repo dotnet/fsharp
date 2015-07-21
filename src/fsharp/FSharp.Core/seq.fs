@@ -1479,9 +1479,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
-            if typeof<'T>.IsValueType
+            checkNonNull "source" seq
+
+#if FX_ATLEAST_40
+            if typeof<'Key>.IsValueType
                 then mkDelayedSeq (fun () -> groupByValueType keyf seq)
                 else mkDelayedSeq (fun () -> groupByRefType   keyf seq)
+#else
+            mkDelayedSeq (fun () -> groupByRefType keyf seq)
+#endif
 
         [<CompiledName("Distinct")>]
         let distinct source =
@@ -1557,10 +1563,16 @@ namespace Microsoft.FSharp.Collections
         let countByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value)
 
         [<CompiledName("CountBy")>]
-        let countBy (keyf:'T->'Key) (seq:seq<'T>) =
-            if typeof<'T>.IsValueType
-                then mkDelayedSeq (fun () -> countByValueType keyf seq)
-                else mkDelayedSeq (fun () -> countByRefType   keyf seq)
+        let countBy (keyf:'T->'Key) (source:seq<'T>) =
+            checkNonNull "source" source
+
+#if FX_ATLEAST_40
+            if typeof<'Key>.IsValueType
+                then mkDelayedSeq (fun () -> countByValueType keyf source)
+                else mkDelayedSeq (fun () -> countByRefType   keyf source)
+#else
+            mkDelayedSeq (fun () -> countByRefType   keyf source)
+#endif
 
         [<CompiledName("Sum")>]
         let inline sum (source: seq< (^a) >) : ^a = 
