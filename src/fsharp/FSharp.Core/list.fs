@@ -449,30 +449,51 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Where")>]
         let where f x = Microsoft.FSharp.Primitives.Basics.List.filter f x
 
-        [<CompiledName("GroupBy")>]
-        let groupBy keyf (list: 'T list) =
-            let dict = new Dictionary<Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>,ResizeArray<'T>>(Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer)
+        let groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
+            let dict = Dictionary<_,ResizeArray<_>> comparer
+
+            // Previously this was 1, but I think this is rather stingy, considering that we are alreadying paying
+            // for at least a key, the ResizeArray reference, which includes an array reference, an Entry in the
+            // Dictionary, plus any empty space in the Dictionary of unfilled hash buckets. Having it larger means
+            // that we won't be having as many re-allocations. The ResizeArray is destroyed at the end anyway.
+            let initialBucketSize = 4
 
             // Build the groupings
             let rec loop list =
                 match list with
                 | v :: t -> 
-                    let key = Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf v)
-                    let ok,prev = dict.TryGetValue(key)
-                    if ok then
-                        prev.Add(v)
+                    let key = keyf v
+                    let mutable prev = Unchecked.defaultof<_>
+                    if dict.TryGetValue(key, &prev) then
+                        prev.Add v
                     else 
-                        let prev = new ResizeArray<'T>(1)
+                        let prev = ResizeArray initialBucketSize
                         dict.[key] <- prev
-                        prev.Add(v)
+                        prev.Add v
                     loop t
                 | _ -> ()
             loop list
 
             // Return the list-of-lists.
             dict
-            |> Seq.map (fun group -> (group.Key.Value, Seq.toList group.Value))
+            |> Seq.map (fun group -> (getKey group.Key, Seq.toList group.Value))
             |> Seq.toList
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let groupByValueType (keyf:'T->'Key) (list:'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let groupByRefType   (keyf:'T->'Key) (list:'T list) = groupByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) list
+
+        [<CompiledName("GroupBy")>]
+        let groupBy (keyf:'T->'Key) (list:'T list) =
+#if FX_ATLEAST_40
+            if typeof<'Key>.IsValueType
+                then groupByValueType keyf list
+                else groupByRefType   keyf list
+#else
+            groupByRefType keyf source
+#endif
 
         [<CompiledName("Partition")>]
         let partition p x = Microsoft.FSharp.Primitives.Basics.List.partition p x
