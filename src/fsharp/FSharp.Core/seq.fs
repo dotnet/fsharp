@@ -1445,6 +1445,8 @@ namespace Microsoft.FSharp.Collections
             mkSeq (fun () -> source.GetEnumerator())
 
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
+            checkNonNull "seq" seq
+
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
             // Previously this was 1, but I think this is rather stingy, considering that we are alreadying paying
@@ -1479,8 +1481,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
-            checkNonNull "source" seq
-
 #if FX_ATLEAST_40
             if typeof<'Key>.IsValueType
                 then mkDelayedSeq (fun () -> groupByValueType keyf seq)
