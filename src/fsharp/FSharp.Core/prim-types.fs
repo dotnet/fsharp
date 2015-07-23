@@ -1334,6 +1334,24 @@ namespace Microsoft.FSharp.Core
                         interface IEssenceOfGetHashCode<'a> with
                             member __.Ensorcel (ec, x) = f.Invoke (ec, x)
 
+                    [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfGetHashCode<bool      > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Float      = interface IEssenceOfGetHashCode<float     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfGetHashCode<sbyte     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfGetHashCode<int16     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfGetHashCode<int32     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfGetHashCode<int64     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfGetHashCode<byte      > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfGetHashCode<uint16    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfGetHashCode<uint32    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfGetHashCode<uint64    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfGetHashCode<nativeint > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfGetHashCode<unativeint> with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfGetHashCode<char      > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfGetHashCode<string    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfGetHashCode<decimal   > with member __.Ensorcel (_,a) = a.GetHashCode()
+                    [<Struct; NoComparison; NoEquality>] type Float32    = interface IEssenceOfGetHashCode<float32   > with member __.Ensorcel (_,a) = a.GetHashCode()
+                                                                                                                                                       
+
             module Exemplars =
                 module Nullable =
                     type StructuralComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable>() =
@@ -1385,10 +1403,6 @@ namespace Microsoft.FSharp.Core
                                 | _, _ -> x.Value.CompareTo (box y.Value)
 
                     type StructuralEquatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable>() =
-                        member __.GetHashCode (ec:IEqualityComparer, x:Nullable<'a>) =
-                            if x.HasValue then x.Value.GetHashCode (ec) 
-                            else 0
-
                         interface Specializations.IEssenceOfEquals<Nullable<'a>> with
                             member __.Ensorcel (ec:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1410,10 +1424,6 @@ namespace Microsoft.FSharp.Core
                                 | _, _ -> x.Value.Equals y.Value
 
                     type Equality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality>() =
-                        member __.GetHashCode (_:IEqualityComparer, x:Nullable<'a>) =
-                            if x.HasValue then x.Value.GetHashCode ()
-                            else 0
-
                         interface Specializations.IEssenceOfEquals<Nullable<'a>> with
                             member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1449,8 +1459,6 @@ namespace Microsoft.FSharp.Core
                                 x.CompareTo y
 
                     type StructuralEquatable<'a when 'a : struct and 'a :> IStructuralEquatable>() =
-                        member __.GetHashCode (ec:IEqualityComparer, x:'a) = x.GetHashCode (ec) 
-
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =
                                 x.Equals (box y, ec) 
@@ -1464,8 +1472,6 @@ namespace Microsoft.FSharp.Core
                                 x.Equals y
 
                     type Equality<'a when 'a : struct and 'a : equality>() =
-                        member __.GetHashCode (_:IEqualityComparer, x:'a) = x.GetHashCode ()
-
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 x.Equals y
@@ -1523,11 +1529,6 @@ namespace Microsoft.FSharp.Core
                                 | _, _ -> x.CompareTo y
 
                     type StructuralEquatable<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable>() =
-                        member __.GetHashCode (ec:IEqualityComparer, x:'a) =
-                            match x with
-                            | null -> 0
-                            | _ -> x.GetHashCode (ec) 
-
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
@@ -1550,11 +1551,6 @@ namespace Microsoft.FSharp.Core
                                 | _, _ -> x.Equals y
 
                     type Equality<'a when 'a : not struct and 'a : null and 'a : equality>() =
-                        member __.GetHashCode (_:IEqualityComparer, x:'a) =
-                            match x with
-                            | null -> 0
-                            | _ -> x.GetHashCode ()
-
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
@@ -3018,10 +3014,9 @@ namespace Microsoft.FSharp.Core
                 let makeGetHashCodeReturnType ty =
                     mos.makeGenericType<Func<_,_,_>> [| typeof<IEqualityComparer>; ty; typeof<int> |]
 
-                let makeGetHashCodeDelegate (ty:Type) (ct:Type) (def:Type) : obj =
+                let makeInstance (ct:Type) (def:Type) : obj =
                     let concrete = def.MakeGenericType [|ct|]
-                    let instance = Activator.CreateInstance concrete
-                    upcast Delegate.CreateDelegate (makeGetHashCodeReturnType ty, instance, "GetHashCode")
+                    Activator.CreateInstance concrete
 
                 let mutable private tupleHandler = null
                 let addTupleHandler f =
@@ -3035,58 +3030,59 @@ namespace Microsoft.FSharp.Core
                     | _ -> null
 
                 let standardTypes (t:Type) : obj =
-                    if   t.Equals typeof<bool>       then box (Func<IEqualityComparer,bool      ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<float>      then box (Func<IEqualityComparer,float     ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<sbyte>      then box (Func<IEqualityComparer,sbyte     ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<int16>      then box (Func<IEqualityComparer,int16     ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<int32>      then box (Func<IEqualityComparer,int32     ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<int64>      then box (Func<IEqualityComparer,int64     ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<byte>       then box (Func<IEqualityComparer,byte      ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<uint16>     then box (Func<IEqualityComparer,uint16    ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<uint32>     then box (Func<IEqualityComparer,uint32    ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<uint64>     then box (Func<IEqualityComparer,uint64    ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<nativeint>  then box (Func<IEqualityComparer,nativeint ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<unativeint> then box (Func<IEqualityComparer,unativeint,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<char>       then box (Func<IEqualityComparer,char      ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<string>     then box (Func<IEqualityComparer,string    ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<decimal>    then box (Func<IEqualityComparer,decimal   ,int>(fun _ a -> a.GetHashCode()))
-                    elif t.Equals typeof<float32>    then box (Func<IEqualityComparer,float32   ,int>(fun _ a -> a.GetHashCode()))
+                    if   t.Equals typeof<bool>       then box (Specializations.FlaconOfGetHashCode<bool      , Specializations.GetHashCodeTypes.Bool      >.Instance)
+                    elif t.Equals typeof<float>      then box (Specializations.FlaconOfGetHashCode<float     , Specializations.GetHashCodeTypes.Float     >.Instance)
+                    elif t.Equals typeof<sbyte>      then box (Specializations.FlaconOfGetHashCode<sbyte     , Specializations.GetHashCodeTypes.Sbyte     >.Instance)
+                    elif t.Equals typeof<int16>      then box (Specializations.FlaconOfGetHashCode<int16     , Specializations.GetHashCodeTypes.Int16     >.Instance)
+                    elif t.Equals typeof<int32>      then box (Specializations.FlaconOfGetHashCode<int32     , Specializations.GetHashCodeTypes.Int32     >.Instance)
+                    elif t.Equals typeof<int64>      then box (Specializations.FlaconOfGetHashCode<int64     , Specializations.GetHashCodeTypes.Int64     >.Instance)
+                    elif t.Equals typeof<byte>       then box (Specializations.FlaconOfGetHashCode<byte      , Specializations.GetHashCodeTypes.Byte      >.Instance)
+                    elif t.Equals typeof<uint16>     then box (Specializations.FlaconOfGetHashCode<uint16    , Specializations.GetHashCodeTypes.Uint16    >.Instance)
+                    elif t.Equals typeof<uint32>     then box (Specializations.FlaconOfGetHashCode<uint32    , Specializations.GetHashCodeTypes.Uint32    >.Instance)
+                    elif t.Equals typeof<uint64>     then box (Specializations.FlaconOfGetHashCode<uint64    , Specializations.GetHashCodeTypes.Uint64    >.Instance)
+                    elif t.Equals typeof<nativeint>  then box (Specializations.FlaconOfGetHashCode<nativeint , Specializations.GetHashCodeTypes.Nativeint >.Instance)
+                    elif t.Equals typeof<unativeint> then box (Specializations.FlaconOfGetHashCode<unativeint, Specializations.GetHashCodeTypes.Unativeint>.Instance)
+                    elif t.Equals typeof<char>       then box (Specializations.FlaconOfGetHashCode<char      , Specializations.GetHashCodeTypes.Char      >.Instance)
+                    elif t.Equals typeof<string>     then box (Specializations.FlaconOfGetHashCode<string    , Specializations.GetHashCodeTypes.String    >.Instance)
+                    elif t.Equals typeof<decimal>    then box (Specializations.FlaconOfGetHashCode<decimal   , Specializations.GetHashCodeTypes.Decimal   >.Instance)
+                    elif t.Equals typeof<float32>    then box (Specializations.FlaconOfGetHashCode<float32   , Specializations.GetHashCodeTypes.Float32   >.Instance)
                     else null
 
                 type GenericHashParamObject<'a>() =
-                    member __.GetHashCode (iec:IEqualityComparer, x:'a) = GenericHashParamObj iec (box x)
+                    interface Specializations.IEssenceOfGetHashCode<'a> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:'a) = GenericHashParamObj iec (box x)
 
                 let arrays (t:Type) : obj =
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
                         // TODO: Future; for now just default back to previous functionality
-                        makeGetHashCodeDelegate t t typedefof<GenericHashParamObject<_>>
+                        makeInstance t typedefof<GenericHashParamObject<_>>
                     else null
 
                 let nullableType (t:Type) : obj =
                     if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
                         let underlying = get (t.GetGenericArguments()) 0
-                        let make = makeGetHashCodeDelegate t underlying 
+                        let make = makeInstance underlying 
                         
                         if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralEquatable
                         else                                                             make Exemplars.nullableEquality
                     else null
 
                 let structualEquatable (t:Type): obj =
-                    let make = makeGetHashCodeDelegate t t
+                    let make = makeInstance t
 
                     if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
                     elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralEquatable
                     else null
 
                 let sealedTypes (t:Type): obj =
-                    let make = makeGetHashCodeDelegate t t
+                    let make = makeInstance t
 
                     if t.IsValueType then make Exemplars.valueTypeEquality
                     elif t.IsSealed  then make Exemplars.refTypeEquality
                     else null
 
                 let defaultGetHashCode ty =
-                    makeGetHashCodeDelegate ty ty typedefof<GenericHashParamObject<_>>
+                    makeInstance ty typedefof<GenericHashParamObject<_>>
 
                 let createGetHashCodeDelegate (t:Type) : obj =
                     mos.takeFirstNonNull [|
@@ -3100,10 +3096,11 @@ namespace Microsoft.FSharp.Core
                     |]
                             
                 type Function<'a>() =
-                    static let func : Func<IEqualityComparer,'a, int> =
+                    static let func : Specializations.IEssenceOfGetHashCode<'a> =
                         match createGetHashCodeDelegate typeof<'a> with
                         | null -> raise (Exception "invalid logic")
-                        | f -> unboxPrim f
+                        | :? Specializations.IEssenceOfGetHashCode<'a> as f -> f
+                        | f -> upcast Specializations.GetHashCodeTypes.FromFunc(unboxPrim f)
 
                     static member Func = func
 
@@ -3113,16 +3110,16 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic x = 
                 let iec = fsEqualityComparerUnlimitedHashingPER
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x))
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit x =
                 let iec = CountLimitedHasherPER limit
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x))
 
             // used by tuples
             let inline GenericHashWithComparerIntrinsic_inline (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                GenericSpecializeHash.Function<_>.Func.Invoke (iec, x)
+                GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x)
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
