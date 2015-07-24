@@ -2699,8 +2699,6 @@ namespace Microsoft.FSharp.Core
                     | _ -> raise (Exception "invalid logic")                    
 
                 let createEqualsDelegate (tyRelation:Type) (ty:Type) : obj =
-                    //System.Console.WriteLine ("{0} - {1}", tyRelation, ty)
-
                     mos.takeFirstNonNull [|
                         fun () -> tuples tyRelation ty
                         fun () -> floatingPointTypes tyRelation ty
@@ -3578,7 +3576,7 @@ namespace Microsoft.FSharp.Core
 
                 type tt = Specializations.EqualsTypes.Int32
 
-                let tuplesEquals (ty:Type) : obj =
+                let tuplesEquals (_relation:Type) (ty:Type) : obj =
                     if ty.IsGenericType then
                         let tyDef = ty.GetGenericTypeDefinition ()
                         let tyDefArgs = ty.GetGenericArguments ()
