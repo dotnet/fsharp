@@ -3577,7 +3577,7 @@ namespace Microsoft.FSharp.Core
                 type tt = Specializations.EqualsTypes.Int32
 
                 let tuplesEquals (_relation:Type) (ty:Type) : obj =
-                    if ty.IsGenericType then
+                    if ty.IsGenericType && ty.Equals typeof<EquivalenceRelation> then
                         let tyDef = ty.GetGenericTypeDefinition ()
                         let tyDefArgs = ty.GetGenericArguments ()
                         if tyDef.Equals typedefof<Tuple<_>>       then
