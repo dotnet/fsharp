@@ -3518,6 +3518,23 @@ namespace Microsoft.FSharp.Core
                 GenericSpecializeEquals.addTupleHandler (box tuplesEquals)
                 GenericSpecializeHash.addTupleHandler (box tuplesGetHashCode)
 
+            type EssenceOfEqualityComparer<'a, 'eq, 'ghc
+                    when 'eq  :> Specializations.IEssenceOfEquals<'a>      and 'eq : (new : unit -> 'eq)
+                     and 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc)>() =
+                
+                interface IEqualityComparer<'a> with
+                    member __.Equals (x:'a, y:'a) =
+                        Specializations.FlaconOfEquals<'a, 'eq>.Instance.Ensorcel (fsEqualityComparerNoHashingER, x, y)
+                    member __.GetHashCode (x:'a) =
+                        Specializations.FlaconOfGetHashCode<'a,'ghc>.Instance.Ensorcel (fsEqualityComparerUnlimitedHashingPER, x)
+
+            let makeEqualityComparer (ty:Type) =
+                let eq = (TupleEquality.getEssenceOfEqualsObj ty).GetType ()
+                let ghc = (TupleEquality.getEssenceOfGetHashCodeObj ty).GetType ()
+                let equalityComparerDef = typedefof<EssenceOfEqualityComparer<int,Specializations.EqualsTypes.Int32,Specializations.GetHashCodeTypes.Int32>>
+                let equalityComparer = equalityComparerDef.MakeGenericType [| ty; eq; ghc |]
+                Activator.CreateInstance equalityComparer
+
 #else
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
@@ -3806,12 +3823,18 @@ namespace Microsoft.FSharp.Core
         // LanguagePrimitives: PUBLISH IEqualityComparer AND IComparer OBJECTS
         //------------------------------------------------------------------------- 
 
-
         let inline MakeGenericEqualityComparer<'T>() = 
             // type-specialize some common cases to generate more efficient functions 
             { new System.Collections.Generic.IEqualityComparer<'T> with 
                   member self.GetHashCode(x) = GenericHash x 
                   member self.Equals(x,y) = GenericEquality x y }
+
+        let inline MakeGenericEqualityComparerWithEssence<'T>() : IEqualityComparer<'T> =
+#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
+            unboxPrim (HashCompare.makeEqualityComparer typeof<'T>)
+#else
+            MakeGenericEqualityComparer<'T> ()
+#endif
 
         let inline MakeGenericLimitedEqualityComparer<'T>(limit:int) = 
             // type-specialize some common cases to generate more efficient functions 
@@ -3856,7 +3879,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32IEquality)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalIEquality)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringIEquality)
-                | _ -> MakeGenericEqualityComparer<'T>()
+                | _ -> MakeGenericEqualityComparerWithEssence<'T>()
             static member Function : System.Collections.Generic.IEqualityComparer<'T> = f
 
         let FastGenericEqualityComparerFromTable<'T> = FastGenericEqualityComparerTable<'T>.Function
