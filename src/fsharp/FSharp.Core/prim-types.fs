@@ -3119,7 +3119,7 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultGetHashCode t
                     |]
                             
-                type IGetEssenceOfEqualsObj =
+                type IGetEssenceOfGetHashCodeObj =
                     abstract Get : unit -> obj
                             
                 type Function<'a>() =
@@ -3130,7 +3130,7 @@ namespace Microsoft.FSharp.Core
 
                     static member Func = func
 
-                    interface IGetEssenceOfEqualsObj with
+                    interface IGetEssenceOfGetHashCodeObj with
                         member __.Get () = box func
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
@@ -3446,7 +3446,14 @@ namespace Microsoft.FSharp.Core
                     let x = typedefof<GenericSpecializeHash.Function<_>>
                     let o = x.MakeGenericType [|ty|]
                     match Activator.CreateInstance o with
-                    | :? GenericSpecializeHash.IGetEssenceOfEqualsObj as getter -> getter.Get ()
+                    | :? GenericSpecializeHash.IGetEssenceOfGetHashCodeObj as getter -> getter.Get ()
+                    | _ -> raise (Exception "invalid logic")
+
+                let getEssenceOfEqualsObj ty =
+                    let x = typedefof<GenericSpecializeEquals.Function<_,_>>
+                    let o = x.MakeGenericType [|typeof<EquivalenceRelation>; ty|]
+                    match Activator.CreateInstance o with
+                    | :? GenericSpecializeEquals.IGetEssenceOfEqualsObj as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
                 type t = Specializations.GetHashCodeTypes.Int32
@@ -3477,7 +3484,38 @@ namespace Microsoft.FSharp.Core
                              //makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>                
                         else null
                     else null
-//                GenericSpecializeEquals.addTupleHandler (box tuplesEquals)
+
+
+                type tt = Specializations.EqualsTypes.Int32
+
+                let tuplesEquals (ty:Type) : obj =
+                    if ty.IsGenericType then
+                        let tyDef = ty.GetGenericTypeDefinition ()
+                        let tyDefArgs = ty.GetGenericArguments ()
+                        if tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then
+                            let t0 = (get tyDefArgs 0)
+                            let t1 = (get tyDefArgs 1)
+                            let t2 = (get tyDefArgs 2)
+                            let t3 = (get tyDefArgs 3)
+                            let t4 = (get tyDefArgs 4)
+                            let ghc0 = (getEssenceOfEqualsObj t0).GetType ()
+                            let ghc1 = (getEssenceOfEqualsObj t1).GetType ()
+                            let ghc2 = (getEssenceOfEqualsObj t2).GetType ()
+                            let ghc3 = (getEssenceOfEqualsObj t3).GetType ()
+                            let ghc4 = (getEssenceOfEqualsObj t4).GetType ()
+
+                            let tt = typedefof<TupleEssenceOfEquals<int,int,int,int,int,tt,tt,tt,tt,tt>>
+                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
+                            Activator.CreateInstance zz
+
+
+                            //GenericSpecializeHash.Function<_>.Func
+                            //GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func
+                             //makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>                
+                        else null
+                    else null
+
+                GenericSpecializeEquals.addTupleHandler (box tuplesEquals)
                 GenericSpecializeHash.addTupleHandler (box tuplesGetHashCode)
 
 #else
