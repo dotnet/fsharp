@@ -1329,11 +1329,6 @@ namespace Microsoft.FSharp.Core
                     [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfEquals<decimal   > with member __.Ensorcel (_,x,y) = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
 
                 module GetHashCodeTypes =
-                    [<Sealed>]
-                    type FromFunc<'a>(f:Func<IEqualityComparer,'a,int>) =
-                        interface IEssenceOfGetHashCode<'a> with
-                            member __.Ensorcel (ec, x) = f.Invoke (ec, x)
-
                     [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfGetHashCode<bool      > with member __.Ensorcel (_,a) = a.GetHashCode()
                     [<Struct; NoComparison; NoEquality>] type Float      = interface IEssenceOfGetHashCode<float     > with member __.Ensorcel (_,a) = a.GetHashCode()
                     [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfGetHashCode<sbyte     > with member __.Ensorcel (_,a) = a.GetHashCode()
@@ -1350,11 +1345,11 @@ namespace Microsoft.FSharp.Core
                     [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfGetHashCode<string    > with member __.Ensorcel (_,a) = a.GetHashCode()
                     [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfGetHashCode<decimal   > with member __.Ensorcel (_,a) = a.GetHashCode()
                     [<Struct; NoComparison; NoEquality>] type Float32    = interface IEssenceOfGetHashCode<float32   > with member __.Ensorcel (_,a) = a.GetHashCode()
-                                                                                                                                                       
 
             module Exemplars =
                 module Nullable =
-                    type StructuralComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable> =
                         member __.CompareTo (ec:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                             match x.HasValue, y.HasValue with
                             | false, false -> 0
@@ -1370,7 +1365,8 @@ namespace Microsoft.FSharp.Core
                                 | _, false -> +1
                                 | _, _ -> x.Value.CompareTo (box y.Value, ec)
 
-                    type ComparableGeneric<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable<'a>>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type ComparableGeneric<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable<'a>> =
                         member __.CompareTo (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                             match x.HasValue, y.HasValue with
                             | false, false -> 0
@@ -1386,7 +1382,8 @@ namespace Microsoft.FSharp.Core
                                 | _, false -> +1
                                 | _, _ -> x.Value.CompareTo y.Value
 
-                    type Comparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Comparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable> =
                         member __.CompareTo (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                             match x.HasValue, y.HasValue with
                             | false, false -> 0
@@ -1402,7 +1399,8 @@ namespace Microsoft.FSharp.Core
                                 | _, false -> +1
                                 | _, _ -> x.Value.CompareTo (box y.Value)
 
-                    type StructuralEquatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralEquatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable> =
                         interface Specializations.IEssenceOfEquals<Nullable<'a>> with
                             member __.Ensorcel (ec:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1415,7 +1413,8 @@ namespace Microsoft.FSharp.Core
                                 if x.HasValue then x.Value.GetHashCode (ec) 
                                 else 0
 
-                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a>>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a>> =
                         interface Specializations.IEssenceOfEquals<Nullable<'a>> with
                             member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1423,7 +1422,8 @@ namespace Microsoft.FSharp.Core
                                 | false, _ | _, false -> false
                                 | _, _ -> x.Value.Equals y.Value
 
-                    type Equality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality> =
                         interface Specializations.IEssenceOfEquals<Nullable<'a>> with
                             member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1437,28 +1437,32 @@ namespace Microsoft.FSharp.Core
                                 else 0
 
                 module ValueType =
-                    type StructuralComparable<'a when 'a : struct and 'a :> IStructuralComparable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralComparable<'a when 'a : struct and 'a :> IStructuralComparable> =
                         member __.CompareTo (ec:IComparer, x:'a, y:'a) = x.CompareTo (box y, ec)
 
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (ec:IComparer, x:'a, y:'a) =
                                 x.CompareTo (box y, ec)
 
-                    type ComparableGeneric<'a when 'a : struct and 'a :> IComparable<'a>>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type ComparableGeneric<'a when 'a : struct and 'a :> IComparable<'a>> =
                         member __.CompareTo (_:IComparer, x:'a, y:'a) = x.CompareTo y
 
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 x.CompareTo y
 
-                    type Comparable<'a when 'a : struct and 'a :> IComparable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Comparable<'a when 'a : struct and 'a :> IComparable> =
                         member __.CompareTo (_:IComparer, x:'a, y:'a) = x.CompareTo y
 
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 x.CompareTo y
 
-                    type StructuralEquatable<'a when 'a : struct and 'a :> IStructuralEquatable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralEquatable<'a when 'a : struct and 'a :> IStructuralEquatable> =
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =
                                 x.Equals (box y, ec) 
@@ -1466,12 +1470,14 @@ namespace Microsoft.FSharp.Core
                             member __.Ensorcel (ec:IEqualityComparer, x:'a) =
                                 x.GetHashCode (ec) 
 
-                    type Equatable<'a when 'a : struct and 'a :> IEquatable<'a>>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equatable<'a when 'a : struct and 'a :> IEquatable<'a>> =
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 x.Equals y
 
-                    type Equality<'a when 'a : struct and 'a : equality>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equality<'a when 'a : struct and 'a : equality> =
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 x.Equals y
@@ -1480,7 +1486,8 @@ namespace Microsoft.FSharp.Core
                                 x.GetHashCode ()
 
                 module RefType = 
-                    type StructuralComparable<'a when 'a : not struct and 'a : null and 'a :> IStructuralComparable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralComparable<'a when 'a : not struct and 'a : null and 'a :> IStructuralComparable> =
                         member __.CompareTo (ec:IComparer, x:'a, y:'a) =
                             match x, y with
                             | null, null -> 0
@@ -1496,7 +1503,8 @@ namespace Microsoft.FSharp.Core
                                 | _, null -> +1
                                 | _, _ -> x.CompareTo (box y, ec)
 
-                    type ComparableGeneric<'a when 'a : not struct and 'a : null and 'a :> IComparable<'a>>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type ComparableGeneric<'a when 'a : not struct and 'a : null and 'a :> IComparable<'a>> =
                         member __.CompareTo (_:IComparer, x:'a, y:'a) = 
                             match x, y with
                             | null, null -> 0
@@ -1512,7 +1520,8 @@ namespace Microsoft.FSharp.Core
                                 | _, null -> +1
                                 | _, _ -> x.CompareTo y
 
-                    type Comparable<'a when 'a : not struct and 'a : null and 'a :> IComparable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Comparable<'a when 'a : not struct and 'a : null and 'a :> IComparable> =
                         member __.CompareTo (_:IComparer, x:'a, y:'a) = 
                             match x, y with
                             | null, null -> 0
@@ -1528,7 +1537,8 @@ namespace Microsoft.FSharp.Core
                                 | _, null -> +1
                                 | _, _ -> x.CompareTo y
 
-                    type StructuralEquatable<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralEquatable<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable> =
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
@@ -1542,7 +1552,8 @@ namespace Microsoft.FSharp.Core
                                 | null -> 0
                                 | _ -> x.GetHashCode (ec) 
 
-                    type Equatable<'a when 'a : not struct and 'a : null and 'a :> IEquatable<'a>>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equatable<'a when 'a : not struct and 'a : null and 'a :> IEquatable<'a>> =
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
@@ -1550,7 +1561,8 @@ namespace Microsoft.FSharp.Core
                                 | null, _ | _, null -> false
                                 | _, _ -> x.Equals y
 
-                    type Equality<'a when 'a : not struct and 'a : null and 'a : equality>() =
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equality<'a when 'a : not struct and 'a : null and 'a : equality> =
                         interface Specializations.IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
@@ -1839,6 +1851,9 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultCompare ty
                     |]
 
+                type IGetEssenceOfComparerObj =
+                    abstract Get : unit -> obj
+
                 type Function<'relation, 'a>() =
                     static let func : Func<IComparer,'a, 'a, int> =
                         match createCompareDelegate typeof<'relation> typeof<'a> with
@@ -1846,6 +1861,9 @@ namespace Microsoft.FSharp.Core
                         | f -> unboxPrim f
 
                     static member Func = func
+
+                    interface IGetEssenceOfComparerObj with
+                        member __.Get () = box func
 
             let inline GenericComparisonWithERIntrinsic_inline (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
                 GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Invoke (comp, x, y)            
@@ -2693,6 +2711,9 @@ namespace Microsoft.FSharp.Core
                         fun () -> equalityInterfaces ty
                         fun () -> defaultEquality tyRelation ty
                     |]
+
+                type IGetEssenceOfEqualsObj =
+                    abstract Get : unit -> obj
                             
                 type Function<'relation, 'a>() =
                     static let func : Specializations.IEssenceOfEquals<'a> =
@@ -2701,6 +2722,9 @@ namespace Microsoft.FSharp.Core
                         | f -> unboxPrim f
 
                     static member Func = func
+
+                    interface IGetEssenceOfEqualsObj with
+                        member __.Get () = box func
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -3095,14 +3119,19 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultGetHashCode t
                     |]
                             
+                type IGetEssenceOfEqualsObj =
+                    abstract Get : unit -> obj
+                            
                 type Function<'a>() =
                     static let func : Specializations.IEssenceOfGetHashCode<'a> =
                         match createGetHashCodeDelegate typeof<'a> with
                         | null -> raise (Exception "invalid logic")
-                        | :? Specializations.IEssenceOfGetHashCode<'a> as f -> f
-                        | f -> upcast Specializations.GetHashCodeTypes.FromFunc(unboxPrim f)
+                        | f -> unboxPrim f
 
                     static member Func = func
+
+                    interface IGetEssenceOfEqualsObj with
+                        member __.Get () = box func
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
@@ -3215,33 +3244,48 @@ namespace Microsoft.FSharp.Core
                         let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
                         eliminate_tail_call_int (cth (cth a b) (cth c d))
 
-                type TupleEREqualityComparer<'a,'b,'c,'d,'e>() =
-                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
-                        match x, y with
-                        | null, null -> true
-                        | null, _ | _, null -> false
-                        | _, _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
-                            | false -> false
-                            | _ ->
-                            GenericEqualityERIntrinsic_inline x.Item5 y.Item5
+                type TupleEssenceOfEquals<'a,'b,'c,'d,'e,
+                                             'eq1,'eq2,'eq3,'eq4,'eq5
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)>() =
+                    interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5)
 
-                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>) =
-                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
-                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
-                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
-                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
-                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
-                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) e)
+                type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,
+                                                 'ghc1,'ghc2,'ghc3,'ghc4,'ghc5
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)>() =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
+                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
+                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) e)
 
                 type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f>() =
                     member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
@@ -3350,7 +3394,7 @@ namespace Microsoft.FSharp.Core
                         let g = GenericHashWithComparerIntrinsic_inline iec x.Item7
                         let h = GenericHashWithComparerIntrinsic_inline iec x.Rest
                         eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
-
+(*
                 let makeTupleEqualityComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
                     let concrete = def.MakeGenericType types
                     let instance = Activator.CreateInstance concrete
@@ -3396,8 +3440,44 @@ namespace Microsoft.FSharp.Core
                         elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_,_>>
                         else null
                     else null
+*)
+                
+                let getEssenceOfGetHashCodeObj ty =
+                    let x = typedefof<GenericSpecializeHash.Function<_>>
+                    let o = x.MakeGenericType [|ty|]
+                    match Activator.CreateInstance o with
+                    | :? GenericSpecializeHash.IGetEssenceOfEqualsObj as getter -> getter.Get ()
+                    | _ -> raise (Exception "invalid logic")
 
-                GenericSpecializeEquals.addTupleHandler (box tuplesEquals)
+                type t = Specializations.GetHashCodeTypes.Int32
+
+                let tuplesGetHashCode (ty:Type) : obj =
+                    if ty.IsGenericType then
+                        let tyDef = ty.GetGenericTypeDefinition ()
+                        let tyDefArgs = ty.GetGenericArguments ()
+                        if tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then
+                            let t0 = (get tyDefArgs 0)
+                            let t1 = (get tyDefArgs 1)
+                            let t2 = (get tyDefArgs 2)
+                            let t3 = (get tyDefArgs 3)
+                            let t4 = (get tyDefArgs 4)
+                            let ghc0 = (getEssenceOfGetHashCodeObj t0).GetType ()
+                            let ghc1 = (getEssenceOfGetHashCodeObj t1).GetType ()
+                            let ghc2 = (getEssenceOfGetHashCodeObj t2).GetType ()
+                            let ghc3 = (getEssenceOfGetHashCodeObj t3).GetType ()
+                            let ghc4 = (getEssenceOfGetHashCodeObj t4).GetType ()
+
+                            let tt = typedefof<TupleEssenceOfGetHashCode<int,int,int,int,int,t,t,t,t,t>>
+                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
+                            Activator.CreateInstance zz
+
+
+                            //GenericSpecializeHash.Function<_>.Func
+                            //GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func
+                             //makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>                
+                        else null
+                    else null
+//                GenericSpecializeEquals.addTupleHandler (box tuplesEquals)
                 GenericSpecializeHash.addTupleHandler (box tuplesGetHashCode)
 
 #else
