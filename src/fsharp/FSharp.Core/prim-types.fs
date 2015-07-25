@@ -3512,6 +3512,13 @@ namespace Microsoft.FSharp.Core
                     | :? GenericSpecializeEquals.IGetEssenceOfEqualsObj as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
+                let getEssenceOfCompareToObj ty =
+                    let x = typedefof<GenericSpecializeCompareTo.Function<_,_>>
+                    let o = x.MakeGenericType [|typeof<EquivalenceRelation>; ty|]
+                    match Activator.CreateInstance o with
+                    | :? GenericSpecializeCompareTo.IGetEssenceOfComparerObj as getter -> getter.Get ()
+                    | _ -> raise (Exception "invalid logic")
+
                 type t = Specializations.GetHashCodeTypes.Int32
 
                 let tuplesGetHashCode (ty:Type) : obj =
@@ -3664,12 +3671,25 @@ namespace Microsoft.FSharp.Core
                     member __.GetHashCode (x:'a) =
                         Specializations.FlaconOfGetHashCode<'a,'ghc>.Instance.Ensorcel (fsEqualityComparerUnlimitedHashingPER, x)
 
+            type EssenceOfComparer<'a, 'comp
+                    when 'comp  :> Specializations.IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp)>() =
+                
+                interface IComparer<'a> with
+                    member __.Compare (x:'a, y:'a) =
+                        Specializations.FlaconOfComparer<'a, 'comp>.Instance.Ensorcel (fsComparerER, x, y)
+
             let makeEqualityComparer (ty:Type) =
                 let eq = (TupleEquality.getEssenceOfEqualsObj ty).GetType ()
                 let ghc = (TupleEquality.getEssenceOfGetHashCodeObj ty).GetType ()
                 let equalityComparerDef = typedefof<EssenceOfEqualityComparer<int,Specializations.EqualsTypes.Int32,Specializations.GetHashCodeTypes.Int32>>
                 let equalityComparer = equalityComparerDef.MakeGenericType [| ty; eq; ghc |]
                 Activator.CreateInstance equalityComparer
+
+            let makeComparer (ty:Type) =
+                let comp = (TupleEquality.getEssenceOfCompareToObj ty).GetType ()
+                let comparerDef = typedefof<EssenceOfComparer<int,Specializations.ComparerTypes.Int32>>
+                let comparer = comparerDef.MakeGenericType [| ty; comp |]
+                Activator.CreateInstance comparer
 
 #else
 
@@ -4057,6 +4077,13 @@ namespace Microsoft.FSharp.Core
             { new System.Collections.Generic.IComparer<'T> with 
                  member __.Compare(x,y) = GenericComparison x y }
 
+        let inline MakeGenericComparerWithEssence<'T>() : IComparer<'T> = 
+#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
+            unboxPrim (HashCompare.makeComparer typeof<'T>)
+#else
+            MakeGenericComparer<'T> ()
+#endif
+
         let CharComparer    = MakeGenericComparer<char>()
         let StringComparer  = MakeGenericComparer<string>()
         let SByteComparer   = MakeGenericComparer<sbyte>()
@@ -4132,7 +4159,7 @@ namespace Microsoft.FSharp.Core
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
                     // For example, for any value type.
-                    MakeGenericComparer<'T>()
+                    MakeGenericComparerWithEssence<'T>()
 
             static member Value : System.Collections.Generic.IComparer<'T> = f
 
