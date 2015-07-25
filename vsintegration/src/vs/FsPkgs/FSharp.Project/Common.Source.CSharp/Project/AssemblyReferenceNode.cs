@@ -55,6 +55,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private AssemblyResolvedInfo resolvedInfo;
         private AssemblyMSBuildProjectionInfo msbuildProjectionInfo;
         private bool fsprojIncludeHasFilename = false;
+        private bool isTypeProvider;
         #endregion
 
         #region properties
@@ -116,6 +117,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     return this.resolvedInfo.AssemblyName.Name;
                 }
                 return MSBuildItem.GetEvaluatedInclude(this.ItemNode.Item);
+            }
+        }
+
+        public bool IsTypeProvider
+        {
+            get { return isTypeProvider; }
+            set
+            {
+                if (isTypeProvider != value)
+                {
+                    isTypeProvider = value;
+                    this.ReDraw(UIHierarchyElement.Icon);
+                }
             }
         }
 
@@ -708,5 +722,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 #endif
 
         #endregion
+
+        public override int ImageIndex
+        {
+            get
+            {
+                const int typeProviderAssemblyIcon = (int) ProjectNode.ImageName.TypeProviderAssembly;
+                return IsTypeProvider ? typeProviderAssemblyIcon : base.ImageIndex;
+            }
+        }
     }
 }

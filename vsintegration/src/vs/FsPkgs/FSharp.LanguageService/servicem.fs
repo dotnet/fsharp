@@ -1311,7 +1311,7 @@ type internal LanguageServiceState() =
                 // We may have missed a file change event for a dependent file (e.g. after the user added a project reference, he might immediately build that project, but 
                 // we haven't yet started listening for changes to that file on disk - the call to SetDependencyFiles() below starts listening).  This can only happen if 
                 // the set of dependencies has changed (otherwise we were _already_ listening and would not have missed the event)...
-                let anyDependenciesChanged = source.SetDependencyFiles(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ApprovalsAbsoluteFileName :: untypedParse.DependencyFiles())
+                let anyDependenciesChanged = source.SetDependencyFiles(untypedParse.DependencyFiles())
                 // .. so if dependencies have changed, and we may have missed an event, let's behave as though this typecheck is failing and the file still needs to be re-type-checked
                 if anyDependenciesChanged then
                     req.ResultClearsDirtinessOfFile <- false
@@ -2077,25 +2077,6 @@ type FSharpPackage() as self =
             let language = new FSharpLanguageService()
             language.SetSite(self)
             language.Initialize()
-            TypeProviderSecurityGlobals.invalidationCallback <- fun () -> language.LanguageServiceState.InteractiveChecker.InvalidateAll()
-            Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some(fun (typeProviderRunTimeAssemblyFileName) ->
-                let pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
-                let filename = 
-                    match Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked with
-                    | None -> assert false; ""  // this should never happen
-                    | Some fn -> fn
-                UIThread.RunSync(fun() ->
-                    // need to access the RDT on the UI thread
-                    match language.LanguageServiceState.Artifacts.TryFindOwningProject((ServiceProvider language.GetService).Rdt, filename) with
-                    | Some owningProjectSite ->
-                        let projectName = Path.GetFileNameWithoutExtension(owningProjectSite.ProjectFileName())
-                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, null, projectName, typeProviderRunTimeAssemblyFileName, pubInfo) 
-                    | None -> 
-                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, filename, null, typeProviderRunTimeAssemblyFileName, pubInfo) 
-                    )
-                // the 'displayLSTypeProviderSecurityDialogBlockingUI' callback is run async to the background typecheck, so after the user has interacted with the dialog, request a re-typecheck
-                TypeProviderSecurityGlobals.invalidationCallback() 
-                )
             self.RegisterForIdleTime()
             box language
         | _ -> null
