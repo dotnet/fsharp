@@ -1849,7 +1849,7 @@ namespace Microsoft.FSharp.Core
 
                 let createCompareDelegate (tyRelation:Type) (ty:Type) : obj =
                     mos.takeFirstNonNull [|
-                        //fun () -> tuples tyRelation ty
+                        fun () -> tuples tyRelation ty
                         fun () -> floatingPointTypes tyRelation ty
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
@@ -1859,8 +1859,8 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultCompare ty
                     |]
 
-                type IGetEssenceOfComparerObj =
-                    abstract Get : unit -> obj
+                type IGetEssenceOfComparerType =
+                    abstract Get : unit -> Type
 
                 type Function<'relation, 'a>() =
                     static let func : Specializations.IEssenceOfCompareTo<'a> =
@@ -1870,8 +1870,8 @@ namespace Microsoft.FSharp.Core
 
                     static member Func = func
 
-                    interface IGetEssenceOfComparerObj with
-                        member __.Get () = box func
+                    interface IGetEssenceOfComparerType with
+                        member __.Get () = func.GetType ()
 
             let inline GenericComparisonWithERIntrinsic_inline (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
                 GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Ensorcel (comp, x, y)            
@@ -1896,189 +1896,330 @@ namespace Microsoft.FSharp.Core
                     eliminate_tail_call_int (comp.Compare (box x, box y))
 
             module TupleComparers =
-                type TupleERComparer<'a>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,
+                                                'comp1
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)> =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1))
 
-                type TupleERComparer<'a,'b>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,'b,
+                                                'comp1,'comp2
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
+                                                                                                                                        > =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2))
 
-                type TupleERComparer<'a,'b,'c>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,'b,'c,
+                                                'comp1,'comp2,'comp3
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
+                                                                                                                                        > =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3))
 
-                type TupleERComparer<'a,'b,'c,'d>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4)
 
-                type TupleERComparer<'a,'b,'c,'d,'e>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,'b,'c,'d,
+                                                'comp1,'comp2,'comp3,'comp4
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
+                                                                                                                                        > =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4))
 
-                type TupleERComparer<'a,'b,'c,'d,'e,'f>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,
+                                                'comp1,'comp2,'comp3,'comp4,'comp5
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
+                                                                                                                                        > =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5))
 
-                type TupleERComparer<'a,'b,'c,'d,'e,'f,'g>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Item7 y.Item7)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,'f,
+                                                'comp1,'comp2,'comp3,'comp4,'comp5,'comp6
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
+                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6)
+                                                                                                                                        > =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'f, 'comp6>.Instance.Ensorcel (comparer, x.Item6, y.Item6))
 
-                type TupleERComparer<'a,'b,'c,'d,'e,'f,'g,'h>() =
-                    member __.CompareTo (_:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
-                        match x, y with
-                        | null, null -> 0
-                        | null, _ -> -1
-                        | _, null -> +1
-                        | _, _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item1 y.Item1 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item2 y.Item2 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item3 y.Item3 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item4 y.Item4 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item5 y.Item5 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item6 y.Item6 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            match GenericComparisonWithERIntrinsic_inline fsComparerER x.Item7 y.Item7 with
-                            | x when x <> 0 -> x
-                            | _ ->
-                            eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline fsComparerER x.Rest y.Rest)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,'f,'g,
+                                                'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
+                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6)
+                                                     and 'comp7 :> Specializations.IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7)
+                                                                                                                                        > =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'f, 'comp6>.Instance.Ensorcel (comparer, x.Item6, y.Item6) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'g, 'comp7>.Instance.Ensorcel (comparer, x.Item7, y.Item7))
 
-                let makeTupleComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
-                    let concrete = def.MakeGenericType types
-                    let instance = Activator.CreateInstance concrete
-                    box (Delegate.CreateDelegate (GenericSpecializeCompareTo.makeCompareReturnType ty, instance, "CompareTo"))
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,'f,'g,'h,
+                                                'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7,'comp8
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
+                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6)
+                                                     and 'comp7 :> Specializations.IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7)
+                                                     and 'comp8 :> Specializations.IEssenceOfCompareTo<'h> and 'comp8 : (new : unit -> 'comp8)
+                                                                                                                                        > =
+                    interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'f, 'comp6>.Instance.Ensorcel (comparer, x.Item6, y.Item6) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match Specializations.FlaconOfComparer<'g, 'comp7>.Instance.Ensorcel (comparer, x.Item7, y.Item7) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'h, 'comp8>.Instance.Ensorcel (comparer, x.Rest, y.Rest))
 
-                let tuples (tyRelation:Type) (ty:Type) : obj =
-                    match tyRelation with
-                    | r when r.Equals typeof<EquivalenceRelation> ->
-                        if ty.IsGenericType then
-                            let tyDef = ty.GetGenericTypeDefinition ()
-                            let tyDefArgs = ty.GetGenericArguments ()
-                            if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_,_>>
-                            else null
+                let getEssenceOfCompareToType (ty:Type) =
+                    let x = typedefof<GenericSpecializeCompareTo.Function<_,_>>
+                    let o = x.MakeGenericType [|typeof<EquivalenceRelation>; ty|]
+                    match Activator.CreateInstance o with
+                    | :? GenericSpecializeCompareTo.IGetEssenceOfComparerType as getter -> getter.Get ()
+                    | _ -> raise (Exception "invalid logic")
+
+                type tt = Specializations.ComparerTypes.Int32
+
+                let tuplesCompareTo (_relation:Type) (ty:Type) : obj =
+                    if ty.IsGenericType && _relation.Equals typeof<EquivalenceRelation> then
+                        let tyDef = ty.GetGenericTypeDefinition ()
+                        let tyDefArgs = ty.GetGenericArguments ()
+                        if tyDef.Equals typedefof<Tuple<_>>       then
+                            let t0 = (get tyDefArgs 0)
+                            let ghc0 = (getEssenceOfCompareToType t0)
+
+                            let tt = typedefof<TupleEssenceOfCompareTo<int,tt>>
+                            let zz = tt.MakeGenericType [| t0; ghc0 |] 
+                            Activator.CreateInstance zz
+                        elif tyDef.Equals typedefof<Tuple<_,_>>       then
+                            let t0 = (get tyDefArgs 0)
+                            let t1 = (get tyDefArgs 1)
+                            let ghc0 = (getEssenceOfCompareToType t0)
+                            let ghc1 = (getEssenceOfCompareToType t1)
+
+                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,tt,tt>>
+                            let zz = tt.MakeGenericType [| t0; t1; ghc0; ghc1 |] 
+                            Activator.CreateInstance zz
+                        elif tyDef.Equals typedefof<Tuple<_,_,_>>       then
+                            let t0 = (get tyDefArgs 0)
+                            let t1 = (get tyDefArgs 1)
+                            let t2 = (get tyDefArgs 2)
+                            let ghc0 = (getEssenceOfCompareToType t0)
+                            let ghc1 = (getEssenceOfCompareToType t1)
+                            let ghc2 = (getEssenceOfCompareToType t2)
+
+                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,int,tt,tt,tt>>
+                            let zz = tt.MakeGenericType [| t0; t1; t2; ghc0; ghc1; ghc2 |] 
+                            Activator.CreateInstance zz
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>       then
+                            let t0 = (get tyDefArgs 0)
+                            let t1 = (get tyDefArgs 1)
+                            let t2 = (get tyDefArgs 2)
+                            let t3 = (get tyDefArgs 3)
+                            let ghc0 = (getEssenceOfCompareToType t0)
+                            let ghc1 = (getEssenceOfCompareToType t1)
+                            let ghc2 = (getEssenceOfCompareToType t2)
+                            let ghc3 = (getEssenceOfCompareToType t3)
+
+                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,int,int,tt,tt,tt,tt>>
+                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; ghc0; ghc1; ghc2; ghc3 |] 
+                            Activator.CreateInstance zz
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then
+                            let t0 = (get tyDefArgs 0)
+                            let t1 = (get tyDefArgs 1)
+                            let t2 = (get tyDefArgs 2)
+                            let t3 = (get tyDefArgs 3)
+                            let t4 = (get tyDefArgs 4)
+                            let ghc0 = (getEssenceOfCompareToType t0)
+                            let ghc1 = (getEssenceOfCompareToType t1)
+                            let ghc2 = (getEssenceOfCompareToType t2)
+                            let ghc3 = (getEssenceOfCompareToType t3)
+                            let ghc4 = (getEssenceOfCompareToType t4)
+
+                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,tt,tt,tt,tt,tt>>
+                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
+                            Activator.CreateInstance zz
                         else null
-                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
-                    | _ ->
-                        //System.Console.WriteLine ("{0}", tyRelation)
-                        raise (Exception "invalid logic")
+                    else null
 
-                GenericSpecializeCompareTo.addTupleHandler (box tuples)
+                GenericSpecializeCompareTo.addTupleHandler (box tuplesCompareTo)
+
+//                let makeTupleComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
+//                    let concrete = def.MakeGenericType types
+//                    let instance = Activator.CreateInstance concrete
+//                    box (Delegate.CreateDelegate (GenericSpecializeCompareTo.makeCompareReturnType ty, instance, "CompareTo"))
+//
+//                let tuples (tyRelation:Type) (ty:Type) : obj =
+//                    match tyRelation with
+//                    | r when r.Equals typeof<EquivalenceRelation> ->
+//                        if ty.IsGenericType then
+//                            let tyDef = ty.GetGenericTypeDefinition ()
+//                            let tyDefArgs = ty.GetGenericArguments ()
+//                            if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_>>
+//                            elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_>>
+//                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_>>
+//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_>>
+//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_>>
+//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_>>
+//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_>>
+//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_,_>>
+//                            else null
+//                        else null
+//                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+//                    | _ ->
+//                        //System.Console.WriteLine ("{0}", tyRelation)
+//                        raise (Exception "invalid logic")
+//
+//                GenericSpecializeCompareTo.addTupleHandler (box tuples)
                 
 
             /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
@@ -2718,8 +2859,8 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultEquality tyRelation ty
                     |]
 
-                type IGetEssenceOfEqualsObj =
-                    abstract Get : unit -> obj
+                type IGetEssenceOfEqualsType =
+                    abstract Get : unit -> Type
                             
                 type Function<'relation, 'a>() =
                     static let func : Specializations.IEssenceOfEquals<'a> =
@@ -2729,8 +2870,8 @@ namespace Microsoft.FSharp.Core
 
                     static member Func = func
 
-                    interface IGetEssenceOfEqualsObj with
-                        member __.Get () = box func
+                    interface IGetEssenceOfEqualsType with
+                        member __.Get () = func.GetType ()
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -3125,8 +3266,8 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultGetHashCode t
                     |]
                             
-                type IGetEssenceOfGetHashCodeObj =
-                    abstract Get : unit -> obj
+                type IGetEssenceOfGetHashCodeType =
+                    abstract Get : unit -> Type
                             
                 type Function<'a>() =
                     static let func : Specializations.IEssenceOfGetHashCode<'a> =
@@ -3136,8 +3277,8 @@ namespace Microsoft.FSharp.Core
 
                     static member Func = func
 
-                    interface IGetEssenceOfGetHashCodeObj with
-                        member __.Get () = box func
+                    interface IGetEssenceOfGetHashCodeType with
+                        member __.Get () = func.GetType ()
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
@@ -3498,25 +3639,18 @@ namespace Microsoft.FSharp.Core
                     else null
 *)
                 
-                let getEssenceOfGetHashCodeObj ty =
+                let getEssenceOfGetHashCodeType ty =
                     let x = typedefof<GenericSpecializeHash.Function<_>>
                     let o = x.MakeGenericType [|ty|]
                     match Activator.CreateInstance o with
-                    | :? GenericSpecializeHash.IGetEssenceOfGetHashCodeObj as getter -> getter.Get ()
+                    | :? GenericSpecializeHash.IGetEssenceOfGetHashCodeType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
-                let getEssenceOfEqualsObj ty =
+                let getEssenceOfEqualsType ty =
                     let x = typedefof<GenericSpecializeEquals.Function<_,_>>
                     let o = x.MakeGenericType [|typeof<EquivalenceRelation>; ty|]
                     match Activator.CreateInstance o with
-                    | :? GenericSpecializeEquals.IGetEssenceOfEqualsObj as getter -> getter.Get ()
-                    | _ -> raise (Exception "invalid logic")
-
-                let getEssenceOfCompareToObj ty =
-                    let x = typedefof<GenericSpecializeCompareTo.Function<_,_>>
-                    let o = x.MakeGenericType [|typeof<EquivalenceRelation>; ty|]
-                    match Activator.CreateInstance o with
-                    | :? GenericSpecializeCompareTo.IGetEssenceOfComparerObj as getter -> getter.Get ()
+                    | :? GenericSpecializeEquals.IGetEssenceOfEqualsType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
                 type t = Specializations.GetHashCodeTypes.Int32
@@ -3527,7 +3661,7 @@ namespace Microsoft.FSharp.Core
                         let tyDefArgs = ty.GetGenericArguments ()
                         if tyDef.Equals typedefof<Tuple<_>>       then
                             let t0 = (get tyDefArgs 0)
-                            let ghc0 = (getEssenceOfGetHashCodeObj t0).GetType ()
+                            let ghc0 = (getEssenceOfGetHashCodeType t0)
 
                             let tt = typedefof<TupleEssenceOfGetHashCode<int,t>>
                             let zz = tt.MakeGenericType [| t0; ghc0; |] 
@@ -3535,8 +3669,8 @@ namespace Microsoft.FSharp.Core
                         elif tyDef.Equals typedefof<Tuple<_,_>>       then
                             let t0 = (get tyDefArgs 0)
                             let t1 = (get tyDefArgs 1)
-                            let ghc0 = (getEssenceOfGetHashCodeObj t0).GetType ()
-                            let ghc1 = (getEssenceOfGetHashCodeObj t1).GetType ()
+                            let ghc0 = (getEssenceOfGetHashCodeType t0)
+                            let ghc1 = (getEssenceOfGetHashCodeType t1)
 
                             let tt = typedefof<TupleEssenceOfGetHashCode<int,int,t,t>>
                             let zz = tt.MakeGenericType [| t0; t1; ghc0; ghc1 |] 
@@ -3545,9 +3679,9 @@ namespace Microsoft.FSharp.Core
                             let t0 = (get tyDefArgs 0)
                             let t1 = (get tyDefArgs 1)
                             let t2 = (get tyDefArgs 2)
-                            let ghc0 = (getEssenceOfGetHashCodeObj t0).GetType ()
-                            let ghc1 = (getEssenceOfGetHashCodeObj t1).GetType ()
-                            let ghc2 = (getEssenceOfGetHashCodeObj t2).GetType ()
+                            let ghc0 = (getEssenceOfGetHashCodeType t0)
+                            let ghc1 = (getEssenceOfGetHashCodeType t1)
+                            let ghc2 = (getEssenceOfGetHashCodeType t2)
 
                             let tt = typedefof<TupleEssenceOfGetHashCode<int,int,int,t,t,t>>
                             let zz = tt.MakeGenericType [| t0; t1; t2; ghc0; ghc1; ghc2 |] 
@@ -3557,10 +3691,10 @@ namespace Microsoft.FSharp.Core
                             let t1 = (get tyDefArgs 1)
                             let t2 = (get tyDefArgs 2)
                             let t3 = (get tyDefArgs 3)
-                            let ghc0 = (getEssenceOfGetHashCodeObj t0).GetType ()
-                            let ghc1 = (getEssenceOfGetHashCodeObj t1).GetType ()
-                            let ghc2 = (getEssenceOfGetHashCodeObj t2).GetType ()
-                            let ghc3 = (getEssenceOfGetHashCodeObj t3).GetType ()
+                            let ghc0 = (getEssenceOfGetHashCodeType t0)
+                            let ghc1 = (getEssenceOfGetHashCodeType t1)
+                            let ghc2 = (getEssenceOfGetHashCodeType t2)
+                            let ghc3 = (getEssenceOfGetHashCodeType t3)
 
                             let tt = typedefof<TupleEssenceOfGetHashCode<int,int,int,int,t,t,t,t>>
                             let zz = tt.MakeGenericType [| t0; t1; t2; t3; ghc0; ghc1; ghc2; ghc3 |] 
@@ -3571,11 +3705,11 @@ namespace Microsoft.FSharp.Core
                             let t2 = (get tyDefArgs 2)
                             let t3 = (get tyDefArgs 3)
                             let t4 = (get tyDefArgs 4)
-                            let ghc0 = (getEssenceOfGetHashCodeObj t0).GetType ()
-                            let ghc1 = (getEssenceOfGetHashCodeObj t1).GetType ()
-                            let ghc2 = (getEssenceOfGetHashCodeObj t2).GetType ()
-                            let ghc3 = (getEssenceOfGetHashCodeObj t3).GetType ()
-                            let ghc4 = (getEssenceOfGetHashCodeObj t4).GetType ()
+                            let ghc0 = (getEssenceOfGetHashCodeType t0)
+                            let ghc1 = (getEssenceOfGetHashCodeType t1)
+                            let ghc2 = (getEssenceOfGetHashCodeType t2)
+                            let ghc3 = (getEssenceOfGetHashCodeType t3)
+                            let ghc4 = (getEssenceOfGetHashCodeType t4)
 
                             let tt = typedefof<TupleEssenceOfGetHashCode<int,int,int,int,int,t,t,t,t,t>>
                             let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
@@ -3597,7 +3731,7 @@ namespace Microsoft.FSharp.Core
                         let tyDefArgs = ty.GetGenericArguments ()
                         if tyDef.Equals typedefof<Tuple<_>>       then
                             let t0 = (get tyDefArgs 0)
-                            let ghc0 = (getEssenceOfEqualsObj t0).GetType ()
+                            let ghc0 = (getEssenceOfEqualsType t0)
 
                             let tt = typedefof<TupleEssenceOfEquals<int,tt>>
                             let zz = tt.MakeGenericType [| t0; ghc0 |] 
@@ -3605,8 +3739,8 @@ namespace Microsoft.FSharp.Core
                         elif tyDef.Equals typedefof<Tuple<_,_>>       then
                             let t0 = (get tyDefArgs 0)
                             let t1 = (get tyDefArgs 1)
-                            let ghc0 = (getEssenceOfEqualsObj t0).GetType ()
-                            let ghc1 = (getEssenceOfEqualsObj t1).GetType ()
+                            let ghc0 = (getEssenceOfEqualsType t0)
+                            let ghc1 = (getEssenceOfEqualsType t1)
 
                             let tt = typedefof<TupleEssenceOfEquals<int,int,tt,tt>>
                             let zz = tt.MakeGenericType [| t0; t1; ghc0; ghc1 |] 
@@ -3615,9 +3749,9 @@ namespace Microsoft.FSharp.Core
                             let t0 = (get tyDefArgs 0)
                             let t1 = (get tyDefArgs 1)
                             let t2 = (get tyDefArgs 2)
-                            let ghc0 = (getEssenceOfEqualsObj t0).GetType ()
-                            let ghc1 = (getEssenceOfEqualsObj t1).GetType ()
-                            let ghc2 = (getEssenceOfEqualsObj t2).GetType ()
+                            let ghc0 = (getEssenceOfEqualsType t0)
+                            let ghc1 = (getEssenceOfEqualsType t1)
+                            let ghc2 = (getEssenceOfEqualsType t2)
 
                             let tt = typedefof<TupleEssenceOfEquals<int,int,int,tt,tt,tt>>
                             let zz = tt.MakeGenericType [| t0; t1; t2; ghc0; ghc1; ghc2 |] 
@@ -3627,10 +3761,10 @@ namespace Microsoft.FSharp.Core
                             let t1 = (get tyDefArgs 1)
                             let t2 = (get tyDefArgs 2)
                             let t3 = (get tyDefArgs 3)
-                            let ghc0 = (getEssenceOfEqualsObj t0).GetType ()
-                            let ghc1 = (getEssenceOfEqualsObj t1).GetType ()
-                            let ghc2 = (getEssenceOfEqualsObj t2).GetType ()
-                            let ghc3 = (getEssenceOfEqualsObj t3).GetType ()
+                            let ghc0 = (getEssenceOfEqualsType t0)
+                            let ghc1 = (getEssenceOfEqualsType t1)
+                            let ghc2 = (getEssenceOfEqualsType t2)
+                            let ghc3 = (getEssenceOfEqualsType t3)
 
                             let tt = typedefof<TupleEssenceOfEquals<int,int,int,int,tt,tt,tt,tt>>
                             let zz = tt.MakeGenericType [| t0; t1; t2; t3; ghc0; ghc1; ghc2; ghc3 |] 
@@ -3641,11 +3775,11 @@ namespace Microsoft.FSharp.Core
                             let t2 = (get tyDefArgs 2)
                             let t3 = (get tyDefArgs 3)
                             let t4 = (get tyDefArgs 4)
-                            let ghc0 = (getEssenceOfEqualsObj t0).GetType ()
-                            let ghc1 = (getEssenceOfEqualsObj t1).GetType ()
-                            let ghc2 = (getEssenceOfEqualsObj t2).GetType ()
-                            let ghc3 = (getEssenceOfEqualsObj t3).GetType ()
-                            let ghc4 = (getEssenceOfEqualsObj t4).GetType ()
+                            let ghc0 = (getEssenceOfEqualsType t0)
+                            let ghc1 = (getEssenceOfEqualsType t1)
+                            let ghc2 = (getEssenceOfEqualsType t2)
+                            let ghc3 = (getEssenceOfEqualsType t3)
+                            let ghc4 = (getEssenceOfEqualsType t4)
 
                             let tt = typedefof<TupleEssenceOfEquals<int,int,int,int,int,tt,tt,tt,tt,tt>>
                             let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
@@ -3679,14 +3813,14 @@ namespace Microsoft.FSharp.Core
                         Specializations.FlaconOfComparer<'a, 'comp>.Instance.Ensorcel (fsComparerER, x, y)
 
             let makeEqualityComparer (ty:Type) =
-                let eq = (TupleEquality.getEssenceOfEqualsObj ty).GetType ()
-                let ghc = (TupleEquality.getEssenceOfGetHashCodeObj ty).GetType ()
+                let eq = (TupleEquality.getEssenceOfEqualsType ty)
+                let ghc = (TupleEquality.getEssenceOfGetHashCodeType ty)
                 let equalityComparerDef = typedefof<EssenceOfEqualityComparer<int,Specializations.EqualsTypes.Int32,Specializations.GetHashCodeTypes.Int32>>
                 let equalityComparer = equalityComparerDef.MakeGenericType [| ty; eq; ghc |]
                 Activator.CreateInstance equalityComparer
 
             let makeComparer (ty:Type) =
-                let comp = (TupleEquality.getEssenceOfCompareToObj ty).GetType ()
+                let comp = (TupleComparers.getEssenceOfCompareToType ty)
                 let comparerDef = typedefof<EssenceOfComparer<int,Specializations.ComparerTypes.Int32>>
                 let comparer = comparerDef.MakeGenericType [| ty; comp |]
                 Activator.CreateInstance comparer
