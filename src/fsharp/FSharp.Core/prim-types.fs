@@ -1252,6 +1252,99 @@ namespace Microsoft.FSharp.Core
                         interface IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (c, x, y) = f.Invoke (c, x, y)
 
+                    let getPERNaNResult (comp:IComparer) =
+                        match comp with
+                        | :? GenericComparer as comp -> getPERNaNCompareToResult comp
+                        | _ -> raise (Exception "invalid logic")
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type FloatPER =
+                        interface IEssenceOfCompareTo<float> with
+                            member __.Ensorcel (c,x,y) = 
+                                if System.Double.IsNaN x || System.Double.IsNaN y
+                                    then getPERNaNResult c
+                                    else x.CompareTo y
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type Float32PER =
+                        interface IEssenceOfCompareTo<float32> with
+                            member __.Ensorcel (c,x,y) = 
+                                if System.Single.IsNaN x || System.Single.IsNaN y
+                                    then getPERNaNResult c
+                                    else x.CompareTo y
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type NullableFloatPER =
+                        interface IEssenceOfCompareTo<Nullable<float>> with
+                            member __.Ensorcel (c,x,y) = 
+                                match x.HasValue, y.HasValue with
+                                | false, false -> 0
+                                | false, _ -> -1
+                                | _, false -> +1
+                                | _ ->
+                                    if System.Double.IsNaN x.Value || System.Double.IsNaN y.Value
+                                        then getPERNaNResult c
+                                        else x.Value.CompareTo y.Value
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type NullableFloat32PER =
+                        interface IEssenceOfCompareTo<Nullable<float32>> with
+                            member __.Ensorcel (c,x,y) = 
+                                match x.HasValue, y.HasValue with
+                                | false, false -> 0
+                                | false, _ -> -1
+                                | _, false -> +1
+                                | _ ->
+                                    if System.Single.IsNaN x.Value || System.Single.IsNaN y.Value
+                                        then getPERNaNResult c
+                                        else x.Value.CompareTo y.Value
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type FloatER =
+                        interface IEssenceOfCompareTo<float> with
+                            member __.Ensorcel (_,x,y) = x.CompareTo y
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type Float32ER =
+                        interface IEssenceOfCompareTo<float32> with
+                            member __.Ensorcel (_,x,y) = x.CompareTo y
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type NullableFloatER =
+                        interface IEssenceOfCompareTo<Nullable<float>> with
+                            member __.Ensorcel (_,x,y) = 
+                                match x.HasValue, y.HasValue with
+                                | false, false -> 0
+                                | false, _ -> -1
+                                | _, false -> +1
+                                | _ -> x.Value.CompareTo y.Value
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type NullableFloat32ER =
+                        interface IEssenceOfCompareTo<Nullable<float32>> with
+                            member __.Ensorcel (_,x,y) = 
+                                match x.HasValue, y.HasValue with
+                                | false, false -> 0
+                                | false, _ -> -1
+                                | _, false -> +1
+                                | _ -> x.Value.CompareTo y.Value
+
+
+                    [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfCompareTo<bool      > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfCompareTo<sbyte     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfCompareTo<int16     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfCompareTo<int32     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfCompareTo<int64     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfCompareTo<nativeint > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfCompareTo<byte      > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfCompareTo<uint16    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfCompareTo<uint32    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfCompareTo<uint64    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfCompareTo<unativeint> with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfCompareTo<char      > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                    [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfCompareTo<string    > with member __.Ensorcel (_,x,y) = System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                    [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfCompareTo<decimal   > with member __.Ensorcel (_,x,y) = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+
                 module EqualsTypes =
                     [<Struct; NoComparison; NoEquality>]
                     type FloatPER =
@@ -1350,13 +1443,6 @@ namespace Microsoft.FSharp.Core
                 module Nullable =
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable> =
-                        member __.CompareTo (ec:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                            match x.HasValue, y.HasValue with
-                            | false, false -> 0
-                            | false, _ -> -1
-                            | _, false -> +1
-                            | _, _ -> x.Value.CompareTo (box y.Value, ec)
-
                         interface Specializations.IEssenceOfCompareTo<Nullable<'a>> with
                             member __.Ensorcel (ec:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1367,13 +1453,6 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type ComparableGeneric<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable<'a>> =
-                        member __.CompareTo (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                            match x.HasValue, y.HasValue with
-                            | false, false -> 0
-                            | false, _ -> -1
-                            | _, false -> +1
-                            | _, _ -> x.Value.CompareTo y.Value
-
                         interface Specializations.IEssenceOfCompareTo<Nullable<'a>> with
                             member __.Ensorcel (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1384,13 +1463,6 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type Comparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable> =
-                        member __.CompareTo (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                            match x.HasValue, y.HasValue with
-                            | false, false -> 0
-                            | false, _ -> -1
-                            | _, false -> +1
-                            | _, _ -> x.Value.CompareTo (box y.Value)
-
                         interface Specializations.IEssenceOfCompareTo<Nullable<'a>> with
                             member __.Ensorcel (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
@@ -1439,24 +1511,18 @@ namespace Microsoft.FSharp.Core
                 module ValueType =
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralComparable<'a when 'a : struct and 'a :> IStructuralComparable> =
-                        member __.CompareTo (ec:IComparer, x:'a, y:'a) = x.CompareTo (box y, ec)
-
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (ec:IComparer, x:'a, y:'a) =
                                 x.CompareTo (box y, ec)
 
                     [<Struct; NoComparison; NoEquality>]
                     type ComparableGeneric<'a when 'a : struct and 'a :> IComparable<'a>> =
-                        member __.CompareTo (_:IComparer, x:'a, y:'a) = x.CompareTo y
-
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 x.CompareTo y
 
                     [<Struct; NoComparison; NoEquality>]
                     type Comparable<'a when 'a : struct and 'a :> IComparable> =
-                        member __.CompareTo (_:IComparer, x:'a, y:'a) = x.CompareTo y
-
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 x.CompareTo y
@@ -1488,13 +1554,6 @@ namespace Microsoft.FSharp.Core
                 module RefType = 
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralComparable<'a when 'a : not struct and 'a : null and 'a :> IStructuralComparable> =
-                        member __.CompareTo (ec:IComparer, x:'a, y:'a) =
-                            match x, y with
-                            | null, null -> 0
-                            | null, _ -> -1
-                            | _, null -> +1
-                            | _, _ -> x.CompareTo (box y, ec)
-
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (ec:IComparer, x:'a, y:'a) =
                                 match x, y with
@@ -1505,13 +1564,6 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type ComparableGeneric<'a when 'a : not struct and 'a : null and 'a :> IComparable<'a>> =
-                        member __.CompareTo (_:IComparer, x:'a, y:'a) = 
-                            match x, y with
-                            | null, null -> 0
-                            | null, _ -> -1
-                            | _, null -> +1
-                            | _, _ -> x.CompareTo y
-
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 match x, y with
@@ -1522,13 +1574,6 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type Comparable<'a when 'a : not struct and 'a : null and 'a :> IComparable> =
-                        member __.CompareTo (_:IComparer, x:'a, y:'a) = 
-                            match x, y with
-                            | null, null -> 0
-                            | null, _ -> -1
-                            | _, null -> +1
-                            | _, _ -> x.CompareTo y
-
                         interface Specializations.IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 match x, y with
@@ -1701,10 +1746,9 @@ namespace Microsoft.FSharp.Core
                 let makeCompareReturnType ty =
                     mos.makeGenericType<Func<_,_,_,_>> [| typeof<IComparer>; ty; ty; typeof<int> |]
 
-                let makeCompareDelegate (ty:Type) (ct:Type) (def:Type) : obj =
+                let makeInstance (ct:Type) (def:Type) : obj =
                     let concrete = def.MakeGenericType [|ct|]
-                    let instance = Activator.CreateInstance concrete
-                    upcast Delegate.CreateDelegate (makeCompareReturnType ty, instance, "CompareTo")
+                    Activator.CreateInstance concrete
 
                 let mutable private tupleHandler = null
                 let addTupleHandler f =
@@ -1720,73 +1764,36 @@ namespace Microsoft.FSharp.Core
                 let floatingPointTypes (tyRelation:Type) (ty:Type) =
                     match tyRelation with
                     | r when r.Equals typeof<PartialEquivalenceRelation> ->
-                        let getPERNaNResult (comp:IComparer) =
-                            match comp with
-                            | :? GenericComparer as comp -> getPERNaNCompareToResult comp
-                            | _ -> raise (Exception "invalid logic")
-
                         match ty with
-                        | t when t.Equals typeof<float> -> box (Func<IComparer,float,float,int>(fun comp x y ->
-                            if System.Double.IsNaN x || System.Double.IsNaN y
-                                then getPERNaNResult comp
-                                else x.CompareTo y))
-                        | t when t.Equals typeof<float32> -> box (Func<IComparer,float32,float32,int>(fun comp x y ->
-                            if System.Single.IsNaN x || System.Single.IsNaN y
-                                then getPERNaNResult comp
-                                else x.CompareTo y))
-                        | t when t.Equals typeof<Nullable<float>> -> box (Func<IComparer,Nullable<float>,Nullable<float>,int>(fun comp x y ->
-                            match x.HasValue, y.HasValue with
-                            | false, false -> 0
-                            | false, _ -> -1
-                            | _, false -> +1
-                            | _ ->
-                                if System.Double.IsNaN x.Value || System.Double.IsNaN y.Value
-                                    then getPERNaNResult comp
-                                    else x.Value.CompareTo y.Value))
-                        | t when t.Equals typeof<Nullable<float32>> -> box (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun comp x y ->
-                            match x.HasValue, y.HasValue with
-                            | false, false -> 0
-                            | false, _ -> -1
-                            | _, false -> +1
-                            | _ ->
-                                if System.Single.IsNaN x.Value || System.Single.IsNaN y.Value
-                                    then getPERNaNResult comp
-                                    else x.Value.CompareTo y.Value))
+                        | t when t.Equals typeof<float>             -> box (Specializations.FlaconOfComparer<float,             Specializations.ComparerTypes.FloatPER          >.Instance)
+                        | t when t.Equals typeof<float32>           -> box (Specializations.FlaconOfComparer<float32,           Specializations.ComparerTypes.Float32PER        >.Instance)
+                        | t when t.Equals typeof<Nullable<float>>   -> box (Specializations.FlaconOfComparer<Nullable<float>,   Specializations.ComparerTypes.NullableFloatPER  >.Instance)
+                        | t when t.Equals typeof<Nullable<float32>> -> box (Specializations.FlaconOfComparer<Nullable<float32>, Specializations.ComparerTypes.NullableFloat32PER>.Instance)
                         | _ -> null
                     | r when r.Equals typeof<EquivalenceRelation> ->
                         match ty with
-                        | t when t.Equals typeof<float>             -> box (Func<IComparer,float,            float,            int>(fun _ x y -> x.CompareTo y))
-                        | t when t.Equals typeof<float32>           -> box (Func<IComparer,float32,          float32,          int>(fun _ x y -> x.CompareTo y))
-                        | t when t.Equals typeof<Nullable<float>>   -> box (Func<IComparer,Nullable<float>,  Nullable<float>,  int>(fun _ x y ->
-                            match x.HasValue, y.HasValue with
-                            | false, false -> 0
-                            | false, _ -> -1
-                            | _, false -> +1
-                            | _ -> x.Value.CompareTo y.Value))
-                        | t when t.Equals typeof<Nullable<float32>> -> box (Func<IComparer,Nullable<float32>,Nullable<float32>,int>(fun _ x y ->
-                            match x.HasValue, y.HasValue with
-                            | false, false -> 0
-                            | false, _ -> -1
-                            | _, false -> +1
-                            | _ -> x.Value.CompareTo y.Value))
+                        | t when t.Equals typeof<float>             -> box (Specializations.FlaconOfComparer<float,             Specializations.ComparerTypes.FloatER          >.Instance)
+                        | t when t.Equals typeof<float32>           -> box (Specializations.FlaconOfComparer<float32,           Specializations.ComparerTypes.Float32ER        >.Instance)
+                        | t when t.Equals typeof<Nullable<float>>   -> box (Specializations.FlaconOfComparer<Nullable<float>,   Specializations.ComparerTypes.NullableFloatER  >.Instance)
+                        | t when t.Equals typeof<Nullable<float32>> -> box (Specializations.FlaconOfComparer<Nullable<float32>, Specializations.ComparerTypes.NullableFloat32ER>.Instance)
                         | _ -> null
                     | _ -> raise (Exception "invalid logic")
 
                 let standardTypes (t:Type) : obj =
-                    if   t.Equals typeof<bool>       then box (Func<IComparer,bool      ,bool      ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    elif t.Equals typeof<sbyte>      then box (Func<IComparer,sbyte     ,sbyte     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    elif t.Equals typeof<int16>      then box (Func<IComparer,int16     ,int16     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    elif t.Equals typeof<int32>      then box (Func<IComparer,int32     ,int32     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    elif t.Equals typeof<int64>      then box (Func<IComparer,int64     ,int64     ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    elif t.Equals typeof<nativeint>  then box (Func<IComparer,nativeint ,nativeint ,int>(fun _ x y -> if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)))
-                    elif t.Equals typeof<byte>       then box (Func<IComparer,byte      ,byte      ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    elif t.Equals typeof<uint16>     then box (Func<IComparer,uint16    ,uint16    ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    elif t.Equals typeof<uint32>     then box (Func<IComparer,uint32    ,uint32    ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    elif t.Equals typeof<uint64>     then box (Func<IComparer,uint64    ,uint64    ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    elif t.Equals typeof<unativeint> then box (Func<IComparer,unativeint,unativeint,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    elif t.Equals typeof<char>       then box (Func<IComparer,char      ,char      ,int>(fun _ x y -> if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)))
-                    elif t.Equals typeof<string>     then box (Func<IComparer,string    ,string    ,int>(fun _ x y -> System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))))
-                    elif t.Equals typeof<decimal>    then box (Func<IComparer,decimal   ,decimal   ,int>(fun _ x y -> System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))))
+                    if   t.Equals typeof<bool>       then box (Specializations.FlaconOfComparer<bool      , Specializations.ComparerTypes.Bool      >.Instance)
+                    elif t.Equals typeof<sbyte>      then box (Specializations.FlaconOfComparer<sbyte     , Specializations.ComparerTypes.Sbyte     >.Instance)
+                    elif t.Equals typeof<int16>      then box (Specializations.FlaconOfComparer<int16     , Specializations.ComparerTypes.Int16     >.Instance)
+                    elif t.Equals typeof<int32>      then box (Specializations.FlaconOfComparer<int32     , Specializations.ComparerTypes.Int32     >.Instance)
+                    elif t.Equals typeof<int64>      then box (Specializations.FlaconOfComparer<int64     , Specializations.ComparerTypes.Int64     >.Instance)
+                    elif t.Equals typeof<nativeint>  then box (Specializations.FlaconOfComparer<nativeint , Specializations.ComparerTypes.Nativeint >.Instance)
+                    elif t.Equals typeof<byte>       then box (Specializations.FlaconOfComparer<byte      , Specializations.ComparerTypes.Byte      >.Instance)
+                    elif t.Equals typeof<uint16>     then box (Specializations.FlaconOfComparer<uint16    , Specializations.ComparerTypes.Uint16    >.Instance)
+                    elif t.Equals typeof<uint32>     then box (Specializations.FlaconOfComparer<uint32    , Specializations.ComparerTypes.Uint32    >.Instance)
+                    elif t.Equals typeof<uint64>     then box (Specializations.FlaconOfComparer<uint64    , Specializations.ComparerTypes.Uint64    >.Instance)
+                    elif t.Equals typeof<unativeint> then box (Specializations.FlaconOfComparer<unativeint, Specializations.ComparerTypes.Unativeint>.Instance)
+                    elif t.Equals typeof<char>       then box (Specializations.FlaconOfComparer<char      , Specializations.ComparerTypes.Char      >.Instance)
+                    elif t.Equals typeof<string>     then box (Specializations.FlaconOfComparer<string    , Specializations.ComparerTypes.String    >.Instance)
+                    elif t.Equals typeof<decimal>    then box (Specializations.FlaconOfComparer<decimal   , Specializations.ComparerTypes.Decimal   >.Instance)
                     else null
 
                 let compilerGenerated tyRelation ty =
@@ -1794,26 +1801,27 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<EquivalenceRelation> ->
                         if mos.hasFSharpCompilerGeneratedComparison ty then
                             if ty.IsValueType
-                                then makeCompareDelegate ty ty Exemplars.valueTypeComparableGeneric
-                                else makeCompareDelegate ty ty Exemplars.refTypeComparableGeneric
+                                then makeInstance ty Exemplars.valueTypeComparableGeneric
+                                else makeInstance ty Exemplars.refTypeComparableGeneric
                         else null
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
                 type GenericComparerObj<'a>() =
-                    member __.CompareTo (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
+                    interface Specializations.IEssenceOfCompareTo<'a> with
+                        member __.Ensorcel (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
 
                 let arrays (t:Type) : obj =
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
                         // TODO: Future; for now just default back to previous functionality
-                        makeCompareDelegate t t typedefof<GenericComparerObj<_>>
+                        makeInstance t typedefof<GenericComparerObj<_>>
                     else null
 
                 let nullableType (t:Type) : obj =
                     if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
                         let underlying = get (t.GetGenericArguments()) 0
                         let comparableGeneric = mos.makeComparableType underlying
-                        let make = makeCompareDelegate t underlying
+                        let make = makeInstance underlying
                         
                         if typeof<IStructuralComparable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralComparable
                         elif comparableGeneric.IsAssignableFrom underlying           then make Exemplars.nullableComparableGeneric
@@ -1821,7 +1829,7 @@ namespace Microsoft.FSharp.Core
                     else null
 
                 let comparisonInterfaces (t:Type) : obj =
-                    let make = makeCompareDelegate t t
+                    let make = makeInstance t
                     let comparableGeneric = mos.makeComparableType t
 
                     if   t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralComparable
@@ -1837,11 +1845,11 @@ namespace Microsoft.FSharp.Core
                     else null
 
                 let defaultCompare ty =
-                    makeCompareDelegate ty ty typedefof<GenericComparerObj<_>>
+                    makeInstance ty typedefof<GenericComparerObj<_>>
 
                 let createCompareDelegate (tyRelation:Type) (ty:Type) : obj =
                     mos.takeFirstNonNull [|
-                        fun () -> tuples tyRelation ty
+                        //fun () -> tuples tyRelation ty
                         fun () -> floatingPointTypes tyRelation ty
                         fun () -> standardTypes ty
                         fun () -> compilerGenerated tyRelation ty
@@ -1855,7 +1863,7 @@ namespace Microsoft.FSharp.Core
                     abstract Get : unit -> obj
 
                 type Function<'relation, 'a>() =
-                    static let func : Func<IComparer,'a, 'a, int> =
+                    static let func : Specializations.IEssenceOfCompareTo<'a> =
                         match createCompareDelegate typeof<'relation> typeof<'a> with
                         | null -> raise (Exception "invalid logic")
                         | f -> unboxPrim f
@@ -1866,7 +1874,7 @@ namespace Microsoft.FSharp.Core
                         member __.Get () = box func
 
             let inline GenericComparisonWithERIntrinsic_inline (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Invoke (comp, x, y)            
+                GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Ensorcel (comp, x, y)            
 
             /// Compare two values of the same generic type, using "comp".
             //
@@ -1879,8 +1887,8 @@ namespace Microsoft.FSharp.Core
                 | :? GenericComparer as info ->
                     match info.ComparerType with
                     | ComparerType.ER     -> eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline comp x y)
-                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Invoke (comp, x, y))
-                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Invoke (comp, x, y))
+                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
+                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
                     | _ -> raise (Exception "invalid logic")
                 | c when obj.ReferenceEquals (c, Comparer<'T>.Default)   ->
                     eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
@@ -2078,7 +2086,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
-                eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Invoke (fsComparerER, x, y))
+                eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Ensorcel (fsComparerER, x, y))
 
             /// Generic less-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
