@@ -1247,11 +1247,6 @@ namespace Microsoft.FSharp.Core
 
 
                 module ComparerTypes =
-                    [<Sealed>]
-                    type FromFunc<'a>(f:Func<IComparer,'a,'a,int>) =
-                        interface IEssenceOfCompareTo<'a> with
-                            member __.Ensorcel (c, x, y) = f.Invoke (c, x, y)
-
                     let getPERNaNResult (comp:IComparer) =
                         match comp with
                         | :? GenericComparer as comp -> getPERNaNCompareToResult comp
@@ -1753,9 +1748,6 @@ namespace Microsoft.FSharp.Core
                     Activator.CreateInstance concreteCompositeEssenceType
 
             module GenericSpecializeCompareTo =
-                let makeCompareReturnType ty =
-                    mos.makeGenericType<Func<_,_,_,_>> [| typeof<IComparer>; ty; ty; typeof<int> |]
-
                 let makeInstance (ct:Type) (def:Type) : obj =
                     let concrete = def.MakeGenericType [|ct|]
                     Activator.CreateInstance concrete
@@ -2128,9 +2120,8 @@ namespace Microsoft.FSharp.Core
                                 eliminate_tail_call_int (Specializations.FlaconOfComparer<'h, 'comp8>.Instance.Ensorcel (comparer, x.Rest, y.Rest))
 
                 let getEssenceOfCompareToType (tyRelation:Type) (ty:Type) =
-                    let genericSpecializeCompareToDef = typedefof<GenericSpecializeCompareTo.Function<_,_>>
-                    let concreteSpecializeCompareTo = genericSpecializeCompareToDef.MakeGenericType [|tyRelation; ty|]
-                    match Activator.CreateInstance concreteSpecializeCompareTo with
+                    let compareTo = mos.makeGenericType<GenericSpecializeCompareTo.Function<_,_>> [|tyRelation; ty|]
+                    match Activator.CreateInstance compareTo with
                     | :? GenericSpecializeCompareTo.IGetEssenceOfComparerType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
@@ -2661,9 +2652,6 @@ namespace Microsoft.FSharp.Core
 
 #if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
             module GenericSpecializeEquals =
-                let makeEqualsReturnType ty =
-                    mos.makeGenericType<Func<_,_,_,_>> [| typeof<IEqualityComparer>; ty; ty; typeof<bool> |]
-
                 let makeInstance (ct:Type) (def:Type) : obj =
                     let concrete = def.MakeGenericType [|ct|]
                     Activator.CreateInstance concrete
@@ -3108,9 +3096,6 @@ namespace Microsoft.FSharp.Core
             // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
             // for fallback to that funciton. 
             module GenericSpecializeHash =
-                let makeGetHashCodeReturnType ty =
-                    mos.makeGenericType<Func<_,_,_>> [| typeof<IEqualityComparer>; ty; typeof<int> |]
-
                 let makeInstance (ct:Type) (def:Type) : obj =
                     let concrete = def.MakeGenericType [|ct|]
                     Activator.CreateInstance concrete
@@ -3585,16 +3570,14 @@ namespace Microsoft.FSharp.Core
                             eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
                 
                 let getEssenceOfGetHashCodeType ty =
-                    let genericSpecializeHashDef = typedefof<GenericSpecializeHash.Function<_>>
-                    let concreteSpecializeHash = genericSpecializeHashDef.MakeGenericType [|ty|]
-                    match Activator.CreateInstance concreteSpecializeHash with
+                    let getHashCode = mos.makeGenericType<GenericSpecializeHash.Function<_>> [|ty|]
+                    match Activator.CreateInstance getHashCode with
                     | :? GenericSpecializeHash.IGetEssenceOfGetHashCodeType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
                 let getEssenceOfEqualsType tyRelation ty =
-                    let genericSpecializeEqualsDef = typedefof<GenericSpecializeEquals.Function<_,_>>
-                    let concreteSpecializeEquals = genericSpecializeEqualsDef.MakeGenericType [| tyRelation; ty|]
-                    match Activator.CreateInstance concreteSpecializeEquals with
+                    let equals = mos.makeGenericType<GenericSpecializeEquals.Function<_,_>> [| tyRelation; ty|]
+                    match Activator.CreateInstance equals with
                     | :? GenericSpecializeEquals.IGetEssenceOfEqualsType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
