@@ -1742,6 +1742,16 @@ namespace Microsoft.FSharp.Core
                             | result -> result
                     takeFirst 0
 
+                let compositeCreator (getEssence:Type->Type) (args:Type[]) (genericCompositeEssenceType:Type) =
+                    let compositeArgs : Type[] = unboxPrim (Array.CreateInstance (typeof<Type>, args.Length*2))
+                    for i = 0 to args.Length-1 do
+                        let argType = get args i
+                        let essenceType = getEssence argType
+                        compositeArgs.SetValue (argType, i)
+                        compositeArgs.SetValue (essenceType, i+args.Length)
+                    let concreteCompositeEssenceType = genericCompositeEssenceType.MakeGenericType compositeArgs
+                    Activator.CreateInstance concreteCompositeEssenceType
+
             module GenericSpecializeCompareTo =
                 let makeCompareReturnType ty =
                     mos.makeGenericType<Func<_,_,_,_>> [| typeof<IComparer>; ty; ty; typeof<int> |]
@@ -2127,100 +2137,24 @@ namespace Microsoft.FSharp.Core
                     | :? GenericSpecializeCompareTo.IGetEssenceOfComparerType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
-                type tt = Specializations.ComparerTypes.Int32
-
+                type t = Specializations.ComparerTypes.Int32
                 let tuplesCompareTo (_relation:Type) (ty:Type) : obj =
                     if ty.IsGenericType && _relation.Equals typeof<EquivalenceRelation> then
                         let tyDef = ty.GetGenericTypeDefinition ()
                         let tyDefArgs = ty.GetGenericArguments ()
-                        if tyDef.Equals typedefof<Tuple<_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let ghc0 = (getEssenceOfCompareToType t0)
-
-                            let tt = typedefof<TupleEssenceOfCompareTo<int,tt>>
-                            let zz = tt.MakeGenericType [| t0; ghc0 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let ghc0 = (getEssenceOfCompareToType t0)
-                            let ghc1 = (getEssenceOfCompareToType t1)
-
-                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; ghc0; ghc1 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let ghc0 = (getEssenceOfCompareToType t0)
-                            let ghc1 = (getEssenceOfCompareToType t1)
-                            let ghc2 = (getEssenceOfCompareToType t2)
-
-                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,int,tt,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; ghc0; ghc1; ghc2 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let t3 = (get tyDefArgs 3)
-                            let ghc0 = (getEssenceOfCompareToType t0)
-                            let ghc1 = (getEssenceOfCompareToType t1)
-                            let ghc2 = (getEssenceOfCompareToType t2)
-                            let ghc3 = (getEssenceOfCompareToType t3)
-
-                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,int,int,tt,tt,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; ghc0; ghc1; ghc2; ghc3 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let t3 = (get tyDefArgs 3)
-                            let t4 = (get tyDefArgs 4)
-                            let ghc0 = (getEssenceOfCompareToType t0)
-                            let ghc1 = (getEssenceOfCompareToType t1)
-                            let ghc2 = (getEssenceOfCompareToType t2)
-                            let ghc3 = (getEssenceOfCompareToType t3)
-                            let ghc4 = (getEssenceOfCompareToType t4)
-
-                            let tt = typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,tt,tt,tt,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
-                            Activator.CreateInstance zz
+                        let create = mos.compositeCreator getEssenceOfCompareToType tyDefArgs
+                        if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TupleEssenceOfCompareTo<int,t>> 
+                        elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TupleEssenceOfCompareTo<int,int,t,t>> 
+                        elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TupleEssenceOfCompareTo<int,int,int,t,t,t>> 
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,t,t,t,t>> 
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,t,t,t,t,t>> 
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,int,t,t,t,t,t,t>> 
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,int,int,t,t,t,t,t,t,t>> 
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>> 
                         else null
                     else null
 
                 GenericSpecializeCompareTo.addTupleHandler (box tuplesCompareTo)
-
-//                let makeTupleComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
-//                    let concrete = def.MakeGenericType types
-//                    let instance = Activator.CreateInstance concrete
-//                    box (Delegate.CreateDelegate (GenericSpecializeCompareTo.makeCompareReturnType ty, instance, "CompareTo"))
-//
-//                let tuples (tyRelation:Type) (ty:Type) : obj =
-//                    match tyRelation with
-//                    | r when r.Equals typeof<EquivalenceRelation> ->
-//                        if ty.IsGenericType then
-//                            let tyDef = ty.GetGenericTypeDefinition ()
-//                            let tyDefArgs = ty.GetGenericArguments ()
-//                            if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_>>
-//                            elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_>>
-//                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_>>
-//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_>>
-//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_>>
-//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_>>
-//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_>>
-//                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleComparerDelegate ty tyDefArgs typedefof<TupleERComparer<_,_,_,_,_,_,_,_>>
-//                            else null
-//                        else null
-//                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
-//                    | _ ->
-//                        //System.Console.WriteLine ("{0}", tyRelation)
-//                        raise (Exception "invalid logic")
-//
-//                GenericSpecializeCompareTo.addTupleHandler (box tuples)
-                
 
             /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
             //
@@ -3332,15 +3266,6 @@ namespace Microsoft.FSharp.Core
                                 Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1)
 
                 [<Struct; NoComparison; NoEquality>]
-                type TupleEssenceOfGetHashCode<'a,
-                                                 'ghc1
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)> =
-                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a>> with
-                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            eliminate_tail_call_int a
-
-                [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,
                                              'eq1,'eq2
                                                 when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
@@ -3355,17 +3280,6 @@ namespace Microsoft.FSharp.Core
                                 | false -> false
                                 | _ ->
                                 Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2)
-
-                [<Struct; NoComparison; NoEquality>]
-                type TupleEssenceOfGetHashCode<'a,'b,
-                                                 'ghc1,'ghc2
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)> =
-                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b>> with
-                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            eliminate_tail_call_int (cth a b)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,
@@ -3386,19 +3300,6 @@ namespace Microsoft.FSharp.Core
                                 | false -> false
                                 | _ ->
                                 Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3)
-
-                [<Struct; NoComparison; NoEquality>]
-                type TupleEssenceOfGetHashCode<'a,'b,'c,
-                                                 'ghc1,'ghc2,'ghc3
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)> =
-                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c>> with
-                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
-                            eliminate_tail_call_int (cth (cth a b) c)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,'d,
@@ -3425,28 +3326,14 @@ namespace Microsoft.FSharp.Core
                                 Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4)
 
                 [<Struct; NoComparison; NoEquality>]
-                type TupleEssenceOfGetHashCode<'a,'b,'c,'d,
-                                                 'ghc1,'ghc2,'ghc3,'ghc4
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
-                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)> =
-                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d>> with
-                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
-                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
-                            eliminate_tail_call_int (cth (cth a b) (cth c d))
-
-                [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,'d,'e,
                                              'eq1,'eq2,'eq3,'eq4,'eq5
                                                 when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
                                                  and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
                                                  and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
                                                  and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
-                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)> =
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
+                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
                             match x, y with
@@ -3468,6 +3355,165 @@ namespace Microsoft.FSharp.Core
                                 Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5)
 
                 [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfEquals<'a,'b,'c,'d,'e,'f,
+                                             'eq1,'eq2,'eq3,'eq4,'eq5,'eq6
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
+                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6)
+                                                                                                                                    > =
+                    interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5) with
+                                | false -> false
+                                | _ ->
+                                Specializations.FlaconOfEquals<'f, 'eq6>.Instance.Ensorcel (ec, x.Item6, y.Item6)
+
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfEquals<'a,'b,'c,'d,'e,'f,'g,
+                                             'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
+                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6)
+                                                 and 'eq7 :> Specializations.IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7)
+                                                                                                                                    > =
+                    interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'f, 'eq6>.Instance.Ensorcel (ec, x.Item6, y.Item6) with
+                                | false -> false
+                                | _ ->
+                                Specializations.FlaconOfEquals<'g, 'eq7>.Instance.Ensorcel (ec, x.Item7, y.Item7)
+
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfEquals<'a,'b,'c,'d,'e,'f,'g,'h,
+                                             'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7,'eq8
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
+                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6)
+                                                 and 'eq7 :> Specializations.IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7)
+                                                 and 'eq8 :> Specializations.IEssenceOfEquals<'h> and 'eq8 : (new : unit -> 'eq8)
+                                                                                                                                    > =
+                    interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'f, 'eq6>.Instance.Ensorcel (ec, x.Item6, y.Item6) with
+                                | false -> false
+                                | _ ->
+                                match Specializations.FlaconOfEquals<'g, 'eq7>.Instance.Ensorcel (ec, x.Item7, y.Item7) with
+                                | false -> false
+                                | _ ->
+                                Specializations.FlaconOfEquals<'h, 'eq8>.Instance.Ensorcel (ec, x.Rest, y.Rest)
+
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfGetHashCode<'a,
+                                                 'ghc1
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)> =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            eliminate_tail_call_int a
+
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfGetHashCode<'a,'b,
+                                                 'ghc1,'ghc2
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)> =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            eliminate_tail_call_int (cth a b)
+
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfGetHashCode<'a,'b,'c,
+                                                 'ghc1,'ghc2,'ghc3
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)> =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
+                            eliminate_tail_call_int (cth (cth a b) c)
+
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfGetHashCode<'a,'b,'c,'d,
+                                                 'ghc1,'ghc2,'ghc3,'ghc4
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)> =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
+                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
+                            eliminate_tail_call_int (cth (cth a b) (cth c d))
+
+                [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,
                                                  'ghc1,'ghc2,'ghc3,'ghc4,'ghc5
                                                     when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
@@ -3484,160 +3530,71 @@ namespace Microsoft.FSharp.Core
                             let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
                             eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) e)
 
-                type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f>() =
-                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
-                        match x, y with
-                        | null, null -> true
-                        | null, _ | _, null -> false
-                        | _, _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item5 y.Item5 with
-                            | false -> false
-                            | _ ->
-                            GenericEqualityERIntrinsic_inline x.Item6 y.Item6
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,'f,
+                                                 'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)
+                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6)
+                                                                                                                                                > =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
+                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
+                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
+                            let f = Specializations.FlaconOfGetHashCode<'f,'ghc6>.Instance.Ensorcel (iec, x.Item6)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth e f))
 
-                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>) =
-                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
-                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
-                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
-                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
-                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
-                        let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
-                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth e f))
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,'f,'g,
+                                                 'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)
+                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6)
+                                                     and 'ghc7 :> Specializations.IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7)
+                                                                                                                                                > =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
+                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
+                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
+                            let f = Specializations.FlaconOfGetHashCode<'f,'ghc6>.Instance.Ensorcel (iec, x.Item6)
+                            let g = Specializations.FlaconOfGetHashCode<'g,'ghc7>.Instance.Ensorcel (iec, x.Item7)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) g))
 
-                type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f,'g>() =
-                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
-                        match x, y with
-                        | null, null -> true
-                        | null, _ | _, null -> false
-                        | _, _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item5 y.Item5 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item6 y.Item6 with
-                            | false -> false
-                            | _ ->
-                            GenericEqualityERIntrinsic_inline x.Item7 y.Item7
-
-                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) =
-                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
-                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
-                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
-                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
-                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
-                        let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
-                        let g = GenericHashWithComparerIntrinsic_inline iec x.Item7
-                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) g))
-
-                type TupleEREqualityComparer<'a,'b,'c,'d,'e,'f,'g,'h>() =
-                    member __.Equals (_:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
-                        match x, y with
-                        | null, null -> true
-                        | null, _ | _, null -> false
-                        | _, _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item1 y.Item1 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item2 y.Item2 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item3 y.Item3 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item4 y.Item4 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item5 y.Item5 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item6 y.Item6 with
-                            | false -> false
-                            | _ ->
-                            match GenericEqualityERIntrinsic_inline x.Item7 y.Item7 with
-                            | false -> false
-                            | _ ->
-                            GenericEqualityERIntrinsic_inline x.Rest y.Rest
-
-                    member __.GetHashCode (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) =
-                        let a = GenericHashWithComparerIntrinsic_inline iec x.Item1
-                        let b = GenericHashWithComparerIntrinsic_inline iec x.Item2 
-                        let c = GenericHashWithComparerIntrinsic_inline iec x.Item3
-                        let d = GenericHashWithComparerIntrinsic_inline iec x.Item4 
-                        let e = GenericHashWithComparerIntrinsic_inline iec x.Item5
-                        let f = GenericHashWithComparerIntrinsic_inline iec x.Item6
-                        let g = GenericHashWithComparerIntrinsic_inline iec x.Item7
-                        let h = GenericHashWithComparerIntrinsic_inline iec x.Rest
-                        eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
-(*
-                let makeTupleEqualityComparerDelegate (ty:Type) (types:array<Type>) (def:Type) =
-                    let concrete = def.MakeGenericType types
-                    let instance = Activator.CreateInstance concrete
-                    box (Delegate.CreateDelegate (GenericSpecializeEquals.makeEqualsReturnType ty, instance, "Equals"))
-
-                let tuplesEquals (tyRelation:Type) (ty:Type) : obj =
-                    match tyRelation with
-                    | r when r.Equals typeof<EquivalenceRelation> ->
-                        if ty.IsGenericType then
-                            let tyDef = ty.GetGenericTypeDefinition ()
-                            let tyDefArgs = ty.GetGenericArguments ()
-                            if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleEqualityComparerDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_,_>>
-                            else null
-                        else null
-                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
-                    | _ ->
-                        System.Console.WriteLine ("{0}", tyRelation)
-                        raise (Exception "invalid logic")
-
-                let makeTupleGetHashCodeDelegate (ty:Type) (types:array<Type>) (def:Type) =
-                    let concrete = def.MakeGenericType types
-                    let instance = Activator.CreateInstance concrete
-                    box (Delegate.CreateDelegate (GenericSpecializeHash.makeGetHashCodeReturnType ty, instance, "GetHashCode"))
-
-                let tuplesGetHashCode (ty:Type) : obj =
-                    if ty.IsGenericType then
-                        let tyDef = ty.GetGenericTypeDefinition ()
-                        let tyDefArgs = ty.GetGenericArguments ()
-                        if   tyDef.Equals typedefof<Tuple<_>>               then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_>>
-                        elif tyDef.Equals typedefof<Tuple<_,_>>             then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_>>
-                        elif tyDef.Equals typedefof<Tuple<_,_,_>>           then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_>>
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_>>
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_>>
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_>>
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_,_,_,_>>
-                        else null
-                    else null
-*)
+                [<Struct; NoComparison; NoEquality>]
+                type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,'f,'g,'h,
+                                                 'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7,'ghc8
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)
+                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6)
+                                                     and 'ghc7 :> Specializations.IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7)
+                                                     and 'ghc8 :> Specializations.IEssenceOfGetHashCode<'h> and 'ghc8 : (new : unit -> 'ghc8)
+                                                                                                                                                > =
+                    interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) =
+                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
+                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
+                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
+                            let f = Specializations.FlaconOfGetHashCode<'f,'ghc6>.Instance.Ensorcel (iec, x.Item6)
+                            let g = Specializations.FlaconOfGetHashCode<'g,'ghc7>.Instance.Ensorcel (iec, x.Item7)
+                            let h = Specializations.FlaconOfGetHashCode<'h,'ghc8>.Instance.Ensorcel (iec, x.Rest)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
                 
                 let getEssenceOfGetHashCodeType ty =
                     let x = typedefof<GenericSpecializeHash.Function<_>>
@@ -3654,141 +3611,36 @@ namespace Microsoft.FSharp.Core
                     | _ -> raise (Exception "invalid logic")
 
                 type t = Specializations.GetHashCodeTypes.Int32
-
                 let tuplesGetHashCode (ty:Type) : obj =
                     if ty.IsGenericType then
                         let tyDef = ty.GetGenericTypeDefinition ()
                         let tyDefArgs = ty.GetGenericArguments ()
-                        if tyDef.Equals typedefof<Tuple<_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let ghc0 = (getEssenceOfGetHashCodeType t0)
-
-                            let tt = typedefof<TupleEssenceOfGetHashCode<int,t>>
-                            let zz = tt.MakeGenericType [| t0; ghc0; |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let ghc0 = (getEssenceOfGetHashCodeType t0)
-                            let ghc1 = (getEssenceOfGetHashCodeType t1)
-
-                            let tt = typedefof<TupleEssenceOfGetHashCode<int,int,t,t>>
-                            let zz = tt.MakeGenericType [| t0; t1; ghc0; ghc1 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let ghc0 = (getEssenceOfGetHashCodeType t0)
-                            let ghc1 = (getEssenceOfGetHashCodeType t1)
-                            let ghc2 = (getEssenceOfGetHashCodeType t2)
-
-                            let tt = typedefof<TupleEssenceOfGetHashCode<int,int,int,t,t,t>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; ghc0; ghc1; ghc2 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let t3 = (get tyDefArgs 3)
-                            let ghc0 = (getEssenceOfGetHashCodeType t0)
-                            let ghc1 = (getEssenceOfGetHashCodeType t1)
-                            let ghc2 = (getEssenceOfGetHashCodeType t2)
-                            let ghc3 = (getEssenceOfGetHashCodeType t3)
-
-                            let tt = typedefof<TupleEssenceOfGetHashCode<int,int,int,int,t,t,t,t>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; ghc0; ghc1; ghc2; ghc3 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let t3 = (get tyDefArgs 3)
-                            let t4 = (get tyDefArgs 4)
-                            let ghc0 = (getEssenceOfGetHashCodeType t0)
-                            let ghc1 = (getEssenceOfGetHashCodeType t1)
-                            let ghc2 = (getEssenceOfGetHashCodeType t2)
-                            let ghc3 = (getEssenceOfGetHashCodeType t3)
-                            let ghc4 = (getEssenceOfGetHashCodeType t4)
-
-                            let tt = typedefof<TupleEssenceOfGetHashCode<int,int,int,int,int,t,t,t,t,t>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
-                            Activator.CreateInstance zz
-
-
-                            //GenericSpecializeHash.Function<_>.Func
-                            //GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func
-                             //makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>                
+                        let create = mos.compositeCreator getEssenceOfGetHashCodeType tyDefArgs
+                        if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TupleEssenceOfGetHashCode<int,t>>
+                        elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TupleEssenceOfGetHashCode<int,int,t,t>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TupleEssenceOfGetHashCode<int,int,int,t,t,t>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<TupleEssenceOfGetHashCode<int,int,int,int,t,t,t,t>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<TupleEssenceOfGetHashCode<int,int,int,int,int,t,t,t,t,t>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<TupleEssenceOfGetHashCode<int,int,int,int,int,int,t,t,t,t,t,t>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<TupleEssenceOfGetHashCode<int,int,int,int,int,int,int,t,t,t,t,t,t,t>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<TupleEssenceOfGetHashCode<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>>
                         else null
                     else null
 
-
-                type tt = Specializations.EqualsTypes.Int32
-
+                type u = Specializations.EqualsTypes.Int32
                 let tuplesEquals (_relation:Type) (ty:Type) : obj =
                     if ty.IsGenericType && _relation.Equals typeof<EquivalenceRelation> then
                         let tyDef = ty.GetGenericTypeDefinition ()
                         let tyDefArgs = ty.GetGenericArguments ()
-                        if tyDef.Equals typedefof<Tuple<_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let ghc0 = (getEssenceOfEqualsType t0)
-
-                            let tt = typedefof<TupleEssenceOfEquals<int,tt>>
-                            let zz = tt.MakeGenericType [| t0; ghc0 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let ghc0 = (getEssenceOfEqualsType t0)
-                            let ghc1 = (getEssenceOfEqualsType t1)
-
-                            let tt = typedefof<TupleEssenceOfEquals<int,int,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; ghc0; ghc1 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let ghc0 = (getEssenceOfEqualsType t0)
-                            let ghc1 = (getEssenceOfEqualsType t1)
-                            let ghc2 = (getEssenceOfEqualsType t2)
-
-                            let tt = typedefof<TupleEssenceOfEquals<int,int,int,tt,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; ghc0; ghc1; ghc2 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let t3 = (get tyDefArgs 3)
-                            let ghc0 = (getEssenceOfEqualsType t0)
-                            let ghc1 = (getEssenceOfEqualsType t1)
-                            let ghc2 = (getEssenceOfEqualsType t2)
-                            let ghc3 = (getEssenceOfEqualsType t3)
-
-                            let tt = typedefof<TupleEssenceOfEquals<int,int,int,int,tt,tt,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; ghc0; ghc1; ghc2; ghc3 |] 
-                            Activator.CreateInstance zz
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then
-                            let t0 = (get tyDefArgs 0)
-                            let t1 = (get tyDefArgs 1)
-                            let t2 = (get tyDefArgs 2)
-                            let t3 = (get tyDefArgs 3)
-                            let t4 = (get tyDefArgs 4)
-                            let ghc0 = (getEssenceOfEqualsType t0)
-                            let ghc1 = (getEssenceOfEqualsType t1)
-                            let ghc2 = (getEssenceOfEqualsType t2)
-                            let ghc3 = (getEssenceOfEqualsType t3)
-                            let ghc4 = (getEssenceOfEqualsType t4)
-
-                            let tt = typedefof<TupleEssenceOfEquals<int,int,int,int,int,tt,tt,tt,tt,tt>>
-                            let zz = tt.MakeGenericType [| t0; t1; t2; t3; t4; ghc0; ghc1; ghc2; ghc3; ghc4 |] 
-                            Activator.CreateInstance zz
-
-
-                            //GenericSpecializeHash.Function<_>.Func
-                            //GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func
-                             //makeTupleGetHashCodeDelegate ty tyDefArgs typedefof<TupleEREqualityComparer<_,_,_,_,_>>                
+                        let create = mos.compositeCreator getEssenceOfEqualsType tyDefArgs
+                        if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TupleEssenceOfEquals<int,u>>
+                        elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TupleEssenceOfEquals<int,int,u,u>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TupleEssenceOfEquals<int,int,int,u,u,u>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<TupleEssenceOfEquals<int,int,int,int,u,u,u,u>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<TupleEssenceOfEquals<int,int,int,int,int,u,u,u,u,u>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<TupleEssenceOfEquals<int,int,int,int,int,int,u,u,u,u,u,u>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<TupleEssenceOfEquals<int,int,int,int,int,int,int,u,u,u,u,u,u,u>>
+                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<TupleEssenceOfEquals<int,int,int,int,int,int,int,int,u,u,u,u,u,u,u,u>>
                         else null
                     else null
 
