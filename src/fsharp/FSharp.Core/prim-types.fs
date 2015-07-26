@@ -1883,9 +1883,6 @@ namespace Microsoft.FSharp.Core
                     interface IGetEssenceOfComparerType with
                         member __.Get () = func.GetType ()
 
-            let inline GenericComparisonWithERIntrinsic_inline (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Ensorcel (comp, x, y)            
-
             /// Compare two values of the same generic type, using "comp".
             //
             // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
@@ -1896,7 +1893,7 @@ namespace Microsoft.FSharp.Core
                 match comp with
                 | :? GenericComparer as info ->
                     match info.ComparerType with
-                    | ComparerType.ER     -> eliminate_tail_call_int (GenericComparisonWithERIntrinsic_inline comp x y)
+                    | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
                     | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
                     | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
                     | _ -> raise (Exception "invalid logic")
@@ -2130,19 +2127,19 @@ namespace Microsoft.FSharp.Core
                                 | _ ->
                                 eliminate_tail_call_int (Specializations.FlaconOfComparer<'h, 'comp8>.Instance.Ensorcel (comparer, x.Rest, y.Rest))
 
-                let getEssenceOfCompareToType (ty:Type) =
-                    let x = typedefof<GenericSpecializeCompareTo.Function<_,_>>
-                    let o = x.MakeGenericType [|typeof<EquivalenceRelation>; ty|]
-                    match Activator.CreateInstance o with
+                let getEssenceOfCompareToType (tyRelation:Type) (ty:Type) =
+                    let genericSpecializeCompareToDef = typedefof<GenericSpecializeCompareTo.Function<_,_>>
+                    let concreteSpecializeCompareTo = genericSpecializeCompareToDef.MakeGenericType [|tyRelation; ty|]
+                    match Activator.CreateInstance concreteSpecializeCompareTo with
                     | :? GenericSpecializeCompareTo.IGetEssenceOfComparerType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
                 type t = Specializations.ComparerTypes.Int32
-                let tuplesCompareTo (_relation:Type) (ty:Type) : obj =
-                    if ty.IsGenericType && _relation.Equals typeof<EquivalenceRelation> then
+                let tuplesCompareTo (tyRelation:Type) (ty:Type) : obj =
+                    if ty.IsGenericType then
                         let tyDef = ty.GetGenericTypeDefinition ()
                         let tyDefArgs = ty.GetGenericArguments ()
-                        let create = mos.compositeCreator getEssenceOfCompareToType tyDefArgs
+                        let create = mos.compositeCreator (getEssenceOfCompareToType tyRelation) tyDefArgs
                         if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TupleEssenceOfCompareTo<int,t>> 
                         elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TupleEssenceOfCompareTo<int,int,t,t>> 
                         elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TupleEssenceOfCompareTo<int,int,int,t,t,t>> 
@@ -2814,11 +2811,6 @@ namespace Microsoft.FSharp.Core
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
                 eliminate_tail_call_bool (GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (fsEqualityComparerNoHashingPER, x, y))
 
-            // used also by the tuple equality comparers
-
-            let inline GenericEqualityERIntrinsic_inline (x : 'T) (y : 'T) : bool =
-                GenericSpecializeEquals.Function<EquivalenceRelation,_>.Func.Ensorcel (fsEqualityComparerNoHashingER, x, y)
-
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
             // ER semantics is used for recursive calls when implementing .Equals(that) for structural data, see the code generated for record and union types in augment.fs
@@ -2826,7 +2818,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                eliminate_tail_call_bool (GenericEqualityERIntrinsic_inline x y)
+                eliminate_tail_call_bool (GenericSpecializeEquals.Function<EquivalenceRelation,_>.Func.Ensorcel (fsEqualityComparerNoHashingER, x, y))
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -3227,10 +3219,6 @@ namespace Microsoft.FSharp.Core
                 let iec = CountLimitedHasherPER limit
                 eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x))
 
-            // used by tuples
-            let inline GenericHashWithComparerIntrinsic_inline (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x)
-
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
             // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
@@ -3239,7 +3227,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                eliminate_tail_call_int (GenericHashWithComparerIntrinsic_inline iec x)
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x))
 
 
 
@@ -3597,16 +3585,16 @@ namespace Microsoft.FSharp.Core
                             eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
                 
                 let getEssenceOfGetHashCodeType ty =
-                    let x = typedefof<GenericSpecializeHash.Function<_>>
-                    let o = x.MakeGenericType [|ty|]
-                    match Activator.CreateInstance o with
+                    let genericSpecializeHashDef = typedefof<GenericSpecializeHash.Function<_>>
+                    let concreteSpecializeHash = genericSpecializeHashDef.MakeGenericType [|ty|]
+                    match Activator.CreateInstance concreteSpecializeHash with
                     | :? GenericSpecializeHash.IGetEssenceOfGetHashCodeType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
-                let getEssenceOfEqualsType ty =
-                    let x = typedefof<GenericSpecializeEquals.Function<_,_>>
-                    let o = x.MakeGenericType [|typeof<EquivalenceRelation>; ty|]
-                    match Activator.CreateInstance o with
+                let getEssenceOfEqualsType tyRelation ty =
+                    let genericSpecializeEqualsDef = typedefof<GenericSpecializeEquals.Function<_,_>>
+                    let concreteSpecializeEquals = genericSpecializeEqualsDef.MakeGenericType [| tyRelation; ty|]
+                    match Activator.CreateInstance concreteSpecializeEquals with
                     | :? GenericSpecializeEquals.IGetEssenceOfEqualsType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
@@ -3628,11 +3616,11 @@ namespace Microsoft.FSharp.Core
                     else null
 
                 type u = Specializations.EqualsTypes.Int32
-                let tuplesEquals (_relation:Type) (ty:Type) : obj =
-                    if ty.IsGenericType && _relation.Equals typeof<EquivalenceRelation> then
+                let tuplesEquals (tyRelation:Type) (ty:Type) : obj =
+                    if ty.IsGenericType then
                         let tyDef = ty.GetGenericTypeDefinition ()
                         let tyDefArgs = ty.GetGenericArguments ()
-                        let create = mos.compositeCreator getEssenceOfEqualsType tyDefArgs
+                        let create = mos.compositeCreator (getEssenceOfEqualsType tyRelation) tyDefArgs
                         if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TupleEssenceOfEquals<int,u>>
                         elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TupleEssenceOfEquals<int,int,u,u>>
                         elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TupleEssenceOfEquals<int,int,int,u,u,u>>
@@ -3665,14 +3653,14 @@ namespace Microsoft.FSharp.Core
                         Specializations.FlaconOfComparer<'a, 'comp>.Instance.Ensorcel (fsComparerER, x, y)
 
             let makeEqualityComparer (ty:Type) =
-                let eq = (TupleEquality.getEssenceOfEqualsType ty)
-                let ghc = (TupleEquality.getEssenceOfGetHashCodeType ty)
+                let eq = TupleEquality.getEssenceOfEqualsType typeof<PartialEquivalenceRelation> ty
+                let ghc = TupleEquality.getEssenceOfGetHashCodeType ty
                 let equalityComparerDef = typedefof<EssenceOfEqualityComparer<int,Specializations.EqualsTypes.Int32,Specializations.GetHashCodeTypes.Int32>>
                 let equalityComparer = equalityComparerDef.MakeGenericType [| ty; eq; ghc |]
                 Activator.CreateInstance equalityComparer
 
             let makeComparer (ty:Type) =
-                let comp = (TupleComparers.getEssenceOfCompareToType ty)
+                let comp = TupleComparers.getEssenceOfCompareToType typeof<EquivalenceRelation> ty
                 let comparerDef = typedefof<EssenceOfComparer<int,Specializations.ComparerTypes.Int32>>
                 let comparer = comparerDef.MakeGenericType [| ty; comp |]
                 Activator.CreateInstance comparer
