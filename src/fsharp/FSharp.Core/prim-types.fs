@@ -402,7 +402,9 @@ namespace Microsoft.FSharp.Core
         type System.Type with
             member inline this.IsGenericType = this.GetTypeInfo().IsGenericType
             member inline this.IsValueType = this.GetTypeInfo().IsValueType
+            member inline this.IsSealed = this.GetTypeInfo().IsSealed
             member inline this.IsAssignableFrom(otherTy : Type) = this.GetTypeInfo().IsAssignableFrom(otherTy.GetTypeInfo())
+            member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
             member inline this.GetProperty(name) = this.GetRuntimeProperty(name)
             member inline this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
             member inline this.GetCustomAttributes(attrTy : Type, inherits : bool) : obj[] = 
@@ -411,7 +413,6 @@ namespace Microsoft.FSharp.Core
     open PrimReflectionAdapters
 
 #endif
-
 
     module BasicInlinedOperations =  
         let inline unboxPrim<'T>(x:obj) = (# "unbox.any !0" type ('T) x : 'T #)
@@ -1213,7 +1214,6 @@ namespace Microsoft.FSharp.Core
                 | true -> true
                 | false -> false
 
-#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
             module Specializations =
                 type IEssenceOfCompareTo<'a> =
                     abstract Ensorcel : IComparer * 'a * 'a -> int
@@ -1672,6 +1672,19 @@ namespace Microsoft.FSharp.Core
             type private PartialEquivalenceRelation = class end
 
             module mos =
+                let makeGenericType<'a> tys =
+                    let typedef = typedefof<'a>
+                    typedef.MakeGenericType tys
+
+                let makeEquatableType ty =
+                    makeGenericType<IEquatable<_>> [|ty|]
+
+                let makeComparableType ty =
+                    makeGenericType<IComparable<_>> [|ty|]
+
+// portable47 doesn't support reflection in the way I'm using it; maybe someone with greater understanding
+// of the configurations could provide a real solution
+#if FX_ATLEAST_40 
                 let rec private tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
                     if not (interfaceType.IsAssignableFrom objectType) then null
                     else
@@ -1699,10 +1712,6 @@ namespace Microsoft.FSharp.Core
                         | null -> false
                         | _ -> true
 
-                let makeEquatableType ty =
-                    let equatableTypedef = typedefof<IEquatable<_>>
-                    equatableTypedef.MakeGenericType [|ty|]
-
                 let hasFSharpCompilerGeneratedEquality (ty:Type) =
                     match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
                     | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
@@ -1711,10 +1720,6 @@ namespace Microsoft.FSharp.Core
                         && isCompilerGeneratedMethod ty "Equals" [|typeof<obj>|] 
                     | _ -> false
 
-                let makeComparableType ty =
-                    let comparableTypedef = typedefof<IComparable<_>>
-                    comparableTypedef.MakeGenericType [|ty|]
-
                 let hasFSharpCompilerGeneratedComparison (ty:Type) =
                     match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
                     | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
@@ -1722,10 +1727,11 @@ namespace Microsoft.FSharp.Core
                         && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralComparable> "CompareTo" [|typeof<obj>; typeof<IComparer>|]
                         && isCompilerGeneratedInterfaceMethod ty typeof<IComparable> "CompareTo" [|typeof<obj>|]
                     | _ -> false
+#else
+                let hasFSharpCompilerGeneratedEquality (_:Type) = false
+                let hasFSharpCompilerGeneratedComparison (_:Type) = false
 
-                let makeGenericType<'a> tys =
-                    let typedef = typedefof<'a>
-                    typedef.MakeGenericType tys
+#endif
 
                 let takeFirstNonNull items =
                     let rec takeFirst idx =
@@ -2171,44 +2177,6 @@ namespace Microsoft.FSharp.Core
             let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
                 (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 1 : bool #)
 
-#else
-            /// Compare two values of the same generic type, using "comp".
-            //
-            // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
-            //
-            // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
-            // cases where it is known how a particular type implements generic comparison.
-            let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                comp.Compare(box x, box y)
-
-
-            /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
-            //
-            // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on "T".
-            let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
-                GenericComparisonWithComparerIntrinsic fsComparerER x y
-
-            /// Generic less-than. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericLessThanIntrinsic (x:'T) (y:'T) = 
-                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 0 : bool #)
-            
-            /// Generic greater-than. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
-                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) 0 : bool #)
-             
-            /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
-                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) (-1) : bool #)
-            
-            /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
-            /// the local exception that is thrown when NaN's are compared.
-            let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
-                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 1 : bool #)
-#endif
             /// Compare two values of the same generic type, in either PER or ER mode, but include static optimizations
             /// for various well-known cases.
             //
@@ -2649,8 +2617,6 @@ namespace Microsoft.FSharp.Core
                   interface IEqualityComparerInfo with
                     member __.Info = EqualityComparerInfo.ER }
 
-
-#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
             module GenericSpecializeEquals =
                 let makeInstance (ct:Type) (def:Type) : obj =
                     let concrete = def.MakeGenericType [|ct|]
@@ -2828,32 +2794,6 @@ namespace Microsoft.FSharp.Core
                     eliminate_tail_call_bool (EqualityComparer<'T>.Default.Equals (x, y))
                 | _ ->
                     eliminate_tail_call_bool (comp.Equals (box x, box y))
-#else
-            /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
-            //
-            // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on "T".
-            let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                GenericEqualityObj false fsEqualityComparerNoHashingPER ((box x), (box y))
-                
-            /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
-            //
-            // ER semantics is used for recursive calls when implementing .Equals(that) for structural data, see the code generated for record and union types in augment.fs
-            //
-            // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on "T".
-            let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                GenericEqualityObj true fsEqualityComparerNoHashingER ((box x), (box y))
-                
-            /// Implements generic equality between two values using "comp" for recursive calls.
-            //
-            // The compiler optimizer is aware of this function  (see use of generic_equality_withc_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
-            // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
-            let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                comp.Equals((box x),(box y))
-           
-#endif
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -3090,8 +3030,6 @@ namespace Microsoft.FSharp.Core
                     override iec.GetHashCode(x:obj) = GenericHashParamObj iec x
                 interface IEqualityComparerInfo with
                     member __.Info = EqualityComparerInfo.PER
-
-#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
 
             // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
             // for fallback to that funciton. 
@@ -3647,28 +3585,6 @@ namespace Microsoft.FSharp.Core
                 let comparerDef = typedefof<EssenceOfComparer<int,Specializations.ComparerTypes.Int32>>
                 let comparer = comparerDef.MakeGenericType [| ty; comp |]
                 Activator.CreateInstance comparer
-
-#else
-
-            /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
-            //
-            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on type "T".
-            let GenericHashIntrinsic x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box(x))
-
-            /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
-            let LimitedGenericHashIntrinsic limit x = GenericHashParamObj (CountLimitedHasherPER(limit)) (box(x))
-
-            /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
-            //
-            // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
-            // a CountLimitedHasherPER.
-            //
-            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on type "T".
-            let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                GenericHashParamObj iec (box(x))
-#endif
                 
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
@@ -3943,11 +3859,7 @@ namespace Microsoft.FSharp.Core
                   member self.Equals(x,y) = GenericEquality x y }
 
         let inline MakeGenericEqualityComparerWithEssence<'T>() : IEqualityComparer<'T> =
-#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
             unboxPrim (HashCompare.makeEqualityComparer typeof<'T>)
-#else
-            MakeGenericEqualityComparer<'T> ()
-#endif
 
         let inline MakeGenericLimitedEqualityComparer<'T>(limit:int) = 
             // type-specialize some common cases to generate more efficient functions 
@@ -4035,11 +3947,7 @@ namespace Microsoft.FSharp.Core
                  member __.Compare(x,y) = GenericComparison x y }
 
         let inline MakeGenericComparerWithEssence<'T>() : IComparer<'T> = 
-#if FX_ATLEAST_40 // should probably create some compilation flag for this stuff
             unboxPrim (HashCompare.makeComparer typeof<'T>)
-#else
-            MakeGenericComparer<'T> ()
-#endif
 
         let CharComparer    = MakeGenericComparer<char>()
         let StringComparer  = MakeGenericComparer<string>()
