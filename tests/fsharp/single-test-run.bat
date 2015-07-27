@@ -2,17 +2,22 @@
 setlocal
 set ERRORMSG=
 
+@echo start >run_output.log
 dir build.ok > NUL ) || (
   @echo 'build.ok' not found.
+  @echo 'build.ok' not found. >>run_output.log
   set ERRORMSG=%ERRORMSG% Skipped because 'build.ok' not found.
   goto :ERROR
 )
 
-call %~d0%~p0..\config.bat
+echo before config >>run_output.log
+call %~d0%~p0..\config.bat >>run_output.log
 if errorlevel 1 (
+  echo after config 1>>run_output.log
   set ERRORMSG=%ERRORMSG% config.bat failed;
   goto :ERROR
 )
+echo after config 0 >>run_output.log
 
 if not exist "%FSC%" (
   set ERRORMSG=%ERRORMSG% fsc.exe not found at the location "%FSC%"
@@ -52,7 +57,6 @@ if exist test2-hw.fsx (set sourceshw=%sourceshw% test2-hw.fsx)
 :START
 
 set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% FSC_HW FSC_O3 GENERATED_SIGNATURE EMPTY_SIGNATURE EMPTY_SIGNATURE_OPT FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG FRENCH SPANISH AS_DLL WRAPPER_NAMESPACE WRAPPER_NAMESPACE_OPT
-
 if "%REDUCED_RUNTIME%"=="1" (
     echo REDUCED_RUNTIME set
     
@@ -169,6 +173,18 @@ goto :EOF
   dir test.ok > NUL 2>&1 ) || (
   @echo :FSC_BASIC_64 failed
   set ERRORMSG=%ERRORMSG% FSC_BASIC_64 failed;
+  )
+goto :EOF
+
+:FSC_CORECLR
+@echo do :FSC_CORECLR
+  echo a >>run_output.log
+  if exist test.ok (del /f /q test.ok)
+  echo b >>run_output.log
+  %CLIX% %~d0%~p0\testdirectory\corerun.exe .\output\test.exe >>run_output.log && ( 
+  dir test.ok > NUL 2>&1 ) || (
+  @echo :FSC_CORECLR failed
+  set ERRORMSG=%ERRORMSG% FSC_CORECLR failed;
   )
 goto :EOF
 

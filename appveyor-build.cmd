@@ -97,6 +97,9 @@ call RunTests.cmd release compilerunit
 call RunTests.cmd release coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
 
+call RunTests.cmd release coreclr
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreclr' failed && goto :failure
+
 popd
 
 goto :eof

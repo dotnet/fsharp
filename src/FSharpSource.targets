@@ -745,6 +745,7 @@
     <DnuRestoreCommand>"$(DnuToolPath)"</DnuRestoreCommand>
     <DnuRestoreCommand>$(DnuRestoreCommand) restore</DnuRestoreCommand>
     <DnuRestoreCommand>$(DnuRestoreCommand) --packages "$(PackagesDir.TrimEnd('/').TrimEnd('\\'))"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-core/"</DnuRestoreCommand>
     <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-corefx/"</DnuRestoreCommand>
     <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-buildtools"</DnuRestoreCommand>
 

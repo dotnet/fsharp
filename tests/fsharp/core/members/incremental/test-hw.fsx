@@ -1,4 +1,9 @@
 // #Conformance #MemberDefinitions #Mutable #ObjectOrientedTypes #Classes #InterfacesAndImplementations #Recursion 
+
+#if CoreClr
+open coreclrutilities
+#endif
+
 #light
 
 

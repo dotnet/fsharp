@@ -3,6 +3,10 @@
 module Core_seq
 #endif
 
+#if CoreClr
+open coreclrutilities
+#endif
+
 #nowarn "62"
 #nowarn "44"
 

@@ -2724,7 +2724,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             let resolved = TryResolveFileUsingPaths(searchPaths,m,nm)
             match resolved with 
             | Some(resolved) -> 
-                let sysdir = tcConfig.IsSystemAssembly resolved
+                let sysdir = true (* tcConfig.IsSystemAssembly resolved *)
                 let fusionName = 
                     if isNetModule then ""
                     else 
@@ -2899,7 +2899,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                                                      resolvedFrom=resolvedFile.resolvedFrom;
                                                      fusionName=resolvedFile.fusionName
                                                      redist=resolvedFile.redist;
-                                                     sysdir=tcConfig.IsSystemAssembly canonicalItemSpec;
+                                                     sysdir= true (*tcConfig.IsSystemAssembly canonicalItemSpec *) ;
                                                      ilAssemblyRef = ref None})
                                     (maxIndexOfReference, assemblyResolutions))
 

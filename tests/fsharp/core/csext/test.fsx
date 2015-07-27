@@ -2,6 +2,11 @@
 #if Portable
 module Core_csext
 #endif
+
+#if CoreClr
+open coreclrutilities
+#endif
+
 #light
 
 
