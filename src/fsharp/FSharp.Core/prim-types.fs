@@ -1672,6 +1672,9 @@ namespace Microsoft.FSharp.Core
             type private PartialEquivalenceRelation = class end
 
             module mos =
+                type IGetType =
+                    abstract Get : unit -> Type
+                            
                 let makeGenericType<'a> tys =
                     let typedef = typedefof<'a>
                     typedef.MakeGenericType tys
@@ -1867,19 +1870,38 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultCompare ty
                     |]
 
-                type IGetEssenceOfComparerType =
-                    abstract Get : unit -> Type
+                [<AbstractClass>]
+                type ComparerInvoker<'a>() =
+                    class
+                        abstract Invoke : IComparer * 'a * 'a -> int
+                    end
+
+                [<Sealed>]
+                type EssenceOfCompareWrapper<'a, 'eq 
+                        when 'eq  :> Specializations.IEssenceOfCompareTo<'a> and 'eq : (new : unit -> 'eq)>() =
+                    inherit ComparerInvoker<'a>()
+                
+                    override __.Invoke (comp, x:'a, y:'a) =
+                        Specializations.FlaconOfComparer<'a, 'eq>.Instance.Ensorcel (comp, x, y)
+
+                let makeComparerInvoker (ty:Type) comp =
+                    let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,Specializations.ComparerTypes.Int32>>
+                    let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
+                    Activator.CreateInstance wrapperType
 
                 type Function<'relation, 'a>() =
-                    static let func : Specializations.IEssenceOfCompareTo<'a> =
+                    static let essenceType : Type = 
                         match createCompareDelegate typeof<'relation> typeof<'a> with
                         | null -> raise (Exception "invalid logic")
-                        | f -> unboxPrim f
+                        | f -> f.GetType()
 
-                    static member Func = func
+                    static let invoker : ComparerInvoker<'a> =
+                        unboxPrim (makeComparerInvoker typeof<'a> essenceType)
 
-                    interface IGetEssenceOfComparerType with
-                        member __.Get () = func.GetType ()
+                    static member Invoker = invoker
+
+                    interface mos.IGetType with
+                        member __.Get () = essenceType
 
             /// Compare two values of the same generic type, using "comp".
             //
@@ -1891,9 +1913,9 @@ namespace Microsoft.FSharp.Core
                 match comp with
                 | :? GenericComparer as info ->
                     match info.ComparerType with
-                    | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
-                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
-                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (comp, x, y))
+                    | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
+                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
+                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
                     | _ -> raise (Exception "invalid logic")
                 | c when obj.ReferenceEquals (c, Comparer<'T>.Default)   ->
                     eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
@@ -2128,7 +2150,7 @@ namespace Microsoft.FSharp.Core
                 let getEssenceOfCompareToType (tyRelation:Type) (ty:Type) =
                     let compareTo = mos.makeGenericType<GenericSpecializeCompareTo.Function<_,_>> [|tyRelation; ty|]
                     match Activator.CreateInstance compareTo with
-                    | :? GenericSpecializeCompareTo.IGetEssenceOfComparerType as getter -> getter.Get ()
+                    | :? mos.IGetType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
                 type t = Specializations.ComparerTypes.Int32
@@ -2155,7 +2177,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_comparison_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericComparisonIntrinsic<'T> (x:'T) (y:'T) : int = 
-                eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Func.Ensorcel (fsComparerER, x, y))
+                eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Invoker.Invoke (fsComparerER, x, y))
 
             /// Generic less-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
@@ -2744,26 +2766,45 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultEquality tyRelation ty
                     |]
 
-                type IGetEssenceOfEqualsType =
-                    abstract Get : unit -> Type
-                            
+                [<AbstractClass>]
+                type EqualsInvoker<'a>() =
+                    class
+                        abstract Invoke : IEqualityComparer * 'a * 'a -> bool
+                    end
+
+                [<Sealed>]
+                type EssenceOfEqualsWrapper<'a, 'eq 
+                        when 'eq  :> Specializations.IEssenceOfEquals<'a> and 'eq : (new : unit -> 'eq)>() =
+                    inherit EqualsInvoker<'a>()
+                
+                    override __.Invoke (comp, x:'a, y:'a) =
+                        Specializations.FlaconOfEquals<'a, 'eq>.Instance.Ensorcel (comp, x, y)
+
+                let makeEqualsWrapper (ty:Type) comp =
+                    let wrapperTypeDef = typedefof<EssenceOfEqualsWrapper<int,Specializations.EqualsTypes.Int32>>
+                    let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
+                    Activator.CreateInstance wrapperType
+
                 type Function<'relation, 'a>() =
-                    static let func : Specializations.IEssenceOfEquals<'a> =
+                    static let essenceType : Type = 
                         match createEqualsDelegate typeof<'relation> typeof<'a> with
                         | null -> raise (Exception "invalid logic")
-                        | f -> unboxPrim f
+                        | f -> f.GetType()
 
-                    static member Func = func
+                    static let invoker : EqualsInvoker<'a> =
+                        unboxPrim (makeEqualsWrapper typeof<'a> essenceType)
 
-                    interface IGetEssenceOfEqualsType with
-                        member __.Get () = func.GetType ()
+                    static member Invoker = invoker
+
+                    interface mos.IGetType with
+                        member __.Get () = essenceType
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                eliminate_tail_call_bool (GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Func.Ensorcel (fsEqualityComparerNoHashingPER, x, y))
+                eliminate_tail_call_bool (GenericSpecializeEquals.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (fsEqualityComparerNoHashingPER, x, y))
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -2772,7 +2813,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                eliminate_tail_call_bool (GenericSpecializeEquals.Function<EquivalenceRelation,_>.Func.Ensorcel (fsEqualityComparerNoHashingER, x, y))
+                eliminate_tail_call_bool (GenericSpecializeEquals.Function<EquivalenceRelation,_>.Invoker.Invoke (fsEqualityComparerNoHashingER, x, y))
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -3115,19 +3156,38 @@ namespace Microsoft.FSharp.Core
                         fun () -> defaultGetHashCode t
                     |]
                             
-                type IGetEssenceOfGetHashCodeType =
-                    abstract Get : unit -> Type
+                [<AbstractClass>]
+                type GetHashCodeInvoker<'a>() =
+                    class
+                        abstract Invoke : IEqualityComparer * 'a -> int
+                    end
+
+                [<Sealed>]
+                type EssenceOfGetHashCodeWrapper<'a, 'ghc
+                         when 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc)>() =
+                    inherit GetHashCodeInvoker<'a>()
+                
+                    override __.Invoke (comp, x:'a) =
+                        Specializations.FlaconOfGetHashCode<'a,'ghc>.Instance.Ensorcel (comp, x)
+
+                let makeGetHashCodeWrapper (ty:Type) comp =
+                    let wrapperTypeDef = typedefof<EssenceOfGetHashCodeWrapper<int,Specializations.GetHashCodeTypes.Int32>>
+                    let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
+                    Activator.CreateInstance wrapperType
                             
                 type Function<'a>() =
-                    static let func : Specializations.IEssenceOfGetHashCode<'a> =
+                    static let essenceType : Type = 
                         match createGetHashCodeDelegate typeof<'a> with
                         | null -> raise (Exception "invalid logic")
-                        | f -> unboxPrim f
+                        | f -> f.GetType()
 
-                    static member Func = func
+                    static let invoker : GetHashCodeInvoker<'a> =
+                        unboxPrim (makeGetHashCodeWrapper typeof<'a> essenceType)
 
-                    interface IGetEssenceOfGetHashCodeType with
-                        member __.Get () = func.GetType ()
+                    static member Invoker = invoker
+
+                    interface mos.IGetType with
+                        member __.Get () = essenceType
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
@@ -3135,12 +3195,12 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic x = 
                 let iec = fsEqualityComparerUnlimitedHashingPER
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Invoker.Invoke (iec, x))
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit x =
                 let iec = CountLimitedHasherPER limit
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Invoker.Invoke (iec, x))
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -3150,7 +3210,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Func.Ensorcel (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Invoker.Invoke (iec, x))
 
 
 
@@ -3510,13 +3570,13 @@ namespace Microsoft.FSharp.Core
                 let getEssenceOfGetHashCodeType ty =
                     let getHashCode = mos.makeGenericType<GenericSpecializeHash.Function<_>> [|ty|]
                     match Activator.CreateInstance getHashCode with
-                    | :? GenericSpecializeHash.IGetEssenceOfGetHashCodeType as getter -> getter.Get ()
+                    | :? mos.IGetType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
                 let getEssenceOfEqualsType tyRelation ty =
                     let equals = mos.makeGenericType<GenericSpecializeEquals.Function<_,_>> [| tyRelation; ty|]
                     match Activator.CreateInstance equals with
-                    | :? GenericSpecializeEquals.IGetEssenceOfEqualsType as getter -> getter.Get ()
+                    | :? mos.IGetType as getter -> getter.Get ()
                     | _ -> raise (Exception "invalid logic")
 
                 type t = Specializations.GetHashCodeTypes.Int32
@@ -3556,6 +3616,7 @@ namespace Microsoft.FSharp.Core
                 GenericSpecializeEquals.addTupleHandler (box tuplesEquals)
                 GenericSpecializeHash.addTupleHandler (box tuplesGetHashCode)
 
+            [<Sealed>]
             type EssenceOfEqualityComparer<'a, 'eq, 'ghc
                     when 'eq  :> Specializations.IEssenceOfEquals<'a>      and 'eq : (new : unit -> 'eq)
                      and 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc)>() =
@@ -3566,6 +3627,7 @@ namespace Microsoft.FSharp.Core
                     member __.GetHashCode (x:'a) =
                         Specializations.FlaconOfGetHashCode<'a,'ghc>.Instance.Ensorcel (fsEqualityComparerUnlimitedHashingPER, x)
 
+            [<Sealed>]
             type EssenceOfComparer<'a, 'comp
                     when 'comp  :> Specializations.IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp)>() =
                 
