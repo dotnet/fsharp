@@ -2,23 +2,17 @@
 setlocal
 set ERRORMSG=
 
-@echo start >run_output.log
 dir build.ok > NUL ) || (
   @echo 'build.ok' not found.
-  @echo 'build.ok' not found. >>run_output.log
   set ERRORMSG=%ERRORMSG% Skipped because 'build.ok' not found.
   goto :ERROR
 )
 
-echo before config >>run_output.log
-call %~d0%~p0..\config.bat >>run_output.log
+call %~d0%~p0..\config.bat
 if errorlevel 1 (
-  echo after config 1>>run_output.log
   set ERRORMSG=%ERRORMSG% config.bat failed;
   goto :ERROR
 )
-echo after config 0 >>run_output.log
-
 if not exist "%FSC%" (
   set ERRORMSG=%ERRORMSG% fsc.exe not found at the location "%FSC%"
   goto :ERROR
@@ -178,10 +172,8 @@ goto :EOF
 
 :FSC_CORECLR
 @echo do :FSC_CORECLR
-  echo a >>run_output.log
   if exist test.ok (del /f /q test.ok)
-  echo b >>run_output.log
-  %CLIX% %~d0%~p0\testdirectory\corerun.exe .\output\test.exe >>run_output.log && ( 
+  %CLIX% %~d0%~p0\testdirectory\corerun.exe .\output\test.exe
   dir test.ok > NUL 2>&1 ) || (
   @echo :FSC_CORECLR failed
   set ERRORMSG=%ERRORMSG% FSC_CORECLR failed;

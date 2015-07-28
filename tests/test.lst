@@ -57,7 +57,7 @@ Core05		fsharp\core\parsing
 Core05		fsharp\core\patterns
 Core05		fsharp\core\pinvoke
 Core05,coreclr		fsharp\core\printf
-Core05,coreclr		fsharp\core\printing
+Core05		fsharp\core\printing
 Core05		fsharp\core\queriesCustomQueryOps
 Core06,CoreQuotes		fsharp\core\queriesLeafExpressionConvert
 Core06		fsharp\core\queriesNullableOperators

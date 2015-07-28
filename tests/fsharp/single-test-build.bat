@@ -3,9 +3,9 @@
 setlocal
 if EXIST build.ok DEL /f /q build.ok
 
-echo  FSCOREDLL_CORECLR_PATH='%FSCOREDLL_CORECLR_PATH%' >build_output.log
-echo PERMUTATIONS='%permutations%' >>build_output.log
-call %~d0%~p0..\config.bat >>build_output.log
+echo  FSCOREDLL_CORECLR_PATH='%FSCOREDLL_CORECLR_PATH%'
+echo PERMUTATIONS='%permutations%'
+call %~d0%~p0..\config.bat
 
 if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
   goto Skip
@@ -139,8 +139,8 @@ set command_line_args=%command_line_args% --dnuPath:%~d0%~p0..\..\packages\dnx-c
 set command_line_args=%command_line_args% --nugetsources:--nugetSources:https://www.myget.org/F/dotnet-core;https://www.myget.org/F/dotnet-corefx;https://www.myget.org/F/dotnet-buildtools
 set command_line_args=%command_line_args% --define:CoreClr --define:NetCore
 set command_line_args=%command_line_args% --InitializeForTests:true
-echo %command_line_args%  >>build_output.log
-fsi %command_line_args%  >>build_output.log
+echo %command_line_args%
+fsi %command_line_args%
 echo Errorlevel: %errorlevel%
 if ERRORLEVEL 1 goto Error
 
