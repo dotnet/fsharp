@@ -1,6 +1,4 @@
 // #Conformance #Namespaces #SignatureFiles 
-
-
 namespace Hello.Goodbye
 
 type A = A | B | C
@@ -60,6 +58,10 @@ end
 
 
 namespace global
+
+#if CoreClr
+open coreclrutilities
+#endif
 
 type A = A | B | C
 

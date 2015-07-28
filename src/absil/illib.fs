@@ -686,6 +686,7 @@ type UniqueStampGenerator<'T when 'T : equality>() =
             nItems <- nItems + 1
             idx
     member this.Encode(str)  = encode str
+    member this.Table = encodeTab.Keys
 
 //---------------------------------------------------------------------------
 // memoize tables (all entries cached, never collected)

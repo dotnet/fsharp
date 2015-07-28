@@ -1609,7 +1609,38 @@ let SystemAssemblies primaryAssemblyName =
       yield "System.Core"
       yield "System.Runtime"
       yield "System.Observable"
-      yield "System.Numerics"] 
+      yield "System.Numerics"
+
+      // Additions for coreclr and portable profiles
+      yield "System.Collections"
+      yield "System.Collections.Concurrent"
+      yield "System.Console"
+      yield "System.Diagnostics.Debug"
+      yield "System.Diagnostics.Tools"
+      yield "System.Globalization"
+      yield "System.IO"
+      yield "System.Linq"
+      yield "System.Linq.Expressions"
+      yield "System.Linq.Queryable"
+      yield "System.Net.Requests"
+      yield "System.Reflection"
+      yield "System.Reflection.Emit"
+      yield "System.Reflection.Emit.ILGeneration"
+      yield "System.Reflection.Extensions"
+      yield "System.Resources.ResourceManager"
+      yield "System.Runtime.Extensions"
+      yield "System.Runtime.InteropServices"
+      yield "System.Runtime.Numerics"
+      yield "System.Text.Encoding"
+      yield "System.Text.Encoding.Extensions"
+      yield "System.Text.RegularExpressions"
+      yield "System.Threading"
+      yield "System.Threading.Tasks"
+      yield "System.Threading.Tasks.Parallel"
+      yield "System.Threading.Thread"
+      yield "System.Threading.ThreadPool"
+      yield "System.Threading.Timer"
+      ] 
 
 // The set of references entered into the TcConfigBuilder for scripts prior to computing
 // the load closure. 
@@ -2673,8 +2704,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     ///       is a resource that can be shared between any two IncrementalBuild objects that reference
     ///       precisely S
     ///
-    /// Determined by looking at the set of assemblies in the framework assemblies directory, plus the 
-    /// F# core library.
+    /// Determined by looking at the set of assemblies referenced by f# .
     ///
     /// Returning true may mean that the file is locked and/or placed into the
     /// 'framework' reference set that is potentially shared across multiple compilations.
@@ -2899,7 +2929,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                                                      resolvedFrom=resolvedFile.resolvedFrom;
                                                      fusionName=resolvedFile.fusionName
                                                      redist=resolvedFile.redist;
-                                                     sysdir=tcConfig.IsSystemAssembly canonicalItemSpec;
+                                                     sysdir= tcConfig.IsSystemAssembly canonicalItemSpec;
                                                      ilAssemblyRef = ref None})
                                     (maxIndexOfReference, assemblyResolutions))
 

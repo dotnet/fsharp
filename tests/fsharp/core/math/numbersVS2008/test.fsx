@@ -1,4 +1,9 @@
 // #Regression #Conformance #Regression 
+
+#if CoreClr
+open coreclrutilities
+#endif
+
 #light
 #nowarn "49";;
 #nowarn "44";;

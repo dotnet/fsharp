@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "Microsoft.NETCore.Runtime.CoreCLR-x86": "1.0.0-beta-*",
+    "Microsoft.NETCore.ConsoleHost-x86": "1.0.0-beta-*",
+    "Microsoft.NETCore.TestHost-x86": "1.0.0-beta-*",
+    "Microsoft.NETCore.Windows.ApiSets-x86": "1.0.0-beta-*",
+    "System.IO.Compression.clrcompression-x86": "1.0.0-beta-*",
+    "System.Console": "4.0.0-beta-*",
+    "System.IO": "4.0.0-beta-*",
+    "System.IO.FileSystem": "4.0.0-beta-*",
+    "System.Reflection.TypeExtensions": "4.0.0-beta-*",
+    "System.Globalization": "4.0.10-beta-*",
+    "System.Threading": "4.0.10-beta-*",
+  }
+}

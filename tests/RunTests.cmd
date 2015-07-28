@@ -21,6 +21,10 @@ rem "ttags" indicates what test areas will be run, based on the tags in the test
 set TTAGS_ARG=
 set _tmp=%3
 if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
+if /I '%_tmp%' == 'coreclr' (
+    set single_threaded=true
+    set permutations=FSC_CORECLR
+)
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
 set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
@@ -29,7 +33,7 @@ if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
 
 if /I "%APPVEYOR_CI%" == "1" (set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI)
 
-set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
+if /I not '%single_threaded%' == 'true' (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
 set REDUCED_RUNTIME=1
@@ -46,6 +50,9 @@ set FSCBINPATH=%~dp0..\%FLAVOR%\net40\bin
 rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0\TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
+
+rem set folder where fsharp.core.dll can be loaded from
+set FSCOREDLL_CORECLR_PATH=%~dp0..\%FLAVOR%\coreclr\bin\fsharp.core.dll
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
@@ -103,6 +110,11 @@ if errorlevel 1 (
 
 echo perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
      perl %~dp0\fsharpqa\testenv\bin\runall.pl -resultsroot %RESULTSDIR% -results %RESULTFILE% -log %FAILFILE% -fail %FAILENV% -cleanup:yes %TTAGS_ARG% %NO_TTAGS_ARG% %PARALLEL_ARG%
+)
+if errorlevel 1 (
+  type %RESULTSDIR%\%FAILFILE%
+  exit /b 1
+)
 goto :EOF
 
 
@@ -143,7 +155,7 @@ set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FS
 set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
 set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0
 
-REM == open source logic        
+REM == open source logic
 if exist "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
 if exist "%FSCBinPath%\..\..\net20\bin\FSharp.Core.dll" set FSCOREDLL20PATH=%FSCBinPath%\..\..\net20\bin
 if exist "%FSCBinPath%\..\..\portable47\bin\FSharp.Core.dll" set FSCOREDLLPORTABLEPATH=%FSCBinPath%\..\..\portable47\bin

@@ -1,5 +1,9 @@
 #indent "off"
 
+#if CoreClr
+open coreclrutilities
+#endif
+
 open System
 
   type Bytes = Byte[]

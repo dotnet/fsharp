@@ -452,3 +452,5 @@ Tue 07/14/2009,  9:26:43.59, Microsoft.FSharp-TypeFunc, 0, Microsoft.FSharp-clas
 20/01/2010, 19:59:48.26, Microsoft.FSharp-TypeFunc, 0, Microsoft.FSharp-classes, 1368,  Microsoft.FSharp-methods, 5716, ,  Microsoft.FSharp-fields, 1933,  
 21/04/2010, 21:42:44.95, Microsoft.FSharp-TypeFunc, 0, Microsoft.FSharp-classes, 1376,  Microsoft.FSharp-methods, 5730, ,  Microsoft.FSharp-fields, 1945,  
 Sun 11/09/2014, 17:38:09.23, Microsoft.FSharp-TypeFunc, 0, Microsoft.FSharp-classes, 2504,  Microsoft.FSharp-methods, 8641, ,  Microsoft.FSharp-fields, 3827,  
+Fri 07/10/2015,  9:24:49.02, Microsoft.FSharp-TypeFunc, 0, Microsoft.FSharp-classes, 2564,  Microsoft.FSharp-methods, 8978, ,  Microsoft.FSharp-fields, 4040,  
+Fri 07/10/2015,  9:34:44.89, Microsoft.FSharp-TypeFunc, 0, Microsoft.FSharp-classes, 2564,  Microsoft.FSharp-methods, 8978, ,  Microsoft.FSharp-fields, 4040,  

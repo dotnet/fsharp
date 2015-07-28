@@ -1,6 +1,9 @@
 // #Conformance #SignatureFiles #Classes #ObjectConstructors #ObjectOrientedTypes #Fields #MemberDefinitions #MethodsAndProperties #Unions #InterfacesAndImplementations #Events #Overloading #Recursion #Regression 
 module Global
 
+#if CoreClr
+open coreclrutilities
+#endif
 
 #nowarn "62"
 

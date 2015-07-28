@@ -13,7 +13,6 @@ if errorlevel 1 (
   set ERRORMSG=%ERRORMSG% config.bat failed;
   goto :ERROR
 )
-
 if not exist "%FSC%" (
   set ERRORMSG=%ERRORMSG% fsc.exe not found at the location "%FSC%"
   goto :ERROR
@@ -52,7 +51,6 @@ if exist test2-hw.fsx (set sourceshw=%sourceshw% test2-hw.fsx)
 :START
 
 set PERMUTATIONS_LIST=FSI_FILE FSI_STDIN FSI_STDIN_OPT FSI_STDIN_GUI FSC_BASIC %FSC_BASIC_64% FSC_HW FSC_O3 GENERATED_SIGNATURE EMPTY_SIGNATURE EMPTY_SIGNATURE_OPT FSC_OPT_MINUS_DEBUG FSC_OPT_PLUS_DEBUG FRENCH SPANISH AS_DLL WRAPPER_NAMESPACE WRAPPER_NAMESPACE_OPT
-
 if "%REDUCED_RUNTIME%"=="1" (
     echo REDUCED_RUNTIME set
     
@@ -169,6 +167,16 @@ goto :EOF
   dir test.ok > NUL 2>&1 ) || (
   @echo :FSC_BASIC_64 failed
   set ERRORMSG=%ERRORMSG% FSC_BASIC_64 failed;
+  )
+goto :EOF
+
+:FSC_CORECLR
+@echo do :FSC_CORECLR
+  if exist test.ok (del /f /q test.ok)
+  %CLIX% %~d0%~p0\testdirectory\corerun.exe .\output\test.exe
+  dir test.ok > NUL 2>&1 ) || (
+  @echo :FSC_CORECLR failed
+  set ERRORMSG=%ERRORMSG% FSC_CORECLR failed;
   )
 goto :EOF
 
