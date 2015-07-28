@@ -1614,52 +1614,35 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; CustomComparison; CustomEquality>]
                     type ValueTypeComparableInterfaces =
-                        interface IStructuralComparable                      with member   __.CompareTo (_,_) = doNotEat ()
-                        interface IComparable<ValueTypeComparableInterfaces> with member   __.CompareTo _     = doNotEat ()
-                        interface IComparable                                with member   __.CompareTo _     = doNotEat ()
-                        override __.Equals _                                                                  = doNotEat ()
-                        override __.GetHashCode ()                                                            = doNotEat ()
-
-                    [<AllowNullLiteral>]
-                    type RefTypeComparableInterfaces =
-                        interface IStructuralComparable                    with member   __.CompareTo (_,_) = doNotEat ()
-                        interface IComparable<RefTypeComparableInterfaces> with member   __.CompareTo _     = doNotEat ()
-                        interface IComparable                              with member   __.CompareTo _     = doNotEat ()
-                        override __.Equals _                                                                = doNotEat ()
-                        override __.GetHashCode ()                                                          = doNotEat ()
+                        interface IStructuralComparable         with member   __.CompareTo (_,_) = doNotEat ()
+                        override __.Equals _                                                     = doNotEat ()
+                        override __.GetHashCode ()                                               = doNotEat ()
 
                     [<Struct; NoComparison; CustomEquality>]
                     type ValueTypeEquatableInterfaces =
-                        interface IStructuralEquatable                     with member __.Equals (_,_)  = doNotEat ()
-                                                                                member __.GetHashCode _ = doNotEat ()
-                        interface IEquatable<ValueTypeEquatableInterfaces> with member __.Equals _      = doNotEat ()
-
-                    [<AllowNullLiteral>]
-                    type RefTypeEquatableInterfaces =
-                        interface IStructuralEquatable                     with member __.Equals (_,_)  = doNotEat ()
-                                                                                member __.GetHashCode _ = doNotEat ()
-                        interface IEquatable<RefTypeEquatableInterfaces>   with member __.Equals _      = doNotEat ()
+                        interface IStructuralEquatable          with member __.Equals (_,_)  = doNotEat ()
+                                                                     member __.GetHashCode _ = doNotEat ()
 
 
                 let nullableStructuralComparable  = typedefof<Nullable. StructuralComparable<DummyTypes.ValueTypeComparableInterfaces>>
-                let nullableComparableGeneric     = typedefof<Nullable. ComparableGeneric<   DummyTypes.ValueTypeComparableInterfaces>>
-                let nullableComparable            = typedefof<Nullable. Comparable<          DummyTypes.ValueTypeComparableInterfaces>>
+                let nullableComparableGeneric     = typedefof<Nullable. ComparableGeneric<int>>
+                let nullableComparable            = typedefof<Nullable. Comparable<int>>
                 let valueTypeStructuralComparable = typedefof<ValueType.StructuralComparable<DummyTypes.ValueTypeComparableInterfaces>>
-                let valueTypeComparableGeneric    = typedefof<ValueType.ComparableGeneric<   DummyTypes.ValueTypeComparableInterfaces>>
-                let valueTypeComparable           = typedefof<ValueType.Comparable<          DummyTypes.ValueTypeComparableInterfaces>>
-                let refTypeStructuralComparable   = typedefof<RefType.  StructuralComparable<DummyTypes.RefTypeComparableInterfaces>>
-                let refTypeComparableGeneric      = typedefof<RefType.  ComparableGeneric<   DummyTypes.RefTypeComparableInterfaces>>
-                let refTypeComparable             = typedefof<RefType.  Comparable<          DummyTypes.RefTypeComparableInterfaces>>
+                let valueTypeComparableGeneric    = typedefof<ValueType.ComparableGeneric<int>>
+                let valueTypeComparable           = typedefof<ValueType.Comparable<int>>
+                let refTypeStructuralComparable   = typedefof<RefType.  StructuralComparable<Tuple<int,int>>>
+                let refTypeComparableGeneric      = typedefof<RefType.  ComparableGeneric<string>>
+                let refTypeComparable             = typedefof<RefType.  Comparable<string>>
 
-                let nullableStructuralEquatable   = typedefof<Nullable. StructuralEquatable< DummyTypes.ValueTypeEquatableInterfaces>>
-                let nullableEquatable             = typedefof<Nullable. Equatable<           DummyTypes.ValueTypeEquatableInterfaces>>
-                let nullableEquality              = typedefof<Nullable. Equality<            DummyTypes.ValueTypeEquatableInterfaces>>
-                let valueTypeStructuralEquatable  = typedefof<ValueType.StructuralEquatable< DummyTypes.ValueTypeEquatableInterfaces>>
-                let valueTypeEquatable            = typedefof<ValueType.Equatable<           DummyTypes.ValueTypeEquatableInterfaces>>
-                let valueTypeEquality             = typedefof<ValueType.Equality<            DummyTypes.ValueTypeEquatableInterfaces>>
-                let refTypeStructuralEquatable    = typedefof<RefType.  StructuralEquatable< DummyTypes.RefTypeEquatableInterfaces>>
-                let refTypeEquatable              = typedefof<RefType.  Equatable<           DummyTypes.RefTypeEquatableInterfaces>>
-                let refTypeEquality               = typedefof<RefType.  Equality<            DummyTypes.RefTypeEquatableInterfaces>>
+                let nullableStructuralEquatable   = typedefof<Nullable. StructuralEquatable<DummyTypes.ValueTypeEquatableInterfaces>>
+                let nullableEquatable             = typedefof<Nullable. Equatable<int>>
+                let nullableEquality              = typedefof<Nullable. Equality<int>>
+                let valueTypeStructuralEquatable  = typedefof<ValueType.StructuralEquatable<DummyTypes.ValueTypeEquatableInterfaces>>
+                let valueTypeEquatable            = typedefof<ValueType.Equatable<int>>
+                let valueTypeEquality             = typedefof<ValueType.Equality<int>>
+                let refTypeStructuralEquatable    = typedefof<RefType.  StructuralEquatable<Tuple<int,int>>>
+                let refTypeEquatable              = typedefof<RefType.  Equatable<string>>
+                let refTypeEquality               = typedefof<RefType.  Equality<string>>
 
             type private EquivalenceRelation = class end
             type private PartialEquivalenceRelation = class end
