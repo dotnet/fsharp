@@ -1623,7 +1623,6 @@ namespace Microsoft.FSharp.Core
                         interface IStructuralEquatable          with member __.Equals (_,_)  = doNotEat ()
                                                                      member __.GetHashCode _ = doNotEat ()
 
-
                 let nullableStructuralComparable  = typedefof<Nullable. StructuralComparable<DummyTypes.ValueTypeComparableInterfaces>>
                 let nullableComparableGeneric     = typedefof<Nullable. ComparableGeneric<int>>
                 let nullableComparable            = typedefof<Nullable. Comparable<int>>
@@ -1643,256 +1642,6 @@ namespace Microsoft.FSharp.Core
                 let refTypeStructuralEquatable    = typedefof<RefType.  StructuralEquatable<Tuple<int,int>>>
                 let refTypeEquatable              = typedefof<RefType.  Equatable<string>>
                 let refTypeEquality               = typedefof<RefType.  Equality<string>>
-
-            type private EquivalenceRelation = class end
-            type private PartialEquivalenceRelation = class end
-
-            module mos =
-                type IGetType =
-                    abstract Get : unit -> Type
-                            
-                let makeGenericType<'a> tys =
-                    let typedef = typedefof<'a>
-                    typedef.MakeGenericType tys
-
-                let makeEquatableType ty =
-                    makeGenericType<IEquatable<_>> [|ty|]
-
-                let makeComparableType ty =
-                    makeGenericType<IComparable<_>> [|ty|]
-
-// portable47 doesn't support reflection in the way I'm using it; maybe someone with greater understanding
-// of the configurations could provide a real solution
-#if FX_ATLEAST_40 
-                let rec private tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
-                    if not (interfaceType.IsAssignableFrom objectType) then null
-                    else
-                        let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
-                        let interfaceMap = objectType.GetInterfaceMap interfaceType
-                        let rec findTargetMethod index =
-                            if index = interfaceMap.InterfaceMethods.Length then null
-                            elif methodInfo.Equals (get interfaceMap.InterfaceMethods index) then (get interfaceMap.TargetMethods index)
-                            else findTargetMethod (index+1)
-                        findTargetMethod 0
-
-                let rec private isCompilerGeneratedInterfaceMethod objectType interfaceType methodName methodArgTypes =
-                    match tryFindObjectsInterfaceMethod objectType interfaceType methodName methodArgTypes with
-                    | null -> false
-                    | m -> 
-                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
-                        | null -> false
-                        | _ -> true
-
-                let rec private isCompilerGeneratedMethod (objectType:Type) (methodName:string) (methodArgTypes:array<Type>) =
-                    match objectType.GetMethod (methodName, methodArgTypes) with
-                    | null -> false
-                    | m ->
-                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
-                        | null -> false
-                        | _ -> true
-
-                let hasFSharpCompilerGeneratedEquality (ty:Type) =
-                    match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
-                    | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
-                        isCompilerGeneratedInterfaceMethod ty (makeEquatableType ty) "Equals" [|ty|]
-                        && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
-                        && isCompilerGeneratedMethod ty "Equals" [|typeof<obj>|] 
-                    | _ -> false
-
-                let hasFSharpCompilerGeneratedComparison (ty:Type) =
-                    match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
-                    | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
-                        isCompilerGeneratedInterfaceMethod ty (makeComparableType ty) "CompareTo" [|ty|]
-                        && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralComparable> "CompareTo" [|typeof<obj>; typeof<IComparer>|]
-                        && isCompilerGeneratedInterfaceMethod ty typeof<IComparable> "CompareTo" [|typeof<obj>|]
-                    | _ -> false
-#else
-                let hasFSharpCompilerGeneratedEquality (_:Type) = false
-                let hasFSharpCompilerGeneratedComparison (_:Type) = false
-
-#endif
-
-                let takeFirstNonNull items =
-                    let rec takeFirst idx =
-                        if idx = length items then raise (Exception "invalid logic")
-                        else
-                            let f = get items idx
-                            match f () with
-                            | null -> takeFirst (idx+1)
-                            | result -> result
-                    takeFirst 0
-
-                let compositeType (getEssence:Type->Type) (args:Type[]) (genericCompositeEssenceType:Type) =
-                    let compositeArgs : Type[] = unboxPrim (Array.CreateInstance (typeof<Type>, args.Length*2))
-                    for i = 0 to args.Length-1 do
-                        let argType = get args i
-                        let essenceType = getEssence argType
-                        compositeArgs.SetValue (argType, i)
-                        compositeArgs.SetValue (essenceType, i+args.Length)
-                    genericCompositeEssenceType.MakeGenericType compositeArgs
-
-            module GenericSpecializeCompareTo =
-                let makeType (ct:Type) (def:Type) : Type =
-                    def.MakeGenericType [|ct|]
-
-                let mutable private tupleHandler = null
-                let addTupleHandler f =
-                    match box tupleHandler with
-                    | null -> tupleHandler <- f
-                    | _ -> raise (Exception "invalid logic")
-
-                let tuples tyRelation ty =
-                    match box tupleHandler with
-                    | :? (Type -> Type -> Type) as handler -> handler tyRelation ty
-                    | _ -> null
-
-                let floatingPointTypes (tyRelation:Type) (ty:Type) =
-                    match tyRelation with
-                    | r when r.Equals typeof<PartialEquivalenceRelation> ->
-                        match ty with
-                        | t when t.Equals typeof<float>             -> typeof<Specializations.ComparerTypes.FloatPER>
-                        | t when t.Equals typeof<float32>           -> typeof<Specializations.ComparerTypes.Float32PER>
-                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.ComparerTypes.NullableFloatPER>
-                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.ComparerTypes.NullableFloat32PER>
-                        | _ -> null
-                    | r when r.Equals typeof<EquivalenceRelation> ->
-                        match ty with
-                        | t when t.Equals typeof<float>             -> typeof<Specializations.ComparerTypes.FloatER>
-                        | t when t.Equals typeof<float32>           -> typeof<Specializations.ComparerTypes.Float32ER>
-                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.ComparerTypes.NullableFloatER>
-                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.ComparerTypes.NullableFloat32ER>
-                        | _ -> null
-                    | _ -> raise (Exception "invalid logic")
-
-                let standardTypes (t:Type) : Type =
-                    if   t.Equals typeof<bool>       then typeof<Specializations.ComparerTypes.Bool>
-                    elif t.Equals typeof<sbyte>      then typeof<Specializations.ComparerTypes.Sbyte>
-                    elif t.Equals typeof<int16>      then typeof<Specializations.ComparerTypes.Int16>
-                    elif t.Equals typeof<int32>      then typeof<Specializations.ComparerTypes.Int32>
-                    elif t.Equals typeof<int64>      then typeof<Specializations.ComparerTypes.Int64>
-                    elif t.Equals typeof<nativeint>  then typeof<Specializations.ComparerTypes.Nativeint>
-                    elif t.Equals typeof<byte>       then typeof<Specializations.ComparerTypes.Byte>
-                    elif t.Equals typeof<uint16>     then typeof<Specializations.ComparerTypes.Uint16>
-                    elif t.Equals typeof<uint32>     then typeof<Specializations.ComparerTypes.Uint32>
-                    elif t.Equals typeof<uint64>     then typeof<Specializations.ComparerTypes.Uint64>
-                    elif t.Equals typeof<unativeint> then typeof<Specializations.ComparerTypes.Unativeint>
-                    elif t.Equals typeof<char>       then typeof<Specializations.ComparerTypes.Char>
-                    elif t.Equals typeof<string>     then typeof<Specializations.ComparerTypes.String>
-                    elif t.Equals typeof<decimal>    then typeof<Specializations.ComparerTypes.Decimal>
-                    else null
-
-                let compilerGenerated tyRelation ty =
-                    match tyRelation with
-                    | r when r.Equals typeof<EquivalenceRelation> ->
-                        if mos.hasFSharpCompilerGeneratedComparison ty then
-                            if ty.IsValueType
-                                then makeType ty Exemplars.valueTypeComparableGeneric
-                                else makeType ty Exemplars.refTypeComparableGeneric
-                        else null
-                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
-                    | _ -> raise (Exception "invalid logic")
-
-                type GenericComparerObj<'a>() =
-                    interface Specializations.IEssenceOfCompareTo<'a> with
-                        member __.Ensorcel (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
-
-                let arrays (t:Type) : Type =
-                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
-                        // TODO: Future; for now just default back to previous functionality
-                        makeType t typedefof<GenericComparerObj<_>>
-                    else null
-
-                let nullableType (t:Type) : Type =
-                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
-                        let underlying = get (t.GetGenericArguments()) 0
-                        let comparableGeneric = mos.makeComparableType underlying
-                        let make = makeType underlying
-                        
-                        if typeof<IStructuralComparable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralComparable
-                        elif comparableGeneric.IsAssignableFrom underlying           then make Exemplars.nullableComparableGeneric
-                        else                                                              make Exemplars.nullableComparable
-                    else null
-
-                let comparisonInterfaces (t:Type) : Type =
-                    let make = makeType t
-                    let comparableGeneric = mos.makeComparableType t
-
-                    if   t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralComparable
-                    elif t.IsValueType && comparableGeneric.IsAssignableFrom t             then make Exemplars.valueTypeComparableGeneric
-                    elif t.IsValueType && typeof<IComparable>.IsAssignableFrom t           then make Exemplars.valueTypeComparable
-
-                    elif typeof<IStructuralComparable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralComparable
-
-                    // only sealed as a derived class might inherit from IStructuralComparable
-                    elif t.IsSealed && comparableGeneric.IsAssignableFrom t                then make Exemplars.refTypeComparableGeneric
-                    elif t.IsSealed && typeof<IComparable>.IsAssignableFrom t              then make Exemplars.refTypeComparable
-
-                    else null
-
-                let defaultCompare ty =
-                    makeType ty typedefof<GenericComparerObj<_>>
-
-                let getCompareEssenceType (tyRelation:Type) (ty:Type) : Type =
-                    mos.takeFirstNonNull [|
-                        fun () -> tuples tyRelation ty
-                        fun () -> floatingPointTypes tyRelation ty
-                        fun () -> standardTypes ty
-                        fun () -> compilerGenerated tyRelation ty
-                        fun () -> arrays ty
-                        fun () -> nullableType ty
-                        fun () -> comparisonInterfaces ty
-                        fun () -> defaultCompare ty
-                    |]
-
-                [<AbstractClass>]
-                type ComparerInvoker<'a>() =
-                    class
-                        abstract Invoke : IComparer * 'a * 'a -> int
-                    end
-
-                [<Sealed>]
-                type EssenceOfCompareWrapper<'a, 'eq 
-                        when 'eq  :> Specializations.IEssenceOfCompareTo<'a> and 'eq : (new : unit -> 'eq)>() =
-                    inherit ComparerInvoker<'a>()
-                
-                    override __.Invoke (comp, x:'a, y:'a) =
-                        Specializations.FlaconOfComparer<'a, 'eq>.Instance.Ensorcel (comp, x, y)
-
-                let makeComparerInvoker (ty:Type) comp =
-                    let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,Specializations.ComparerTypes.Int32>>
-                    let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
-                    Activator.CreateInstance wrapperType
-
-                type Function<'relation, 'a>() =
-                    static let essenceType : Type = 
-                        getCompareEssenceType typeof<'relation> typeof<'a>
-
-                    static let invoker : ComparerInvoker<'a> =
-                        unboxPrim (makeComparerInvoker typeof<'a> essenceType)
-
-                    static member Invoker = invoker
-
-                    interface mos.IGetType with
-                        member __.Get () = essenceType
-
-            /// Compare two values of the same generic type, using "comp".
-            //
-            // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
-            //
-            // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
-            // cases where it is known how a particular type implements generic comparison.
-            let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
-                match comp with
-                | :? GenericComparer as info ->
-                    match info.ComparerType with
-                    | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
-                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
-                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
-                    | _ -> raise (Exception "invalid logic")
-                | c when obj.ReferenceEquals (c, Comparer<'T>.Default)   ->
-                    eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
-                | _ ->
-                    eliminate_tail_call_int (comp.Compare (box x, box y))
 
             module TupleComparers =
                 [<Struct; NoComparison; NoEquality>]
@@ -2119,30 +1868,266 @@ namespace Microsoft.FSharp.Core
                                 | _ ->
                                 eliminate_tail_call_int (Specializations.FlaconOfComparer<'h, 'comp8>.Instance.Ensorcel (comparer, x.Rest, y.Rest))
 
-                let getEssenceOfCompareToType (tyRelation:Type) (ty:Type) =
-                    let compareTo = mos.makeGenericType<GenericSpecializeCompareTo.Function<_,_>> [|tyRelation; ty|]
-                    match Activator.CreateInstance compareTo with
-                    | :? mos.IGetType as getter -> getter.Get ()
+            type private EquivalenceRelation = class end
+            type private PartialEquivalenceRelation = class end
+
+            module mos =
+                type IGetType =
+                    abstract Get : unit -> Type
+                            
+                let makeType (ct:Type) (def:Type) : Type =
+                    def.MakeGenericType [|ct|]
+
+                let makeGenericType<'a> tys =
+                    let typedef = typedefof<'a>
+                    typedef.MakeGenericType tys
+
+                let makeEquatableType ty =
+                    makeGenericType<IEquatable<_>> [|ty|]
+
+                let makeComparableType ty =
+                    makeGenericType<IComparable<_>> [|ty|]
+
+// portable47 doesn't support reflection in the way I'm using it; maybe someone with greater understanding
+// of the configurations could provide a real solution
+#if FX_ATLEAST_40 
+                let rec private tryFindObjectsInterfaceMethod (objectType:Type) (interfaceType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                    if not (interfaceType.IsAssignableFrom objectType) then null
+                    else
+                        let methodInfo = interfaceType.GetMethod (methodName, methodArgTypes) 
+                        let interfaceMap = objectType.GetInterfaceMap interfaceType
+                        let rec findTargetMethod index =
+                            if index = interfaceMap.InterfaceMethods.Length then null
+                            elif methodInfo.Equals (get interfaceMap.InterfaceMethods index) then (get interfaceMap.TargetMethods index)
+                            else findTargetMethod (index+1)
+                        findTargetMethod 0
+
+                let rec private isCompilerGeneratedInterfaceMethod objectType interfaceType methodName methodArgTypes =
+                    match tryFindObjectsInterfaceMethod objectType interfaceType methodName methodArgTypes with
+                    | null -> false
+                    | m -> 
+                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                        | null -> false
+                        | _ -> true
+
+                let rec private isCompilerGeneratedMethod (objectType:Type) (methodName:string) (methodArgTypes:array<Type>) =
+                    match objectType.GetMethod (methodName, methodArgTypes) with
+                    | null -> false
+                    | m ->
+                        match m.GetCustomAttribute typeof<CompilerGeneratedAttribute> with
+                        | null -> false
+                        | _ -> true
+
+                let hasFSharpCompilerGeneratedEquality (ty:Type) =
+                    match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
+                    | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
+                        isCompilerGeneratedInterfaceMethod ty (makeEquatableType ty) "Equals" [|ty|]
+                        && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralEquatable> "Equals" [|typeof<obj>; typeof<IEqualityComparer>|]
+                        && isCompilerGeneratedMethod ty "Equals" [|typeof<obj>|] 
+                    | _ -> false
+
+                let hasFSharpCompilerGeneratedComparison (ty:Type) =
+                    match ty.GetCustomAttribute typeof<CompilationMappingAttribute> with
+                    | :? CompilationMappingAttribute as m when (m.SourceConstructFlags.Equals SourceConstructFlags.ObjectType(*struct*)) || (m.SourceConstructFlags.Equals SourceConstructFlags.RecordType) ->
+                        isCompilerGeneratedInterfaceMethod ty (makeComparableType ty) "CompareTo" [|ty|]
+                        && isCompilerGeneratedInterfaceMethod ty typeof<IStructuralComparable> "CompareTo" [|typeof<obj>; typeof<IComparer>|]
+                        && isCompilerGeneratedInterfaceMethod ty typeof<IComparable> "CompareTo" [|typeof<obj>|]
+                    | _ -> false
+#else
+                let hasFSharpCompilerGeneratedEquality (_:Type) = false
+                let hasFSharpCompilerGeneratedComparison (_:Type) = false
+#endif
+
+                let takeFirstNonNull items =
+                    let rec takeFirst idx =
+                        if idx = length items then raise (Exception "invalid logic")
+                        else
+                            let f = get items idx
+                            match f () with
+                            | null -> takeFirst (idx+1)
+                            | result -> result
+                    takeFirst 0
+
+                let compositeType (getEssence:Type->Type) (args:Type[]) (genericCompositeEssenceType:Type) =
+                    let compositeArgs : Type[] = unboxPrim (Array.CreateInstance (typeof<Type>, args.Length*2))
+                    for i = 0 to args.Length-1 do
+                        let argType = get args i
+                        let essenceType = getEssence argType
+                        compositeArgs.SetValue (argType, i)
+                        compositeArgs.SetValue (essenceType, i+args.Length)
+                    genericCompositeEssenceType.MakeGenericType compositeArgs
+
+            module GenericSpecializeCompareTo =
+                let floatingPointTypes (tyRelation:Type) (ty:Type) =
+                    match tyRelation with
+                    | r when r.Equals typeof<PartialEquivalenceRelation> ->
+                        match ty with
+                        | t when t.Equals typeof<float>             -> typeof<Specializations.ComparerTypes.FloatPER>
+                        | t when t.Equals typeof<float32>           -> typeof<Specializations.ComparerTypes.Float32PER>
+                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.ComparerTypes.NullableFloatPER>
+                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.ComparerTypes.NullableFloat32PER>
+                        | _ -> null
+                    | r when r.Equals typeof<EquivalenceRelation> ->
+                        match ty with
+                        | t when t.Equals typeof<float>             -> typeof<Specializations.ComparerTypes.FloatER>
+                        | t when t.Equals typeof<float32>           -> typeof<Specializations.ComparerTypes.Float32ER>
+                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.ComparerTypes.NullableFloatER>
+                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.ComparerTypes.NullableFloat32ER>
+                        | _ -> null
                     | _ -> raise (Exception "invalid logic")
 
-                type t = Specializations.ComparerTypes.Int32
-                let tuplesCompareTo (tyRelation:Type) (ty:Type) : Type =
-                    if ty.IsGenericType then
-                        let tyDef = ty.GetGenericTypeDefinition ()
-                        let tyDefArgs = ty.GetGenericArguments ()
-                        let create = mos.compositeType (getEssenceOfCompareToType tyRelation) tyDefArgs
-                        if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TupleEssenceOfCompareTo<int,t>> 
-                        elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TupleEssenceOfCompareTo<int,int,t,t>> 
-                        elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TupleEssenceOfCompareTo<int,int,int,t,t,t>> 
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,t,t,t,t>> 
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,t,t,t,t,t>> 
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,int,t,t,t,t,t,t>> 
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,int,int,t,t,t,t,t,t,t>> 
-                        elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<TupleEssenceOfCompareTo<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>> 
-                        else null
+                let standardTypes (t:Type) : Type =
+                    if   t.Equals typeof<bool>       then typeof<Specializations.ComparerTypes.Bool>
+                    elif t.Equals typeof<sbyte>      then typeof<Specializations.ComparerTypes.Sbyte>
+                    elif t.Equals typeof<int16>      then typeof<Specializations.ComparerTypes.Int16>
+                    elif t.Equals typeof<int32>      then typeof<Specializations.ComparerTypes.Int32>
+                    elif t.Equals typeof<int64>      then typeof<Specializations.ComparerTypes.Int64>
+                    elif t.Equals typeof<nativeint>  then typeof<Specializations.ComparerTypes.Nativeint>
+                    elif t.Equals typeof<byte>       then typeof<Specializations.ComparerTypes.Byte>
+                    elif t.Equals typeof<uint16>     then typeof<Specializations.ComparerTypes.Uint16>
+                    elif t.Equals typeof<uint32>     then typeof<Specializations.ComparerTypes.Uint32>
+                    elif t.Equals typeof<uint64>     then typeof<Specializations.ComparerTypes.Uint64>
+                    elif t.Equals typeof<unativeint> then typeof<Specializations.ComparerTypes.Unativeint>
+                    elif t.Equals typeof<char>       then typeof<Specializations.ComparerTypes.Char>
+                    elif t.Equals typeof<string>     then typeof<Specializations.ComparerTypes.String>
+                    elif t.Equals typeof<decimal>    then typeof<Specializations.ComparerTypes.Decimal>
                     else null
 
-                GenericSpecializeCompareTo.addTupleHandler (box tuplesCompareTo)
+                let compilerGenerated tyRelation ty =
+                    match tyRelation with
+                    | r when r.Equals typeof<EquivalenceRelation> ->
+                        if mos.hasFSharpCompilerGeneratedComparison ty then
+                            if ty.IsValueType
+                                then mos.makeType ty Exemplars.valueTypeComparableGeneric
+                                else mos.makeType ty Exemplars.refTypeComparableGeneric
+                        else null
+                    | r when r.Equals typeof<PartialEquivalenceRelation> -> null
+                    | _ -> raise (Exception "invalid logic")
+
+                type GenericComparerObj<'a>() =
+                    interface Specializations.IEssenceOfCompareTo<'a> with
+                        member __.Ensorcel (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
+
+                let arrays (t:Type) : Type =
+                    if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
+                        // TODO: Future; for now just default back to previous functionality
+                        mos.makeType t typedefof<GenericComparerObj<_>>
+                    else null
+
+                let nullableType (t:Type) : Type =
+                    if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
+                        let underlying = get (t.GetGenericArguments()) 0
+                        let comparableGeneric = mos.makeComparableType underlying
+                        let make = mos.makeType underlying
+                        
+                        if typeof<IStructuralComparable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralComparable
+                        elif comparableGeneric.IsAssignableFrom underlying           then make Exemplars.nullableComparableGeneric
+                        else                                                              make Exemplars.nullableComparable
+                    else null
+
+                let comparisonInterfaces (t:Type) : Type =
+                    let make = mos.makeType t
+                    let comparableGeneric = mos.makeComparableType t
+
+                    if   t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralComparable
+                    elif t.IsValueType && comparableGeneric.IsAssignableFrom t             then make Exemplars.valueTypeComparableGeneric
+                    elif t.IsValueType && typeof<IComparable>.IsAssignableFrom t           then make Exemplars.valueTypeComparable
+
+                    elif typeof<IStructuralComparable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralComparable
+
+                    // only sealed as a derived class might inherit from IStructuralComparable
+                    elif t.IsSealed && comparableGeneric.IsAssignableFrom t                then make Exemplars.refTypeComparableGeneric
+                    elif t.IsSealed && typeof<IComparable>.IsAssignableFrom t              then make Exemplars.refTypeComparable
+
+                    else null
+
+                let defaultCompare ty =
+                    mos.makeType ty typedefof<GenericComparerObj<_>>
+
+                let getCompareEssenceType (tyRelation:Type) (ty:Type) tuples : Type =
+                    mos.takeFirstNonNull [|
+                        fun () -> tuples tyRelation ty
+                        fun () -> floatingPointTypes tyRelation ty
+                        fun () -> standardTypes ty
+                        fun () -> compilerGenerated tyRelation ty
+                        fun () -> arrays ty
+                        fun () -> nullableType ty
+                        fun () -> comparisonInterfaces ty
+                        fun () -> defaultCompare ty
+                    |]
+
+                [<AbstractClass>]
+                type ComparerInvoker<'a>() =
+                    class
+                        abstract Invoke : IComparer * 'a * 'a -> int
+                    end
+
+                [<Sealed>]
+                type EssenceOfCompareWrapper<'a, 'eq 
+                        when 'eq  :> Specializations.IEssenceOfCompareTo<'a> and 'eq : (new : unit -> 'eq)>() =
+                    inherit ComparerInvoker<'a>()
+                
+                    override __.Invoke (comp, x:'a, y:'a) =
+                        Specializations.FlaconOfComparer<'a, 'eq>.Instance.Ensorcel (comp, x, y)
+
+                let makeComparerInvoker (ty:Type) comp =
+                    let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,Specializations.ComparerTypes.Int32>>
+                    let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
+                    Activator.CreateInstance wrapperType
+
+                type t = Specializations.ComparerTypes.Int32
+                type Function<'relation, 'a>() =
+                    static let essenceType : Type = 
+                        getCompareEssenceType typeof<'relation> typeof<'a> Helpers.tuplesCompareTo
+
+                    static let invoker : ComparerInvoker<'a> =
+                        unboxPrim (makeComparerInvoker typeof<'a> essenceType)
+
+                    static member Invoker = invoker
+
+                    interface mos.IGetType with
+                        member __.Get () = essenceType
+                and Helpers =
+                    static member getEssenceOfCompareToType (tyRelation:Type) (ty:Type) =
+                        let compareTo = mos.makeGenericType<Function<_,_>> [|tyRelation; ty|]
+                        match Activator.CreateInstance compareTo with
+                        | :? mos.IGetType as getter -> getter.Get ()
+                        | _ -> raise (Exception "invalid logic")
+
+                    static member tuplesCompareTo (tyRelation:Type) (ty:Type) : Type =
+                        if ty.IsGenericType then
+                            let tyDef = ty.GetGenericTypeDefinition ()
+                            let tyDefArgs = ty.GetGenericArguments ()
+                            let create = mos.compositeType (Helpers.getEssenceOfCompareToType tyRelation) tyDefArgs
+                            if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,int,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,int,int,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,int,int,int,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,int,int,int,int,t,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,int,int,int,int,int,t,t,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,int,int,int,int,int,int,t,t,t,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<TupleComparers.TupleEssenceOfCompareTo<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>> 
+                            else null
+                        else null
+
+            /// Compare two values of the same generic type, using "comp".
+            //
+            // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
+            //
+            // NOTE: the compiler optimizer is aware of this function and devirtualizes in the 
+            // cases where it is known how a particular type implements generic comparison.
+            let GenericComparisonWithComparerIntrinsic<'T> (comp:System.Collections.IComparer) (x:'T) (y:'T) : int = 
+                match comp with
+                | :? GenericComparer as info ->
+                    match info.ComparerType with
+                    | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
+                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
+                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
+                    | _ -> raise (Exception "invalid logic")
+                | c when obj.ReferenceEquals (c, Comparer<'T>.Default)   ->
+                    eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
+                | _ ->
+                    eliminate_tail_call_int (comp.Compare (box x, box y))
 
             /// Generic comparison. Implements ER mode (where "0" is returned when NaNs are compared)
             //
@@ -2612,9 +2597,6 @@ namespace Microsoft.FSharp.Core
                     member __.Info = EqualityComparerInfo.ER }
 
             module GenericSpecializeEquals =
-                let makeType (ct:Type) (def:Type) =
-                    def.MakeGenericType [|ct|]
-
                 let mutable private tupleHandler = null
                 let addTupleHandler f =
                     match box tupleHandler with
@@ -2669,8 +2651,8 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<EquivalenceRelation> ->
                         if mos.hasFSharpCompilerGeneratedEquality ty then
                             if ty.IsValueType
-                                then makeType ty Exemplars.valueTypeEquatable
-                                else makeType ty Exemplars.refTypeEquatable
+                                then mos.makeType ty Exemplars.valueTypeEquatable
+                                else mos.makeType ty Exemplars.refTypeEquatable
                         else null
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
@@ -2687,8 +2669,8 @@ namespace Microsoft.FSharp.Core
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
                         // TODO: Future; for now just default back to previous functionality
                         match tyRelation with
-                        | r when r.Equals typeof<PartialEquivalenceRelation> -> makeType t typedefof<GenericEqualityObj_PER<_>>
-                        | r when r.Equals typeof<EquivalenceRelation>        -> makeType t typedefof<GenericEqualityObj_ER<_>>
+                        | r when r.Equals typeof<PartialEquivalenceRelation> -> mos.makeType t typedefof<GenericEqualityObj_PER<_>>
+                        | r when r.Equals typeof<EquivalenceRelation>        -> mos.makeType t typedefof<GenericEqualityObj_ER<_>>
                         | _ -> raise (Exception "invalid logic")
                     else null
 
@@ -2696,7 +2678,7 @@ namespace Microsoft.FSharp.Core
                     if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
                         let underlying = get (t.GetGenericArguments()) 0
                         let equatable = mos.makeEquatableType underlying
-                        let make = makeType underlying 
+                        let make = mos.makeType underlying 
                         
                         if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralEquatable
                         elif equatable.IsAssignableFrom underlying                  then make Exemplars.nullableEquatable
@@ -2704,7 +2686,7 @@ namespace Microsoft.FSharp.Core
                     else null
 
                 let equalityInterfaces (t:Type) : Type =
-                    let make = makeType t
+                    let make = mos.makeType t
                     let equatable = mos.makeEquatableType t
 
                     if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
@@ -2721,8 +2703,8 @@ namespace Microsoft.FSharp.Core
 
                 let defaultEquality tyRelation ty =
                     match tyRelation with
-                    | r when r.Equals typeof<PartialEquivalenceRelation> -> makeType ty typedefof<GenericEqualityObj_PER<_>>
-                    | r when r.Equals typeof<EquivalenceRelation>        -> makeType ty typedefof<GenericEqualityObj_ER<_>>
+                    | r when r.Equals typeof<PartialEquivalenceRelation> -> mos.makeType ty typedefof<GenericEqualityObj_PER<_>>
+                    | r when r.Equals typeof<EquivalenceRelation>        -> mos.makeType ty typedefof<GenericEqualityObj_ER<_>>
                     | _ -> raise (Exception "invalid logic")                    
 
                 let getEqualsEssenceType (tyRelation:Type) (ty:Type) : Type =
@@ -3044,9 +3026,6 @@ namespace Microsoft.FSharp.Core
             // functionality of GenericSpecializedHash should match GenericHashParamObj, or return null
             // for fallback to that funciton. 
             module GenericSpecializeHash =
-                let makeType (ct:Type) (def:Type) =
-                    def.MakeGenericType [|ct|]
-
                 let mutable private tupleHandler = null
                 let addTupleHandler f =
                     match box tupleHandler with
@@ -3084,34 +3063,34 @@ namespace Microsoft.FSharp.Core
                 let arrays (t:Type) : Type =
                     if t.IsArray || typeof<System.Array>.IsAssignableFrom t then
                         // TODO: Future; for now just default back to previous functionality
-                        makeType t typedefof<GenericHashParamObject<_>>
+                        mos.makeType t typedefof<GenericHashParamObject<_>>
                     else null
 
                 let nullableType (t:Type) : Type =
                     if t.IsGenericType && ((t.GetGenericTypeDefinition ()).Equals typedefof<System.Nullable<_>>) then
                         let underlying = get (t.GetGenericArguments()) 0
-                        let make = makeType underlying 
+                        let make = mos.makeType underlying 
                         
                         if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralEquatable
                         else                                                             make Exemplars.nullableEquality
                     else null
 
                 let structualEquatable (t:Type): Type =
-                    let make = makeType t
+                    let make = mos.makeType t
 
                     if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
                     elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralEquatable
                     else null
 
                 let sealedTypes (t:Type): Type =
-                    let make = makeType t
+                    let make = mos.makeType t
 
                     if t.IsValueType then make Exemplars.valueTypeEquality
                     elif t.IsSealed  then make Exemplars.refTypeEquality
                     else null
 
                 let defaultGetHashCode ty =
-                    makeType ty typedefof<GenericHashParamObject<_>>
+                    mos.makeType ty typedefof<GenericHashParamObject<_>>
 
                 let getGetHashCodeEssenceType (t:Type) : Type =
                     mos.takeFirstNonNull [|
@@ -3609,7 +3588,7 @@ namespace Microsoft.FSharp.Core
                 Activator.CreateInstance equalityComparer
 
             let makeComparer (ty:Type) =
-                let comp = TupleComparers.getEssenceOfCompareToType typeof<EquivalenceRelation> ty
+                let comp = GenericSpecializeCompareTo.Helpers.getEssenceOfCompareToType typeof<EquivalenceRelation> ty
                 let comparerDef = typedefof<EssenceOfComparer<int,Specializations.ComparerTypes.Int32>>
                 let comparer = comparerDef.MakeGenericType [| ty; comp |]
                 Activator.CreateInstance comparer
