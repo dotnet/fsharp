@@ -14,16 +14,23 @@
           "lib/DNXCore50/System.Collections.dll": {}
         }
       },
-      "System.Collections.Concurrent/4.0.10-beta-22405": {
+      "System.Collections.Concurrent/4.0.10-beta-23127": {
         "dependencies": {
-          "System.Runtime": "4.0.0-beta-22405",
-          "System.Threading.Tasks": "4.0.0-beta-22405"
+          "System.Runtime": "4.0.20-beta-23127",
+          "System.Threading.Tasks": "4.0.10-beta-23127",
+          "System.Diagnostics.Tracing": "4.0.20-beta-23127",
+          "System.Resources.ResourceManager": "4.0.0-beta-23127",
+          "System.Diagnostics.Debug": "4.0.10-beta-23127",
+          "System.Threading": "4.0.10-beta-23127",
+          "System.Collections": "4.0.10-beta-23127",
+          "System.Runtime.Extensions": "4.0.10-beta-23127",
+          "System.Globalization": "4.0.10-beta-23127"
         },
         "compile": {
-          "lib/contract/System.Collections.Concurrent.dll": {}
+          "ref/dotnet/System.Collections.Concurrent.dll": {}
         },
         "runtime": {
-          "lib/aspnetcore50/System.Collections.Concurrent.dll": {}
+          "lib/dotnet/System.Collections.Concurrent.dll": {}
         }
       },
       "System.Console/4.0.0-beta-23127": {
@@ -463,17 +470,35 @@
         "runtimes/win8-aot/lib/netcore50/System.Collections.dll"
       ]
     },
-    "System.Collections.Concurrent/4.0.10-beta-22405": {
-      "sha512": "mVvpgfdVu7x/n+D/gAlN34iZfMkuzl8poOiUxCYFaJ4OFLsv1xNeChs3Oaz+jq8vjJSpgj3n0sUBz1YtkYh4+w==",
+    "System.Collections.Concurrent/4.0.10-beta-23127": {
+      "serviceable": true,
+      "sha512": "6ztGCgMpxYIVbHC0KYDDR2UdwzVXT7QB827EkPHntcRJKmcyEYbH3ZS3uWXOoLG8PBTSoJfVP/k2Wpf0CwcKvA==",
       "files": [
-        "License.rtf",
-        "System.Collections.Concurrent.4.0.10-beta-22405.nupkg",
-        "System.Collections.Concurrent.4.0.10-beta-22405.nupkg.sha512",
+        "System.Collections.Concurrent.4.0.10-beta-23127.nupkg",
+        "System.Collections.Concurrent.4.0.10-beta-23127.nupkg.sha512",
         "System.Collections.Concurrent.nuspec",
-        "lib/aspnetcore50/System.Collections.Concurrent.dll",
-        "lib/contract/System.Collections.Concurrent.dll",
-        "lib/net45/System.Collections.Concurrent.dll",
-        "lib/portable-wpa80+win80+net45+aspnetcore50/System.Collections.Concurrent.dll"
+        "lib/dotnet/System.Collections.Concurrent.dll",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net46/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "ref/dotnet/System.Collections.Concurrent.dll",
+        "ref/dotnet/System.Collections.Concurrent.xml",
+        "ref/dotnet/de/System.Collections.Concurrent.xml",
+        "ref/dotnet/es/System.Collections.Concurrent.xml",
+        "ref/dotnet/fr/System.Collections.Concurrent.xml",
+        "ref/dotnet/it/System.Collections.Concurrent.xml",
+        "ref/dotnet/ja/System.Collections.Concurrent.xml",
+        "ref/dotnet/ko/System.Collections.Concurrent.xml",
+        "ref/dotnet/ru/System.Collections.Concurrent.xml",
+        "ref/dotnet/zh-hans/System.Collections.Concurrent.xml",
+        "ref/dotnet/zh-hant/System.Collections.Concurrent.xml",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net46/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._"
       ]
     },
     "System.Console/4.0.0-beta-23127": {
@@ -1561,7 +1586,7 @@
   "projectFileDependencyGroups": {
     "": [
       "System.Collections >= 4.0.10-beta-*",
-      "System.Collections.Concurrent >= 4.0.10-beta-**",
+      "System.Collections.Concurrent >= 4.0.10-beta-*",
       "System.Console >= 4.0.0-beta-*",
       "System.Diagnostics.Debug >= 4.0.10-beta-*",
       "System.Diagnostics.Tools >= 4.0.0-beta-*",

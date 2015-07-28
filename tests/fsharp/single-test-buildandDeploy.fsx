@@ -25,7 +25,7 @@ let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" "DNX
 let Output = GetArgumentFromCommandLine "--output:" @"output"
 let FSharpCore = GetArgumentFromCommandLine "--fsharpCore:" "fsharp.core.dll was not specified"
 let NugetProjectJson = GetArgumentFromCommandLine "--nugetProjectJson:" "project.json was not specified"
-let NugetSources = (GetArgumentFromCommandLine "--nugetSources:" "").Split([|';'|]) |> Seq.fold(fun acc src -> acc + " " + src) ""
+let NugetSources = (GetArgumentFromCommandLine "--nugetSources:" "").Split([|';'|]) |> Seq.fold(fun acc src -> acc + " -s:" + src) ""
 let DnuPath = GetArgumentFromCommandLine "--dnuPath:" "..\..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00053\lib\dnu.cmd"
 let FscPath = GetArgumentFromCommandLine "--fscPath:" "Fsc Path not specified"
 let TestPlatform = GetArgumentFromCommandLine "--testPlatform:" "Test Platform not specified"
@@ -75,11 +75,12 @@ let executeCompiler sources references =
     let listToSpaceSeperatedString list = list |> Seq.fold(fun a t -> sprintf "%s %s" a t) ""
     let addReferenceSwitch list = list |> Seq.map(fun i -> sprintf "--reference:%s" i)
     let arguments = sprintf @"--out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --noframework %s -r:%s %s %s" (Output) (listToSpaceSeperatedString (addReferenceSwitch references)) (FSharpCore) (listToPrefixedSpaceSeperatedString "--define:" Defines) (listToSpaceSeperatedString sources)
-    printf "%s %s" FscPath arguments
+    printfn "%s %s" FscPath arguments
     executeProcess FscPath arguments
 
 let restorePackages () =
     let arguments = "restore " + "--packages " + PackagesDir + " " + NugetSources + " " + NugetProjectJson
+    printfn "%s %s" DnuPath arguments
     executeProcess DnuPath arguments
 
 restorePackages()
