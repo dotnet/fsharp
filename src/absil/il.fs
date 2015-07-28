@@ -442,34 +442,30 @@ type AssemblyRefData =
 let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
 
 let compareVersions x y =
-    match x with
-    | None ->
-        match y with
-        | None -> 0                 // both None therefore equal
-        | Some(_,_,_,_) -> -1       // left None, y some, therefore x is smaller
-    | Some(x1,x2,x3,x4) ->
-        match y with
-        | None -> 1                 // y None, x some, therefore x is bigger
-        | Some(y1,y2,y3,y4) ->
-            if y1>x1 then 1 
-            elif y1<x1 then -1
-            elif y2>x2 then 1 
-            elif y2<x1 then -1
-            elif y3>x3 then 1 
-            elif y3<x1 then -1
-            elif y4>x4 then 1 
-            elif y4<x1 then -1
-            else 0
+    match x,y with 
+    | None, None -> 0
+    | Some _, None -> 1
+    | None, Some _ -> -1
+    | Some(x1,x2,x3,x4), Some(y1,y2,y3,y4) ->
+        if y1>x1 then 1 
+        elif y1<x1 then -1
+        elif y2>x2 then 1 
+        elif y2<x1 then -1
+        elif y3>x3 then 1 
+        elif y3<x1 then -1
+        elif y4>x4 then 1 
+        elif y4<x1 then -1
+        else 0
 
 let isMscorlib data =
-    if System.String.Compare(data.assemRefName, "mscorlib", System.StringComparison.OrdinalIgnoreCase) = 0 then true 
+    if System.String.Compare(data.assemRefName, "mscorlib") = 0 then true 
     else false
-    
+
 let GetReferenceUnifiedVersion data = 
     let mutable highest = data.assemRefVersion
-    if (isMscorlib data)<> true then 
+    if not (isMscorlib data) then 
         for ref in AssemblyRefUniqueStampGenerator.Table do
-            if System.String.Compare(ref.assemRefName, data.assemRefName, System.StringComparison.OrdinalIgnoreCase) = 0 && highest < ref.assemRefVersion then 
+            if System.String.Compare(ref.assemRefName, data.assemRefName) = 0 && highest < ref.assemRefVersion then 
                 highest <- ref.assemRefVersion
     highest
 
