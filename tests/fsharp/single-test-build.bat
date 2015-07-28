@@ -140,7 +140,7 @@ set command_line_args=%command_line_args% --nugetsources:--nugetSources:https://
 set command_line_args=%command_line_args% --define:CoreClr --define:NetCore
 set command_line_args=%command_line_args% --InitializeForTests:true
 echo %command_line_args%  >>build_output.log
-fsi %command_line_args%   >>build_output.log
+fsi %command_line_args%  >>build_output.log
 echo Errorlevel: %errorlevel%
 if ERRORLEVEL 1 goto Error
 
