@@ -1214,6 +1214,8 @@ namespace Microsoft.FSharp.Core
                 | true -> true
                 | false -> false
 
+            let phantom<'t> = unsafeDefault<'t>
+
             module Specializations =
                 type IEssenceOfCompareTo<'a> =
                     abstract Ensorcel : IComparer * 'a * 'a -> int
@@ -1223,21 +1225,6 @@ namespace Microsoft.FSharp.Core
 
                 type IEssenceOfGetHashCode<'a> =
                     abstract Ensorcel : IEqualityComparer * 'a -> int
-
-                [<Sealed>]
-                type FlaconOfComparer<'a, 't when 't :> IEssenceOfCompareTo<'a> and 't : (new : unit -> 't)>() =
-                    static let ``instance`` = new 't ()
-                    static member Instance = ``instance``
-
-                [<Sealed>]
-                type FlaconOfEquals<'a, 't when 't :> IEssenceOfEquals<'a> and 't : (new : unit -> 't)>() =
-                    static let ``instance`` = new 't ()
-                    static member Instance = ``instance``
-
-                [<Sealed>]
-                type FlaconOfGetHashCode<'a, 't when 't :> IEssenceOfGetHashCode<'a> and 't : (new : unit -> 't)>() =
-                    static let ``instance`` = new 't ()
-                    static member Instance = ``instance``
 
                 module ComparerTypes =
                     let getPERNaNResult (comp:IComparer) =
@@ -1647,7 +1634,8 @@ namespace Microsoft.FSharp.Core
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,
                                                 'comp1
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)> =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
                             match x, y with
@@ -1655,14 +1643,14 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1))
+                                eliminate_tail_call_int (phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,'b,
                                                 'comp1,'comp2
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
-                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
-                                                                                                                                        > =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
                             match x, y with
@@ -1670,18 +1658,18 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2))
+                                eliminate_tail_call_int (phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,'b,'c,
                                                 'comp1,'comp2,'comp3
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
-                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
-                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
-                                                                                                                                        > =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
                             match x, y with
@@ -1689,23 +1677,23 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3))
+                                eliminate_tail_call_int (phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3))
 
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,'b,'c,'d,
                                                 'comp1,'comp2,'comp3,'comp4
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
-                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
-                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
-                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
-                                                                                                                                        > =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
                             match x, y with
@@ -1713,26 +1701,26 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4))
+                                eliminate_tail_call_int (phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,
                                                 'comp1,'comp2,'comp3,'comp4,'comp5
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
-                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
-                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
-                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
-                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
-                                                                                                                                        > =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
                             match x, y with
@@ -1740,30 +1728,30 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5))
+                                eliminate_tail_call_int (phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,'f,
                                                 'comp1,'comp2,'comp3,'comp4,'comp5,'comp6
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
-                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
-                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
-                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
-                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
-                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6)
-                                                                                                                                        > =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
                             match x, y with
@@ -1771,34 +1759,34 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5) with
+                                match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'f, 'comp6>.Instance.Ensorcel (comparer, x.Item6, y.Item6))
+                                eliminate_tail_call_int (phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,'f,'g,
                                                 'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
-                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
-                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
-                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
-                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
-                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6)
-                                                     and 'comp7 :> Specializations.IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7)
-                                                                                                                                        > =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
+                                                     and 'comp7 :> Specializations.IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7) and 'comp7 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
                             match x, y with
@@ -1806,38 +1794,38 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5) with
+                                match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'f, 'comp6>.Instance.Ensorcel (comparer, x.Item6, y.Item6) with
+                                match phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'g, 'comp7>.Instance.Ensorcel (comparer, x.Item7, y.Item7))
+                                eliminate_tail_call_int (phantom<'comp7>.Ensorcel (comparer, x.Item7, y.Item7))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfCompareTo<'a,'b,'c,'d,'e,'f,'g,'h,
                                                 'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7,'comp8
-                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1)
-                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2)
-                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3)
-                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4)
-                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5)
-                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6)
-                                                     and 'comp7 :> Specializations.IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7)
-                                                     and 'comp8 :> Specializations.IEssenceOfCompareTo<'h> and 'comp8 : (new : unit -> 'comp8)
-                                                                                                                                        > =
+                                                    when 'comp1 :> Specializations.IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                     and 'comp2 :> Specializations.IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                     and 'comp3 :> Specializations.IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                                     and 'comp4 :> Specializations.IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                                     and 'comp5 :> Specializations.IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                                     and 'comp6 :> Specializations.IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
+                                                     and 'comp7 :> Specializations.IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7) and 'comp7 : struct
+                                                     and 'comp8 :> Specializations.IEssenceOfCompareTo<'h> and 'comp8 : (new : unit -> 'comp8) and 'comp8 : struct
+                                                                                                                                                                    > =
                     interface Specializations.IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
                         member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
                             match x, y with
@@ -1845,241 +1833,245 @@ namespace Microsoft.FSharp.Core
                             | null, _ -> -1
                             | _, null -> +1
                             | _, _ ->
-                                match Specializations.FlaconOfComparer<'a, 'comp1>.Instance.Ensorcel (comparer, x.Item1, y.Item1) with
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'b, 'comp2>.Instance.Ensorcel (comparer, x.Item2, y.Item2) with
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'c, 'comp3>.Instance.Ensorcel (comparer, x.Item3, y.Item3) with
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'d, 'comp4>.Instance.Ensorcel (comparer, x.Item4, y.Item4) with
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'e, 'comp5>.Instance.Ensorcel (comparer, x.Item5, y.Item5) with
+                                match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'f, 'comp6>.Instance.Ensorcel (comparer, x.Item6, y.Item6) with
+                                match phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                match Specializations.FlaconOfComparer<'g, 'comp7>.Instance.Ensorcel (comparer, x.Item7, y.Item7) with
+                                match phantom<'comp7>.Ensorcel (comparer, x.Item7, y.Item7) with
                                 | x when x <> 0 -> x
                                 | _ ->
-                                eliminate_tail_call_int (Specializations.FlaconOfComparer<'h, 'comp8>.Instance.Ensorcel (comparer, x.Rest, y.Rest))
+                                eliminate_tail_call_int (phantom<'comp8>.Ensorcel (comparer, x.Rest, y.Rest))
 
             module TupleEquals =
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,
                                              'eq1
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)> =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1)
+                                phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,
                                              'eq1,'eq2
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
-                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)> =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
                                 | false -> false
                                 | _ ->
-                                Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2)
+                                phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,
                                              'eq1,'eq2,'eq3
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
-                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
-                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)> =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
                                 | false -> false
                                 | _ ->
-                                Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3)
+                                phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,'d,
                                              'eq1,'eq2,'eq3,'eq4
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
-                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
-                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
-                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)> =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
                                 | false -> false
                                 | _ ->
-                                Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4)
+                                phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,'d,'e,
                                              'eq1,'eq2,'eq3,'eq4,'eq5
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
-                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
-                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
-                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
-                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
-                                                                                                                                    > =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
                                 | false -> false
                                 | _ ->
-                                Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5)
+                                phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,'d,'e,'f,
                                              'eq1,'eq2,'eq3,'eq4,'eq5,'eq6
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
-                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
-                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
-                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
-                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
-                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6)
-                                                                                                                                    > =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5) with
+                                match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
                                 | false -> false
                                 | _ ->
-                                Specializations.FlaconOfEquals<'f, 'eq6>.Instance.Ensorcel (ec, x.Item6, y.Item6)
+                                phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,'d,'e,'f,'g,
                                              'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
-                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
-                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
-                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
-                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
-                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6)
-                                                 and 'eq7 :> Specializations.IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7)
-                                                                                                                                    > =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
+                                                 and 'eq7 :> Specializations.IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7) and 'eq7 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5) with
+                                match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'f, 'eq6>.Instance.Ensorcel (ec, x.Item6, y.Item6) with
+                                match phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6) with
                                 | false -> false
                                 | _ ->
-                                Specializations.FlaconOfEquals<'g, 'eq7>.Instance.Ensorcel (ec, x.Item7, y.Item7)
+                                phantom<'eq7>.Ensorcel (ec, x.Item7, y.Item7)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfEquals<'a,'b,'c,'d,'e,'f,'g,'h,
                                              'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7,'eq8
-                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1)
-                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2)
-                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3)
-                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4)
-                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5)
-                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6)
-                                                 and 'eq7 :> Specializations.IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7)
-                                                 and 'eq8 :> Specializations.IEssenceOfEquals<'h> and 'eq8 : (new : unit -> 'eq8)
-                                                                                                                                    > =
+                                                when 'eq1 :> Specializations.IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                 and 'eq2 :> Specializations.IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                 and 'eq3 :> Specializations.IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                                 and 'eq4 :> Specializations.IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                                 and 'eq5 :> Specializations.IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                                 and 'eq6 :> Specializations.IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
+                                                 and 'eq7 :> Specializations.IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7) and 'eq7 : struct
+                                                 and 'eq8 :> Specializations.IEssenceOfEquals<'h> and 'eq8 : (new : unit -> 'eq8) and 'eq8 : struct
+                                                                                                                                                    > =
                     interface Specializations.IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
                         member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
                             match x, y with
                             | null, null -> true
                             | null, _ | _, null -> false
                             | _, _ ->
-                                match Specializations.FlaconOfEquals<'a, 'eq1>.Instance.Ensorcel (ec, x.Item1, y.Item1) with
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'b, 'eq2>.Instance.Ensorcel (ec, x.Item2, y.Item2) with
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'c, 'eq3>.Instance.Ensorcel (ec, x.Item3, y.Item3) with
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'d, 'eq4>.Instance.Ensorcel (ec, x.Item4, y.Item4) with
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'e, 'eq5>.Instance.Ensorcel (ec, x.Item5, y.Item5) with
+                                match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'f, 'eq6>.Instance.Ensorcel (ec, x.Item6, y.Item6) with
+                                match phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6) with
                                 | false -> false
                                 | _ ->
-                                match Specializations.FlaconOfEquals<'g, 'eq7>.Instance.Ensorcel (ec, x.Item7, y.Item7) with
+                                match phantom<'eq7>.Ensorcel (ec, x.Item7, y.Item7) with
                                 | false -> false
                                 | _ ->
-                                Specializations.FlaconOfEquals<'h, 'eq8>.Instance.Ensorcel (ec, x.Rest, y.Rest)
+                                phantom<'eq8>.Ensorcel (ec, x.Rest, y.Rest)
 
             module TuplesGetHashCode =
 (*
@@ -2094,132 +2086,137 @@ namespace Microsoft.FSharp.Core
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,
                                                  'ghc1
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)> =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
                             eliminate_tail_call_int a
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,
                                                  'ghc1,'ghc2
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)> =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
                             eliminate_tail_call_int (cth a b)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,'c,
                                                  'ghc1,'ghc2,'ghc3
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)> =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
                             eliminate_tail_call_int (cth (cth a b) c)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,'c,'d,
                                                  'ghc1,'ghc2,'ghc3,'ghc4
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
-                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)> =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
-                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
                             eliminate_tail_call_int (cth (cth a b) (cth c d))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,
                                                  'ghc1,'ghc2,'ghc3,'ghc4,'ghc5
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
-                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
-                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)> =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
-                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
-                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
                             eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) e)
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,'f,
                                                  'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
-                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
-                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)
-                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6)
-                                                                                                                                                > =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
-                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
-                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
-                            let f = Specializations.FlaconOfGetHashCode<'f,'ghc6>.Instance.Ensorcel (iec, x.Item6)
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
+                            let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
                             eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth e f))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,'f,'g,
                                                  'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
-                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
-                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)
-                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6)
-                                                     and 'ghc7 :> Specializations.IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7)
-                                                                                                                                                > =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
+                                                     and 'ghc7 :> Specializations.IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7) and 'ghc7 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
-                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
-                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
-                            let f = Specializations.FlaconOfGetHashCode<'f,'ghc6>.Instance.Ensorcel (iec, x.Item6)
-                            let g = Specializations.FlaconOfGetHashCode<'g,'ghc7>.Instance.Ensorcel (iec, x.Item7)
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
+                            let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
+                            let g = phantom<'ghc7>.Ensorcel (iec, x.Item7)
                             eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) g))
 
                 [<Struct; NoComparison; NoEquality>]
                 type TupleEssenceOfGetHashCode<'a,'b,'c,'d,'e,'f,'g,'h,
                                                  'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7,'ghc8
-                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1)
-                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2)
-                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3)
-                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4)
-                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5)
-                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6)
-                                                     and 'ghc7 :> Specializations.IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7)
-                                                     and 'ghc8 :> Specializations.IEssenceOfGetHashCode<'h> and 'ghc8 : (new : unit -> 'ghc8)
-                                                                                                                                                > =
+                                                    when 'ghc1 :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                     and 'ghc2 :> Specializations.IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                     and 'ghc3 :> Specializations.IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                                     and 'ghc4 :> Specializations.IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                                     and 'ghc5 :> Specializations.IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                                     and 'ghc6 :> Specializations.IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
+                                                     and 'ghc7 :> Specializations.IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7) and 'ghc7 : struct
+                                                     and 'ghc8 :> Specializations.IEssenceOfGetHashCode<'h> and 'ghc8 : (new : unit -> 'ghc8) and 'ghc8 : struct
+                                                                                                                                                                > =
                     interface Specializations.IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
                         member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) =
-                            let a = Specializations.FlaconOfGetHashCode<'a,'ghc1>.Instance.Ensorcel (iec, x.Item1)
-                            let b = Specializations.FlaconOfGetHashCode<'b,'ghc2>.Instance.Ensorcel (iec, x.Item2) 
-                            let c = Specializations.FlaconOfGetHashCode<'c,'ghc3>.Instance.Ensorcel (iec, x.Item3)
-                            let d = Specializations.FlaconOfGetHashCode<'d,'ghc4>.Instance.Ensorcel (iec, x.Item4) 
-                            let e = Specializations.FlaconOfGetHashCode<'e,'ghc5>.Instance.Ensorcel (iec, x.Item5)
-                            let f = Specializations.FlaconOfGetHashCode<'f,'ghc6>.Instance.Ensorcel (iec, x.Item6)
-                            let g = Specializations.FlaconOfGetHashCode<'g,'ghc7>.Instance.Ensorcel (iec, x.Item7)
-                            let h = Specializations.FlaconOfGetHashCode<'h,'ghc8>.Instance.Ensorcel (iec, x.Rest)
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
+                            let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
+                            let g = phantom<'ghc7>.Ensorcel (iec, x.Item7)
+                            let h = phantom<'ghc8>.Ensorcel (iec, x.Rest)
                             eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
 
             type private EquivalenceRelation = class end
@@ -2358,7 +2355,8 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
-                type GenericComparerObj<'a>() =
+                [<Struct;NoComparison;NoEquality>]
+                type GenericComparerObj<'a> =
                     interface Specializations.IEssenceOfCompareTo<'a> with
                         member __.Ensorcel (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
 
@@ -2417,12 +2415,12 @@ namespace Microsoft.FSharp.Core
                     end
 
                 [<Sealed>]
-                type EssenceOfCompareWrapper<'a, 'eq 
-                        when 'eq  :> Specializations.IEssenceOfCompareTo<'a> and 'eq : (new : unit -> 'eq)>() =
+                type EssenceOfCompareWrapper<'a, 'comp 
+                        when 'comp  :> Specializations.IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp) and 'comp : struct>() =
                     inherit ComparerInvoker<'a>()
                 
                     override __.Invoke (comp, x:'a, y:'a) =
-                        Specializations.FlaconOfComparer<'a, 'eq>.Instance.Ensorcel (comp, x, y)
+                        phantom<'comp>.Ensorcel (comp, x, y)
 
                 let makeComparerInvoker (ty:Type) comp =
                     let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,Specializations.ComparerTypes.Int32>>
@@ -3000,11 +2998,13 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
-                type GenericEqualityObj_ER<'a>() =
+                [<Struct;NoComparison;NoEquality>]
+                type GenericEqualityObj_ER<'a> =
                     interface Specializations.IEssenceOfEquals<'a> with
                         member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =  GenericEqualityObj true ec (box x, box y)
                         
-                type GenericEqualityObj_PER<'a>() =
+                [<Struct;NoComparison;NoEquality>]
+                type GenericEqualityObj_PER<'a> =
                     interface Specializations.IEssenceOfEquals<'a> with
                         member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) = GenericEqualityObj false ec (box x, box y)
 
@@ -3070,11 +3070,11 @@ namespace Microsoft.FSharp.Core
 
                 [<Sealed>]
                 type EssenceOfEqualsWrapper<'a, 'eq 
-                        when 'eq  :> Specializations.IEssenceOfEquals<'a> and 'eq : (new : unit -> 'eq)>() =
+                        when 'eq  :> Specializations.IEssenceOfEquals<'a> and 'eq : (new : unit -> 'eq) and 'eq : struct>() =
                     inherit EqualsInvoker<'a>()
                 
                     override __.Invoke (comp, x:'a, y:'a) =
-                        Specializations.FlaconOfEquals<'a, 'eq>.Instance.Ensorcel (comp, x, y)
+                        phantom<'eq>.Ensorcel (comp, x, y)
 
                 let makeEqualsWrapper (ty:Type) comp =
                     let wrapperTypeDef = typedefof<EssenceOfEqualsWrapper<int,Specializations.EqualsTypes.Int32>>
@@ -3412,7 +3412,8 @@ namespace Microsoft.FSharp.Core
                     elif t.Equals typeof<float32>    then typeof<Specializations.GetHashCodeTypes.Float32>
                     else null
 
-                type GenericHashParamObject<'a>() =
+                [<Struct;NoComparison;NoEquality>]
+                type GenericHashParamObject<'a> =
                     interface Specializations.IEssenceOfGetHashCode<'a> with
                         member __.Ensorcel (iec:IEqualityComparer, x:'a) = GenericHashParamObj iec (box x)
 
@@ -3467,11 +3468,11 @@ namespace Microsoft.FSharp.Core
 
                 [<Sealed>]
                 type EssenceOfGetHashCodeWrapper<'a, 'ghc
-                         when 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc)>() =
+                         when 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc) and 'ghc : struct>() =
                     inherit GetHashCodeInvoker<'a>()
                 
                     override __.Invoke (comp, x:'a) =
-                        Specializations.FlaconOfGetHashCode<'a,'ghc>.Instance.Ensorcel (comp, x)
+                        phantom<'ghc>.Ensorcel (comp, x)
 
                 let makeGetHashCodeWrapper (ty:Type) comp =
                     let wrapperTypeDef = typedefof<EssenceOfGetHashCodeWrapper<int,Specializations.GetHashCodeTypes.Int32>>
@@ -3538,22 +3539,22 @@ namespace Microsoft.FSharp.Core
 
             [<Sealed>]
             type EssenceOfEqualityComparer<'a, 'eq, 'ghc
-                    when 'eq  :> Specializations.IEssenceOfEquals<'a>      and 'eq : (new : unit -> 'eq)
-                     and 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc)>() =
+                    when 'eq  :> Specializations.IEssenceOfEquals<'a>      and 'eq  : (new : unit -> 'eq)  and 'eq  : struct
+                     and 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc) and 'ghc : struct>() =
                 
                 interface IEqualityComparer<'a> with
                     member __.Equals (x:'a, y:'a) =
-                        Specializations.FlaconOfEquals<'a, 'eq>.Instance.Ensorcel (fsEqualityComparerNoHashingER, x, y)
+                        phantom<'eq>.Ensorcel (fsEqualityComparerNoHashingER, x, y)
                     member __.GetHashCode (x:'a) =
-                        Specializations.FlaconOfGetHashCode<'a,'ghc>.Instance.Ensorcel (fsEqualityComparerUnlimitedHashingPER, x)
+                        phantom<'ghc>.Ensorcel (fsEqualityComparerUnlimitedHashingPER, x)
 
             [<Sealed>]
             type EssenceOfComparer<'a, 'comp
-                    when 'comp  :> Specializations.IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp)>() =
+                    when 'comp  :> Specializations.IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp) and 'comp : struct>() =
                 
                 interface IComparer<'a> with
                     member __.Compare (x:'a, y:'a) =
-                        Specializations.FlaconOfComparer<'a, 'comp>.Instance.Ensorcel (fsComparerER, x, y)
+                        phantom<'comp>.Ensorcel (fsComparerER, x, y)
 
             let makeEqualityComparer (ty:Type) =
                 let eq = GenericSpecializeEquals.Helpers.getEssenceOfEqualsType typeof<PartialEquivalenceRelation> ty
