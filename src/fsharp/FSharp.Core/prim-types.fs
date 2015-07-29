@@ -2221,6 +2221,7 @@ namespace Microsoft.FSharp.Core
 
             type private EquivalenceRelation = class end
             type private PartialEquivalenceRelation = class end
+            type private UnknownRelation = class end
 
             module mos =
                 type IGetType =
@@ -3412,6 +3413,17 @@ namespace Microsoft.FSharp.Core
                     elif t.Equals typeof<float32>    then typeof<Specializations.GetHashCodeTypes.Float32>
                     else null
 
+                let compilerGenerated (tyRelation:Type) ty =
+                    match tyRelation with
+                    | r when r.Equals typeof<EquivalenceRelation> || r.Equals typeof<PartialEquivalenceRelation> ->
+                        if mos.hasFSharpCompilerGeneratedEquality ty then
+                            if ty.IsValueType
+                                then mos.makeType ty Exemplars.valueTypeEquality
+                                else mos.makeType ty Exemplars.refTypeEquality
+                        else null
+                    | r when r.Equals typeof<UnknownRelation> -> null
+                    | _ -> raise (Exception "invalid logic")
+
                 [<Struct;NoComparison;NoEquality>]
                 type GenericHashParamObject<'a> =
                     interface Specializations.IEssenceOfGetHashCode<'a> with
@@ -3449,10 +3461,11 @@ namespace Microsoft.FSharp.Core
                 let defaultGetHashCode ty =
                     mos.makeType ty typedefof<GenericHashParamObject<_>>
 
-                let getGetHashCodeEssenceType (t:Type) tuples : Type =
+                let getGetHashCodeEssenceType (tyRelation:Type) (t:Type) tuples : Type =
                     mos.takeFirstNonNull [|
-                        fun () -> tuples t
+                        fun () -> tuples tyRelation t
                         fun () -> standardTypes t
+                        fun () -> compilerGenerated tyRelation t
                         fun () -> arrays t
                         fun () -> nullableType t
                         fun () -> structualEquatable t
@@ -3480,9 +3493,9 @@ namespace Microsoft.FSharp.Core
                     Activator.CreateInstance wrapperType
                             
                 type t = Specializations.GetHashCodeTypes.Int32
-                type Function<'a>() =
+                type Function<'relation, 'a>() =
                     static let essenceType : Type =
-                        getGetHashCodeEssenceType typeof<'a> Helpers.tuplesGetHashCode
+                        getGetHashCodeEssenceType typeof<'relation> typeof<'a> Helpers.tuplesGetHashCode
 
                     static let invoker : GetHashCodeInvoker<'a> =
                         unboxPrim (makeGetHashCodeWrapper typeof<'a> essenceType)
@@ -3492,17 +3505,17 @@ namespace Microsoft.FSharp.Core
                     interface mos.IGetType with
                         member __.Get () = essenceType
                 and Helpers =
-                    static member getEssenceOfGetHashCodeType ty =
-                        let getHashCode = mos.makeGenericType<Function<_>> [|ty|]
+                    static member getEssenceOfGetHashCodeType tyRelation ty =
+                        let getHashCode = mos.makeGenericType<Function<_,_>> [|tyRelation; ty|]
                         match Activator.CreateInstance getHashCode with
                         | :? mos.IGetType as getter -> getter.Get ()
                         | _ -> raise (Exception "invalid logic")
 
-                    static member tuplesGetHashCode (ty:Type) : Type =
+                    static member tuplesGetHashCode (tyRelation:Type) (ty:Type) : Type =
                         if ty.IsGenericType then
                             let tyDef = ty.GetGenericTypeDefinition ()
                             let tyDefArgs = ty.GetGenericArguments ()
-                            let create = mos.compositeType Helpers.getEssenceOfGetHashCodeType tyDefArgs
+                            let create = mos.compositeType (Helpers.getEssenceOfGetHashCodeType tyRelation) tyDefArgs
                             if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<TuplesGetHashCode.TupleEssenceOfGetHashCode<int,t>>
                             elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<TuplesGetHashCode.TupleEssenceOfGetHashCode<int,int,t,t>>
                             elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<TuplesGetHashCode.TupleEssenceOfGetHashCode<int,int,int,t,t,t>>
@@ -3520,12 +3533,12 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic x = 
                 let iec = fsEqualityComparerUnlimitedHashingPER
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Invoker.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (iec, x))
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit x =
                 let iec = CountLimitedHasherPER limit
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Invoker.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (iec, x))
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -3535,7 +3548,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                eliminate_tail_call_int (GenericSpecializeHash.Function<_>.Invoker.Invoke (iec, x))
+                eliminate_tail_call_int (GenericSpecializeHash.Function<UnknownRelation,_>.Invoker.Invoke (iec, x))
 
             [<Sealed>]
             type EssenceOfEqualityComparer<'a, 'eq, 'ghc
@@ -3558,7 +3571,7 @@ namespace Microsoft.FSharp.Core
 
             let makeEqualityComparer (ty:Type) =
                 let eq = GenericSpecializeEquals.Helpers.getEssenceOfEqualsType typeof<PartialEquivalenceRelation> ty
-                let ghc = GenericSpecializeHash.Helpers.getEssenceOfGetHashCodeType ty
+                let ghc = GenericSpecializeHash.Helpers.getEssenceOfGetHashCodeType typeof<PartialEquivalenceRelation> ty
                 let equalityComparerDef = typedefof<EssenceOfEqualityComparer<int,Specializations.EqualsTypes.Int32,Specializations.GetHashCodeTypes.Int32>>
                 let equalityComparer = equalityComparerDef.MakeGenericType [| ty; eq; ghc |]
                 Activator.CreateInstance equalityComparer
