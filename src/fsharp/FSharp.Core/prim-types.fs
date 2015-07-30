@@ -1214,797 +1214,342 @@ namespace Microsoft.FSharp.Core
                 | true -> true
                 | false -> false
 
+            // Used to denote the use of a struct that is not initialized, because we are using them to
+            // denote pure functions that have no state
             let phantom<'t> = unsafeDefault<'t>
 
-            module Specializations =
-                type IEssenceOfCompareTo<'a> =
-                    abstract Ensorcel : IComparer * 'a * 'a -> int
+            type IEssenceOfCompareTo<'a> =
+                abstract Ensorcel : IComparer * 'a * 'a -> int
 
-                type IEssenceOfEquals<'a> =
-                    abstract Ensorcel : IEqualityComparer * 'a * 'a -> bool
+            type IEssenceOfEquals<'a> =
+                abstract Ensorcel : IEqualityComparer * 'a * 'a -> bool
 
-                type IEssenceOfGetHashCode<'a> =
-                    abstract Ensorcel : IEqualityComparer * 'a -> int
+            type IEssenceOfGetHashCode<'a> =
+                abstract Ensorcel : IEqualityComparer * 'a -> int
 
-                module ComparerTypes =
-                    let getPERNaNResult (comp:IComparer) =
-                        match comp with
-                        | :? GenericComparer as comp -> getPERNaNCompareToResult comp
-                        | _ -> raise (Exception "invalid logic")
+            module ComparerTypes =
+                let getPERNaNResult (comp:IComparer) =
+                    match comp with
+                    | :? GenericComparer as comp -> getPERNaNCompareToResult comp
+                    | _ -> raise (Exception "invalid logic")
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type FloatPER =
-                        interface IEssenceOfCompareTo<float> with
-                            member __.Ensorcel (c,x,y) = 
-                                if System.Double.IsNaN x || System.Double.IsNaN y
+                [<Struct; NoComparison; NoEquality>]
+                type FloatPER =
+                    interface IEssenceOfCompareTo<float> with
+                        member __.Ensorcel (c,x,y) = 
+                            if System.Double.IsNaN x || System.Double.IsNaN y
+                                then getPERNaNResult c
+                                else x.CompareTo y
+
+                [<Struct; NoComparison; NoEquality>]
+                type Float32PER =
+                    interface IEssenceOfCompareTo<float32> with
+                        member __.Ensorcel (c,x,y) = 
+                            if System.Single.IsNaN x || System.Single.IsNaN y
+                                then getPERNaNResult c
+                                else x.CompareTo y
+
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloatPER =
+                    interface IEssenceOfCompareTo<Nullable<float>> with
+                        member __.Ensorcel (c,x,y) = 
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ ->
+                                if System.Double.IsNaN x.Value || System.Double.IsNaN y.Value
                                     then getPERNaNResult c
-                                    else x.CompareTo y
+                                    else x.Value.CompareTo y.Value
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type Float32PER =
-                        interface IEssenceOfCompareTo<float32> with
-                            member __.Ensorcel (c,x,y) = 
-                                if System.Single.IsNaN x || System.Single.IsNaN y
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloat32PER =
+                    interface IEssenceOfCompareTo<Nullable<float32>> with
+                        member __.Ensorcel (c,x,y) = 
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ ->
+                                if System.Single.IsNaN x.Value || System.Single.IsNaN y.Value
                                     then getPERNaNResult c
-                                    else x.CompareTo y
+                                    else x.Value.CompareTo y.Value
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloatPER =
-                        interface IEssenceOfCompareTo<Nullable<float>> with
-                            member __.Ensorcel (c,x,y) = 
-                                match x.HasValue, y.HasValue with
-                                | false, false -> 0
-                                | false, _ -> -1
-                                | _, false -> +1
+                [<Struct; NoComparison; NoEquality>]
+                type FloatER =
+                    interface IEssenceOfCompareTo<float> with
+                        member __.Ensorcel (_,x,y) = x.CompareTo y
+
+                [<Struct; NoComparison; NoEquality>]
+                type Float32ER =
+                    interface IEssenceOfCompareTo<float32> with
+                        member __.Ensorcel (_,x,y) = x.CompareTo y
+
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloatER =
+                    interface IEssenceOfCompareTo<Nullable<float>> with
+                        member __.Ensorcel (_,x,y) = 
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ -> x.Value.CompareTo y.Value
+
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloat32ER =
+                    interface IEssenceOfCompareTo<Nullable<float32>> with
+                        member __.Ensorcel (_,x,y) = 
+                            match x.HasValue, y.HasValue with
+                            | false, false -> 0
+                            | false, _ -> -1
+                            | _, false -> +1
+                            | _ -> x.Value.CompareTo y.Value
+
+
+                [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfCompareTo<bool      > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfCompareTo<sbyte     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfCompareTo<int16     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfCompareTo<int32     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfCompareTo<int64     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfCompareTo<nativeint > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfCompareTo<byte      > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfCompareTo<uint16    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfCompareTo<uint32    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfCompareTo<uint64    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfCompareTo<unativeint> with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfCompareTo<char      > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfCompareTo<string    > with member __.Ensorcel (_,x,y) = System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
+                [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfCompareTo<decimal   > with member __.Ensorcel (_,x,y) = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,
+                            'comp1
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                                                                                                                > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                eliminate_tail_call_int (phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1))
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,
+                            'comp1,'comp2
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                    and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                                                                                                                    > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a,'b>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
                                 | _ ->
-                                    if System.Double.IsNaN x.Value || System.Double.IsNaN y.Value
-                                        then getPERNaNResult c
-                                        else x.Value.CompareTo y.Value
+                                eliminate_tail_call_int (phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2))
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloat32PER =
-                        interface IEssenceOfCompareTo<Nullable<float32>> with
-                            member __.Ensorcel (c,x,y) = 
-                                match x.HasValue, y.HasValue with
-                                | false, false -> 0
-                                | false, _ -> -1
-                                | _, false -> +1
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,
+                            'comp1,'comp2,'comp3
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                    and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                    and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                                                                                                                    > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
                                 | _ ->
-                                    if System.Single.IsNaN x.Value || System.Single.IsNaN y.Value
-                                        then getPERNaNResult c
-                                        else x.Value.CompareTo y.Value
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type FloatER =
-                        interface IEssenceOfCompareTo<float> with
-                            member __.Ensorcel (_,x,y) = x.CompareTo y
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Float32ER =
-                        interface IEssenceOfCompareTo<float32> with
-                            member __.Ensorcel (_,x,y) = x.CompareTo y
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloatER =
-                        interface IEssenceOfCompareTo<Nullable<float>> with
-                            member __.Ensorcel (_,x,y) = 
-                                match x.HasValue, y.HasValue with
-                                | false, false -> 0
-                                | false, _ -> -1
-                                | _, false -> +1
-                                | _ -> x.Value.CompareTo y.Value
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloat32ER =
-                        interface IEssenceOfCompareTo<Nullable<float32>> with
-                            member __.Ensorcel (_,x,y) = 
-                                match x.HasValue, y.HasValue with
-                                | false, false -> 0
-                                | false, _ -> -1
-                                | _, false -> +1
-                                | _ -> x.Value.CompareTo y.Value
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3))
 
 
-                    [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfCompareTo<bool      > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfCompareTo<sbyte     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfCompareTo<int16     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfCompareTo<int32     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfCompareTo<int64     > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfCompareTo<nativeint > with member __.Ensorcel (_,x,y) = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfCompareTo<byte      > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfCompareTo<uint16    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfCompareTo<uint32    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfCompareTo<uint64    > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfCompareTo<unativeint> with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfCompareTo<char      > with member __.Ensorcel (_,x,y) = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                    [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfCompareTo<string    > with member __.Ensorcel (_,x,y) = System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
-                    [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfCompareTo<decimal   > with member __.Ensorcel (_,x,y) = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,
+                            'comp1,'comp2,'comp3,'comp4
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                    and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                    and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                    and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                                                                                                                    > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4))
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,
-                                'comp1
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                                                                                                                   > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    eliminate_tail_call_int (phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1))
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,
+                            'comp1,'comp2,'comp3,'comp4,'comp5
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                    and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                    and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                    and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                    and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                                                                                                                    > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5))
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,
-                                'comp1,'comp2
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                     and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
-                                                                                                                                      > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a,'b>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    eliminate_tail_call_int (phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2))
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,
+                            'comp1,'comp2,'comp3,'comp4,'comp5,'comp6
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                    and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                    and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                    and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                    and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                    and 'comp6 :> IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
+                                                                                                                                    > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6))
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,
-                                'comp1,'comp2,'comp3
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                     and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
-                                     and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
-                                                                                                                                      > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    eliminate_tail_call_int (phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3))
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,'g,
+                            'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                    and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                    and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                    and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                    and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                    and 'comp6 :> IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
+                                    and 'comp7 :> IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7) and 'comp7 : struct
+                                                                                                                                    > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (phantom<'comp7>.Ensorcel (comparer, x.Item7, y.Item7))
 
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,'g,'h,
+                            'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7,'comp8
+                                when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
+                                    and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
+                                    and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
+                                    and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
+                                    and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
+                                    and 'comp6 :> IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
+                                    and 'comp7 :> IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7) and 'comp7 : struct
+                                    and 'comp8 :> IEssenceOfCompareTo<'h> and 'comp8 : (new : unit -> 'comp8) and 'comp8 : struct
+                                                                                                                                    > =
+                    interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
+                        member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
+                            match x, y with
+                            | null, null -> 0
+                            | null, _ -> -1
+                            | _, null -> +1
+                            | _, _ ->
+                                match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                match phantom<'comp7>.Ensorcel (comparer, x.Item7, y.Item7) with
+                                | x when x <> 0 -> x
+                                | _ ->
+                                eliminate_tail_call_int (phantom<'comp8>.Ensorcel (comparer, x.Rest, y.Rest))
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,
-                                'comp1,'comp2,'comp3,'comp4
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                     and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
-                                     and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
-                                     and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
-                                                                                                                                      > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    eliminate_tail_call_int (phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,
-                                'comp1,'comp2,'comp3,'comp4,'comp5
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                     and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
-                                     and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
-                                     and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
-                                     and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
-                                                                                                                                      > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    eliminate_tail_call_int (phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,
-                                'comp1,'comp2,'comp3,'comp4,'comp5,'comp6
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                     and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
-                                     and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
-                                     and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
-                                     and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
-                                     and 'comp6 :> IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
-                                                                                                                                      > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    eliminate_tail_call_int (phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,'g,
-                                'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                     and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
-                                     and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
-                                     and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
-                                     and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
-                                     and 'comp6 :> IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
-                                     and 'comp7 :> IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7) and 'comp7 : struct
-                                                                                                                                      > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    eliminate_tail_call_int (phantom<'comp7>.Ensorcel (comparer, x.Item7, y.Item7))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,'g,'h,
-                                'comp1,'comp2,'comp3,'comp4,'comp5,'comp6,'comp7,'comp8
-                                    when 'comp1 :> IEssenceOfCompareTo<'a> and 'comp1 : (new : unit -> 'comp1) and 'comp1 : struct
-                                     and 'comp2 :> IEssenceOfCompareTo<'b> and 'comp2 : (new : unit -> 'comp2) and 'comp2 : struct
-                                     and 'comp3 :> IEssenceOfCompareTo<'c> and 'comp3 : (new : unit -> 'comp3) and 'comp3 : struct
-                                     and 'comp4 :> IEssenceOfCompareTo<'d> and 'comp4 : (new : unit -> 'comp4) and 'comp4 : struct
-                                     and 'comp5 :> IEssenceOfCompareTo<'e> and 'comp5 : (new : unit -> 'comp5) and 'comp5 : struct
-                                     and 'comp6 :> IEssenceOfCompareTo<'f> and 'comp6 : (new : unit -> 'comp6) and 'comp6 : struct
-                                     and 'comp7 :> IEssenceOfCompareTo<'g> and 'comp7 : (new : unit -> 'comp7) and 'comp7 : struct
-                                     and 'comp8 :> IEssenceOfCompareTo<'h> and 'comp8 : (new : unit -> 'comp8) and 'comp8 : struct
-                                                                                                                                      > =
-                        interface IEssenceOfCompareTo<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
-                            member __.Ensorcel (comparer:IComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
-                                match x, y with
-                                | null, null -> 0
-                                | null, _ -> -1
-                                | _, null -> +1
-                                | _, _ ->
-                                    match phantom<'comp1>.Ensorcel (comparer, x.Item1, y.Item1) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp2>.Ensorcel (comparer, x.Item2, y.Item2) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp3>.Ensorcel (comparer, x.Item3, y.Item3) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp4>.Ensorcel (comparer, x.Item4, y.Item4) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp5>.Ensorcel (comparer, x.Item5, y.Item5) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp6>.Ensorcel (comparer, x.Item6, y.Item6) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    match phantom<'comp7>.Ensorcel (comparer, x.Item7, y.Item7) with
-                                    | x when x <> 0 -> x
-                                    | _ ->
-                                    eliminate_tail_call_int (phantom<'comp8>.Ensorcel (comparer, x.Rest, y.Rest))
-
-                module EqualsTypes =
-                    [<Struct; NoComparison; NoEquality>]
-                    type FloatPER =
-                        interface IEssenceOfEquals<float>
-                            with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Float32PER =
-                        interface IEssenceOfEquals<float32> with
-                            member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloatPER =
-                        interface IEssenceOfEquals<Nullable<float>> with
-                            member __.Ensorcel (_,x,y) =
-                                match x.HasValue, y.HasValue with
-                                | false, false -> true
-                                | false, _ 
-                                | _, false -> false
-                                | _ -> (# "ceq" x.Value y.Value : bool #)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloat32PER =
-                        interface IEssenceOfEquals<Nullable<float32>> with
-                            member __.Ensorcel (_,x,y) =
-                                match x.HasValue, y.HasValue with
-                                | false, false -> true
-                                | false, _ 
-                                | _, false -> false
-                                | _ -> (# "ceq" x.Value y.Value : bool #)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type FloatER =
-                        interface IEssenceOfEquals<float>
-                            with member __.Ensorcel (_,x,y) = if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Float32ER =
-                        interface IEssenceOfEquals<float32> with
-                            member __.Ensorcel (_,x,y) = if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloatER =
-                        interface IEssenceOfEquals<Nullable<float>> with
-                            member __.Ensorcel (_,x,y) =
-                                match x.HasValue, y.HasValue with
-                                | false, false -> true
-                                | false, _ 
-                                | _, false -> false
-                                | _ -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type NullableFloat32ER =
-                        interface IEssenceOfEquals<Nullable<float32>> with
-                            member __.Ensorcel (_,x,y) =
-                                match x.HasValue, y.HasValue with
-                                | false, false -> true
-                                | false, _ 
-                                | _, false -> false
-                                | _ -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
-
-                    [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfEquals<bool      > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfEquals<sbyte     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfEquals<int16     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfEquals<int32     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfEquals<int64     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfEquals<byte      > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfEquals<uint16    > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfEquals<uint32    > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfEquals<uint64    > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfEquals<nativeint > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfEquals<unativeint> with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfEquals<char      > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
-                    [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfEquals<string    > with member __.Ensorcel (_,x,y) = System.String.Equals((# "" x : string #),(# "" y : string #))
-                    [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfEquals<decimal   > with member __.Ensorcel (_,x,y) = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,
-                                'eq1
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,
-                                'eq1,'eq2
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                     and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a,'b>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
-                                    | false -> false
-                                    | _ ->
-                                    phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,
-                                'eq1,'eq2,'eq3
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                     and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
-                                     and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a,'b,'c>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
-                                    | false -> false
-                                    | _ ->
-                                    phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,
-                                'eq1,'eq2,'eq3,'eq4
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                     and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
-                                     and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
-                                     and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
-                                    | false -> false
-                                    | _ ->
-                                    phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,
-                                'eq1,'eq2,'eq3,'eq4,'eq5
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                     and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
-                                     and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
-                                     and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
-                                     and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
-                                    | false -> false
-                                    | _ ->
-                                    phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,
-                                'eq1,'eq2,'eq3,'eq4,'eq5,'eq6
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                     and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
-                                     and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
-                                     and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
-                                     and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
-                                     and 'eq6 :> IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
-                                    | false -> false
-                                    | _ ->
-                                    phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,'g,
-                                'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                     and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
-                                     and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
-                                     and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
-                                     and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
-                                     and 'eq6 :> IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
-                                     and 'eq7 :> IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7) and 'eq7 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6) with
-                                    | false -> false
-                                    | _ ->
-                                    phantom<'eq7>.Ensorcel (ec, x.Item7, y.Item7)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,'g,'h,
-                                'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7,'eq8
-                                    when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
-                                     and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
-                                     and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
-                                     and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
-                                     and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
-                                     and 'eq6 :> IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
-                                     and 'eq7 :> IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7) and 'eq7 : struct
-                                     and 'eq8 :> IEssenceOfEquals<'h> and 'eq8 : (new : unit -> 'eq8) and 'eq8 : struct
-                                                                                                                        > =
-                        interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
-                                match x, y with
-                                | null, null -> true
-                                | null, _ | _, null -> false
-                                | _, _ ->
-                                    match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6) with
-                                    | false -> false
-                                    | _ ->
-                                    match phantom<'eq7>.Ensorcel (ec, x.Item7, y.Item7) with
-                                    | false -> false
-                                    | _ ->
-                                    phantom<'eq8>.Ensorcel (ec, x.Rest, y.Rest)
-
-                module GetHashCodeTypes =
-                    [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfGetHashCode<bool      > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Float      = interface IEssenceOfGetHashCode<float     > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfGetHashCode<sbyte     > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfGetHashCode<int16     > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfGetHashCode<int32     > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfGetHashCode<int64     > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfGetHashCode<byte      > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfGetHashCode<uint16    > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfGetHashCode<uint32    > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfGetHashCode<uint64    > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfGetHashCode<nativeint > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfGetHashCode<unativeint> with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfGetHashCode<char      > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfGetHashCode<string    > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfGetHashCode<decimal   > with member __.Ensorcel (_,a) = a.GetHashCode()
-                    [<Struct; NoComparison; NoEquality>] type Float32    = interface IEssenceOfGetHashCode<float32   > with member __.Ensorcel (_,a) = a.GetHashCode()
-
-    (*
-                    let inline mask (n:int) (m:int) = (# "and" n m : int #)
-                    let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
-                    let inline opshr (x:int) (n:int) : int =  (# "shr" x (mask n 31) : int #)
-                    let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
-                    let inline combineTupleHashes (h1 : int) (h2 : int) = -1640531527 + (h2 + (opshl h1 6) + (opshr h1 2))
-    *)
-                    let inline cth a b = TupleUtils.combineTupleHashes a b
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,
-                                'ghc1
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                eliminate_tail_call_int a
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,
-                                'ghc1,'ghc2
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                     and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a,'b>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
-                                eliminate_tail_call_int (cth a b)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,
-                                'ghc1,'ghc2,'ghc3
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                     and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
-                                     and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
-                                let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
-                                eliminate_tail_call_int (cth (cth a b) c)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,
-                                'ghc1,'ghc2,'ghc3,'ghc4
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                     and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
-                                     and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
-                                     and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
-                                let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
-                                let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
-                                eliminate_tail_call_int (cth (cth a b) (cth c d))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,
-                                'ghc1,'ghc2,'ghc3,'ghc4,'ghc5
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                     and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
-                                     and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
-                                     and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
-                                     and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
-                                let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
-                                let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
-                                let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
-                                eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) e)
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,
-                                'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                     and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
-                                     and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
-                                     and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
-                                     and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
-                                     and 'ghc6 :> IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
-                                let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
-                                let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
-                                let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
-                                let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
-                                eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth e f))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,'g,
-                                'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                     and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
-                                     and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
-                                     and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
-                                     and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
-                                     and 'ghc6 :> IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
-                                     and 'ghc7 :> IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7) and 'ghc7 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
-                                let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
-                                let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
-                                let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
-                                let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
-                                let g = phantom<'ghc7>.Ensorcel (iec, x.Item7)
-                                eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) g))
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Tuple<'a,'b,'c,'d,'e,'f,'g,'h,
-                                'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7,'ghc8
-                                    when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
-                                     and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
-                                     and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
-                                     and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
-                                     and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
-                                     and 'ghc6 :> IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
-                                     and 'ghc7 :> IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7) and 'ghc7 : struct
-                                     and 'ghc8 :> IEssenceOfGetHashCode<'h> and 'ghc8 : (new : unit -> 'ghc8) and 'ghc8 : struct
-                                                                                                                                 > =
-                        interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
-                            member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) =
-                                let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
-                                let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
-                                let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
-                                let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
-                                let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
-                                let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
-                                let g = phantom<'ghc7>.Ensorcel (iec, x.Item7)
-                                let h = phantom<'ghc8>.Ensorcel (iec, x.Rest)
-                                eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
-
-            module Exemplars =
                 module Nullable =
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralComparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralComparable> =
-                        interface Specializations.IEssenceOfCompareTo<Nullable<'a>> with
+                        interface IEssenceOfCompareTo<Nullable<'a>> with
                             member __.Ensorcel (ec:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
                                 | false, false -> 0
@@ -2014,7 +1559,7 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type ComparableGeneric<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable<'a>> =
-                        interface Specializations.IEssenceOfCompareTo<Nullable<'a>> with
+                        interface IEssenceOfCompareTo<Nullable<'a>> with
                             member __.Ensorcel (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
                                 | false, false -> 0
@@ -2024,7 +1569,7 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type Comparable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IComparable> =
-                        interface Specializations.IEssenceOfCompareTo<Nullable<'a>> with
+                        interface IEssenceOfCompareTo<Nullable<'a>> with
                             member __.Ensorcel (_:IComparer, x:Nullable<'a>, y:Nullable<'a>) =
                                 match x.HasValue, y.HasValue with
                                 | false, false -> 0
@@ -2032,90 +1577,29 @@ namespace Microsoft.FSharp.Core
                                 | _, false -> +1
                                 | _, _ -> x.Value.CompareTo (box y.Value)
 
-                    [<Struct; NoComparison; NoEquality>]
-                    type StructuralEquatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable> =
-                        interface Specializations.IEssenceOfEquals<Nullable<'a>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                                match x.HasValue, y.HasValue with
-                                | false, false -> true
-                                | false, _ | _, false -> false
-                                | _, _ -> x.Value.Equals (box y.Value, ec) 
-
-                        interface Specializations.IEssenceOfGetHashCode<Nullable<'a>> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:Nullable<'a>) =
-                                if x.HasValue then x.Value.GetHashCode (ec) 
-                                else 0
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a>> =
-                        interface Specializations.IEssenceOfEquals<Nullable<'a>> with
-                            member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                                match x.HasValue, y.HasValue with
-                                | false, false -> true
-                                | false, _ | _, false -> false
-                                | _, _ -> x.Value.Equals y.Value
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Equality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality> =
-                        interface Specializations.IEssenceOfEquals<Nullable<'a>> with
-                            member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
-                                match x.HasValue, y.HasValue with
-                                | false, false -> true
-                                | false, _ | _, false -> false
-                                | _, _ -> x.Value.Equals y.Value
-
-                        interface Specializations.IEssenceOfGetHashCode<Nullable<'a>> with
-                            member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>) =
-                                if x.HasValue then x.Value.GetHashCode ()
-                                else 0
-
                 module ValueType =
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralComparable<'a when 'a : struct and 'a :> IStructuralComparable> =
-                        interface Specializations.IEssenceOfCompareTo<'a> with
+                        interface IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (ec:IComparer, x:'a, y:'a) =
                                 x.CompareTo (box y, ec)
 
                     [<Struct; NoComparison; NoEquality>]
                     type ComparableGeneric<'a when 'a : struct and 'a :> IComparable<'a>> =
-                        interface Specializations.IEssenceOfCompareTo<'a> with
+                        interface IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 x.CompareTo y
 
                     [<Struct; NoComparison; NoEquality>]
                     type Comparable<'a when 'a : struct and 'a :> IComparable> =
-                        interface Specializations.IEssenceOfCompareTo<'a> with
+                        interface IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 x.CompareTo y
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type StructuralEquatable<'a when 'a : struct and 'a :> IStructuralEquatable> =
-                        interface Specializations.IEssenceOfEquals<'a> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =
-                                x.Equals (box y, ec) 
-                        interface Specializations.IEssenceOfGetHashCode<'a> with
-                            member __.Ensorcel (ec:IEqualityComparer, x:'a) =
-                                x.GetHashCode (ec) 
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Equatable<'a when 'a : struct and 'a :> IEquatable<'a>> =
-                        interface Specializations.IEssenceOfEquals<'a> with
-                            member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
-                                x.Equals y
-
-                    [<Struct; NoComparison; NoEquality>]
-                    type Equality<'a when 'a : struct and 'a : equality> =
-                        interface Specializations.IEssenceOfEquals<'a> with
-                            member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
-                                x.Equals y
-                        interface Specializations.IEssenceOfGetHashCode<'a> with
-                            member __.Ensorcel (_:IEqualityComparer, x:'a) =
-                                x.GetHashCode ()
 
                 module RefType = 
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralComparable<'a when 'a : not struct and 'a : null and 'a :> IStructuralComparable> =
-                        interface Specializations.IEssenceOfCompareTo<'a> with
+                        interface IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (ec:IComparer, x:'a, y:'a) =
                                 match x, y with
                                 | null, null -> 0
@@ -2125,7 +1609,7 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type ComparableGeneric<'a when 'a : not struct and 'a : null and 'a :> IComparable<'a>> =
-                        interface Specializations.IEssenceOfCompareTo<'a> with
+                        interface IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 match x, y with
                                 | null, null -> 0
@@ -2135,7 +1619,7 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type Comparable<'a when 'a : not struct and 'a : null and 'a :> IComparable> =
-                        interface Specializations.IEssenceOfCompareTo<'a> with
+                        interface IEssenceOfCompareTo<'a> with
                             member __.Ensorcel (_:IComparer, x:'a, y:'a) =
                                 match x, y with
                                 | null, null -> 0
@@ -2143,16 +1627,536 @@ namespace Microsoft.FSharp.Core
                                 | _, null -> +1
                                 | _, _ -> x.CompareTo y
 
+            module EqualsTypes =
+                [<Struct; NoComparison; NoEquality>]
+                type FloatPER =
+                    interface IEssenceOfEquals<float>
+                        with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Float32PER =
+                    interface IEssenceOfEquals<float32> with
+                        member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloatPER =
+                    interface IEssenceOfEquals<Nullable<float>> with
+                        member __.Ensorcel (_,x,y) =
+                            match x.HasValue, y.HasValue with
+                            | false, false -> true
+                            | false, _ 
+                            | _, false -> false
+                            | _ -> (# "ceq" x.Value y.Value : bool #)
+
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloat32PER =
+                    interface IEssenceOfEquals<Nullable<float32>> with
+                        member __.Ensorcel (_,x,y) =
+                            match x.HasValue, y.HasValue with
+                            | false, false -> true
+                            | false, _ 
+                            | _, false -> false
+                            | _ -> (# "ceq" x.Value y.Value : bool #)
+
+                [<Struct; NoComparison; NoEquality>]
+                type FloatER =
+                    interface IEssenceOfEquals<float>
+                        with member __.Ensorcel (_,x,y) = if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Float32ER =
+                    interface IEssenceOfEquals<float32> with
+                        member __.Ensorcel (_,x,y) = if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
+
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloatER =
+                    interface IEssenceOfEquals<Nullable<float>> with
+                        member __.Ensorcel (_,x,y) =
+                            match x.HasValue, y.HasValue with
+                            | false, false -> true
+                            | false, _ 
+                            | _, false -> false
+                            | _ -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
+
+                [<Struct; NoComparison; NoEquality>]
+                type NullableFloat32ER =
+                    interface IEssenceOfEquals<Nullable<float32>> with
+                        member __.Ensorcel (_,x,y) =
+                            match x.HasValue, y.HasValue with
+                            | false, false -> true
+                            | false, _ 
+                            | _, false -> false
+                            | _ -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
+
+                [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfEquals<bool      > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfEquals<sbyte     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfEquals<int16     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfEquals<int32     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfEquals<int64     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfEquals<byte      > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfEquals<uint16    > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfEquals<uint32    > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfEquals<uint64    > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfEquals<nativeint > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfEquals<unativeint> with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfEquals<char      > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
+                [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfEquals<string    > with member __.Ensorcel (_,x,y) = System.String.Equals((# "" x : string #),(# "" y : string #))
+                [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfEquals<decimal   > with member __.Ensorcel (_,x,y) = System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,
+                            'eq1
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a>, y:System.Tuple<'a>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,
+                            'eq1,'eq2
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                    and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a,'b>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b>, y:System.Tuple<'a,'b>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,
+                            'eq1,'eq2,'eq3
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                    and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                    and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a,'b,'c>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c>, y:System.Tuple<'a,'b,'c>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,
+                            'eq1,'eq2,'eq3,'eq4
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                    and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                    and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                    and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>, y:System.Tuple<'a,'b,'c,'d>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,
+                            'eq1,'eq2,'eq3,'eq4,'eq5
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                    and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                    and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                    and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                    and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>, y:System.Tuple<'a,'b,'c,'d,'e>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,
+                            'eq1,'eq2,'eq3,'eq4,'eq5,'eq6
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                    and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                    and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                    and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                    and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                    and 'eq6 :> IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>, y:System.Tuple<'a,'b,'c,'d,'e,'f>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
+                                | false -> false
+                                | _ ->
+                                phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,'g,
+                            'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                    and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                    and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                    and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                    and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                    and 'eq6 :> IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
+                                    and 'eq7 :> IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7) and 'eq7 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6) with
+                                | false -> false
+                                | _ ->
+                                phantom<'eq7>.Ensorcel (ec, x.Item7, y.Item7)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,'g,'h,
+                            'eq1,'eq2,'eq3,'eq4,'eq5,'eq6,'eq7,'eq8
+                                when 'eq1 :> IEssenceOfEquals<'a> and 'eq1 : (new : unit -> 'eq1) and 'eq1 : struct
+                                    and 'eq2 :> IEssenceOfEquals<'b> and 'eq2 : (new : unit -> 'eq2) and 'eq2 : struct
+                                    and 'eq3 :> IEssenceOfEquals<'c> and 'eq3 : (new : unit -> 'eq3) and 'eq3 : struct
+                                    and 'eq4 :> IEssenceOfEquals<'d> and 'eq4 : (new : unit -> 'eq4) and 'eq4 : struct
+                                    and 'eq5 :> IEssenceOfEquals<'e> and 'eq5 : (new : unit -> 'eq5) and 'eq5 : struct
+                                    and 'eq6 :> IEssenceOfEquals<'f> and 'eq6 : (new : unit -> 'eq6) and 'eq6 : struct
+                                    and 'eq7 :> IEssenceOfEquals<'g> and 'eq7 : (new : unit -> 'eq7) and 'eq7 : struct
+                                    and 'eq8 :> IEssenceOfEquals<'h> and 'eq8 : (new : unit -> 'eq8) and 'eq8 : struct
+                                                                                                                    > =
+                    interface IEssenceOfEquals<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
+                        member __.Ensorcel (ec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>, y:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) = 
+                            match x, y with
+                            | null, null -> true
+                            | null, _ | _, null -> false
+                            | _, _ ->
+                                match phantom<'eq1>.Ensorcel (ec, x.Item1, y.Item1) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq2>.Ensorcel (ec, x.Item2, y.Item2) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq3>.Ensorcel (ec, x.Item3, y.Item3) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq4>.Ensorcel (ec, x.Item4, y.Item4) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq5>.Ensorcel (ec, x.Item5, y.Item5) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq6>.Ensorcel (ec, x.Item6, y.Item6) with
+                                | false -> false
+                                | _ ->
+                                match phantom<'eq7>.Ensorcel (ec, x.Item7, y.Item7) with
+                                | false -> false
+                                | _ ->
+                                phantom<'eq8>.Ensorcel (ec, x.Rest, y.Rest)
+
+            module GetHashCodeTypes =
+                [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfGetHashCode<bool      > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Float      = interface IEssenceOfGetHashCode<float     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfGetHashCode<sbyte     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Int16      = interface IEssenceOfGetHashCode<int16     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Int32      = interface IEssenceOfGetHashCode<int32     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Int64      = interface IEssenceOfGetHashCode<int64     > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Byte       = interface IEssenceOfGetHashCode<byte      > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Uint16     = interface IEssenceOfGetHashCode<uint16    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Uint32     = interface IEssenceOfGetHashCode<uint32    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Uint64     = interface IEssenceOfGetHashCode<uint64    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Nativeint  = interface IEssenceOfGetHashCode<nativeint > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Unativeint = interface IEssenceOfGetHashCode<unativeint> with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Char       = interface IEssenceOfGetHashCode<char      > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type String     = interface IEssenceOfGetHashCode<string    > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Decimal    = interface IEssenceOfGetHashCode<decimal   > with member __.Ensorcel (_,a) = a.GetHashCode()
+                [<Struct; NoComparison; NoEquality>] type Float32    = interface IEssenceOfGetHashCode<float32   > with member __.Ensorcel (_,a) = a.GetHashCode()
+
+(*
+                let inline mask (n:int) (m:int) = (# "and" n m : int #)
+                let inline opshl (x:int) (n:int) : int =  (# "shl" x (mask n 31) : int #)
+                let inline opshr (x:int) (n:int) : int =  (# "shr" x (mask n 31) : int #)
+                let inline opxor (x:int) (y:int) : int = (# "xor" x y : int32 #)
+                let inline combineTupleHashes (h1 : int) (h2 : int) = -1640531527 + (h2 + (opshl h1 6) + (opshr h1 2))
+*)
+                let inline cth a b = TupleUtils.combineTupleHashes a b
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,
+                            'ghc1
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            eliminate_tail_call_int a
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,
+                            'ghc1,'ghc2
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                    and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a,'b>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            eliminate_tail_call_int (cth a b)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,
+                            'ghc1,'ghc2,'ghc3
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                    and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                    and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            eliminate_tail_call_int (cth (cth a b) c)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,
+                            'ghc1,'ghc2,'ghc3,'ghc4
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                    and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                    and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                    and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            eliminate_tail_call_int (cth (cth a b) (cth c d))
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,
+                            'ghc1,'ghc2,'ghc3,'ghc4,'ghc5
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                    and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                    and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                    and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                    and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) e)
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,
+                            'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                    and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                    and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                    and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                    and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                    and 'ghc6 :> IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
+                            let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth e f))
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,'g,
+                            'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                    and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                    and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                    and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                    and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                    and 'ghc6 :> IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
+                                    and 'ghc7 :> IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7) and 'ghc7 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
+                            let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
+                            let g = phantom<'ghc7>.Ensorcel (iec, x.Item7)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) g))
+
+                [<Struct; NoComparison; NoEquality>]
+                type Tuple<'a,'b,'c,'d,'e,'f,'g,'h,
+                            'ghc1,'ghc2,'ghc3,'ghc4,'ghc5,'ghc6,'ghc7,'ghc8
+                                when 'ghc1 :> IEssenceOfGetHashCode<'a> and 'ghc1 : (new : unit -> 'ghc1) and 'ghc1 : struct
+                                    and 'ghc2 :> IEssenceOfGetHashCode<'b> and 'ghc2 : (new : unit -> 'ghc2) and 'ghc2 : struct
+                                    and 'ghc3 :> IEssenceOfGetHashCode<'c> and 'ghc3 : (new : unit -> 'ghc3) and 'ghc3 : struct
+                                    and 'ghc4 :> IEssenceOfGetHashCode<'d> and 'ghc4 : (new : unit -> 'ghc4) and 'ghc4 : struct
+                                    and 'ghc5 :> IEssenceOfGetHashCode<'e> and 'ghc5 : (new : unit -> 'ghc5) and 'ghc5 : struct
+                                    and 'ghc6 :> IEssenceOfGetHashCode<'f> and 'ghc6 : (new : unit -> 'ghc6) and 'ghc6 : struct
+                                    and 'ghc7 :> IEssenceOfGetHashCode<'g> and 'ghc7 : (new : unit -> 'ghc7) and 'ghc7 : struct
+                                    and 'ghc8 :> IEssenceOfGetHashCode<'h> and 'ghc8 : (new : unit -> 'ghc8) and 'ghc8 : struct
+                                                                                                                                > =
+                    interface IEssenceOfGetHashCode<System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>> with
+                        member __.Ensorcel (iec:IEqualityComparer, x:System.Tuple<'a,'b,'c,'d,'e,'f,'g,'h>) =
+                            let a = phantom<'ghc1>.Ensorcel (iec, x.Item1)
+                            let b = phantom<'ghc2>.Ensorcel (iec, x.Item2) 
+                            let c = phantom<'ghc3>.Ensorcel (iec, x.Item3)
+                            let d = phantom<'ghc4>.Ensorcel (iec, x.Item4) 
+                            let e = phantom<'ghc5>.Ensorcel (iec, x.Item5)
+                            let f = phantom<'ghc6>.Ensorcel (iec, x.Item6)
+                            let g = phantom<'ghc7>.Ensorcel (iec, x.Item7)
+                            let h = phantom<'ghc8>.Ensorcel (iec, x.Rest)
+                            eliminate_tail_call_int (cth (cth (cth a b) (cth c d)) (cth (cth e f) (cth g h)))
+
+            module CommonEqualityTypes =
+                module Nullable =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralEquatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IStructuralEquatable> =
+                        interface IEssenceOfEquals<Nullable<'a>> with
+                            member __.Ensorcel (ec:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                                match x.HasValue, y.HasValue with
+                                | false, false -> true
+                                | false, _ | _, false -> false
+                                | _, _ -> x.Value.Equals (box y.Value, ec) 
+
+                        interface IEssenceOfGetHashCode<Nullable<'a>> with
+                            member __.Ensorcel (ec:IEqualityComparer, x:Nullable<'a>) =
+                                if x.HasValue then x.Value.GetHashCode (ec) 
+                                else 0
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equatable<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a :> IEquatable<'a>> =
+                        interface IEssenceOfEquals<Nullable<'a>> with
+                            member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                                match x.HasValue, y.HasValue with
+                                | false, false -> true
+                                | false, _ | _, false -> false
+                                | _, _ -> x.Value.Equals y.Value
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equality<'a when 'a : struct and 'a : (new : unit ->  'a) and 'a :> ValueType and 'a : equality> =
+                        interface IEssenceOfEquals<Nullable<'a>> with
+                            member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>, y:Nullable<'a>) =
+                                match x.HasValue, y.HasValue with
+                                | false, false -> true
+                                | false, _ | _, false -> false
+                                | _, _ -> x.Value.Equals y.Value
+
+                        interface IEssenceOfGetHashCode<Nullable<'a>> with
+                            member __.Ensorcel (_:IEqualityComparer, x:Nullable<'a>) =
+                                if x.HasValue then x.Value.GetHashCode ()
+                                else 0
+
+                module ValueType =
+                    [<Struct; NoComparison; NoEquality>]
+                    type StructuralEquatable<'a when 'a : struct and 'a :> IStructuralEquatable> =
+                        interface IEssenceOfEquals<'a> with
+                            member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =
+                                x.Equals (box y, ec) 
+                        interface IEssenceOfGetHashCode<'a> with
+                            member __.Ensorcel (ec:IEqualityComparer, x:'a) =
+                                x.GetHashCode (ec) 
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equatable<'a when 'a : struct and 'a :> IEquatable<'a>> =
+                        interface IEssenceOfEquals<'a> with
+                            member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
+                                x.Equals y
+
+                    [<Struct; NoComparison; NoEquality>]
+                    type Equality<'a when 'a : struct and 'a : equality> =
+                        interface IEssenceOfEquals<'a> with
+                            member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
+                                x.Equals y
+                        interface IEssenceOfGetHashCode<'a> with
+                            member __.Ensorcel (_:IEqualityComparer, x:'a) =
+                                x.GetHashCode ()
+
+                module RefType =
                     [<Struct; NoComparison; NoEquality>]
                     type StructuralEquatable<'a when 'a : not struct and 'a : null and 'a :> IStructuralEquatable> =
-                        interface Specializations.IEssenceOfEquals<'a> with
+                        interface IEssenceOfEquals<'a> with
                             member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
                                 | null, null -> true
                                 | null, _ | _, null -> false
                                 | _, _ -> x.Equals (box y, ec) 
 
-                        interface Specializations.IEssenceOfGetHashCode<'a> with
+                        interface IEssenceOfGetHashCode<'a> with
                             member __.Ensorcel (ec:IEqualityComparer, x:'a) =
                                 match x with
                                 | null -> 0
@@ -2160,7 +2164,7 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type Equatable<'a when 'a : not struct and 'a : null and 'a :> IEquatable<'a>> =
-                        interface Specializations.IEssenceOfEquals<'a> with
+                        interface IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
                                 | null, null -> true
@@ -2169,52 +2173,25 @@ namespace Microsoft.FSharp.Core
 
                     [<Struct; NoComparison; NoEquality>]
                     type Equality<'a when 'a : not struct and 'a : null and 'a : equality> =
-                        interface Specializations.IEssenceOfEquals<'a> with
+                        interface IEssenceOfEquals<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a, y:'a) =
                                 match x, y with
                                 | null, null -> true
                                 | null, _ | _, null -> false
                                 | _, _ -> x.Equals y
 
-                        interface Specializations.IEssenceOfGetHashCode<'a> with
+                        interface IEssenceOfGetHashCode<'a> with
                             member __.Ensorcel (_:IEqualityComparer, x:'a) =
                                 match x with
                                 | null -> 0
                                 | _ -> x.GetHashCode ()
 
-                module DummyTypes =
-                    let doNotEat () = raise (Exception "not for eating! these types only exist for getting typedef.")
-
-                    [<Struct; CustomComparison; CustomEquality>]
-                    type ValueTypeComparableInterfaces =
-                        interface IStructuralComparable         with member   __.CompareTo (_,_) = doNotEat ()
-                        override __.Equals _                                                     = doNotEat ()
-                        override __.GetHashCode ()                                               = doNotEat ()
-
-                    [<Struct; NoComparison; CustomEquality>]
-                    type ValueTypeEquatableInterfaces =
-                        interface IStructuralEquatable          with member __.Equals (_,_)  = doNotEat ()
-                                                                     member __.GetHashCode _ = doNotEat ()
-
-                let nullableStructuralComparable  = typedefof<Nullable. StructuralComparable<DummyTypes.ValueTypeComparableInterfaces>>
-                let nullableComparableGeneric     = typedefof<Nullable. ComparableGeneric<int>>
-                let nullableComparable            = typedefof<Nullable. Comparable<int>>
-                let valueTypeStructuralComparable = typedefof<ValueType.StructuralComparable<DummyTypes.ValueTypeComparableInterfaces>>
-                let valueTypeComparableGeneric    = typedefof<ValueType.ComparableGeneric<int>>
-                let valueTypeComparable           = typedefof<ValueType.Comparable<int>>
-                let refTypeStructuralComparable   = typedefof<RefType.  StructuralComparable<Tuple<int,int>>>
-                let refTypeComparableGeneric      = typedefof<RefType.  ComparableGeneric<string>>
-                let refTypeComparable             = typedefof<RefType.  Comparable<string>>
-
-                let nullableStructuralEquatable   = typedefof<Nullable. StructuralEquatable<DummyTypes.ValueTypeEquatableInterfaces>>
-                let nullableEquatable             = typedefof<Nullable. Equatable<int>>
-                let nullableEquality              = typedefof<Nullable. Equality<int>>
-                let valueTypeStructuralEquatable  = typedefof<ValueType.StructuralEquatable<DummyTypes.ValueTypeEquatableInterfaces>>
-                let valueTypeEquatable            = typedefof<ValueType.Equatable<int>>
-                let valueTypeEquality             = typedefof<ValueType.Equality<int>>
-                let refTypeStructuralEquatable    = typedefof<RefType.  StructuralEquatable<Tuple<int,int>>>
-                let refTypeEquatable              = typedefof<RefType.  Equatable<string>>
-                let refTypeEquality               = typedefof<RefType.  Equality<string>>
+            let doNotEat () = raise (Exception "not for consumption! this type only exist for getting typedef.")
+            [<Struct; CustomComparison; CustomEquality>]
+            type DummyValueType =
+                interface IStructuralComparable with member __.CompareTo (_,_) = doNotEat ()
+                interface IStructuralEquatable  with member __.Equals (_,_)    = doNotEat ()
+                                                     member __.GetHashCode _   = doNotEat ()
 
             type private EquivalenceRelation = class end
             type private PartialEquivalenceRelation = class end
@@ -2311,35 +2288,35 @@ namespace Microsoft.FSharp.Core
                     match tyRelation with
                     | r when r.Equals typeof<PartialEquivalenceRelation> ->
                         match ty with
-                        | t when t.Equals typeof<float>             -> typeof<Specializations.ComparerTypes.FloatPER>
-                        | t when t.Equals typeof<float32>           -> typeof<Specializations.ComparerTypes.Float32PER>
-                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.ComparerTypes.NullableFloatPER>
-                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.ComparerTypes.NullableFloat32PER>
+                        | t when t.Equals typeof<float>             -> typeof<ComparerTypes.FloatPER>
+                        | t when t.Equals typeof<float32>           -> typeof<ComparerTypes.Float32PER>
+                        | t when t.Equals typeof<Nullable<float>>   -> typeof<ComparerTypes.NullableFloatPER>
+                        | t when t.Equals typeof<Nullable<float32>> -> typeof<ComparerTypes.NullableFloat32PER>
                         | _ -> null
                     | r when r.Equals typeof<EquivalenceRelation> ->
                         match ty with
-                        | t when t.Equals typeof<float>             -> typeof<Specializations.ComparerTypes.FloatER>
-                        | t when t.Equals typeof<float32>           -> typeof<Specializations.ComparerTypes.Float32ER>
-                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.ComparerTypes.NullableFloatER>
-                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.ComparerTypes.NullableFloat32ER>
+                        | t when t.Equals typeof<float>             -> typeof<ComparerTypes.FloatER>
+                        | t when t.Equals typeof<float32>           -> typeof<ComparerTypes.Float32ER>
+                        | t when t.Equals typeof<Nullable<float>>   -> typeof<ComparerTypes.NullableFloatER>
+                        | t when t.Equals typeof<Nullable<float32>> -> typeof<ComparerTypes.NullableFloat32ER>
                         | _ -> null
                     | _ -> raise (Exception "invalid logic")
 
                 let standardTypes (t:Type) : Type =
-                    if   t.Equals typeof<bool>       then typeof<Specializations.ComparerTypes.Bool>
-                    elif t.Equals typeof<sbyte>      then typeof<Specializations.ComparerTypes.Sbyte>
-                    elif t.Equals typeof<int16>      then typeof<Specializations.ComparerTypes.Int16>
-                    elif t.Equals typeof<int32>      then typeof<Specializations.ComparerTypes.Int32>
-                    elif t.Equals typeof<int64>      then typeof<Specializations.ComparerTypes.Int64>
-                    elif t.Equals typeof<nativeint>  then typeof<Specializations.ComparerTypes.Nativeint>
-                    elif t.Equals typeof<byte>       then typeof<Specializations.ComparerTypes.Byte>
-                    elif t.Equals typeof<uint16>     then typeof<Specializations.ComparerTypes.Uint16>
-                    elif t.Equals typeof<uint32>     then typeof<Specializations.ComparerTypes.Uint32>
-                    elif t.Equals typeof<uint64>     then typeof<Specializations.ComparerTypes.Uint64>
-                    elif t.Equals typeof<unativeint> then typeof<Specializations.ComparerTypes.Unativeint>
-                    elif t.Equals typeof<char>       then typeof<Specializations.ComparerTypes.Char>
-                    elif t.Equals typeof<string>     then typeof<Specializations.ComparerTypes.String>
-                    elif t.Equals typeof<decimal>    then typeof<Specializations.ComparerTypes.Decimal>
+                    if   t.Equals typeof<bool>       then typeof<ComparerTypes.Bool>
+                    elif t.Equals typeof<sbyte>      then typeof<ComparerTypes.Sbyte>
+                    elif t.Equals typeof<int16>      then typeof<ComparerTypes.Int16>
+                    elif t.Equals typeof<int32>      then typeof<ComparerTypes.Int32>
+                    elif t.Equals typeof<int64>      then typeof<ComparerTypes.Int64>
+                    elif t.Equals typeof<nativeint>  then typeof<ComparerTypes.Nativeint>
+                    elif t.Equals typeof<byte>       then typeof<ComparerTypes.Byte>
+                    elif t.Equals typeof<uint16>     then typeof<ComparerTypes.Uint16>
+                    elif t.Equals typeof<uint32>     then typeof<ComparerTypes.Uint32>
+                    elif t.Equals typeof<uint64>     then typeof<ComparerTypes.Uint64>
+                    elif t.Equals typeof<unativeint> then typeof<ComparerTypes.Unativeint>
+                    elif t.Equals typeof<char>       then typeof<ComparerTypes.Char>
+                    elif t.Equals typeof<string>     then typeof<ComparerTypes.String>
+                    elif t.Equals typeof<decimal>    then typeof<ComparerTypes.Decimal>
                     else null
 
                 let compilerGenerated tyRelation ty =
@@ -2347,15 +2324,15 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<EquivalenceRelation> ->
                         if mos.hasFSharpCompilerGeneratedComparison ty then
                             if ty.IsValueType
-                                then mos.makeType ty Exemplars.valueTypeComparableGeneric
-                                else mos.makeType ty Exemplars.refTypeComparableGeneric
+                                then mos.makeType ty typedefof<ComparerTypes.ValueType.ComparableGeneric<int>>
+                                else mos.makeType ty typedefof<ComparerTypes.RefType.  ComparableGeneric<string>>
                         else null
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
                 [<Struct;NoComparison;NoEquality>]
                 type GenericComparerObj<'a> =
-                    interface Specializations.IEssenceOfCompareTo<'a> with
+                    interface IEssenceOfCompareTo<'a> with
                         member __.Ensorcel (comp:IComparer, x:'a, y:'a) = comp.Compare (box x, box y)
 
                 let arrays (t:Type) : Type =
@@ -2370,24 +2347,24 @@ namespace Microsoft.FSharp.Core
                         let comparableGeneric = mos.makeComparableType underlying
                         let make = mos.makeType underlying
                         
-                        if typeof<IStructuralComparable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralComparable
-                        elif comparableGeneric.IsAssignableFrom underlying           then make Exemplars.nullableComparableGeneric
-                        else                                                              make Exemplars.nullableComparable
+                        if typeof<IStructuralComparable>.IsAssignableFrom underlying then make typedefof<ComparerTypes.Nullable. StructuralComparable<DummyValueType>>
+                        elif comparableGeneric.IsAssignableFrom underlying           then make typedefof<ComparerTypes.Nullable. ComparableGeneric<int>>
+                        else                                                              make typedefof<ComparerTypes.Nullable. Comparable<int>>
                     else null
 
                 let comparisonInterfaces (t:Type) : Type =
                     let make = mos.makeType t
                     let comparableGeneric = mos.makeComparableType t
 
-                    if   t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralComparable
-                    elif t.IsValueType && comparableGeneric.IsAssignableFrom t             then make Exemplars.valueTypeComparableGeneric
-                    elif t.IsValueType && typeof<IComparable>.IsAssignableFrom t           then make Exemplars.valueTypeComparable
+                    if   t.IsValueType && typeof<IStructuralComparable>.IsAssignableFrom t then make typedefof<ComparerTypes.ValueType.StructuralComparable<DummyValueType>>
+                    elif t.IsValueType && comparableGeneric.IsAssignableFrom t             then make typedefof<ComparerTypes.ValueType.ComparableGeneric<int>>
+                    elif t.IsValueType && typeof<IComparable>.IsAssignableFrom t           then make typedefof<ComparerTypes.ValueType.Comparable<int>>
 
-                    elif typeof<IStructuralComparable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralComparable
+                    elif typeof<IStructuralComparable>.IsAssignableFrom t                  then make typedefof<ComparerTypes.RefType.  StructuralComparable<Tuple<int,int>>>
 
                     // only sealed as a derived class might inherit from IStructuralComparable
-                    elif t.IsSealed && comparableGeneric.IsAssignableFrom t                then make Exemplars.refTypeComparableGeneric
-                    elif t.IsSealed && typeof<IComparable>.IsAssignableFrom t              then make Exemplars.refTypeComparable
+                    elif t.IsSealed && comparableGeneric.IsAssignableFrom t                then make typedefof<ComparerTypes.RefType.  ComparableGeneric<string>>
+                    elif t.IsSealed && typeof<IComparable>.IsAssignableFrom t              then make typedefof<ComparerTypes.RefType.  Comparable<string>>
 
                     else null
 
@@ -2414,18 +2391,18 @@ namespace Microsoft.FSharp.Core
 
                 [<Sealed>]
                 type EssenceOfCompareWrapper<'a, 'comp 
-                        when 'comp  :> Specializations.IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp) and 'comp : struct>() =
+                        when 'comp  :> IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp) and 'comp : struct>() =
                     inherit ComparerInvoker<'a>()
                 
                     override __.Invoke (comp, x:'a, y:'a) =
                         phantom<'comp>.Ensorcel (comp, x, y)
 
                 let makeComparerInvoker (ty:Type) comp =
-                    let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,Specializations.ComparerTypes.Int32>>
+                    let wrapperTypeDef = typedefof<EssenceOfCompareWrapper<int,ComparerTypes.Int32>>
                     let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
                     Activator.CreateInstance wrapperType
 
-                type t = Specializations.ComparerTypes.Int32
+                type t = ComparerTypes.Int32
                 type Function<'relation, 'a>() =
                     static let essenceType : Type = 
                         getCompareEssenceType typeof<'relation> typeof<'a> Helpers.tuplesCompareTo
@@ -2449,14 +2426,14 @@ namespace Microsoft.FSharp.Core
                             let tyDef = ty.GetGenericTypeDefinition ()
                             let tyDefArgs = ty.GetGenericArguments ()
                             let create = mos.compositeType (Helpers.getEssenceOfCompareToType tyRelation) tyDefArgs
-                            if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<Specializations.ComparerTypes.Tuple<int,t>> 
-                            elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<Specializations.ComparerTypes.Tuple<int,int,t,t>> 
-                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<Specializations.ComparerTypes.Tuple<int,int,int,t,t,t>> 
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<Specializations.ComparerTypes.Tuple<int,int,int,int,t,t,t,t>> 
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<Specializations.ComparerTypes.Tuple<int,int,int,int,int,t,t,t,t,t>> 
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<Specializations.ComparerTypes.Tuple<int,int,int,int,int,int,t,t,t,t,t,t>> 
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<Specializations.ComparerTypes.Tuple<int,int,int,int,int,int,int,t,t,t,t,t,t,t>> 
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<Specializations.ComparerTypes.Tuple<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>> 
+                            if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<ComparerTypes.Tuple<int,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<ComparerTypes.Tuple<int,int,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<ComparerTypes.Tuple<int,int,int,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<ComparerTypes.Tuple<int,int,int,int,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<ComparerTypes.Tuple<int,int,int,int,int,t,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<ComparerTypes.Tuple<int,int,int,int,int,int,t,t,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<ComparerTypes.Tuple<int,int,int,int,int,int,int,t,t,t,t,t,t,t>> 
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<ComparerTypes.Tuple<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>> 
                             else null
                         else null
 
@@ -2951,35 +2928,35 @@ namespace Microsoft.FSharp.Core
                     match tyRelation with
                     | r when r.Equals typeof<PartialEquivalenceRelation> ->
                         match ty with
-                        | t when t.Equals typeof<float>             -> typeof<Specializations.EqualsTypes.FloatPER>
-                        | t when t.Equals typeof<float32>           -> typeof<Specializations.EqualsTypes.Float32PER>
-                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.EqualsTypes.NullableFloatPER>
-                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.EqualsTypes.NullableFloat32PER>
+                        | t when t.Equals typeof<float>             -> typeof<EqualsTypes.FloatPER>
+                        | t when t.Equals typeof<float32>           -> typeof<EqualsTypes.Float32PER>
+                        | t when t.Equals typeof<Nullable<float>>   -> typeof<EqualsTypes.NullableFloatPER>
+                        | t when t.Equals typeof<Nullable<float32>> -> typeof<EqualsTypes.NullableFloat32PER>
                         | _ -> null
                     | r when r.Equals typeof<EquivalenceRelation> ->
                         match ty with
-                        | t when t.Equals typeof<float>             -> typeof<Specializations.EqualsTypes.FloatER>
-                        | t when t.Equals typeof<float32>           -> typeof<Specializations.EqualsTypes.Float32ER>
-                        | t when t.Equals typeof<Nullable<float>>   -> typeof<Specializations.EqualsTypes.NullableFloatER>
-                        | t when t.Equals typeof<Nullable<float32>> -> typeof<Specializations.EqualsTypes.NullableFloat32ER>
+                        | t when t.Equals typeof<float>             -> typeof<EqualsTypes.FloatER>
+                        | t when t.Equals typeof<float32>           -> typeof<EqualsTypes.Float32ER>
+                        | t when t.Equals typeof<Nullable<float>>   -> typeof<EqualsTypes.NullableFloatER>
+                        | t when t.Equals typeof<Nullable<float32>> -> typeof<EqualsTypes.NullableFloat32ER>
                         | _ -> null
                     | _ -> raise (Exception "invalid logic")
 
                 let standardTypes (t:Type) : Type =
-                    if   t.Equals typeof<bool>       then typeof<Specializations.EqualsTypes.Bool>
-                    elif t.Equals typeof<sbyte>      then typeof<Specializations.EqualsTypes.Sbyte>
-                    elif t.Equals typeof<int16>      then typeof<Specializations.EqualsTypes.Int16>
-                    elif t.Equals typeof<int32>      then typeof<Specializations.EqualsTypes.Int32>
-                    elif t.Equals typeof<int64>      then typeof<Specializations.EqualsTypes.Int64>
-                    elif t.Equals typeof<byte>       then typeof<Specializations.EqualsTypes.Byte>
-                    elif t.Equals typeof<uint16>     then typeof<Specializations.EqualsTypes.Uint16>
-                    elif t.Equals typeof<uint32>     then typeof<Specializations.EqualsTypes.Uint32>
-                    elif t.Equals typeof<uint64>     then typeof<Specializations.EqualsTypes.Uint64>
-                    elif t.Equals typeof<nativeint>  then typeof<Specializations.EqualsTypes.Nativeint>
-                    elif t.Equals typeof<unativeint> then typeof<Specializations.EqualsTypes.Unativeint>
-                    elif t.Equals typeof<char>       then typeof<Specializations.EqualsTypes.Char>
-                    elif t.Equals typeof<string>     then typeof<Specializations.EqualsTypes.String>
-                    elif t.Equals typeof<decimal>    then typeof<Specializations.EqualsTypes.Decimal>
+                    if   t.Equals typeof<bool>       then typeof<EqualsTypes.Bool>
+                    elif t.Equals typeof<sbyte>      then typeof<EqualsTypes.Sbyte>
+                    elif t.Equals typeof<int16>      then typeof<EqualsTypes.Int16>
+                    elif t.Equals typeof<int32>      then typeof<EqualsTypes.Int32>
+                    elif t.Equals typeof<int64>      then typeof<EqualsTypes.Int64>
+                    elif t.Equals typeof<byte>       then typeof<EqualsTypes.Byte>
+                    elif t.Equals typeof<uint16>     then typeof<EqualsTypes.Uint16>
+                    elif t.Equals typeof<uint32>     then typeof<EqualsTypes.Uint32>
+                    elif t.Equals typeof<uint64>     then typeof<EqualsTypes.Uint64>
+                    elif t.Equals typeof<nativeint>  then typeof<EqualsTypes.Nativeint>
+                    elif t.Equals typeof<unativeint> then typeof<EqualsTypes.Unativeint>
+                    elif t.Equals typeof<char>       then typeof<EqualsTypes.Char>
+                    elif t.Equals typeof<string>     then typeof<EqualsTypes.String>
+                    elif t.Equals typeof<decimal>    then typeof<EqualsTypes.Decimal>
                     else null
 
                 let compilerGenerated tyRelation ty =
@@ -2990,20 +2967,20 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<EquivalenceRelation> ->
                         if mos.hasFSharpCompilerGeneratedEquality ty then
                             if ty.IsValueType
-                                then mos.makeType ty Exemplars.valueTypeEquatable
-                                else mos.makeType ty Exemplars.refTypeEquatable
+                                then mos.makeType ty typedefof<CommonEqualityTypes.ValueType.Equatable<int>>
+                                else mos.makeType ty typedefof<CommonEqualityTypes.RefType.Equatable<string>>
                         else null
                     | r when r.Equals typeof<PartialEquivalenceRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
                 [<Struct;NoComparison;NoEquality>]
                 type GenericEqualityObj_ER<'a> =
-                    interface Specializations.IEssenceOfEquals<'a> with
+                    interface IEssenceOfEquals<'a> with
                         member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) =  GenericEqualityObj true ec (box x, box y)
                         
                 [<Struct;NoComparison;NoEquality>]
                 type GenericEqualityObj_PER<'a> =
-                    interface Specializations.IEssenceOfEquals<'a> with
+                    interface IEssenceOfEquals<'a> with
                         member __.Ensorcel (ec:IEqualityComparer, x:'a, y:'a) = GenericEqualityObj false ec (box x, box y)
 
                 let arrays (tyRelation:Type) (t:Type) : Type =
@@ -3021,24 +2998,24 @@ namespace Microsoft.FSharp.Core
                         let equatable = mos.makeEquatableType underlying
                         let make = mos.makeType underlying 
                         
-                        if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralEquatable
-                        elif equatable.IsAssignableFrom underlying                  then make Exemplars.nullableEquatable
-                        else                                                             make Exemplars.nullableEquality
+                        if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make typedefof<CommonEqualityTypes.Nullable. StructuralEquatable<DummyValueType>>
+                        elif equatable.IsAssignableFrom underlying                  then make typedefof<CommonEqualityTypes.Nullable.Equatable<int>>
+                        else                                                             make typedefof<CommonEqualityTypes.Nullable.Equality<int>>
                     else null
 
                 let equalityInterfaces (t:Type) : Type =
                     let make = mos.makeType t
                     let equatable = mos.makeEquatableType t
 
-                    if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
-                    elif t.IsValueType && equatable.IsAssignableFrom t                    then make Exemplars.valueTypeEquatable
-                    elif t.IsValueType                                                    then make Exemplars.valueTypeEquality
+                    if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make typedefof<CommonEqualityTypes.ValueType.StructuralEquatable<DummyValueType>>
+                    elif t.IsValueType && equatable.IsAssignableFrom t                    then make typedefof<CommonEqualityTypes.ValueType.Equatable<int>>
+                    elif t.IsValueType                                                    then make typedefof<CommonEqualityTypes.ValueType.Equality<int>>
 
-                    elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralEquatable
+                    elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make typedefof<CommonEqualityTypes.RefType.StructuralEquatable<Tuple<int,int>>>
 
                     // only sealed as a derived class might inherit from IStructuralEquatable
-                    elif t.IsSealed && equatable.IsAssignableFrom t                       then make Exemplars.refTypeEquatable
-                    elif t.IsSealed                                                       then make Exemplars.refTypeEquality
+                    elif t.IsSealed && equatable.IsAssignableFrom t                       then make typedefof<CommonEqualityTypes.RefType.Equatable<string>>
+                    elif t.IsSealed                                                       then make typedefof<CommonEqualityTypes.RefType.Equality<string>>
 
                     else null
 
@@ -3068,18 +3045,18 @@ namespace Microsoft.FSharp.Core
 
                 [<Sealed>]
                 type EssenceOfEqualsWrapper<'a, 'eq 
-                        when 'eq  :> Specializations.IEssenceOfEquals<'a> and 'eq : (new : unit -> 'eq) and 'eq : struct>() =
+                        when 'eq  :> IEssenceOfEquals<'a> and 'eq : (new : unit -> 'eq) and 'eq : struct>() =
                     inherit EqualsInvoker<'a>()
                 
                     override __.Invoke (comp, x:'a, y:'a) =
                         phantom<'eq>.Ensorcel (comp, x, y)
 
                 let makeEqualsWrapper (ty:Type) comp =
-                    let wrapperTypeDef = typedefof<EssenceOfEqualsWrapper<int,Specializations.EqualsTypes.Int32>>
+                    let wrapperTypeDef = typedefof<EssenceOfEqualsWrapper<int,EqualsTypes.Int32>>
                     let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
                     Activator.CreateInstance wrapperType
 
-                type u = Specializations.EqualsTypes.Int32
+                type u = EqualsTypes.Int32
                 type Function<'relation, 'a>() =
                     static let essenceType : Type =
                         getEqualsEssenceType typeof<'relation> typeof<'a> Helpers.tuplesEquals
@@ -3103,14 +3080,14 @@ namespace Microsoft.FSharp.Core
                             let tyDef = ty.GetGenericTypeDefinition ()
                             let tyDefArgs = ty.GetGenericArguments ()
                             let create = mos.compositeType (Helpers.getEssenceOfEqualsType tyRelation) tyDefArgs
-                            if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<Specializations.EqualsTypes.Tuple<int,u>>
-                            elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<Specializations.EqualsTypes.Tuple<int,int,u,u>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<Specializations.EqualsTypes.Tuple<int,int,int,u,u,u>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<Specializations.EqualsTypes.Tuple<int,int,int,int,u,u,u,u>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<Specializations.EqualsTypes.Tuple<int,int,int,int,int,u,u,u,u,u>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<Specializations.EqualsTypes.Tuple<int,int,int,int,int,int,u,u,u,u,u,u>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<Specializations.EqualsTypes.Tuple<int,int,int,int,int,int,int,u,u,u,u,u,u,u>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<Specializations.EqualsTypes.Tuple<int,int,int,int,int,int,int,int,u,u,u,u,u,u,u,u>>
+                            if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<EqualsTypes.Tuple<int,u>>
+                            elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<EqualsTypes.Tuple<int,int,u,u>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<EqualsTypes.Tuple<int,int,int,u,u,u>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<EqualsTypes.Tuple<int,int,int,int,u,u,u,u>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<EqualsTypes.Tuple<int,int,int,int,int,u,u,u,u,u>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<EqualsTypes.Tuple<int,int,int,int,int,int,u,u,u,u,u,u>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<EqualsTypes.Tuple<int,int,int,int,int,int,int,u,u,u,u,u,u,u>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<EqualsTypes.Tuple<int,int,int,int,int,int,int,int,u,u,u,u,u,u,u,u>>
                             else null
                         else null
 
@@ -3392,22 +3369,22 @@ namespace Microsoft.FSharp.Core
             // for fallback to that funciton. 
             module GenericSpecializeHash =
                 let standardTypes (t:Type) : Type =
-                    if   t.Equals typeof<bool>       then typeof<Specializations.GetHashCodeTypes.Bool>
-                    elif t.Equals typeof<float>      then typeof<Specializations.GetHashCodeTypes.Float>
-                    elif t.Equals typeof<sbyte>      then typeof<Specializations.GetHashCodeTypes.Sbyte>
-                    elif t.Equals typeof<int16>      then typeof<Specializations.GetHashCodeTypes.Int16>
-                    elif t.Equals typeof<int32>      then typeof<Specializations.GetHashCodeTypes.Int32>
-                    elif t.Equals typeof<int64>      then typeof<Specializations.GetHashCodeTypes.Int64>
-                    elif t.Equals typeof<byte>       then typeof<Specializations.GetHashCodeTypes.Byte>
-                    elif t.Equals typeof<uint16>     then typeof<Specializations.GetHashCodeTypes.Uint16>
-                    elif t.Equals typeof<uint32>     then typeof<Specializations.GetHashCodeTypes.Uint32>
-                    elif t.Equals typeof<uint64>     then typeof<Specializations.GetHashCodeTypes.Uint64>
-                    elif t.Equals typeof<nativeint>  then typeof<Specializations.GetHashCodeTypes.Nativeint>
-                    elif t.Equals typeof<unativeint> then typeof<Specializations.GetHashCodeTypes.Unativeint>
-                    elif t.Equals typeof<char>       then typeof<Specializations.GetHashCodeTypes.Char>
-                    elif t.Equals typeof<string>     then typeof<Specializations.GetHashCodeTypes.String>
-                    elif t.Equals typeof<decimal>    then typeof<Specializations.GetHashCodeTypes.Decimal>
-                    elif t.Equals typeof<float32>    then typeof<Specializations.GetHashCodeTypes.Float32>
+                    if   t.Equals typeof<bool>       then typeof<GetHashCodeTypes.Bool>
+                    elif t.Equals typeof<float>      then typeof<GetHashCodeTypes.Float>
+                    elif t.Equals typeof<sbyte>      then typeof<GetHashCodeTypes.Sbyte>
+                    elif t.Equals typeof<int16>      then typeof<GetHashCodeTypes.Int16>
+                    elif t.Equals typeof<int32>      then typeof<GetHashCodeTypes.Int32>
+                    elif t.Equals typeof<int64>      then typeof<GetHashCodeTypes.Int64>
+                    elif t.Equals typeof<byte>       then typeof<GetHashCodeTypes.Byte>
+                    elif t.Equals typeof<uint16>     then typeof<GetHashCodeTypes.Uint16>
+                    elif t.Equals typeof<uint32>     then typeof<GetHashCodeTypes.Uint32>
+                    elif t.Equals typeof<uint64>     then typeof<GetHashCodeTypes.Uint64>
+                    elif t.Equals typeof<nativeint>  then typeof<GetHashCodeTypes.Nativeint>
+                    elif t.Equals typeof<unativeint> then typeof<GetHashCodeTypes.Unativeint>
+                    elif t.Equals typeof<char>       then typeof<GetHashCodeTypes.Char>
+                    elif t.Equals typeof<string>     then typeof<GetHashCodeTypes.String>
+                    elif t.Equals typeof<decimal>    then typeof<GetHashCodeTypes.Decimal>
+                    elif t.Equals typeof<float32>    then typeof<GetHashCodeTypes.Float32>
                     else null
 
                 let compilerGenerated (tyRelation:Type) ty =
@@ -3415,15 +3392,15 @@ namespace Microsoft.FSharp.Core
                     | r when r.Equals typeof<EquivalenceRelation> || r.Equals typeof<PartialEquivalenceRelation> ->
                         if mos.hasFSharpCompilerGeneratedEquality ty then
                             if ty.IsValueType
-                                then mos.makeType ty Exemplars.valueTypeEquality
-                                else mos.makeType ty Exemplars.refTypeEquality
+                                then mos.makeType ty typedefof<CommonEqualityTypes.ValueType.Equality<int>>
+                                else mos.makeType ty typedefof<CommonEqualityTypes.RefType.Equality<string>>
                         else null
                     | r when r.Equals typeof<UnknownRelation> -> null
                     | _ -> raise (Exception "invalid logic")
 
                 [<Struct;NoComparison;NoEquality>]
                 type GenericHashParamObject<'a> =
-                    interface Specializations.IEssenceOfGetHashCode<'a> with
+                    interface IEssenceOfGetHashCode<'a> with
                         member __.Ensorcel (iec:IEqualityComparer, x:'a) = GenericHashParamObj iec (box x)
 
                 let arrays (t:Type) : Type =
@@ -3437,22 +3414,22 @@ namespace Microsoft.FSharp.Core
                         let underlying = get (t.GetGenericArguments()) 0
                         let make = mos.makeType underlying 
                         
-                        if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make Exemplars.nullableStructuralEquatable
-                        else                                                             make Exemplars.nullableEquality
+                        if typeof<IStructuralEquatable>.IsAssignableFrom underlying then make typedefof<CommonEqualityTypes.Nullable. StructuralEquatable<DummyValueType>>
+                        else                                                             make typedefof<CommonEqualityTypes.Nullable.Equality<int>>
                     else null
 
                 let structualEquatable (t:Type): Type =
                     let make = mos.makeType t
 
-                    if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make Exemplars.valueTypeStructuralEquatable
-                    elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make Exemplars.refTypeStructuralEquatable
+                    if   t.IsValueType && typeof<IStructuralEquatable>.IsAssignableFrom t then make typedefof<CommonEqualityTypes.ValueType.StructuralEquatable<DummyValueType>>
+                    elif typeof<IStructuralEquatable>.IsAssignableFrom t                  then make typedefof<CommonEqualityTypes.RefType.StructuralEquatable<Tuple<int,int>>>
                     else null
 
                 let sealedTypes (t:Type): Type =
                     let make = mos.makeType t
 
-                    if t.IsValueType then make Exemplars.valueTypeEquality
-                    elif t.IsSealed  then make Exemplars.refTypeEquality
+                    if t.IsValueType then make typedefof<CommonEqualityTypes.ValueType.Equality<int>>
+                    elif t.IsSealed  then make typedefof<CommonEqualityTypes.RefType.Equality<string>>
                     else null
 
                 let defaultGetHashCode ty =
@@ -3478,18 +3455,18 @@ namespace Microsoft.FSharp.Core
 
                 [<Sealed>]
                 type EssenceOfGetHashCodeWrapper<'a, 'ghc
-                         when 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc) and 'ghc : struct>() =
+                         when 'ghc :> IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc) and 'ghc : struct>() =
                     inherit GetHashCodeInvoker<'a>()
                 
                     override __.Invoke (comp, x:'a) =
                         phantom<'ghc>.Ensorcel (comp, x)
 
                 let makeGetHashCodeWrapper (ty:Type) comp =
-                    let wrapperTypeDef = typedefof<EssenceOfGetHashCodeWrapper<int,Specializations.GetHashCodeTypes.Int32>>
+                    let wrapperTypeDef = typedefof<EssenceOfGetHashCodeWrapper<int,GetHashCodeTypes.Int32>>
                     let wrapperType = wrapperTypeDef.MakeGenericType [| ty; comp |]
                     Activator.CreateInstance wrapperType
                             
-                type t = Specializations.GetHashCodeTypes.Int32
+                type t = GetHashCodeTypes.Int32
                 type Function<'relation, 'a>() =
                     static let essenceType : Type =
                         getGetHashCodeEssenceType typeof<'relation> typeof<'a> Helpers.tuplesGetHashCode
@@ -3513,14 +3490,14 @@ namespace Microsoft.FSharp.Core
                             let tyDef = ty.GetGenericTypeDefinition ()
                             let tyDefArgs = ty.GetGenericArguments ()
                             let create = mos.compositeType (Helpers.getEssenceOfGetHashCodeType tyRelation) tyDefArgs
-                            if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,t>>
-                            elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,int,t,t>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,int,int,t,t,t>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,int,int,int,t,t,t,t>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,int,int,int,int,t,t,t,t,t>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,int,int,int,int,int,t,t,t,t,t,t>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,int,int,int,int,int,int,t,t,t,t,t,t,t>>
-                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<Specializations.GetHashCodeTypes.Tuple<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>>
+                            if   tyDef.Equals typedefof<Tuple<_>>               then create typedefof<GetHashCodeTypes.Tuple<int,t>>
+                            elif tyDef.Equals typedefof<Tuple<_,_>>             then create typedefof<GetHashCodeTypes.Tuple<int,int,t,t>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_>>           then create typedefof<GetHashCodeTypes.Tuple<int,int,int,t,t,t>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_>>         then create typedefof<GetHashCodeTypes.Tuple<int,int,int,int,t,t,t,t>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_>>       then create typedefof<GetHashCodeTypes.Tuple<int,int,int,int,int,t,t,t,t,t>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_>>     then create typedefof<GetHashCodeTypes.Tuple<int,int,int,int,int,int,t,t,t,t,t,t>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_>>   then create typedefof<GetHashCodeTypes.Tuple<int,int,int,int,int,int,int,t,t,t,t,t,t,t>>
+                            elif tyDef.Equals typedefof<Tuple<_,_,_,_,_,_,_,_>> then create typedefof<GetHashCodeTypes.Tuple<int,int,int,int,int,int,int,int,t,t,t,t,t,t,t,t>>
                             else null
                         else null
 
@@ -3549,8 +3526,8 @@ namespace Microsoft.FSharp.Core
 
             [<Sealed>]
             type EssenceOfEqualityComparer<'a, 'eq, 'ghc
-                    when 'eq  :> Specializations.IEssenceOfEquals<'a>      and 'eq  : (new : unit -> 'eq)  and 'eq  : struct
-                     and 'ghc :> Specializations.IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc) and 'ghc : struct>() =
+                    when 'eq  :> IEssenceOfEquals<'a>      and 'eq  : (new : unit -> 'eq)  and 'eq  : struct
+                     and 'ghc :> IEssenceOfGetHashCode<'a> and 'ghc : (new : unit -> 'ghc) and 'ghc : struct>() =
                 
                 interface IEqualityComparer<'a> with
                     member __.Equals (x:'a, y:'a) =
@@ -3560,7 +3537,7 @@ namespace Microsoft.FSharp.Core
 
             [<Sealed>]
             type EssenceOfComparer<'a, 'comp
-                    when 'comp  :> Specializations.IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp) and 'comp : struct>() =
+                    when 'comp  :> IEssenceOfCompareTo<'a> and 'comp : (new : unit -> 'comp) and 'comp : struct>() =
                 
                 interface IComparer<'a> with
                     member __.Compare (x:'a, y:'a) =
@@ -3569,13 +3546,13 @@ namespace Microsoft.FSharp.Core
             let makeEqualityComparer (ty:Type) =
                 let eq = GenericSpecializeEquals.Helpers.getEssenceOfEqualsType typeof<PartialEquivalenceRelation> ty
                 let ghc = GenericSpecializeHash.Helpers.getEssenceOfGetHashCodeType typeof<PartialEquivalenceRelation> ty
-                let equalityComparerDef = typedefof<EssenceOfEqualityComparer<int,Specializations.EqualsTypes.Int32,Specializations.GetHashCodeTypes.Int32>>
+                let equalityComparerDef = typedefof<EssenceOfEqualityComparer<int,EqualsTypes.Int32,GetHashCodeTypes.Int32>>
                 let equalityComparer = equalityComparerDef.MakeGenericType [| ty; eq; ghc |]
                 Activator.CreateInstance equalityComparer
 
             let makeComparer (ty:Type) =
                 let comp = GenericSpecializeCompareTo.Helpers.getEssenceOfCompareToType typeof<EquivalenceRelation> ty
-                let comparerDef = typedefof<EssenceOfComparer<int,Specializations.ComparerTypes.Int32>>
+                let comparerDef = typedefof<EssenceOfComparer<int,ComparerTypes.Int32>>
                 let comparer = comparerDef.MakeGenericType [| ty; comp |]
                 Activator.CreateInstance comparer
                 
