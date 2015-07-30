@@ -3531,7 +3531,7 @@ namespace Microsoft.FSharp.Core
                 
                 interface IEqualityComparer<'a> with
                     member __.Equals (x:'a, y:'a) =
-                        phantom<'eq>.Ensorcel (fsEqualityComparerNoHashingER, x, y)
+                        phantom<'eq>.Ensorcel (fsEqualityComparerNoHashingPER, x, y)
                     member __.GetHashCode (x:'a) =
                         phantom<'ghc>.Ensorcel (fsEqualityComparerUnlimitedHashingPER, x)
 
