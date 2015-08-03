@@ -59,7 +59,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Returns teh object that handles listening to file changes on the nested project files.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public FileChangeManager NestedProjectNodeReloader
+        public FileChangeManager NestedProjectNodeReloader
         {
             get
             {
@@ -78,7 +78,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// This is the object that will be returned by EnvDTE.Project.Object for this project
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public override object Object
+        public override object Object
         {
             get { return new Automation.OASolutionFolder<ProjectContainerNode>(this); }
         }
@@ -166,7 +166,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override bool FilterItemTypeToBeAddedToHierarchy(string itemType)
+        public override bool FilterItemTypeToBeAddedToHierarchy(string itemType)
         {
             if (String.Compare(itemType, ProjectFileConstants.SubProject, StringComparison.OrdinalIgnoreCase) == 0)
             {
@@ -215,7 +215,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Reloads a project and its nested project nodes.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void Reload()
+        public override void Reload()
         {
             base.Reload();
             this.CreateNestedProjectNodes();
@@ -352,7 +352,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         #region helper methods
 
-        /*internal, but public for FSharp.Project.dll*/ protected void RemoveNestedProjectNodes()
+        protected void RemoveNestedProjectNodes()
         {
             for (HierarchyNode n = this.FirstChild; n != null; n = n.NextSibling)
             {
@@ -373,7 +373,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// and for each SubProject it finds, it create the project and a node
         /// in our Hierarchy to hold the project.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ protected void CreateNestedProjectNodes()
+        protected void CreateNestedProjectNodes()
         {
             // 1. Create a ProjectElement with the found item and then Instantiate a new Nested project with this ProjectElement.
             // 2. Link into the hierarchy.            
@@ -423,7 +423,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// This is used while loading the project and can also be used
         /// to add an existing project to our hierarchy.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual NestedProjectNode AddExistingNestedProject(ProjectElement element, __VSCREATEPROJFLAGS creationFlags)
+        public virtual NestedProjectNode AddExistingNestedProject(ProjectElement element, __VSCREATEPROJFLAGS creationFlags)
         {
             ProjectElement elementToUse = (element == null) ? this.nestedProjectElement : element;
 
@@ -450,7 +450,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="element">The project item to use as the base of the nested project.</param>
         /// <param name="silent">true if the wizard should run silently, otherwise false.</param>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Vs")]
-        public /*protected internal, but public for FSharp.Project.dll*/ void RunVsTemplateWizard(ProjectElement element, bool silent)
+        public void RunVsTemplateWizard(ProjectElement element, bool silent)
         {
             ProjectElement elementToUse = (element == null) ? this.nestedProjectElement : element;
 
@@ -512,7 +512,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// If you want to create a project for which there exist a
         /// vstemplate, consider using RunVsTemplateWizard instead.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual NestedProjectNode AddNestedProjectFromTemplate(ProjectElement element, __VSCREATEPROJFLAGS creationFlags)
+        public virtual NestedProjectNode AddNestedProjectFromTemplate(ProjectElement element, __VSCREATEPROJFLAGS creationFlags)
         {
             ProjectElement elementToUse = (element == null) ? this.nestedProjectElement : element;
 
@@ -533,7 +533,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// If you want to create a project for which there exist a
         /// vstemplate, consider using RunVsTemplateWizard instead.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual NestedProjectNode AddNestedProjectFromTemplate(string fileName, string destination, string projectName, ProjectElement element, __VSCREATEPROJFLAGS creationFlags)
+        public virtual NestedProjectNode AddNestedProjectFromTemplate(string fileName, string destination, string projectName, ProjectElement element, __VSCREATEPROJFLAGS creationFlags)
         {
             // If this is project creation and the template specified a subproject in its project file, this.nestedProjectElement will be used 
             ProjectElement elementToUse = (element == null) ? this.nestedProjectElement : element;
@@ -574,7 +574,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Override this method if you want to provide your own type of nodes.
         /// This would be the case if you derive a class from NestedProjectNode
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual NestedProjectNode CreateNestedProjectNode(ProjectElement element)
+        public virtual NestedProjectNode CreateNestedProjectNode(ProjectElement element)
         {
             return new NestedProjectNode(this, element);
         }
@@ -582,7 +582,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Links the nested project nodes to the solution. The default implementation parses all nested project nodes and calles AddVirtualProjectEx on them.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void AddVirtualProjects()
+        public virtual void AddVirtualProjects()
         {
             for (HierarchyNode child = this.FirstChild; child != null; child = child.NextSibling)
             {
@@ -602,7 +602,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Template can be a full path, a project template (for projects
         /// that support VsTemplates) or a relative path (for other projects).
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual string GetProjectTemplatePath(ProjectElement element)
+        public virtual string GetProjectTemplatePath(ProjectElement element)
         {
             ProjectElement elementToUse = (element == null) ? this.nestedProjectElement : element;
 
@@ -670,7 +670,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Reloads a nested project node by deleting it and readding it.
         /// </summary>
         /// <param name="node">The node to reload.</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void ReloadNestedProjectNode(NestedProjectNode node)
+        public virtual void ReloadNestedProjectNode(NestedProjectNode node)
         {
             if (node == null)
             {

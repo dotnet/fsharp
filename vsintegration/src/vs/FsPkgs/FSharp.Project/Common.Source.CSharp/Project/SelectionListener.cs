@@ -37,7 +37,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region ctors
-        public /*protected, but public for FSharp.Project.dll*/ SelectionListener(ServiceProvider serviceProvider)
+        public SelectionListener(ServiceProvider serviceProvider)
         {
 
             this.serviceProvider = serviceProvider;
@@ -53,7 +53,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region properties
-        public /*protected, but public for FSharp.Project.dll*/ uint EventsCookie
+        public uint EventsCookie
         {
             get
             {
@@ -61,7 +61,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ IVsMonitorSelection SelectionMonitor
+        public IVsMonitorSelection SelectionMonitor
         {
             get
             {
@@ -69,7 +69,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ ServiceProvider ServiceProvider
+        public ServiceProvider ServiceProvider
         {
             get
             {
@@ -121,7 +121,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The method that does the cleanup.
         /// </summary>
         /// <param name="disposing"></param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Dispose(bool disposing)
+        public virtual void Dispose(bool disposing)
         {
             // Everybody can go here.
             if (!this.isDisposed)

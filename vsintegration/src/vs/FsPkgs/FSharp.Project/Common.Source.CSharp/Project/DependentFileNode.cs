@@ -83,7 +83,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Disable certain commands for dependent file nodes 
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override int QueryStatusOnNode(Guid cmdGroup, uint cmd, IntPtr pCmdText, ref QueryStatusResult result)
+        public override int QueryStatusOnNode(Guid cmdGroup, uint cmd, IntPtr pCmdText, ref QueryStatusResult result)
         {
             if (cmdGroup == VsMenus.guidStandardCommandSet97)
             {
@@ -122,12 +122,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// DependentFileNodes node cannot be dragged.
         /// </summary>
         /// <returns>null</returns>
-        public /*protected, but public for FSharp.Project.dll*/ override StringBuilder PrepareSelectedNodesForClipBoard()
+        public override StringBuilder PrepareSelectedNodesForClipBoard()
         {
             return null;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             return new DependentFileNodeProperties(this);
         }
@@ -136,7 +136,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Redraws the state icon if the node is not excluded from source control.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Scc")]
-        public /*protected, but public for FSharp.Project.dll*/ override void UpdateSccStateIcons()
+        public override void UpdateSccStateIcons()
         {
             if (!this.ExcludeNodeFromScc)
             {

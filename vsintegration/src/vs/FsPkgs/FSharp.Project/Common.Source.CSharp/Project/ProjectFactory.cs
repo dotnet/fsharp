@@ -33,7 +33,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region properties
-        public /*protected, but public for FSharp.Project.dll*/ Microsoft.VisualStudio.Shell.Package Package
+        public Microsoft.VisualStudio.Shell.Package Package
         {
             get
             {
@@ -41,7 +41,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ System.IServiceProvider Site
+        public System.IServiceProvider Site
         {
             get
             {
@@ -52,7 +52,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The msbuild engine that we are going to use.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ Microsoft.Build.Evaluation.ProjectCollection BuildEngine
+        public Microsoft.Build.Evaluation.ProjectCollection BuildEngine
         {
             get
             {
@@ -63,7 +63,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The msbuild project for the temporary project file.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ Microsoft.Build.Evaluation.Project BuildProject
+        public Microsoft.Build.Evaluation.Project BuildProject
         {
             get
             {
@@ -77,7 +77,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region ctor
-        public /*protected, but public for FSharp.Project.dll*/ ProjectFactory(Microsoft.VisualStudio.Shell.Package package)
+        public ProjectFactory(Microsoft.VisualStudio.Shell.Package package)
         {
             this.package = package;
             this.site = package;

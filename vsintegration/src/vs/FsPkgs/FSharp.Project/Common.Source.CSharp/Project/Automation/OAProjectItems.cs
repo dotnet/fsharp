@@ -201,7 +201,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <param name="path">The full path of the item to add.</param>
         /// <param name="op">The VSADDITEMOPERATION to use when adding the item.</param>
         /// <returns>A ProjectItem object. </returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual EnvDTE.ProjectItem AddItem(string path, VSADDITEMOPERATION op)
+        public virtual EnvDTE.ProjectItem AddItem(string path, VSADDITEMOPERATION op)
         {
             return UIThread.DoOnUIThread(delegate() {
                 if (this.Project == null || this.Project.Project == null || this.Project.Project.Site == null || this.Project.Project.IsClosed)
@@ -247,7 +247,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <param name="result">The VSADDRESULT returned by the Add methods</param>
         /// <param name="path">The full path of the item added.</param>
         /// <returns>A ProjectItem object.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual EnvDTE.ProjectItem EvaluateAddResult(VSADDRESULT result, string path)
+        public virtual EnvDTE.ProjectItem EvaluateAddResult(VSADDRESULT result, string path)
         {
             return UIThread.DoOnUIThread(delegate() {
                 if (result == VSADDRESULT.ADDRESULT_Success)

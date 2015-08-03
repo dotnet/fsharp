@@ -32,9 +32,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
         #region properties
         /// <summary>
-        /// Defines an /*internal, but public for FSharp.Project.dll*/ public list of project items
+        /// Defines an public list of project items
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public IList<EnvDTE.ProjectItem> Items
+        public IList<EnvDTE.ProjectItem> Items
         {
             get
             {
@@ -45,7 +45,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Defines a relationship to the associated project.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public OAProject Project
+        public OAProject Project
         {
             get
             {
@@ -56,7 +56,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <summary>
         /// Defines the node that contains the items
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public HierarchyNode NodeWithItems
+        public HierarchyNode NodeWithItems
         {
             get
             {
@@ -258,7 +258,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// Retrives a list of items associated with the current node.
         /// </summary>
         /// <returns>A List of project items</returns>
-        public /*protected, but public for FSharp.Project.dll*/ IList<EnvDTE.ProjectItem> GetListOfProjectItems()
+        public IList<EnvDTE.ProjectItem> GetListOfProjectItems()
         {
             return UIThread.DoOnUIThread(delegate() {
                 List<EnvDTE.ProjectItem> list = new List<EnvDTE.ProjectItem>();

@@ -78,7 +78,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// enable the logger to retrive the verbosity from
 		/// the correct registry hive.
 		/// </summary>
-		/*internal, but public for FSharp.Project.dll*/ public string BuildVerbosityRegistryRoot
+		public string BuildVerbosityRegistryRoot
 		{
 			get { return buildVerbosityRegistryRoot; }
 			set { buildVerbosityRegistryRoot = value; }
@@ -86,7 +86,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// <summary>
 		/// Set to null to avoid writing to the output window
 		/// </summary>
-		/*internal, but public for FSharp.Project.dll*/ public IVsOutputWindowPane OutputWindowPane
+		public IVsOutputWindowPane OutputWindowPane
 		{
 			get { return outputWindowPane; }
 			set { outputWindowPane = value; }

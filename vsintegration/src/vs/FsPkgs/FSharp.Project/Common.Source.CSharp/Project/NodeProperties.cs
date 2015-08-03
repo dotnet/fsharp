@@ -289,13 +289,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region helper methods
-        public /*protected, but public for FSharp.Project.dll*/ string GetProperty(string name, string def)
+        public string GetProperty(string name, string def)
         {
             string a = this.Node.ItemNode.GetMetadata(name);
             return (a == null) ? def : a;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ void SetProperty(string name, string value)
+        public void SetProperty(string name, string value)
         {
             this.Node.ItemNode.SetMetadata(name, value);
         }
@@ -783,18 +783,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     #region fields
         private EventHandler<HierarchyNodeEventArgs> onCustomToolChanged;
         private EventHandler<HierarchyNodeEventArgs> onCustomToolNameSpaceChanged;
-        public /*protected, but public for FSharp.Project.dll*/ string _customTool = "";
-        public /*protected, but public for FSharp.Project.dll*/ string _customToolNamespace = "";
+        public string _customTool = "";
+        public string _customToolNamespace = "";
         #endregion
 
     #region custom tool events
-        /*internal, but public for FSharp.Project.dll*/ public event EventHandler<HierarchyNodeEventArgs> OnCustomToolChanged
+        public event EventHandler<HierarchyNodeEventArgs> OnCustomToolChanged
         {
             add { onCustomToolChanged += value; }
             remove { onCustomToolChanged -= value; }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public event EventHandler<HierarchyNodeEventArgs> OnCustomToolNameSpaceChanged
+        public event EventHandler<HierarchyNodeEventArgs> OnCustomToolNameSpaceChanged
         {
             add { onCustomToolNameSpaceChanged += value; }
             remove { onCustomToolNameSpaceChanged -= value; }

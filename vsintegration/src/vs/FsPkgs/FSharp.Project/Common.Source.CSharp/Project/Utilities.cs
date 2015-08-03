@@ -114,7 +114,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Is Visual Studio in design mode.
         /// </summary>
-        /// <param name="serviceProvider">The service provider.</param>
+        /// <param name="site">The service provider.</param>
         /// <returns>true if visual studio is in design mode</returns>
         public static bool IsVisualStudioInDesignMode(IServiceProvider site)
         {
@@ -402,7 +402,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="automationObject">The automation object.</param>
         /// <returns>The name of the active configuartion.</returns>        
-        /*internal, but public for FSharp.Project.dll*/ public static string GetActiveConfigurationName(EnvDTE.Project automationObject)
+        public static string GetActiveConfigurationName(EnvDTE.Project automationObject)
         {
             if (automationObject == null)
             {
@@ -470,7 +470,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="objToQuery">Managed or COM object.</param>
         /// <returns>Pointer to the IUnknown interface of the object.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public static IntPtr QueryInterfaceIUnknown(object objToQuery)
+        public static IntPtr QueryInterfaceIUnknown(object objToQuery)
         {
             bool releaseIt = false;
             IntPtr unknown = IntPtr.Zero;
@@ -677,10 +677,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Initializes the in memory project. Sets BuildEnabled on the project to true.
         /// </summary>
-        /// <param name="engine">The build engine to use to create a build project.</param>
+        /// <param name="buildEngine">The build engine to use to create a build project.</param>
         /// <param name="fullProjectPath">The full path of the project.</param>
         /// <returns>A loaded msbuild project.</returns>
-        /*internal, but public for FSharp.Project.dll*/
         public static Microsoft.Build.Evaluation.Project InitializeMsBuildProject(Microsoft.Build.Evaluation.ProjectCollection buildEngine, string fullProjectPath)
         {
             if (buildEngine == null)
@@ -714,7 +713,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="fullProjectPath">The full path of the project.</param>
         /// <param name="exitingBuildProject">An Existing build project that will be reloaded.</param>
         /// <returns>A loaded msbuild project.</returns>
-        /*internal, but public for FSharp.Project.dll*/
         public static Microsoft.Build.Evaluation.Project ReinitializeMsBuildProject(Microsoft.Build.Evaluation.ProjectCollection buildEngine, string fullProjectPath, Microsoft.Build.Evaluation.Project exitingBuildProject)
         {
             // If we have a build project that has been loaded with another file unload it.
@@ -734,7 +732,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return Utilities.InitializeMsBuildProject(buildEngine, fullProjectPath);
         }
 
-        /*internal, but public for FSharp.Project.dll*/
         public static Microsoft.Build.Evaluation.ProjectCollection InitializeMsBuildEngine(Microsoft.Build.Evaluation.ProjectCollection existingEngine)
         {
             if (existingEngine == null)
@@ -887,7 +884,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="anyFileName">A file name, which can be relative/absolute and contain lower-case/upper-case characters.</param>
         /// <returns>Canonicalized file name.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public static string CanonicalizeFileName(string anyFileName)
+        public static string CanonicalizeFileName(string anyFileName)
         {
             // Get absolute path
             // Note: this will not handle UNC paths
@@ -921,7 +918,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="fileName">The file to check whether it is a template file</param>
         /// <returns>true if the file is a template file</returns>
-        /*internal, but public for FSharp.Project.dll*/ public static bool IsTemplateFile(string fileName)
+        public static bool IsTemplateFile(string fileName)
         {
             if (String.IsNullOrEmpty(fileName))
             {
@@ -937,10 +934,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="serviceProvider">A service provider.</param>
         /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
-        /// <param name="configuration">The name of the active configuration.</param>
-        /// <param name="platform">The name of the platform.</param>
         /// <returns>true if successfull.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, Guid projectId, out ConfigCanonicalName configCanonicalName)
+        public static bool TryGetActiveConfigurationAndPlatform(System.IServiceProvider serviceProvider, Guid projectId, out ConfigCanonicalName configCanonicalName)
         {
             if (serviceProvider == null)
             {
@@ -968,7 +963,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="serviceProvider">A reference to a Service Provider.</param>
         /// <returns>true if the shell is in command line mode. false otherwise.</returns>
-        /*internal, but public for FSharp.Project.dll*/ public static bool IsShellInCommandLineMode(System.IServiceProvider serviceProvider)
+        public static bool IsShellInCommandLineMode(System.IServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
             {

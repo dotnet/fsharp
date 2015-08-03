@@ -508,7 +508,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Flags for specifying which events to stop triggering.
         /// </summary>
         [Flags]
-        /*internal, but public for FSharp.Project.dll*/ public enum EventTriggering
+        public enum EventTriggering
         {
             TriggerAll = 0,
             DoNotTriggerHierarchyEvents = 1,
@@ -521,7 +521,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The user file extension.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public const string PerUserFileExtension = ".user";
+        public const string PerUserFileExtension = ".user";
         #endregion
 
         #region fields
@@ -685,7 +685,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private Dictionary<Type, Guid> catidMapping = new Dictionary<Type, Guid>();
 
 		/// <summary>
-		/// The /*internal, but public for FSharp.Project.dll*/ public package implementation.
+		/// The public package implementation.
 		/// </summary>
 		private ProjectPackage package;
 
@@ -882,7 +882,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "ReEvaluate")]
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Re")]
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual string ReEvaluateProjectFileTargetName
+        public virtual string ReEvaluateProjectFileTargetName
         {
             get
             {
@@ -893,7 +893,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// This is the object that will be returned by EnvDTE.Project.Object for this project
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual object ProjectObject
+        public virtual object ProjectObject
         {
             get
             {
@@ -904,7 +904,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Override this property to specify when the project file is dirty.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual bool IsProjectFileDirty
+        public virtual bool IsProjectFileDirty
         {
             get
             {
@@ -922,7 +922,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// True if the project uses the Project Designer Editor instead of the property page frame to edit project properties.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual bool SupportsProjectDesigner
+        public virtual bool SupportsProjectDesigner
         {
             get
             {
@@ -935,7 +935,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ virtual Guid ProjectDesignerEditor
+        public virtual Guid ProjectDesignerEditor
         {
             get
             {
@@ -946,7 +946,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Defines the flag that supports the VSHPROPID.ShowProjInSolutionPage
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual bool ShowProjectInSolutionPage
+        public virtual bool ShowProjectInSolutionPage
         {
             get
             {
@@ -969,7 +969,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets or sets the ability of a project filenode to have child nodes (sub items).
         /// Example would be C#/VB forms having resx and designer files.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ bool CanFileNodesHaveChilds
+        public bool CanFileNodesHaveChilds
         {
             get
             {
@@ -1140,7 +1140,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets or sets the flag whether query edit should communicate with the scc manager.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ bool DisableQueryEdit
+        public bool DisableQueryEdit
         {
             get
             {
@@ -1155,7 +1155,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets a collection of integer ids that maps to project item instances
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/
         public IdItemMapping ItemIdMap
         {
             get
@@ -1178,7 +1177,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets whether or not the readonly file attribute is set for this project.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public bool IsReadOnly
+        public bool IsReadOnly
         {
             get
             {
@@ -1189,7 +1188,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets or sets the build logger.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ IDEBuildLogger BuildLogger
+        public IDEBuildLogger BuildLogger
         {
             get
             {
@@ -1205,7 +1204,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the taskprovider.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ TaskProvider TaskProvider
+        public TaskProvider TaskProvider
         {
             get
             {
@@ -1224,7 +1223,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the project file name.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ string FileName
+        public string FileName
         {
             get
             {
@@ -1236,7 +1235,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the configuration provider.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ ConfigProvider ConfigProvider
+        public ConfigProvider ConfigProvider
         {
             get
             {
@@ -1265,7 +1264,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets or sets whether or not source code control is disabled for this project.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Scc")]
-        public /*protected, but public for FSharp.Project.dll*/ bool IsSccDisabled
+        public bool IsSccDisabled
         {
             get
             {
@@ -1281,7 +1280,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets or set whether items can be deleted for this project.
         /// Enabling this feature can have the potential destructive behavior such as deleting files from disk.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ bool CanProjectDeleteItems
+        public bool CanProjectDeleteItems
         {
             get
             {
@@ -1296,7 +1295,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Determines whether the project was fully opened. This is set when the OnAfterOpenProject has triggered.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ bool HasProjectOpened
+        public bool HasProjectOpened
         {
             get
             {
@@ -1307,7 +1306,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets or sets event triggering flags.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public EventTriggering EventTriggeringFlag
+        public EventTriggering EventTriggeringFlag
         {
             get
             {
@@ -1322,7 +1321,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Defines the build project that has loaded the project file.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ Microsoft.Build.Evaluation.Project BuildProject
+        public Microsoft.Build.Evaluation.Project BuildProject
         {
             get
             {
@@ -1338,7 +1337,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Defines the build engine that is used to build the project file.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public Microsoft.Build.Evaluation.ProjectCollection BuildEngine
+        public Microsoft.Build.Evaluation.ProjectCollection BuildEngine
         {
             get
             {
@@ -1352,9 +1351,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
 		/// <summary>
-		/// The /*internal, but public for FSharp.Project.dll*/ public package implementation.
+		/// The public package implementation.
 		/// </summary>
-		/*internal, but public for FSharp.Project.dll*/ public ProjectPackage Package
+		public ProjectPackage Package
 		{
 			get
 			{
@@ -1378,7 +1377,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         #endregion
 
         #region overridden methods
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             return new ProjectNodeProperties(this);
         }
@@ -1868,7 +1867,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="pvaIn">Pointer to a VARIANTARG structure containing input arguments. Can be NULL</param>
         /// <param name="pvaOut">VARIANTARG structure to receive command output. Can be NULL.</param>
         /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        public override int ExecCommandOnNode(Guid cmdGroup, uint cmd, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
         {
             if (cmdGroup == VsMenus.guidStandardCommandSet97)
             {
@@ -1929,7 +1928,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="deleteOperation">A flag that specifies the type of delete operation (delete from storage or remove from project)</param>
         /// <returns>true if item can be deleted from project</returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
+        public override bool CanDeleteItem(__VSDELETEITEMOPERATION deleteOperation)
         {
             if (deleteOperation == __VSDELETEITEMOPERATION.DELITEMOP_RemoveFromProject)
             {
@@ -2138,7 +2137,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 this.disableQueryEdit = true;
 
-                // set up /*internal, but public for FSharp.Project.dll*/ public members and icons
+                // set up public members and icons
                 canceled = 0;
 
                 this.ProjectMgr = this;
@@ -2313,7 +2312,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="key">Key to retrieve the target item from the subitems list</param>
         /// <returns>Newly added node</returns>
         /// <remarks>If the parent node was found we add the dependent item to it otherwise we add the item ignoring the "DependentUpon" metatdata</remarks>
-        public /*protected, but public for FSharp.Project.dll*/ virtual HierarchyNode AddDependentFileNode(IDictionary<String, Microsoft.Build.Evaluation.ProjectItem> subitems, string key)
+        public virtual HierarchyNode AddDependentFileNode(IDictionary<String, Microsoft.Build.Evaluation.ProjectItem> subitems, string key)
         {
             Microsoft.Build.Evaluation.ProjectItem item = subitems[key];
             subitems.Remove(key);
@@ -2908,7 +2907,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// List of Guids of the config independent property pages. It is called by the GetProperty for VSHPROPID_PropertyPagesCLSIDList property.
 		/// </summary>
 		/// <returns></returns>
-		public /*protected, but public for FSharp.Project.dll*/ virtual Guid[] GetConfigurationIndependentPropertyPages()
+		public virtual Guid[] GetConfigurationIndependentPropertyPages()
 		{
 			return new Guid[] { Guid.Empty };
 		}
@@ -2917,7 +2916,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Returns a list of Guids of the configuration dependent property pages. It is called by the GetProperty for VSHPROPID_CfgPropertyPagesCLSIDList property.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual Guid[] GetConfigurationDependentPropertyPages()
+        public virtual Guid[] GetConfigurationDependentPropertyPages()
         {
             return new Guid[0];
         }
@@ -2926,7 +2925,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// An ordered list of guids of the prefered property pages. See <see cref="__VSHPROPID.VSHPROPID_PriorityPropertyPagesCLSIDList"/>
         /// </summary>
         /// <returns>An array of guids.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual Guid[] GetPriorityProjectDesignerPages()
+        public virtual Guid[] GetPriorityProjectDesignerPages()
         {
             return new Guid[] { Guid.Empty };
         }
@@ -2940,7 +2939,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="parent">the parent node where to add the subfolder if it does not exist.</param>
         /// <returns>the foldernode correcsponding to the path.</returns>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "SubFolder")]
-        public /*protected, but public for FSharp.Project.dll*/ virtual FolderNode VerifySubFolderExists(string path, HierarchyNode parent)
+        public virtual FolderNode VerifySubFolderExists(string path, HierarchyNode parent)
         {
             FolderNode folderNode = null;
             uint uiItemId;
@@ -2992,7 +2991,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Gets the list of selected HierarchyNode objects
         /// </summary>
         /// <returns>A list of HierarchyNode objects</returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual IList<HierarchyNode> GetSelectedNodes()
+        public virtual IList<HierarchyNode> GetSelectedNodes()
         {
             // Retrieve shell interface in order to get current selection
             IVsMonitorSelection monitorSelection = this.GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
@@ -3090,7 +3089,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Recursevily walks the hierarchy nodes and redraws the state icons
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void UpdateSccStateIcons()
+        public override void UpdateSccStateIcons()
         {
             if (this.FirstChild == null)
             {
@@ -3108,7 +3107,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Handles the shows all objects command.
         /// </summary>
         /// <returns></returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual int ShowAllFiles()
+        public virtual int ShowAllFiles()
         {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
@@ -3117,7 +3116,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Handles the Add web reference command.
         /// </summary>
         /// <returns></returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual int AddWebReference()
+        public virtual int AddWebReference()
         {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
@@ -3126,7 +3125,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Unloads the project.
         /// </summary>
         /// <returns></returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual int UnloadProject()
+        public virtual int UnloadProject()
         {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
@@ -3135,7 +3134,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Handles the clean project command.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual int CleanProject()
+        public virtual int CleanProject()
         {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
@@ -3143,7 +3142,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Reload project from project file
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Reload()
+        public virtual void Reload()
         {
             Debug.Assert(this.buildEngine != null, "There is no build engine defined for this project");
 
@@ -3185,7 +3184,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Renames the project file
         /// </summary>
         /// <param name="newFile">The full path of the new project file.</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void RenameProjectFile(string newFile)
+        public virtual void RenameProjectFile(string newFile)
         {
             IVsUIShell shell = this.Site.GetService(typeof(SVsUIShell)) as IVsUIShell;
             Debug.Assert(shell != null, "Could not get the ui shell from the project");
@@ -3271,7 +3270,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Filter items that should not be processed as file items. Example: Folders and References.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ virtual bool FilterItemTypeToBeAddedToHierarchy(string itemType)
+        public virtual bool FilterItemTypeToBeAddedToHierarchy(string itemType)
         {
             return (String.Compare(itemType, ProjectFileConstants.Reference, StringComparison.OrdinalIgnoreCase) == 0
                     || String.Compare(itemType, ProjectFileConstants.ProjectReference, StringComparison.OrdinalIgnoreCase) == 0
@@ -3285,7 +3284,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Associate window output pane to the build logger
         /// </summary>
         /// <param name="output"></param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void SetOutputLogger(IVsOutputWindowPane output)
+        public virtual void SetOutputLogger(IVsOutputWindowPane output)
         {
             // Create our logger, if it was not specified
             if (!this.useProvidedLogger || this.buildLogger == null)
@@ -3680,7 +3679,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <remarks>The following common project properties are defaulted to projectName (if empty):
         ///    AssemblyName, Name and RootNamespace.
         /// If the project filename is not set then no properties are set</remarks>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void InitializeProjectProperties()
+        public virtual void InitializeProjectProperties()
         {
             // Get projectName from project filename. Return if not set
             string projectName = Path.GetFileNameWithoutExtension(this.filename);
@@ -3707,7 +3706,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Factory method for configuration provider
         /// </summary>
         /// <returns>Configuration provider created</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual ConfigProvider CreateConfigProvider()
+        public virtual ConfigProvider CreateConfigProvider()
         {
             return new ConfigProvider(this);
         }
@@ -3716,7 +3715,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Factory method for reference container node
         /// </summary>
         /// <returns>ReferenceContainerNode created</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual ReferenceContainerNode CreateReferenceContainerNode()
+        public virtual ReferenceContainerNode CreateReferenceContainerNode()
         {
             return new ReferenceContainerNode(this);
         }
@@ -3727,7 +3726,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="newFileName">The new name of the project file.</param>
         /// <param name="saveCopyAs">if <c>true</c> - then SaveAs operation is performed on the copy of of current project file</param>
         /// <returns>Success value or an error code.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual int SaveAs(string newFileName, bool saveCopyAs)
+        public virtual int SaveAs(string newFileName, bool saveCopyAs)
         {
             Debug.Assert(!String.IsNullOrEmpty(newFileName), "Cannot save project file for an empty or null file name");
 
@@ -3868,7 +3867,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// An implementer can override this method to provide specialized semantics on how the project file is renamed in the msbuild file.
         /// </summary>
         /// <param name="newFileName">The new full path of the project file</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void SaveMSBuildProjectFileAs(string newFileName)
+        public virtual void SaveMSBuildProjectFileAs(string newFileName)
         {
             Debug.Assert(!String.IsNullOrEmpty(newFileName), "Cannot save project file for an empty or null file name");
 
@@ -3937,7 +3936,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="originalFileName">The orginal filname.</param>
         /// <param name="computedNewFileName">The computed new file name, that will be copied to the project directory or into the folder .</param>
         /// <returns>S_OK for success, or an error message</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual int CanOverwriteExistingItem(string originalFileName, string computedNewFileName)
+        public virtual int CanOverwriteExistingItem(string originalFileName, string computedNewFileName)
         {
             if (String.IsNullOrEmpty(originalFileName) || String.IsNullOrEmpty(computedNewFileName))
             {
@@ -3982,7 +3981,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Handle owerwriting of an existing item in the hierarchy.
         /// </summary>
         /// <param name="existingNode">The node that exists.</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void OverwriteExistingItem(HierarchyNode existingNode)
+        public virtual void OverwriteExistingItem(HierarchyNode existingNode)
         {
 
         }
@@ -3992,7 +3991,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="parentNode">The parent of the new fileNode</param>
         /// <param name="fileName">The file name</param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual HierarchyNode AddNewFileNodeToHierarchy(HierarchyNode parentNode, string fileName)
+        public virtual HierarchyNode AddNewFileNodeToHierarchy(HierarchyNode parentNode, string fileName)
         {
             var ret = AddNewFileNodeToHierarchyCore(parentNode, fileName);
             FireAddNodeEvent(fileName);
@@ -4039,7 +4038,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines whther the current mode of the project is in a supress command mode.
         /// </summary>
         /// <returns></returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual bool IsCurrentStateASuppressCommandsMode()
+        public virtual bool IsCurrentStateASuppressCommandsMode()
         {
             if (VsShellUtilities.IsSolutionBuilding(this.Site))
             {
@@ -4070,7 +4069,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         ///        - GetOutputGroupDescription
         /// </summary>
         /// <returns>List of output group name and corresponding MSBuild target</returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual IList<KeyValuePair<string, string>> GetOutputGroupNames()
+        public virtual IList<KeyValuePair<string, string>> GetOutputGroupNames()
         {
             return new List<KeyValuePair<string, string>>(outputGroupNames);
         }
@@ -4080,7 +4079,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="canonicalName">Canonical name of the output group</param>
         /// <returns>Display name</returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual string GetOutputGroupDisplayName(string canonicalName)
+        public virtual string GetOutputGroupDisplayName(string canonicalName)
         {
             string result = SR.GetString(String.Format(CultureInfo.InvariantCulture, "Output{0}", canonicalName), CultureInfo.CurrentUICulture);
             if (String.IsNullOrEmpty(result))
@@ -4093,7 +4092,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="canonicalName">Canonical name of the output group</param>
         /// <returns>Description</returns>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual string GetOutputGroupDescription(string canonicalName)
+        public virtual string GetOutputGroupDescription(string canonicalName)
         {
             string result = SR.GetString(String.Format(CultureInfo.InvariantCulture, "Output{0}Description", canonicalName), CultureInfo.CurrentUICulture);
             if (String.IsNullOrEmpty(result))
@@ -4106,7 +4105,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// This does not get persisted and is used to evaluate msbuild conditions
         /// which are based on the $(Configuration) property.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void SetCurrentConfiguration()
+        public virtual void SetCurrentConfiguration()
         {
 #if FX_ATLEAST_45
             if ((this.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor).IsInProgress())
@@ -4172,7 +4171,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Loads reference items from the project file into the hierarchy.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void ProcessReferences()
+        public virtual void ProcessReferences()
         {
             IReferenceContainer container = GetReferenceContainer();
             if (null == container)
@@ -4196,7 +4195,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Loads build actions for a project
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void ProcessCustomBuildActions()
+        public virtual void ProcessCustomBuildActions()
         {
             // The buildActionConverter has a set of default actions that are always there:
             this.buildActionConverter.ResetBuildActionsToDefaults();
@@ -4214,7 +4213,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Now that comprises the final list of item types that should be available.
         }
 
-        public /*protected internal, but public for FSharp.Project.dll*/void CheckForWildcards()
+        public void CheckForWildcards()
         {
             var dict = new Dictionary<Microsoft.Build.Construction.ProjectItemElement, Microsoft.Build.Evaluation.ProjectItem>();
             foreach (var item in MSBuildProject.GetStaticAndVisibleItemsInOrder(this.buildProject))
@@ -4232,7 +4231,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Loads file items from the project file into the hierarchy.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void ProcessFilesAndFolders()
+        public virtual void ProcessFilesAndFolders()
         {
             List<String> subitemsKeys = new List<String>();
             Dictionary<String, Microsoft.Build.Evaluation.ProjectItem> subitems = new Dictionary<String, Microsoft.Build.Evaluation.ProjectItem>();
@@ -4294,7 +4293,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="subitemsKeys">List of sub item keys </param>
         /// <param name="subitems"></param>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void ProcessDependentFileNodes(List<String> subitemsKeys, Dictionary<String, Microsoft.Build.Evaluation.ProjectItem> subitems)
+        public virtual void ProcessDependentFileNodes(List<String> subitemsKeys, Dictionary<String, Microsoft.Build.Evaluation.ProjectItem> subitems)
         {
             foreach (string key in subitemsKeys)
             {
@@ -4310,7 +4309,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// For flavored projects which implement IPersistXMLFragment, load the information now
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ virtual void LoadNonBuildInformation()
+        public virtual void LoadNonBuildInformation()
         {
             IVsHierarchy outerHierarchy = InteropSafeIVsHierarchy;
             if (outerHierarchy is IPersistXMLFragment)
@@ -4322,7 +4321,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Used to sort nodes in the hierarchy.
         /// </summary>
-        public /*protected internal, but public for FSharp.Project.dll*/ abstract int CompareNodes(HierarchyNode node1, HierarchyNode node2);
+        public abstract int CompareNodes(HierarchyNode node1, HierarchyNode node2);
 
         /// <summary>
         /// Handles global properties related to configuration and platform changes invoked by a change in the active configuration.
@@ -4673,7 +4672,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="hierarchy"></param>
         /// <returns></returns>
-        /*internal, but public for FSharp.Project.dll*/ public NestedProjectNode GetNestedProjectForHierarchy(IVsHierarchy hierarchy)
+        public NestedProjectNode GetNestedProjectForHierarchy(IVsHierarchy hierarchy)
         {
             if (hierarchy != null && (hierarchy is IVsProject3))
             {
@@ -4703,7 +4702,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// If the node is a ProjectNode it is the project folder.
         /// Otherwise (such as FileNode subitem) it delegate the resolution to the parent node.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public string GetBaseDirectoryForAddingFiles(HierarchyNode nodeToAddFile)
+        public string GetBaseDirectoryForAddingFiles(HierarchyNode nodeToAddFile)
         {
             string baseDir = String.Empty;
 
@@ -4724,7 +4723,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// For /*internal, but public for FSharp.Project.dll*/ public use only.
+        /// For public use only.
         /// This creates a copy of an existing configuration and add it to the project.
         /// Caller should change the condition on the PropertyGroup.
         /// If derived class want to accomplish this, they should call ConfigProvider.AddCfgsOfCfgName()
@@ -4733,7 +4732,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="group">PropertyGroup to clone</param>
         /// <returns></returns>
-        /*internal, but public for FSharp.Project.dll*/ public Microsoft.Build.Construction.ProjectPropertyGroupElement ClonePropertyGroup(Microsoft.Build.Construction.ProjectPropertyGroupElement group)
+        public Microsoft.Build.Construction.ProjectPropertyGroupElement ClonePropertyGroup(Microsoft.Build.Construction.ProjectPropertyGroupElement group)
         {
             // Create a new (empty) PropertyGroup
             Microsoft.Build.Construction.ProjectPropertyGroupElement newPropertyGroup = this.buildProject.Xml.AddPropertyGroup();
@@ -4757,7 +4756,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Register the project with the Scc manager.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Scc")]
-        public /*protected, but public for FSharp.Project.dll*/ void RegisterSccProject()
+        public void RegisterSccProject()
         {
 
             if (this.IsSccDisabled || this.isRegisteredWithScc || String.IsNullOrEmpty(this.sccProjectName))
@@ -4780,7 +4779,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "UnRegister")]
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "Un")]
-        public /*protected, but public for FSharp.Project.dll*/ void UnRegisterProject()
+        public void UnRegisterProject()
         {
             if (this.IsSccDisabled || !this.isRegisteredWithScc)
             {
@@ -4802,7 +4801,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="type">Type of the object for which you want the CATID</param>
         /// <returns>CATID</returns>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CATID")]
-        public /*protected internal, but public for FSharp.Project.dll*/ Guid GetCATIDForType(Type type)
+        public Guid GetCATIDForType(Type type)
         {
             if (type == null)
                 throw new ArgumentNullException("type");
@@ -4823,7 +4822,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="catid">GUID that extender can use to uniquely identify your object type</param>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "catid")]
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "CATID")]
-        public /*protected, but public for FSharp.Project.dll*/ void AddCATIDMapping(Type type, Guid catid)
+        public void AddCATIDMapping(Type type, Guid catid)
         {
             catidMapping.Add(type, catid);
         }
@@ -4833,7 +4832,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         /// <param name="persistXmlFragment">Object that support being initialized with an XML fragment</param>
         /// <param name="configName">Name of the configuration being initialized, null if it is the project</param>
-        public /*protected internal, but public for FSharp.Project.dll*/ void LoadXmlFragment(IPersistXMLFragment persistXmlFragment, string configName)
+        public void LoadXmlFragment(IPersistXMLFragment persistXmlFragment, string configName)
         {
             if (xmlFragments == null)
             {
@@ -4913,7 +4912,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Retrieve all XML fragments that need to be saved from the flavors and store the information in msbuild.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "XML")]
-        public /*protected, but public for FSharp.Project.dll*/ void PersistXMLFragments()
+        public void PersistXMLFragments()
         {
             if (this.IsFlavorDirty() != 0)
             {
@@ -5049,7 +5048,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ int IsFlavorDirty()
+        public int IsFlavorDirty()
         {
             int isDirty = 0;
             // See if one of our flavor consider us dirty
@@ -7052,7 +7051,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Get the outer T implementation.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/
         private T GetOuterAs<T>()
             where T : class
         {

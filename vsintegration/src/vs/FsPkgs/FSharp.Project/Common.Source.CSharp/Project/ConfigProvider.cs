@@ -41,7 +41,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// The associated project.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ ProjectNode ProjectMgr
+        public ProjectNode ProjectMgr
         {
             get
             {
