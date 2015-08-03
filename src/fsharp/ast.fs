@@ -2072,7 +2072,7 @@ and LexCont = LexerWhitespaceContinuation
 /// The error raised by the parse_error_rich function, which is called by the parser engine
 /// when a syntax error occurs. The first object is the ParseErrorContext which contains a dump of
 /// information about the grammar at the point where the error occured, e.g. what tokens
-/// are valid to shift next at that point in the grammar. This information is processed in build.fs.
+/// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
 exception SyntaxError of obj (* ParseErrorContext<_> *) * range
 

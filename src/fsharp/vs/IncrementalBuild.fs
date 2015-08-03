@@ -13,8 +13,10 @@ open System
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Build
+open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.Tastops
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
@@ -1014,7 +1016,7 @@ type ErrorInfo = {
 
     /// Decompose a warning or error into parts: position, severity, message
     static member internal CreateFromException(exn,warn,trim:bool,fallbackRange:range) = 
-        let m = match RangeOfError exn with Some m -> m | None -> fallbackRange 
+        let m = match GetRangeOfError exn with Some m -> m | None -> fallbackRange 
         let (s1:int),(s2:int) = Pos.toVS m.Start
         let (s3:int),(s4:int) = Pos.toVS (if trim then m.Start else m.End)
         let msg = bufs (fun buf -> OutputPhasedError buf exn false)
@@ -1081,11 +1083,11 @@ module internal IncrementalFSharpBuild =
     open Internal.Utilities.Collections
 
     open IncrementalBuild
-    open Microsoft.FSharp.Compiler.Build
-    open Microsoft.FSharp.Compiler.Fscopts
+    open Microsoft.FSharp.Compiler.CompileOps
+    open Microsoft.FSharp.Compiler.CompileOptions
     open Microsoft.FSharp.Compiler.Ast
     open Microsoft.FSharp.Compiler.ErrorLogger
-    open Microsoft.FSharp.Compiler.Env
+    open Microsoft.FSharp.Compiler.TcGlobals
     open Microsoft.FSharp.Compiler.TypeChecker
     open Microsoft.FSharp.Compiler.Tast 
     open Microsoft.FSharp.Compiler.Range
@@ -1209,11 +1211,11 @@ module internal IncrementalFSharpBuild =
         let errorsSeenInScope = new ResizeArray<_>()
             
         let warningOrError warn exn = 
-            let warn = warn && not (ReportWarningAsError tcConfig.globalWarnLevel tcConfig.specificWarnOff tcConfig.specificWarnOn tcConfig.specificWarnAsError tcConfig.specificWarnAsWarn tcConfig.globalWarnAsError exn)                
+            let warn = warn && not (ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn)                
             if not warn then
                 errorsSeenInScope.Add(exn)
                 errorLogger.ErrorSink(exn)                
-            else if ReportWarning tcConfig.globalWarnLevel tcConfig.specificWarnOff tcConfig.specificWarnOn exn then 
+            else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
                 warningsSeenInScope.Add(exn)
                 errorLogger.WarnSink(exn)                    
 
@@ -1427,8 +1429,8 @@ module internal IncrementalFSharpBuild =
                     errorLogger.Warning(e)
                     frameworkTcImports           
 
-            let tcEnv0 = GetInitialTypecheckerEnv (Some assemblyName) rangeStartup tcConfig tcImports tcGlobals
-            let tcState0 = TypecheckInitialState (rangeStartup,assemblyName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv0)
+            let tcEnv0 = GetInitialTcEnv (Some assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+            let tcState0 = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0)
             let tcAcc = 
                 { tcGlobals=tcGlobals
                   tcImports=tcImports
@@ -1456,11 +1458,11 @@ module internal IncrementalFSharpBuild =
                         Trace.PrintLine("FSharpBackgroundBuild", fun _ -> sprintf "Typechecking %s..." filename)                
                         beforeTypeCheckFile.Trigger filename
                         let! (tcEnv,topAttribs,typedImplFiles),tcState = 
-                            TypecheckOneInputEventually ((fun () -> errorLogger.ErrorCount > 0),
+                            TypeCheckOneInputEventually ((fun () -> errorLogger.ErrorCount > 0),
                                                          tcConfig,tcAcc.tcImports,
                                                          tcAcc.tcGlobals,
                                                          None,
-                                                         Nameres.TcResultsSink.NoSink,
+                                                         NameResolution.TcResultsSink.NoSink,
                                                          tcAcc.tcState,input)
                         
                         /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
@@ -1505,8 +1507,8 @@ module internal IncrementalFSharpBuild =
             Trace.PrintLine("FSharpBackgroundBuildVerbose", fun _ -> sprintf "Finalizing Type Check" )
             let finalAcc = tcStates.[tcStates.Length-1]
             let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnv, (Option.get acc.topAttribs), acc.typedImplFiles)
-            let (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState = TypecheckMultipleInputsFinish (results,finalAcc.tcState)
-            let tcState,tassembly = TypecheckClosedInputSetFinish (mimpls,tcState)
+            let (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState = TypeCheckMultipleInputsFinish (results,finalAcc.tcState)
+            let tcState,tassembly = TypeCheckClosedInputSetFinish (mimpls,tcState)
             tcState, topAttrs, tassembly, tcEnvAtEndOfLastFile, finalAcc.tcImports, finalAcc.tcGlobals, finalAcc.tcConfig
 
         // END OF BUILD TASK FUNCTIONS
@@ -1542,7 +1544,7 @@ module internal IncrementalFSharpBuild =
         let fileDependencies = 
             let unresolvedFileDependencies = 
                 unresolvedReferences
-                |> List.map (function Microsoft.FSharp.Compiler.Build.UnresolvedAssemblyReference(referenceText, _) -> referenceText)
+                |> List.map (function Microsoft.FSharp.Compiler.CompileOps.UnresolvedAssemblyReference(referenceText, _) -> referenceText)
                 |> List.filter(fun referenceText->not(Path.IsInvalidPath(referenceText))) // Exclude things that are definitely not a file name
                 |> List.map(fun referenceText -> if FileSystem.IsPathRootedShim(referenceText) then referenceText else System.IO.Path.Combine(projectDirectory,referenceText))
                 |> List.map (fun file->{Filename =  file; ExistenceDependency = true; IncrementalBuildDependency = true })
@@ -1618,7 +1620,7 @@ module internal IncrementalFSharpBuild =
         member __.TypeCheck() = 
             let newPartialBuild = IncrementalBuild.Eval "FinalizeTypeCheck" partialBuild
             partialBuild <- newPartialBuild
-            match GetScalarResult<Build.TcState * TypeChecker.TopAttribs * Tast.TypedAssembly * TypeChecker.TcEnv * Build.TcImports * Env.TcGlobals * Build.TcConfig>("FinalizeTypeCheck",partialBuild) with
+            match GetScalarResult<TcState * TypeChecker.TopAttribs * Tast.TypedAssembly * TypeChecker.TcEnv * TcImports * TcGlobals * TcConfig>("FinalizeTypeCheck",partialBuild) with
             | Some((tcState,topAttribs,typedAssembly,tcEnv,tcImports,tcGlobals,tcConfig),_) -> tcState,topAttribs,typedAssembly,tcEnv,tcImports,tcGlobals,tcConfig
             | None -> failwith "Build was not evaluated."
         
@@ -1668,7 +1670,7 @@ module internal IncrementalFSharpBuild =
             let tcConfigB = 
                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
                     
-                // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
+                // see also fsc.fs:ProcessCommandLineArgsAndImportAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = 
                     TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, 
                                               optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true) 
@@ -1686,10 +1688,7 @@ module internal IncrementalFSharpBuild =
 
                 // Apply command-line arguments.
                 try
-                    ParseCompilerOptions
-                        (fun _sourceOrDll -> () )
-                        (Fscopts.GetCoreServiceCompilerOptions tcConfigB)
-                        commandLineArgs             
+                    ParseCompilerOptions ((fun _sourceOrDll -> () ), CompileOptions.GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
                 with e -> errorRecovery e range0
 
 

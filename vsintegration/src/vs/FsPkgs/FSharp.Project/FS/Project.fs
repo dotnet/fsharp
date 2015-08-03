@@ -1757,7 +1757,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                     TypeProviderSecurityGlobals.invalidationCallback()  
                                 let argv = Array.append flags sources  // flags + sources = entire command line
                                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
-                                Microsoft.FSharp.Compiler.Driver.runFromCommandLineToImportingAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
+                                Microsoft.FSharp.Compiler.Driver.ProcessCommandLineArgsAndImportAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
                                             { new Microsoft.FSharp.Compiler.ErrorLogger.Exiter with 
                                                 member x.Exit(n) = 
                                                     match n with

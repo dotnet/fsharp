@@ -50,9 +50,9 @@ type FscCompiler() =
         }
 
     /// converts short and long issue types to the same CompilationIssue reprsentation
-    let convert (issue : Microsoft.FSharp.Compiler.Build.ErrorOrWarning) : CompilationIssue = 
+    let convert issue : CompilationIssue = 
         match issue with
-        | Microsoft.FSharp.Compiler.Build.ErrorOrWarning.Short(isError, text) -> 
+        | Microsoft.FSharp.Compiler.CompileOps.ErrorOrWarning.Short(isError, text) -> 
             {
                 Location = emptyLocation
                 Code = ""
@@ -61,7 +61,7 @@ type FscCompiler() =
                 Text = text
                 Type = if isError then CompilationIssueType.Error else CompilationIssueType.Warning
             }
-        | Microsoft.FSharp.Compiler.Build.ErrorOrWarning.Long(isError, details) ->
+        | Microsoft.FSharp.Compiler.CompileOps.ErrorOrWarning.Long(isError, details) ->
             let loc, file = 
                 match details.Location with
                 | Some l when not l.IsEmpty -> 
