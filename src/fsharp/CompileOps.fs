@@ -722,7 +722,9 @@ let OutputPhasedErrorR (os:System.Text.StringBuilder) (err:PhasedError) =
               os.Append(Duplicate2E().Format k (DecompileOpName s)) |> ignore
       | UndefinedName(_,k,id,_) -> 
           os.Append(k (DecompileOpName id.idText)) |> ignore
-                
+      | InternalUndefinedItemRef(f,smr,ccuName,s) ->  
+          let _, errs = f(smr, ccuName, s)  
+          os.Append(errs) |> ignore  
       | FieldNotMutable  _ -> 
           os.Append(FieldNotMutableE().Format) |> ignore
       | FieldsFromDifferentTypes (_,fref1,fref2,_) -> 
