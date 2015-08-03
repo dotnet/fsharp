@@ -215,7 +215,7 @@ type internal InteractiveChecker =
 #if FSI_SERVER_INTELLISENSE
 // These functions determine all declarations, called by fsi.fs for fsi-server requests.
 module internal FsiIntelisense =
-    val getDeclarations : Build.TcConfig * Env.TcGlobals * Build.TcImports * Build.TcState -> string -> string[] -> (string * string * string * int)[]
+    val getDeclarations : Build.TcConfig * TcGlobals * Build.TcImports * Build.TcState -> string -> string[] -> (string * string * string * int)[]
 #endif
 
 module internal PrettyNaming =
