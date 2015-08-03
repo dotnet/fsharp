@@ -27,11 +27,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// </summary>
     internal abstract class DocumentManager
     {
-        #region fields
         private HierarchyNode node = null;
-        #endregion
 
-        #region properties
         public HierarchyNode Node
         {
             get
@@ -39,16 +36,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.node;
             }
         }
-        #endregion
         
-        #region ctors
         public DocumentManager(HierarchyNode node)
         {
             this.node = node;
         }
-        #endregion
-
-        #region virtual methods
 
         /// <summary>
         /// Open a document using the standard editor. This method has no implementation since a document is abstract in this context
@@ -139,9 +131,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-
-        #region helper methods
         /// <summary>
         /// Get document properties from RDT
         /// </summary>
@@ -224,9 +213,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return fullPath;
         }
 
-        #endregion
-
-        #region static methods
         /// <summary>
         /// Updates the caption for all windows associated to the document.
         /// </summary>
@@ -349,6 +335,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
     }
 }

@@ -35,7 +35,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     public class NestedProjectNode : HierarchyNode, IPropertyNotifySink
     {
 
-        #region fields
         private IVsHierarchy nestedHierarchy;
 
         Guid projectInstanceGuid = Guid.Empty;
@@ -58,9 +57,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         // A cooike retrieved when advising on property chnanged events.
         private uint projectPropertyNotifySinkCookie;
-        #endregion
 
-        #region properties
         public IVsHierarchy NestedHierarchy
         {
             get
@@ -68,9 +65,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.nestedHierarchy;
             }
         }
-        #endregion
 
-        #region virtual properties
         /// <summary>
         /// Returns the __VSADDVPFLAGS that will be passed in when calling AddVirtualProjectEx
         /// </summary>
@@ -78,9 +73,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get { return 0; }
         }
-        #endregion
 
-        #region overridden properties
         /// <summary>
         /// The path of the nested project.
         /// </summary>
@@ -92,9 +85,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// The Caption of the nested project.
-        /// </summary>
         public override string Caption
         {
             get
@@ -134,12 +124,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             set { this.isDisposed = value; }
         }
 
-
-
-        #endregion
-
-        #region ctor
-
         public NestedProjectNode()
         {
         }
@@ -149,9 +133,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.IsExpanded = true;
         }
-        #endregion
 
-        #region IPropertyNotifySink Members
         /// <summary>
         /// Notifies a sink that the [bindable] property specified by dispID has changed. 
         /// If dispID is DISPID_UNKNOWN, then multiple properties have changed together. 
@@ -186,13 +168,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
 
         }
-
-        #endregion
-
-        #region public methods
-        #endregion
-
-        #region overridden methods
 
         /// <summary>
         /// Get the automation object for the NestedProjectNode
@@ -428,14 +403,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="reserved">Reserved parameter defined at the IVsPersistHierarchyItem2::ReloadItem parameter.</param>
         public override void ReloadItem(uint reserved)
         {
-            #region precondition
             if (this.isDisposed || this.ProjectMgr == null || this.ProjectMgr.IsClosed)
             {
                 throw new InvalidOperationException();
             }
 
             Debug.Assert(this.nestedHierarchy != null, "The nested hierarchy object must be created before calling this method");
-            #endregion
 
             IVsPersistHierarchyItem2 persistHierachyItem = this.nestedHierarchy as IVsPersistHierarchyItem2;
 
@@ -455,14 +428,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="ignoreFlag">Flag indicating whether or not to ignore changes (1 to ignore, 0 to stop ignoring).</param>
         public override void IgnoreItemFileChanges(bool ignoreFlag)
         {
-            #region precondition
             if (this.isDisposed || this.ProjectMgr == null || this.ProjectMgr.IsClosed)
             {
                 throw new InvalidOperationException();
             }
 
             Debug.Assert(this.nestedHierarchy != null, "The nested hierarchy object must be created before calling this method");
-            #endregion
 
             this.IgnoreNestedProjectFile(ignoreFlag);
 
@@ -564,9 +535,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return queryRemoveFileFlags;
         }
-        #endregion
 
-        #region virtual methods
         /// <summary>
         /// Initialize the nested hierarhy node.
         /// </summary>
@@ -659,12 +628,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             // This is the second step in creating and adding a nested project. The inner hierarchy must have been
             // already initialized at this point. 
-            #region precondition
             if (this.nestedHierarchy == null)
             {
                 throw new InvalidOperationException();
             }
-            #endregion
+
             // get the IVsSolution interface from the global service provider
             IVsSolution solution = this.GetService(typeof(IVsSolution)) as IVsSolution;
             Debug.Assert(solution != null, "Could not get the IVsSolution object from the services exposed by this project");
@@ -878,9 +846,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             string newRelativePath = Path.Combine(existingRelativePath, newFileName);
             this.ItemNode.Rename(newRelativePath);
         }
-        #endregion    
 
-        #region helper methods
         /// <summary>
         /// Closes a nested project and releases the nested hierrachy pointer.
         /// </summary>
@@ -1132,7 +1098,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return connectionPoint;
         }
-        #endregion       
     }
 }
 #endif

@@ -21,19 +21,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [CLSCompliant(false), ComVisible(true)]
     public class OANullProperty : EnvDTE.Property
     {
-        #region fields
         private OAProperties parent;
-        #endregion
-
-        #region ctors
 
         internal OANullProperty(OAProperties parent)
         {
             this.parent = parent;
         }
-        #endregion
-
-        #region EnvDTE.Property
 
         public object Application
         {
@@ -97,6 +90,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             get { return String.Empty; }
             set { }
         }
-        #endregion
     }
 }

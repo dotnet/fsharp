@@ -41,8 +41,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
 
-        #region SolutionFolder Members
-
         public virtual EnvDTE.Project AddFromFile(string fileName)
         {
             ProjectContainerNode projectContainer = (ProjectContainerNode)this.node.ProjectMgr;
@@ -124,8 +122,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return (EnvDTE.DTE)this.node.ProjectMgr.Site.GetService(typeof(EnvDTE.DTE));
             }
         }
-
-        #endregion
     }
 
 }

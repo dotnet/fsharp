@@ -32,18 +32,13 @@ namespace Microsoft.VisualStudio.Shell
     [System.Runtime.InteropServices.ComVisibleAttribute(false)]
     public sealed class WebSiteProjectAttribute : RegistrationAttribute
     {
-        #region Constants
         private const string webSiteProjectGuid = "{E24C65DC-7377-472B-9ABA-BC803B73C61A}";
         private const string websitePackageGuid = "{39c9c826-8ef8-4079-8c95-428f5b1c323f}";
-        #endregion
 
-        #region Fields
         private Type packageType;
         private string languageID;
         private string languageName;
-        #endregion
 
-        #region Constructors
         /// <summary>
         /// Creates a new WebSiteProjectAttribute attribute to register a 
         /// language with the web site project 
@@ -65,9 +60,7 @@ namespace Microsoft.VisualStudio.Shell
             this.languageName = languageName;
 
         }
-        #endregion
 
-        #region Properties
         /// <summary>
         /// Gets the Language ID which is being referenced from the vstemplate
         /// </summary>
@@ -123,9 +116,7 @@ namespace Microsoft.VisualStudio.Shell
             key.Close();
             return vsInstallDir;
         }
-        #endregion
 
-        #region Methods
         /// <summary>
         /// Called to register this attribute with the given context.  The context
         /// contains the location where the registration information should be placed.
@@ -174,7 +165,6 @@ namespace Microsoft.VisualStudio.Shell
                 context.RemoveKey(string.Format(CultureInfo.InvariantCulture, "{0}\\{1}", ProjectTemplatesDir, languageID));
             }
         }
-        #endregion
     }
 }
 

@@ -32,20 +32,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public class ReferenceContainerNode : HierarchyNode, IReferenceContainer
     {
-        #region fields
         public const string ReferencesNodeVirtualName = "References";
         private List<ProjectReferenceNode> projectReferencesWithEnabledCaching = new List<ProjectReferenceNode>();
-        #endregion
         
-        #region ctor
         internal ReferenceContainerNode(ProjectNode root) : base(root)
         {
             this.VirtualNodeName = ReferencesNodeVirtualName;
             this.ExcludeNodeFromScc = true;
         }
-        #endregion
 
-        #region Properties
         private static string[] supportedReferenceTypes = new string[] {
             ProjectFileConstants.ProjectReference,
             ProjectFileConstants.Reference,
@@ -55,9 +50,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get { return supportedReferenceTypes; }
         }
-        #endregion
 
-        #region overridden properties
         public override int SortPriority
         {
             get 
@@ -104,10 +97,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return references;
             }
         }
-
-        #endregion
-
-        #region overridden methods
 
         public override void AddChild(HierarchyNode node)
         {
@@ -255,8 +244,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return false;
         }
 
-        #endregion
-
         public void BeginBatchUpdate()
         {
             foreach (var r in EnumReferences())
@@ -274,7 +261,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             projectReferencesWithEnabledCaching.Clear();
         }
 
-        #region IReferenceContainer
         public IList<ReferenceNode> EnumReferences()
         {
             List<ReferenceNode> refs = new List<ReferenceNode>();
@@ -478,7 +464,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return node;
         }
-        #endregion
 
         private void EnableCachingForProjectReferencesInBatchUpdate(HierarchyNode node)
         {
@@ -490,7 +475,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             projectReferencesWithEnabledCaching.Add(projectReference);
         }
 
-        #region virtual methods
         internal virtual ReferenceNode CreateReferenceNode(string referenceType, ProjectElement element, BuildResult buildResult)
         {
             ReferenceNode node = null;
@@ -533,9 +517,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return node;
         }
-        #endregion
 
-        #region Helper functions to add references
         /// <summary>
         /// Creates a project reference node given an existing project element.
         /// </summary>
@@ -699,7 +681,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             ComReferenceNode node = new ComReferenceNode(this.ProjectMgr, selectorData);
             return node;
         }
-        #endregion
-
     }
 }

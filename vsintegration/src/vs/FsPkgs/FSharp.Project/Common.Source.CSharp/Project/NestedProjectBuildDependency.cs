@@ -20,15 +20,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         IVsHierarchy dependentHierarchy = null;
 
-        #region ctors
         [CLSCompliant(false)]
         public NestedProjectBuildDependency(IVsHierarchy dependentHierarchy)
         {
             this.dependentHierarchy = dependentHierarchy;
         }
-        #endregion
 
-        #region IVsBuildDependency methods
         public int get_CanonicalName(out string canonicalName)
         {
             canonicalName = null;
@@ -76,7 +73,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return (unknownProject == null) ? VSConstants.E_FAIL : VSConstants.S_OK;
         }
-        #endregion
 
     }
 }

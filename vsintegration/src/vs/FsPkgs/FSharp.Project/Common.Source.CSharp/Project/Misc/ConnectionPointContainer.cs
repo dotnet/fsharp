@@ -43,7 +43,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             connectionPoints.Add(typeof(SinkType).GUID, new ConnectionPoint<SinkType>(this, source));
         }
 
-        #region IConnectionPointContainer Members
         void IConnectionPointContainer.EnumConnectionPoints(out IEnumConnectionPoints ppEnum)
         {
             throw new NotImplementedException();
@@ -52,7 +51,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             ppCP = connectionPoints[riid];
         }
-        #endregion
     }
 
     internal class ConnectionPoint<SinkType> : IConnectionPoint
@@ -77,7 +75,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             sinks = new Dictionary<uint, SinkType>();
             nextCookie = 1;
         }
-        #region IConnectionPoint Members
+
         public void Advise(object pUnkSink, out uint pdwCookie)
         {
             SinkType sink = pUnkSink as SinkType;
@@ -113,6 +111,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             sinks.Remove(dwCookie);
             source.OnSinkRemoved(sink);
         }
-        #endregion
     }
 }

@@ -28,14 +28,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAProjectItems : OANavigableProjectItems
     {
-        #region ctor
         internal OAProjectItems(OAProject project, HierarchyNode nodeWithItems)
             : base(project, nodeWithItems)
         {
         }
-        #endregion
 
-        #region EnvDTE.ProjectItems
         /// <summary>
         /// Creates a new project item from an existing item template file and adds it to the project. 
         /// </summary>
@@ -192,9 +189,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             return this.AddItem(fileName, VSADDITEMOPERATION.VSADDITEMOP_OPENFILE);
         }
 
-        #endregion
-
-        #region helper methods
         /// <summary>
         /// Adds an item to the project.
         /// </summary>
@@ -313,7 +307,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
             return Path.Combine(components);
         }
-
-        #endregion
     }
 }

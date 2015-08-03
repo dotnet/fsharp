@@ -296,7 +296,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return this.uri; }
         }
 
-        // <include file='doc\Utilities.uex' path='docs/doc[@for="Url.Segments"]/*' />
         // Unlike the Uri class, this ALWAYS succeeds, even on relative paths, and it
         // strips out the path separator characters
         

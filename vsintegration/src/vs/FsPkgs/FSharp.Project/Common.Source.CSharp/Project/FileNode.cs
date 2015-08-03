@@ -72,11 +72,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public class FileNode : HierarchyNode
     {
-        #region static fiels
         private static Dictionary<string, int> extensionIcons;
-        #endregion
 
-        #region overriden Properties
         /// <summary>
         /// overwrites of the generic hierarchyitem.
         /// </summary>
@@ -155,9 +152,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             }
         }
-        #endregion
 
-        #region ctor
         static FileNode()
         {
             // Build the dictionary with the mapping between some well known extensions
@@ -214,10 +209,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.HasDesigner = true;
             } 
         } 
-
-        #endregion
-
-        #region overridden methods
 
         public override NodeProperties CreatePropertiesObject()
         {
@@ -541,7 +532,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         return VSConstants.S_OK;
 
                     case VsCommands.ViewCode:
-                    //case VsCommands.Delete: goto case VsCommands.OpenWith;
                     case VsCommands.Open:
                     case VsCommands.OpenWith:
                         result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
@@ -706,9 +696,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return true;
         }
 
-        #endregion
-
-#region virtual methods
         public virtual string FileName
         {
             get
@@ -985,9 +972,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-
-#region Helper methods
         /// <summary>
         /// Get's called to rename the eventually running document this hierarchyitem points to
         /// </summary>
@@ -1119,9 +1103,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             uiWindow.ExpandItem(this.ProjectMgr.InteropSafeIVsUIHierarchy, this.ID, EXPANDFLAGS.EXPF_SelectItem);
         }
 
-        #endregion
-
-#region SingleFileGenerator Support methods
 #if SINGLE_FILE_GENERATOR
         /// <summary>
         /// Event handler for the Custom tool property changes
@@ -1143,9 +1124,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.RunGenerator();
         }
 #endif
-        #endregion
 
-#region helpers
 #if SINGLE_FILE_GENERATOR
         /// <summary>
         /// Runs a generator.
@@ -1183,6 +1162,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return childNodes;
         }
-        #endregion
     }
 }

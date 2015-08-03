@@ -20,17 +20,12 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
-    /// <include file='doc\Utilities.uex' path='docs/doc[@for="IndentingStyle"]/*' />
     internal enum IndentingStyle {
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="IndentingStyle.None"]/*' />
         None,
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="IndentingStyle.Block"]/*' />
         Block,
-        /// <include file='doc\Utilities.uex' path='docs/doc[@for="IndentingStyle.Smart"]/*' />
         Smart
     }
 
-    /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences"]/*' />
     /// <summary>
     /// LanguagePreferences encapsulates the standard General and Tab settings for a language service
     /// and provides a way of getting and setting the values.  It is expected that you
@@ -74,7 +69,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         _HighlightMatchingBraceFlags braceFlags;
         string name;
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.LanguagePreferences"]/*' />
         /// <summary>
         /// Gets the language preferences.
         /// </summary>
@@ -84,16 +78,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.name = name;
         }
 
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.LanguagePreferences1"]/*' />
         internal LanguagePreferences() { }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.LanguageName;"]/*' />
         protected string LanguageName {
             get { return this.name; }
             set { this.name = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.Site;"]/*' />
         /// <summary>
         /// This property is not public for a reason. If it were public it would
         /// get called during LoadSettingsFromStorage which will break it.  
@@ -104,20 +95,17 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             set { this.site = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.Site;"]/*' />
         public IServiceProvider GetSite() {
             return this.site;
         }
 
         // Our base language service perferences (from Babel originally)
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableCodeSense;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableCodeSense {
             get { return this.enableCodeSense; }
             set { this.enableCodeSense = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableMatchBraces;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableMatchBraces {
             get {
@@ -126,77 +114,66 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             set { this.enableMatchBraces = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableQuickInfo;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableQuickInfo {
             get { return this.enableQuickInfo; }
             set { this.enableQuickInfo = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableShowMatchingBrace;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableShowMatchingBrace {
             get { return this.enableShowMatchingBrace; }
             set { this.enableShowMatchingBrace = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableMatchBracesAtCaret;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableMatchBracesAtCaret {
             get { return this.enableMatchBracesAtCaret; }
             set { this.enableMatchBracesAtCaret = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.MaxErrorMessages;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int MaxErrorMessages {
             get { return this.maxErrorMessages; }
             set { this.maxErrorMessages = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.CodeSenseDelay;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int CodeSenseDelay {
             get { return this.codeSenseDelay; }
             set { this.codeSenseDelay = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableAsyncCompletion;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableAsyncCompletion {
             get { return this.enableAsyncCompletion; }
             set { this.enableAsyncCompletion = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableFormatSelection;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableFormatSelection {
             get { return this.enableFormatSelection; }
             set { this.enableFormatSelection = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableCommenting;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableCommenting {
             get { return this.enableCommenting; }
             set { this.enableCommenting = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.MaxRegionTime;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int MaxRegionTime {
             get { return this.maxRegionTime; }
             set { this.maxRegionTime = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.HighlightMatchingBraceFlags;"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public _HighlightMatchingBraceFlags HighlightMatchingBraceFlags {
             get { return this.braceFlags; }
             set { this.braceFlags = value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.Init"]/*' />
         public virtual void Init() {
             ILocalRegistry3 localRegistry = site.GetService(typeof(SLocalRegistry)) as ILocalRegistry3;
             string root = null;
@@ -219,18 +196,15 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             localRegistry = null;
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.InitUserPreferences"]/*' />
         public virtual void InitUserPreferences(RegistryKey key, string name) {
             this.GetLanguagePreferences();
         }
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.GetIntegerValue"]/*' />
         public int GetIntegerValue(RegistryKey key, string name, int def) {
             object o = key.GetValue(name);
             if (o is int) return (int)o;
             if (o is string) return int.Parse((string)o, CultureInfo.InvariantCulture);
             return def;
         }
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.GetBooleanValue"]/*' />
         public bool GetBooleanValue(RegistryKey key, string name, bool def) {
             object o = key.GetValue(name);
             if (o is int) return ((int)o != 0);
@@ -238,7 +212,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return def;
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.InitMachinePreferences"]/*' />
         public virtual void InitMachinePreferences(RegistryKey key, string name) {
             using (RegistryKey keyLanguage = key.OpenSubKey("languages\\language services\\" + name, false)) {
                 if (keyLanguage != null) {
@@ -259,70 +232,60 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.Dispose"]/*' />
         public virtual void Dispose() {
             Disconnect();
             site = null;
         }
 
         // General tab
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.AutoListMembers"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool AutoListMembers {
             get { return prefs.fAutoListMembers != 0; }
             set { prefs.fAutoListMembers = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.HideAdvancedMembers"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool HideAdvancedMembers {
             get { return prefs.fHideAdvancedAutoListMembers != 0; }
             set { prefs.fHideAdvancedAutoListMembers = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.ParameterInformation"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool ParameterInformation {
             get { return prefs.fAutoListParams != 0; }
             set { prefs.fAutoListParams = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.VirtualSpace"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool VirtualSpace {
             get { return prefs.fVirtualSpace != 0; }
             set { prefs.fVirtualSpace = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.WordWrap"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool WordWrap {
             get { return prefs.fWordWrap != 0; }
             set { prefs.fWordWrap = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.WordWrapGlyphs"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool WordWrapGlyphs {
             get { return (int)prefs.fWordWrapGlyphs != 0; }
             set { prefs.fWordWrapGlyphs = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.CutCopyBlankLines"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool CutCopyBlankLines {
             get { return (int)prefs.fCutCopyBlanks != 0; }
             set { prefs.fCutCopyBlanks = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.LineNumbers"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool LineNumbers {
             get { return prefs.fLineNumbers != 0; }
             set { prefs.fLineNumbers = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableLeftClickForURLs"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool EnableLeftClickForURLs {
             get { return prefs.fHotURLs != 0; }
@@ -330,48 +293,41 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         // Tabs tab
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.Indenting"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         internal IndentingStyle IndentStyle {
             get { return (IndentingStyle)prefs.IndentStyle; }
             set { prefs.IndentStyle = (vsIndentStyle)value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.TabSize"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int TabSize {
             get { return (int)prefs.uTabSize; }
             set { prefs.uTabSize = (uint)value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.IndentSize"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int IndentSize {
             get { return (int)prefs.uIndentSize; }
             set { prefs.uIndentSize = (uint)value; }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.InsertSpaces"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool InsertTabs {
             get { return prefs.fInsertTabs != 0; }
             set { prefs.fInsertTabs = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.ShowNavigationBar"]/*' />
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool ShowNavigationBar {
             get { return (int)prefs.fDropdownBar != 0; }
             set { prefs.fDropdownBar = (uint)(value ? 1 : 0); }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.EnableAutoOutlining"]/*' />
         public bool AutoOutlining {
             get { return this.autoOutlining; }
             set { this.autoOutlining = value; }
         }
 
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.GetLanguagePrefs"]/*' />
         public virtual void GetLanguagePreferences() {
             IVsTextManager textMgr = site.GetService(typeof(SVsTextManager)) as IVsTextManager;
             if (textMgr != null) {
@@ -389,7 +345,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\PropertySheet.uex' path='docs/doc[@for="LanguagePreferences.Apply"]/*' />
         public virtual void Apply() {
             IVsTextManager2 textMgr2 = site.GetService(typeof(SVsTextManager)) as IVsTextManager2;
             if (textMgr2 != null) {
@@ -418,37 +373,27 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        #region IVsTextManagerEvents2 Members
-
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.OnRegisterMarkerType"]/*' />
         public virtual int OnRegisterMarkerType(int iMarkerType) {
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.OnRegisterView"]/*' />
         public virtual int OnRegisterView(IVsTextView view) {
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.OnUnregisterView"]/*' />
         public virtual int OnUnregisterView(IVsTextView view) {
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.OnReplaceAllInFilesBegin"]/*' />
         public virtual int OnReplaceAllInFilesBegin() {
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.OnReplaceAllInFilesEnd"]/*' />
         public virtual int OnReplaceAllInFilesEnd() {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\Preferences.uex' path='docs/doc[@for="LanguagePreferences.OnUserPreferencesChanged2"]/*' />
         public virtual int OnUserPreferencesChanged2(VIEWPREFERENCES2[] viewPrefs, FRAMEPREFERENCES2[] framePrefs, LANGPREFERENCES2[] langPrefs, FONTCOLORPREFERENCES2[] fontColorPrefs) {
             if (langPrefs != null && langPrefs.Length > 0 && langPrefs[0].guidLang == this.langSvc) {
                 this.prefs = langPrefs[0];
             }
             return NativeMethods.S_OK;
         }
-
-        #endregion
     }
 }

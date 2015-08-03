@@ -24,15 +24,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     , IVsProjectUpgradeViaFactory, IVsProjectUpgradeViaFactory4
 
 	{
-		#region fields
 		private Microsoft.VisualStudio.Shell.Package package;
 		private System.IServiceProvider site;
 
         private Microsoft.Build.Evaluation.ProjectCollection buildEngine;
         private Microsoft.Build.Evaluation.Project buildProject;
-        #endregion
 
-        #region properties
         public Microsoft.VisualStudio.Shell.Package Package
         {
             get
@@ -74,22 +71,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.buildProject = value;
             }
         }
-        #endregion
 
-        #region ctor
         public ProjectFactory(Microsoft.VisualStudio.Shell.Package package)
         {
             this.package = package;
             this.site = package;
             this.buildEngine = Utilities.InitializeMsBuildEngine(this.buildEngine);
         }
-        #endregion
 
-        #region abstract methods
         protected abstract ProjectNode CreateProject();
-        #endregion
 
-        #region overriden methods
         /// <summary>
         /// Rather than directly creating the project, ask VS to initate the process of
         /// creating an aggregated project in case we are flavored. We will be called
@@ -179,9 +170,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return guids;
         }
-        #endregion
 
-        #region helpers
 #if FX_ATLEAST_45
 
         private class ProjectInspector
@@ -290,9 +279,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return null;
         }
-	#endregion
 
-        #region IVsProjectUpgradeViaFactory
         private string m_lastUpgradedProjectFile;
         private const string SCC_PROJECT_NAME = "SccProjectName";
         private string m_sccProjectName;
@@ -823,8 +810,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 i++;
             }
         }
-
-        #endregion
-
     }
 }

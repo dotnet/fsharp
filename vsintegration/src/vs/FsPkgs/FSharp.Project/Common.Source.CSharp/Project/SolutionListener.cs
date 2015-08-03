@@ -25,8 +25,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     internal abstract class SolutionListener : IVsSolutionEvents3, IVsSolutionEvents4, IDisposable
     {
-
-        #region fields
         private uint eventsCookie = (uint)ShellConstants.VSCOOKIE_NIL;
         private IVsSolution solution = null;
         private IServiceProvider serviceProvider = null;
@@ -35,9 +33,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines an object that will be a mutex for this object for synchronizing thread calls.
         /// </summary>
         private static volatile object Mutex = new object();
-        #endregion
 
-        #region ctors
         public SolutionListener(IServiceProvider serviceProvider)
         {
 
@@ -51,9 +47,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException();
             }
         }
-        #endregion
 
-        #region properties
         public uint EventsCookie
         {
             get
@@ -77,9 +71,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.serviceProvider;
             }
         }
-        #endregion
 
-        #region IVsSolutionEvents3, IVsSolutionEvents2, IVsSolutionEvents methods
         public virtual int OnAfterCloseSolution(object reserved)
         {
             return VSConstants.E_NOTIMPL;
@@ -154,9 +146,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
-        #region IVsSolutionEvents4 methods
         public virtual int OnAfterAsynchOpenProject(IVsHierarchy hierarchy, int added)
         {
             return VSConstants.E_NOTIMPL;
@@ -179,22 +169,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return VSConstants.E_NOTIMPL;
         }
-        #endregion
 
-        #region Dispose        
-
-        /// <summary>
-        /// The IDispose interface Dispose method for disposing the object determinastically.
-        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        #endregion
-
-        #region methods
         public void Init()
         {
             if (this.solution != null)
@@ -228,6 +209,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
     }
 }

@@ -22,14 +22,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     internal class SingleFileGenerator : ISingleFileGenerator, IVsGeneratorProgress
     {
 
-        #region fields
         private bool gettingCheckoutStatus;
         private bool runningGenerator;
         private bool hasRunGenerator = false;
         private ProjectNode projectMgr;
-        #endregion
 
-        #region ctors
         /// <summary>
         /// Overloadde ctor.
         /// </summary>
@@ -38,9 +35,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.projectMgr = projectMgr;
         }
-        #endregion
-
-        #region IVsGeneratorProgress Members
 
         public virtual int GeneratorError(int warning, uint level, string err, uint line, uint col)
         {
@@ -52,9 +46,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.E_NOTIMPL;
         }
 
-        #endregion
-
-        #region ISingleFileGenerator
         /// <summary>
         /// Runs the generator on the current project item.
         /// </summary>
@@ -83,9 +74,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
         
-        #region virtual methods
         /// <summary>
         /// Invokes the specified generator
         /// </summary>
@@ -305,9 +294,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return filePath;
         }
-        #endregion
 
-        #region helpers
         /// <summary>
         /// Returns the buffer contents for a moniker.
         /// </summary>
@@ -466,12 +453,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return (ret == 1);
         }
-        #endregion
-        
 
-
-
-        #region QueryEditQuerySave helpers
         /// <summary>
         /// This function asks to the QueryEditQuerySave service if it is possible to
         /// edit the file.
@@ -525,7 +507,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return false;
         }        
-        #endregion
     }
 }
 #endif

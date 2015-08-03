@@ -25,7 +25,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public class FolderNode : HierarchyNode
     {
-        #region ctors
         /// <summary>
         /// Constructor for the FolderNode
         /// </summary>
@@ -37,9 +36,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             this.VirtualNodeName = relativePath.TrimEnd('\\');
         }
-        #endregion
 
-        #region overridden properties
         /// <summary>
         /// This relates to the SCC glyph
         /// </summary>
@@ -51,9 +48,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return VsStateIcon.STATEICON_NOSTATEICON;
             }
         }
-        #endregion
 
-        #region overridden methods
         public override NodeProperties CreatePropertiesObject()
         {
             return new FolderNodeProperties(this);
@@ -315,9 +310,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return false;
         }
 
-        #endregion
-
-        #region virtual methods
         /// <summary>
         /// Override if your node is not a file system folder so that
         /// it does nothing or it deletes it from your storage location.
@@ -405,9 +397,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Directory.Move(this.Url, newPath);
             }
         }
-        #endregion
 
-        #region helper methods
         private void RenameFolder(string newName)
         {
             // Do the rename (note that we only do the physical rename if the leaf name changed)
@@ -464,7 +454,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException(errorMessage);
             }
         }
-
-        #endregion
     }
 }
