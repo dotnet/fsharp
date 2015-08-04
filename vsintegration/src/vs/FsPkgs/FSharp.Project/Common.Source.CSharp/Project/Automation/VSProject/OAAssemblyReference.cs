@@ -20,7 +20,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
         }
 
-        #region Reference override
         public override int BuildNumber
         {
             get
@@ -155,6 +154,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return BaseReferenceNode.ResolvedAssembly.Version.ToString();
             }
         }
-        #endregion
     }
 }

@@ -25,7 +25,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     internal abstract class SelectionListener : IVsSelectionEvents, IDisposable
     {
-        #region fields
         private uint eventsCookie = (uint)ShellConstants.VSCOOKIE_NIL;
         private IVsMonitorSelection monSel = null;
         private ServiceProvider serviceProvider = null;
@@ -34,10 +33,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines an object that will be a mutex for this object for synchronizing thread calls.
         /// </summary>
         private static volatile object Mutex = new object();
-        #endregion
 
-        #region ctors
-        public /*protected, but public for FSharp.Project.dll*/ SelectionListener(ServiceProvider serviceProvider)
+        public SelectionListener(ServiceProvider serviceProvider)
         {
 
             this.serviceProvider = serviceProvider;
@@ -50,10 +47,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 throw new InvalidOperationException();
             }
         }
-        #endregion
 
-        #region properties
-        public /*protected, but public for FSharp.Project.dll*/ uint EventsCookie
+        public uint EventsCookie
         {
             get
             {
@@ -61,7 +56,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ IVsMonitorSelection SelectionMonitor
+        public IVsMonitorSelection SelectionMonitor
         {
             get
             {
@@ -69,16 +64,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ ServiceProvider ServiceProvider
+        public ServiceProvider ServiceProvider
         {
             get
             {
                 return this.serviceProvider;
             }
         }
-        #endregion
-
-        #region IVsSelectionEvents Members
 
         public virtual int OnCmdUIContextChanged(uint dwCmdUICookie, int fActive)
         {
@@ -95,20 +87,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.E_NOTIMPL;
         }
 
-        #endregion
-
-        #region IDisposable Members
-        /// <summary>
-        /// The IDispose interface Dispose method for disposing the object determinastically.
-        /// </summary>
         public void Dispose()
         {
             this.Dispose(true);
             GC.SuppressFinalize(this);
         }
-        #endregion
 
-        #region methods
         public void Init()
         {
             if (this.SelectionMonitor != null)
@@ -121,7 +105,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// The method that does the cleanup.
         /// </summary>
         /// <param name="disposing"></param>
-        public /*protected, but public for FSharp.Project.dll*/ virtual void Dispose(bool disposing)
+        public virtual void Dispose(bool disposing)
         {
             // Everybody can go here.
             if (!this.isDisposed)
@@ -142,7 +126,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
         }
-        #endregion
-
     }
 }

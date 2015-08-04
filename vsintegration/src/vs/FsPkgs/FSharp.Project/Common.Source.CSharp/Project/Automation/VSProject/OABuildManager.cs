@@ -24,8 +24,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         }
 
 
-        #region BuildManager Members
-
         public string BuildDesignTimeOutput(string bstrOutputMoniker)
         {
             throw new NotImplementedException();
@@ -53,15 +51,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             get { throw new NotImplementedException(); }
         }
 
-        #endregion
-
-        #region _dispBuildManagerEvents_Event Members
-
         public event _dispBuildManagerEvents_DesignTimeOutputDeletedEventHandler DesignTimeOutputDeleted;
 
         public event _dispBuildManagerEvents_DesignTimeOutputDirtyEventHandler DesignTimeOutputDirty;
-
-        #endregion
 
         private void OnDesignTimeOutputDeleted(object sender, EventArgs args)
         {
@@ -97,8 +89,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             return moniker;
         }
 
-        #region IEventSource<_dispBuildManagerEvents> Members
-
         void IEventSource<_dispBuildManagerEvents>.OnSinkAdded(_dispBuildManagerEvents sink)
         {
             DesignTimeOutputDeleted += new _dispBuildManagerEvents_DesignTimeOutputDeletedEventHandler(sink.DesignTimeOutputDeleted);
@@ -110,7 +100,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             DesignTimeOutputDeleted -= new _dispBuildManagerEvents_DesignTimeOutputDeletedEventHandler(sink.DesignTimeOutputDeleted);
             DesignTimeOutputDirty -= new _dispBuildManagerEvents_DesignTimeOutputDirtyEventHandler(sink.DesignTimeOutputDirty);
         }
-
-        #endregion
     }
 }

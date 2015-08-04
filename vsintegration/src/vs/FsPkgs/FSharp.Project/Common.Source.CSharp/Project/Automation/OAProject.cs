@@ -22,39 +22,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAProject : EnvDTE.Project, EnvDTE.ISupportVSProperties
     {
-        #region fields
         private ProjectNode project;
-#if UNUSED_NESTED_PROJECTS
-        Automation.OASolutionFolder<ProjectContainerNode> solutionFolder;
-#endif
         EnvDTE.ConfigurationManager configurationManager;
-        #endregion
 
-        #region properties
         public ProjectNode Project
         {
             get { return this.project; }
         }
-        #endregion
 
-        #region ctor
         internal OAProject(ProjectNode project)
         {
             this.project = project;
-
-#if UNUSED_NESTED_PROJECTS
-            if (project is ProjectContainerNode)
-            {
-                this.solutionFolder = new Automation.OASolutionFolder<ProjectContainerNode>((ProjectContainerNode)project);
-            }
-#endif
         }
-        #endregion
 
-        #region EnvDTE.Project
-        /// <summary>
-        /// Gets or sets the name of the object. 
-        /// </summary>
         public virtual string Name
         {
             get
@@ -449,18 +429,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 }
             });
         }
-        #endregion
 
-        #region ISupportVSProperties methods
         /// <summary>
         /// For use by F# tooling only. 
         /// </summary>
         public virtual void NotifyPropertiesDelete()
         {
         }
-        #endregion
 
-        #region private methods
         /// <summary>
         /// Saves or Save Asthe project.
         /// </summary>
@@ -588,6 +564,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 }
             });
         }
-        #endregion
     }
 }

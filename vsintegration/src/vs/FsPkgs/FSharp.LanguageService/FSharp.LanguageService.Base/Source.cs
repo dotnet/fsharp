@@ -622,8 +622,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public abstract string OriginalFilename { get; }
 #endif
 
-        #region Reformatting
-
         /// <summary>
         /// This method formats the given span using the given EditArray. The default behavior does nothing.  
         /// So you need to override this method if you want formatting to work.  
@@ -633,10 +631,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public void ReformatSpan(EditArray mgr, TextSpan span)
         {
         }
-
-        #endregion
-
-        #region Commenting
 
         // Implemented in Source.fs
         /// <summary>Implement this method to provide different comment delimiters.</summary>
@@ -774,10 +768,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return result;
         }
 
-
-        #endregion
-
-        #region IVsTextLinesEvents
         public void OnChangeLineText(TextLineChange[] lineChange, int last)
         {
             TextSpan span = new TextSpan();
@@ -794,7 +784,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public void OnChangeLineAttributes(int firstLine, int lastLine)
         {
         }
-        #endregion
 
 
         //===================================================================================
@@ -1974,7 +1963,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
         }
 
-        #region IVsHiddenTextClient
         public void OnHiddenRegionChange(IVsHiddenRegion region, HIDDEN_REGION_EVENT evt, int fBufferModifiable)
         {
         }
@@ -2012,14 +2000,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public void OnBeforeSessionEnd()
         {
         }
-        #endregion
-
-        #region IVsUserDataEvents Members
 
         public abstract void OnUserDataChange(ref Guid riidKey, object vtNewValue);
-
-        #endregion
-
     }
 
     /// <summary>
@@ -2267,7 +2249,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return '\0';
         }
 
-        #region IVsCompletionSet
         //--------------------------------------------------------------------------
         //IVsCompletionSet methods
         //--------------------------------------------------------------------------
@@ -2451,9 +2432,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.displayed = false;
             this.Close();
         }
-        #endregion
-
-        #region IVsCompletionSetEx Members
 
         public int CompareItems(string bstrSoFar, string bstrOther, int lCharactersToCompare, out int plResult)
         {
@@ -2496,8 +2474,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
             return NativeMethods.S_OK;
         }
-
-        #endregion
     }
 
     //-------------------------------------------------------------------------------------

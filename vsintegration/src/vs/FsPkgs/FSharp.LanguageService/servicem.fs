@@ -1933,65 +1933,6 @@ module FSharpIntellisenseProvider =
 
         member x.Name = filename
 
-#if UNUSED
-module Setup = 
-    /// This attribute adds a intellisense provider for a specific language 
-    /// type. 
-    /// For Example:
-    ///   [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\8.0Exp\Languages\IntellisenseProviders\
-    ///         [Custom_Provider]
-    /// 
-    [<AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)>]
-    type ProvideIntellisenseProviderAttribute(provider:Type, providerName:string, addItemLanguageName:string, defaultExtension:string, shortLanguageName:string, templateFolderName:string) =
-        inherit RegistrationAttribute() 
-        let mutable additionalExtensions : Option<string> = None
-
-        /// Private function to get the provider base key name
-        let providerRegKey() = String.Format(CultureInfo.InvariantCulture, @"Languages\IntellisenseProviders\{0}", [| box providerName |])
-        
-            /// Gets the Type of the intellisense provider.
-        member x.Provider = provider
-            /// Get the Guid representing the generator type
-        member x.ProviderGuid = provider.GUID
-            /// Get the ProviderName
-        member x.ProviderName = providerName
-            /// Get item language
-        member x.AddItemLanguageName = addItemLanguageName
-            /// Get the Default extension
-        member x.DefaultExtension = defaultExtension
-            /// Get the short language name
-        member x.ShortLanguageName = shortLanguageName
-            /// Get the tempalte folder name
-        member x.TemplateFolderName = templateFolderName
-            /// Get/Set Additional extensions
-        member x.AdditionalExtensions 
-            with get() = additionalExtensions
-            and set v = additionalExtensions <- Some(v)
-            ///     Called to register this attribute with the given context.  The context
-            ///     contains the location where the registration inforomation should be placed.
-            ///     It also contains other information such as the type being registered and path information.
-        override x.Register(context:RegistrationAttribute.RegistrationContext) =
-            Check.ArgumentNotNull context "context"
-            use childKey = context.CreateKey(providerRegKey())
-            let mutable providerGuid = provider.GUID
-            childKey.SetValue("GUID", providerGuid.ToString("B"))
-            childKey.SetValue("AddItemLanguageName", addItemLanguageName)
-            childKey.SetValue("DefaultExtension", defaultExtension)
-            childKey.SetValue("ShortLanguageName", shortLanguageName)
-            childKey.SetValue("TemplateFolderName", templateFolderName)
-            match additionalExtensions with 
-            | None | Some "" -> ()
-            | Some(s) ->  childKey.SetValue("AdditionalExtensions", s)
-
-            /// <summary>
-            /// Unregister this file extension.
-            /// </summary>
-            /// <param name="context"></param>
-        override x.Unregister(context:RegistrationAttribute.RegistrationContext) =
-            if (null <> context) then
-                context.RemoveKey(providerRegKey())
-#endif
-
 // Workaround to access non-public settings persistence type.
 // GetService( ) with this will work as long as the GUID matches the real type.
 [<Guid("9B164E40-C3A2-4363-9BC5-EB4039DEF653")>]
