@@ -1159,31 +1159,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         // pprinter: leafFormatter
         // --------------------------------------------------------------------
 
-#if Suggestion4299
-        // See bug 4299. Suppress FSI_dddd+<etc> from fsi printer.
-        let fixupForInteractiveFSharpClassesWithNoToString obj (text:string) =
-              // Given obj:T.
-              // If T is a nested type inside a parent type called FSI_dddd, then it looks like an F# Interactive type.
-              // Further, if the .ToString() text starts with "FSI_dddd+T" then it looks like it's the default ToString.
-              // A better test: it is default ToString if the MethodInfo.DeclaringType is System.Object.
-              // In this case, replace "FSI_dddd+T" by "T".
-              // assert(obj <> null)
-              let fullName = obj.GetType().FullName // e.g. "FSI_0123+Name"
-              let name     = obj.GetType().Name     // e.g. "Name"
-              let T = obj.GetType()      
-              if text.StartsWith(fullName) then
-                  // text could be a default .ToString() since it starts with the FullName of the type. More checks...
-                  if T.IsNested &&
-                     T.DeclaringType.Name.StartsWith("FSI_") &&                             // Name has "FSI_" which is 
-                     T.DeclaringType.Name.Substring(4) |> Seq.forall System.Char.IsDigit    // followed by digits?
-                  then
-                      name ^ text.Substring(fullName.Length)    // replace fullName by name at start of text
-                  else
-                      text
-              else
-                text
-#endif
-
         let leafFormatter (opts:FormatOptions) (obj :obj) =
             match obj with 
             | null -> "null"
@@ -1219,10 +1194,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | :? bool   as b -> (if b then "true" else "false")
             | :? char   as c -> "\'" + formatChar true c + "\'"
             | _ -> try  let text = obj.ToString()
-//Suggestion4299. Not yet fixed.
-//#if COMPILER
-//                      let text = fixupForInteractiveFSharpClassesWithNoToString obj text
-//#endif  
                         text
                    with e ->
                      // If a .ToString() call throws an exception, catch it and use the message as the result.

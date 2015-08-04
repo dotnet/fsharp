@@ -212,13 +212,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public override NodeProperties CreatePropertiesObject()
         {
-#if SINGLE_FILE_GENERATOR
-            ISingleFileGenerator generator = this.CreateSingleFileGenerator();
-
-            return generator == null ? new FileNodeProperties(this) : new SingleFileGeneratorNodeProperties(this);
-#else
             return new FileNodeProperties(this);
-#endif
         }
 
         public override object GetIconHandle(bool open)
@@ -418,12 +412,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             string oldrelPath = this.ItemNode.GetMetadata(ProjectFileConstants.Include);
 
             RenameDocument(oldName, newName);
-#if UNUSED_DEPENDENT_FILES
-                                if (this is DependentFileNode)
-                                {
-                                        OnInvalidateItems(this.Parent);
-                                }
-#endif
+
             // Return S_FALSE if the hierarchy item id has changed.  This forces VS to flush the stale
             // hierarchy item id.
             if (returnValue == (int)VSConstants.S_OK || returnValue == (int)VSConstants.S_FALSE || returnValue == VSConstants.OLE_E_PROMPTSAVECANCELLED)
@@ -491,29 +480,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
 
-            // Exec on special filenode commands
-            if (cmdGroup == VsMenus.guidStandardCommandSet2K)
-            {
-#if SINGLE_FILE_GENERATOR
-                switch ((VsCommands2K)cmd)
-                {
-                    case VsCommands2K.RUNCUSTOMTOOL:
-                        {
-                            try
-                            {
-                                this.RunGenerator();
-                                return VSConstants.S_OK;
-                            }
-                            catch (Exception e)
-                            {
-                                Trace.WriteLine("Running Custom Tool failed : " + e.Message);
-                                throw;
-                            }
-                        }
-                }
-#endif
-            }
-
             return base.ExecCommandOnNode(cmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut);
         }
 
@@ -545,16 +511,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
                     return VSConstants.S_OK;
                 }
-#if SINGLE_FILE_GENERATOR
-                if ((VsCommands2K)cmd == VsCommands2K.RUNCUSTOMTOOL)
-                {
-                    if (string.IsNullOrEmpty(this.ItemNode.GetMetadata(ProjectFileConstants.DependentUpon)) && (this.NodeProperties is SingleFileGeneratorNodeProperties))
-                    {
-                        result |= QueryStatusResult.SUPPORTED | QueryStatusResult.ENABLED;
-                        return VSConstants.S_OK;
-                    }
-                }
-#endif
             }
             else
             {
@@ -930,17 +886,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             File.Move(oldName, newName);
         }
 
-#if SINGLE_FILE_GENERATOR
-        /// <summary>
-        /// factory method for creating single file generators.
-        /// </summary>
-        /// <returns></returns>
-        public virtual ISingleFileGenerator CreateSingleFileGenerator()
-        {
-            return new SingleFileGenerator(this.ProjectMgr);
-        }
-#endif
-
         /// <summary>
         /// This method should be overridden to provide the list of special files and associated flags for source control.
         /// </summary>
@@ -1102,42 +1047,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             IVsUIHierarchyWindow uiWindow = UIHierarchyUtilities.GetUIHierarchyWindow(this.ProjectMgr.Site, SolutionExplorer);
             uiWindow.ExpandItem(this.ProjectMgr.InteropSafeIVsUIHierarchy, this.ID, EXPANDFLAGS.EXPF_SelectItem);
         }
-
-#if SINGLE_FILE_GENERATOR
-        /// <summary>
-        /// Event handler for the Custom tool property changes
-        /// </summary>
-        /// <param name="sender">FileNode sending it</param>
-        /// <param name="e">Node event args</param>
-        internal virtual void OnCustomToolChanged(object sender, HierarchyNodeEventArgs e)
-        {
-            this.RunGenerator();
-        }
-
-        /// <summary>
-        /// Event handler for the Custom tool namespce property changes
-        /// </summary>
-        /// <param name="sender">FileNode sending it</param>
-        /// <param name="e">Node event args</param>
-        internal virtual void OnCustomToolNameSpaceChanged(object sender, HierarchyNodeEventArgs e)
-        {
-            this.RunGenerator();
-        }
-#endif
-
-#if SINGLE_FILE_GENERATOR
-        /// <summary>
-        /// Runs a generator.
-        /// </summary>
-        public void RunGenerator()
-        {
-            ISingleFileGenerator generator = this.CreateSingleFileGenerator();
-            if (generator != null)
-            {
-                generator.RunGenerator(this.Url);
-            }
-        }
-#endif
 
         /// <summary>
         /// Update the ChildNodes after the parent node has been renamed

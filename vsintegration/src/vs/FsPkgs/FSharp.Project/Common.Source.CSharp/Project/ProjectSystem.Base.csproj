@@ -76,12 +76,9 @@
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="..\RegistrationAttributes\WebSiteProjectAttribute.cs" />
-    <Compile Include="..\RegistrationAttributes\WebSiteProjectRelatedFilesAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryTemplateMappingAttribute.cs" />
-    <Compile Include="..\RegistrationAttributes\SingleFileGeneratorSupportRegistrationAttribute.cs" />
     <Compile Include="Misc\ConnectionPointContainer.cs" />
     <Compile Include="Misc\ExternDll.cs" />
     <Compile Include="Misc\NativeMethods.cs" />
@@ -95,7 +92,6 @@
     <!-- Automation Objects -->
     <Compile Include="Automation\OAFileItem.cs" />
     <Compile Include="Automation\OAFolderItem.cs" />
-    <Compile Include="Automation\OANestedProjectItem.cs" />
     <Compile Include="Automation\OANullProperty.cs" />
     <Compile Include="Automation\OAProject.cs" />
     <Compile Include="Automation\OAProjectItem.cs" />
@@ -105,7 +101,6 @@
     <Compile Include="Automation\OANavigableProjectItems.cs" />
     <Compile Include="Automation\OAReferenceFolderItem.cs" />
     <Compile Include="Automation\OAReferenceItem.cs" />
-    <Compile Include="Automation\OASolutionFolder.cs" />
 
     <!-- Objects needed to implement a Language Project -->
     <Compile Include="Automation\VSProject\OAAssemblyReference.cs" />
@@ -128,7 +123,6 @@
     <Compile Include="FileChangeManager.cs" />
     <Compile Include="FileDocumentManager.cs" />
     <Compile Include="FileNode.cs" />
-    <Compile Include="DependentFileNode.cs" />
     <Compile Include="FolderNode.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HierarchyNode.cs" />
@@ -139,14 +133,11 @@
     <Compile Include="LinkedFileNode.cs" />
     <Compile Include="LocalizableProperties.cs" />
     <Compile Include="Microsoft.VisualStudio.Package.Project.cs" />
-    <Compile Include="NestedProjectBuildDependency.cs" />
-    <Compile Include="NestedProjectNode.cs" />
     <Compile Include="NodeProperties.cs" />
     <Compile Include="OleServiceProvider.cs" />
     <Compile Include="Output.cs" />
     <Compile Include="OutputGroup.cs" />
     <Compile Include="ProjectConfig.cs" />
-    <Compile Include="ProjectContainerNode.cs"/>
     <Compile Include="ProjectDesignerDocumentManager.cs" />
     <Compile Include="ProjectElement.cs" />
     <Compile Include="ProjectFactory.cs" />
@@ -160,21 +151,15 @@
     <Compile Include="PropertiesEditorLauncher.cs" />
     <Compile Include="ReferenceContainerNode.cs" />
     <Compile Include="ReferenceNode.cs" />
-    <Compile Include="RegisteredProjectType.cs" />
-    <Compile Include="SingleFileGenerator.cs" />
-    <Compile Include="SingleFileGeneratorFactory.cs" />
     <Compile Include="SolutionListener.cs" />
-    <Compile Include="SolutionListenerForBuildDependencyUpdate.cs" />
     <Compile Include="SolutionListenerForProjectEvents.cs" />
     <Compile Include="SolutionListenerForProjectOpen.cs" />
     <Compile Include="SolutionListenerForProjectReferenceUpdate.cs" />
     <Compile Include="StructuresEnums.cs" />
     <Compile Include="SuspendFileChanges.cs" />
     <Compile Include="Tracing.cs" />
-    <Compile Include="TokenProcessor.cs" />
     <Compile Include="TrackDocumentsHelper.cs" />
     <Compile Include="TypeConverters.cs" />
-    <Compile Include="Url.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="VsCommands.cs" />
     <Compile Include="VSMDCodeDomProvider.cs" />

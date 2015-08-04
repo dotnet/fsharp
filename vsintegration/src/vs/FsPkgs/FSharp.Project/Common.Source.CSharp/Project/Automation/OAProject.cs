@@ -23,9 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     public class OAProject : EnvDTE.Project, EnvDTE.ISupportVSProperties
     {
         private ProjectNode project;
-#if UNUSED_NESTED_PROJECTS
-        Automation.OASolutionFolder<ProjectContainerNode> solutionFolder;
-#endif
         EnvDTE.ConfigurationManager configurationManager;
 
         public ProjectNode Project
@@ -36,13 +33,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         internal OAProject(ProjectNode project)
         {
             this.project = project;
-
-#if UNUSED_NESTED_PROJECTS
-            if (project is ProjectContainerNode)
-            {
-                this.solutionFolder = new Automation.OASolutionFolder<ProjectContainerNode>((ProjectContainerNode)project);
-            }
-#endif
         }
 
         public virtual string Name

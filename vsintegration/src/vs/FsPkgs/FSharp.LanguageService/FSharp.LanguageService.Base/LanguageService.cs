@@ -58,7 +58,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         IObjectWithSite, IVsDebuggerEvents,
         IVsFormatFilterProvider,
         ILanguageServiceTestHelper
-    { //, IVsOutliningCapableLanguage {
+    {
 
         private IServiceProvider site;
         private ArrayList codeWindowManagers;
@@ -1023,14 +1023,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             Microsoft.VisualStudio.Shell.Package pkg = (Microsoft.VisualStudio.Shell.Package)this.site.GetService(typeof(Microsoft.VisualStudio.Shell.Package));
             this.lcid = pkg.GetProviderLocale();
         }
-
-#if IVsOutliningCapableLanguage                 
-        public virtual void CollapseToDefinitions(IVsTextLines buffer, IVsOutliningSession session) {
-            Source source = this.GetSource(buffer);
-            source.CollapseAllHiddenRegions(session);
-        }
-#endif
-
 
         public virtual int OnModeChange(DBGMODE dbgmodeNew)
         {

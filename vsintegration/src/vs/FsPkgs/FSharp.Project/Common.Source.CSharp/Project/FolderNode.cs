@@ -211,17 +211,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 throw new ArgumentException(SR.GetString(SR.InvalidParameter, CultureInfo.CurrentUICulture), "sccFile");
             }
-
-            // Get the file node for the file passed in.
-            FileNode node = this.FindChild(sccFile) as FileNode;
-
-#if UNUSED_DEPENDENT_FILES
-            // Dependents do not participate directly in scc.
-            if (node != null && !(node is DependentFileNode))
-            {
-                node.GetSccSpecialFiles(sccFile, files, flags);
-            }
-#endif
         }
 
         /// <summary>

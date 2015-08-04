@@ -255,12 +255,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                         {
                             item = new OAFileItem(this.Project, nodeAdded as FileNode);
                         }
-#if UNUSED_NESTED_PROJECTS
-                        else if (nodeAdded is NestedProjectNode)
-                        {
-                            item = new OANestedProjectItem(this.Project, nodeAdded as NestedProjectNode);
-                        }
-#endif
                         else
                         {
                             item = new OAProjectItem<HierarchyNode>(this.Project, nodeAdded);
