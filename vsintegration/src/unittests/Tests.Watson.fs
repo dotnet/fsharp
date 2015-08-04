@@ -27,7 +27,7 @@ type Check =
         try 
             try
 #if DEBUG
-                Microsoft.FSharp.Compiler.Build.FullCompiler.showAssertForUnexpectedException := false
+                Microsoft.FSharp.Compiler.CompileOps.FullCompiler.showAssertForUnexpectedException := false
 #endif
                 if (File.Exists("watson-test.fs")) then
                     File.Delete("watson-test.fs")
@@ -37,13 +37,13 @@ type Check =
             with 
             | :? 'TException as e -> 
                 let msg = e.ToString();
-                if msg.Contains("ReportTime") || msg.Contains("TypecheckOneInput") then ()
+                if msg.Contains("ReportTime") || msg.Contains("TypeCheckOneInput") then ()
                 else
                     printfn "%s" msg
                     Assert.Fail("The correct callstack was not reported to watson.")
         finally               
 #if DEBUG
-            Microsoft.FSharp.Compiler.Build.FullCompiler.showAssertForUnexpectedException := true
+            Microsoft.FSharp.Compiler.CompileOps.FullCompiler.showAssertForUnexpectedException := true 
 #endif
         File.Delete("watson-test.fs")
 

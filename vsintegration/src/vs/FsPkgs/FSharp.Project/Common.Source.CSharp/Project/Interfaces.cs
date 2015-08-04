@@ -3,15 +3,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
-using System.IO;
-using System.Windows.Forms;
-using System.Diagnostics;
-using System.Globalization;
-using System.Text;
-using System.Threading;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.OLE.Interop;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
 using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
@@ -24,7 +16,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// This interface defines the rules for handling build dependency on a project container.
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it shouldbe available for the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     [CLSCompliant(false)]
     public interface IBuildDependencyOnProjectContainer
@@ -49,7 +40,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// Interface for manipulating build dependency
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it shouldbe available for the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     [CLSCompliant(false)]
     public interface IBuildDependencyUpdate
@@ -57,7 +47,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Defines a container for storing BuildDependencies
         /// </summary>
-
         IVsBuildDependency[] BuildDependencies
         {
             get;
@@ -80,8 +69,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// Provides access to the reference data container.
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it should be available for
-    /// the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     public interface IReferenceContainerProvider
     {
@@ -91,8 +78,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     /// <summary>
     /// Defines a container for manipulating references
     /// </summary>
-    /// <remarks>Normally this should be an /*internal, but public for FSharp.Project.dll*/ public interface but since it should be available for
-    /// the aggregator it must be made public.</remarks>
     [ComVisible(true)]
     public interface IReferenceContainer
     {
@@ -126,7 +111,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ComVisible(true)]
     public interface IProjectEventsListener
     {
-
         /// <summary>
         /// Is the object a project events listener.
         /// </summary>

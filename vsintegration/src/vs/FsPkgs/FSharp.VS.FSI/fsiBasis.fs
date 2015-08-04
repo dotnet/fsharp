@@ -33,7 +33,6 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.TextManager.Interop
 
 module internal AssemblyAttributes = 
-    //[<assembly: System.Security.SecurityTransparent>]
     [<assembly:ComVisible(true)>]
     do()
 
@@ -56,6 +55,8 @@ module internal Guids =
     // some commands moved to VS Shell
     let guidInteractiveShell            = Microsoft.VisualStudio.VSConstants.VsStd11 
     let cmdIDSendSelection              = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive
+    let cmdIDSendLine                   = int Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive
+
     // some commands not in VS Shell
     let guidInteractive                 = Guid("8B9BF77B-AF94-4588-8847-2EB2BFFD29EB")
     let cmdIDDebugSelection             = 0x01

@@ -74,11 +74,15 @@ module internal Locals =
 open Util
 open Locals
 
-// consumed by C#, so enum type used instead of union
 type internal FsiDebuggerState =
-    | NotRunning = 0
-    | AttachedToFSI = 1
-    | AttachedNotToFSI = 2
+    | NotRunning
+    | AttachedToFSI
+    | AttachedNotToFSI
+
+type internal FsiEditorSendAction =
+    | ExecuteSelection
+    | ExecuteLine
+    | DebugSelection
 
 [<Guid("dee22b65-9761-4a26-8fb2-759b971d6dfc")>] //REVIEW: double check fresh guid! IIRC it is.
 type internal FsiToolWindow() as this = 
@@ -115,7 +119,6 @@ type internal FsiToolWindow() as this =
 
     // Remove: after next submit (passing through SD)       
     // vsTextManager did not seem to yield current selection...
-    // let vsTextManager  = Util.CreateObjectT<VsTextManagerClass,VsTextManager> provider
 
     // The IP sample called GetService() to obtain the LanguageService.
     let fsiLangService = provider.GetService(typeof<FsiLanguageService>) |> unbox : FsiLanguageService
@@ -563,14 +566,18 @@ type internal FsiToolWindow() as this =
 
         executeTextNoHistory interaction
 
-    let sendSelectionToFSI dbgBreak =
+    let sendSelectionToFSI action =
+        let dbgBreak,selectLine = 
+            match action with
+            | ExecuteSelection -> false, false
+            | ExecuteLine -> false, true
+            | DebugSelection -> true, false
+
         try
-            // REVIEW: See supportWhenFSharpDocument for alternative way of obtaining selection, via IVs APIs.
-            // Change post CTP.            
             let dte = provider.GetService(typeof<DTE>) :?> DTE        
             let activeD = dte.ActiveDocument            
             match activeD.Selection with
-            | :? TextSelection as selection when selection.Text = "" ->
+            | :? TextSelection as selection when selectLine || selection.Text = "" ->
                 selection.SelectLine()
                 showNoActivate()
                 executeInteraction dbgBreak (System.IO.Path.GetDirectoryName(activeD.FullName)) activeD.FullName selection.TopLine selection.Text 
@@ -587,13 +594,16 @@ type internal FsiToolWindow() as this =
                  // REVIEW: log error into Trace.
                  // Example errors include no active document.
 
-    let onMLSend (sender:obj) (e:EventArgs) =       
-        sendSelectionToFSI false
+    let onMLSendSelection (sender:obj) (e:EventArgs) =       
+        sendSelectionToFSI ExecuteSelection
 
-    let onMLDebug (sender:obj) (e:EventArgs) = 
+    let onMLSendLine (sender:obj) (e:EventArgs) =       
+        sendSelectionToFSI ExecuteLine
+
+    let onMLDebugSelection (sender:obj) (e:EventArgs) = 
         if checkDebuggability () then
             attachDebugger ()
-        sendSelectionToFSI true
+        sendSelectionToFSI DebugSelection
 
     /// Handle UP and DOWN. Cycle history.    
     let onHistory (sender:obj) (e:EventArgs) =
@@ -631,8 +641,9 @@ type internal FsiToolWindow() as this =
     do  this.BitmapIndex      <- 0  
     do  this.Caption          <- VFSIstrings.SR.fsharpInteractive()
    
-    member this.MLSend(obj,e) = onMLSend obj e
-    member this.MLDebug(obj,e) = onMLDebug obj e
+    member this.MLSendSelection(obj,e) = onMLSendSelection obj e
+    member this.MLSendLine(obj,e) = onMLSendLine obj e
+    member this.MLDebugSelection(obj,e) = onMLDebugSelection obj e
 
     member this.GetDebuggerState() =
         let (state, _) = getDebuggerState ()
@@ -709,8 +720,10 @@ type internal FsiToolWindow() as this =
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDAttachDebugger      onAttachDebugger  None
             addCommand Guids.guidFsiConsoleCmdSet Guids.cmdIDDetachDebugger      onDetachDebugger  None
             
-            addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSend        None
-            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebug       None
+            addCommand Guids.guidInteractiveShell Guids.cmdIDSendSelection       onMLSendSelection   None
+            addCommand Guids.guidInteractiveShell Guids.cmdIDSendLine            onMLSendLine        None
+
+            addCommand Guids.guidInteractive Guids.cmdIDDebugSelection           onMLDebugSelection  None
             
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.UP)      onHistory      (Some supportWhenInInputArea)
             addCommand guidVSStd2KCmdID (int32 VSConstants.VSStd2KCmdID.DOWN)    onHistory      (Some supportWhenInInputArea)            

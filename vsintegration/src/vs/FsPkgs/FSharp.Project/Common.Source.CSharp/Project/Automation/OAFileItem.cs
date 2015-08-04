@@ -26,15 +26,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAFileItem : OAProjectItem<FileNode>
     {
-        #region ctors
         internal OAFileItem(OAProject project, FileNode node)
             : base(project, node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         /// <summary>
         /// Returns the dirty state of the document.
         /// </summary>
@@ -307,9 +303,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             });
         }
 
-        /// <summary>
-        /// Gets the ProjectItems for the object.
-        /// </summary>
         public override ProjectItems ProjectItems
         {
             get
@@ -324,10 +317,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-
-        #endregion
-
-        #region helpers
         /// <summary>
         /// Saves or Save As the  file
         /// </summary>
@@ -432,7 +421,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 }
             });
         }
-        #endregion
 
     }
 }

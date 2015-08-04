@@ -20,18 +20,18 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.PrettyNaming
 
-open Microsoft.FSharp.Compiler.Env 
+open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Build
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Nameres
+open Microsoft.FSharp.Compiler.NameResolution
 open ItemDescriptionIcons 
 
 module EnvMisc2 =
@@ -107,35 +107,6 @@ module internal ItemDescriptionsImpl =
           
     // Format the supertypes and other useful information about a type to a buffer
     let OutputUsefulTypeInfo _isDeclInfo (_infoReader:InfoReader) _m _denv _os _ty = ()
-#if DISABLED
-        if false then 
-          ErrorScope.ProtectAndDiscard m (fun () -> 
-            let g = infoReader.g
-            let amap = infoReader.amap
-            let supertypes = 
-                let supertypes = AllSuperTypesOfType g amap m AllowMultiIntfInstantiations.Yes ty
-                let supertypes = supertypes |> List.filter (AccessibilityLogic.IsTypeAccessible g AccessibleFromSomewhere) 
-                let supertypes = supertypes |> List.filter (typeEquiv g g.obj_ty >> not) 
-                let selfs,supertypes = supertypes |> List.partition (typeEquiv g ty) 
-                let supertypesC,supertypesI = supertypes |> List.partition (isInterfaceTy g)
-                let supertypes = selfs @ supertypesC @ supertypesI
-                supertypes
-            let supertypeLs,_ = NicePrint.layoutPrettifiedTypes denv supertypes 
-            // Suppress printing supertypes for enums, delegates, exceptions and attributes
-            if supertypes.Length > 1 // more then self
-                && not (isEnumTy g ty) 
-                && not (isUnionTy g ty) 
-                && not (isRecdTy g ty) 
-                && not (isDelegateTy g ty) 
-                && not (ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr) 
-                && not (ExistsHeadTypeInEntireHierarchy g amap m ty g.tcref_System_Attribute) then 
-                bprintf os "\n\n";
-                List.zip supertypes supertypeLs |> List.iter (fun (superty,supertyL) -> 
-                    if typeEquiv g superty ty then bprintf os "  %s: %a\n" (FSComp.SR.typeInfoType()) bufferL supertyL
-                    elif isClassTy g superty || isInterfaceTy g ty then bprintf os "  %s: %a\n" (FSComp.SR.typeInfoInherits()) bufferL supertyL
-                    else bprintf os "  %s: %a\n" (FSComp.SR.typeInfoImplements()) bufferL supertyL))
-#endif
-           
     
     let rangeOfPropInfo (pinfo:PropInfo) =
         match pinfo with

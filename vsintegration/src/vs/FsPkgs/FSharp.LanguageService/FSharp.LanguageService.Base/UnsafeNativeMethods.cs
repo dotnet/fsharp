@@ -216,14 +216,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [DllImport("shell32.dll", EntryPoint = "DragQueryFileW", SetLastError = true, CharSet = CharSet.Unicode, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         public static extern uint DragQueryFile(IntPtr hDrop, uint iFile, char[] lpszFile, uint cch);
 
-        ///////////// UNUSED
-
-#if false
-        [DllImport(ExternDll.Oleaut32, PreserveSig=false)]
-        public static extern UCOMITypeLib LoadRegTypeLib(ref Guid clsid, int majorVersion, int minorVersion, int lcid);
-
-        #endif
-        
     }
 }
 

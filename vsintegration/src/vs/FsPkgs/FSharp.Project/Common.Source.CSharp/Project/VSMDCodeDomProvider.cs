@@ -22,11 +22,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.provider = provider;
         }
 
-        #region IVSMDCodeDomProvider Members
         object IVSMDCodeDomProvider.CodeDomProvider
         {
             get { return provider; }
         }
-        #endregion
     }
 }

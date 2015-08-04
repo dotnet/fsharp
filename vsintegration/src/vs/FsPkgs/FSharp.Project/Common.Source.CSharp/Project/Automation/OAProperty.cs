@@ -19,21 +19,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [CLSCompliant(false), ComVisible(true)]
     public class OAProperty : EnvDTE.Property
     {
-        #region fields
         private OAProperties parent;
         private PropertyInfo pi;
-        #endregion
-
-        #region ctors
 
         internal OAProperty(OAProperties parent, PropertyInfo pi)
         {
             this.parent = parent;
             this.pi = pi;
         }
-        #endregion
 
-        #region EnvDTE.Property
         /// <summary>
         /// For use by F# tooling only.
         /// </summary>
@@ -202,6 +196,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 }
             }
         }
-        #endregion
     }
 }

@@ -674,7 +674,8 @@ type UnboxAndOptionStuff() =
         Assert.IsTrue( tryUnbox<int> (box 1) = Some 1)
         Assert.IsTrue( tryUnbox<string> (box "") = Some "")
         Assert.IsTrue( tryUnbox<string> (box 1) = None)
-        
+
+    [<Test>]
     member this.IsNull() =
         Assert.IsTrue( isNull (null : string))
         Assert.IsTrue( isNull (null : string[]))
