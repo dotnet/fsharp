@@ -2634,7 +2634,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     | MSBuildResolver.RuntimeLike ->
                         [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()] 
                     | _ -> 
-                        let frameworkRoot = MSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectory
+                        let frameworkRoot = MSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectoryOnWindows
                         let frameworkRootVersion = Path.Combine(frameworkRoot,tcConfig.targetFrameworkVersionMajorMinor)
                         [frameworkRootVersion]
                 with e -> 
