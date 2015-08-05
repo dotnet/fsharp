@@ -2436,6 +2436,8 @@ namespace Microsoft.FSharp.Core
                             else null
                         else null
 
+            let inline GenericComparisonForInequality comp x y =
+                GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y)
             /// Compare two values of the same generic type, using "comp".
             //
             // "comp" is assumed to be either fsComparerPER or fsComparerER (and hence 'Compare' is implemented via 'GenericCompare').
@@ -2447,8 +2449,8 @@ namespace Microsoft.FSharp.Core
                 | :? GenericComparer as info ->
                     match info.ComparerType with
                     | ComparerType.ER     -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<EquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
-                    | ComparerType.PER_gt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
-                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericSpecializeCompareTo.Function<PartialEquivalenceRelation,_>.Invoker.Invoke (comp, x, y))
+                    | ComparerType.PER_gt 
+                    | ComparerType.PER_lt -> eliminate_tail_call_int (GenericComparisonForInequality comp x y)
                     | _ -> raise (Exception "invalid logic")
                 | c when obj.ReferenceEquals (c, Comparer<'T>.Default)   ->
                     eliminate_tail_call_int (Comparer<'T>.Default.Compare (x, y))
@@ -2465,22 +2467,22 @@ namespace Microsoft.FSharp.Core
             /// Generic less-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericLessThanIntrinsic (x:'T) (y:'T) = 
-                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 0 : bool #)
+                (# "clt" (GenericComparisonForInequality fsComparerPER_lt x y) 0 : bool #)
             
             /// Generic greater-than. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericGreaterThanIntrinsic (x:'T) (y:'T) = 
-                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) 0 : bool #)
+                (# "cgt" (GenericComparisonForInequality fsComparerPER_gt x y) 0 : bool #)
              
             /// Generic greater-than-or-equal. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericGreaterOrEqualIntrinsic (x:'T) (y:'T) = 
-                (# "cgt" (GenericComparisonWithComparerIntrinsic fsComparerPER_gt x y) (-1) : bool #)
+                (# "cgt" (GenericComparisonForInequality fsComparerPER_gt x y) (-1) : bool #)
             
             /// Generic less-than-or-equal. Uses comparison implementation in PER mode but catches 
             /// the local exception that is thrown when NaN's are compared.
             let GenericLessOrEqualIntrinsic (x:'T) (y:'T) = 
-                (# "clt" (GenericComparisonWithComparerIntrinsic fsComparerPER_lt x y) 1 : bool #)
+                (# "clt" (GenericComparisonForInequality fsComparerPER_lt x y) 1 : bool #)
 
             /// Compare two values of the same generic type, in either PER or ER mode, but include static optimizations
             /// for various well-known cases.
