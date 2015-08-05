@@ -1676,7 +1676,7 @@ namespace Microsoft.FSharp.Core
                             | false, false -> true
                             | false, _ 
                             | _, false -> false
-                            | _ -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
+                            | _ -> if not (# "ceq" x.Value x.Value : bool #) && not (# "ceq" y.Value y.Value : bool #) then true else (# "ceq" x.Value y.Value : bool #)
 
                 [<Struct; NoComparison; NoEquality>]
                 type NullableFloat32ER =
@@ -1686,7 +1686,7 @@ namespace Microsoft.FSharp.Core
                             | false, false -> true
                             | false, _ 
                             | _, false -> false
-                            | _ -> if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then true else (# "ceq" x y : bool #)
+                            | _ -> if not (# "ceq" x.Value x.Value : bool #) && not (# "ceq" y.Value y.Value : bool #) then true else (# "ceq" x.Value y.Value : bool #)
 
                 [<Struct; NoComparison; NoEquality>] type Bool       = interface IEssenceOfEquals<bool      > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
                 [<Struct; NoComparison; NoEquality>] type Sbyte      = interface IEssenceOfEquals<sbyte     > with member __.Ensorcel (_,x,y) = (# "ceq" x y : bool #)
