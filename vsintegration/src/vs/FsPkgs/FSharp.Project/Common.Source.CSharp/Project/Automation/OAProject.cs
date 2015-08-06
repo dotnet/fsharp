@@ -394,10 +394,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// </summary>
         /// <param name="fileName">The file name of the project</param>
         /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
-        /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>        
         public virtual void Save(string fileName)
         {
-            this.DoSave(false, fileName);
+            this.DoSave(false, fileName ?? string.Empty);
         }
 
         /// <summary>
