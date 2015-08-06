@@ -23,6 +23,7 @@ Core02		fsharp\core\csext
 Core02		..\testsprivate\fsharp\core\csfromfs
 Core02		fsharp\core\events
 Core02		fsharp\core\forwarders
+Core02		fsharp\core\forexpression
 Core02		fsharp\core\fsfromcs
 Core02		fsharp\core\fsfromfsviacs
 Core02		fsharp\core\fsiAndModifiers

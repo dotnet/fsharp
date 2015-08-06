@@ -67,6 +67,24 @@ type S =
 
 module TypedTest = begin 
 
+    // Checks the shape of the quotation to match that of
+    // foreach implemented in terms of GetEnumerator ()
+    let (|ForEachShape|_|) = function
+        | Let (
+                inputSequence,
+                inputSequenceBinding,
+                Let (
+                        enumerator,
+                        enumeratorBinding,
+                        TryFinally (
+                            WhileLoop (
+                                guard,
+                                Let (i, currentExpr, body)),
+                            cleanup)
+                        )
+                ) -> Some inputSequence
+        | _ -> None
+
     let x = <@ 1 @>
 
     test "check SByte"    ((<@  1y   @> |> (function SByte 1y ->   true | _ -> false))) 
@@ -108,7 +126,11 @@ module TypedTest = begin
     // In this example, the types of the start and end points are not known at the point the loop
     // is typechecked. There was a bug (6064) where the transformation to a ForIntegerRangeLoop was only happening
     // when types were known
-    test "check ForIntegerRangeLoop"   (<@ for i in failwith "" .. failwith "" do printf "hello" @> |> (function ForIntegerRangeLoop(v,_,_,b) -> true | _ -> false))
+    test "check ForIntegerRangeLoop"    (<@ for i in failwith "" .. failwith "" do printf "hello" @> |> (function ForIntegerRangeLoop(v,_,_,b) -> true | _ -> false))
+    // Checks that foreach over non-integer ranges should have the shape of foreach implemented in terms of GetEnumerator
+    test "check ForEachInSeq"           (<@ for i in seq {for x in 0..10 -> x} do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
+    test "check ForEachInList"          (<@ for i in "123" do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
+    test "check ForEachInString"        (<@ for i in [1;2;3] do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
     // A slight non orthogonality is that all other 'for' loops go to (quite complex) the desugared form
     test "check Other Loop"   (<@ for i in 1 .. 2 .. 10 do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
     test "check Other Loop"   (<@ for i in 1L .. 10L do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
