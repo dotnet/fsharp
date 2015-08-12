@@ -1456,13 +1456,13 @@ namespace Microsoft.FSharp.Collections
 
             // Build the groupings
             seq |> iter (fun v -> 
-                let key = keyf v
+                let safeKey = keyf v
                 let mutable prev = Unchecked.defaultof<_>
-                match dict.TryGetValue (key, &prev) with
+                match dict.TryGetValue (safeKey, &prev) with
                 | true -> prev.Add v
                 | false ->
                     let prev = ResizeArray minimumBucketSize
-                    dict.[key] <- prev
+                    dict.[safeKey] <- prev
                     prev.Add v)
 
             // Trim the size of each result group, don't trim very small buckets, as excessive work, and garbage for 
@@ -1548,11 +1548,11 @@ namespace Microsoft.FSharp.Collections
 
             // Build the groupings
             source |> iter (fun v -> 
-                let key = keyf v
+                let safeKey = keyf v
                 let mutable prev = Unchecked.defaultof<_>
-                if dict.TryGetValue(key, &prev)
-                    then dict.[key] <- prev + 1
-                    else dict.[key] <- 1)
+                if dict.TryGetValue(safeKey, &prev)
+                    then dict.[safeKey] <- prev + 1
+                    else dict.[safeKey] <- 1)
 
             dict |> map (fun group -> (getKey group.Key, group.Value))
 

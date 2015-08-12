@@ -177,9 +177,9 @@ namespace Microsoft.FSharp.Collections
 
             // Build the groupings
             for v in array do
-                let key = projection v
+                let safeKey = projection v
                 let mutable prev = Unchecked.defaultof<_>
-                if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
+                if dict.TryGetValue(safeKey, &prev) then dict.[safeKey] <- prev + 1 else dict.[safeKey] <- 1
 
             let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
             let mutable i = 0
@@ -435,13 +435,13 @@ namespace Microsoft.FSharp.Collections
             // Build the groupings
             for i = 0 to (array.Length - 1) do
                 let v = array.[i]
-                let key = keyf v
+                let safeKey = keyf v
                 let mutable prev = Unchecked.defaultof<_>
-                if dict.TryGetValue(key, &prev) then
+                if dict.TryGetValue(safeKey, &prev) then
                     prev.Add v
                 else 
                     let prev = ResizeArray initialBucketSize
-                    dict.[key] <- prev
+                    dict.[safeKey] <- prev
                     prev.Add v
                      
             // Return the array-of-arrays.

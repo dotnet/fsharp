@@ -47,9 +47,9 @@ namespace Microsoft.FSharp.Collections
                 match srcList with
                 | [] -> ()
                 | h::t ->
-                    let key = projection h
+                    let safeKey = projection h
                     let mutable prev = 0
-                    if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1
+                    if dict.TryGetValue(safeKey, &prev) then dict.[safeKey] <- prev + 1 else dict.[safeKey] <- 1
                     loop t
             loop list
             let mutable result = []
@@ -462,13 +462,13 @@ namespace Microsoft.FSharp.Collections
             let rec loop list =
                 match list with
                 | v :: t -> 
-                    let key = keyf v
+                    let safeKey = keyf v
                     let mutable prev = Unchecked.defaultof<_>
-                    if dict.TryGetValue(key, &prev) then
+                    if dict.TryGetValue(safeKey, &prev) then
                         prev.Add v
                     else 
                         let prev = ResizeArray initialBucketSize
-                        dict.[key] <- prev
+                        dict.[safeKey] <- prev
                         prev.Add v
                     loop t
                 | _ -> ()

@@ -64,8 +64,8 @@ module ExtraTopLevelOperators =
                 member s.Add(k,v) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
                 member s.ContainsKey(k) = d.ContainsKey(makeSafeKey k)
                 member s.TryGetValue(k,r) = 
-                    let key = makeSafeKey k
-                    if d.ContainsKey(key) then (r <- d.[key]; true) else false
+                    let safeKey = makeSafeKey k
+                    if d.ContainsKey(safeKey) then (r <- d.[safeKey]; true) else false
                 member s.Remove(k : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
           interface ICollection<KeyValuePair<'Key, 'T>> with 
                 member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
