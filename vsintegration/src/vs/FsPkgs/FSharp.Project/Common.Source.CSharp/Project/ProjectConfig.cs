@@ -1674,33 +1674,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
 
 #if FX_ATLEAST_45
-#if VS_VERSION_DEV12
-        private static string RegistryRoot = @"SOFTWARE\Microsoft\VisualStudio\12.0\";
-#else
-        private static string RegistryRoot = @"SOFTWARE\Microsoft\VisualStudio\14.0\";
-#endif
-        private static bool? isMultiThreadedBuildEnabled = null;
-        internal static bool IsMultiThreadedBuildEnabled() 
-        {
-            if (!isMultiThreadedBuildEnabled.HasValue)
-            {
-                isMultiThreadedBuildEnabled = false;
-                string key = RegistryRoot + @"Projects\{f2a71f9b-5d33-465a-a702-920d77279786}";
-                using (RegistryKey subKey = Registry.LocalMachine.OpenSubKey(key))
-                {
-                    if (subKey != null)
-                    {
-                        object valueAsObject = subKey.GetValue(@"IsMultiThreadedBuildEnabled");  // Note: VS caches the registry pretty aggressively, may need "devenv /setup" to pick up a changed value
-                        if (valueAsObject != null && valueAsObject is string)
-                        {
-                            isMultiThreadedBuildEnabled = ((string)valueAsObject) == "1";
-                        }
-                    }
-                }
-            }
-            return isMultiThreadedBuildEnabled.Value;
-        }
-
         private bool IsInProgress()
         {
             return buildManagerAccessor.IsInProgress();
@@ -1736,7 +1709,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 case VSBLDCFGPROPID_SupportsMTBuild:
                     // Indicate that we support multi-proc builds
-                    pvar = IsMultiThreadedBuildEnabled();
+                    pvar = true;
                     return VSConstants.S_OK;
                 default:
                     pvar = null;
