@@ -4,7 +4,7 @@ module internal Microsoft.FSharp.Compiler.Driver
 
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TypeChecker
 

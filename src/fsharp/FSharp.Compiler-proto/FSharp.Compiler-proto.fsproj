@@ -133,6 +133,9 @@
     <Compile Include="..\..\absil\ildiag.fs">
       <Link>ildiag.fs</Link>
     </Compile>
+    <Compile Include="..\ReferenceResolution.fsi">
+      <Link>ReferenceResolution.fsi</Link>
+    </Compile>
     <Compile Include="..\ReferenceResolution.fs">
       <Link>ReferenceResolution.fs</Link>
     </Compile>
@@ -228,11 +231,14 @@
     <Compile Include="..\..\ilx\ilxsettings.fs">
       <Link>ilxsettings.fs</Link>
     </Compile>
-	  <Compile Include="..\..\ilx\EraseClosures.fsi">
-		  <Link>EraseClosures.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\..\ilx\EraseClosures.fs">
+    <Compile Include="..\..\ilx\EraseClosures.fsi">
+        <Link>EraseClosures.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\ilx\EraseClosures.fs">
       <Link>EraseClosures.fs</Link>
+    </Compile>
+    <Compile Include="..\..\ilx\EraseUnions.fsi">
+      <Link>EraseUnions.fsi</Link>
     </Compile>
     <Compile Include="..\..\ilx\EraseUnions.fs">
       <Link>EraseUnions.fs</Link>
@@ -268,14 +274,11 @@
     </Compile>
     <Compile Include="pplex.fs" />
     <Compile Include="lex.fs" />
-    <Compile Include="..\ast.fs">
-	  <Link>ast.fs</Link>
-    </Compile>
     <Compile Include="..\QuotationPickler.fsi">
          <Link>QuotationPickler.fsi</Link>
     </Compile>
     <Compile Include="..\QuotationPickler.fs">
-	  <Link>QuotationPickler.fs</Link>
+        <Link>QuotationPickler.fs</Link>
     </Compile>
     <Compile Include="..\QueueList.fs">
       <Link>QueueList.fs</Link>
@@ -284,14 +287,14 @@
       <Link>tast.fs</Link>
     </Compile>
     <Compile Include="..\TcGlobals.fs">
-		  <Link>TcGlobals.fs</Link>
-	  </Compile>
-	  <Compile Include="..\TastOps.fsi">
-		  <Link>TastOps.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\TastOps.fs">
-		  <Link>TastOps.fs</Link>
-	  </Compile>
+        <Link>TcGlobals.fs</Link>
+    </Compile>
+    <Compile Include="..\TastOps.fsi">
+        <Link>TastOps.fsi</Link>
+    </Compile>
+    <Compile Include="..\TastOps.fs">
+        <Link>TastOps.fs</Link>
+    </Compile>
     <Compile Include="..\TastPickle.fsi">
       <Link>TastPickle.fsi</Link>
     </Compile>
@@ -334,10 +337,10 @@
     <Compile Include="..\PatternMatchCompilation.fs">
       <Link>PatternMatchCompilation.fs</Link>
     </Compile>
-	  <Compile Include="..\ConstraintSolver.fsi">
-		  <Link>ConstraintSolver.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\ConstraintSolver.fs">
+    <Compile Include="..\ConstraintSolver.fsi">
+        <Link>ConstraintSolver.fsi</Link>
+    </Compile>
+    <Compile Include="..\ConstraintSolver.fs">
       <Link>ConstraintSolver.fs</Link>
     </Compile>
     <Compile Include="..\CheckFormatStrings.fsi">
@@ -370,16 +373,16 @@
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimizer.fsi</Link>
     </Compile>
-    <Compile Include="..\autobox.fs">
-      <Link>autobox.fs</Link>
-    </Compile>
     <Compile Include="..\Optimizer.fs">
       <Link>Optimizer.fs</Link>
     </Compile>
-	  <Compile Include="..\DetupleArgs.fsi">
-		  <Link>DetupleArgs.fsi</Link>
-	  </Compile>
-	  <Compile Include="..\DetupleArgs.fs">
+    <Compile Include="..\autobox.fs">
+      <Link>autobox.fs</Link>
+    </Compile>
+    <Compile Include="..\DetupleArgs.fsi">
+        <Link>DetupleArgs.fsi</Link>
+    </Compile>
+    <Compile Include="..\DetupleArgs.fs">
       <Link>DetupleArgs.fs</Link>
     </Compile>
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fsi">
@@ -420,6 +423,9 @@
     </Compile>
     <Compile Include="..\vs\IncrementalBuild.fs">
       <Link>IncrementalBuild.fs</Link>
+    </Compile>
+    <Compile Include="..\fsc.fsi">
+      <Link>fsc.fsi</Link>
     </Compile>
     <Compile Include="..\fsc.fs">
       <Link>fsc.fs</Link>

@@ -70,7 +70,7 @@ module internal MSBuildResolver =
     /// Perform assembly resolution on the given references
     val Resolve:
                 resolutionEnvironment: ResolutionEnvironment *
-                references:(string*(*baggage*)string)[] * 
+                references:seq<string (* baggage *) * string> * 
                 targetFrameworkVersion:string *
                 targetFrameworkDirectories:string list *
                 targetProcessorArchitecture:string *

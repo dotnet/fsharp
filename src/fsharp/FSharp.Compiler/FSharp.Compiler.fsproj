@@ -144,6 +144,9 @@
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogging\ErrorLogger.fs</Link>
     </Compile>
+    <Compile Include="..\ReferenceResolution.fsi">
+      <Link>ReferenceResolution\ReferenceResolution.fsi</Link>
+    </Compile>
     <Compile Include="..\ReferenceResolution.fs">
       <Link>ReferenceResolution\ReferenceResolution.fs</Link>
     </Compile>
@@ -446,6 +449,9 @@
     </Compile>
     <Compile Include="..\vs\IncrementalBuild.fs">
       <Link>Driver\IncrementalBuild.fs</Link>
+    </Compile>
+    <Compile Include="..\fsc.fsi">
+      <Link>Driver\fsc.fsi</Link>
     </Compile>
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
