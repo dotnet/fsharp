@@ -1461,7 +1461,7 @@ namespace Microsoft.FSharp.Collections
                 match dict.TryGetValue (safeKey, &prev) with
                 | true -> prev.Add v
                 | false ->
-                    let prev = ResizeArray minimumBucketSize
+                    let prev = ResizeArray ()
                     dict.[safeKey] <- prev
                     prev.Add v)
 

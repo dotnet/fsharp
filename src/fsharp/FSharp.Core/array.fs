@@ -426,12 +426,6 @@ namespace Microsoft.FSharp.Collections
         let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (array: 'T[]) =
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
-            // Previously this was 1, but I think this is rather stingy, considering that we are alreadying paying
-            // for at least a key, the ResizeArray reference, which includes an array reference, an Entry in the
-            // Dictionary, plus any empty space in the Dictionary of unfilled hash buckets. Having it larger means
-            // that we won't be having as many re-allocations. The ResizeArray is destroyed at the end anyway.
-            let initialBucketSize = 4
-
             // Build the groupings
             for i = 0 to (array.Length - 1) do
                 let v = array.[i]
@@ -440,7 +434,7 @@ namespace Microsoft.FSharp.Collections
                 if dict.TryGetValue(safeKey, &prev) then
                     prev.Add v
                 else 
-                    let prev = ResizeArray initialBucketSize
+                    let prev = ResizeArray ()
                     dict.[safeKey] <- prev
                     prev.Add v
                      
