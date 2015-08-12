@@ -85,6 +85,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteSeqFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
+    <Compile Include="FSharp.Core\ComparersRegression.fs" />
     <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" /> 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
