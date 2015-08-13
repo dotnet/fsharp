@@ -238,6 +238,7 @@ Conformance08			Conformance\UnitsOfMeasure\WithOOP
 
 
 NoHostedCompiler,TypeProviders01			TypeProviders\Arrays
+NoHostedCompiler,TypeProviders01			TypeProviders\Attributes
 NoHostedCompiler,TypeProviders01			..\..\..\testsprivate\fsharpqa\Source\TypeProviders\BuiltIn\EdmxFile
 NoHostedCompiler,TypeProviders01			TypeProviders\BuiltIn\OdataService\Diagnostics
 NoHostedCompiler,TypeProviders01			TypeProviders\BuiltIn\OdataService\StaticParam
