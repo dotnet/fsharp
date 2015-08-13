@@ -317,6 +317,7 @@ type TcConfigBuilder =
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
+      mutable exename : string option 
       mutable shadowCopyReferences : bool }
 
 
