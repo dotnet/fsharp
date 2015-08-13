@@ -305,7 +305,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         protected virtual bool CanShowUrlInOnObjectBrowser()
         {
-            return !string.IsNullOrEmpty(Url) && FSLib.FileSystem.SafeExists(Url);
+            return !string.IsNullOrEmpty(Url) && FSLib.Shim.FileSystem.SafeExists(Url);
         }
 
         /// <summary>

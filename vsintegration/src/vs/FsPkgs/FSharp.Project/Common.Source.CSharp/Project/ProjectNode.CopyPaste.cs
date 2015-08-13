@@ -574,7 +574,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             HierarchyNode newNode = parentNode;
             // If the file/directory exist, add a node for it
-            if (FSLib.FileSystem.SafeExists(targetPath))
+            if (FSLib.Shim.FileSystem.SafeExists(targetPath))
             {
                 VSADDRESULT[] result = new VSADDRESULT[1];
                 ErrorHandler.ThrowOnFailure(this.AddItem(parentNode.ID, VSADDITEMOPERATION.VSADDITEMOP_OPENFILE, name, 1, new string[] { targetPath }, IntPtr.Zero, result));

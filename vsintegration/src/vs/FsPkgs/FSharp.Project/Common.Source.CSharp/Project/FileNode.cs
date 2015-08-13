@@ -360,7 +360,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="path"></param>
         public override void DeleteFromStorage(string path)
         {
-            if (FSLib.FileSystem.SafeExists(path))
+            if (FSLib.Shim.FileSystem.SafeExists(path))
             {
                 File.SetAttributes(path, FileAttributes.Normal); // make sure it's not readonly.
                 File.Delete(path);
@@ -644,7 +644,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             string moniker = this.GetMkDocument();
 
-            if (String.IsNullOrEmpty(moniker) || !FSLib.FileSystem.SafeExists(moniker))
+            if (String.IsNullOrEmpty(moniker) || !FSLib.Shim.FileSystem.SafeExists(moniker))
             {
                 return false;
             }
@@ -694,7 +694,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>True if the file exist</returns>
         public virtual bool IsFileOnDisk(string path)
         {
-            return FSLib.FileSystem.SafeExists(path);
+            return FSLib.Shim.FileSystem.SafeExists(path);
         }
 
         /// <summary>

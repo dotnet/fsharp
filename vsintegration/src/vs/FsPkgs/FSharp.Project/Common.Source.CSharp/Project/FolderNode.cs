@@ -103,7 +103,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             // Verify that No Directory/file already exists with the new name on disk
-            if (Directory.Exists(newPath) || FSLib.FileSystem.SafeExists(newPath))
+            if (Directory.Exists(newPath) || FSLib.Shim.FileSystem.SafeExists(newPath))
             {
                 return ShowFileOrFolderAlreadExistsErrorMessage(newPath);
             }

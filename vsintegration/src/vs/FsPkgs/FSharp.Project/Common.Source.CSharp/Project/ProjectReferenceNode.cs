@@ -750,7 +750,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return false;
             }
 
-            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && FSLib.FileSystem.SafeExists(this.referencedProjectFullPath));
+            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && FSLib.Shim.FileSystem.SafeExists(this.referencedProjectFullPath));
         }
 
         /// <summary>

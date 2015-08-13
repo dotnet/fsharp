@@ -2807,7 +2807,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         {
                             // Cleanup.
                             this.DeleteFromStorage(docNew);
-                            if (this is ProjectNode && FSLib.FileSystem.SafeExists(docNew))
+                            if (this is ProjectNode && FSLib.Shim.FileSystem.SafeExists(docNew))
                             {
                                 File.Delete(docNew);
                             }
