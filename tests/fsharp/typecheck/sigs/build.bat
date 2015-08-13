@@ -14,6 +14,7 @@ call ..\..\single-neg-test.bat neg93
 call ..\..\single-neg-test.bat neg92
 @if ERRORLEVEL 1 goto Error
 
+
 call ..\..\single-neg-test.bat neg91
 @if ERRORLEVEL 1 goto Error
 
@@ -525,6 +526,19 @@ call ..\..\single-neg-test.bat neg35
 
 "%FSC%" %fsc_flags% -a -o:pos05.dll  pos05.fs
 @if ERRORLEVEL 1 goto Error
+
+REM --------Smoke test for --gccerrors option--------------
+
+"%FSC%" %fsc_flags% --gccerrors --warnaserror --nologo --maxerrors:10000 -a -o:neg92.dll  neg92.fs 2> neg92.gccerr
+@if ERRORLEVEL 1 goto Error
+
+%FSDIFF% neg92.gccerr neg92.gccbsl > neg92.gccdiff
+@if ERRORLEVEL 1 (
+    set ERRORMSG=%ERRORMSG% Differences in GCC Errors smoke test;
+    goto Error
+)
+
+REM --------Exit points------------------------
 
 :Ok
 echo Built fsharp %~f0 ok.

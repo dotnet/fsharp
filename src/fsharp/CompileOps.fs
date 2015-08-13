@@ -1345,6 +1345,7 @@ type ErrorStyle =
     | EmacsErrors 
     | TestErrors 
     | VSErrors
+    | GccErrors
 
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
@@ -1418,6 +1419,11 @@ let CollectErrorOrWarning (implicitIncludeDir,showFullPaths,flattenErrors,errorS
                     let file = file.Replace("/","\\")
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
                     sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+
+                  | ErrorStyle.GccErrors     -> 
+                    let file = file.Replace('/',System.IO.Path.DirectorySeparatorChar)
+                    let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
+                    sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
 
                   // Here, we want the complete range information so Project Systems can generate proper squiggles
                   | ErrorStyle.VSErrors      -> 
