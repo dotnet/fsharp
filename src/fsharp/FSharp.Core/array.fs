@@ -11,6 +11,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.SR
+    open Microsoft.FSharp.Core.LanguagePrimitives.ErrorStrings
 #if FX_NO_ICLONEABLE
     open Microsoft.FSharp.Core.ICloneableExtensions            
 #else
@@ -461,7 +462,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             let len = array.Length
             if len = 0 then 
-                invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+                invalidArg "array" InputArrayEmptyString
             else 
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 let mutable res = array.[0]
@@ -473,7 +474,7 @@ namespace Microsoft.FSharp.Collections
         let reduceBack f (array : _[]) = 
             checkNonNull "array" array
             let len = array.Length
-            if len = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if len = 0 then invalidArg "array" InputArrayEmptyString
             else foldSubRight f array 0 (len - 2) array.[len - 1]
 
         [<CompiledName("SortInPlaceWith")>]
@@ -574,7 +575,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Min")>]
         let inline min (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
             let mutable acc = array.[0]
             for i = 1 to array.Length - 1 do
                 let curr = array.[i]
@@ -585,7 +586,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MinBy")>]
         let inline minBy f (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
             let mutable accv = array.[0]
             let mutable acc = f accv
             for i = 1 to array.Length - 1 do
@@ -599,7 +600,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Max")>]
         let inline max (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
             let mutable acc = array.[0]
             for i = 1 to array.Length - 1 do
                 let curr = array.[i]
@@ -610,7 +611,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MaxBy")>]
         let inline maxBy f (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
             let mutable accv = array.[0]
             let mutable acc = f accv
             for i = 1 to array.Length - 1 do

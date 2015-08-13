@@ -646,17 +646,17 @@ namespace Microsoft.FSharp.Core
 
     module LanguagePrimitives =  
    
-        [<Sealed>]
-        type (* internal *) ErrorStrings =
+
+        module (* internal *) ErrorStrings =
             // inline functions cannot call GetString, so we must make these bits public
-            static member AddressOpNotFirstClassString with get () = SR.GetString(SR.addressOpNotFirstClass)
-            static member NoNegateMinValueString with get () = SR.GetString(SR.noNegateMinValue)
+            let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
+            let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
             // needs to be public to be visible from inline function 'average' and others
-            static member InputSequenceEmptyString with get () = SR.GetString(SR.inputSequenceEmpty) 
+            let InputSequenceEmptyString = SR.GetString(SR.inputSequenceEmpty) 
             // needs to be public to be visible from inline function 'average' and others
-            static member InputArrayEmptyString with get () = SR.GetString(SR.arrayWasEmpty) 
+            let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
             // needs to be public to be visible from inline function 'average' and others
-            static member InputMustBeNonNegativeString with get () = SR.GetString(SR.inputMustBeNonNegative)
+            let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
         module IntrinsicOperators =        
