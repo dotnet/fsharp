@@ -7141,14 +7141,15 @@ let TryGetActivePatternInfo (vref:ValRef) =
     if logicalName.Length = 0 || logicalName.[0] <> '|' then 
        None 
     else 
-       ActivePatternInfoOfValName vref.CoreDisplayName
+       ActivePatternInfoOfValName vref.CoreDisplayName vref.Range
 
 type ActivePatternElemRef with 
     member x.Name = 
         let (APElemRef(_,vref,n)) = x
         match TryGetActivePatternInfo vref with
         | None -> error(InternalError("not an active pattern name", vref.Range))
-        | Some (APInfo(_,nms)) -> 
+        | Some apinfo -> 
+            let nms = apinfo.ActiveTags
             if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern refernce", vref.Range));
             List.nth nms n
 
@@ -7173,8 +7174,7 @@ let mkChoiceCaseRef g m n i =
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
 
 type PrettyNaming.ActivePatternInfo with 
-    member x.Names = let (APInfo(_,nms)) = x in nms
-    member x.IsTotal = let (APInfo(total,_)) = x in total
+    member x.Names = x.ActiveTags
 
     member apinfo.ResultType g m rtys = 
         let choicety = mkChoiceTy g m rtys

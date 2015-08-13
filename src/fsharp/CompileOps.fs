@@ -40,7 +40,6 @@ open Microsoft.FSharp.Compiler.MSBuildResolver
 open Microsoft.FSharp.Compiler.TypeRelations
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
-open Internal.Utilities.FileSystem
 open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Microsoft.FSharp.Compiler.Import
@@ -2230,7 +2229,7 @@ type TcConfigBuilder =
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
            
     member tcConfigB.AddLoadedSource(m,path,pathLoadedFrom) =
-        if Path.IsInvalidPath(path) then
+        if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidFilename(path),m))    
         else 
             let path = 
@@ -2247,7 +2246,7 @@ type TcConfigBuilder =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
 
     member tcConfigB.AddReferencedAssemblyByPath (m,path) = 
-        if Path.IsInvalidPath(path) then
+        if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path),m))
         elif not (List.mem (AssemblyReference(m,path)) tcConfigB.referencedDLLs) then // NOTE: We keep same paths if range is different.
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path)
@@ -4658,7 +4657,7 @@ module private ScriptPreprocessClosure =
         
     let SourceFileOfFilename(filename,m,inputCodePage:int option) : ClosureDirective list = 
         try
-            let filename = FileSystem.SafeGetFullPath(filename)
+            let filename = FileSystem.GetFullPathShim(filename)
             use stream = FileSystem.FileStreamReadShim filename
             use reader = 
                 match inputCodePage with 
@@ -4697,7 +4696,7 @@ module private ScriptPreprocessClosure =
             match closureDirective with 
             | ClosedSourceFile _ as csf -> [csf]
             | SourceFile(filename,m,source) ->
-                let filename = FileSystem.SafeGetFullPath(filename)
+                let filename = FileSystem.GetFullPathShim(filename)
                 if observedSources.HaveSeen(filename) then [] 
                 else     
                     observedSources.SetSeen(filename)
@@ -4748,7 +4747,7 @@ module private ScriptPreprocessClosure =
         for directive in closureDirectives do
             match directive with 
             | ClosedSourceFile(filename,m,input,_,_,noWarns) -> 
-                let filename = FileSystem.SafeGetFullPath(filename)
+                let filename = FileSystem.GetFullPathShim(filename)
                 sourceFiles := (filename,m) :: !sourceFiles  
                 globalNoWarns := (!globalNoWarns @ noWarns) 
                 sourceInputs := (filename,input) :: !sourceInputs                 

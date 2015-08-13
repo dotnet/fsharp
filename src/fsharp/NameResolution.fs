@@ -79,7 +79,7 @@ let TryFindTypeWithRecdField (modref:ModuleOrNamespaceRef) (id: Ident) =
 /// Get the active pattern elements defined by a given value, if any
 let ActivePatternElemsOfValRef vref = 
     match TryGetActivePatternInfo vref with
-    | Some (APInfo(_,nms) as apinfo) -> List.mapi (fun i _ -> APElemRef(apinfo,vref, i)) nms
+    | Some apinfo -> apinfo.ActiveTags |> List.mapi (fun i _ -> APElemRef(apinfo,vref, i)) 
     | None -> [] 
 
 
@@ -1076,15 +1076,15 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
 [<RequireQualifiedAccess>]
 type ItemOccurence = 
     /// This is a binding / declaration of the item
-    | Binding = 0
+    | Binding 
     /// This is a usage of the item 
-    | Use = 1
+    | Use 
     /// This is a usage of a type name in a type
-    | UseInType = 2
+    | UseInType 
     /// This is a usage of a type name in an attribute
-    | UseInAttribute = 3
+    | UseInAttribute 
     /// Inside pattern matching
-    | Pattern = 4
+    | Pattern 
   
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
