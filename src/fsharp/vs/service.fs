@@ -85,10 +85,10 @@ module internal Params =
         let initial = ParamOfRecdField g denv f
         if isGenerated i f then initial
         else
-        { initial with Display = NicePrint.stringOfParamData denv (ParamData(false, false, NotOptional, Some initial.Name, ReflectedArgInfo.None, f.rfield_type)) }
+        { initial with Display = NicePrint.stringOfParamData denv (ParamData(false, false, NotOptional, Some (mkSynId f.Range initial.Name), ReflectedArgInfo.None, f.rfield_type)) }
 
     let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isOutArg, _optArgInfo, nmOpt, _reflArgInfo, pty) as paramData) =
-        { Name = match nmOpt with None -> "" | Some pn -> pn
+        { Name = match nmOpt with None -> "" | Some pn -> pn.idText
           CanonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty
           Display = NicePrint.stringOfParamData denv paramData
           Description = "" }
@@ -101,7 +101,8 @@ module internal Params =
                 let isOptArg = optArgInfo.IsOptional
                 match nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
                 // Layout an optional argument 
-                | Some(nm), true, ptyOpt -> 
+                | Some id, true, ptyOpt -> 
+                    let nm = id.idText
                     // detect parameter type, if ptyOpt is None - this is .NET style optional argument
                     let pty = defaultArg ptyOpt pty
                     nm, (sprintf "?%s:" nm),  pty
@@ -109,7 +110,8 @@ module internal Params =
                 | None, _,_ -> 
                     "", "", pty
                 // Layout a named argument 
-                | Some nm,_,_ -> 
+                | Some id,_,_ -> 
+                    let nm = id.idText
                     let prefix = 
                         if isParamArrayArg then 
                             sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
@@ -604,7 +606,7 @@ type TypeCheckInfo
             match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
             | x::_ -> x |> List.choose(fun (ParamData(_isParamArray, _isOut, _optArgInfo, name, _, ty)) -> 
                 match name with
-                | Some n -> Some (Item.ArgName(Ident(n, m), ty, Some (ArgumentContainer.Method meth)))
+                | Some n -> Some (Item.ArgName(n, ty, Some (ArgumentContainer.Method meth)))
                 | None -> None
                 )
             | _ -> []

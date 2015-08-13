@@ -212,7 +212,7 @@ module internal ItemDescriptionsImpl =
                   let isPP = HasFSharpAttribute g g.attrib_ProjectionParameterAttribute argInfo.Attribs
                   // Strip the tuple space type of the type of projection parameters
                   let ty = if isPP && isFunTy g ty then rangeOfFunTy g ty else ty
-                  yield ParamNameAndType(argInfo.Name |> Option.map (fun id -> id.idText), ty) ]
+                  yield ParamNameAndType(argInfo.Name |> Option.map (fun id -> id), ty) ]
         | _ -> []
 
     // Find the name of the metadata file for this external definition 
@@ -602,7 +602,8 @@ module internal ItemDescriptionsImpl =
             DataTipElement(text, xml)
 
         // Active pattern tag inside the declaration (result)             
-        | Item.ActivePatternResult(APInfo(_, items), ty, idx, _) ->
+        | Item.ActivePatternResult(apinfo, ty, idx, _) ->
+            let items = apinfo.ActiveTags
             let text = bufs (fun os -> 
                 bprintf os "%s %s: " (FSComp.SR.typeInfoActivePatternResult()) (List.item idx items) 
                 NicePrint.outputTy denv os ty)

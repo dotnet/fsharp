@@ -171,11 +171,11 @@ type TypeNameResolutionInfo =
 /// Represents the kind of the occurence when reporting a name in name resolution
 [<RequireQualifiedAccess>]
 type internal ItemOccurence = 
-    | Binding = 0
-    | Use = 1
-    | UseInType = 2
-    | UseInAttribute = 3
-    | Pattern = 4
+    | Binding 
+    | Use 
+    | UseInType 
+    | UseInAttribute 
+    | Pattern 
   
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
