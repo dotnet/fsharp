@@ -6270,7 +6270,7 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
       let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
       if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
         // Parse the format string to work out the phantom types 
-        let aty',ety' = (try CheckFormatStrings.ParseFormatString m cenv.g s bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s),m)))
+        let (aty',ety'),_specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g None s bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s),m)))
         UnifyTypes cenv env m aty aty'
         UnifyTypes cenv env m ety ety'
         mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s),tpenv
