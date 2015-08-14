@@ -11,8 +11,6 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TypeChecker
 
-type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
-
 [<AbstractClass>]
 type ErrorLoggerProvider =
     new : unit -> ErrorLoggerProvider
@@ -23,6 +21,8 @@ val internal ProcessCommandLineArgsAndImportAssemblies : (string -> unit) * stri
 
 #if NO_COMPILER_BACKEND
 #else
+
+type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
 
 val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string -> ILAttribute list * ILResource list
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> SigningInfo
