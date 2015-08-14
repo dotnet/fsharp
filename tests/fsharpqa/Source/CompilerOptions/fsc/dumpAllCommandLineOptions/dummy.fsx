@@ -137,6 +137,8 @@
 //<Expects status="notin">section='NoSection                ' ! option=no-string-interning            kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=statistics                     kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=generate-filter-blocks         kind=OptionUnit</Expects>
+//<Expects status="notin">section='NoSection                ' ! option=gccerrors                      kind=OptionUnit</Expects>
+//<Expects status="notin">section='NoSection                ' ! option=exename                        kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=max-errors                     kind=OptionInt</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=debug-file                     kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=no-debug-file                  kind=OptionUnit</Expects>

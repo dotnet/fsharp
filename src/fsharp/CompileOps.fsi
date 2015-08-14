@@ -78,7 +78,8 @@ type ErrorStyle =
     | DefaultErrors 
     | EmacsErrors 
     | TestErrors 
-    | VSErrors    
+    | VSErrors
+    | GccErrors
 
 /// Get the location associated with an error
 val GetRangeOfError : PhasedError -> range option
@@ -316,6 +317,7 @@ type TcConfigBuilder =
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
+      mutable exename : string option 
       mutable shadowCopyReferences : bool }
 
 
