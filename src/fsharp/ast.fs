@@ -948,7 +948,7 @@ and
     | OptionalVal of Ident * range
     /// ':? type '
     | IsInst of SynType * range
-    /// <@ expr @>, used for active pattern arguments
+    /// &lt;@ expr @&gt;, used for active pattern arguments
     | QuoteExpr of SynExpr * range
 
     /// Deprecated character ranges

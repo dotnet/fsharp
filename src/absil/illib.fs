@@ -620,7 +620,7 @@ module Eventually =
 
     let force e = Option.get (forceWhile (fun () -> true) e)
         
-    /// Keep running the computation bit by bit until a time limit is reached. 
+    /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
     let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
         let sw = new System.Diagnostics.Stopwatch() 

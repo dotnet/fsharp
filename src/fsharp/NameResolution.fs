@@ -2148,7 +2148,7 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
             match TryFindTypeWithRecdField modref id  with
             | Some tycon when IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef tycon) -> 
                 let showDeprecated = HasFSharpAttribute ncenv.g ncenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
-                success(FieldResolution(modref.RecdFieldRefInNestedTycon tycon id,showDeprecated), rest)
+                success(resInfo, FieldResolution(modref.RecdFieldRefInNestedTycon tycon id,showDeprecated), rest)
             | _ -> error
         // search for type-qualified names, e.g. { Microsoft.FSharp.Core.Ref.contents = 1 } 
         let tyconSearch = 
@@ -2158,7 +2158,7 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
                 let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty,tcref))
                 let tyconSearch = ResolveLongIdentInTyconRefs ncenv nenv LookupKind.RecdField  (depth+1) m ad rest typeNameResInfo id.idRange tcrefs
                 // choose only fields 
-                let tyconSearch = tyconSearch |?> List.choose (function (_,Item.RecdField(RecdFieldInfo(_,rfref)),rest) -> Some(FieldResolution(rfref,false),rest) | _ -> None)
+                let tyconSearch = tyconSearch |?> List.choose (function (resInfo,Item.RecdField(RecdFieldInfo(_,rfref)),rest) -> Some(resInfo,FieldResolution(rfref,false),rest) | _ -> None)
                 tyconSearch
             | _ -> 
                 NoResultsOrUsefulErrors
@@ -2177,7 +2177,7 @@ let rec ResolveFieldInModuleOrNamespace (ncenv:NameResolver) nenv ad (resInfo:Re
         error(InternalError("ResolveFieldInModuleOrNamespace",m))
 
 /// Resolve a long identifier representing a record field 
-let ResolveField (ncenv:NameResolver) nenv ad typ (mp,id:Ident) =
+let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) =
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
     let m = id.idRange
@@ -2185,7 +2185,7 @@ let ResolveField (ncenv:NameResolver) nenv ad typ (mp,id:Ident) =
     | [] -> 
         if isAppTy g typ then 
             match ncenv.InfoReader.TryFindRecdOrClassFieldInfoOfType(id.idText,m,typ) with
-            | Some (RecdFieldInfo(_,rfref)) -> [FieldResolution(rfref,false)]
+            | Some (RecdFieldInfo(_,rfref)) -> [ResolutionInfo.Empty, FieldResolution(rfref,false)]
             | None -> error(Error(FSComp.SR.nrTypeDoesNotContainSuchField((NicePrint.minimalStringOfType nenv.eDisplayEnv typ), id.idText),m))
         else 
             let frefs = 
@@ -2194,7 +2194,7 @@ let ResolveField (ncenv:NameResolver) nenv ad typ (mp,id:Ident) =
             // Eliminate duplicates arising from multiple 'open' 
             frefs 
             |> ListSet.setify (fun fref1 fref2 -> tyconRefEq g fref1.TyconRef fref2.TyconRef)
-            |> List.map (fun x -> FieldResolution(x,false))
+            |> List.map (fun x -> ResolutionInfo.Empty, FieldResolution(x,false))
                         
     | _ -> 
         let lid = (mp@[id])
@@ -2206,15 +2206,19 @@ let ResolveField (ncenv:NameResolver) nenv ad typ (mp,id:Ident) =
                 let tcrefs = tcrefs |> List.map (fun tcref -> (ResolutionInfo.Empty,tcref))
                 let tyconSearch = ResolveLongIdentInTyconRefs ncenv nenv LookupKind.RecdField 1 m ad rest typeNameResInfo tn.idRange tcrefs
                 // choose only fields 
-                let tyconSearch = tyconSearch |?> List.choose (function (_,Item.RecdField(RecdFieldInfo(_,rfref)),rest) -> Some(FieldResolution(rfref,false),rest) | _ -> None)
+                let tyconSearch = tyconSearch |?> List.choose (function (resInfo,Item.RecdField(RecdFieldInfo(_,rfref)),rest) -> Some(resInfo,FieldResolution(rfref,false),rest) | _ -> None)
                 tyconSearch
             | _ -> NoResultsOrUsefulErrors
         let modulSearch ad = 
             ResolveLongIndentAsModuleOrNamespaceThen ncenv.amap m OpenQualified nenv ad lid 
                 (ResolveFieldInModuleOrNamespace ncenv nenv ad)
-        let item,rest = ForceRaise (AtMostOneResult m (modulSearch ad +++ tyconSearch ad +++ modulSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode))
+        let resInfo,item,rest = ForceRaise (AtMostOneResult m (modulSearch ad +++ tyconSearch ad +++ modulSearch AccessibleFromSomeFSharpCode +++ tyconSearch AccessibleFromSomeFSharpCode))
         if nonNil rest then errorR(Error(FSComp.SR.nrInvalidFieldLabel(),(List.head rest).idRange));
-        [item]
+        [(resInfo,item)]
+
+let ResolveField sink ncenv nenv ad typ (mp,id) =
+    let res = ResolveFieldPrim ncenv nenv ad typ (mp,id)
+    res  |> List.map snd
 
 /// Generate a new reference to a record field with a fresh type instantiation
 let FreshenRecdFieldRef (ncenv:NameResolver) m (rfref:RecdFieldRef) =
