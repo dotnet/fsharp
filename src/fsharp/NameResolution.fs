@@ -2216,7 +2216,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) =
         if nonNil rest then errorR(Error(FSComp.SR.nrInvalidFieldLabel(),(List.head rest).idRange));
         [(resInfo,item)]
 
-let ResolveField sink ncenv nenv ad typ (mp,id) =
+let ResolveField (sink: TcResultsSink) ncenv nenv ad typ (mp,id) =
     let res = ResolveFieldPrim ncenv nenv ad typ (mp,id)
     res  |> List.map snd
 
