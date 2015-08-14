@@ -1628,6 +1628,8 @@ type ScriptTests() as this =
         Assert.IsNotNull(totalCreationsMeth, "totalCreationsMeth should not be null")
         let totalDisposalsMeth = providerCounters.GetMethod("GetTotalDisposals")
         Assert.IsNotNull(totalDisposalsMeth, "totalDisposalsMeth should not be null")
+        let checkConfigsMeth = providerCounters.GetMethod("CheckAllConfigsDisposed")
+        Assert.IsNotNull(checkConfigsMeth, "checkConfigsMeth should not be null")
 
         let providerCounters2 = providerAssembly.GetType("Microsoft.FSharp.TypeProvider.Emit.GlobalCountersForInvalidation")
         Assert.IsNotNull(providerCounters2, "provider counters #2 module should not be null")
@@ -1638,6 +1640,7 @@ type ScriptTests() as this =
 
         let totalCreations() = totalCreationsMeth.Invoke(null, [| |]) :?> int
         let totalDisposals() = totalDisposalsMeth.Invoke(null, [| |]) :?> int
+        let checkConfigsDisposed() = checkConfigsMeth.Invoke(null, [| |]) |> ignore
         let totalInvaldiationHandlersAdded() = totalInvaldiationHandlersAddedMeth.Invoke(null, [| |]) :?> int
         let totalInvaldiationHandlersRemoved() = totalInvaldiationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
@@ -1693,6 +1696,7 @@ type ScriptTests() as this =
         ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
         Assert.IsTrue(countDisposals() = 50, "Check6b, at end, countDisposals() = 50 after explicit clearing")
         Assert.IsTrue(countInvaldiationHandlersAdded() - countInvaldiationHandlersRemoved() = 0, "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
+        checkConfigsDisposed()
 
     [<Test>]
     [<Category("TypeProvider")>]
