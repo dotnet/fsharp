@@ -11,23 +11,24 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     open Microsoft.FSharp.Compiler
     open Microsoft.FSharp.Compiler.AbstractIL.Internal
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-
-/// Anything to do with special names of identifiers and other lexical rules 
-
     open System.Globalization
     open System.Collections.Generic
+    open System.Collections.Concurrent
 
     //------------------------------------------------------------------------
     // Operator name compilation
     //-----------------------------------------------------------------------
 
-    let parenGet = ".()"
-    let parenSet = ".()<-"
-    let qmark = "?"
-    let qmarkSet = "?<-"
+    let [<Literal>] parenGet = ".()"
+    let [<Literal>] parenSet = ".()<-"
+    let [<Literal>] qmark = "?"
+    let [<Literal>] qmarkSet = "?<-"
+
+    /// Prefix for compiled (mangled) operator names.
+    let [<Literal>] opNamePrefix = "op_"
 
     let private opNameTable = 
-     [ ("[]", "op_Nil");
+     [|("[]", "op_Nil");
        ("::", "op_ColonColon");
        ("+", "op_Addition");
        ("~%", "op_Splice");
@@ -78,14 +79,14 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
        ("/=", "op_DivisionAssignment");
        ("..", "op_Range");
        (".. ..", "op_RangeStep"); 
-       ("?", "op_Dynamic");
-       ("?<-", "op_DynamicAssignment");
+       (qmark, "op_Dynamic");
+       (qmarkSet, "op_DynamicAssignment");
        (parenGet, "op_ArrayLookup");
        (parenSet, "op_ArrayAssign");
-       ]
+       |]
 
     let private opCharTranslateTable =
-      [ ( '>', "Greater");
+      [|( '>', "Greater");
         ( '<', "Less"); 
         ( '+', "Plus");
         ( '-', "Minus");
@@ -109,66 +110,184 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
         ( ')', "RParen");
         ( ' ', "Space");
         ( '[', "LBrack");
-        ( ']', "RBrack"); ]
+        ( ']', "RBrack"); |]
 
-    let private opCharDict = 
-        let t = new Dictionary<_,_>()
-        for (c,_) in opCharTranslateTable do 
-            t.Add(c,1)
+    /// The set of characters usable in custom operators.
+    let private opCharSet =
+        let t = new HashSet<_>()
+        for (c,_) in opCharTranslateTable do
+            t.Add(c) |> ignore
         t
         
-    let IsOpName (n:string) =
-        let rec loop i = (i < n.Length && (opCharDict.ContainsKey(n.[i]) || loop (i+1)))
+    let IsOpName (name:string) =
+        let nameLen = name.Length
+        let rec loop i = (i < nameLen && (opCharSet.Contains(name.[i]) || loop (i+1)))
         loop 0
 
-    let CompileOpName =
-        let t = Map.ofList opNameTable
-        let t2 = Map.ofList opCharTranslateTable
-        fun n -> 
-            match t.TryFind(n) with 
-            | Some(x) -> x 
-            | None -> 
-                if IsOpName n then 
-                  let mutable r = []
-                  for i = 0 to String.length n - 1 do
-                      let c = n.[i]
-                      let c2 = match t2.TryFind(c) with Some(x) -> x | None -> string c
-                      r <- c2 :: r 
-                  "op_"^(String.concat "" (List.rev r))
-                else n
+    let IsMangledOpName (n:string) =
+        n.StartsWith (opNamePrefix, System.StringComparison.Ordinal)
 
-    let IsMangledOpName (n:string) = n.Length >= 3 && n.Substring(0,3) = "op_"     
-                             
-    let DecompileOpName = 
-      let t = new Dictionary<string,string>()
-      for (x,y) in opNameTable do
-          t.Add(y,x)
-      fun n -> 
-          let mutable res = Unchecked.defaultof<_>
-          if t.TryGetValue(n,&res) then 
-              res
-          else
-              if n.StartsWith("op_",System.StringComparison.Ordinal) then 
-                let rec loop (remaining:string) = 
-                    let l = remaining.Length
-                    if l = 0 then Some(remaining) else
-                    let choice = 
-                      opCharTranslateTable |> List.tryPick (fun (a,b) -> 
-                          let bl = b.Length
-                          if bl <= l && remaining.Substring(0,bl) = b then 
-                            Some(string a, remaining.Substring(bl,l - bl)) 
-                          else None) 
-                        
-                    match choice with 
-                    | Some (a,remaining2) -> 
-                        match loop remaining2 with 
-                        | None -> None
-                        | Some a2 -> Some(a^a2)
-                    | None -> None (* giveup *)
-                match loop (n.Substring(3,n.Length - 3)) with
-                | Some res -> res
-                | None -> n
-              else n
+    // +++ GLOBAL STATE
+    /// Compiles a custom operator into a mangled operator name.
+    /// For example, "!%" becomes "op_DereferencePercent".
+    /// This function should only be used for custom operators;
+    /// if an operator is or potentially may be a built-in operator,
+    /// use the 'CompileOpName' function instead.
+    let private compileCustomOpName =
+        let t2 =
+            let t2 = Dictionary<_,_> (opCharTranslateTable.Length)
+            for x, y in opCharTranslateTable do
+                t2.Add (x, y)
+            t2
+        /// The maximum length of the name for a custom operator character.
+        /// This value is used when initializing StringBuilders to avoid resizing.
+        let maxOperatorNameLength =
+            opCharTranslateTable
+            |> Array.maxBy (snd >> String.length)
+            |> snd
+            |> String.length
+
+        /// Memoize compilation of custom operators.
+        /// They're typically used more than once so this avoids some CPU and GC overhead.
+        let compiledOperators = ConcurrentDictionary<_,_> (System.StringComparer.Ordinal)
+
+        fun op ->
+            // Has this operator already been compiled?
+            match compiledOperators.TryGetValue op with
+            | true, opName -> opName
+            | false, _ ->
+                let opLength = op.Length
+                let sb = new System.Text.StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
+                for i = 0 to opLength - 1 do
+                    let c = op.[i]
+                    match t2.TryGetValue c with
+                    | true, x ->
+                        sb.Append(x) |> ignore
+                    | false, _ ->
+                        sb.Append(c) |> ignore
+
+                /// The compiled (mangled) operator name.
+                let opName = sb.ToString ()
+
+                // Cache the compiled name so it can be reused.
+                compiledOperators.TryAdd (op, opName) |> ignore
+                opName
+
+    // +++ GLOBAL STATE
+    /// Compiles an operator into a mangled operator name.
+    /// For example, "!%" becomes "op_DereferencePercent".
+    /// This function accepts both built-in and custom operators.
+    let CompileOpName =
+        /// Maps the built-in F# operators to their mangled operator names.
+        let standardOpNames =
+            let opNames = Dictionary<_,_> (opNameTable.Length, System.StringComparer.Ordinal)
+            for x, y in opNameTable do
+                opNames.Add (x, y)
+            opNames
+
+        fun op ->
+            match standardOpNames.TryGetValue op with
+            | true, x -> x
+            | false, _ ->
+                if IsOpName op then
+                    compileCustomOpName op
+                else op
+
+    // +++ GLOBAL STATE
+    /// Decompiles the mangled name of a custom operator back into an operator.
+    /// For example, "op_DereferencePercent" becomes "!%".
+    /// This function should only be used for mangled names of custom operators;
+    /// if a mangled name potentially represents a built-in operator,
+    /// use the 'DecompileOpName' function instead.
+    let private decompileCustomOpName =
+        // Memoize this operation. Custom operators are typically used more than once
+        // so this avoids repeating decompilation.
+        let decompiledOperators = ConcurrentDictionary<_,_> (System.StringComparer.Ordinal)
+
+        /// The minimum length of the name for a custom operator character.
+        /// This value is used when initializing StringBuilders to avoid resizing.
+        let minOperatorNameLength =
+            opCharTranslateTable
+            |> Array.minBy (snd >> String.length)
+            |> snd
+            |> String.length
+
+        fun opName ->
+            // Has this operator name already been decompiled?
+            match decompiledOperators.TryGetValue opName with
+            | true, op -> op
+            | false, _ ->
+                let opNameLen = opName.Length
+                
+                /// Function which decompiles the mangled operator name back into a string of operator characters.
+                /// Returns None if the name contains text which doesn't correspond to an operator;
+                /// otherwise returns Some containing the original operator. 
+                let rec decompile (sb : System.Text.StringBuilder) idx =
+                    // Have we reached the end of 'opName'?
+                    if idx = opNameLen then
+                        // Finished decompiling.
+                        // Cache the decompiled operator before returning so it can be reused.
+                        let decompiledOp = sb.ToString ()
+                        decompiledOperators.TryAdd (opName, decompiledOp) |> ignore
+                        decompiledOp
+                    else
+                        let choice =
+                            opCharTranslateTable
+                            |> Array.tryFind (fun (_, opCharName) ->
+                                // If this operator character name is longer than the remaining piece of 'opName',
+                                // it's obviously not a match.
+                                let opCharNameLen = opCharName.Length
+                                if opNameLen - idx < opCharNameLen then false
+                                else
+                                    // Does 'opCharName' match the current position in 'opName'?
+                                    System.String.Compare (opName, idx, opCharName, 0, opCharNameLen, System.StringComparison.Ordinal) = 0)
+
+                        match choice with
+                        | None ->
+                            // Couldn't decompile, so just return the original 'opName'.
+                            opName
+                        | Some (opChar, opCharName) ->
+                            // 'opCharName' matched the current position in 'opName'.
+                            // Append the corresponding operator character to the StringBuilder
+                            // and continue decompiling at the index following this instance of 'opCharName'.
+                            sb.Append opChar |> ignore
+                            decompile sb (idx + opCharName.Length)
+
+                let opNamePrefixLen = opNamePrefix.Length
+                let sb =
+                    /// The maximum number of operator characters that could be contained in the
+                    /// decompiled operator given the length of the mangled custom operator name.
+                    let maxPossibleOpCharCount = (opNameLen - opNamePrefixLen) / minOperatorNameLength
+                    System.Text.StringBuilder (maxPossibleOpCharCount)
+
+                // Start decompiling just after the operator prefix.
+                decompile sb opNamePrefixLen
+
+    // +++ GLOBAL STATE
+    /// Decompiles a mangled operator name back into an operator.
+    /// For example, "op_DereferencePercent" becomes "!%".
+    /// This function accepts mangled names for both built-in and custom operators.
+    let DecompileOpName =
+        /// Maps the mangled operator names of built-in F# operators back to the operators.
+        let standardOps =
+            let ops = Dictionary<string, string> (opNameTable.Length, System.StringComparer.Ordinal)
+            for x, y in opNameTable do
+                ops.Add(y,x)
+            ops
+
+        fun opName ->
+            match standardOps.TryGetValue opName with
+            | true, res -> res
+            | false, _ ->
+                if IsMangledOpName opName then
+                    decompileCustomOpName opName
+                else
+                    opName
+
+    let DemangleOperatorName nm =
+        let nm = DecompileOpName nm
+        if IsOpName nm then "( " + nm + " )"
+        else nm
                   
     let opNameCons = CompileOpName "::"
     let opNameNil = CompileOpName "[]"
@@ -177,59 +296,95 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     let opNameNullableEquals = CompileOpName "?="
     let opNameNullableEqualsNullable = CompileOpName "?=?"
 
-
     /// The characters that are allowed to be the first character of an identifier.
     let IsIdentifierFirstCharacter c =
-        let cat = System.Char.GetUnicodeCategory(c)
-        c='_' ||
-        (    cat = UnicodeCategory.UppercaseLetter // Letters
-          || cat = UnicodeCategory.LowercaseLetter 
-          || cat = UnicodeCategory.TitlecaseLetter
-          || cat = UnicodeCategory.ModifierLetter
-          || cat = UnicodeCategory.OtherLetter
-          || cat = UnicodeCategory.LetterNumber 
-        )
+        if c = '_' then true
+        else
+            match System.Char.GetUnicodeCategory c with
+            // Letters
+            | UnicodeCategory.UppercaseLetter
+            | UnicodeCategory.LowercaseLetter
+            | UnicodeCategory.TitlecaseLetter
+            | UnicodeCategory.ModifierLetter
+            | UnicodeCategory.OtherLetter
+            | UnicodeCategory.LetterNumber -> true
+            | _ -> false
 
     /// The characters that are allowed to be in an identifier.
     let IsIdentifierPartCharacter c =
-        let cat = System.Char.GetUnicodeCategory(c)
-        (    cat = UnicodeCategory.UppercaseLetter // Letters
-          || cat = UnicodeCategory.LowercaseLetter 
-          || cat = UnicodeCategory.TitlecaseLetter
-          || cat = UnicodeCategory.ModifierLetter
-          || cat = UnicodeCategory.OtherLetter
-          || cat = UnicodeCategory.LetterNumber 
-          || cat = UnicodeCategory.DecimalDigitNumber // Numbers
-          || cat = UnicodeCategory.ConnectorPunctuation // Connectors
-          || cat = UnicodeCategory.NonSpacingMark // Combiners
-          || cat = UnicodeCategory.SpacingCombiningMark
-          || c = '\'' // Tick
-        )
+        if c = '\'' then true   // Tick
+        else
+            match System.Char.GetUnicodeCategory c with
+            // Letters
+            | UnicodeCategory.UppercaseLetter
+            | UnicodeCategory.LowercaseLetter
+            | UnicodeCategory.TitlecaseLetter
+            | UnicodeCategory.ModifierLetter
+            | UnicodeCategory.OtherLetter
+            | UnicodeCategory.LetterNumber
+            // Numbers
+            | UnicodeCategory.DecimalDigitNumber
+            // Connectors
+            | UnicodeCategory.ConnectorPunctuation
+            // Combiners
+            | UnicodeCategory.NonSpacingMark
+            | UnicodeCategory.SpacingCombiningMark -> true
+            | _ -> false
 
-    /// Is this character a part of a long identifier 
-    let IsLongIdentifierPartCharacter c = 
-        (IsIdentifierPartCharacter c) || (c = '.')
+    /// Is this character a part of a long identifier?
+    let IsLongIdentifierPartCharacter c =
+        c = '.'
+        || IsIdentifierPartCharacter c
 
-    let IsValidPrefixOperatorUse s = 
+    let IsValidPrefixOperatorUse s =
+        if System.String.IsNullOrEmpty s then false else
         match s with 
         | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" -> true
-        | _ -> s.[0] = '!' || (s.[0] = '~' && String.forall (fun c -> c = s.[0]) s)
+        | _ ->
+            s.[0] = '!'
+            // The check for the first character here could be eliminated since it's covered
+            // by the call to String.forall; it is a fast check used to avoid the call if possible.
+            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
     
     let IsValidPrefixOperatorDefinitionName s = 
+        if System.String.IsNullOrEmpty s then false else
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ -> (s.[0] = '!' && s <> "!=") || (s.[0] = '~' && String.forall (fun c -> c = s.[0]) s)
+        | _ ->
+            (s.[0] = '!' && s <> "!=")
+            // The check for the first character here could be eliminated since it's covered
+            // by the call to String.forall; it is a fast check used to avoid the call if possible.
+            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
         
-    let IsPrefixOperator s = 
+    let IsPrefixOperator s =
+        if System.String.IsNullOrEmpty s then false else
         let s = DecompileOpName s
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
-        | _ -> (s.[0] = '!' && s <> "!=")  || (s.[0] = '~' && String.forall (fun c -> c = s.[0]) s)
+        | _ ->
+            (s.[0] = '!' && s <> "!=")
+            // The check for the first character here could be eliminated since it's covered
+            // by the call to String.forall; it is a fast check used to avoid the call if possible.
+            || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
 
     let IsTernaryOperator s = 
-        DecompileOpName s = "?<-"
+        (DecompileOpName s = qmarkSet)
 
-    let IsInfixOperator s (* where s is assumed to be a compiled name *) =
+    let IsInfixOperator =
+        /// EQUALS, INFIX_COMPARE_OP, LESS, GREATER
+        let relational = [| "=";"!=";"<";">";"$"|]
+        /// INFIX_AT_HAT_OP
+        let concat = [| "@";"^" |]
+        /// PLUS_MINUS_OP, MINUS
+        let plusMinus = [| "+"; "-" |]
+        /// PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
+        let otherMath = [| "*";"/";"%" |]
+
+        /// Characters ignored at the start of the operator name
+        /// when determining whether an operator is an infix operator.
+        let ignoredChars = [| '.'; '?' |]
+
+        fun s (* where s is assumed to be a compiled name *) ->
         // Certain operator idents are parsed as infix expression operators.
         // The parsing as infix operators is hardwired in the grammar [see declExpr productions]
         // where certain operator tokens are accepted in infix forms, i.e. <expr> <op> <expr>.
@@ -237,32 +392,40 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
         //------
         // This function recognises these "infix operator" names.
         let s = DecompileOpName s
-        let skipIgnoredChars = s.TrimStart('.', '?')
+        let skipIgnoredChars = s.TrimStart(ignoredChars)
         let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWith(prefix,System.StringComparison.Ordinal)
-        let afterSkipStarts     prefixes = List.exists afterSkipStartsWith prefixes
-        // The following conditions follow the declExpr infix clauses. The test corresponds to the lexer definition for the token.
+        let afterSkipStarts     prefixes = Array.exists afterSkipStartsWith prefixes
+        // The following conditions follow the declExpr infix clauses.
+        // The test corresponds to the lexer definition for the token.
         s = ":=" ||                                    // COLON_EQUALS
         afterSkipStartsWith "|" ||                     // BAR_BAR, INFIX_BAR_OP
         (* REVIEW: OR is deadcode, now called BAR? *)  // OR
         afterSkipStartsWith "&"  ||                    // AMP, AMP_AMP, INFIX_AMP_OP
-        afterSkipStarts ["=";"!=";"<";">";"$"] ||      // EQUALS, INFIX_COMPARE_OP, LESS, GREATER
+        afterSkipStarts relational ||                  // EQUALS, INFIX_COMPARE_OP, LESS, GREATER
         s = "$" ||                                     // DOLLAR
-        afterSkipStarts ["@";"^"] ||                   // INFIX_AT_HAT_OP
+        afterSkipStarts concat ||                      // INFIX_AT_HAT_OP
         s = "::" ||                                    // COLON_COLON
-        afterSkipStarts ["+";"-"] ||                   // PLUS_MINUS_OP, MINUS
-        afterSkipStarts ["*";"/";"%"] ||               // PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
+        afterSkipStarts plusMinus ||                   // PLUS_MINUS_OP, MINUS
+        afterSkipStarts otherMath ||                   // PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
         s = "**"                                       // INFIX_STAR_STAR_OP
 
-    let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName = 
-        if (opName = "&" || opName = "or" || opName = "&&" || opName = "||") then Control
-        elif (opName = "<>" || opName = "=" ) then Equality
-        elif (opName = "<" || opName = ">" || opName = "<=" || opName = ">=") then Relational
-        elif (opName = "<<" || opName = "<|" || opName = "<||" || opName = "<||" || opName = "|>" || opName = "||>" || opName = "|||>" || opName = ">>" || opName = "^" || opName = ":=" || opName = "@") then FixedTypes
-        elif (opName = ".[]" ) then Indexer
-        else Other
+    let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
+        match opName with
+        | "&" | "or" | "&&" | "||" ->
+            Control
+        | "<>" | "=" ->
+            Equality
+        | "<" | ">" | "<=" | ">=" ->
+            Relational
+        | "<<" | "<|" | "<||" | "<||" | "|>" | "||>" | "|||>" | ">>" | "^" | ":=" | "@" ->
+            FixedTypes
+        | ".[]" ->
+            Indexer
+        | _ ->
+            Other
 
-    let private compilerGeneratedMarker = "@"
-    let private compilerGeneratedMarkerChar = '@'
+    let [<Literal>] private compilerGeneratedMarker = "@"
+    let [<Literal>] private compilerGeneratedMarkerChar = '@'
     
     let IsCompilerGeneratedName (nm:string) =
         nm.IndexOf compilerGeneratedMarkerChar <> -1
@@ -283,17 +446,17 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     // Handle mangled .NET generic type names
     //------------------------------------------------------------------------- 
      
-    let private mangledGenericTypeNameSym = '`'
+    let [<Literal>] private mangledGenericTypeNameSym = '`'
     let IsMangledGenericName (n:string) = 
         n.IndexOf mangledGenericTypeNameSym <> -1 &&
         (* check what comes after the symbol is a number *)
         let m = n.LastIndexOf mangledGenericTypeNameSym
         let mutable res = m < n.Length - 1
         for i = m + 1 to n.Length - 1 do
-            res <- res && n.[i] >= '0' && n.[i] <= '9';
+            res <- res && n.[i] >= '0' && n.[i] <= '9'
         res
 
-    type NameArityPair = NameArityPair of string*int
+    type NameArityPair = NameArityPair of string * int
     let DecodeGenericTypeName n = 
         if IsMangledGenericName n then 
             let pos = n.LastIndexOf mangledGenericTypeNameSym
@@ -318,38 +481,33 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
 
     let private chopStringTo (s:string) (c:char) =
         (* chopStringTo "abcdef" 'c' --> "def" *)
-        if s.IndexOf c <> -1 then
-            let i =  s.IndexOf c + 1
+        match s.IndexOf c with
+        | -1 -> s
+        | idx ->
+            let i = idx + 1
             s.Substring(i, s.Length - i)
-        else
-            s
 
     /// Try to chop "get_" or "set_" from a string
     let TryChopPropertyName (s: string) =
-        // extract the logical name from any mangled name produced by MakeMemberDataAndMangledNameForMemberVal 
-        let s = 
-            if s.StartsWith("get_", System.StringComparison.Ordinal) || 
-               s.StartsWith("set_", System.StringComparison.Ordinal) 
-            then s 
-            else chopStringTo s '.'
+        // extract the logical name from any mangled name produced by MakeMemberDataAndMangledNameForMemberVal
+        if s.Length <= 4 then None else
+        if s.StartsWith("get_", System.StringComparison.Ordinal) ||
+           s.StartsWith("set_", System.StringComparison.Ordinal)
+        then Some (s.Substring(4, s.Length - 4))
+        else
+        let s = chopStringTo s '.'
+        if s.StartsWith("get_", System.StringComparison.Ordinal) ||
+           s.StartsWith("set_", System.StringComparison.Ordinal)
+        then Some (s.Substring(4, s.Length - 4))
+        else None
 
-        if s.Length <= 4 || (let s = s.Substring(0,4) in s <> "get_" && s <> "set_") then
-            None
-        else 
-            Some(s.Substring(4,s.Length - 4) )
-
-
+    /// Try to chop "get_" or "set_" from a string.
+    /// If the string does not start with "get_" or "set_", this function raises an exception.
     let ChopPropertyName s =
         match TryChopPropertyName s with 
         | None -> 
-            failwith("Invalid internal property name: '"^s^"'"); 
-            s
+            failwithf "Invalid internal property name: '%s'" s
         | Some res -> res
-        
-
-    let DemangleOperatorName nm = 
-        let nm = DecompileOpName nm
-        if IsOpName nm then "( "^nm^" )" else nm 
 
     let SplitNamesForILPath (s : string) : string list = 
         if s.StartsWith("``",System.StringComparison.Ordinal) && s.EndsWith("``",System.StringComparison.Ordinal) && s.Length > 4 then [s.Substring(2, s.Length-4)] // identifier is enclosed in `` .. ``, so it is only a single element (this is very approximate)
@@ -358,12 +516,11 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     // Return a string array delimited by the given separator.
     // Note that a quoted string is not going to be mangled into pieces. 
     let private splitAroundQuotation (text:string) (separator:char) =
-        let text' = text.ToCharArray()
-        let length = text'.Length
-        let isNotQuotedQuotation n = n > 0 && text'.[n-1] <> '\\'
+        let length = text.Length
+        let isNotQuotedQuotation n = n > 0 && text.[n-1] <> '\\'
         let rec split (i, cur, group, insideQuotation) =        
             if i>=length then List.rev (cur::group) else
-            match text'.[i], insideQuotation with
+            match text.[i], insideQuotation with
             // split when seeing a separator
             | c, false when c = separator -> split (i+1, "", cur::group, false)
             // keep reading if a separator is inside quotation
@@ -383,22 +540,26 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
         | true -> Array.append (mangledText.[0..(count-2)]) ([| mangledText.[(count-1)..] |> String.concat (System.Char.ToString separator) |])
         | false -> mangledText
 
-    let FSharpModuleSuffix = "Module"
+    let [<Literal>] FSharpModuleSuffix = "Module"
 
-    let MangledGlobalName = "`global`"
+    let [<Literal>] MangledGlobalName = "`global`"
     
     let IllegalCharactersInTypeAndNamespaceNames = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`'  |]
 
+    /// Determines if the specified name is a valid name for an active pattern.
     let IsActivePatternName (nm:string) =
+        let nameLen = nm.Length
+        // The name must start and end with '|'
         (nm.IndexOf '|' = 0) &&
-        nm.Length >= 3 &&
-        (nm.LastIndexOf '|' = nm.Length - 1) &&
+        (nm.LastIndexOf '|' = nameLen - 1) &&
+        // The name must contain at least one character between the starting and ending delimiters.
+        nameLen >= 3 &&
         (
-           let core = nm.Substring(1, nm.Length - 2) 
+           let core = nm.Substring(1, nameLen - 2)
            // no operator characters except '|' and ' '
-           core |> String.forall (fun c -> c = '|' || c = ' ' || not (opCharDict.ContainsKey c)) &&
+           core |> String.forall (fun c -> c = '|' || c = ' ' || not (opCharSet.Contains c)) &&
            // at least one non-operator or space character
-           core |> String.exists (fun c -> c = ' ' || not (opCharDict.ContainsKey c))
+           core |> String.exists (fun c -> c = ' ' || not (opCharSet.Contains c))
         )
 
     //IsActivePatternName "|+|" = false
@@ -408,7 +569,7 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     //IsActivePatternName "||S|" = true
 
     type ActivePatternInfo = 
-        | APInfo of bool * string list 
+        | APInfo of bool * string list
         member x.IsTotal = let (APInfo(p,_)) = x in p
         member x.ActiveTags = let (APInfo(_,tags)) = x in tags
 
@@ -430,31 +591,29 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     let private mangleStaticStringArg (nm:string,v:string) = 
         nm + "=" + "\"" + v.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""
 
-    let private tryDemangleStaticStringArg (mangledText:string) = 
-        let pieces = splitAroundQuotationWithCount mangledText '=' 2
-        if pieces.Length <> 2 then None else
-        let nm = pieces.[0]
-        let v = pieces.[1]
-        if v.Length >= 2 then 
-            Some(nm,v.[1..v.Length-2].Replace("\\\\","\\").Replace("\\\"","\""))
-        else
-            Some(nm,v)
+    let private tryDemangleStaticStringArg (mangledText:string) =
+        match splitAroundQuotationWithCount mangledText '=' 2 with
+        | [| nm; v |] ->
+            if v.Length >= 2 then
+                Some(nm,v.[1..v.Length-2].Replace("\\\\","\\").Replace("\\\"","\""))
+            else
+                Some(nm,v)
+        | _ -> None
 
     // Demangle the static parameters
     exception InvalidMangledStaticArg of string
 
     let demangleProvidedTypeName (typeLogicalName:string) = 
         if typeLogicalName.Contains "," then 
-            let pieces = splitAroundQuotation typeLogicalName ',' 
-            if pieces.[1..] |> Array.forall (fun x -> tryDemangleStaticStringArg x |> Option.isSome) then
-                let argNamesAndValues = 
-                    pieces.[1..] |> Array.map (fun piece -> 
-                        match tryDemangleStaticStringArg piece with 
-                        | None -> raise (InvalidMangledStaticArg piece)
-                        | Some v -> v)
-                pieces.[0], argNamesAndValues
-            else 
-                typeLogicalName, [| |]
+            let pieces = splitAroundQuotation typeLogicalName ','
+            match pieces with
+            | [| x; "" |] -> x, [| |]
+            | _ ->
+                let argNamesAndValues = pieces.[1..] |> Array.choose tryDemangleStaticStringArg
+                if argNamesAndValues.Length = (pieces.Length - 1) then
+                    pieces.[0], argNamesAndValues
+                else
+                    typeLogicalName, [| |]
         else 
             typeLogicalName, [| |]
 
@@ -463,8 +622,20 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
             nonDefaultArgs
             |> Array.map mangleStaticStringArg
             |> String.concat ","
-        typeLogicalName+","+nonDefaultArgsText
 
-    //let testDemangleStaticStringArg() = 
-    //   for x in [ ""; "\""; "\"\""; "a"; "\\"; "\\\\"; "\\\""; "_"; "\"\"" ] do 
-    //      if demangleStaticStringArg (mangleStaticStringArg x) <> x then printfn "failed for <<%s>>" x
+        if nonDefaultArgsText = "" then
+            typeLogicalName
+        else
+            typeLogicalName + "," + nonDefaultArgsText
+
+
+    let computeMangledNameWithoutDefaultArgValues(nm,staticArgs,defaultArgValues) =
+        let nonDefaultArgs = 
+            (staticArgs,defaultArgValues) 
+            ||> Array.zip 
+            |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
+                let actualArgValue = string staticArg 
+                match defaultArgValue with 
+                | Some v when v = actualArgValue -> None
+                | _ -> Some (defaultArgName, actualArgValue))
+        mangleProvidedTypeName (nm, nonDefaultArgs)

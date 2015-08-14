@@ -2785,6 +2785,7 @@ sub get_env_file
 		if (/^\s*(\w+)\s*=/)
 		{
 		    my $var = uc($1);
+
 		    $sublist[$envnum][4]{$var} = $';
 		    if ($' =~ /%(\w+)%/)
 		    {
@@ -2794,7 +2795,17 @@ sub get_env_file
 			# Modified by apardoe to correct Perl hash behavior change from build 314 to 616.
 			$sublist[$envnum][4]{uc($1)} and $sublist[$envnum][4]{$var} = $sublist[$envnum][4]{uc($1)};
 			$envlist[$envnum][4]{uc($1)} and $sublist[$envnum][4]{$var} = $envlist[$envnum][4]{uc($1)};
-		    }                    
+		    }
+
+            if($var eq "FSIMODE")
+            {
+                $sublist[$envnum][1] = $sublist[$envnum][1] . ",FSI,NoMT";
+            }
+            
+            if($var eq "SCFLAGS" && $sublist[$envnum][4]{$var} =~ /--noframework\b/)
+            {
+                $sublist[$envnum][1] = $sublist[$envnum][1] . ",NoCrossVer,NoMT";
+            }
 		} else {
 		    print_noise("Bad assignment '$_', skipping...\n", 1);
 		    next ENV_LINE;

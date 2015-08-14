@@ -29,12 +29,6 @@ module internal Hooks =
 
     // This should be called from the Package ctor, to do unsited initialisation.
     let fsiConsoleWindowPackageCtorUnsited (this:Package) =        
-(*      // "Proffer the service"
-        let serviceContainer = this :> IServiceContainer
-        let langService = new FsiLanguageService()
-        langService.SetSite(this)        
-        serviceContainer.AddService(typeof<FsiLanguageService>,langService,true)
-*)
 
         // This seems an alternative to the boiler plate proffering above. Gives delayed creation?
         let callback  = fsiServiceCreatorCallback(this)
@@ -56,30 +50,38 @@ module internal Hooks =
         with e2 ->
             (System.Windows.Forms.MessageBox.Show(e2.ToString()) |> ignore)
 
-    let private withFSIToolWindow (this:Package) f =
+    let private queryFSIToolWindow (this:Package) (f : FsiToolWindow -> 't) (dflt : 't) =
         try            
             let window = this.FindToolWindow(typeof<FsiToolWindow>, 0, true)
             let windowFrame = window.Frame :?> IVsWindowFrame
             if windowFrame.IsVisible() <> VSConstants.S_OK then
                 windowFrame.Show() |> throwOnFailure0
             match window with
-            | null -> ()
             | :? FsiToolWindow as window -> f window
-            | _ -> ()
+            | _ -> dflt
         with e2 ->
             (System.Windows.Forms.MessageBox.Show(VFSIstrings.SR.exceptionRaisedWhenRequestingToolWindow(e2.ToString())) |> ignore)
+            dflt
 
-    let OnMLSend (this:Package) (selectLine : bool) (sender:obj) (e:EventArgs) =
+    let private withFSIToolWindow (this:Package) f =
+        queryFSIToolWindow this f ()
+
+    let OnMLSend (this:Package) (action : FsiEditorSendAction) (sender:obj) (e:EventArgs) =
         withFSIToolWindow this (fun window ->
-            if selectLine then window.MLSendLine(sender,e)
-            else window.MLSend(sender,e)
+            match action with
+            | ExecuteSelection -> window.MLSendSelection(sender, e)
+            | ExecuteLine -> window.MLSendLine(sender, e)
+            | DebugSelection -> window.MLDebugSelection(sender, e)
         )
 
     let AddReferencesToFSI (this:Package) references =
         withFSIToolWindow this (fun window -> window.AddReferences references)
 
+    let GetDebuggerState (this:Package) =
+        queryFSIToolWindow this (fun window -> window.GetDebuggerState()) FsiDebuggerState.AttachedNotToFSI
+
     // FxCop request this function not be public
-    let private supportWhenFSharpDocument (selectLine : bool) (sender:obj) (e:EventArgs) =    
+    let private supportWhenFSharpDocument (sender:obj) (e:EventArgs) =    
         let command = sender :?> OleMenuCommand       
         if command <> null then                        
             let looksLikeFSharp,haveSelection = 
@@ -113,7 +115,7 @@ module internal Hooks =
                     
             command.Supported  <- true
             command.Visible    <- looksLikeFSharp
-            command.Enabled    <- if selectLine then true else haveSelection
+            command.Enabled    <- true
 
     let mutable private hasBeenInitialized = false
 
@@ -127,20 +129,3 @@ module internal Hooks =
                 let id  = new CommandID(Guids.guidFsiPackageCmdSet,int32 Guids.cmdIDLaunchFsiToolWindow)
                 let cmd = new MenuCommand(new EventHandler(ShowToolWindow this), id)
                 commandService.AddCommand(cmd)
-
-#if FX_ATLEAST_45
-                // Dev11 handles FSI commands in LS ViewFilter
-#else
-                // See VS SDK docs on "Command Routing Algorithm".
-                // Add OLECommand to OleCommandTarget at the package level,
-                // for when it is fired from other contexts, e.g. text editor.
-                let id  = new CommandID(Guids.guidInteractive,int32 Guids.cmdIDSendSelection)
-                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this false), id)
-                cmd.BeforeQueryStatus.AddHandler(new EventHandler(supportWhenFSharpDocument false))
-                commandService.AddCommand(cmd)
-
-                let id  = new CommandID(Guids.guidInteractive2,int32 Guids.cmdIDSendLine)
-                let cmd = new OleMenuCommand(new EventHandler(OnMLSend this true), id)
-                cmd.BeforeQueryStatus.AddHandler(new EventHandler(supportWhenFSharpDocument true))
-                commandService.AddCommand(cmd)
-#endif

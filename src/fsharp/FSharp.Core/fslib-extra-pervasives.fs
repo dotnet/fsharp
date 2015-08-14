@@ -8,6 +8,7 @@ module ExtraTopLevelOperators =
     open System.Collections.Generic
     open System.IO
     open System.Diagnostics
+    open System.Reflection
     open Microsoft.FSharp
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
@@ -30,19 +31,16 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateSet")>]
     let set l = Collections.Set.ofSeq l
 
-    [<CompiledName("CreateDictionary")>]
-    let dict l = 
-        // Use a dictionary (this requires hashing and equality on the key type)
-        // Wrap keys in a StructBox in case they are null (when System.Collections.Generic.Dictionary fails). 
-        let t = new Dictionary<RuntimeHelpers.StructBox<'Key>,_>(RuntimeHelpers.StructBox<'Key>.Comparer)
+    let inline dictImpl (comparer:IEqualityComparer<'SafeKey>) (makeSafeKey:'Key->'SafeKey) (getKey:'SafeKey->'Key) (l:seq<'Key*'T>) = 
+        let t = Dictionary comparer
         for (k,v) in l do 
-            t.[RuntimeHelpers.StructBox(k)] <- v
+            t.[makeSafeKey k] <- v
         let d = (t :> IDictionary<_,_>)
         let c = (t :> ICollection<_>)
         // Give a read-only view of the dictionary
         { new IDictionary<'Key, 'T> with 
                 member s.Item 
-                    with get x = d.[RuntimeHelpers.StructBox(x)]
+                    with get x = d.[makeSafeKey x]
                     and  set x v = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
                 member s.Keys = 
                     let keys = d.Keys
@@ -50,45 +48,60 @@ module ExtraTopLevelOperators =
                           member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                           member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                           member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-                          member s.Contains(x) = keys.Contains(RuntimeHelpers.StructBox(x))
+                          member s.Contains(x) = keys.Contains(makeSafeKey x)
                           member s.CopyTo(arr,i) = 
                               let mutable n = 0 
                               for k in keys do 
-                                  arr.[i+n] <- k.Value
+                                  arr.[i+n] <- getKey k
                                   n <- n + 1
                           member s.IsReadOnly = true
                           member s.Count = keys.Count
                       interface IEnumerable<'Key> with
-                            member s.GetEnumerator() = (keys |> Seq.map (fun v -> v.Value)).GetEnumerator()
+                            member s.GetEnumerator() = (keys |> Seq.map getKey).GetEnumerator()
                       interface System.Collections.IEnumerable with
-                            member s.GetEnumerator() = ((keys |> Seq.map (fun v -> v.Value)) :> System.Collections.IEnumerable).GetEnumerator() }
+                            member s.GetEnumerator() = ((keys |> Seq.map getKey) :> System.Collections.IEnumerable).GetEnumerator() }
                     
                 member s.Values = d.Values
                 member s.Add(k,v) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-                member s.ContainsKey(k) = d.ContainsKey(RuntimeHelpers.StructBox(k))
+                member s.ContainsKey(k) = d.ContainsKey(makeSafeKey k)
                 member s.TryGetValue(k,r) = 
-                    let key = RuntimeHelpers.StructBox(k)
-                    if d.ContainsKey(key) then (r <- d.[key]; true) else false
+                    let safeKey = makeSafeKey k
+                    if d.ContainsKey(safeKey) then (r <- d.[safeKey]; true) else false
                 member s.Remove(k : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
           interface ICollection<KeyValuePair<'Key, 'T>> with 
                 member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                 member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                 member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-                member s.Contains(KeyValue(k,v)) = c.Contains(KeyValuePair<_,_>(RuntimeHelpers.StructBox(k),v))
+                member s.Contains(KeyValue(k,v)) = c.Contains(KeyValuePair<_,_>(makeSafeKey k,v))
                 member s.CopyTo(arr,i) = 
                     let mutable n = 0 
                     for (KeyValue(k,v)) in c do 
-                        arr.[i+n] <- KeyValuePair<_,_>(k.Value,v)
+                        arr.[i+n] <- KeyValuePair<_,_>(getKey k,v)
                         n <- n + 1
                 member s.IsReadOnly = true
                 member s.Count = c.Count
           interface IEnumerable<KeyValuePair<'Key, 'T>> with
                 member s.GetEnumerator() = 
-                    (c |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(k.Value,v))).GetEnumerator()
+                    (c |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))).GetEnumerator()
           interface System.Collections.IEnumerable with
                 member s.GetEnumerator() = 
-                    ((c |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(k.Value,v))) :> System.Collections.IEnumerable).GetEnumerator() }
+                    ((c |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))) :> System.Collections.IEnumerable).GetEnumerator() }
 
+    // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+    let dictValueType (l:seq<'Key*'T>) = dictImpl HashIdentity.Structural<'Key> id id l
+
+    // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+    let dictRefType   (l:seq<'Key*'T>) = dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
+
+    [<CompiledName("CreateDictionary")>]
+    let dict (l:seq<'Key*'T>) =
+#if FX_RESHAPED_REFLECTION
+        if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+        if typeof<'Key>.IsValueType
+#endif
+            then dictValueType l
+            else dictRefType   l
 
     let getArray (vals : seq<'T>) = 
         match vals with
@@ -165,6 +178,14 @@ module ExtraTopLevelOperators =
 
     [<CompiledName("ToSByte")>]
     let inline int8 x = sbyte x
+
+    module Checked = 
+
+        [<CompiledName("ToByte")>]
+        let inline uint8 x = Checked.byte x
+
+        [<CompiledName("ToSByte")>]
+        let inline int8 x = Checked.sbyte x
 
 
     #if FX_MINIMAL_REFLECTION // not on Compact Framework 
@@ -298,6 +319,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract GetTypes : unit -> Type[] 
         abstract ResolveTypeName : typeName: string -> Type
 
+
     type ITypeProvider =
         inherit System.IDisposable
         abstract GetNamespaces : unit -> IProvidedNamespace[] 
@@ -313,5 +335,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract GetMemberCustomAttributesData : assembly:System.Reflection.MemberInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
         abstract GetParameterCustomAttributesData : assembly:System.Reflection.ParameterInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
 #endif
+
+    type ITypeProvider2 =
+        abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
+        abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
 
 #endif

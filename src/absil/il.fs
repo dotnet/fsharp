@@ -3,6 +3,7 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.IL
 
 #nowarn "49"
+#nowarn "44" // This construct is deprecated. please use List.item
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
 #nowarn "346" // The struct, record or union type 'IlxExtensionType' has an explicit implementation of 'Object.Equals'. ...
 
@@ -214,22 +215,18 @@ module SHA1 =
         else k60to79 
 
 
-    type chan = SHABytes of byte[] 
-    type sha_instream = 
-        { stream: chan;
+    type SHAStream = 
+        { stream: byte[];
           mutable pos: int;
           mutable eof:  bool; }
 
-    let rot_left32 x n =  (x <<< n) ||| (x >>>& (32-n))
+    let rotLeft32 x n =  (x <<< n) ||| (x >>>& (32-n))
 
-    let inline sha_eof sha = sha.eof
-
-    (* padding and length (in bits!) recorded at end *)
-    let sha_after_eof sha  = 
+    
+    // padding and length (in bits!) recorded at end 
+    let shaAfterEof sha  = 
         let n = sha.pos
-        let len = 
-          (match sha.stream with
-          | SHABytes s -> s.Length)
+        let len = sha.stream.Length
         if n = len then 0x80
         else 
           let padded_len = (((len + 9 + 63) / 64) * 64) - 8
@@ -244,22 +241,21 @@ module SHA1 =
           elif (n &&& 63) = 63 then (sha.eof <- true; int32 (int64 len * int64 8) &&& 0xff)
           else 0x0
 
-    let sha_read8 sha = 
-        let b = 
-            match sha.stream with 
-            | SHABytes s -> if sha.pos >= s.Length then sha_after_eof sha else int32 s.[sha.pos]
-        sha.pos <- sha.pos + 1; 
+    let shaRead8 sha = 
+        let s = sha.stream 
+        let b = if sha.pos >= s.Length then shaAfterEof sha else int32 s.[sha.pos]
+        sha.pos <- sha.pos + 1
         b
         
-    let sha_read32 sha  = 
-        let b0 = sha_read8 sha
-        let b1 = sha_read8 sha
-        let b2 = sha_read8 sha
-        let b3 = sha_read8 sha
+    let shaRead32 sha  = 
+        let b0 = shaRead8 sha
+        let b1 = shaRead8 sha
+        let b2 = shaRead8 sha
+        let b3 = shaRead8 sha
         let res = (b0 <<< 24) ||| (b1 <<< 16) ||| (b2 <<< 8) ||| b3
         res
 
-    let sha1_hash sha = 
+    let sha1Hash sha = 
         let mutable h0 = 0x67452301
         let mutable h1 = 0xEFCDAB89
         let mutable h2 = 0x98BADCFE
@@ -271,21 +267,21 @@ module SHA1 =
         let mutable d = 0
         let mutable e = 0
         let w = Array.create 80 0x00
-        while (not (sha_eof sha)) do
+        while (not sha.eof) do
             for i = 0 to 15 do
-                w.[i] <- sha_read32 sha
+                w.[i] <- shaRead32 sha
             for t = 16 to 79 do
-                w.[t] <- rot_left32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1
+                w.[t] <- rotLeft32 (w.[t-3] ^^^ w.[t-8] ^^^ w.[t-14] ^^^ w.[t-16]) 1
             a <- h0 
             b <- h1
             c <- h2
             d <- h3
             e <- h4
             for t = 0 to 79 do
-                let temp = (rot_left32 a 5) + f(t,b,c,d) + e + w.[t] + k(t)
+                let temp = (rotLeft32 a 5) + f(t,b,c,d) + e + w.[t] + k(t)
                 e <- d
                 d <- c
-                c <- rot_left32 b 30
+                c <- rotLeft32 b 30
                 b <- a
                 a <- temp
             h0 <- h0 + a
@@ -296,7 +292,7 @@ module SHA1 =
         h0,h1,h2,h3,h4
 
     let sha1HashBytes s = 
-        let (_h0,_h1,_h2,h3,h4) = sha1_hash { stream = SHABytes s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
+        let (_h0,_h1,_h2,h3,h4) = sha1Hash { stream = s; pos = 0; eof = false }   // the result of the SHA algorithm is stored in registers 3 and 4
         Array.map byte [|  b0 h4; b1 h4; b2 h4; b3 h4; b0 h3; b1 h3; b2 h3; b3 h3; |]
 
 
@@ -677,8 +673,8 @@ type ILTypeRef =
         
     member tref.FullName = String.concat "." (tref.Enclosing @ [tref.Name])
         
-    member tref.BasicQualifiedName = 
-        String.concat "+" (tref.Enclosing @ [ tref.Name ])
+    member tref.BasicQualifiedName =
+        (String.concat "+" (tref.Enclosing @ [ tref.Name ] )).Replace(",", @"\,")
 
     member tref.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic) = 
         let sco = tref.Scope.QualifiedNameWithNoShortPrimaryAssembly
@@ -1184,7 +1180,8 @@ and ILFilterBlock =
 [<NoComparison; NoEquality>]
 type ILLocal = 
     { Type: ILType;
-      IsPinned: bool }
+      IsPinned: bool;
+      DebugInfo: (string * int * int) option }
       
 type ILLocals = ILList<ILLocal>
 let emptyILLocals = (ILList.empty : ILLocals)
@@ -3021,9 +3018,10 @@ let mkILReturn ty : ILReturn =
       Type=ty;
       CustomAttrs=emptyILCustomAttrs  }
 
-let mkILLocal ty = 
+let mkILLocal ty dbgInfo = 
     { IsPinned=false;
-      Type=ty; }
+      Type=ty;
+      DebugInfo=dbgInfo }
 
 type ILFieldSpec with
   member fr.ActualType = 
@@ -4385,6 +4383,8 @@ and encodeCustomAttrValue ilg ty c =
     match ty, c with 
     | ILType.Boxed tspec, _ when tspec.Name = tname_Object ->  
        [| yield! encodeCustomAttrElemTypeForObject c; yield! encodeCustomAttrPrimValue ilg c |]
+    | ILType.Array (shape, _), ILAttribElem.Null when shape = ILArrayShape.SingleDimensional ->  
+       [| yield! i32AsBytes 0xFFFFFFFF |]
     | ILType.Array (shape, elemType), ILAttribElem.Array (_,elems) when shape = ILArrayShape.SingleDimensional ->  
        [| yield! i32AsBytes elems.Length; for elem in elems do yield! encodeCustomAttrValue ilg elemType elem |]
     | _ -> 
@@ -4685,7 +4685,7 @@ type ILTypeSigParser(tstring : string) =
         let ilty = x.ParseType()
         ILAttribElem.Type(Some(ilty))
 
-let decodeILAttribData ilg (ca: ILAttribute) scope = 
+let decodeILAttribData ilg (ca: ILAttribute) = 
     let bytes = ca.Data
     let sigptr = 0
     let bb0,sigptr = sigptr_get_byte bytes sigptr
@@ -4752,6 +4752,7 @@ let decodeILAttribData ilg (ca: ILAttribute) scope =
               parseVal ty sigptr 
       | ILType.Array(shape,elemTy) when shape = ILArrayShape.SingleDimensional ->  
           let n,sigptr = sigptr_get_i32 bytes sigptr
+          if n = 0xFFFFFFFF then ILAttribElem.Null,sigptr else
           let rec parseElems acc n sigptr = 
             if n = 0 then List.rev acc else
             let v,sigptr = parseVal elemTy sigptr
@@ -4778,15 +4779,19 @@ let decodeILAttribData ilg (ca: ILAttribute) scope =
       let et,sigptr = sigptr_get_u8 bytes sigptr
       // We have a named value 
       let ty,sigptr = 
-        // REVIEW: Post-M3, consider removing the restriction for scope - it's unnecessary
-        // because you can reconstruct scope using the qualified name from the CA Blob
-        if (0x50 = (int et) || 0x55 = (int et)) && Option.isSome scope then
+        if (0x50 = (int et) || 0x55 = (int et)) then
             let qualified_tname,sigptr = sigptr_get_serstring bytes sigptr
-            // we're already getting the qualified name from the binary blob
-            // if we don't split out the unqualified name from the qualified name,
-            // we'll write the qualified assembly reference string twice to the binary blob
-            let unqualified_tname = qualified_tname.Split([|','|]).[0]
-            let scoref = Option.get scope                    
+            let unqualified_tname, rest = 
+                let pieces = qualified_tname.Split(',')
+                if pieces.Length > 1 then 
+                    pieces.[0], Some (String.concat "," pieces.[1..])
+                else 
+                    pieces.[0], None
+            let scoref = 
+                match rest with 
+                | Some aname -> ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName(System.Reflection.AssemblyName(aname)))        
+                | None -> ilg.traits.ScopeRef
+
             let tref = mkILTyRef (scoref,unqualified_tname)
             let tspec = mkILNonGenericTySpec tref
             ILType.Value(tspec),sigptr            

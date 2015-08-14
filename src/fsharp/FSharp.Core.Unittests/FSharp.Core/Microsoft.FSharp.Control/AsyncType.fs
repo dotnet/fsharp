@@ -269,4 +269,58 @@ type AsyncType() =
         Async.Start a
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore        
+
+    [<Test>]
+    member this.NonGenericTaskAsyncValue () =
+        let hasBeenCalled = ref false
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif 
+            Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
+        let a = async {
+                do! Async.AwaitTask(t)
+                return true
+            }
+        let result =Async.RunSynchronously(a, 1000)
+        (!hasBeenCalled && result) |> Assert.IsTrue
+        
+    [<Test>]
+    member this.NonGenericTaskAsyncValueException () =
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif 
+            Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
+        let a = async {
+                try
+                    let! v = Async.AwaitTask(t)
+                    return false
+                with e -> return true
+              }
+        Async.RunSynchronously(a, 3000) |> Assert.IsTrue  
+        
+    [<Test>]
+    member this.NonGenericTaskAsyncValueCancellation () =
+        use ewh = new ManualResetEvent(false)    
+        let cts = new CancellationTokenSource()
+        let token = cts.Token
+#if FSHARP_CORE_NETCORE_PORTABLE
+        let t = 
+#else
+        use t =
+#endif   
+            Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
+        let cancelled = ref true
+        let a = async {
+                    use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
+                    let! v = Async.AwaitTask(t)
+                    return v
+            }        
+        Async.Start a
+        cts.Cancel()
+        ewh.WaitOne(10000) |> ignore        
+
 #endif

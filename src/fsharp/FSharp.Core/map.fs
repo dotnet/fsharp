@@ -157,10 +157,10 @@ namespace Microsoft.FSharp.Collections
                 elif c = 0 then Some v2
                 else tryFind comparer k r
 
-        let partition1 (comparer: IComparer<'Value>) f k v (acc1,acc2) = 
-            if f k v then (add comparer k v acc1,acc2) else (acc1,add comparer k v acc2) 
+        let partition1 (comparer: IComparer<'Value>) (f:OptimizedClosures.FSharpFunc<_,_,_>) k v (acc1,acc2) = 
+            if f.Invoke(k, v) then (add comparer k v acc1,acc2) else (acc1,add comparer k v acc2) 
         
-        let rec partitionAux (comparer: IComparer<'Value>) f s acc = 
+        let rec partitionAux (comparer: IComparer<'Value>) (f:OptimizedClosures.FSharpFunc<_,_,_>) s acc = 
             match s with 
             | MapEmpty -> acc
             | MapOne(k,v) -> partition1 comparer f k v acc
@@ -169,11 +169,11 @@ namespace Microsoft.FSharp.Collections
                 let acc = partition1 comparer f k v acc
                 partitionAux comparer f l acc
 
-        let partition (comparer: IComparer<'Value>) f s = partitionAux comparer f s (empty,empty)
+        let partition (comparer: IComparer<'Value>) f s = partitionAux comparer (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) s (empty,empty)
 
-        let filter1 (comparer: IComparer<'Value>) f k v acc = if f k v then add comparer k v acc else acc 
+        let filter1 (comparer: IComparer<'Value>) (f:OptimizedClosures.FSharpFunc<_,_,_>) k v acc = if f.Invoke(k, v) then add comparer k v acc else acc 
 
-        let rec filterAux (comparer: IComparer<'Value>) f s acc = 
+        let rec filterAux (comparer: IComparer<'Value>) (f:OptimizedClosures.FSharpFunc<_,_,_>) s acc = 
             match s with 
             | MapEmpty -> acc
             | MapOne(k,v) -> filter1 comparer f k v acc
@@ -182,7 +182,7 @@ namespace Microsoft.FSharp.Collections
                 let acc = filter1 comparer f k v acc
                 filterAux comparer f r acc
 
-        let filter (comparer: IComparer<'Value>) f s = filterAux comparer f s empty
+        let filter (comparer: IComparer<'Value>) f s = filterAux comparer (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) s empty
 
         let rec spliceOutSuccessor m = 
             match m with 
@@ -220,36 +220,44 @@ namespace Microsoft.FSharp.Collections
                 if c < 0 then mem comparer k l
                 else (c = 0 || mem comparer k r)
 
-        let rec iter f m = 
+        let rec iterOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m =
             match m with 
             | MapEmpty -> ()
-            | MapOne(k2,v2) -> f k2 v2
-            | MapNode(k2,v2,l,r,_) -> iter f l; f k2 v2; iter f r
+            | MapOne(k2,v2) -> f.Invoke(k2, v2)
+            | MapNode(k2,v2,l,r,_) -> iterOpt f l; f.Invoke(k2, v2); iterOpt f r
 
-        let rec tryPick f m = 
+        let iter f m = iterOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
+
+        let rec tryPickOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m =
             match m with 
             | MapEmpty -> None
-            | MapOne(k2,v2) -> f k2 v2 
+            | MapOne(k2,v2) -> f.Invoke(k2, v2) 
             | MapNode(k2,v2,l,r,_) -> 
-                match tryPick f l with 
+                match tryPickOpt f l with 
                 | Some _ as res -> res 
                 | None -> 
-                match f k2 v2 with 
+                match f.Invoke(k2, v2) with 
                 | Some _ as res -> res 
                 | None -> 
-                tryPick f r
+                tryPickOpt f r
 
-        let rec exists f m = 
+        let tryPick f m = tryPickOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
+
+        let rec existsOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m = 
             match m with 
             | MapEmpty -> false
-            | MapOne(k2,v2) -> f k2 v2
-            | MapNode(k2,v2,l,r,_) -> exists f l || f k2 v2 || exists f r
+            | MapOne(k2,v2) -> f.Invoke(k2, v2)
+            | MapNode(k2,v2,l,r,_) -> existsOpt f l || f.Invoke(k2, v2) || existsOpt f r
 
-        let rec forall f m = 
+        let exists f m = existsOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
+
+        let rec forallOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m = 
             match m with 
             | MapEmpty -> true
-            | MapOne(k2,v2) -> f k2 v2
-            | MapNode(k2,v2,l,r,_) -> forall f l && f k2 v2 && forall f r
+            | MapOne(k2,v2) -> f.Invoke(k2, v2)
+            | MapNode(k2,v2,l,r,_) -> forallOpt f l && f.Invoke(k2, v2) && forallOpt f r
+
+        let forall f m = forallOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
 
         let rec map f m = 
             match m with 
@@ -261,53 +269,61 @@ namespace Microsoft.FSharp.Collections
                 let r2 = map f r 
                 MapNode(k,v2,l2, r2,h)
 
-        let rec mapi f m = 
+        let rec mapiOpt (f:OptimizedClosures.FSharpFunc<_,_,_>) m = 
             match m with
             | MapEmpty -> empty
-            | MapOne(k,v) -> MapOne(k,f k v)
+            | MapOne(k,v) -> MapOne(k, f.Invoke(k, v))
             | MapNode(k,v,l,r,h) -> 
-                let l2 = mapi f l 
-                let v2 = f k v 
-                let r2 = mapi f r 
+                let l2 = mapiOpt f l 
+                let v2 = f.Invoke(k, v) 
+                let r2 = mapiOpt f r 
                 MapNode(k,v2, l2, r2,h)
 
-        let rec foldBack (f:OptimizedClosures.FSharpFunc<_,_,_,_>) m x = 
+        let mapi f m = mapiOpt (OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)) m
+
+        let rec foldBackOpt (f:OptimizedClosures.FSharpFunc<_,_,_,_>) m x = 
             match m with 
             | MapEmpty -> x
             | MapOne(k,v) -> f.Invoke(k,v,x)
             | MapNode(k,v,l,r,_) -> 
-                let x = foldBack f r x
+                let x = foldBackOpt f r x
                 let x = f.Invoke(k,v,x)
-                foldBack f l x
+                foldBackOpt f l x
 
-        let rec fold (f:OptimizedClosures.FSharpFunc<_,_,_,_>) x m  = 
+        let foldBack f m x = foldBackOpt (OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)) m x
+
+        let rec foldOpt (f:OptimizedClosures.FSharpFunc<_,_,_,_>) x m  = 
             match m with 
             | MapEmpty -> x
             | MapOne(k,v) -> f.Invoke(x,k,v)
             | MapNode(k,v,l,r,_) -> 
-                let x = fold f x l
+                let x = foldOpt f x l
                 let x = f.Invoke(x,k,v)
-                fold f x r
+                foldOpt f x r
 
-        let foldSection (comparer: IComparer<'Value>) lo hi f m x =
-            let rec foldFromTo f m x = 
+        let fold f x m = foldOpt (OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)) x m
+
+        let foldSectionOpt (comparer: IComparer<'Value>) lo hi (f:OptimizedClosures.FSharpFunc<_,_,_,_>) m x =
+            let rec foldFromTo (f:OptimizedClosures.FSharpFunc<_,_,_,_>) m x = 
                 match m with 
                 | MapEmpty -> x
                 | MapOne(k,v) ->
                     let cLoKey = comparer.Compare(lo,k)
                     let cKeyHi = comparer.Compare(k,hi)
-                    let x = if cLoKey <= 0 && cKeyHi <= 0 then f k v x else x
+                    let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke(k, v, x) else x
                     x
                 | MapNode(k,v,l,r,_) ->
                     let cLoKey = comparer.Compare(lo,k)
                     let cKeyHi = comparer.Compare(k,hi)
-                    let x = if cLoKey < 0                then foldFromTo f l x else x
-                    let x = if cLoKey <= 0 && cKeyHi <= 0 then f k v x                     else x
-                    let x = if cKeyHi < 0                then foldFromTo f r x else x
+                    let x = if cLoKey < 0                 then foldFromTo f l x else x
+                    let x = if cLoKey <= 0 && cKeyHi <= 0 then f.Invoke(k, v, x) else x
+                    let x = if cKeyHi < 0                 then foldFromTo f r x else x
                     x
            
             if comparer.Compare(lo,hi) = 1 then x else foldFromTo f m x
 
+        let foldSection (comparer: IComparer<'Value>) lo hi f m x =
+            foldSectionOpt comparer lo hi (OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)) m x
 
         let toList m = 
             let rec loop m acc = 
@@ -504,9 +520,7 @@ namespace Microsoft.FSharp.Collections
         member m.Exists(f) = MapTree.exists f tree 
         member m.Filter(f)  : Map<'Key,'Value> = new Map<'Key,'Value>(comparer ,MapTree.filter comparer f tree)
         member m.ForAll(f) = MapTree.forall f tree 
-        member m.Fold f acc =  
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            MapTree.foldBack f tree acc
+        member m.Fold f acc = MapTree.foldBack f tree acc
 
         member m.FoldSection (lo:'Key) (hi:'Key) f (acc:'z) = MapTree.foldSection comparer lo hi f tree acc 
 
@@ -694,14 +708,10 @@ namespace Microsoft.FSharp.Collections
         let map f (m:Map<_,_>) = m.Map(f)
 
         [<CompiledName("Fold")>]
-        let fold<'Key,'T,'State when 'Key : comparison> f (z:'State) (m:Map<'Key,'T>) = 
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            MapTree.fold f z m.Tree
+        let fold<'Key,'T,'State when 'Key : comparison> f (z:'State) (m:Map<'Key,'T>) = MapTree.fold f z m.Tree
 
         [<CompiledName("FoldBack")>]
-        let foldBack<'Key,'T,'State  when 'Key : comparison> f (m:Map<'Key,'T>) (z:'State) = 
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            MapTree.foldBack  f m.Tree z
+        let foldBack<'Key,'T,'State  when 'Key : comparison> f (m:Map<'Key,'T>) (z:'State) =  MapTree.foldBack  f m.Tree z
         
         [<CompiledName("ToSeq")>]
         let toSeq (m:Map<_,_>) = m |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
@@ -729,7 +739,5 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ToArray")>]
         let toArray (m:Map<_,_>) = m.ToArray()
 
-
         [<CompiledName("Empty")>]
         let empty<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>.Empty
-

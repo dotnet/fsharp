@@ -3,34 +3,24 @@
 module internal Microsoft.FSharp.Compiler.Driver 
 
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Build
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TypeChecker
 
 /// the F# project system calls this to pop up type provider security dialog if needed
-val internal runFromCommandLineToImportingAssemblies : (string -> unit) * string[] * string * string * Exiter -> unit
+val internal ProcessCommandLineArgsAndImportAssemblies : (string -> unit) * string[] * string * string * Exiter -> unit
 
 #if NO_COMPILER_BACKEND
 #else
 
-[<Class>]
-type ErrorLoggerThatAccumulatesErrors = 
-    inherit ErrorLogger
-    new : TcConfigBuilder -> ErrorLoggerThatAccumulatesErrors
-    new : TcConfig -> ErrorLoggerThatAccumulatesErrors
-    member GetMessages : unit -> (bool * string) list
-    member ProcessMessage : PhasedError * bool -> (bool * string) option
-
-
 /// fsc.exe calls this
 val mainCompile : argv : string[] * bannerAlreadyPrinted : bool * exiter : Exiter -> unit
 
+[<RequireQualifiedAccess>]
 type CompilationOutput = 
-    {
-        Errors : seq<ErrorOrWarning>
-        Warnings : seq<ErrorOrWarning>
-    }
+    { Errors : ErrorOrWarning[]
+      Warnings : ErrorOrWarning[] }
 
 type InProcCompiler = 
     new : unit -> InProcCompiler

@@ -83,7 +83,7 @@ my $TAILFLAGS = $ENV{TAILFLAGS};
 # Check for any global compiler flags
 my $ISCFLAGS = $ENV{ISCFLAGS};
 unless( defined($ISCFLAGS) ){
-  $ISCFLAGS = "-g --optimize";
+  $ISCFLAGS = " ";
 }
 
 # Filter out flags that don't make sense in FSI (e.g. --standalone)
@@ -313,7 +313,22 @@ if ($targetType == TARGET_EXE) {
       RunCommand("Marking exe with /LARGEADDRESSAWARE...","editbin.exe /LARGEADDRESSAWARE $targetName");
   }
 
-  $ExitCode = RunCommand("Running","$ENV{SIMULATOR_PIPE} $targetName $param");
+  my $sim = "";
+  if (defined($ENV{SIMULATOR_PIPE})) {
+    # replace known tokens
+    $_ = $ENV{SIMULATOR_PIPE};
+    s/^\$FSC_PIPE/$FSC_PIPE/;
+    s/^\$FSI_PIPE/$FSI_PIPE/;
+    s/^\$FSI32_PIPE/$FSI32_PIPE/;
+    s/\$ISCFLAGS/$ISCFLAGS/;
+    s/^\$CSC_PIPE/$CSC_PIPE/;
+    s/^\$VBC_PIPE/$VBC_PIPE/;
+    s/\$PLATFORM/$ENV{PLATFORM}/;
+    
+    $sim = $_;
+  }
+
+  $ExitCode = RunCommand("Running","$sim $targetName $param");
   my($DeltaTime) = time() - $StartTime;
 
   LogTime($Sources, $CompileTime, $DeltaTime) if ($TimeTests);
@@ -459,8 +474,12 @@ sub RunCommand {
 # GetSrc -- Find the source file to build
 #
 sub GetSrc() {
+  my $cwd = cwd();
+  
   # The environment SOURCE var usually defines what to compile
-  my $source = $ENV{SOURCE};
+  $_ = $ENV{SOURCE};
+  s/\$CWD/$cwd/;
+  my $source = $_;
   return($source) if defined($source);
 
   # Or if there's only one source file in the directory

@@ -5,11 +5,8 @@ namespace Internal.Utilities.FileSystem
   [<Class>]
   type internal File =
       static member SafeExists : filename:string -> bool
-      static member SafeNewFileStream : filename:string * mode:System.IO.FileMode * access:System.IO.FileAccess * share:System.IO.FileShare -> System.IO.FileStream
 
   [<Class>]
   type internal Path =
-      static member SafeGetFullPath : filename:string -> string
       static member IsInvalidDirectory : path:string -> bool
-      static member IsInvalidFilename : filename:string -> bool
       static member IsInvalidPath : path:string -> bool

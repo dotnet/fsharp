@@ -13,8 +13,14 @@ namespace Microsoft.FSharp.Collections
     module ComparisonIdentity = 
       
         /// <summary>Structural comparison.  Compare using Operators.compare.</summary>
-        val Structural<'T> : IComparer<'T> when 'T : comparison 
-        
+        val inline Structural<'T> : IComparer<'T> when 'T : comparison 
+
+#if BUILDING_WITH_LKG
+#else
+        /// <summary>Non-structural comparison.  Compare using NonStructuralComparison.compare.</summary>
+        val inline NonStructural< ^T > : IComparer< ^T > when ^T : (static member ( < ) : ^T * ^T    -> bool) and ^T : (static member ( > ) : ^T * ^T    -> bool) 
+#endif
+
         /// <summary>Compare using the given comparer function.</summary>
         /// <param name="comparer">A function to compare two values.</param>
         /// <returns>An object implementing IComparer using the supplied comparer.</returns>
@@ -24,11 +30,12 @@ namespace Microsoft.FSharp.Collections
     module HashIdentity = 
 
         /// <summary>Structural hashing.  Hash using Operators.(=) and Operators.hash.</summary>
-        
-        // inline justification: allows specialization of structural hash functions based on type
         val inline Structural<'T> : IEqualityComparer<'T>  when 'T : equality
         
-        val LimitedStructural<'T> : limit: int -> IEqualityComparer<'T>  when 'T : equality
+        /// <summary>Non-structural hashing.  Equality using NonStructuralComparison.(=) and NonStructuralComparison.hash.</summary>
+        val inline NonStructural<'T> : IEqualityComparer< ^T >  when ^T : equality and ^T  : (static member ( = ) : ^T * ^T    -> bool) 
+        
+        val inline LimitedStructural<'T> : limit: int -> IEqualityComparer<'T>  when 'T : equality
         
         /// <summary>Physical hashing (hash on reference identity of objects, and the contents of value types).  
         /// Hash using LanguagePrimitives.PhysicalEquality and LanguagePrimitives.PhysicalHash,

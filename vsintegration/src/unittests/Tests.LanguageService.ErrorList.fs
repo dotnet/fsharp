@@ -273,7 +273,7 @@ let x =
         CheckErrorList content <|
             fun errors ->
                 Assert.AreEqual(1, List.length errors)
-                assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Console.WriteLine(buffer: char []) : unit, System.Console.WriteLine(format: string, params arg: obj []) : unit, System.Console.WriteLine(value: obj) : unit, System.Console.WriteLine(value: string) : unit"
+                assertContains errors "A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Console.WriteLine(buffer: char []) : unit, System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj []) : unit, System.Console.WriteLine(value: obj) : unit, System.Console.WriteLine(value: string) : unit"
 
     [<Test>]
     member public this.``InvalidMethodOverload2``() = 
@@ -468,7 +468,7 @@ but here has type
         // dummy Type Provider exposes a parametric type (N1.T) that takes 2 static params (string * int) 
         // but here as you can see it's give (string)
         let fileContent = """type foo = N1.T< const "Hello World">"""
-        let expectedStr = "The static parameter 'ParamIgnored' of the provided type 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."
+        let expectedStr = "The static parameter 'ParamIgnored' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
             addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
@@ -578,14 +578,6 @@ but here has type
         let file = OpenFile(project,"File1.fs")            
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
         VerifyErrorListContainedExpectedStr("nonexistent",project)
-
-    [<Test>]
-    member public this.``ErrorReporting.WrongPreprocessorIf``() =  
-        let fileContent = """
-            #light
-            #if !!!!COMPILED
-            #endif"""
-        this.VerifyErrorListContainedExpectedString(fileContent,"#if")
 
     [<Test>]
     member public this.``BackgroundComplier``() = 

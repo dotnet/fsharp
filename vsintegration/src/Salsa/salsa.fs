@@ -230,9 +230,9 @@ module internal Salsa =
                  sources = capturedSources |> Array.toList }
             let Canonicalize (filename:string) = 
                 if System.IO.Path.IsPathRooted(filename) then
-                    Internal.Utilities.FileSystem.Path.SafeGetFullPath(filename)
+                    System.IO.Path.GetFullPath(filename)
                 else
-                    Internal.Utilities.FileSystem.Path.SafeGetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(project.FullPath),filename))
+                    System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(project.FullPath),filename))
             { flags = result.flags 
               sources = result.sources |> List.map Canonicalize }
             
@@ -262,7 +262,7 @@ module internal Salsa =
         let AreSame f1 f2 = 
             let result = 
                    System.String.Compare(f1,f2,StringComparison.CurrentCultureIgnoreCase)=0
-                || System.String.Compare(Internal.Utilities.FileSystem.Path.SafeGetFullPath(f1),Internal.Utilities.FileSystem.Path.SafeGetFullPath(f2),StringComparison.CurrentCultureIgnoreCase)=0
+                || System.String.Compare(System.IO.Path.GetFullPath(f1),System.IO.Path.GetFullPath(f2),StringComparison.CurrentCultureIgnoreCase)=0
             result                                    
 
     type MSBuildProjectSite(projectfile,configurationFunc,platformFunc) = 
@@ -1236,7 +1236,7 @@ module internal Salsa =
                 // Full check.                    
                 let sink = new AuthoringSink(BackgroundRequestReason.FullTypeCheck, 0, 0, maxErrors) 
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(0,0,new TokenInfo(),file.CombinedLines, snapshot, MethodTipMiscellany.Typing, Internal.Utilities.FileSystem.Path.SafeGetFullPath(file.Filename), BackgroundRequestReason.FullTypeCheck, view,sink,null,file.Source.ChangeCount,false)
+                let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(0,0,new TokenInfo(),file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath(file.Filename), BackgroundRequestReason.FullTypeCheck, view,sink,null,file.Source.ChangeCount,false)
                 pr.ResultSink.add_OnErrorAdded(
                     OnErrorAddedHandler(fun path subcategory msg context severity -> 
                                 project.Errors <- new Error(path, subcategory, msg, context, severity) :: project.Errors))
@@ -1266,7 +1266,7 @@ module internal Salsa =
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                     let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(
                                                     cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing,
-                                                    Internal.Utilities.FileSystem.Path.SafeGetFullPath(file.Filename),
+                                                    System.IO.Path.GetFullPath(file.Filename),
                                                     parseReason, view, sink, null, file.Source.ChangeCount, false)
                                                    
                     file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
@@ -1323,7 +1323,7 @@ module internal Salsa =
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                     let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(
                                                     cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing,
-                                                    Internal.Utilities.FileSystem.Path.SafeGetFullPath(file.Filename),
+                                                    System.IO.Path.GetFullPath(file.Filename),
                                                     BackgroundRequestReason.MatchBraces, view, sink, null, file.Source.ChangeCount, false)
                                                    
                     file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=false)
@@ -1350,7 +1350,7 @@ module internal Salsa =
                         let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                         let pr = project.Solution.Vs.LanguageService.CreateBackgroundRequest(
                                                         cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.ExplicitlyInvokedViaCtrlShiftSpace,
-                                                        Internal.Utilities.FileSystem.Path.SafeGetFullPath(file.Filename),
+                                                        System.IO.Path.GetFullPath(file.Filename),
                                                         BackgroundRequestReason.MethodTip, view, sink, null, file.Source.ChangeCount, false)
                                                    
                         file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
@@ -1447,7 +1447,7 @@ module internal Salsa =
                   let ti   = new TokenInfo ()
                   let sink = new AuthoringSink (BackgroundRequestReason.Goto, row, col, maxErrors)
                   let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                  let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, Internal.Utilities.FileSystem.Path.SafeGetFullPath file.Filename, BackgroundRequestReason.Goto, view, sink, null, file.Source.ChangeCount, false)
+                  let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.Goto, view, sink, null, file.Source.ChangeCount, false)
                   file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
               (currentAuthoringScope :?> FSharpScope).GotoDefinition (view, row, col)
                  
@@ -1459,7 +1459,7 @@ module internal Salsa =
                 let ti   = new TokenInfo ()
                 let sink = new AuthoringSink (BackgroundRequestReason.Goto, row, col, maxErrors)
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, Internal.Utilities.FileSystem.Path.SafeGetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
+                let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
                 file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
               let keyword = ref None
               let span = new Microsoft.VisualStudio.TextManager.Interop.TextSpan(iStartIndex=col,iStartLine=row,iEndIndex=col,iEndLine=row)
@@ -1475,7 +1475,7 @@ module internal Salsa =
               let ti   = new TokenInfo ()
               let sink = new AuthoringSink (BackgroundRequestReason.FullTypeCheck, row, col, maxErrors)
               let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-              let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, Internal.Utilities.FileSystem.Path.SafeGetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
+              let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
               project.Solution.Vs.LanguageService.ExecuteBackgroundRequest(pr, file.Source) 
               match project.Solution.Vs.LanguageService.UntypedParseScope with
               | Some(scope) ->
@@ -1498,7 +1498,7 @@ module internal Salsa =
               let ti   = new TokenInfo ()
               let sink = new AuthoringSink (BackgroundRequestReason.FullTypeCheck, row, col, maxErrors)
               let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-              let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, Internal.Utilities.FileSystem.Path.SafeGetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
+              let pr   = project.Solution.Vs.LanguageService.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.FullTypeCheck, view, sink, null, file.Source.ChangeCount, false)
               project.Solution.Vs.LanguageService.ExecuteBackgroundRequest(pr, file.Source) 
               match project.Solution.Vs.LanguageService.UntypedParseScope with
               | Some(scope) ->

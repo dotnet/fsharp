@@ -148,7 +148,7 @@ type Project() =
         let compileItems = [@"Folder\foo.fs"; @"bar.fs"; ]
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
             this.EnsureCausesNotification(project, fun() ->
-                let f = Internal.Utilities.FileSystem.Path.SafeGetFullPath(Path.Combine(project.ProjectFolder, @"..\qux.fs"))
+                let f = System.IO.Path.GetFullPath(Path.Combine(project.ProjectFolder, @"..\qux.fs"))
                 project.AddLinkedItem(project, [| f |], Array.create 1 (new VSADDRESULT())) |> ValidateOK
             )
             let expect = Tree("References", ANYTREE,
@@ -170,7 +170,7 @@ type Project() =
         this.MakeProjectAndDoWithProjectFile(compileItems, [], "", (fun project fileName ->
             let folder = TheTests.FindNodeWithCaption(project, "Folder")
             this.EnsureCausesNotification(project, fun() ->
-                let f = Internal.Utilities.FileSystem.Path.SafeGetFullPath(Path.Combine(project.ProjectFolder, @"..\qux.fs"))
+                let f = System.IO.Path.GetFullPath(Path.Combine(project.ProjectFolder, @"..\qux.fs"))
                 project.AddLinkedItem(folder, [| f |], Array.create 1 (new VSADDRESULT())) |> ValidateOK
             )
             let expect = Tree("References", ANYTREE,
@@ -193,7 +193,7 @@ type Project() =
             this.EnsureCausesNotification(project, fun() ->
                 // Note: this is not the same code path as the UI, but it is close
                 project.MoveNewlyAddedFileToBottomOfGroup (fun () ->
-                    let f = Internal.Utilities.FileSystem.Path.SafeGetFullPath(Path.Combine(project.ProjectFolder, @"..\qux.resx"))
+                    let f = System.IO.Path.GetFullPath(Path.Combine(project.ProjectFolder, @"..\qux.resx"))
                     project.AddLinkedItem(project, [| f |], Array.create 1 (new VSADDRESULT())) |> ValidateOK
                 )
             )

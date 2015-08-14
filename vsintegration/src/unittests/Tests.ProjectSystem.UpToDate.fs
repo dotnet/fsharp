@@ -327,6 +327,58 @@ type UpToDate() =
             Assert.IsFalse(config.IsFastUpToDateCheckEnabled())
             ))
 
+    [<Test>]
+    member public this.UTDOptionsFlags () =
+        this.MakeProjectAndDo(["file1.fs"], [], "", (fun project ->
+            let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
+            let debugConfigx86 = project.ConfigProvider.GetProjectConfiguration(configNameDebugx86)            
+            let buildableConfig = 
+                match debugConfigx86.get_BuildableProjectCfg() with
+                | 0, bc -> bc
+                | _ -> failwith "get_BuildableProjectCfg failed"
+
+            let testFlag flag expected =            
+                let supported = Array.zeroCreate<int> 1
+                let ready = Array.zeroCreate<int> 1
+                buildableConfig.QueryStartUpToDateCheck(flag, supported, ready) |> ignore
+                Assert.IsTrue(supported.[0] = expected)
+                Assert.IsTrue(ready.[0] = expected)
+
+            [ VSConstants.VSUTDCF_DTEEONLY, 1
+              VSConstants.VSUTDCF_PACKAGE, 0
+              VSConstants.VSUTDCF_PRIVATE, 1
+              VSConstants.VSUTDCF_REBUILD, 1 ]
+            |> List.iter (fun (flag, expected) -> testFlag flag expected)
+          ))
+
+    [<Test>]
+    member public this.UTDOptionsFlagsUTDDisabled () =
+        this.MakeProjectAndDo(["file1.fs"], [],  @"
+                <PropertyGroup>
+                    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+                </PropertyGroup>
+            ", (fun project ->
+            let configNameDebugx86 = ConfigCanonicalName("Debug", "x86")
+            let debugConfigx86 = project.ConfigProvider.GetProjectConfiguration(configNameDebugx86)            
+            let buildableConfig = 
+                match debugConfigx86.get_BuildableProjectCfg() with
+                | 0, bc -> bc
+                | _ -> failwith "get_BuildableProjectCfg failed"
+
+            let testFlag flag expected =            
+                let supported = Array.zeroCreate<int> 1
+                let ready = Array.zeroCreate<int> 1
+                buildableConfig.QueryStartUpToDateCheck(flag, supported, ready) |> ignore
+                Assert.AreEqual(supported.[0], expected)
+                Assert.AreEqual(ready.[0], expected)
+
+            [ VSConstants.VSUTDCF_DTEEONLY, 1
+              VSConstants.VSUTDCF_PACKAGE, 0
+              VSConstants.VSUTDCF_PRIVATE, 0
+              VSConstants.VSUTDCF_REBUILD, 0 ]
+            |> List.iter (fun (flag, expected) -> testFlag flag expected)
+          ))
+
 [<TestFixture>]
 type ``UpToDate PreserveNewest`` () = 
 
@@ -367,7 +419,7 @@ type ``UpToDate PreserveNewest`` () =
 
         let ``a newer version of output file is ok`` =
             let u, logs = test ("before.doc", Some before) ("after.doc", Some now)
-            Assert.True(u)
+            Assert.IsTrue(u)
             logs |> AssertEqual []
 
         let ``stale output file -> not up-to-date and log`` =

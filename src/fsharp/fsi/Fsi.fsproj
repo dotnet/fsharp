@@ -21,6 +21,7 @@
     <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v3.5</TargetFrameworkVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <Win32Resource>fsi.res</Win32Resource>
   </PropertyGroup>
   <ItemGroup>
     <FsSrGen Include="FSIstrings.txt">

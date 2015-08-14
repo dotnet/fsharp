@@ -27,7 +27,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
         }
 
-        #region ICustomTypeDescriptor
         public virtual AttributeCollection GetAttributes() 
         {
             AttributeCollection col = TypeDescriptor.GetAttributes(this, true);
@@ -107,7 +106,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return this.GetType().FullName;
         }
-
-        #endregion ICustomTypeDescriptor
     }
 }

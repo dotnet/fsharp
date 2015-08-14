@@ -1,13 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\..\..\..\src</FSharpSourcesRoot>
-    <vsFrameworkLatest>Microsoft.VisualStudio.Shell.12.0</vsFrameworkLatest>
-    <vsLanguageServiceLatest>Microsoft.VisualStudio.Package.LanguageService.12.0</vsLanguageServiceLatest>
     <ProjectLanguage>FSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <VsSdkTargetsDir>$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\VSSDK</VsSdkTargetsDir>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -24,12 +23,10 @@
     <VSCTDefinitions>FX_ATLEAST_45</VSCTDefinitions> 
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <RCResourceFile>ProjectResources.rc</RCResourceFile>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <ItemGroup>
-    <RCResourceFile Include="..\..\devdiv\vsintegration\src\vs\FsPkgs\FSharp.Project\FS\ProjectResources.rc">
-      <Link>ProjectResources.rc</Link>
-    </RCResourceFile>
     <VSCTCompile Include="MenusAndCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx">
         <MergeWithCTO>true</MergeWithCTO>
@@ -54,8 +51,7 @@
     <Reference Include="VSLangProj" />
     <Reference Include="VSLangProj80" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="$(vsFrameworkLatest)" />
-    <Reference Include="Microsoft.VisualStudio.Threading" />
+    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
@@ -63,22 +59,19 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Design" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.v12.0" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Design" />
@@ -92,7 +85,6 @@
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="Microsoft.VisualStudio.Shell.UI.Internal, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
       <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
       <Name>FSharp.LanguageService.Compiler</Name>
@@ -138,5 +130,11 @@
           SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')"
           DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" 
       />
+  </Target>
+  <PropertyGroup>
+    <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
+  </PropertyGroup>
+  <Target Name="BeforeBuild">
+      <Exec Command='"$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe" /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)' />
   </Target>
 </Project>

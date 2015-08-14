@@ -66,6 +66,7 @@ module SessionsProperties =
     let mutable useAnyCpuVersion = false
     let mutable fsiArgs = "--optimize"
     let mutable fsiShadowCopy = true
+    let mutable fsiDebugMode = false
 
 // This code pre-dates the events/object system.
 // Later: Tidy up.
@@ -140,6 +141,7 @@ type Session =
     abstract Exited          : IObservable<EventArgs> 
     abstract Alive           : bool
     abstract ProcessID       : int
+    abstract ProcessArgs     : string
     abstract Kill            : unit -> unit
 #if FSI_SERVER_INTELLISENSE
     abstract Completions     : string -> string[]
@@ -152,17 +154,18 @@ let catchAll (ie: IEvent<_,_>) : IEvent<_> =
     ie.Add(fun x -> try w(x) with err -> ignore(System.Windows.Forms.MessageBox.Show(err.ToString())); ());
     e
 
+let fsiExeName () = if SessionsProperties.useAnyCpuVersion then "fsianycpu.exe" else "fsi.exe"
 let determineFsiRelativePath () =
     let thisAssembly : System.Reflection.Assembly = typeof<Microsoft.FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
     let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
     // Use the quick-development path if available    
-    Path.Combine(thisAssemblyDirectory,"fsi.exe")        
+    Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
 let determineFsiPath () =    
     // Use the quick-development path if available
     let fsiRelativePath       = determineFsiRelativePath()        
     let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with | Some(s) -> s | None -> ""
-    let fsiRegistryPath = Path.Combine(fsbin, if SessionsProperties.useAnyCpuVersion then "fsianycpu.exe" else "fsi.exe")
+    let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
     // Choose relative path, if it exists (for developers), otherwise, the installed path.    
     if  File.Exists(fsiRelativePath) then
         fsiRelativePath
@@ -225,11 +228,26 @@ let fsiStartInfo channelName =
     // Send codepage preferences to the FSI.
     // We also need to send fsi.exe the locale of the VS process
     let inCP,outCP = System.Text.Encoding.UTF8.CodePage,System.Text.Encoding.UTF8.CodePage
-    let procArgs = sprintf "--fsi-server-output-codepage:%d --fsi-server-input-codepage:%d --fsi-server-lcid:%d --fsi-server:%s %s" outCP inCP (System.Threading.Thread.CurrentThread.CurrentUICulture.LCID) channelName (!settings).startupFlags
-    let shadowCopy = 
-        let state = if SessionsProperties.fsiShadowCopy then "+" else "-"
-        sprintf "--shadowcopyreferences%s" state
-    procInfo.Arguments <- procArgs + " " + SessionsProperties.fsiArgs + " " + shadowCopy // procArgs + user settable args
+
+    let addBoolOption name value args = sprintf "%s --%s%s" args name (if value then "+" else "-")
+    let addStringOption name value args = sprintf "%s --%s:%O" args name value
+    
+    let procArgs =
+        ""
+        |> addStringOption "fsi-server-output-codepage" outCP
+        |> addStringOption "fsi-server-input-codepage" inCP
+        |> addStringOption "fsi-server-lcid" System.Threading.Thread.CurrentThread.CurrentUICulture.LCID
+        |> addStringOption "fsi-server" channelName
+        |> (+) <| sprintf " %s" (!settings).startupFlags
+        |> (+) <| sprintf " %s" SessionsProperties.fsiArgs
+        |> addBoolOption "shadowcopyreferences" SessionsProperties.fsiShadowCopy
+        |> (fun args -> if SessionsProperties.fsiDebugMode then
+                            // for best debug experience, need optimizations OFF and debug info ON
+                            // tack these on the the end, they will override whatever comes earlier
+                            args |> addBoolOption "optimize" false |> addBoolOption "debug" true
+                        else args)
+
+    procInfo.Arguments <- procArgs
     procInfo.CreateNoWindow <- true;
     procInfo.UseShellExecute <- false;
     procInfo
@@ -272,9 +290,8 @@ let fsiProcess (procInfo:ProcessStartInfo) =
     // Fix 982: Force input to be written in UTF8 regardless of the apparent encoding.
     let inputWriter = new System.IO.StreamWriter(cmdProcess.StandardInput.BaseStream, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier=false))
     inputWriter.AutoFlush <- false;
-    //System.Windows.Forms.MessageBox.Show (sprintf "sending in encoding %O=%d/%d, code page = %d\n" inputWriter.Encoding inputWriter.Encoding.CodePage  inputWriter.Encoding.WindowsCodePage   cmdProcess.StandardInput.Encoding.CodePage) |> ignore
+
     let send str = 
-        //System.Windows.Forms.MessageBox.Show (sprintf "sending '%s'" str) |> ignore
         inputWriter.WriteLine(str:string); 
         inputWriter.Flush()
     inE.Add(send);
@@ -366,6 +383,7 @@ let createSessionProcess () =
         member x.Exited      = exitedE      
         member x.Alive       = not proc.HasExited
         member x.ProcessID   = proc.Id
+        member x.ProcessArgs = procInfo.Arguments
         member x.Kill()         = killProcess outW proc
 #if FSI_SERVER_INTELLISENSE
         member x.Completions(s) = completions(s:string)
@@ -419,6 +437,11 @@ let createSessions () =
         match !sessionR with
         | None -> -1 (* -1 assumed to never be a valid process ID *)
         | Some session -> session.ProcessID
+
+    let processArgs() =
+        match !sessionR with
+        | None -> ""
+        | Some session -> session.ProcessArgs
       
     let interrupt() =
         match !sessionR with
@@ -444,6 +467,7 @@ let createSessions () =
         member x.Error          = upcast errE
         member x.Alive          = alive()
         member x.ProcessID      = processId()
+        member x.ProcessArgs    = processArgs()
         member x.Kill()         = kill()
         member x.Restart()      = restart()
         member x.Exited         = upcast exitedE

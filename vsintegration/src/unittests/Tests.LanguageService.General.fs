@@ -65,7 +65,7 @@ type GeneralTests() =
 
     let publicTypesInAsm(asmfile : string) =
         printfn "Validating assembly '%s'" asmfile
-        let codeBase = (new Uri(Assembly.GetExecutingAssembly().CodeBase)).LocalPath |> Path.GetDirectoryName
+        let codeBase = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
         let asm = Assembly.LoadFrom(Path.Combine(codeBase, asmfile))
 
         // For public types that have ComVisible, validate that the constructor is internal
@@ -167,7 +167,7 @@ type GeneralTests() =
         let lsbase = publicTypesInAsm @"FSharp.LanguageService.Base.dll"
         Assert.AreEqual(0, lsbase)
         let psbase = publicTypesInAsm @"FSharp.ProjectSystem.Base.dll"
-        Assert.AreEqual(14, psbase)
+        Assert.AreEqual(17, psbase)
         let fsi = publicTypesInAsm @"FSharp.VS.FSI.dll"
         Assert.AreEqual(1, fsi)
 
@@ -175,7 +175,7 @@ type GeneralTests() =
     member public this.``PublicSurfaceArea.DotNetReflectionAndTypeProviders``() =
         let tp = publicTypesInAsm @"FSharp.Data.TypeProviders.dll"
         Assert.AreEqual(1, tp)  // the 'DataProviders' type that is decorated with [<TypeProvider>] must be public\
-        let curDir = (new Uri(Assembly.GetExecutingAssembly().CodeBase)).LocalPath |> Path.GetDirectoryName
+        let curDir = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
         let script = """
 open Microsoft.FSharp.Core.CompilerServices
 

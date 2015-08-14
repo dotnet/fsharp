@@ -535,7 +535,7 @@ type internal LineTokenizer(text:string,
     let lexbuf = UnicodeLexing.StringAsLexbuf text
     
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
-    let fsx = Build.IsScript(filename)
+    let fsx = CompileOps.IsScript(filename)
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
@@ -646,7 +646,7 @@ type internal LineTokenizer(text:string,
                   | RQUOTE_DOT (s,raw) -> 
                       delayToken(DOT, rightc, rightc)
                       false, (RQUOTE (s,raw), leftc, rightc - 1)
-                  | INFIX_COMPARE_OP (Lexfilter.TyparsCloseOp(greaters,afterOp) as opstr) -> 
+                  | INFIX_COMPARE_OP (LexFilter.TyparsCloseOp(greaters,afterOp) as opstr) -> 
                       match afterOp with
                       | None -> ()
                       | Some tok -> delayToken(tok, leftc + greaters.Length, rightc)
@@ -733,6 +733,7 @@ type internal LineTokenizer(text:string,
                     | true,"I" 
                     | true,"load" 
                     | true,"time" 
+                    | true,"dbgbreak" 
                     | true,"cd" 
 #if DEBUG
                     | true,"terms" 

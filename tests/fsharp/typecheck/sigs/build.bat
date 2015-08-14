@@ -5,8 +5,46 @@ REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
 
 call %~d0%~p0..\..\..\config.bat
 
+call ..\..\single-neg-test.bat neg93
+@if ERRORLEVEL 1 goto Error
+
+"%FSC%" --noframework -r:"%FSCOREDLLPATH%" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Core.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Data.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Numerics.dll" -a -o:pos21.dll  pos21.fs
+@if ERRORLEVEL 1 goto Error
+
+call ..\..\single-neg-test.bat neg92
+@if ERRORLEVEL 1 goto Error
+
 call ..\..\single-neg-test.bat neg91
 @if ERRORLEVEL 1 goto Error
+
+"%FSC%" %fsc_flags% --target:exe -o:pos20.exe  pos20.fs 
+@if ERRORLEVEL 1 goto Error
+
+"%PEVERIFY%" pos20.exe
+@if ERRORLEVEL 1 goto Error
+
+pos20.exe
+@if ERRORLEVEL 1 goto Error
+
+"%FSC%" %fsc_flags% --target:exe -o:pos19.exe  pos19.fs 
+@if ERRORLEVEL 1 goto Error
+
+"%PEVERIFY%" pos19.exe
+@if ERRORLEVEL 1 goto Error
+
+pos19.exe
+@if ERRORLEVEL 1 goto Error
+
+
+"%FSC%" %fsc_flags% --target:exe -o:pos18.exe  pos18.fs 
+@if ERRORLEVEL 1 goto Error
+
+"%PEVERIFY%" pos18.exe
+@if ERRORLEVEL 1 goto Error
+
+pos18.exe
+@if ERRORLEVEL 1 goto Error
+
 
 "%FSC%" %fsc_flags% --target:exe -o:pos16.exe  pos16.fs 
 @if ERRORLEVEL 1 goto Error
@@ -15,6 +53,15 @@ call ..\..\single-neg-test.bat neg91
 @if ERRORLEVEL 1 goto Error
 
 pos16.exe
+@if ERRORLEVEL 1 goto Error
+
+"%FSC%" %fsc_flags% --target:exe -o:pos17.exe  pos17.fs 
+@if ERRORLEVEL 1 goto Error
+
+"%PEVERIFY%" pos17.exe
+@if ERRORLEVEL 1 goto Error
+
+pos17.exe
 @if ERRORLEVEL 1 goto Error
 
 "%FSC%" %fsc_flags% --target:exe -o:pos15.exe  pos15.fs 
@@ -478,7 +525,6 @@ call ..\..\single-neg-test.bat neg35
 
 "%FSC%" %fsc_flags% -a -o:pos05.dll  pos05.fs
 @if ERRORLEVEL 1 goto Error
-
 
 :Ok
 echo Built fsharp %~f0 ok.

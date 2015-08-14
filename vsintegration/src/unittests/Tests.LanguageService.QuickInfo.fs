@@ -204,6 +204,16 @@ type QuickInfoTests() =
             atStart = true,
             f = (fun ((text, _), _) -> printfn "actual %s" text; Assert.IsFalse(text.Contains "member Print1"))
             )
+
+    [<Test>]
+    member public this.``QuickInfo.HideBaseClassMembersTP``() =
+        let fileContents = "type foo = HiddenMembersInBaseClass.HiddenBaseMembersTP(*Marker*)"
+        
+        this.AssertQuickInfoContainsAtStartOfMarker(
+            fileContents,
+            marker = "MembersTP(*Marker*)",
+            expected = "type HiddenBaseMembersTP =\n  inherit TPBaseTy\n  member ShowThisProp : unit",
+            addtlRefAssy = [System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     member public this.``QuickInfo.OverriddenMethods``() =
@@ -466,7 +476,7 @@ type QuickInfoTests() =
         let fileContents = """ 
                                 let t = "a".Split('c')"""
 
-        this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "Spl", "params separator")
+        this.AssertQuickInfoContainsAtEndOfMarker (fileContents, "Spl", "[<System.ParamArray>] separator")
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -919,7 +929,7 @@ type QuickInfoTests() =
                 type A() =
                     static member Foo([<System.ParamArrayAttribute>] a : int[]) = ()
                 let r = A.Foo(42)""" ,
-            "type A","params a:"    )
+            "type A","[<ParamArray>] a:"    )
 
     [<Test>]
     member public this.``ParamsArrayArgument.OnMethod``() =        
@@ -928,7 +938,7 @@ type QuickInfoTests() =
                 type A() =
                     static member Foo([<System.ParamArrayAttribute>] a : int[]) = ()
                 let r = A.Foo(42)""" ,
-            "A.Foo","params a:"    )
+            "A.Foo","[<System.ParamArray>] a:"    )
           
     [<Test>]
     member public this.``Regression.AccessorMutator.Bug4903e``() =        
@@ -2585,7 +2595,7 @@ query."
                                 /// use Set as the type name of UoM
                                 type Set
 
-                                let v1 = [1.0<Set> .. 2.0<Set> .. 5.0<Set>] |> Seq.nth 1
+                                let v1 = [1.0<Set> .. 2.0<Set> .. 5.0<Set>] |> Seq.item 1
 
                                 (if v1 = 3.0<Set> then 0 else 1) |> ignore
     
@@ -2856,7 +2866,7 @@ query."
     
                                 myString "myString"(*Marker8*)
                                 |> Seq.filter (fun c -> int c > 75)
-                                |> Seq.nth 0
+                                |> Seq.item 0
                                 |> (=) 'e'(*Marker6*)
                                 |> ignore"""
         this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker fileContent "(*Marker1*)" "BigInteger"
@@ -2942,7 +2952,7 @@ query."
                                Ex1(value(*Marker6*) = v) -> ()
 
                              //Static parameters of type providers
-                             let provType = N1.T<Param1(*Marker7*)="hello", ParamIgnored(*Marker8*)=10>
+                             type provType = N1.T<Param1(*Marker7*)="hello", ParamIgnored(*Marker8*)=10>
                              """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Marker1*)", "x1 param!")

@@ -91,6 +91,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<Literal>]
         let v40 = "v4.0"
         [<Literal>]
+        let v45 = "v4.5"
+        [<Literal>]
         let NETCore = ".NETCore"
         [<Literal>]
         let NETPortable = ".NETPortable"
@@ -119,6 +121,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             seq {
                 yield! listReferenceFoldersForPlatform (Path.Combine(NETFramework, v20))
                 yield! listReferenceFoldersForPlatform (Path.Combine(NETFramework, v40))
+                yield! listReferenceFoldersForPlatform (Path.Combine(NETFramework, v45))
                 yield! listReferenceFoldersForPlatform NETCore
                 yield! listReferenceFoldersForPlatform NETPortable
             }
@@ -250,7 +253,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<Literal>]
         let AddReferenceAssemblyPageDialogNoItemsText = "AddReferenceAssemblyPageDialogNoItemsText";
         [<Literal>]
-        let FSharpCoreVersionIsNotCompatibleWithDev11 = "FSharpCoreVersionIsNotCompatibleWithDev11";
+        let FSharpCoreVersionIsNotLegacyCompatible = "FSharpCoreVersionIsNotLegacyCompatible";
 
 
         let thisAssembly = typeof<DummyTypeInThisAssembly>.Assembly 
@@ -387,7 +390,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 #endif
 
     module internal Attributes = 
-        //[<assembly: System.Security.SecurityTransparent>]
 #if NO_ASSEM_ATTRS_YET    
         //
         // General Information about an assembly is controlled through the following 

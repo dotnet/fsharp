@@ -15,6 +15,7 @@ do ()
 
 [<AutoOpen>]
 module Utils = 
+    let (|StartsWith|_|) p (s:string) = if s.StartsWith(p) then Some() else None
     let mkNamespace (name,typ:System.Type) = 
         { new IProvidedNamespace with
           member this.NamespaceName = name
@@ -40,6 +41,11 @@ module Utils =
                 member __.ConstructorArguments = upcast [| CustomAttributeTypedArgument(typeof<string>, msg)  |]
                 member __.NamedArguments = upcast [| |] }
 
+    let mkAllowNullLiteralValueAttributeData(value: bool) = 
+        { new CustomAttributeData() with 
+                member __.Constructor =  typeof<Microsoft.FSharp.Core.AllowNullLiteralAttribute>.GetConstructors().[0]
+                member __.ConstructorArguments = upcast [| CustomAttributeTypedArgument(typeof<bool>, value)  |]
+                member __.NamedArguments = upcast [| |] }
 
 type public Runtime() =
     static member Id x = x
@@ -90,6 +96,15 @@ type public GlobalNamespaceProvider() =
         member this.Invalidate = invalidation.Publish
         member this.GetGeneratedAssemblyContents(assembly) = failwith "GetGeneratedAssemblyContents"
 
+#if USE_IMPLICIT_ITypeProvider2
+    member this.GetStaticParametersForMethod _ = [||]
+    member this.ApplyStaticArgumentsForMethod(_,_,_) = raise <| System.InvalidOperationException()
+#else
+    interface ITypeProvider2 with
+        member this.GetStaticParametersForMethod _ = [||]
+        member this.ApplyStaticArgumentsForMethod(_,_,_) = raise <| System.InvalidOperationException()
+#endif
+
 
 
 [<TypeProvider>]
@@ -99,6 +114,32 @@ type public Provider() =
     let rootNamespace = "FSharp.HelloWorld"
     let nestedNamespaceName1 = "FSharp.HelloWorld.NestedNamespace1"
     let nestedNamespaceName2 = "FSharp.HelloWorld.Nested.Nested.Nested.Namespace2"
+
+
+    // Test provision of erase methods with static parameters
+    let helloWorldMethodWithStaticParameters =
+        MemoizationTable(fun (isStatic, enclType, ty, nm, n:int) ->
+           TypeBuilder.CreateMethod(enclType, nm, ty, isStatic=isStatic, parameters=[| for i in 1..n -> TypeBuilder.CreateParameter("x" +  string i,ty) |]) :> MethodBase)
+
+    let helloWorldMethodsWithStaticParametersUninstantiated enclType =
+         [| yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticCharParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticBoolParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticSByteParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticInt16Parameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticInt32Parameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticOptionalInt32Parameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticInt64Parameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticByteParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticUInt16Parameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(true,enclType,typeof<obj>,"HelloWorldStaticMethodWithStaticUInt32Parameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(true,enclType,typeof<obj>,"HelloWorldStaticMethodWithStaticUInt64Parameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticDayOfWeekParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticStringParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticSingleParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticDoubleParameter",0) :> MemberInfo 
+            yield helloWorldMethodWithStaticParameters.Apply(false,enclType,typeof<obj>,"HelloWorldInstanceMethodWithStaticDecimalParameter",0) :> MemberInfo 
+         |]
+
     // Test provision of an erased class 
     let mkHelloWorldType namespaceName className baseType =
         let rec allMembers = 
@@ -184,6 +225,7 @@ type public Provider() =
                    yield TypeBuilder.CreateMethod(theType ,"TryWithSmokeTest2",typeof<bool>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    yield TypeBuilder.CreateMethod(theType ,"TryWithSmokeTest3",typeof<bool>, isStatic=true, parameters=[|  |]) :> MemberInfo 
                    
+                   yield! helloWorldMethodsWithStaticParametersUninstantiated theType
                    yield (theNestedType :> _)
                    yield TypeBuilder.CreateConstructor(theType,(fun _ -> [| |])) :> MemberInfo |]  
 
@@ -192,10 +234,14 @@ type public Provider() =
                 [| for (propertyName, propertyType) in  [for i in 1 .. 2 -> ("StaticProperty"+string i, (if i = 1 then typeof<string> else typeof<int>)) ] do 
                        let prop = TypeBuilder.CreateSyntheticProperty(theNestedType,propertyName,propertyType,isStatic=true) 
                        yield! TypeBuilder.JoinPropertiesIntoMemberInfos [prop]
-                   yield TypeBuilder.CreateConstructor(theNestedType,(fun _ -> [| |])) :> MemberInfo |]  
+                   yield TypeBuilder.CreateConstructor(theNestedType,(fun _ -> [| |])) :> MemberInfo
+                    |]  
 
-        and theType = TypeBuilder.CreateSimpleType(TypeContainer.Namespace(modul, namespaceName),className,members=allMembers,baseType=baseType)
-        and theNestedType = TypeBuilder.CreateSimpleType(TypeContainer.Type(theType),"NestedType",members=allMembersOfNestedType)
+        and theType = TypeBuilder.CreateSimpleType(TypeContainer.Namespace(modul, namespaceName),className,members=allMembers,baseType=baseType, 
+                                                   getCustomAttributes=(fun () -> [| mkAllowNullLiteralValueAttributeData(false) |]))
+
+        and theNestedType = TypeBuilder.CreateSimpleType(TypeContainer.Type(theType),"NestedType",members=allMembersOfNestedType, 
+                                                         getCustomAttributes=(fun () -> [| mkAllowNullLiteralValueAttributeData(true) |]))
 
         theType
     let helloWorldType = mkHelloWorldType rootNamespace "HelloWorldType" (typeof<obj>)
@@ -230,6 +276,8 @@ type public Provider() =
                          let prop = TypeBuilder.CreateSyntheticProperty(theType,propertyName,propertyType,isStatic=true) 
                          yield! TypeBuilder.JoinPropertiesIntoMemberInfos [prop]
                      yield (theNestedType :> _)
+                     // Note these are methods taking static parameters inside a type taking static parameters
+                     yield! helloWorldMethodsWithStaticParametersUninstantiated theType
                      yield TypeBuilder.CreateConstructor(theType,(fun _ -> [| |])) :> MemberInfo  |]
 
           and allMembersOfNestedType = 
@@ -245,7 +293,6 @@ type public Provider() =
 
           theType)
 
-    let helloWorldTypeWithStaticParameterUninstantiated = helloWorldTypeWithStaticParameters.Apply("HelloWorldTypeWithStaticParameter",1)
     let helloWorldTypeWithStaticCharParameterUninstantiated = helloWorldTypeWithStaticParameters.Apply("HelloWorldTypeWithStaticCharParameter",1)
     let helloWorldTypeWithStaticBoolParameterUninstantiated = helloWorldTypeWithStaticParameters.Apply("HelloWorldTypeWithStaticBoolParameter",1)
     let helloWorldTypeWithStaticSByteParameterUninstantiated = helloWorldTypeWithStaticParameters.Apply("HelloWorldTypeWithStaticSByteParameter",1)
@@ -262,6 +309,7 @@ type public Provider() =
     let helloWorldTypeWithStaticSingleParameterUninstantiated = helloWorldTypeWithStaticParameters.Apply("HelloWorldTypeWithStaticSingleParameter",1)
     let helloWorldTypeWithStaticDoubleParameterUninstantiated = helloWorldTypeWithStaticParameters.Apply("HelloWorldTypeWithStaticDoubleParameter",1)
     let helloWorldTypeWithStaticDecimalParameterUninstantiated = helloWorldTypeWithStaticParameters.Apply("HelloWorldTypeWithStaticDecimalParameter",1)
+
 
     let mkNestedNamespace (name,typ) = 
         { new IProvidedNamespace with
@@ -298,10 +346,10 @@ type public Provider() =
     // This implements both get_StaticProperty1 and get_StaticProperty2
     static member GetPropertyByName(propertyName:string) : 'T = 
         match propertyName with 
-        | nm when nm.StartsWith "StaticProperty1" -> "You got a static property" |> box |> unbox
-        | nm when nm.StartsWith "StaticProperty2" -> 42 |> box |> unbox
-        | nm when nm.StartsWith "StaticPropertyMinus" -> 40 - (int (nm.Replace("StaticPropertyMinus",""))) |> box |> unbox
-        | nm when nm.StartsWith "StaticProperty" -> int (nm.Replace("StaticProperty","")) + 40 |> box |> unbox
+        | StartsWith "StaticProperty1" -> "You got a static property" |> box |> unbox
+        | StartsWith "StaticProperty2" -> 42 |> box |> unbox
+        | StartsWith "StaticPropertyMinus" as nm -> 40 - (int (nm.Replace("StaticPropertyMinus",""))) |> box |> unbox
+        | StartsWith "StaticProperty" as nm -> int (nm.Replace("StaticProperty","")) + 40 |> box |> unbox
         | _ -> failwith "unexpected property"
 
     // This implements OneOptionalParameter and TwoOptionalParameters
@@ -515,6 +563,38 @@ type public Provider() =
                      <@@ (fun () -> System.Console.WriteLine "hello") @@>
                 elif syntheticMethodBase.Name = "LambdaSmokeTest3" then 
                      <@@ (fun x y -> x + y) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticCharParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : char) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticBoolParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : bool) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticSByteParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : sbyte) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticInt16Parameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : int16) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticInt32Parameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : int32) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticUInt16Parameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : int32) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticOptionalInt32Parameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : int32) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticInt64Parameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : int64) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticByteParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : byte) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldStaticMethodWithStaticUInt32Parameter") then 
+                    <@@ (%%(parameterExpressions.[0]) : uint32) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldStaticMethodWithStaticUInt64Parameter") then 
+                    <@@ (%%(parameterExpressions.[0]) : uint64) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticDayOfWeekParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : System.DayOfWeek) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticStringParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : string) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticSingleParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : single) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticDoubleParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : double) @@>
+                elif syntheticMethodBase.Name.StartsWith("HelloWorldInstanceMethodWithStaticDecimalParameter") then 
+                    <@@ (%%(parameterExpressions.[1]) : decimal) @@>                     
                 elif syntheticMethodBase.Name = "CallInstrinsics" then 
                      <@@ [ ((true & false) |> box);
                            ((true && false) |> box);
@@ -812,6 +892,102 @@ type public Provider() =
        
 
         member this.GetGeneratedAssemblyContents(assembly) = failwith "GetGeneratedAssemblyContents"
+
+    member this.GetStaticParametersForMethodImpl(methodWithoutArguments: MethodBase) =
+     [| match methodWithoutArguments.Name with
+        | StartsWith "HelloWorldInstanceMethodWithStaticSByteParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<sbyte>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticInt16Parameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<int16>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticInt32Parameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<int32>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticOptionalInt32Parameter" -> 
+                yield TypeBuilder.CreateStaticParameter("Count",typeof<int32>, 0, defaultValue=42) 
+#if ADD_AN_OPTIONAL_STATIC_PARAMETER
+                yield TypeBuilder.CreateStaticParameter("ExtraParameter",typeof<int32>, 1, defaultValue=43)             
+#endif
+        | StartsWith "HelloWorldInstanceMethodWithStaticInt64Parameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<int64>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticByteParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<byte>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticUInt16Parameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<uint16>, 0) 
+        | StartsWith "HelloWorldStaticMethodWithStaticUInt32Parameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<uint32>, 0) 
+        | StartsWith "HelloWorldStaticMethodWithStaticUInt64Parameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<uint64>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticDayOfWeekParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<System.DayOfWeek>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticDecimalParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<System.Decimal>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticSingleParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<single>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticDoubleParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<double>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticBoolParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<bool>, 0) 
+        | StartsWith "HelloWorldInstanceMethodWithStaticCharParameter" -> yield TypeBuilder.CreateStaticParameter("Count",typeof<char>, 0) 
+        | _ -> () |]
+
+    member this.ApplyStaticArgumentsForMethodImpl(methodWithoutArguments: MethodBase, mangledName:string, staticArguments:obj[]) = 
+        let methodNameWithArguments = mangledName
+        match methodWithoutArguments.Name with
+        | "HelloWorldMethod" -> 
+            if staticArguments.Length <> 0 then failwith "this provided method does not accept static parameters" 
+            methodWithoutArguments
+        | StartsWith "HelloWorldInstanceMethodWithStaticSByteParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<sbyte>,methodNameWithArguments, staticArguments.[0] :?> sbyte |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticInt16Parameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<int16>,methodNameWithArguments, staticArguments.[0] :?> int16 |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticInt32Parameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<int>,methodNameWithArguments, staticArguments.[0] :?> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticInt64Parameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<int64>,methodNameWithArguments, staticArguments.[0] :?> int64 |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticByteParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<byte>,methodNameWithArguments, staticArguments.[0] :?> byte |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticUInt16Parameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<uint16>,methodNameWithArguments, staticArguments.[0] :?> uint16 |> int)
+        | StartsWith "HelloWorldStaticMethodWithStaticUInt32Parameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(true,methodWithoutArguments.DeclaringType,typeof<uint32>,methodNameWithArguments, staticArguments.[0] :?> uint32 |> int)
+        | StartsWith "HelloWorldStaticMethodWithStaticUInt64Parameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(true,methodWithoutArguments.DeclaringType,typeof<uint64>,methodNameWithArguments, staticArguments.[0] :?> uint64 |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticDayOfWeekParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<System.DayOfWeek>,methodNameWithArguments, staticArguments.[0] :?> System.DayOfWeek |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticBoolParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<bool>,methodNameWithArguments, if (staticArguments.[0] :?> bool) then 1 else 0)
+        | StartsWith "HelloWorldInstanceMethodWithStaticStringParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<string>,methodNameWithArguments, staticArguments.[0] :?> string |> String.length)
+        | StartsWith "HelloWorldInstanceMethodWithStaticDecimalParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<decimal>,methodNameWithArguments, staticArguments.[0] :?> decimal |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticCharParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<char>,methodNameWithArguments, staticArguments.[0] :?> char |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticSingleParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<single>,methodNameWithArguments, staticArguments.[0] :?> single |> int)
+        | StartsWith "HelloWorldInstanceMethodWithStaticDoubleParameter" -> 
+            if staticArguments.Length <> 1 then failwith "this provided method accepts one static parameter" 
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<double>,methodNameWithArguments, staticArguments.[0] :?> double |> int)
+
+        | StartsWith "HelloWorldInstanceMethodWithStaticOptionalInt32Parameter" -> 
+#if ADD_AN_OPTIONAL_STATIC_PARAMETER
+            if staticArguments.Length <> 2 then failwith "this provided method accepts two static parameters" 
+#else
+            if staticArguments.Length <> 1 then failwith "this provided method accepts zero, one static parameter" 
+#endif
+            helloWorldMethodWithStaticParameters.Apply(false,methodWithoutArguments.DeclaringType,typeof<int>,methodNameWithArguments, staticArguments.[0] :?> int)
+
+        | nm -> failwith (sprintf "ApplyStaticArgumentsForMethod %s" nm)
+
+#if USE_IMPLICIT_ITypeProvider2
+    member this.GetStaticParametersForMethod(methodWithoutArguments) = this.GetStaticParametersForMethodImpl(methodWithoutArguments)
+    member this.ApplyStaticArgumentsForMethod(methodWithoutArguments, mangledName, staticArguments) = this.ApplyStaticArgumentsForMethodImpl(methodWithoutArguments, mangledName, staticArguments) 
+#else
+    interface ITypeProvider2 with
+        member this.GetStaticParametersForMethod(methodWithoutArguments) = this.GetStaticParametersForMethodImpl(methodWithoutArguments)
+        member this.ApplyStaticArgumentsForMethod(methodWithoutArguments, mangledName, staticArguments) = 
+            this.ApplyStaticArgumentsForMethodImpl(methodWithoutArguments, mangledName, staticArguments) 
+#endif
+
 
 [<TypeProvider>]
 type public GenerativeProvider(config: TypeProviderConfig) =

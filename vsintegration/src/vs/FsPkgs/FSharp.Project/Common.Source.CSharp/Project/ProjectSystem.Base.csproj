@@ -1,12 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..\..\..\..\..\..\src</FSharpSourcesRoot>
-    <vsFrameworkLatest>Microsoft.VisualStudio.Shell.12.0</vsFrameworkLatest>
-    <vsLanguageServiceLatest>Microsoft.VisualStudio.Package.LanguageService.12.0</vsLanguageServiceLatest>
     <ProjectLanguage>CSharp</ProjectLanguage>
     <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
@@ -38,17 +37,11 @@
     <DelaySign>true</DelaySign>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>true</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.v12.0" />
-    <Reference Include="Microsoft.Build.Conversion.v12.0" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.Build.Conversion.$(MSBuildVersionSuffix)" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml" />
@@ -67,7 +60,7 @@
     <Reference Include="VSLangProj80" />
     <Reference Include="microsoft.visualstudio.vcprojectengine" />
     <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
-    <Reference Include="$(vsFrameworkLatest)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VisualStudioVersion)" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
@@ -76,19 +69,16 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.12.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Design" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.dll" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0.dll" />
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
     <Compile Include="InternalsVisibleTo.cs" />
-    <Compile Include="..\RegistrationAttributes\WebSiteProjectAttribute.cs" />
-    <Compile Include="..\RegistrationAttributes\WebSiteProjectRelatedFilesAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideLanguagePropertyAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryAttribute.cs" />
     <Compile Include="..\RegistrationAttributes\WAProvideProjectFactoryTemplateMappingAttribute.cs" />
-    <Compile Include="..\RegistrationAttributes\SingleFileGeneratorSupportRegistrationAttribute.cs" />
     <Compile Include="Misc\ConnectionPointContainer.cs" />
     <Compile Include="Misc\ExternDll.cs" />
     <Compile Include="Misc\NativeMethods.cs" />
@@ -102,7 +92,6 @@
     <!-- Automation Objects -->
     <Compile Include="Automation\OAFileItem.cs" />
     <Compile Include="Automation\OAFolderItem.cs" />
-    <Compile Include="Automation\OANestedProjectItem.cs" />
     <Compile Include="Automation\OANullProperty.cs" />
     <Compile Include="Automation\OAProject.cs" />
     <Compile Include="Automation\OAProjectItem.cs" />
@@ -112,7 +101,6 @@
     <Compile Include="Automation\OANavigableProjectItems.cs" />
     <Compile Include="Automation\OAReferenceFolderItem.cs" />
     <Compile Include="Automation\OAReferenceItem.cs" />
-    <Compile Include="Automation\OASolutionFolder.cs" />
 
     <!-- Objects needed to implement a Language Project -->
     <Compile Include="Automation\VSProject\OAAssemblyReference.cs" />
@@ -135,9 +123,7 @@
     <Compile Include="FileChangeManager.cs" />
     <Compile Include="FileDocumentManager.cs" />
     <Compile Include="FileNode.cs" />
-    <Compile Include="DependentFileNode.cs" />
     <Compile Include="FolderNode.cs" />
-    <Compile Include="GlobalPropertyHandler.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HierarchyNode.cs" />
     <Compile Include="ImageHandler.cs" />
@@ -147,14 +133,11 @@
     <Compile Include="LinkedFileNode.cs" />
     <Compile Include="LocalizableProperties.cs" />
     <Compile Include="Microsoft.VisualStudio.Package.Project.cs" />
-    <Compile Include="NestedProjectBuildDependency.cs" />
-    <Compile Include="NestedProjectNode.cs" />
     <Compile Include="NodeProperties.cs" />
     <Compile Include="OleServiceProvider.cs" />
     <Compile Include="Output.cs" />
     <Compile Include="OutputGroup.cs" />
     <Compile Include="ProjectConfig.cs" />
-    <Compile Include="ProjectContainerNode.cs"/>
     <Compile Include="ProjectDesignerDocumentManager.cs" />
     <Compile Include="ProjectElement.cs" />
     <Compile Include="ProjectFactory.cs" />
@@ -168,21 +151,15 @@
     <Compile Include="PropertiesEditorLauncher.cs" />
     <Compile Include="ReferenceContainerNode.cs" />
     <Compile Include="ReferenceNode.cs" />
-    <Compile Include="RegisteredProjectType.cs" />
-    <Compile Include="SingleFileGenerator.cs" />
-    <Compile Include="SingleFileGeneratorFactory.cs" />
     <Compile Include="SolutionListener.cs" />
-    <Compile Include="SolutionListenerForBuildDependencyUpdate.cs" />
     <Compile Include="SolutionListenerForProjectEvents.cs" />
     <Compile Include="SolutionListenerForProjectOpen.cs" />
     <Compile Include="SolutionListenerForProjectReferenceUpdate.cs" />
     <Compile Include="StructuresEnums.cs" />
     <Compile Include="SuspendFileChanges.cs" />
     <Compile Include="Tracing.cs" />
-    <Compile Include="TokenProcessor.cs" />
     <Compile Include="TrackDocumentsHelper.cs" />
     <Compile Include="TypeConverters.cs" />
-    <Compile Include="Url.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="VsCommands.cs" />
     <Compile Include="VSMDCodeDomProvider.cs" />

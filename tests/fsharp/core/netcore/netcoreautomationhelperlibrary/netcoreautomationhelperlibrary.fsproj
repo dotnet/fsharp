@@ -19,17 +19,17 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(TestProfile)'=='Profile7'">
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFSharpCoreVersion>3.3.1.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>3.7.4.0</TargetFSharpCoreVersion>
     <ProfileCorePath>$(FSCOREDLLNETCOREPATH)</ProfileCorePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TestProfile)'=='Profile78'">
     <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
-    <TargetFSharpCoreVersion>3.78.3.1</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>3.78.4.0</TargetFSharpCoreVersion>
     <ProfileCorePath>$(FSCOREDLLNETCORE78PATH)</ProfileCorePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TestProfile)'=='Profile259'">
     <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
-    <TargetFSharpCoreVersion>3.259.3.1</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>3.259.4.0</TargetFSharpCoreVersion>
     <ProfileCorePath>$(FSCOREDLLNETCORE259PATH)</ProfileCorePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

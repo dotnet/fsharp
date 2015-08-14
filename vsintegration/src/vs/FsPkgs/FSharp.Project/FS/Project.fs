@@ -166,10 +166,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 let initialApprovals = [|
                     for app in approvals do
                         match app with
-                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.Trusted(fileName) ->
+                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(fileName) ->
                             let assemName = Path.GetFileNameWithoutExtension(fileName)
                             yield new TPTOPData(assemName, fileName, IsTrusted=true)
-                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.NotTrusted(fileName) ->
+                        | Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(fileName) ->
                             let assemName = Path.GetFileNameWithoutExtension(fileName)
                             yield new TPTOPData(assemName, fileName, IsTrusted=false)
                     |]
@@ -188,9 +188,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                 backingStore |> Seq.iter (fun a -> 
                                     let app = 
                                         if a.IsTrusted then 
-                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.Trusted(a.FileName)
+                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(a.FileName)
                                         else
-                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.NotTrusted(a.FileName)
+                                            Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.NotTrusted(a.FileName)
                                     Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus (Some file) app)
                             )
                             // invalidate any language service caching
@@ -354,9 +354,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 kvp.Value.Invoke()
         member this.Advise(callbackOwnerKey, callback) =
             notificationsDict.[callbackOwnerKey] <- callback
-// REVIEW: This is not currently used. Leaving it commented out in case we want to revive it.          
-//        member this.Unadvise(callbackOwnerKey) =  
-//            notificationsDict.Remove(callbackOwnerKey) |> ignore
 
     // Used to get us sorted appropriately with the other MSFT products in the splash screen and about box
     [<Guid("591E80E4-5F44-11d3-8BDC-00C04F8EC28C")>]
@@ -497,13 +494,16 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                     |> Seq.toList
                                 let (_, _, v2) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v20)
                                 let (_, _, v4) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v40)
+                                let (_, _, v45) = flatList |> List.find(fun (k1, k2, _) -> k1 = FSharpSDKHelper.NETFramework && k2 = FSharpSDKHelper.v45)
                                 {
                                     new Microsoft.VisualStudio.FSharp.ProjectSystem.IFSharpCoreVersionLookupService with
                                         member this.ListAvailableFSharpCoreVersions(targetFramework) =
                                             if targetFramework.Identifier = FSharpSDKHelper.NETFramework
                                             then 
-                                                // for .NETFramework we distinguish only between 2.0 and 4.0
-                                                if targetFramework.Version.Major < 4 then v2 else v4
+                                                // for .NETFramework we distinguish between 2.0, 4.0 and 4.5
+                                                if targetFramework.Version.Major < 4 then v2 
+                                                elif targetFramework.Version.Major = 4 && targetFramework.Version.Minor < 5 then v4 
+                                                else v45
                                             else 
                                                 // for other target frameworks we assume that they are distinguished by the profile
                                                 let result = 
@@ -723,9 +723,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 #if DESIGNER                
                 this.AddCATIDMapping(typeof<OAFSharpFileItem>, typeof<OAFSharpFileItem>.GUID)
 #endif
-                // The following are not specific to F# and as such we need a separate GUID (we simply used guidgen.exe to create new guids)
-//                this.AddCATIDMapping(typeof<FolderNodeProperties>, new Guid("C5A0C252-8688-415D-9B1A-4334775CA4B3"))
-
                 // This one we use the same as F# file nodes since both refer to files
                 this.AddCATIDMapping(typeof<FileNodeProperties>, typeof<FSharpFileNodeProperties>.GUID)
                 this.AddCATIDMapping(typeof<ProjectConfigProperties>, typeof<ProjectConfigProperties>.GUID)
@@ -766,27 +763,34 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 and set(v) = 
                     if not this.CanUseTargetFSharpCoreReference then () else
                     let currentVersion = System.Version(this.TargetFSharpCoreVersion)
-                    let version = System.Version(v)
-                    if not (currentVersion.Equals version) then
-                        let currentVersionEquals major minor build rev = 
-                            currentVersion.Major = major && 
-                            currentVersion.Minor = minor && 
-                            currentVersion.Build = build && 
-                            currentVersion.Revision = rev
+                    let newVersion = System.Version(v)
+                    if not (currentVersion.Equals newVersion) then
+                        let hasSwitchedToLatestOnlyVersionFromLegacy = 
+                            let legacyVersions =
+                                ["2.3.0.0"             // .NET 2 desktop
+                                 "4.3.0.0"; "4.3.1.0"  // .NET 4 desktop
+                                 "2.3.5.0"; "2.3.5.1"  // portable 47
+                                 "3.3.1.0"             // portable 7
+                                 "3.78.3.1"            // portable 78
+                                 "3.259.3.1"]          // portable 259
+                                |> List.map (fun s -> System.Version(s))
+                            let latestOnlyVersions = 
+                                ["4.4.0.0"             // .NET 4 desktop
+                                 "3.47.4.0"            // portable 47
+                                 "3.7.4.0"             // portable 7
+                                 "3.78.4.0"            // portable 78
+                                 "3.259.4.0"]          // portable 259
+                                |> List.map (fun s -> System.Version(s))
+                            
+                            (legacyVersions |> List.exists ((=) currentVersion)) && (latestOnlyVersions |> List.exists ((=) newVersion))                                
 
-                        let hasSwitchedToNonDev11CompatibleVersion = 
-                            // non-desktop case, silverlight or old style portable - dev11 version 2.3.5.0
-                            ((this.IsCurrentProjectSilverlight() || this.IsCurrentProjectDotNetPortable()) && currentVersionEquals 2 3 5 0) ||
-                            // desktop case: dev11 versions are 4.3.0.0 or 2.3.0.0
-                            (currentVersionEquals 2 3 0 0) || (currentVersionEquals 4 3 0 0)
-
-                        if hasSwitchedToNonDev11CompatibleVersion then
-                            // we are switching from Dev11 compatible version to some another one that can no longer be opened in Dev11
+                        if hasSwitchedToLatestOnlyVersionFromLegacy then
+                            // we are switching from a legacy version to one that is present only in the latest release
                             let result = 
                                 VsShellUtilities.ShowMessageBox
                                     (
                                         serviceProvider = this.Site,
-                                        message = FSharpSR.GetString(FSharpSR.FSharpCoreVersionIsNotCompatibleWithDev11),
+                                        message = FSharpSR.GetString(FSharpSR.FSharpCoreVersionIsNotLegacyCompatible),
                                         title = null,
                                         icon = OLEMSGICON.OLEMSGICON_QUERY, 
                                         msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO, 
@@ -803,6 +807,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                             if (AssemblyReferenceNode.IsFSharpCoreReference asmNode) then
                                 asmNode.RebindFSharpCoreAfterUpdatingVersion(buildResult)
 
+                        this.UpdateTargetFramework(this.InteropSafeIVsHierarchy, this.GetTargetFrameworkMoniker(), this.GetTargetFrameworkMoniker()) |> ignore
                         this.ComputeSourcesAndFlags()
             
             override this.SendReferencesToFSI(references) = 
@@ -1062,61 +1067,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     | _ -> String.Compare(node2.Caption, node1.Caption, true, CultureInfo.CurrentCulture)
                 else
                     node2.SortPriority - node1.SortPriority
-(*
-            /// <summary>
-            /// AddChild - add a node, sorted in the right location.
-            /// </summary>
-            /// <param name="node">The node to add.</param>
-            override fshProjNode.AddChild(node : HierarchyNode) =
-                // REVIEW: fix so files added to bottom, not sorted alpha
-                let this = fshProjNode
-                if node = null then
-                    raise <| new ArgumentNullException("node")
 
-                let map = this.ProjectMgr.ItemIdMap
-
-                // make sure the node is in the map.
-                let nodeWithSameID = this.ProjectMgr.ItemIdMap.[node.ID]
-                if not (Object.ReferenceEquals(node, nodeWithSameID)) then
-                    if (nodeWithSameID = null) && (int(node.ID) <= this.ProjectMgr.ItemIdMap.Count) then
-                        // reuse our hierarchy id if possible.
-                        this.ProjectMgr.ItemIdMap.SetAt(node.ID, this)
-                    else
-                        raise <| new InvalidOperationException()
-
-                let mutable previous = null : HierarchyNode
-                let mutable n = this.FirstChild
-                while n <> null && not (this.ProjectMgr.CompareNodes(node, n) > 0) do
-                    previous <- n
-                    n <- n.NextSibling
-                // insert "node" after "previous".
-                if previous <> null then
-                    node.NextSibling <- previous.NextSibling
-                    previous.NextSibling <- node
-                    if previous = this.LastChild then
-                        this.LastChild <- node
-                else
-                    if this.LastChild = null then
-                        this.LastChild <- node
-                    node.NextSibling <- this.FirstChild
-                    this.FirstChild <- node
-                node.Parent <- this
-                this.OnItemAdded(this, node)
-                ()
-*)
-(*
-            override x.IsItemTypeFileType(typ:string) =
-                if not (base.IsItemTypeFileType(typ)) then 
-                    if (String.Compare(typ, "Page", StringComparison.OrdinalIgnoreCase) = 0
-                     || String.Compare(typ, "ApplicationDefinition", StringComparison.OrdinalIgnoreCase) = 0
-                     || String.Compare(typ, "Resource", StringComparison.OrdinalIgnoreCase) = 0) then 
-                        true
-                    else
-                        false
-                else
-                    //This is a well known item node type, so return true.
-                    true
-*)
             override x.CreatePropertiesObject() : NodeProperties = 
                 (new FSharpProjectNodeProperties(this) :> NodeProperties)
 
@@ -1261,16 +1212,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     newNode.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
 
                 (newNode :> LinkedFileNode)
-
-#if UNUSED_DEPENDENT_FILES
-            override x.CreateDependentFileNode(item:ProjectElement ) =
-                let node = base.CreateDependentFileNode(item)
-                if (null <> node) then 
-                    let includ = item.GetMetadata(ProjectFileConstants.Include)
-                    if (FSharpProjectNode.IsCompilingFSharpFile(includ)) then 
-                        node.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
-                node
-#endif
 
             /// Creates the format list for the open file dialog
             /// <param name="formatlist">The formatlist to return</param>
@@ -1721,7 +1662,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 #if DEBUG
                 compileWasActuallyCalled <- true
 #endif                    
-                let normalizedSources = sources |> Array.map (fun fn -> Internal.Utilities.FileSystem.Path.SafeGetFullPath(System.IO.Path.Combine(x.ProjectFolder, fn)))
+                let normalizedSources = sources |> Array.map (fun fn -> System.IO.Path.GetFullPath(System.IO.Path.Combine(x.ProjectFolder, fn)))
                 let r = (normalizedSources, flags)
                 sourcesAndFlags <- Some(r)
 #if DEBUG
@@ -1746,7 +1687,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                                     TypeProviderSecurityGlobals.invalidationCallback()  
                                 let argv = Array.append flags sources  // flags + sources = entire command line
                                 let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
-                                Microsoft.FSharp.Compiler.Driver.runFromCommandLineToImportingAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
+                                Microsoft.FSharp.Compiler.Driver.ProcessCommandLineArgsAndImportAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
                                             { new Microsoft.FSharp.Compiler.ErrorLogger.Exiter with 
                                                 member x.Exit(n) = 
                                                     match n with
@@ -1767,7 +1708,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 [|
                 for i in buildProject.Items do
                     if i.ItemType = "Compile" then
-                        yield Internal.Utilities.FileSystem.Path.SafeGetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
+                        yield System.IO.Path.GetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
                 |]
             member x.GetCompileItems() = let sources,_ = sourcesAndFlags.Value in sources
             member x.GetCompileFlags() =  let _,flags = sourcesAndFlags.Value in flags
@@ -1833,9 +1774,9 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                               let (_, res) = mtservice.GetInstallableFrameworkForTargetFx(targetFrameworkMoniker)
                               res
 
-                (frameworkName, runtime, if String.IsNullOrEmpty(sku) then null else sku)
+                (runtime, if String.IsNullOrEmpty(sku) then null else sku)
 
-            member internal x.DoFixupAppConfigOnTargetFXChange(frameworkName : System.Runtime.Versioning.FrameworkName, runtime : string, sku : string) =
+            member internal x.DoFixupAppConfigOnTargetFXChange(runtime : string, sku : string, targetFSharpCoreVersion : string, autoGenerateBindingRedirects : bool ) =
                 let mutable res = VSConstants.E_FAIL
                 let specialFiles = x :> IVsProjectSpecialFiles
                 // We only want to force-generate an AppConfig file if the output type is EXE;
@@ -1855,12 +1796,11 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                         res <- langConfigFile.Open(x)
                         if ErrorHandler.Succeeded(res) then
                             langConfigFile.EnsureSupportedRuntimeElement(runtime, sku)
-                            if langConfigFile.IsDirty() then
-                                let node = x.NodeFromItemId(itemid)
-                                System.Diagnostics.Debug.Assert(node <> null, "No project node for the item?")
-                                if node <> null then
-                                    langConfigFile.EnsureHasBindingRedirects(frameworkName.Version.Major)
-                                    res <- langConfigFile.Save()
+                            let node = x.NodeFromItemId(itemid)
+                            System.Diagnostics.Debug.Assert(node <> null, "No project node for the item?")
+                            if node <> null then
+                                langConfigFile.EnsureHasBindingRedirects(targetFSharpCoreVersion, autoGenerateBindingRedirects)
+                                res <- langConfigFile.Save()
 
                         // if we couldn't find the file, but we don't need it, then just ignore
                         if projProp.OutputType = OutputType.Library && res = NativeMethods.STG_E_FILENOTFOUND then
@@ -1869,14 +1809,9 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                         (langConfigFile :> IDisposable).Dispose()
                 res
 
-            override x.FixupAppConfigOnTargetFXChange(targetFrameworkMoniker) =
-                let frameworkName = new System.Runtime.Versioning.FrameworkName(targetFrameworkMoniker)
-                // Spec says to do this only if the framework family is ".NETFramework"
-                if String.Compare(frameworkName.Identifier, ".NETFramework", true, CultureInfo.InvariantCulture) = 0 then
-                    let (frameworkName, runtime, sku) = x.DetermineRuntimeAndSKU(targetFrameworkMoniker)
-                    x.DoFixupAppConfigOnTargetFXChange(frameworkName, runtime, sku)
-                else
-                    VSConstants.S_OK
+            override x.FixupAppConfigOnTargetFXChange(targetFrameworkMoniker, targetFSharpCoreVersion, autoGenerateBindingRedirects) =
+                let (runtime, sku) = x.DetermineRuntimeAndSKU(targetFrameworkMoniker)
+                x.DoFixupAppConfigOnTargetFXChange(runtime, sku, targetFSharpCoreVersion, autoGenerateBindingRedirects)
 
             override x.SetHostObject(targetName, taskName, hostObject) =
 #if DEBUG
@@ -2041,7 +1976,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     guidEditorType <- GuidList.guidEditorFactory
                     VSConstants.S_OK
 
-            // #region IVsProjectSpecificEditorMap2 Members
             interface IVsProjectSpecificEditorMap2 with 
                 member x.GetSpecificEditorProperty(_mkDocument:string, _propid:int, result: byref<obj>) =
                     // initialize output params
@@ -2132,7 +2066,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 if GetCaption(pHierProj) = GetCaption(projNode.InteropSafeIVsHierarchy) then
                     // This code matches what ProjectNode.SetConfiguration would do; that method cannot be called during a build, but at this
                     // current moment in time, it is 'safe' to do this update.
-                    let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.InteropSafeIVsHierarchy)
+                    let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.ProjectIDGuid)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Configuration, currentConfigName.ConfigName)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
                     projNode.UpdateMSBuildState()
@@ -2320,17 +2254,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.RootNamespace)
             and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.RootNamespace, value)
 
-//  REVIEW Temporarily dispabling these until further work can be done.    
-//        [<Browsable(false)>]
-//        member this.ApplicationIcon
-//            with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.ApplicationIcon)
-//            and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.ApplicationIcon, value)
-//            
-//        [<Browsable(false)>]
-//        member this.ApplicationManifest 
-//            with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.ApplicationManifest)
-//            and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.ApplicationManifest, value)
-//            
         [<Browsable(false)>]
         member this.Win32ResourceFile
             with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.Win32Resource)
@@ -2458,11 +2381,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
       [<CLSCompliant(false)>]
       [<Guid("9D8E1EFB-1F18-4E2F-8C67-77328A274718")>]
       public FSharpFileNodeProperties internal (node:HierarchyNode) = 
-#if SINGLE_FILE_GENERATOR
-        inherit SingleFileGeneratorNodeProperties(node)
-#else
         inherit FileNodeProperties(node)
-#endif
 
         [<Browsable(false)>]
         member x.Url = "file:///" + x.Node.Url
@@ -2593,10 +2512,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
             override x.CreatePropertiesObject() =
                 let properties = new FSharpFileNodeProperties(x)
-#if SINGLE_FILE_GENERATOR
-                properties.OnCustomToolChanged.AddHandler(EventHandler<_>(fun sender args -> x.OnCustomToolChanged(sender,args)))
-                properties.OnCustomToolNameSpaceChanged.AddHandler(EventHandler<_>(fun sender args -> x.OnCustomToolNameSpaceChanged(sender,args)))
-#endif
                 (properties :> NodeProperties)
            
             member x.DisposeSelectionListener() = 
@@ -3111,11 +3026,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                             hr <- hier.ParseCanonicalName((document :?> string), &itemid)
                             match projMgr.NodeFromItemId(itemid) with 
                             | :? FSharpFileNode as node -> 
-#if SINGLE_FILE_GENERATOR
-                                node.RunGenerator()
-#else
                                 ignore(node)
-#endif
                             | _ -> 
                                 ()
                 hr

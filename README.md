@@ -1,6 +1,8 @@
 [![Issue Stats](http://issuestats.com/github/Microsoft/visualfsharp/badge/pr)](http://issuestats.com/github/microsoft/visualfsharp)
 [![Issue Stats](http://issuestats.com/github/Microsoft/visualfsharp/badge/issue)](http://issuestats.com/github/microsoft/visualfsharp)
-[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master)
+[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/fsharp4.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/fsharp4)
+
+[![Join the chat at https://gitter.im/Microsoft/visualfsharp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/visualfsharp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 #Visual F# Tools
 
@@ -41,3 +43,4 @@ Although the primary focus of this repo is F# for Windows and the Visual Studio 
 ###Get In Touch
 
 Keep up with the Visual F# Team and the development of the Visual F# Tools by following us [@VisualFSharp](https://twitter.com/VisualFSharp) or subscribing to our [team blog](http://blogs.msdn.com/b/fsharpteam/).
+

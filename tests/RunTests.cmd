@@ -2,8 +2,10 @@
 setlocal
 
 set FLAVOR=%1
-if /I "%FLAVOR%" == "debug" (goto :FLAVOR_OK)
-if /I "%FLAVOR%" == "release" (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "debug"     (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "release"   (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "vsdebug"   (goto :FLAVOR_OK)
+if /I "%FLAVOR%" == "vsrelease" (goto :FLAVOR_OK)
 goto :USAGE
 
 :flavor_ok
@@ -21,9 +23,11 @@ set _tmp=%3
 if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
-set NO_TTAGS_ARG=-nottags:ReqPP
+set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
 set _tmp=%4
-if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,%_tmp:"=%
+if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
+
+if /I "%APPVEYOR_CI%" == "1" (set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI)
 
 set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%
 
@@ -45,6 +49,12 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
+if /I "%2" == "fsharpqadowntarget" (goto :FSHARPQA)
+if /I "%2" == "fsharpqaredirect" (goto :FSHARPQA)
+if /I "%2" == "compilerunit" (
+   set compilerunitsuffix=net40
+   goto :COMPILERUNIT
+)
 if /I "%2" == "coreunit" (
    set coreunitsuffix=net40
    goto :COREUNIT
@@ -71,7 +81,7 @@ if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -120,14 +130,18 @@ IF NOT DEFINED GACUTILEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\gacutil.exe" set GAC
 set FSC=%FSCBINPATH%\fsc.exe
 set PATH=%FSCBINPATH%;%PATH%
 
+set FSCVPREVBINPATH=%X86_PROGRAMFILES%\Microsoft SDKs\F#\3.1\Framework\v4.0
+set FSCVPREV=%FSCVPREVBINPATH%\fsc.exe
+
 REM == VS-installed paths to FSharp.Core.dll
-set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0
+set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
 set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
-set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\2.3.5.1
-set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.3.1.0
-set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.3.1
-set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.3.1
+set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.0
+set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.0
+set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.0
+set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.0
 set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
+set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0
 
 REM == open source logic        
 if exist "%FSCBinPath%\FSharp.Core.dll" set FSCOREDLLPATH=%FSCBinPath%
@@ -145,6 +159,7 @@ set FSCOREDLLNETCOREPATH=%FSCOREDLLNETCOREPATH%\FSharp.Core.dll
 set FSCOREDLLNETCORE78PATH=%FSCOREDLLNETCORE78PATH%\FSharp.Core.dll
 set FSCOREDLLNETCORE259PATH=%FSCOREDLLNETCORE259PATH%\FSharp.Core.dll
 set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll
+set FSCOREDLLVPREVPATH=%FSCOREDLLVPREVPATH%\FSharp.Core.dll
 
 for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
 set PATH=%PATH%;%CORDIR%
@@ -154,6 +169,24 @@ if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTA
 set RESULTFILE=FSharpQA_Results.log
 set FAILFILE=FSharpQA_Failures.log
 set FAILENV=FSharpQA_Failures
+
+if /I "%2" == "fsharpqadowntarget" (
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
+   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
+   set RESULTFILE=FSharpQADownTarget_Results.log
+   set FAILFILE=FSharpQADownTarget_Failures.log
+   set FAILENV=FSharpQADownTarget_Failures
+)
+
+if /I "%2" == "fsharpqaredirect" (
+   set ISCFLAGS=--noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll
+   set PLATFORM=%OSARCH%
+   set SIMULATOR_PIPE="%~dp0\fsharpqa\testenv\bin\$PLATFORM\ExecAssembly.exe"
+   set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NoCrossVer,FSI
+   set RESULTFILE=FSharpQARedirect_Results.log
+   set FAILFILE=FSharpQARedirect_Failures.log
+   set FAILENV=FSharpQARedirect_Failures
+)
 
 where.exe perl > NUL 2> NUL 
 if errorlevel 1 (
@@ -176,6 +209,17 @@ set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
 echo "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
      "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+
+goto :EOF
+
+:COMPILERUNIT
+
+set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
+set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
+set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
+
+echo "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+     "%NUNITPATH%\nunit-console.exe" /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
 
 goto :EOF
 

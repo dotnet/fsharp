@@ -111,7 +111,7 @@ module WebClientTests =
     //and one bad URL, so we know we work under both conditions. The aim of the tests is to get coverage 
     //for cancellation logic paths � we count the number of request routines that have successfully entered 
     //a try/finally that increments/decrements a counter. We check that the counter is zero at the end.  
-    let repeatedFetchAndCancelTest() = 
+    let repeatedFetchStringAndCancelTest() = 
         printfn "starting requests and cancellation routines..." 
         let active = ref 0
         for i = 0 to 100 do 
@@ -143,9 +143,91 @@ module WebClientTests =
             System.Threading.Thread.Sleep(!wait * 3)
 
         printfn "final: active = %d" !active
-        check "WebClient cancellation test final result" !active 0
+        check "WebClient.AsyncDownloadString cancellation test final result" !active 0
 
-    repeatedFetchAndCancelTest()
+    //This test starts ~600 web requests plus routines to cancel them. The tests are robust 
+    //to whether there is a web connection or not � we  just catch all exceptions, and use one good URL 
+    //and one bad URL, so we know we work under both conditions. The aim of the tests is to get coverage 
+    //for cancellation logic paths � we count the number of request routines that have successfully entered 
+    //a try/finally that increments/decrements a counter. We check that the counter is zero at the end.  
+    let repeatedFetchDataAndCancelTest() = 
+        printfn "starting requests and cancellation routines..." 
+        let active = ref 0
+        for i = 0 to 100 do 
+          for sleep in [0;2;10] do 
+           for url in ["http://www.live.com"; "http://www.badnonexistenturl-da-da-da-da-da.com"] do 
+             let cts = new CancellationTokenSource()
+             let result = ref 0
+             
+             Async.Start (async { let incremented = ref false
+                               try 
+                                 try 
+                                   lock active (fun () -> incr active; incremented := true)
+                                   let c = new System.Net.WebClient()
+                                   let! p1 = c.AsyncDownloadData(System.Uri(url))
+                                   let! p2 = c.AsyncDownloadData(System.Uri(url))
+                                   result := p1.Length + p2.Length
+                                 finally
+                                   lock active (fun () -> if !incremented then decr active) 
+                               with _ -> 
+                                   return ()}, cancellationToken=cts.Token)
+
+             System.Threading.Thread.Sleep(sleep)
+             Async.Start ( async {  do! Async.Sleep(100)
+                                    cts.Cancel() })
+        let wait = ref 0 
+        while !active <> 0 && !wait < 500 do
+            incr wait
+            printfn "final: active = %d, waiting %d" !active (!wait * 3)
+            System.Threading.Thread.Sleep(!wait * 3)
+
+        printfn "final: active = %d" !active
+        check "WebClient.AsyncDownloadData cancellation test final result" !active 0
+
+    //This test starts ~600 web requests plus routines to cancel them. The tests are robust 
+    //to whether there is a web connection or not � we  just catch all exceptions, and use one good URL 
+    //and one bad URL, so we know we work under both conditions. The aim of the tests is to get coverage 
+    //for cancellation logic paths � we count the number of request routines that have successfully entered 
+    //a try/finally that increments/decrements a counter. We check that the counter is zero at the end.  
+    let repeatedFetchFileAndCancelTest() = 
+        printfn "starting requests and cancellation routines..." 
+        let active = ref 0
+        for i = 0 to 100 do 
+          for sleep in [0;2;10] do 
+           for url in ["http://www.live.com"; "http://www.badnonexistenturl-da-da-da-da-da.com"] do 
+             let cts = new CancellationTokenSource()
+
+             Async.Start (async { let incremented = ref false
+                               try
+                                 let p1 = sprintf "%i_%i_p1.data" i sleep
+                                 let p2 = sprintf "%i_%i_p2.data" i sleep
+                                 try 
+                                   lock active (fun () -> incr active; incremented := true)
+                                   let c = new System.Net.WebClient()
+                                   do! c.AsyncDownloadFile(System.Uri(url), p1)
+                                   do! c.AsyncDownloadFile(System.Uri(url), p2)
+                                 finally
+                                   lock active (fun () -> if !incremented then decr active)
+                                   System.IO.File.Delete(p1)
+                                   System.IO.File.Delete(p2)
+                               with _ -> 
+                                   return ()}, cancellationToken=cts.Token)
+
+             System.Threading.Thread.Sleep(sleep)
+             Async.Start ( async {  do! Async.Sleep(100)
+                                    cts.Cancel() })
+        let wait = ref 0 
+        while !active <> 0 && !wait < 500 do
+            incr wait
+            printfn "final: active = %d, waiting %d" !active (!wait * 3)
+            System.Threading.Thread.Sleep(!wait * 3)
+
+        printfn "final: active = %d" !active
+        check "WebClient.AsyncDownloadFile cancellation test final result" !active 0
+
+    repeatedFetchStringAndCancelTest()
+    repeatedFetchDataAndCancelTest()
+    repeatedFetchFileAndCancelTest()
 
 
 let _ = 

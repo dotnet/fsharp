@@ -28,6 +28,13 @@ rem fsc.exe building
     "%PEVERIFY%" module2.exe 
     @if ERRORLEVEL 1 goto Error
     
+    "%FSC%" %fsc_flags% --staticlink:module1 -o:module2-staticlink.exe -r:module1.dll module2.fsx
+    @if ERRORLEVEL 1 goto Error
+
+    "%PEVERIFY%" module2-staticlink.exe 
+    @if ERRORLEVEL 1 goto Error
+    
+
 
     "%FSC%" %fsc_flags% -o:module1-opt.dll --target:library --optimize module1.fsx
     @if ERRORLEVEL 1 goto Error

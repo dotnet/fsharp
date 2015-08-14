@@ -24,6 +24,7 @@ module internal SR =
     let pickElementNotFound = "pickElementNotFound"            
     let notEnoughElements = "notEnoughElements"
     let inputMustBeNonNegative = "inputMustBeNonNegative"
+    let inputMustBePositive = "inputMustBePositive"
     let enumerationPastIntMaxValue = "enumerationPastIntMaxValue"
     let inputSequenceEmpty = "inputSequenceEmpty"
     let inputSequenceTooLong = "inputSequenceTooLong"

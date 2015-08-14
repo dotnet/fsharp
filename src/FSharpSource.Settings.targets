@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -26,7 +26,7 @@
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking</OtherFlags>
+    <OtherFlags>$(OtherFlags) --no-jit-optimize --jit-tracking /warnon:3180</OtherFlags>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
@@ -70,5 +70,15 @@
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV12=True</DefineConstants>
+    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <MSBuildVersionSuffix>core</MSBuildVersionSuffix>
+    <MSBuildVersionSuffix Condition="'$(VisualStudioVersion)' == '12.0'">V12.0</MSBuildVersionSuffix>
   </PropertyGroup>
 </Project>

@@ -47,7 +47,7 @@
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public auto autochar beforefieldinit XYZ.Expr
+.class public auto autochar sealed beforefieldinit XYZ.Expr
        extends [mscorlib]System.Object
        implements class [mscorlib]System.IEquatable`1<class XYZ.Expr>,
                   [mscorlib]System.Collections.IStructuralEquatable,
@@ -831,7 +831,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar nested public beforefieldinit Expr
+  .class auto autochar sealed nested public beforefieldinit Expr
          extends [mscorlib]System.Object
          implements class [mscorlib]System.IEquatable`1<class XYZ.ABC/Expr>,
                     [mscorlib]System.Collections.IStructuralEquatable,
@@ -1615,7 +1615,7 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto autochar nested public beforefieldinit Expr
+    .class auto autochar sealed nested public beforefieldinit Expr
            extends [mscorlib]System.Object
            implements class [mscorlib]System.IEquatable`1<class XYZ.ABC/ABC/Expr>,
                       [mscorlib]System.Collections.IStructuralEquatable,

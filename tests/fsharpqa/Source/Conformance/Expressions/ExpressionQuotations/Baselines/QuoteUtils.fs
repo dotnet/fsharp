@@ -10,12 +10,12 @@ open System.Collections.Generic
 
 /// Match a quotation with an active pattern. Use of ExprShape means q should represent valid F# code.   
 let matchQuote q (|Pat|_|) =
-    let result = ref false 
-    let matchedFragment = ref None
+    let mutable result = false 
+    let mutable matchedFragment = None
     let rec checkForShape quote (|Pat|_|) = 
         let m = match quote with
-                | Pat v -> result := true
-                           matchedFragment := Some(quote)
+                | Pat v -> result <- true
+                           matchedFragment <- Some(quote)
                 | _ -> ()
         match quote with
         | ShapeVar v -> Expr.Var v
@@ -24,7 +24,7 @@ let matchQuote q (|Pat|_|) =
                                          let newExprs = List.map f exprs
                                          RebuildShapeCombination(o, newExprs)
     checkForShape q (|Pat|_|) |> ignore
-    if !result then matchedFragment.Value else None
+    if result then matchedFragment else None
     
 /// Compare a quotation to a string representation of its expected shape
 let checkQuote (q : Expr) (expectedShape : string) =

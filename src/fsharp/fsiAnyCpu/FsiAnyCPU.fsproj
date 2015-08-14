@@ -7,20 +7,17 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <!--
-        fsc.exe and fsi.exe only runs on x86 (emulates on ia64, x64) due to 
-        Win32 DLLs and memory mapping dependencies...
-        -->
-    <PlatformTarget>anycpu</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <ProjectGuid>{8b3e283d-b5fe-4055-9d80-7e3a32f3967b}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
-    <AssemblyName>fsiAnyCpu</AssemblyName>
+    <AssemblyName>FsiAnyCPU</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v3.5</TargetFrameworkVersion>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <Win32Resource>..\fsi\fsi.res</Win32Resource>
   </PropertyGroup>
   <!-- MonoDevelop likes these here to recognise the configurations -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' " />

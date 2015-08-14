@@ -32,10 +32,12 @@ module SP = Microsoft.VisualStudio.FSharp.Interactive.Session.SessionsProperties
 [<Guid("4489e9de-6ac1-3cd6-bff8-a904fd0e82d4")>]
 type FsiPropertyPage() = 
     inherit DialogPage()    
+       
     [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
     [<SRProperties.DisplayName(SRProperties.FSharpInteractive64Bit)>] 
     [<SRProperties.Description(SRProperties.FSharpInteractive64BitDescr)>] 
     member this.FsiPreferAnyCPUVersion with get() = SP.useAnyCpuVersion and set (x:bool) = SP.useAnyCpuVersion <- x
+
     [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
     [<SRProperties.DisplayName(SRProperties.FSharpInteractiveOptions)>]
     [<SRProperties.Description(SRProperties.FSharpInteractiveOptionsDescr)>] 
@@ -45,6 +47,12 @@ type FsiPropertyPage() =
     [<SRProperties.DisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
     [<SRProperties.Description(SRProperties.FSharpInteractiveShadowCopyDescr)>] 
     member this.FsiShadowCopy with get() = SP.fsiShadowCopy and set (x:bool) = SP.fsiShadowCopy <- x
+
+    [<SRProperties.Category(SRProperties.FSharpInteractiveDebugging)>]
+    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveDebugMode)>]
+    [<SRProperties.Description(SRProperties.FSharpInteractiveDebugModeDescr)>] 
+    member this.FsiDebugMode with get() = SP.fsiDebugMode and set (x:bool) = SP.fsiDebugMode <- x
+
 // CompletionSet
 type internal FsiCompletionSet(imageList,source:Source) = 
     inherit CompletionSet(imageList, source)
@@ -62,7 +70,6 @@ type internal FsiDeclarations(items : (string*string*string*int)[] ) =
 // Methods
 type internal FsiMethods() =
     inherit Methods()
-    // let items = [|"Alpha";"Beta";"Gamma";"Saturn";"Zune"|] // For testing.
     let items = [| |]
     override this.GetCount() = items.Length
     override this.GetDescription(i) = items.[i]
@@ -167,8 +174,6 @@ module internal Helpers =
     let FsiKeyword =
         { new IVsColorableItem with 
             member x.GetDefaultColors(piForeground, piBackground) =
-                //Check.ArrayArgumentNotNullOrEmpty piForeground "piForeground"
-                //Check.ArrayArgumentNotNullOrEmpty piBackground "piBackground"
                 piForeground.[0] <- COLORINDEX.CI_BLUE
                 piBackground.[0] <- COLORINDEX.CI_USERTEXT_BK
                 VSConstants.S_OK
@@ -197,7 +202,6 @@ type internal FsiLanguageService() =
     member this.Sessions with set x = sessions <- Some x
     
     override this.GetLanguagePreferences() =
-        //System.Windows.Forms.MessageBox.Show("GetLanguagePrefs") |> ignore
         if preferences = null then
             preferences <- new LanguagePreferences(this.Site,
                                                    typeof<FsiLanguageService>.GUID,
@@ -207,13 +211,11 @@ type internal FsiLanguageService() =
         preferences
         
     override this.GetScanner(buffer:IVsTextLines) =
-        //System.Windows.Forms.MessageBox.Show("GetScanner") |> ignore
         if scanner = null then
             scanner <- (new FsiScanner(buffer) :> IScanner)
         scanner
         
     override this.ParseSource(req:ParseRequest) =
-        //System.Windows.Forms.MessageBox.Show("ParseSource") |> ignore
         (new FsiAuthoringScope(sessions,readOnlySpan) :> AuthoringScope)
                 
     override this.Name = "FSharpInteractive" // LINK: see ProvidePackage attribute on the package.

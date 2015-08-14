@@ -8,6 +8,7 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 #nowarn "42" // This construct is deprecated: it is only for use in the F# library
+#nowarn "44" // This construct is deprecated. please use List.item
 
 open System
 open System.IO
@@ -1048,6 +1049,7 @@ type ILReaderContext =
     userStringsStreamPhysicalLoc: int32;
     stringsStreamPhysicalLoc: int32;
     blobsStreamPhysicalLoc: int32;
+    blobsStreamSize: int32;
     readUserStringHeap: (int32 -> string);
     memoizeString: string -> string;
     readStringHeap: (int32 -> string);
@@ -1533,9 +1535,13 @@ let readStringHeapUncached ctxtH idx =
 let readStringHeap          ctxt idx = ctxt.readStringHeap idx 
 let readStringHeapOption   ctxt idx = if idx = 0 then None else Some (readStringHeap ctxt idx) 
 
+let emptyByteArray: byte[] = [||]
 let readBlobHeapUncached ctxtH idx = 
     let ctxt = getHole ctxtH
-    seekReadBlob ctxt.is (ctxt.blobsStreamPhysicalLoc + idx) 
+    // valid index lies in range [1..streamSize)
+    // NOTE: idx cannot be 0 - Blob\String heap has first empty element that is one byte 0
+    if idx <= 0 || idx >= ctxt.blobsStreamSize then emptyByteArray
+    else seekReadBlob ctxt.is (ctxt.blobsStreamPhysicalLoc + idx) 
 let readBlobHeap        ctxt idx = ctxt.readBlobHeap idx 
 let readBlobHeapOption ctxt idx = if idx = 0 then None else Some (readBlobHeap ctxt idx) 
 
@@ -2205,7 +2211,8 @@ and sigptrGetLocal ctxt numtypars bytes sigptr =
             false, sigptr
     let typ, sigptr = sigptrGetTy ctxt numtypars bytes sigptr
     { IsPinned = pinned;
-      Type = typ }, sigptr
+      Type = typ;
+      DebugInfo = None }, sigptr
          
 and readBlobHeapAsMethodSig ctxt numtypars blobIdx  =
     ctxt.readBlobHeapAsMethodSig (BlobAsMethodSigIdx (numtypars,blobIdx))
@@ -3971,6 +3978,7 @@ let rec genOpenBinaryReader infile is opts =
                  userStringsStreamPhysicalLoc   = userStringsStreamPhysicalLoc;
                  stringsStreamPhysicalLoc       = stringsStreamPhysicalLoc;
                  blobsStreamPhysicalLoc         = blobsStreamPhysicalLoc;
+                 blobsStreamSize                = blobsStreamSize;
                  memoizeString                  = Tables.memoize id;
                  readUserStringHeap             = cacheUserStringHeap (readUserStringHeapUncached ctxtH);
                  readStringHeap                 = cacheStringHeap (readStringHeapUncached ctxtH);

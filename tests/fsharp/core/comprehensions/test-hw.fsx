@@ -7,9 +7,9 @@ open System.Text.RegularExpressions
 open System.IO
 open System.Xml
 
-let failures = ref false
+let mutable failures = false
 let report_failure () = 
-  stderr.WriteLine " NO"; failures := true
+  stderr.WriteLine " NO"; failures <- true
 let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure() 
 
 
@@ -92,10 +92,10 @@ let test3198b =
 
 let test3198x = 
     let mutable count = 0 in 
-    let ie = ref {1 .. 3} 
+    let mutable ie = {1 .. 3} 
     
-    for i in !ie do 
-        ie := {1 .. 2}
+    for i in ie do 
+        ie <- {1 .. 2}
         count <- count + 1;
         printf "i = %d\n" i 
     done;
@@ -502,7 +502,7 @@ let rec allFiles dir =
           for subdir in Directory.GetDirectories dir do yield! (allFiles subdir) }
 
 let _ = 
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
+  if failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 
         System.IO.File.WriteAllText("test.ok","ok"); 
         exit 0)
@@ -533,10 +533,10 @@ module Attempt =
 module RandomWalk = 
     let rnd = new System.Random() 
     let dice p = (rnd.NextDouble() < p )
-    let walk initial upP = [| let state = ref initial 
+    let walk initial upP = [| let mutable state = initial 
                               for i in 0 .. 100 do
-                                 do if dice upP then incr state else decr state
-                                 yield float !state |]
+                                 do if dice upP then state <- (state + 1) else (state <- state - 1)
+                                 yield float state |]
 
 
 module StringExtensionTest = 
@@ -1026,9 +1026,9 @@ module TryFinallySequenceExpressionTests =
        use never3 = new RunNeverPoint("3zlknnew55")
        try 
             seq { point1.Run()
-                  let x = ref 0
-                  while !x = 0 do
-                      incr x 
+                  let mutable x = 0
+                  while x = 0 do
+                      x <- x + 1 
                       try 
                           try 
                               point2.Run()

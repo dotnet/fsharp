@@ -6,6 +6,8 @@
 
 module internal Microsoft.FSharp.Compiler.NicePrint
 
+#nowarn "44" // This construct is deprecated. please use List.item
+
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
@@ -14,12 +16,13 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.IL (* Abstract IL  *)
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
@@ -33,7 +36,7 @@ open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.PrettyNaming
 
 [<AutoOpen>]
-module private PrintUtilities = 
+module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
     let squareAngleL x = leftL "[<" ^^ x ^^ rightL ">]"
     let angleL x = sepL "<" ^^ x ^^ rightL ">"  
@@ -67,6 +70,37 @@ module private PrintUtilities =
         | [x] -> [resultFunction x (layoutFunction x)] 
         | (x:: rest) -> [ resultFunction x (layoutFunction x -- leftL (match rest.Length with 1 -> FSComp.SR.nicePrintOtherOverloads1() | n -> FSComp.SR.nicePrintOtherOverloadsN(n))) ] 
         | _ -> []
+    
+    let layoutTyconRefImpl isAttribute (denv: DisplayEnv) (tcref:TyconRef) = 
+        let demangled = 
+            let name =
+                if denv.includeStaticParametersInTypeNames then 
+                    tcref.DisplayNameWithStaticParameters 
+                elif tcref.DisplayName = tcref.DisplayNameWithStaticParameters then
+                    tcref.DisplayName // has no static params
+                else
+                    tcref.DisplayName+"<...>" // shorten
+            if isAttribute then 
+                defaultArg (String.tryDropSuffix name "Attribute") name 
+            else name
+        let tyconTextL = wordL demangled
+        if denv.shortTypeNames then 
+            tyconTextL
+        else
+            let path = demangledPathOfCompPath tcref.CompilationPath
+            let path =
+                if denv.includeStaticParametersInTypeNames then
+                    path
+                else
+                    path |> List.map (fun s -> let i = s.IndexOf(',')
+                                               if i <> -1 then s.Substring(0,i)+"<...>" // apparently has static params, shorten
+                                               else s)
+            let pathText = trimPathByDisplayEnv denv path
+            if pathText = "" then tyconTextL else leftL pathText ^^ tyconTextL
+
+    let layoutBuiltinAttribute (denv: DisplayEnv) (attrib: BuiltinAttribInfo) =
+        let tcref = attrib.TyconRef
+        squareAngleL (layoutTyconRefImpl true denv tcref)
 
 module private PrintIL = 
 
@@ -182,7 +216,8 @@ module private PrintIL =
             // Layout an unnamed argument 
             | _, None, _ -> leftL ":"
             // Layout a named argument 
-            | true, Some nm,_ -> wordL "params" ^^ leftL (nm+":")
+            | true, Some nm,_ ->      
+                layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL (nm + ":")
             | false, Some nm,_ -> leftL (nm+":")
         preL ^^ (layoutILType denv ilTyparSubst p.Type)
        
@@ -547,27 +582,7 @@ module private PrintTypes =
         | _ -> itemL
 
     /// Layout a reference to a type 
-    let layoutTyconRef (denv: DisplayEnv) (tcref:TyconRef) = 
-        let demangled = if denv.includeStaticParametersInTypeNames then 
-                            tcref.DisplayNameWithStaticParameters 
-                        elif tcref.DisplayName = tcref.DisplayNameWithStaticParameters then
-                            tcref.DisplayName // has no static params
-                        else
-                            tcref.DisplayName+"<...>" // shorten
-        let tyconTextL = wordL demangled
-        if denv.shortTypeNames then 
-            tyconTextL
-        else
-            let path = demangledPathOfCompPath tcref.CompilationPath
-            let path =
-                if denv.includeStaticParametersInTypeNames then
-                    path
-                else
-                    path |> List.map (fun s -> let i = s.IndexOf(',')
-                                               if i <> -1 then s.Substring(0,i)+"<...>" // apparently has static params, shorten
-                                               else s)
-            let pathText = trimPathByDisplayEnv denv path
-            if pathText = "" then tyconTextL else leftL pathText ^^ tyconTextL
+    let layoutTyconRef denv tycon = layoutTyconRefImpl false denv tycon
 
     /// Layout the flags of a member 
     let layoutMemberFlags memFlags = 
@@ -812,14 +827,16 @@ module private PrintTypes =
     and private layoutMeasure denv unt =
         let sortVars vs = vs |> List.sortBy (fun (v:Typar,_) -> v.DisplayName) 
         let sortCons cs = cs |> List.sortBy (fun (c:TyconRef,_) -> c.DisplayName) 
-        let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents              unt |> sortVars |> List.partition (fun (_,e) -> e<0)
-        let negcs,poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_,e) -> e<0)
+        let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents              unt |> sortVars |> List.partition (fun (_,e) -> SignRational e < 0)
+        let negcs,poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
         let unparL uv = layoutTyparRef denv uv
         let unconL tc = layoutTyconRef denv tc
-        let prefix = spaceListL  (List.map (fun (v,e) -> if e=1  then unparL v else unparL v -- wordL (sprintf "^ %d" e)) posvs @
-                                  List.map (fun (c,e) -> if e=1  then unconL c else unconL c -- wordL (sprintf "^ %d" e)) poscs)
-        let postfix = spaceListL (List.map (fun (v,e) -> if e= -1 then unparL v else unparL v -- wordL (sprintf "^ %d" (-e))) negvs @
-                                  List.map (fun (c,e) -> if e= -1 then unconL c else unconL c -- wordL (sprintf "^ %d" (-e))) negcs)
+        let rationalL e = wordL (RationalToString e)
+        let measureToPowerL x e = if e = OneRational then x else x -- wordL "^" -- rationalL e
+        let prefix = spaceListL  (List.map (fun (v,e) -> measureToPowerL (unparL v) e) posvs @
+                                  List.map (fun (c,e) -> measureToPowerL (unconL c) e) poscs)
+        let postfix = spaceListL (List.map (fun (v,e) -> measureToPowerL (unparL v) (NegRational e)) negvs @
+                                  List.map (fun (c,e) -> measureToPowerL (unconL c) (NegRational e)) negcs)
         match (negvs,negcs) with 
         | [],[] -> (match posvs,poscs with [],[] -> wordL "1" | _ -> prefix)
         | _ -> prefix ^^ sepL "/" ^^ (if List.length negvs + List.length negcs > 1 then sepL "(" ^^ postfix ^^ sepL ")" else postfix)
@@ -913,7 +930,12 @@ module private PrintTypes =
                     layoutTypeWithInfoAndPrec denv env 2 ty
                 // Layout a named argument 
                 | Some id,_,isParamArray,_ -> 
-                    leftL ((if isParamArray then "params " else "") + id.idText) ^^ sepL ":" ^^ layoutTypeWithInfoAndPrec denv env 2 ty
+                    let prefix =
+                        if isParamArray then    
+                            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^ leftL id.idText
+                        else
+                            leftL id.idText
+                    prefix ^^ sepL ":" ^^ layoutTypeWithInfoAndPrec denv env 2 ty
                         
             let delimitReturnValue = if denv.useColonForReturnType then ":" else "->"
 
@@ -1128,7 +1150,7 @@ module InfoMemberPrinting =
     /// Format the arguments of a method to a buffer. 
     ///
     /// This uses somewhat "old fashioned" printf-style buffer printing.
-    let formatParamDataToBuffer denv os (ParamData(isParamArray,_isOutArg,optArgInfo,nmOpt,pty)) =
+    let formatParamDataToBuffer denv os (ParamData(isParamArray, _isOutArg, optArgInfo, nmOpt, _reflArgInfo, pty)) =
         let isOptArg = optArgInfo.IsOptional
         match isParamArray, nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
         // Layout an optional argument 
@@ -1142,7 +1164,8 @@ module InfoMemberPrinting =
             outputTy denv os pty;
         // Layout a named argument 
         | true, Some nm,_,_ -> 
-            bprintf os "params %s: " nm 
+            layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> bufferL os
+            bprintf os " %s: " nm 
             outputTy denv os pty
         | false, Some nm,_,_ -> 
             bprintf os "%s: " nm 
@@ -1300,7 +1323,7 @@ module private TastDefinitionPrinting =
             let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
             sepListL (wordL "*") (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
 
-    let layoutUnionCase denv  prefixL ucase =
+    let layoutUnionCase denv  prefixL (ucase:UnionCase) =
         let nmL = wordL (DemangleOperatorName ucase.Id.idText) 
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
         match ucase.RecdFields with
@@ -1376,20 +1399,35 @@ module private TastDefinitionPrinting =
               v.DisplayName,            // sort by name 
               List.sum v.NumArgs ,  // sort by #curried
               v.NumArgs.Length)  // sort by arity 
-        let ctors = GetIntrinsicConstructorInfosOfType infoReader m ty 
-        let meths = GetImmediateIntrinsicMethInfosOfType (None,ad) g amap m ty 
+
+        let shouldShow (valRef : ValRef option) =
+            match valRef with
+            | None -> true
+            | Some(vr) ->
+                (denv.showObsoleteMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForObsolete denv.g vr.Attribs)) &&
+                (denv.showHiddenMembers || not (Infos.AttributeChecking.CheckFSharpAttributesForHidden denv.g vr.Attribs))
+
+        let ctors =
+            GetIntrinsicConstructorInfosOfType infoReader m ty
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+
+        let meths =
+            GetImmediateIntrinsicMethInfosOfType (None,ad) g amap m ty
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
+
         let iimplsLs = 
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
             else 
-                GetImmediateInterfacesOfType g amap m ty |> List.map (fun ity -> wordL (if isInterfaceTy g ty then "inherit" else "interface") --- layoutType denv ity)
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (if isInterfaceTy g ty then "inherit" else "interface") --- layoutType denv ity)
 
         let props = 
-            //GetImmediateIntrinsicPropInfosOfType  (None,ad) g amap m ty 
-            GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.No)  PreferOverrides m ty 
+            GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.Yes)  PreferOverrides m ty
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
         let events = 
-            infoReader.GetEventInfosOfType(None,ad,m,ty) 
+            infoReader.GetEventInfosOfType(None,ad,m,ty)
+            |> List.filter (fun v -> shouldShow v.ArbitraryValRef)
 
         let impliedNames = 
             try 

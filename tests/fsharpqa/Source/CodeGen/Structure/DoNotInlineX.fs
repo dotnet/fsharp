@@ -12,7 +12,7 @@ let fsc =
     if not (String.IsNullOrEmpty(overridePath)) then 
         overridePath 
     else
-        let fsc45 = programFiles + @"\Microsoft SDKs\F#\3.1\Framework\v4.0\fsc.exe"
+        let fsc45 = programFiles + @"\Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe"
         let fsc40 = programFiles + @"\Microsoft F#\v4.0\fsc.exe"
         let fsc20 = programFiles + @"\FSharp-2.0.0.0\bin\fsc.exe"
         

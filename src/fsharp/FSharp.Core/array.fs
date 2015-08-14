@@ -6,16 +6,16 @@ namespace Microsoft.FSharp.Collections
     open System.Diagnostics
     open System.Collections.Generic
     open System.Diagnostics.CodeAnalysis
+    open System.Reflection
     open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.SR
-    open Microsoft.FSharp.Core.LanguagePrimitives.ErrorStrings
 #if FX_NO_ICLONEABLE
     open Microsoft.FSharp.Core.ICloneableExtensions            
-#else
-#endif    
+#endif
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -27,8 +27,22 @@ namespace Microsoft.FSharp.Collections
             | null -> nullArg argName 
             | _ -> ()
 
+        let inline indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
+
         [<CompiledName("Length")>]
         let length (array: _[])    = array.Length
+        
+        [<CompiledName("Last")>]
+        let inline last (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
+            array.[array.Length-1]
+
+        [<CompiledName("TryLast")>]
+        let tryLast (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then None 
+            else Some array.[array.Length-1]
 
         [<CompiledName("Initialize")>]
         let inline init count f      = Microsoft.FSharp.Primitives.Basics.Array.init count f
@@ -46,11 +60,23 @@ namespace Microsoft.FSharp.Collections
                 array.[i] <- x
             array
 
+        [<CompiledName("TryHead")>]
+        let tryHead (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then None
+            else Some array.[0]
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (array: 'T[]) = 
             checkNonNull "array" array
             (array.Length = 0)
+
+        [<CompiledName("Tail")>]
+        let tail (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then invalidArg "array" (SR.GetString(SR.notEnoughElements))
+            let len = array.Length - 1
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 1 len array
 
         [<CompiledName("Empty")>]
         let empty<'T> = ([| |] : 'T [])
@@ -91,6 +117,14 @@ namespace Microsoft.FSharp.Collections
             match arrays with 
             | :? ('T[][]) as ts -> ts |> concatArrays // avoid a clone, since we only read the array
             | _ -> arrays |> Seq.toArray |> concatArrays
+            
+        [<CompiledName("Replicate")>]
+        let replicate count x = 
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            let arr = (Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count : 'T array)  
+            for i = 0 to count - 1 do 
+                arr.[i] <- x
+            arr
 
         [<CompiledName("Collect")>]
         let collect (f : 'T -> 'U[])  (array : 'T[]) : 'U[]=
@@ -100,6 +134,76 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len - 1 do
                 result.[i] <- f array.[i]
             concatArrays result
+        
+        [<CompiledName("SplitAt")>]
+        let splitAt index (array:'T[]) =
+            checkNonNull "array" array
+            if index < 0 then invalidArg "index" (SR.GetString(SR.inputMustBeNonNegative))            
+            if array.Length < index then raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+            if index = 0 then
+                let right = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 array.Length array
+                [||],right
+            elif index = array.Length then
+                let left = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 array.Length array
+                left,[||] else
+
+            let res1 = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 index array
+            let res2 = Microsoft.FSharp.Primitives.Basics.Array.subUnchecked index (array.Length-index) array
+
+            res1,res2
+
+        [<CompiledName("Take")>]
+        let take count (array : 'T[]) =
+            checkNonNull "array" array
+            if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
+            if count = 0 then empty else
+            if count > array.Length then
+                raise <| System.InvalidOperationException (SR.GetString(SR.notEnoughElements))
+
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
+
+        [<CompiledName("TakeWhile")>]
+        let takeWhile predicate (array: 'T[]) = 
+            checkNonNull "array" array
+            if array.Length = 0 then empty else
+            let mutable count = 0
+            while count < array.Length && predicate array.[count] do
+                count <- count + 1
+
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count array
+
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (array:'T[]) =
+            let dict = Dictionary comparer
+
+            // Build the groupings
+            for v in array do
+                let safeKey = projection v
+                let mutable prev = Unchecked.defaultof<_>
+                if dict.TryGetValue(safeKey, &prev) then dict.[safeKey] <- prev + 1 else dict.[safeKey] <- 1
+
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
+            let mutable i = 0
+            for group in dict do
+                res.[i] <- getKey group.Key, group.Value
+                i <- i + 1
+            res
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let countByValueType (projection:'T->'Key) (array:'T[]) = countByImpl HashIdentity.Structural<'Key> projection id array
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let countByRefType   (projection:'T->'Key) (array:'T[]) = countByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) array
+
+        [<CompiledName("CountBy")>]
+        let countBy (projection:'T->'Key) (array:'T[]) =
+            checkNonNull "array" array
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then countByValueType projection array
+                else countByRefType   projection array
 
         [<CompiledName("Append")>]
         let append (array1:'T[]) (array2:'T[]) = 
@@ -110,7 +214,12 @@ namespace Microsoft.FSharp.Collections
             let res : 'T[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (n1 + n2)
             Array.Copy(array1, 0, res, 0, n1)
             Array.Copy(array2, 0, res, n1, n2)
-            res            
+            res   
+
+        [<CompiledName("Head")>]
+        let head (array : 'T[]) =
+            checkNonNull "array" array
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString else array.[0]
 
         [<CompiledName("Copy")>]
         let copy (array: 'T[]) =
@@ -132,6 +241,14 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "list" list
             Microsoft.FSharp.Primitives.Basics.List.toArray list
 
+        [<CompiledName("Indexed")>]
+        let indexed (array: 'T[]) =
+            checkNonNull "array" array
+            let len = array.Length
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+            for i = 0 to len - 1 do
+                res.[i] <- (i,array.[i])
+            res
 
         [<CompiledName("Iterate")>]
         let inline iter f (array: 'T[]) = 
@@ -139,6 +256,20 @@ namespace Microsoft.FSharp.Collections
             let len = array.Length
             for i = 0 to len - 1 do 
                 f array.[i]
+
+        [<CompiledName("Distinct")>]
+        let distinct (array:'T[]) =
+            checkNonNull "array" array
+            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+            let mutable i = 0
+
+            let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
+            for v in array do 
+                if hashSet.Add(v) then
+                    temp.[i] <- v
+                    i <- i + 1
+
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 i temp
 
         [<CompiledName("Map")>]
         let inline map (f: 'T -> 'U) (array:'T[]) =
@@ -159,6 +290,19 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len1 - 1 do 
                 f.Invoke(array1.[i], array2.[i])
 
+        [<CompiledName("DistinctBy")>]
+        let distinctBy keyf (array:'T[]) =
+            checkNonNull "array" array
+            let temp = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
+            let mutable i = 0 
+            let hashSet = HashSet<_>(HashIdentity.Structural<_>)
+            for v in array do
+                if hashSet.Add(keyf v) then
+                    temp.[i] <- v
+                    i <- i + 1
+
+            Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 i temp
+
         [<CompiledName("Map2")>]
         let map2 f (array1: 'T[]) (array2: 'U[]) = 
             checkNonNull "array1" array1
@@ -169,6 +313,20 @@ namespace Microsoft.FSharp.Collections
             let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1 
             for i = 0 to len1 - 1 do 
                 res.[i] <- f.Invoke(array1.[i], array2.[i])
+            res
+
+        [<CompiledName("Map3")>]
+        let map3 f (array1: 'T1[]) (array2: 'T2[]) (array3: 'T3[]) = 
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+            checkNonNull "array3" array3
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            let len1 = array1.Length
+            if not (len1 = array2.Length && len1 = array3.Length) then invalidArg "" (SR.GetString(SR.arraysHadDifferentLengths))
+            
+            let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len1
+            for i = 0 to len1 - 1 do
+                res.[i] <- f.Invoke(array1.[i], array2.[i], array3.[i])
             res
 
         [<CompiledName("MapIndexed2")>]
@@ -211,12 +369,32 @@ namespace Microsoft.FSharp.Collections
                 res.[i] <- f.Invoke(i,array.[i])
             res
 
+        [<CompiledName("MapFold")>]
+        let mapFold<'T,'State,'Result> (f : 'State -> 'T -> 'Result * 'State) acc array =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.mapFold f acc array
+
+        [<CompiledName("MapFoldBack")>]
+        let mapFoldBack<'T,'State,'Result> (f : 'T -> 'State -> 'Result * 'State) array acc =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.mapFoldBack f array acc
+
         [<CompiledName("Exists")>]
         let exists (f: 'T -> bool) (array:'T[]) =
             checkNonNull "array" array
             let len = array.Length
             let rec loop i = i < len && (f array.[i] || loop (i+1))
             loop 0
+
+        [<CompiledName("Contains")>]
+        let inline contains e (array:'T[]) =
+            checkNonNull "array" array
+            let mutable state = false
+            let mutable i = 0
+            while (not state && i < array.Length) do
+                state <- e = array.[i]
+                i <- i + 1
+            state
 
         [<CompiledName("Exists2")>]
         let exists2 f (array1: _[]) (array2: _[]) = 
@@ -245,12 +423,53 @@ namespace Microsoft.FSharp.Collections
             let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i+1))
             loop 0
 
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (array: 'T[]) =
+            let dict = Dictionary<_,ResizeArray<_>> comparer
+
+            // Build the groupings
+            for i = 0 to (array.Length - 1) do
+                let v = array.[i]
+                let safeKey = keyf v
+                let mutable prev = Unchecked.defaultof<_>
+                if dict.TryGetValue(safeKey, &prev) then
+                    prev.Add v
+                else 
+                    let prev = ResizeArray ()
+                    dict.[safeKey] <- prev
+                    prev.Add v
+                     
+            // Return the array-of-arrays.
+            let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked dict.Count
+            let mutable i = 0
+            for group in dict do
+                result.[i] <- getKey group.Key, group.Value.ToArray()
+                i <- i + 1
+
+            result
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let groupByValueType (keyf:'T->'Key) (array:'T[]) = groupByImpl HashIdentity.Structural<'Key> keyf id array
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let groupByRefType   (keyf:'T->'Key) (array:'T[]) = groupByImpl Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> Microsoft.FSharp.Core.CompilerServices.RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) array
+
+        [<CompiledName("GroupBy")>]
+        let groupBy (keyf:'T->'Key) (array:'T[]) =
+            checkNonNull "array" array
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then groupByValueType keyf array
+                else groupByRefType   keyf array
+
         [<CompiledName("Pick")>]
         let pick f (array: _[]) = 
             checkNonNull "array" array
             let rec loop i = 
                 if i >= array.Length then 
-                    raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+                    indexNotFound()
                 else 
                     match f array.[i] with 
                     | None -> loop(i+1)
@@ -286,6 +505,20 @@ namespace Microsoft.FSharp.Collections
                 if f x then res.Add(x)
             res.ToArray()
 
+        [<CompiledName("Where")>]
+        let where f (array: _[]) = filter f array
+
+        [<CompiledName("Except")>]
+        let except (itemsToExclude: seq<_>) (array:_[]) =
+            checkNonNull "itemsToExclude" itemsToExclude
+            checkNonNull "array" array
+
+            if array.Length = 0 then
+                array
+            else
+                let cached = HashSet(itemsToExclude, HashIdentity.Structural)
+                array |> filter cached.Add
+
         [<CompiledName("Partition")>]
         let partition f (array: _[]) = 
             checkNonNull "array" array
@@ -300,7 +533,7 @@ namespace Microsoft.FSharp.Collections
         let find f (array: _[]) = 
             checkNonNull "array" array
             let rec loop i = 
-                if i >= array.Length then raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt))) else 
+                if i >= array.Length then indexNotFound() else
                 if f array.[i] then array.[i]  else loop (i+1)
             loop 0 
 
@@ -311,6 +544,85 @@ namespace Microsoft.FSharp.Collections
                 if i >= array.Length then None else 
                 if f array.[i] then Some array.[i]  else loop (i+1)
             loop 0 
+
+        [<CompiledName("Skip")>]
+        let skip count (array:'T[]) =
+            checkNonNull "array" array
+            if count > array.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
+            if count = array.Length then
+                [| |]
+            else
+                let count = max count 0
+                Microsoft.FSharp.Primitives.Basics.Array.subUnchecked count (array.Length - count) array
+
+        [<CompiledName("SkipWhile")>]
+        let skipWhile p (array: 'T[]) =
+            checkNonNull "array" array
+            let mutable i = 0
+            let len = array.Length
+            while i < len && p array.[i] do i <- i + 1
+
+            match len - i with
+            | 0 -> [| |]
+            | resLen ->
+                Microsoft.FSharp.Primitives.Basics.Array.subUnchecked i resLen array
+
+        [<CompiledName("FindBack")>]
+        let findBack f (array: _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.findBack f array
+
+        [<CompiledName("TryFindBack")>]
+        let tryFindBack f (array: _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.tryFindBack f array
+
+        [<CompiledName("FindIndexBack")>]
+        let findIndexBack f (array : _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.findIndexBack f array
+
+        [<CompiledName("TryFindIndexBack")>]
+        let tryFindIndexBack f (array : _[]) =
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.tryFindIndexBack f array
+
+        [<CompiledName("Windowed")>]
+        let windowed windowSize (array:'T[]) =
+            checkNonNull "array" array
+            if windowSize <= 0 then invalidArg "windowSize" (SR.GetString(SR.inputMustBePositive))
+            let len = array.Length
+            if windowSize > len then
+                [| |]
+            else
+                let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked (len - windowSize + 1) : 'T[][]
+                for i = 0 to len - windowSize do
+                    res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked i windowSize array
+                res
+
+        [<CompiledName("ChunkBySize")>]
+        let chunkBySize chunkSize (array:'T[]) =
+            checkNonNull "array" array
+            if chunkSize <= 0 then invalidArg "chunkSize" (SR.GetString(SR.inputMustBePositive))
+            let len = array.Length
+            if len = 0 then
+                [| |]
+            else if chunkSize > len then
+                [| copy array |]
+            else
+                let chunkCount = (len - 1) / chunkSize + 1
+                let res = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked chunkCount : 'T[][]
+                for i = 0 to len / chunkSize - 1 do
+                    res.[i] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked (i * chunkSize) chunkSize array
+                if len % chunkSize <> 0 then
+                    res.[chunkCount - 1] <- Microsoft.FSharp.Primitives.Basics.Array.subUnchecked ((chunkCount - 1) * chunkSize) (len % chunkSize) array
+                res
+
+        [<CompiledName("SplitInto")>]
+        let splitInto count (array:_[]) =
+            checkNonNull "array" array
+            if count <= 0 then invalidArg "count" (SR.GetString(SR.inputMustBePositive))
+            Microsoft.FSharp.Primitives.Basics.Array.splitInto count array
 
         [<CompiledName("Zip")>]
         let zip (array1: _[]) (array2: _[]) = 
@@ -335,6 +647,18 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len1 - 1 do 
                 res.[i] <- (array1.[i],array2.[i],array3.[i])
             res
+
+        [<CompiledName("Unfold")>]
+        let unfold<'T,'State> (f:'State -> ('T*'State) option) (s:'State) =
+            let res = ResizeArray<_>()
+            let rec loop state =
+                match f state with
+                | None -> ()
+                | Some (x,s') ->
+                    res.Add(x)
+                    loop s'
+            loop s
+            res.ToArray()
 
         [<CompiledName("Unzip")>]
         let unzip (array: _[]) = 
@@ -425,16 +749,6 @@ namespace Microsoft.FSharp.Collections
                 res <- f.Invoke(array.[i],res)
             res
 
-        let scanSubRight f (array : _[]) start fin initState = 
-            checkNonNull "array" array
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-            let mutable state = initState 
-            let res = create (2+fin-start) initState 
-            for i = fin downto start do
-                state <- f.Invoke(array.[i],state);
-                res.[i - start] <- state
-            res
-
         let scanSubLeft f  initState (array : _[]) start fin = 
             checkNonNull "array" array
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
@@ -454,15 +768,23 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ScanBack")>]
         let scanBack<'T,'State> f (array : 'T[]) (acc:'State) = 
             checkNonNull "array" array
-            let len = array.Length
-            scanSubRight f array 0 (len - 1) acc
+            Microsoft.FSharp.Primitives.Basics.Array.scanSubRight f array 0 (array.Length - 1) acc
+
+        [<CompiledName("Singleton")>]
+        let inline singleton value = [|value|]
+
+        [<CompiledName("Pairwise")>]
+        let pairwise (array: 'T[]) =
+            checkNonNull "array" array
+            if array.Length < 2 then [||] else
+            init (array.Length-1) (fun i -> array.[i],array.[i+1])
 
         [<CompiledName("Reduce")>]
         let reduce f (array : _[]) = 
             checkNonNull "array" array
             let len = array.Length
             if len = 0 then 
-                invalidArg "array" InputArrayEmptyString
+                invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             else 
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 let mutable res = array.[0]
@@ -474,7 +796,7 @@ namespace Microsoft.FSharp.Collections
         let reduceBack f (array : _[]) = 
             checkNonNull "array" array
             let len = array.Length
-            if len = 0 then invalidArg "array" InputArrayEmptyString
+            if len = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             else foldSubRight f array 0 (len - 2) array.[len - 1]
 
         [<CompiledName("SortInPlaceWith")>]
@@ -521,7 +843,19 @@ namespace Microsoft.FSharp.Collections
             let result = copy array
             sortInPlace result;
             result
-            
+
+        [<CompiledName("SortByDescending")>]
+        let inline sortByDescending f array =
+            checkNonNull "array" array
+            let inline compareDescending a b = compare (f b) (f a)
+            sortWith compareDescending array
+
+        [<CompiledName("SortDescending")>]
+        let inline sortDescending array =
+            checkNonNull "array" array
+            let inline compareDescending a b = compare b a
+            sortWith compareDescending array
+
         [<CompiledName("ToSeq")>]
         let toSeq array = 
             checkNonNull "array" array
@@ -538,7 +872,7 @@ namespace Microsoft.FSharp.Collections
             let len = array.Length 
             let rec go n = 
                 if n >= len then 
-                    raise (System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))  
+                    indexNotFound()
                 elif f array.[n] then 
                     n 
                 else go (n+1)
@@ -575,7 +909,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Min")>]
         let inline min (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             let mutable acc = array.[0]
             for i = 1 to array.Length - 1 do
                 let curr = array.[i]
@@ -586,7 +920,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MinBy")>]
         let inline minBy f (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             let mutable accv = array.[0]
             let mutable acc = f accv
             for i = 1 to array.Length - 1 do
@@ -600,7 +934,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Max")>]
         let inline max (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             let mutable acc = array.[0]
             for i = 1 to array.Length - 1 do
                 let curr = array.[i]
@@ -611,7 +945,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MaxBy")>]
         let inline maxBy f (array:_[]) = 
             checkNonNull "array" array
-            if array.Length = 0 then invalidArg "array" InputArrayEmptyString
+            if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             let mutable accv = array.[0]
             let mutable acc = f accv
             for i = 1 to array.Length - 1 do
@@ -632,6 +966,27 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             Seq.averageBy f array
 
+        [<CompiledName("CompareWith")>]
+        let inline compareWith (comparer:'T -> 'T -> int) (array1: 'T[]) (array2: 'T[]) = 
+            checkNonNull "array1" array1
+            checkNonNull "array2" array2
+    
+            let length1 = array1.Length
+            let length2 = array2.Length
+            let minLength = Operators.min length1 length2
+
+            let rec loop index  =
+                if index = minLength  then
+                    if length1 = length2 then 0
+                    elif length1 < length2 then -1
+                    else 1
+                else  
+                    let result = comparer array1.[index] array2.[index]
+                    if result <> 0 then result else
+                    loop (index+1)
+
+            loop 0
+
         [<CompiledName("GetSubArray")>]
         let sub (array:'T[]) (startIndex:int) (count:int) =
             checkNonNull "array" array
@@ -639,6 +994,16 @@ namespace Microsoft.FSharp.Collections
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
             if startIndex + count > array.Length then invalidArg "count" (SR.GetString(SR.outOfRange))
             Microsoft.FSharp.Primitives.Basics.Array.subUnchecked startIndex count array
+
+        [<CompiledName("Item")>]
+        let item n (array:_[]) =
+            array.[n]
+
+        [<CompiledName("TryItem")>]
+        let tryItem index (array:'T[]) =
+            checkNonNull "array" array
+            if index < 0 || index >= array.Length then None
+            else Some(array.[index])
 
         [<CompiledName("Get")>]
         let get (array:_[]) n = 
@@ -655,7 +1020,22 @@ namespace Microsoft.FSharp.Collections
             if count < 0 then invalidArg "count" (SR.GetString(SR.inputMustBeNonNegative))
             for i = targetIndex to targetIndex + count - 1 do 
                 target.[i] <- x
-            
+
+        [<CompiledName("ExactlyOne")>]
+        let exactlyOne (array:'T[]) =
+            checkNonNull "array" array
+            if array.Length = 1 then array.[0]
+            elif array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
+
+        [<CompiledName("Truncate")>]
+        let truncate count (array:'T[]) =
+            checkNonNull "array" array
+            if count <= 0 then empty
+            else
+                let len = array.Length
+                let count' = Operators.min count len
+                Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count' array
 
 #if FX_NO_TPL_PARALLEL
 #else

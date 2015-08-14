@@ -20,13 +20,18 @@ namespace Microsoft.FSharp.Collections
         let inline Structural<'T when 'T : equality> : IEqualityComparer<'T> = 
             LanguagePrimitives.FastGenericEqualityComparer<'T>
               
-        let LimitedStructural<'T when 'T : equality>(limit) : IEqualityComparer<'T> = 
+        let inline LimitedStructural<'T when 'T : equality>(limit) : IEqualityComparer<'T> = 
             LanguagePrimitives.FastLimitedGenericEqualityComparer<'T>(limit)
               
         let Reference<'T when 'T : not struct > : IEqualityComparer<'T> = 
             { new IEqualityComparer<'T> with
                   member self.GetHashCode(x) = LanguagePrimitives.PhysicalHash(x) 
                   member self.Equals(x,y) = LanguagePrimitives.PhysicalEquality x y }
+
+        let inline NonStructural< 'T when 'T : equality and 'T  : (static member ( = ) : 'T * 'T    -> bool) > = 
+            { new IEqualityComparer< 'T > with
+                  member self.GetHashCode(x) = NonStructuralComparison.hash x 
+                  member self.Equals(x, y) = NonStructuralComparison.(=) x y  }
 
         let inline FromFunctions hash eq : IEqualityComparer<'T> = 
             let eq = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(eq)
@@ -37,10 +42,16 @@ namespace Microsoft.FSharp.Collections
 
     module ComparisonIdentity = 
 
-
-        let Structural<'T when 'T : comparison > : IComparer<'T> = 
+        let inline Structural<'T when 'T : comparison > : IComparer<'T> = 
             LanguagePrimitives.FastGenericComparer<'T>
-            
+
+#if BUILDING_WITH_LKG
+#else
+        let inline NonStructural< 'T when 'T : (static member ( < ) : 'T * 'T    -> bool) and 'T : (static member ( > ) : 'T * 'T    -> bool) > : IComparer< 'T > = 
+            { new IComparer<'T> with
+                  member self.Compare(x,y) = NonStructuralComparison.compare x y } 
+#endif
+
         let FromFunction comparer = 
             let comparer = OptimizedClosures.FSharpFunc<'T,'T,int>.Adapt(comparer)
             { new IComparer<'T> with

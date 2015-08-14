@@ -11,8 +11,8 @@ The test cases for this suite reside under `tests\fsharp`. This suite dates back
 The test cases for this suite reside under `tests\fsharpqa\source`.
 This suite was first created when F# 2.0 was being added to Visual Studio 2010.  Tests for this suite are driven by the "RunAll" framework, implemented in Perl.  This suite is rather large and has broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
 
-### Compiler and Library Core Unit Test Suite
-The test cases for this suite reside next to the F# core library code, at `src\fsharp\FSharp.Core.Unittests`. This suite is a set of standard NUnit test cases, implemented in F#.  This suite focuses on validation of the core F# types and the public surface area of `FSharp.Core.dll`.
+### Compiler and Library Core Unit Test Suites
+The test cases for these suites reside next to the F# core library code, at `src\fsharp\FSharp.Core.Unittests` and `src\fsharp\FSharp.Compiler.Unittests`. These suites are standard NUnit test cases, implemented in F#.  The FSharp.Core.Unittests suite focuses on validation of the core F# types and the public surface area of `FSharp.Core.dll`, and the FSharp.Compiler.Unittests suite focuses on validation of compiler internals.
 
 ### Visual F# Tools IDE Unit Test Suite
 The test cases for this suite reside next to the Visual F# Tools code, at `vsintegration\src\unittests`.  This suite is a set of standard NUnit test cases, implemented in F#.  This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
@@ -38,6 +38,7 @@ The script `tests\RunTests.cmd` has been provided to make execution of the above
 ```
 RunTests.cmd <debug|release> fsharp [tags to run] [tags not to run]
 RunTests.cmd <debug|release> fsharpqa [tags to run] [tags not to run]
+RunTests.cmd <debug|release> compilerunit
 RunTests.cmd <debug|release> coreunit
 RunTests.cmd <debug|release> coreunitportable47
 RunTests.cmd <debug|release> coreunitportable7
@@ -48,7 +49,7 @@ RunTests.cmd <debug|release> ideunit
 
 `RunTests.cmd` sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
 
-All test execution logs and result files will be dropped into the `tests\TestResults` folder, and have file names matching `FSharp_*.*`, `FSharpQA_*.*`, `CoreUnit_*.*`, `IDEUnit_*.*`, e.g. `FSharpQA_Results.log` or `FSharp_Failures.log`.
+All test execution logs and result files will be dropped into the `tests\TestResults` folder, and have file names matching `FSharp_*.*`, `FSharpQA_*.*`, `CompilerUnit_*.*`, `CoreUnit_*.*`, `IDEUnit_*.*`, e.g. `FSharpQA_Results.log` or `FSharp_Failures.log`.
 
 For the FSharp and FSharpQA suites, the list of test areas and their associated "tags" is stored at
 
@@ -93,9 +94,14 @@ Test area directories in this suite will contain a number of source code files a
 Test cases will run an optional "pre command," compile some set of source files using some set of flags, optionally run the resulting binary, then optionally run a final "post command." 
 If all of these steps complete without issue, the test is considered to have passed.
 
-### Core Unit Test Suite
+### FSharp.Compiler and FSharp.Core Unit Test Suites
 
-To build the unit test binary, call `msbuild fsharp-library-unittests-build.proj` from the `src` directory.  Tests are contained in the binary `FSharp.Core.Unittests.dll`.
+To build these unit test binaries, from the `src` directory call 
+
+- `msbuild fsharp-compiler-unittests-build.proj`
+  - Output binary is `FSharp.Compiler.Unittests.dll`
+- `msbuild fsharp-library-unittests-build.proj`
+  - Output binary is `FSharp.Core.Unittests.dll`
 
 You can execute and re-run these tests using any standard NUnit approach - via graphical `nunit.exe` or on the command line via `nunit-console.exe`.
 

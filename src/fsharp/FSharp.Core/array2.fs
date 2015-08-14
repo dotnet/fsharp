@@ -69,10 +69,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("InitializeBased")>]
         let initBased b1 b2 n m f = 
-            let array = (zeroCreateBased b1 b2 n m : 'T[,])  
+            let array = (zeroCreateBased b1 b2 n m : 'T[,])
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             for i = b1 to b1+n - 1 do 
               for j = b2 to b2+m - 1 do 
-                array.[i,j] <- f i j
+                array.[i,j] <- f.Invoke(i, j)
             array
 
 
@@ -102,9 +103,10 @@ namespace Microsoft.FSharp.Collections
             let count2 = length2 array 
             let b1 = base1 array 
             let b2 = base2 array 
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
             for i = b1 to b1+count1 - 1 do 
               for j = b2 to b2+count2 - 1 do 
-                f i j array.[i,j]
+                f.Invoke(i, j, array.[i,j])
 
         [<CompiledName("Map")>]
         let map f array = 
@@ -114,7 +116,8 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MapIndexed")>]
         let mapi f array = 
             checkNonNull "array" array
-            initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f i j array.[i,j])
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            initBased (base1 array) (base2 array) (length1 array) (length2 array) (fun i j -> f.Invoke(i, j, array.[i,j]))
 
         [<CompiledName("Copy")>]
         let copy array = 

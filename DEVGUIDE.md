@@ -10,7 +10,7 @@ To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 > Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A copy of the license can be found in the [License.txt](License.txt) file at the root of this distribution.
 > By using this source code in any fashion, you are agreeing to be bound by the terms of the Apache License, Version 2.0. You must not remove this notice, or any other, from this software.
 
-**Questions?** If you have questions about the source code, please ask in the issues and discussion forums.
+**Questions?** If you have questions about the source code, please ask in the issues.
 
 ## 0.  A Shortcut to Build and Smoke Test
 
@@ -33,10 +33,8 @@ Note that you need the .NET framework 3.5 installed on your machine in order to 
 
 This uses the proto compiler to build `FSharp.Core.dll`, `FSharp.Compiler.dll`, `fsc.exe`, and `fsi.exe`.
 
-```
-msbuild src/fsharp-library-build.proj 
-msbuild src/fsharp-compiler-build.proj 
-```
+    msbuild src/fsharp-library-build.proj 
+    msbuild src/fsharp-compiler-build.proj 
     
 You can now use the updated F# compiler in `debug\net40\bin\fsc.exe` and F# Interactive in `debug\net40\bin\fsi.exe` to develop and test basic language and tool features.
 
@@ -48,73 +46,81 @@ See [TESTGUIDE.md](TESTGUIDE.md) for full details on how to run tests.
     
 Prior to a **Debug** test run, you need to complete **all** of these steps:
 
-```
-msbuild src/fsharp-library-build.proj
-msbuild src/fsharp-compiler-build.proj
-msbuild src/fsharp-typeproviders-build.proj
-msbuild src/fsharp-library-build.proj /p:TargetFramework=net20
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259
-msbuild src/fsharp-library-unittests-build.proj
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259
-src\update.cmd debug -ngen
-tests\BuildTestTools.cmd debug 
-```
+    msbuild src/fsharp-library-build.proj
+    msbuild src/fsharp-compiler-build.proj
+    msbuild src/fsharp-typeproviders-build.proj
+    msbuild src/fsharp-compiler-unittests-build.proj
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=net20
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259
+    msbuild src/fsharp-library-unittests-build.proj
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259
+    src\update.cmd debug -ngen
+    tests\BuildTestTools.cmd debug 
+
 
 [Optional] If testing the Visual Studio bits (see below) you will also need:
 
-```
-msbuild vsintegration\fsharp-vsintegration-build.proj
-msbuild vsintegration\fsharp-vsintegration-unittests-build.proj
-```    
+    msbuild vsintegration\fsharp-vsintegration-build.proj
+    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj
 
 Prior to a **Release** test run, you need to do **all** of these:
 
-```
-msbuild src/fsharp-library-build.proj  /p:Configuration=Release
-msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
-msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Release
-msbuild src/fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=Release
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-msbuild src/fsharp-library-unittests-build.proj  /p:Configuration=Release
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-src\update.cmd release -ngen
-tests\BuildTestTools.cmd release 
-```
+    msbuild src/fsharp-library-build.proj  /p:Configuration=Release
+    msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
+    msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Release
+    msbuild src/fsharp-compiler-unittests-build.proj  /p:Configuration=Release
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=Release
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+    msbuild src/fsharp-library-unittests-build.proj  /p:Configuration=Release
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+    src\update.cmd release -ngen
+    tests\BuildTestTools.cmd release 
 
-[Optional] If testing the Visual F# IDE Tools (see below) you will also need:
 
-```
-msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
-msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
-```
+[Optional] If testing **Release** build of the Visual F# IDE Tools (see below) you will also need:
 
-## 4. [Optional] Build and Install the Visual F# IDE Tools
+    msbuild vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+    msbuild vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
 
-To build the VS components:
+## 4. [Optional] Install the Visual F# IDE Tools and Clobber the F# 4.0 SDK on the machine
 
-```
-msbuild vsintegration\fsharp-vsintegration-build.proj
-```
+**Note:** Step #3 will install a VSIX extension into Visual Studio 2015 that changes the Visual F# IDE Tools 
+components installed into Visual Studio 2015.  You can revert this step by disabling or uninstalling the addin.
 
-To install the VS components:
+**Note:** Step #4 will clobber the machine-wide installed F# 4.0 SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used 
+by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 2015 is currently the 
+only way to revert this step.  
 
-1. Ensure that the VSIX package is uninstalled.
- - In VS, select Tools/Extensions and Updates
- - If the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
-1. Run ```debug\net40\bin\EnableOpenSource.vsix```
-1. Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools.
+**Note:** After you complete the install, the FSharp.Core referenced by your projects will not be updated. If you want to make
+a project that references your updated FSharp.Core, you must explicitly change the ``TargetFSharpCoreVersion`` in the .fsproj
+file to ``4.4.0.5099`` (or a corresponding portable version number with suffix ``5099``).
+
+For **Debug**:
+
+1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
+1. Run ``debug\net40\bin\EnableOpenSource.vsix``
+1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# 4.0 SDK)
+
+For **Release**:
+
+1. Ensure that the VSIX package is uninstalled. In VS, select Tools/Extensions and Updates and if the package `VisualStudio.FSharp.EnableOpenSource` is installed, select Uninstall
+1. Run ``release\net40\bin\EnableOpenSource.vsix``
+1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# 4.0 SDK)
+
+Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive. 
+
 
 ### Notes on the build
 
