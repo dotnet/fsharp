@@ -1896,9 +1896,6 @@ type BackgroundCompiler(notifyFileTypeCheckStateIsDirty:NotifyFileTypeCheckState
             Trace.PrintLine("CompilerServices", fun _ -> "Service.UntypedParseImpl")
             use t = Trace.CallByThreadNamed("Reactor", "UntypedParseImpl", "ThreadPool", fun _->"")  
         
-#if TYPE_PROVIDER_SECURITY
-            ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked <- Some filename
-#endif
             let builder,_,_ = incrementalBuildersCache.Get(options) // Q: Whis it it ok to ignore createErrors in the build cache? A: These errors will be appended into the typecheck results
             
             // Do the parsing.

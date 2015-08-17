@@ -690,6 +690,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.GetProperty(propId);
         }
 #endif
-
     }
 }
