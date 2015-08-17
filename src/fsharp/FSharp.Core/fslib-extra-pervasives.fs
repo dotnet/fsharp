@@ -31,6 +31,12 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateSet")>]
     let set l = Collections.Set.ofSeq l
 
+    let dummyArray = [||]
+    let inline dont_tail_call f = 
+        let result = f ()
+        dummyArray.Length |> ignore // pretty stupid way to avoid tail call, would be better if attribute existed, but this should be inlineable by the JIT
+        result
+
     let inline ICollection_Contains<'collection,'item when 'collection :> ICollection<'item>> (collection:'collection) (item:'item) =
         collection.Contains item
 
@@ -41,7 +47,7 @@ module ExtraTopLevelOperators =
         // Give a read-only view of the dictionary
         { new IDictionary<'Key, 'T> with 
                 member s.Item 
-                    with get x = t.[makeSafeKey x]
+                    with get x = dont_tail_call (fun () -> t.[makeSafeKey x])
                     and  set x v = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
                 member s.Keys = 
                     let keys = t.Keys
@@ -64,7 +70,7 @@ module ExtraTopLevelOperators =
                     
                 member s.Values = upcast t.Values
                 member s.Add(k,v) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-                member s.ContainsKey(k) = t.ContainsKey(makeSafeKey k)
+                member s.ContainsKey(k) = dont_tail_call (fun () -> t.ContainsKey(makeSafeKey k))
                 member s.TryGetValue(k,r) = 
                     let safeKey = makeSafeKey k
                     if t.ContainsKey(safeKey) then (r <- t.[safeKey]; true) else false
