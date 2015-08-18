@@ -208,6 +208,8 @@ module SequencePoint =
 /// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
 let sizeof_IMAGE_DEBUG_DIRECTORY = 28 
 
+#if NO_PDB_WRITER
+#else
 [<NoEquality; NoComparison>]
 type PdbData = 
     { EntryPoint: int32 option;
@@ -273,8 +275,6 @@ let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info =
                                          EndColumn = (if adjustToPrevLine then 80 else sp2.Column); }
         Array.sortInPlaceBy fst allSps;
 
-
-    
     let spOffset = ref 0
     info.Methods |> Array.iteri (fun i minfo ->
 
@@ -365,8 +365,8 @@ let (?) this memb (args:'Args) : 'R =
 
 // Creating instances of needed classes from 'Mono.CompilerServices.SymbolWriter' assembly
 
-let monoCompilerSvc = "Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"
-let ctor (asmName:string) (clsName:string) (args:obj[]) = 
+let monoCompilerSvc = new AssemblyName("Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
+let ctor (asmName:AssemblyName) clsName (args:obj[]) = 
     let asm = Assembly.Load(asmName)
     let ty = asm.GetType(clsName)
     System.Activator.CreateInstance(ty, args)
@@ -432,7 +432,7 @@ let WriteMdbInfo fmdb f info =
             // Finished generating debug information for the curretn method
             wr?CloseMethod()
         | _ -> ()
-    
+
     // Finalize - MDB requires the MVID of the generated .NET module
     let moduleGuid = new System.Guid(info.ModuleID |> Array.map byte)
     wr?WriteSymbolFile(moduleGuid)
@@ -476,11 +476,14 @@ let DumpDebugInfo (outfile:string) (info:PdbData) =
       writeScope "" meth.RootScope
       fprintfn sw ""
     
+#endif
 
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
 
+#if FX_NO_KEY_SIGNING
+#else
 type ILStrongNameSigner =  
     | PublicKeySigner of Support.pubkey
     | KeyPair of Support.keyPair
@@ -522,6 +525,7 @@ type ILStrongNameSigner =
         | PublicKeySigner _ -> ()
         | KeyPair kp -> Support.signerSignFileWithKeyPair file kp
         | KeyContainer kn -> Support.signerSignFileWithKeyContainer file kn
+#endif
 
 //---------------------------------------------------------------------
 // TYPES FOR TABLES
@@ -3417,7 +3421,7 @@ module FileSystemUtilites =
 
       if runningOnMono then 
         try 
-            let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
+            let monoPosix = Assembly.Load(new AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n";
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
             let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],System.Globalization.CultureInfo.InvariantCulture)
@@ -4464,22 +4468,21 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                  b0 reloc2; b1 reloc2; |];
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize);
 
-          os.Close();
-          
-          try 
+          os.Dispose();
+
+          try
               FileSystemUtilites.setExecutablePermission outfile
-          with _ -> 
+          with _ ->
               ()
           pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
           
-        // Looks like a finally...
-        with e ->   
-            (try 
-                os.Close(); 
-                FileSystem.FileDelete outfile 
-             with _ -> ()); 
+        // Looks like a finally
+        with e ->
+            (try
+                os.Dispose();
+                FileSystem.FileDelete outfile
+             with _ -> ());
             reraise()
-   
 
     reportTime showTimes "Writing Image";
      
@@ -4523,10 +4526,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                 if debugDataChunk.size < idd.iddData.Length then 
                     failwith "Debug data area is not big enough.  Debug info may not be usable";
                 writeBytes os2 idd.iddData;
-                os2.Close()
+                os2.Dispose()
             with e -> 
                 failwith ("Error while writing debug directory entry: "+e.Message);
-                (try os2.Close(); FileSystem.FileDelete outfile with _ -> ()); 
+                (try os2.Dispose(); FileSystem.FileDelete outfile with _ -> ()); 
                 reraise()
         with e -> 
             reraise()

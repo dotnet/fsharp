@@ -2298,7 +2298,7 @@ module FSharpResidentCompiler =
             // private to the user.
             if runningOnMono then 
               try 
-                  let monoPosix = System.Reflection.Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
+                  let monoPosix = System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
                   let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
                   let socketName = Path.Combine(FileSystem.GetTempPathShim(), channelName)
                   let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box socketName |],System.Globalization.CultureInfo.InvariantCulture)
@@ -2429,7 +2429,17 @@ let main argv =
     if hasArgument "pause" argv then 
         System.Console.WriteLine("Press any key to continue...")
         System.Console.ReadKey() |> ignore
-      
+
+    let quitProcessExiter = 
+        { new Exiter with 
+            member x.Exit(n) =                    
+                try 
+                  System.Environment.Exit(n)
+                with _ -> 
+                  ()            
+                failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
+        }
+
     if runningOnMono && hasArgument "resident" argv then 
         let argv = stripArgument "resident" argv
 
@@ -2441,7 +2451,7 @@ let main argv =
         match exitCodeOpt with 
         | Some exitCode -> exitCode
         | None -> 
-            mainCompile (argv, true, QuitProcessExiter)
+            mainCompile (argv, true, quitProcessExiter)
             0
 
     elif runningOnMono && hasArgument "server" argv then 
@@ -2451,7 +2461,7 @@ let main argv =
         0
         
     else
-        mainCompile (argv, false, QuitProcessExiter)
+        mainCompile (argv, false, quitProcessExiter)
         0
 
 #endif

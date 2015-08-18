@@ -99,15 +99,6 @@ let rec AttachRange m (exn:exn) =
 type Exiter = 
     abstract Exit : int -> 'T 
 
-let QuitProcessExiter = 
-    { new Exiter with 
-        member x.Exit(n) =                    
-            try 
-              System.Environment.Exit(n)
-            with _ -> 
-              ()            
-            failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() }
-
 /// Closed enumeration of build phases.
 type BuildPhase =
     | DefaultPhase 
@@ -294,9 +285,12 @@ module ErrorLoggerExtensions =
         | :? System.IO.IOException -> () // This covers FileNotFoundException and DirectoryNotFoundException
         | :? System.UnauthorizedAccessException -> ()
         | Failure _ // This gives reports for compiler INTERNAL ERRORs
+#if FX_NO_REDUCEDEXCEPTIONS
+#else
         | :? System.SystemException -> 
             PreserveStackTrace(exn)
             raise exn
+#endif
         | _ -> ()
 
     type ErrorLogger with  
@@ -311,7 +305,10 @@ module ErrorLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the ErrorSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
+#if FX_NO_REDUCEDEXCEPTIONS
+#else
             | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException),_) ->  ()
+#endif
             | ReportedError _  | WrappedError(ReportedError _,_)  -> ()
             | StopProcessing | WrappedError(StopProcessing,_) -> raise exn
             | _ ->

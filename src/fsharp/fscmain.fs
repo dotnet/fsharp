@@ -54,7 +54,7 @@ module FSharpResidentCompiler =
         static let channelName = baseChannelName + "_" +  domainName + "_" + userName
         static let serverName = if runningOnMono then "FSCServerMono" else "FSCSever"
         static let mutable serverExists = true
-        
+
         let outputCollector = new OutputCollector()
 
         // This background agent ensures all compilation requests sent to the server are serialized
@@ -119,7 +119,7 @@ module FSharpResidentCompiler =
             // private to the user.
             if runningOnMono then 
               try 
-                  let monoPosix = System.Reflection.Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
+                  let monoPosix = System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
                   let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
                   let socketName = Path.Combine(Path.GetTempPath(), channelName)
                   let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box socketName |],System.Globalization.CultureInfo.InvariantCulture)
@@ -246,6 +246,17 @@ module Driver =
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
             System.Console.WriteLine("Press any key to continue...")
             System.Console.ReadKey() |> ignore
+
+        let quitProcessExiter = 
+            { new Exiter with 
+                member x.Exit(n) =                    
+                    try 
+                      System.Environment.Exit(n)
+                    with _ -> 
+                      ()            
+                    failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
+            }
+
         if runningOnMono && argv |> Array.exists  (fun x -> x = "/resident" || x = "--resident") then 
             let argv = argv |> Array.filter (fun x -> x <> "/resident" && x <> "--resident")
 
@@ -257,7 +268,7 @@ module Driver =
             match exitCodeOpt with 
             | Some exitCode -> exitCode
             | None -> 
-                mainCompile (argv, true, QuitProcessExiter)
+                mainCompile (argv, true, quitProcessExiter)
                 0
 
         elif runningOnMono && argv |> Array.exists  (fun x -> x = "/server" || x = "--server") then 
@@ -267,7 +278,7 @@ module Driver =
             0
         
         else
-            mainCompile (argv, false, QuitProcessExiter)
+            mainCompile (argv, false, quitProcessExiter)
             0 
 
 

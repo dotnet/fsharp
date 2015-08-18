@@ -1577,7 +1577,7 @@ let DefaultBasicReferencesForOutOfProjectSources =
       // in which case the compiler will also be running as a .NET 2.0 process.
       //
       // NOTE: it seems this can now be removed now that .NET 4.x is minimally assumed when using this toolchain
-      if (try System.Reflection.Assembly.Load "System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" |> ignore; true with _ -> false) then 
+      if (try System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")) |> ignore; true with _ -> false) then 
           yield "System.Core" 
 
       yield "System.Runtime"

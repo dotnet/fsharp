@@ -1232,7 +1232,7 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
             // We can't have a dependency on Mono DLLs (indeed we don't even have them!)
             // So SOFT BIND the following code:
             // Mono.Unix.Native.Stdlib.signal(Mono.Unix.Native.Signum.SIGINT,new Mono.Unix.Native.SignalHandler(fun n -> PosixSignalProcessor.PosixInvoke(n))) |> ignore;
-            match (try Choice1Of2(Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")) with e -> Choice2Of2 e) with 
+            match (try Choice1Of2(Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))) with e -> Choice2Of2 e) with 
             | Choice1Of2(monoPosix) -> 
               try
                 if !progress then fprintfn fsiConsoleOutput.Error "loading type Mono.Unix.Native.Stdlib...";

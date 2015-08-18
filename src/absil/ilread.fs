@@ -4095,7 +4095,7 @@ let OpenILModuleReader infile opts =
           ilAssemblyRefs = ilAssemblyRefs;
           dispose = (fun () -> 
             cell := None;
-            is.Close();
+            is.Dispose();
             ClosePdbReader pdb) }
 
 // ++GLOBAL MUTABLE STATE

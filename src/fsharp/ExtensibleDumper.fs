@@ -9,6 +9,11 @@ open System.Collections.Generic
 #if EXTENSIBLE_DUMPER
 #if DEBUG
 
+#if FX_RESHAPED_REFLECTION
+open PrimReflectionAdapters
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
 type internal ExtensibleDumper(x:obj) =
     static let mutable dumpers = new  Dictionary<Type,(Type*MethodInfo) option>()
 
@@ -21,7 +26,7 @@ type internal ExtensibleDumper(x:obj) =
             let dumpeeType = o.GetType()
             
             let DeriveDumperName(dumpeeType:Type) =
-                "Internal.Utilities.Diagnostic." + dumpeeType.Name + "Dumper"            
+                "Internal.Utilities.Diagnostic." + dumpeeType.Name + "Dumper"
 
             match dumpers.TryGetValue(dumpeeType) with 
             | true, Some(dumperType, methodInfo) -> 
@@ -34,9 +39,9 @@ type internal ExtensibleDumper(x:obj) =
                 "There is no dumper named "+(DeriveDumperName dumpeeType)+" with single constructor that takes "+dumpeeType.Name+" and property named Dump."
             | false, _ -> 
                 let TryAdd(dumpeeType:Type) =
-                    let dumperDerivedName = DeriveDumperName(dumpeeType)                     
+                    let dumperDerivedName = DeriveDumperName(dumpeeType)
                     let dumperAssembly = dumpeeType.Assembly // Dumper must live in the same assembly as dumpee
-                    let dumperType = dumperAssembly.GetType(dumperDerivedName, (*throwOnError*)false)
+                    let dumperType = dumperAssembly.GetType(dumperDerivedName, (*throwOnError*)false, (*ignoreCase*)false)
                     if dumperType <> null then 
                         let dumpMethod = dumperType.GetMethod("ToString")
                         if dumpMethod <> null then 
@@ -46,15 +51,12 @@ type internal ExtensibleDumper(x:obj) =
                                 let parameters = constr.GetParameters()
                                 if parameters.Length = 1 then
                                     dumpers.[o.GetType()] <- Some(dumperType,dumpMethod)
-                    dumpers.ContainsKey(o.GetType())       
+                    dumpers.ContainsKey(o.GetType())
                            
                 if (not(TryAdd(o.GetType()))) then
                     if (not(TryAdd(o.GetType().BaseType))) then 
                         dumpers.[dumpeeType] <- None
-                ExtensibleDumper.Dump(o) // Show the message                                                    
-                                    
-
-
+                ExtensibleDumper.Dump(o) // Show the message
 
 #endif
 #endif

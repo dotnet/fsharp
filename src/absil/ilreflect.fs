@@ -25,6 +25,10 @@ open System.Reflection.Emit
 open System.Runtime.InteropServices
 open System.Collections.Generic
 
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
 let codeLabelOrder = ComparisonIdentity.Structural<ILCodeLabel>
 
 // Convert the output of convCustomAttr

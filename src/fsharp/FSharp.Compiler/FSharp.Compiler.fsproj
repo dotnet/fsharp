@@ -16,7 +16,11 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
+  <!-- References -->
+  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
@@ -27,6 +31,12 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="..\..\utils\reshaped_reflection.fs">
+      <Link>Reflection\reshaped_reflection.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\reshaped_msbuild.fs">
+      <Link>Reflection\reshaped_msbuild.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -510,16 +520,14 @@
     <Compile Include="..\vs\service.fs">
       <Link>Service\service.fs</Link>
     </Compile>
-    <!--
-    <Compile Include="..\vs\SimpleServices.fs">
-      <Link>SimpleServices.fs</Link>
-    </Compile>
--->
     <Compile Include="InternalsVisibleTo.fs">
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -533,11 +541,12 @@
     <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
     <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix)" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.PowerPack.targets" />
 </Project>
