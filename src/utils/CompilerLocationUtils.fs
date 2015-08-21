@@ -23,6 +23,7 @@ module internal FSharpEnvironment =
 #endif
 
     let versionOf<'t> =
+#if FX_RESHAPED_REFLECTION
         let aq = (typeof<'t>).AssemblyQualifiedName
         let version = 
             if aq <> null then 
@@ -33,6 +34,9 @@ module internal FSharpEnvironment =
             else
                 null
         version
+#else
+        typeof<'t>.Assembly.GetName().Version.ToString()
+#endif
 
     let FSharpCoreLibRunningVersion = 
         try match versionOf<Unit> with
