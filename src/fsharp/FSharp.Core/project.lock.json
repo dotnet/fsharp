@@ -249,6 +249,18 @@
           "lib/DNXCore50/System.Reflection.Primitives.dll": {}
         }
       },
+      "System.Reflection.TypeExtensions/4.0.0-beta-23127": {
+        "dependencies": {
+          "System.Runtime": "4.0.0-beta-23127",
+          "System.Reflection": "4.0.0-beta-23127"
+        },
+        "compile": {
+          "ref/dotnet/System.Reflection.TypeExtensions.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Reflection.TypeExtensions.dll": {}
+        }
+      },
       "System.Resources.ResourceManager/4.0.0-beta-23127": {
         "dependencies": {
           "System.Runtime": "4.0.0-beta-23127",
@@ -1092,6 +1104,39 @@
         "runtimes/win8-aot/lib/netcore50/System.Reflection.Primitives.dll"
       ]
     },
+    "System.Reflection.TypeExtensions/4.0.0-beta-23127": {
+      "serviceable": true,
+      "sha512": "vVc+uhYZh6k4+tDxl0QeP31dq3RUySaiDjSmQ2aOEnVfBs7xtbNaxXLXKd5BBAweNQIZBZ5L1Yv0wC2tCa17KQ==",
+      "files": [
+        "System.Reflection.TypeExtensions.4.0.0-beta-23127.nupkg",
+        "System.Reflection.TypeExtensions.4.0.0-beta-23127.nupkg.sha512",
+        "System.Reflection.TypeExtensions.nuspec",
+        "lib/DNXCore50/System.Reflection.TypeExtensions.dll",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net46/System.Reflection.TypeExtensions.dll",
+        "lib/netcore50/System.Reflection.TypeExtensions.dll",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "ref/dotnet/System.Reflection.TypeExtensions.dll",
+        "ref/dotnet/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/de/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/es/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/fr/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/it/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/ja/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/ko/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/ru/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/zh-hans/System.Reflection.TypeExtensions.xml",
+        "ref/dotnet/zh-hant/System.Reflection.TypeExtensions.xml",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net46/System.Reflection.TypeExtensions.dll",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "runtimes/win8-aot/lib/netcore50/System.Reflection.TypeExtensions.dll"
+      ]
+    },
     "System.Resources.ResourceManager/4.0.0-beta-23127": {
       "serviceable": true,
       "sha512": "+stu9oGQvmjeFJfhg4zRf/D0jNGa2L7MIkGz3ik70loEFHLE3OrOXFt3T+3eG37Z6md2KCWKe+85ct6VDaEtWA==",
@@ -1600,6 +1645,7 @@
       "System.Reflection.Emit >= 4.0.0-beta-*",
       "System.Reflection.Emit.ILGeneration >= 4.0.0-beta-*",
       "System.Reflection.Extensions >= 4.0.0-beta-*",
+      "System.Reflection.TypeExtensions >= 4.0.0-beta-*",
       "System.Resources.ResourceManager >= 4.0.0-beta-*",
       "System.Runtime >= 4.0.20-beta-*",
       "System.Runtime.Extensions >= 4.0.10-beta-*",

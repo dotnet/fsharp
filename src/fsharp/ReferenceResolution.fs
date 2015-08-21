@@ -141,7 +141,7 @@ module internal MSBuildResolver =
             match ToolLocationHelper.GetPathToDotNetFrameworkReferenceAssemblies v with
             | null -> []
             | x -> [x]
-        | None -> []        
+        | None -> []
 #else
         // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
         ignore version

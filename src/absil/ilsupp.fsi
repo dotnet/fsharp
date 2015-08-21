@@ -35,6 +35,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 #if FX_NO_LINKEDRESOURCES
 #else
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
+#endif
 
 
 /// Takes the output file name and returns debug file name.
@@ -45,7 +46,6 @@ val getDebugFileName: string -> string
 /// arbitrary buffer, and once with the real buffer.  The size of the
 /// required buffer is returned.
 type PEFileType = X86 | X64
-#endif
 
 #if FX_NO_LINKEDRESOURCES
 #else

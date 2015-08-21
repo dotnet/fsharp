@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
+module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 
 
 let DateTime1970Jan01 = new System.DateTime(1970,1,1,0,0,0,System.DateTimeKind.Utc) (* ECMA Spec (Oct2002), Part II, 24.2.2 PE File Header. *)
@@ -32,6 +32,7 @@ let inline ignore _x = ()
 
 // Native Resource linking/unlinking
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
+#endif
 
 let check _action (hresult) = 
   if uint32 hresult >= 0x80000000ul then 
@@ -62,6 +63,8 @@ let bytesToQWord ((b0 : byte) , (b1 : byte) , (b2 : byte) , (b3 : byte) , (b4 : 
 let dwToBytes n = [| (byte)(n &&& 0xff) ; (byte)((n >>> 8) &&& 0xff) ; (byte)((n >>> 16) &&& 0xff) ; (byte)((n >>> 24) &&& 0xff) |], 4
 let wToBytes (n : int16) = [| (byte)(n &&& 0xffs) ; (byte)((n >>> 8) &&& 0xffs) |], 2
 
+#if FX_NO_LINKEDRESOURCES
+#else
 // REVIEW: factor these classes under one hierarchy, use reflection for creation from buffer and toBytes()
 // Though, everything I'd like to unify is static - metaclasses?
 type IMAGE_FILE_HEADER (m:int16, secs:int16, tds:int32, ptst:int32, nos:int32, soh:int16, c:int16) =

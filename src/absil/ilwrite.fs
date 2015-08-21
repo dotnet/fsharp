@@ -483,6 +483,8 @@ let DumpDebugInfo (outfile:string) (info:PdbData) =
 //---------------------------------------------------------------------
 
 #if FX_NO_KEY_SIGNING
+type ILStrongNameSigner = unit
+
 #else
 type ILStrongNameSigner =  
     | PublicKeySigner of Support.pubkey
@@ -3361,12 +3363,15 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
             if not isDll then dprintn "warning: no entrypoint specified in executable binary";
             0x0
 
+#if NO_PDB_WRITER
+    let pdbData = ()
+#else
     let pdbData = 
         { EntryPoint= (if isDll then None else Some entryPointToken);
           ModuleID = cenv.moduleGuid;
           Documents = cenv.documents.EntriesAsArray;
           Methods= cenv.pdbinfo.ToArray() }
-
+#endif
     let idxForNextedTypeDef (tds:ILTypeDef list, td:ILTypeDef) =
         let enc = tds |> List.map (fun td -> td.Name)
         GetIdxForTypeDef cenv (TdKey(enc, td.Name))
@@ -3416,11 +3421,14 @@ let count f arr =
 
 module FileSystemUtilites = 
     open System.Reflection
+#if FX_RESHAPED_REFLECTION
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
     let setExecutablePermission filename =
 
       if runningOnMono then 
-        try 
+        try
             let monoPosix = Assembly.Load(new AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n";
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
@@ -3431,7 +3439,7 @@ module FileSystemUtilites =
         with e -> 
             if progress then eprintf "failure: %s...\n" (e.ToString());
             // Fail silently
-        
+
 let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress = 
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
@@ -3881,17 +3889,19 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
+let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, _signer: ILStrongNameSigner option, _fixupOverlappingSequencePoints, emitTailcalls, showTimes, _dumpDebugInfo) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
     reportTime showTimes "Write Started";
     let isDll = modul.IsDLL
-    
+
+#if FX_NO_KEY_SIGNING
+#else
     let signer = 
-        match signer,modul.Manifest with
-        | Some _, _ -> signer
-        | _, None -> signer
+        match _signer,modul.Manifest with
+        | Some _, _ -> _signer
+        | _, None -> _signer
         | None, Some {PublicKey=Some pubkey} -> 
             (dprintn "Note: The output assembly will be delay-signed using the original public";
              dprintn "Note: key. In order to load it you will need to either sign it with";
@@ -3901,8 +3911,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
              dprintn "Note: private key when converting the assembly, assuming you have access to";
              dprintn "Note: it.";
              Some (ILStrongNameSigner.OpenPublicKey pubkey))
-        | _ -> signer
+        | _ -> _signer
+#endif
 
+#if FX_NO_KEY_SIGNING
+#else
     let modul = 
         let pubkey =
           match signer with 
@@ -3919,6 +3932,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
         end;
         { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
+#endif
 
     let timestamp = absilWriteGetTimeStamp ()
 
@@ -3928,9 +3942,9 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
-    let  pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+    let  _pdbData, _debugDirectoryChunk, _debugDataChunk, _textV2P,mappings =
         try 
-      
+
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
           let alignVirt = modul.VirtualAlignment // FIXED CHOICE
           let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
@@ -4005,12 +4019,14 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let _codePaddingChunk,next = chunk codePadding.Length next
           
           let metadataChunk,next = chunk metadata.Length next
-          
+
+#if FX_NO_KEY_SIGNING
+#else
           let strongnameChunk,next = 
             match signer with 
             | None -> nochunk next
             | Some s -> chunk s.SignatureSize next
-
+#endif
           let resourcesChunk,next = chunk resources.Length next
          
           let rawdataChunk,next = chunk data.Length next
@@ -4055,6 +4071,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let dataSectionAddr = next
           let dataSectionVirtToPhys v = v - dataSectionAddr + dataSectionPhysLoc
           
+#if FX_NO_LINKEDRESOURCES
+#else
           let resourceFormat = if modul.Is64Bit then Support.X64 else Support.X86
           
           let nativeResources = 
@@ -4073,7 +4091,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let nativeResourcesSize = nativeResources.Length
 
           let nativeResourcesChunk,next = chunk nativeResourcesSize next
-        
+#endif        
           let dummydatap,next = chunk (if next = dataSectionAddr then 0x01 else 0x0) next
           
           let dataSectionSize = next - dataSectionAddr
@@ -4238,9 +4256,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writeInt32 os 0x00; // Export Table Always 0 (see Section 23.1). 
        // 00000100  
           writeDirectory os importTableChunk; // Import Table RVA of Import Table, (see clause 24.3.1). e.g. 0000b530  
+#if FX_NO_LINKEDRESOURCES
+#else
           // Native Resource Table: ECMA says Always 0 (see Section 23.1), but mscorlib and other files with resources bound into executable do not.  For the moment assume the resources table is always the first resource in the file. 
           writeDirectory os nativeResourcesChunk;
-
+#endif
        // 00000110  
           writeInt32 os 0x00; // Exception Table Always 0 (see Section 23.1). 
           writeInt32 os 0x00; // Exception Table Always 0 (see Section 23.1). 
@@ -4339,8 +4359,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             (if modul.IsILOnly then 0x01 else 0x00) ||| 
             (if modul.Is32Bit then 0x02 else 0x00) ||| 
             (if modul.Is32BitPreferred then 0x00020003 else 0x00) ||| 
+#if FX_NO_KEY_SIGNING
+            0x00
+#else
             (if (match signer with None -> false | Some s -> s.IsFullySigned) then 0x08 else 0x00)
-
+#endif
           let headerVersionMajor,headerVersionMinor = headerVersionSupportedByCLRVersion desiredMetadataVersion
 
           writePadding os "pad to cli header" cliHeaderPadding 
@@ -4357,7 +4380,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           
           // e.g. 0x0220 
           writeDirectory os resourcesChunk;
+#if FX_NO_KEY_SIGNING
+#else
           writeDirectory os strongnameChunk;
+#endif
           // e.g. 0x0230 
           writeInt32 os 0x00; // code manager table, always 0 
           writeInt32 os 0x00; // code manager table, always 0 
@@ -4374,9 +4400,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writeBytes os metadata;
           
           // write 0x80 bytes of empty space for encrypted SHA1 hash, written by SN.EXE or call to signing API 
+#if FX_NO_KEY_SIGNING
+#else
           if signer <> None then 
             write (Some (textV2P strongnameChunk.addr)) os "strongname" (Array.create strongnameChunk.size 0x0uy);
-          
+#endif
           write (Some (textV2P resourcesChunk.addr)) os "raw resources" [| |];
           writeBytes os resources;
           write (Some (textV2P rawdataChunk.addr)) os "raw data" [| |];
@@ -4434,17 +4462,19 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize);
           
           // DATA SECTION 
+#if FX_NO_LINKEDRESOURCES
+#else
           match nativeResources with
           | [||] -> ()
           | resources ->
                 write (Some (dataSectionVirtToPhys nativeResourcesChunk.addr)) os "raw native resources" [| |];
                 writeBytes os resources;
-
+#endif
           if dummydatap.size <> 0x0 then
               write (Some (dataSectionVirtToPhys dummydatap.addr)) os "dummy data" [| 0x0uy |];
 
           writePadding os "end of .rsrc" (relocSectionPhysLoc - dataSectionPhysLoc - dataSectionSize);            
-          
+
           // RELOC SECTION 
 
           // See ECMA 24.3.2 
@@ -4486,18 +4516,20 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
     reportTime showTimes "Writing Image";
      
-    if dumpDebugInfo then 
-        DumpDebugInfo outfile pdbData
+#if NO_PDB_WRITER
+#else
+    if _dumpDebugInfo then 
+        DumpDebugInfo outfile _pdbData
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     begin match pdbfile with
     | None -> ()
     | Some fmdb when runningOnMono -> 
-        WriteMdbInfo fmdb outfile pdbData
+        WriteMdbInfo fmdb outfile _pdbData
             
     | Some fpdb -> 
         try 
-            let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
+            let idd = WritePdbInfo _fixupOverlappingSequencePoints showTimes outfile fpdb _pdbData
             reportTime showTimes "Generate PDB Info";
             
           // Now we have the debug data we can go back and fill in the debug directory in the image 
@@ -4505,15 +4537,15 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             let os2 = new BinaryWriter(fs2)
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
-                os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore;
+                os2.BaseStream.Seek (int64 (_textV2P _debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore;
                 writeInt32 os2 idd.iddCharacteristics; // IMAGE_DEBUG_DIRECTORY.Characteristics 
                 writeInt32 os2 timestamp;
                 writeInt32AsUInt16 os2 idd.iddMajorVersion;
                 writeInt32AsUInt16 os2 idd.iddMinorVersion;
                 writeInt32 os2 idd.iddType;
                 writeInt32 os2 idd.iddData.Length;  // IMAGE_DEBUG_DIRECTORY.SizeOfData 
-                writeInt32 os2 debugDataChunk.addr;  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
-                writeInt32 os2 (textV2P debugDataChunk.addr);// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
+                writeInt32 os2 _debugDataChunk.addr;  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
+                writeInt32 os2 (_textV2P _debugDataChunk.addr);// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
 
                 (* dprintf "idd.iddCharacteristics = %ld\n" idd.iddCharacteristics;
                 dprintf "iddMajorVersion = %ld\n" idd.iddMajorVersion;
@@ -4522,8 +4554,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                 dprintf "iddData = (%A) = %s\n" idd.iddData (System.Text.Encoding.UTF8.GetString idd.iddData); *)
                   
                 // write the debug raw data as given us by the PDB writer 
-                os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore;
-                if debugDataChunk.size < idd.iddData.Length then 
+                os2.BaseStream.Seek (int64 (_textV2P _debugDataChunk.addr), SeekOrigin.Begin) |> ignore;
+                if _debugDataChunk.size < idd.iddData.Length then 
                     failwith "Debug data area is not big enough.  Debug info may not be usable";
                 writeBytes os2 idd.iddData;
                 os2.Dispose()
@@ -4536,7 +4568,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
             
     end;
     reportTime showTimes "Finalize PDB";
+#endif
 
+#if FX_NO_KEY_SIGNING
+#else
     /// Sign the binary.  No further changes to binary allowed past this point! 
     match signer with 
     | None -> ()
@@ -4552,7 +4587,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
     reportTime showTimes "Signing Image";
     //Finished writing and signing the binary and debug info...
-
+#endif
     mappings
 
 

@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Core
 
-
 #if FX_RESHAPED_REFLECTION
 module internal ReflectionAdapters = 
     open System
@@ -18,6 +17,8 @@ module internal ReflectionAdapters =
         | Static = 8
         | Public = 16
         | NonPublic = 32
+        | InvokeMethod = 0x100
+
     let inline hasFlag (flag : BindingFlags) f  = (f &&& flag) = flag
     let isDeclaredFlag  f    = hasFlag BindingFlags.DeclaredOnly f
     let isPublicFlag    f    = hasFlag BindingFlags.Public f
@@ -97,12 +98,15 @@ module internal ReflectionAdapters =
                 isAcceptable bindingFlags mi.IsStatic mi.IsPublic
                 )
             |> Seq.toArray
-        // use different sources based on Declared flag
+        member this.GetConstructor(_bindingFlags, _binder, argsT:Type[], _parameterModifiers) =
+            this.GetConstructor(argsT)
         member this.GetMethod(name, ?bindingFlags) =
             let bindingFlags = defaultArg bindingFlags publicFlags
             this.GetMethods(bindingFlags)
             |> Array.filter(fun m -> m.Name = name)
             |> commit
+        member this.GetMethod(name, _bindingFlags, _binder, argsT:Type[], _parameterModifiers) =
+            this.GetMethod(name, argsT)
         // use different sources based on Declared flag
         member this.GetProperty(name, bindingFlags) = 
             this.GetProperties(bindingFlags)
@@ -115,12 +119,17 @@ module internal ReflectionAdapters =
             this.GetMethods(bindingFlags)
             |> Array.filter(fun m -> m.Name = methodName && (compareSequences (m.GetParameters() |> Seq.map(fun x -> x.ParameterType)) args) = 0)
             |> commit
+        member this.InvokeMember(memberName, bindingFlags, _binder, target:obj, arguments:obj[], _cultureInfo) =
+            let m = this.GetMethod(memberName, (arguments |> Seq.map(fun x -> x.GetType()) |> Seq.toArray), bindingFlags)
+            if m <> null then m.Invoke(target, arguments)
+            else null
         member this.IsGenericType = this.GetTypeInfo().IsGenericType
         member this.IsGenericTypeDefinition = this.GetTypeInfo().IsGenericTypeDefinition
         member this.GetGenericArguments() = 
             if this.IsGenericTypeDefinition then this.GetTypeInfo().GenericTypeParameters
             elif this.IsGenericType then this.GenericTypeArguments
             else [||]
+        member this.IsInterface = this.GetTypeInfo().IsInterface
         member this.IsValueType = this.GetTypeInfo().IsValueType
         member this.BaseType = this.GetTypeInfo().BaseType
         member this.GetConstructor(parameterTypes : Type[]) = 

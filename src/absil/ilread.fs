@@ -190,8 +190,11 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
 
     member m.ReadUTF8String i = 
         let n = m.CountUtf8String i
+#if FX_RESHAPED_REFLECTION
+        System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), n)
+#else
         new System.String(NativePtr.ofNativeInt (m.Addr i), 0, n, System.Text.Encoding.UTF8)
-
+#endif
 
 type MMapChannel = 
     { mutable mmPos: int;
