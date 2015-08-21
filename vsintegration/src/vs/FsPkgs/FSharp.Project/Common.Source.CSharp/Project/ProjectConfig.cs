@@ -330,7 +330,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             var p = GetConfigurationProperty(projectFileConstant, false);
 
-            if (p == null)
+            if (string.IsNullOrWhiteSpace(p))
                 return null;
 
             return p == "true";
@@ -419,7 +419,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-                return getBool(ProjectFileConstants.Tailcalls);
+                return getNullableBool(ProjectFileConstants.Tailcalls) ?? true;
             }
             set
             {
