@@ -291,8 +291,8 @@ module internal FSharpEnvironment =
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5
     let IsRunningOnNetFx45OrAbove =
-            let version = new AssemblyName(versionOf<System.Int32>)
-            let major = version.Version.Major
+            let version = new Version(versionOf<System.Int32>) 
+            let major = version.Major
             major > 4 || (major = 4 && IsNetFx45OrAboveInstalled)
 #else
     let IsRunningOnNetFx45OrAbove = false

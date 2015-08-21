@@ -18,13 +18,12 @@ let GetArgumentFromCommandLine switchName defaultValue =
     | Some(file) -> if file.Length <> 0 then file else defaultValue
     | _ -> defaultValue
 
-let ProjectJsonFile = GetArgumentFromCommandLine "--projectJson:" "project.json.lock"
-let LocalProjectJsonFile = GetArgumentFromCommandLine "--lclProjectJson:" "project.json.lock"
+let TestProjectJson = GetArgumentFromCommandLine "--testProjectJson:" "project.json was not specified"
+let TestProjectJsonLock = GetArgumentFromCommandLine "--testProjectJsonLock:" "project.json.lock"
 let PackagesDir = GetArgumentFromCommandLine "--packagesDir:" "."
 let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" "DNXCore,Version=v5.0"
 let Output = GetArgumentFromCommandLine "--output:" @"output"
 let FSharpCore = GetArgumentFromCommandLine "--fsharpCore:" "fsharp.core.dll was not specified"
-let NugetProjectJson = GetArgumentFromCommandLine "--nugetProjectJson:" "project.json was not specified"
 let NugetSources = (GetArgumentFromCommandLine "--nugetSources:" "").Split([|';'|]) |> Seq.fold(fun acc src -> acc + " -s:" + src) ""
 let DnuPath = GetArgumentFromCommandLine "--dnuPath:" "..\..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00053\lib\dnu.cmd"
 let FscPath = GetArgumentFromCommandLine "--fscPath:" "Fsc Path not specified"
@@ -79,7 +78,7 @@ let executeCompiler sources references =
     executeProcess FscPath arguments
 
 let restorePackages () =
-    let arguments = "restore " + "--packages " + PackagesDir + " " + NugetSources + " " + NugetProjectJson
+    let arguments = "restore " + "--packages " + PackagesDir + " " + NugetSources + " " + TestProjectJson
     printfn "%s %s" DnuPath arguments
     executeProcess DnuPath arguments
 
@@ -130,7 +129,7 @@ let collectReferenciesFromProjectJson assemblyReferenceType =
     let getReferencesFromJson (filename:string) =
         let projectJson = JsonValue.Load( filename )
         getAssemblyReferenciesFromTargets projectJson?targets
-    (Seq.append (getReferencesFromJson ProjectJsonFile) (getReferencesFromJson LocalProjectJsonFile)) |> Seq.distinct
+    (getReferencesFromJson TestProjectJsonLock) |> Seq.distinct
 
 let getNativeFiles package =
     let packageVersion =
