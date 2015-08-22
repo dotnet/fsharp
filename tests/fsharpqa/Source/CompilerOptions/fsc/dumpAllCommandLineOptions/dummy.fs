@@ -76,6 +76,7 @@
 //<Expects status="success">section='NoSection                ' ! option=test                           kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=use-incremental-build          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=vserrors                       kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=validate-type-providers        kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=LCID                           kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=flaterrors                     kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=jit                            kind=OptionSwitch</Expects>
