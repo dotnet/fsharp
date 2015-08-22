@@ -30,7 +30,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     [CLSCompliant(false)]
     [ComVisible(true)]
-    public class AssemblyReferenceNode : ReferenceNode
+    public class AssemblyReferenceNode : TypeProviderContainingReferenceNode
     {
         private struct AssemblyResolvedInfo
         {
@@ -311,6 +311,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private bool IsSpecialFSharpCoreReference
         {
             get { return ProjectMgr.CanUseTargetFSharpCoreReference && IsFSharpCoreReference(this) && ContainsUsagesOfTargetFSharpCoreVersionProperty(this); }
+        }
+
+        public override string AssemblyPath
+        {
+            get
+            {
+                return this.Url;
+            }
         }
 
         public override NodeProperties CreatePropertiesObject()
