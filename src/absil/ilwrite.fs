@@ -3425,20 +3425,24 @@ module FileSystemUtilites =
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission filename =
+    let setExecutablePermission _filename =
 
+#if FX_RUNNING_ON_MONO
       if runningOnMono then 
         try
             let monoPosix = Assembly.Load(new AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n";
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],System.Globalization.CultureInfo.InvariantCulture)
+            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box _filename |],System.Globalization.CultureInfo.InvariantCulture)
             let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],System.Globalization.CultureInfo.InvariantCulture) |> unbox<int>
             // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
             monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| box (prevPermissions ||| 0x000001ED) |],System.Globalization.CultureInfo.InvariantCulture) |> ignore
         with e -> 
             if progress then eprintf "failure: %s...\n" (e.ToString());
             // Fail silently
+      else
+#endif
+        ()
 
 let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul noDebugData cilStartAddress = 
 
@@ -4079,15 +4083,17 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, _signer:
             match modul.NativeResources with
             | [] -> [||]
             | resources ->
+#if FX_RUNNING_ON_MONO
                 if runningOnMono then
                   [||]
                 else
+#endif
                   let unlinkedResources = List.map Lazy.force resources
                   begin
                     try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName(outfile))
                     with e -> failwith ("Linking a native resource failed: "+e.Message+"")
                   end
-                
+
           let nativeResourcesSize = nativeResources.Length
 
           let nativeResourcesChunk,next = chunk nativeResourcesSize next
@@ -4524,9 +4530,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, _signer:
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     begin match pdbfile with
     | None -> ()
+#if FX_RUNNING_ON_MONO
     | Some fmdb when runningOnMono -> 
         WriteMdbInfo fmdb outfile _pdbData
-            
+#endif
     | Some fpdb -> 
         try 
             let idd = WritePdbInfo _fixupOverlappingSequencePoints showTimes outfile fpdb _pdbData

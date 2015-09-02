@@ -405,6 +405,7 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
         let typ = typB.CreateTypeAndLog()
 #if FSHARP_CORE_4_5
 #else
+#if FX_RUNNING_ON_MONO
         // Bug DevDev2 40395: Mono 2.6 and 2.8 has a bug where executing code that includes an array type
         // match "match x with :? C[] -> ..." before the full loading of an object of type
         // causes a failure when C is later loaded. One workaround for this is to attempt to do a fake allocation
@@ -415,6 +416,7 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
             try 
               System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typ) |> ignore
             with e -> ()
+        #endif
 #endif
         {emEnv with emTypMap = Zmap.add tref (typT,typB,typeDef,Some typ) emEnv.emTypMap}
     else
@@ -609,9 +611,11 @@ let convFieldInit x =
 // it isn't we resort to this technique...
 let TypeBuilderInstantiationT = 
     let ty = 
+#if FX_RUNNING_ON_MONO
         if runningOnMono then 
             Type.GetType("System.Reflection.MonoGenericClass")
         else
+#endif
             Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
     assert (not (isNull ty))
     ty
@@ -1136,10 +1140,12 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
             let aty = convType cenv emEnv  (ILType.Array(shape,typ)) 
             let ety = aty.GetElementType()
             let meth = 
+#if FX_RUNNING_ON_MONO
                 // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
                 if runningOnMono then 
                     getArrayMethInfo shape.Rank ety
                 else
+#endif
                     modB.GetArrayMethodAndLog(aty,"Get",System.Reflection.CallingConventions.HasThis,ety,Array.create shape.Rank (typeof<int>) )
             ilG.EmitAndLog(OpCodes.Call,meth)
 
@@ -1149,10 +1155,12 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
             let aty = convType cenv emEnv  (ILType.Array(shape,typ)) 
             let ety = aty.GetElementType()
             let meth = 
+#if FX_RUNNING_ON_MONO
                 // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
                 if runningOnMono then 
                     setArrayMethInfo shape.Rank ety
                 else
+#endif
                     modB.GetArrayMethodAndLog(aty,"Set",System.Reflection.CallingConventions.HasThis,(null:Type),Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ])) 
             ilG.EmitAndLog(OpCodes.Call,meth)
 

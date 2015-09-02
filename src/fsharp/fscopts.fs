@@ -26,17 +26,24 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Lexhelp
+
 #if NO_COMPILER_BACKEND
 #else
 open Microsoft.FSharp.Compiler.Ilxgen
 #endif
 
+#if FX_RESHAPED_REFLECTION
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
 module Attributes = 
     open System.Runtime.CompilerServices
 
     //[<assembly: System.Security.SecurityTransparent>]
+#if FX_NO_DEFAULT_DEPENDENCY_TYPE
+#else
     [<Dependency("FSharp.Core",LoadHint.Always)>] 
+#endif
     do()
 
 let lexFilterVerbose = false
@@ -405,15 +412,15 @@ let advancedFlagsFsc tcConfigB =
         yield CompilerOption("staticlink", tagFile, OptionString (fun s -> tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [s]), None,
                              Some (FSComp.SR.optsStaticlink()));
 
+#if FX_RUNNING_ON_MONO
         if runningOnMono then 
             yield CompilerOption("resident", tagFile, OptionUnit (fun () -> ()), None,
                                  Some (FSComp.SR.optsResident()));
-
+#endif
         yield CompilerOption("pdb", tagString, OptionString (fun s -> tcConfigB.debugSymbolFile <- Some s), None,
                              Some (FSComp.SR.optsPdb()));
         yield CompilerOption("simpleresolution", tagNone, OptionUnit (fun () -> tcConfigB.useMonoResolution<-true), None,
                              Some (FSComp.SR.optsSimpleresolution()));
-
         yield CompilerOption("highentropyva", tagNone, OptionSwitch (useHighEntropyVASwitch tcConfigB), None, Some (FSComp.SR.optsUseHighEntropyVA()))
         yield CompilerOption("subsystemversion", tagString, OptionString (subSystemVersionSwitch tcConfigB), None, Some (FSComp.SR.optsSubSystemVersion()))
         yield CompilerOption("targetprofile", tagString, OptionString (setTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile()))
@@ -768,10 +775,16 @@ let ReportTime (tcConfig:TcConfig) descr =
         | Some("fsc-oom") -> raise(System.OutOfMemoryException())
         | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
         | Some("fsc-invop") -> raise(System.InvalidOperationException())
+#if FX_RESHAPED_EXCEPTIONS
+#else
         | Some("fsc-av") -> raise(System.AccessViolationException())
+#endif
         | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
         | Some("fsc-dv0") -> raise(System.DivideByZeroException())
+#if FX_RESHAPED_EXCEPTIONS
+#else
         | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
+#endif
         | Some("fsc-oe") -> raise(System.OverflowException())
         | Some("fsc-atmm") -> raise(System.ArrayTypeMismatchException())
         | Some("fsc-bif") -> raise(System.BadImageFormatException())

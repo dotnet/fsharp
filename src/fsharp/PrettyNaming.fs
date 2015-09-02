@@ -4,7 +4,6 @@
 // Some general F# utilities for mangling / unmangling / manipulating names.
 //--------------------------------------------------------------------------
 
-
 /// Anything to do with special names of identifiers and other lexical rules 
 module internal Microsoft.FSharp.Compiler.PrettyNaming
     open Internal.Utilities
@@ -16,6 +15,10 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
 
     open System.Globalization
     open System.Collections.Generic
+
+#if FX_RESHAPED_REFLECTION
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
     //------------------------------------------------------------------------
     // Operator name compilation

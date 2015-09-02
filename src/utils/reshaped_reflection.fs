@@ -2,6 +2,27 @@
 
 namespace Microsoft.FSharp.Core
 
+//Replacement for: System.Security.SecurityElement.Escape(line) All platforms
+module internal XmlAdapters =
+    open System.Text
+    open Microsoft.FSharp.Collections
+
+    let s_escapeChars = [| '<'; '>'; '\"'; '\''; '&' |]
+
+    let getEscapeSequence c =
+        match c with
+        | '<'  -> "&lt;"
+        | '>'  -> "&gt;"
+        | '\"' -> "&quot;"
+        | '\'' -> "&apos;"
+        | '&'  -> "&amp;"
+        | _ as ch -> ch.ToString()
+
+    let escape str =
+        let sb = new StringBuilder()
+        str |> Seq.iter(fun c -> sb.Append(getEscapeSequence(c)) |>ignore )
+        sb.ToString()
+
 #if FX_RESHAPED_REFLECTION
 module internal ReflectionAdapters = 
     open System
@@ -10,14 +31,14 @@ module internal ReflectionAdapters =
     open Microsoft.FSharp.Collections
     open PrimReflectionAdapters
 
-    [<Flags>]
+    [<System.FlagsAttribute>]
     type BindingFlags =
-        | DeclaredOnly = 2
-        | Instance = 4 
-        | Static = 8
-        | Public = 16
-        | NonPublic = 32
-        | InvokeMethod = 0x100
+    | DeclaredOnly = 2
+    | Instance = 4 
+    | Static = 8
+    | Public = 16
+    | NonPublic = 32
+    | InvokeMethod = 0x100
 
     let inline hasFlag (flag : BindingFlags) f  = (f &&& flag) = flag
     let isDeclaredFlag  f    = hasFlag BindingFlags.DeclaredOnly f
@@ -25,6 +46,10 @@ module internal ReflectionAdapters =
     let isStaticFlag    f    = hasFlag BindingFlags.Static f
     let isInstanceFlag  f    = hasFlag BindingFlags.Instance f
     let isNonPublicFlag f    = hasFlag BindingFlags.NonPublic f
+
+#if FX_NO_EXIT
+    let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
+#endif
 
     [<System.Flags>]
     type TypeCode = 
@@ -59,6 +84,10 @@ module internal ReflectionAdapters =
         box accessor <> null && (accessor.IsPublic || nonPublic)
 
     type System.Type with
+        member this.GetTypeInfo() = IntrospectionExtensions.GetTypeInfo(this)
+        member this.GetRuntimeProperties() = RuntimeReflectionExtensions.GetRuntimeProperties(this)
+        member this.GetRuntimeEvents() = RuntimeReflectionExtensions.GetRuntimeEvents(this)
+        member this.Attributes = this.GetTypeInfo().Attributes
         member this.GetCustomAttributes(attrTy, inherits) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits) |> Seq.toArray)
         member this.GetNestedType (name, bindingFlags) = 
             // MSDN: http://msdn.microsoft.com/en-us/library/0dcb3ad5.aspx
@@ -98,6 +127,22 @@ module internal ReflectionAdapters =
                 isAcceptable bindingFlags mi.IsStatic mi.IsPublic
                 )
             |> Seq.toArray
+#if FX_RESHAPED_REFLECTION_CORECLR
+        member this.GetEvents(?bindingFlags) = 
+            let bindingFlags = defaultArg bindingFlags publicFlags
+            (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredEvents else this.GetRuntimeEvents())
+            |> Seq.filter (fun ei-> 
+                let m = ei.GetAddMethod(true)
+                assert (m <> null)
+                isAcceptable bindingFlags m.IsStatic m.IsPublic
+                )
+            |> Seq.toArray
+        member this.GetEvent(name, ?bindingFlags) = 
+            let bindingFlags = defaultArg bindingFlags publicFlags
+            this.GetEvents(bindingFlags)
+            |> Array.filter (fun ei -> ei.Name = name)
+            |> commit
+#endif
         member this.GetConstructor(_bindingFlags, _binder, argsT:Type[], _parameterModifiers) =
             this.GetConstructor(argsT)
         member this.GetMethod(name, ?bindingFlags) =
@@ -119,6 +164,16 @@ module internal ReflectionAdapters =
             this.GetMethods(bindingFlags)
             |> Array.filter(fun m -> m.Name = methodName && (compareSequences (m.GetParameters() |> Seq.map(fun x -> x.ParameterType)) args) = 0)
             |> commit
+        member this.GetNestedTypes(?bindingFlags) =
+            let bindingFlags = defaultArg bindingFlags publicFlags
+            this.GetTypeInfo().DeclaredNestedTypes
+            |> Seq.filter (fun nestedTy->
+                    (isPublicFlag bindingFlags && nestedTy.IsNestedPublic) || 
+                    (isNonPublicFlag bindingFlags && (nestedTy.IsNestedPrivate || nestedTy.IsNestedFamily || nestedTy.IsNestedAssembly || nestedTy.IsNestedFamORAssem || nestedTy.IsNestedFamANDAssem)))
+            |> Seq.map (fun ti -> ti.AsType())
+            |> Seq.toArray
+        member this.GetEnumUnderlyingType() =
+            Enum.GetUnderlyingType(this)
         member this.InvokeMember(memberName, bindingFlags, _binder, target:obj, arguments:obj[], _cultureInfo) =
             let m = this.GetMethod(memberName, (arguments |> Seq.map(fun x -> x.GetType()) |> Seq.toArray), bindingFlags)
             if m <> null then m.Invoke(target, arguments)
@@ -130,7 +185,12 @@ module internal ReflectionAdapters =
             elif this.IsGenericType then this.GenericTypeArguments
             else [||]
         member this.IsInterface = this.GetTypeInfo().IsInterface
+        member this.IsPublic = this.GetTypeInfo().IsPublic
+        member this.IsNestedPublic = this.GetTypeInfo().IsNestedPublic
+        member this.IsClass = this.GetTypeInfo().IsClass
         member this.IsValueType = this.GetTypeInfo().IsValueType
+        member this.IsSealed = this.GetTypeInfo().IsSealed
+        
         member this.BaseType = this.GetTypeInfo().BaseType
         member this.GetConstructor(parameterTypes : Type[]) = 
             this.GetTypeInfo().DeclaredConstructors
@@ -160,6 +220,7 @@ module internal ReflectionAdapters =
             this.GetFields(bindingFlags)
             |> Array.filter (fun fi -> fi.Name = name)
             |> commit
+        member this.GetField(name) = RuntimeReflectionExtensions.GetRuntimeField(this, name)
         member this.GetProperty(name, propertyType, parameterTypes : Type[]) = 
             this.GetProperties()
             |> Array.filter (fun pi ->
@@ -185,32 +246,95 @@ module internal ReflectionAdapters =
             elif ty = typeof<System.Double> then TypeCode.Double
             elif ty = typeof<System.Decimal> then TypeCode.Decimal
             else TypeCode.Other
+        member this.Module =
+            this.GetTypeInfo().Module
+
+        member this.MetadataToken =
+            // TODO: is this an adequate replacement for MetadataToken
+            let s = String.Format("{0}", this.ToString())
+            s.GetHashCode()
+
+    type System.Reflection.EventInfo with
+        member this.GetAddMethod() =
+            this.AddMethod
+        member this.GetRemoveMethod() =
+            this.RemoveMethod
+        member this.MetadataToken =
+            // TODO: is this an adequate replacement for MetadataToken
+            let s = String.Format("{0},{0}", this.DeclaringType.ToString(), this.ToString())
+            s.GetHashCode()
+
+    type System.Reflection.FieldInfo with
+        member this.GetRawConstantValue() =
+            this.GetValue(null)
+        member this.MetadataToken =
+            // TODO: is this an adequate replacement for MetadataToken
+            let s = String.Format("{0},{0}", this.DeclaringType.ToString(), this.ToString())
+            s.GetHashCode()
 
     type System.Reflection.MemberInfo with
         member this.GetCustomAttributes(attrTy, inherits) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this, attrTy, inherits) |> Seq.toArray)
+        // TODO: is this an adequate replacement for MetadataToken
+        member this.MetadataToken =
+            // TODO: is this an adequate replacement for MetadataToken
+            let s = String.Format("{0},{0}", this.DeclaringType.ToString(), this.ToString())
+            s.GetHashCode()
 
     type System.Reflection.MethodInfo with
         member this.GetCustomAttributes(inherits : bool) : obj[] = downcast box(CustomAttributeExtensions.GetCustomAttributes(this, inherits) |> Seq.toArray)
+        member this.Invoke(obj, _bindingFlags, _binder, args, _ci) =
+            this.Invoke(obj, args)
+        member this.MetadataToken =
+            // TODO: is this an adequate replacement for MetadataToken
+            let s = String.Format("{0},{0}", this.DeclaringType.ToString(), this.ToString())
+            s.GetHashCode()
+
+    type System.Reflection.ParameterInfo with
+        member this.RawDefaultValue = this.DefaultValue
+        member this.MetadataToken =
+            // TODO: is this an adequate replacement for MetadataToken
+            // I really do not understand why: sprintf "%s,%s" (this.ReflectedType.ToString()) (this.ToString()) did not work
+            let s = String.Format("{0},{0},{0}", this.Member.DeclaringType.ToString(),this.Member.ToString(), this.ToString())
+            s.GetHashCode()
 
     type System.Reflection.PropertyInfo with
-        member this.GetGetMethod(nonPublic) = 
+        member this.GetGetMethod(nonPublic) =
             let mi = this.GetMethod
-            if canUseAccessor mi nonPublic then mi 
+            if canUseAccessor mi nonPublic then mi
             else null
-        member this.GetSetMethod(nonPublic) = 
+        member this.GetSetMethod(nonPublic) =
             let mi = this.SetMethod
             if canUseAccessor mi nonPublic then mi
             else null
+        member this.GetGetMethod() = this.GetMethod
+        member this.GetSetMethod() = this.SetMethod
 
     type System.Reflection.Assembly with
         member this.GetTypes() = 
             this.DefinedTypes 
             |> Seq.map (fun ti -> ti.AsType())
             |> Seq.toArray
+        member this.GetExportedTypes() = 
+            this.DefinedTypes 
+            |> Seq.filter(fun ti -> ti.IsPublic)
+            |> Seq.map (fun ti -> ti.AsType()) 
+            |> Seq.toArray
+        member this.Location = 
+            this.ManifestModule.FullyQualifiedName
+
+        member this.GetReferencedAssemblies() : System.Reflection.AssemblyName array =
+            //Todo:  this is thoroughly incorrect. But GetReferencedAssemblies has gone so we need an alternative
+            Array.empty
 
         static member LoadFrom(filename:string) =
             //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
             Assembly.Load(AssemblyName(filename))
+
+
+    type System.Reflection.AssemblyName with
+        static member GetAssemblyName(path) = 
+            //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
+            AssemblyName(path)
 
     type System.Delegate with
         static member CreateDelegate(delegateType, methodInfo : MethodInfo) = methodInfo.CreateDelegate(delegateType)
@@ -224,5 +348,15 @@ module internal ReflectionAdapters =
         member this.GetMethod(methodName, argTypes) =
             this.GetType().GetMethod(methodName, argTypes, BindingFlags.Public)
 
+    type System.Char with
+        static member GetUnicodeCategory(c) = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c)
+
+    type System.Reflection.Module with
+        member this.MetadataToken =
+            // TODO: is this an adequate replacement for MetadataToken
+            let s = this.FullyQualifiedName
+            s.GetHashCode()
+
 #endif
+
 

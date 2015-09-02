@@ -18,6 +18,7 @@ open System.Collections
  
 let logging = false 
 
+#if FX_RUNNING_ON_MONO
 // Officially supported way to detect if we are running on Mono.
 // See http://www.mono-project.com/FAQ:_Technical
 // "How can I detect if am running in Mono?" section
@@ -31,6 +32,7 @@ let runningOnMono =
         // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get 
         // their issue fixed but we need to be robust here anyway.
         false        
+#endif
 
 let _ = if logging then dprintn "* warning: Il.logging is on"
 

@@ -61,9 +61,11 @@ open Internal.Utilities.FileSystem
 //----------------------------------------------------------------------------
 
 open System.Runtime.CompilerServices
+#if FX_NO_DEFAULT_DEPENDENCY_TYPE
+#else
 [<Dependency("FSharp.Compiler",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
-
+#endif
 
 module internal Utilities = 
     type IAnyToLayoutCall = 
@@ -510,7 +512,9 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
          (* Renamed --readline and --no-readline to --tabcompletion:+|- *)
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = On)),           None, Some(FSIstrings.SR.fsiReadline()));
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()));
+#if FX_SHADOWCOPY_IN_FSI
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = On),         None, Some(FSIstrings.SR.shadowCopyReferences()));
+#endif
         ]);
       ]
 
@@ -1033,7 +1037,7 @@ type internal FsiDynamicCompiler
                    inp 
                    (Path.GetDirectoryName sourceFile)
                    istate)
-      
+
     member fsiDynamicCompiler.EvalSourceFiles(istate, m, sourceFiles, lexResourceManager) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         match sourceFiles with 
@@ -1041,10 +1045,10 @@ type internal FsiDynamicCompiler
         | _ -> 
           // use a set of source files as though they were command line inputs
           let sourceFiles = sourceFiles |> List.map (fun nm -> tcConfig.ResolveSourceFile(m,nm,tcConfig.implicitIncludeDir),m) 
-         
+
           // Close the #load graph on each file and gather the inputs from the scripts.
           let closure = LoadClosure.ComputeClosureOfSourceFiles(TcConfig.Create(tcConfigB,validate=false),sourceFiles,CodeContext.Evaluation,lexResourceManager=lexResourceManager,useDefaultScriptingReferences=true)
-          
+
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
           closure.Inputs  |> List.iteri (fun i (sourceFile,_) -> 
@@ -1602,6 +1606,7 @@ type internal FsiInteractionProcessor
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference istate m path 
                 resolutions |> List.iter (fun ar -> 
                     let format = 
+#if FX_SHADOWCOPY_IN_FSI
                         if tcConfig.shadowCopyReferences then
                             let resolvedPath = ar.resolvedPath.ToUpperInvariant()
                             let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
@@ -1614,6 +1619,7 @@ type internal FsiInteractionProcessor
                             | _ ->
                                 FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
                         else
+#endif
                             FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
                     fsiConsoleOutput.uprintnfnn "%s" format)
                 istate,Completed
@@ -2141,7 +2147,11 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                                                     Directory.GetCurrentDirectory(),isInteractive=true, 
                                                     isInvalidationSupported=false)
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
+#if FX_MSBUILDRESOLVER_RUNTIMELIKE
     do tcConfigB.resolutionEnvironment <- MSBuildResolver.RuntimeLike // See Bug 3608
+#else
+    do tcConfigB.resolutionEnvironment <- MSBuildResolver.DesigntimeLike
+#endif
     do tcConfigB.useFsiAuxLib <- true
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)

@@ -4123,7 +4123,6 @@ namespace Microsoft.FSharp.Core
               let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
               PrivateListHelpers.setFreshConsTail lastCons l2;
               res
-        
 
         [<CompiledName("Increment")>]
         let incr x = x.contents <- x.contents + 1

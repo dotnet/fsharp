@@ -71,12 +71,13 @@ module internal ExtensionTyping =
 
     /// Find and instantiate the set of ITypeProvider components for the given assembly reference
     val GetTypeProvidersOfAssembly : 
+#if TYPE_PROVIDER_SECURITY
           displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option 
           * validateTypeProviders: bool 
-#if TYPE_PROVIDER_SECURITY
           * ApprovalIO.TypeProviderApprovalStatus list 
+          *
 #endif
-          * runtimeAssemblyFilename: string 
+            runtimeAssemblyFilename: string 
           * ilScopeRefOfRuntimeAssembly:ILScopeRef
           * designerAssemblyName: string 
           * ResolutionEnvironment 
@@ -217,7 +218,10 @@ module internal ExtensionTyping =
         ProvidedMethodInfo = 
         inherit ProvidedMethodBase
         member ReturnType : ProvidedType
+#if FX_NO_REFLECTION_METADATA_TOKENS
+#else
         member MetadataToken : int
+#endif
 
     and [<AllowNullLiteral; Sealed; Class>] 
         ProvidedParameterInfo = 

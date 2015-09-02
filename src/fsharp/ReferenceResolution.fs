@@ -14,7 +14,7 @@ namespace Microsoft.FSharp.Compiler
 
 module internal MSBuildResolver = 
 
-#if FX_RESHAPED_MSBUILD
+#if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 #if FX_RESHAPED_MSBUILD
@@ -33,9 +33,12 @@ module internal MSBuildResolver =
         | GlobalAssemblyCache
         | Path of string
         | Unknown
-            
-    type ResolutionEnvironment = CompileTimeLike | RuntimeLike | DesigntimeLike
 
+#if FX_MSBUILDRESOLVER_RUNTIMELIKE
+    type ResolutionEnvironment = CompileTimeLike | RuntimeLike | DesigntimeLike
+#else
+    type ResolutionEnvironment = CompileTimeLike | DesigntimeLike
+#endif
     open System
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
@@ -312,6 +315,7 @@ module internal MSBuildResolver =
         let searchPaths = 
             match resolutionEnvironment with
             | DesigntimeLike
+#if FX_MSBUILDRESOLVER_RUNTIMELIKE
             | RuntimeLike ->
                 logmessage("Using scripting resolution precedence.")                      
                 // These are search paths for runtime-like or scripting resolution. GAC searching is present.
@@ -323,6 +327,7 @@ module internal MSBuildResolver =
                 [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @
                 ["{AssemblyFolders}"] @
                 ["{GAC}"] 
+#endif
             | CompileTimeLike -> 
                 logmessage("Using compilation resolution precedence.")                      
                 // These are search paths for compile-like resolution. GAC searching is not present.

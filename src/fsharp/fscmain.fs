@@ -50,9 +50,21 @@ module FSharpResidentCompiler =
         static let userName = Environment.GetEnvironmentVariable (if onWindows then "USERNAME" else "USER") 
         // Use different base channel names on mono and CLR as a CLR remoting process can't talk
         // to a mono server
-        static let baseChannelName = if runningOnMono then "FSCChannelMono" else "FSCChannel"
+        static let baseChannelName = 
+#if FX_RUNNING_ON_MONO
+            if runningOnMono then 
+                "FSCChannelMono" 
+            else 
+#endif
+                "FSCChannel"
         static let channelName = baseChannelName + "_" +  domainName + "_" + userName
-        static let serverName = if runningOnMono then "FSCServerMono" else "FSCSever"
+        static let serverName = 
+#if FX_RUNNING_ON_MONO
+            if runningOnMono then 
+                "FSCServerMono" 
+            else
+#endif
+                "FSCSever"
         static let mutable serverExists = true
 
         let outputCollector = new OutputCollector()
@@ -117,6 +129,7 @@ module FSharpResidentCompiler =
 
             // On Unix, the file permissions of the implicit socket need to be set correctly to make this
             // private to the user.
+#if FX_RUNNING_ON_MONO
             if runningOnMono then 
               try 
                   let monoPosix = System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
@@ -137,8 +150,9 @@ module FSharpResidentCompiler =
 #endif
                   ()
                   // Fail silently
+#endif
             server.Run()
-            
+
         static member private ConnectToServer() =
             Activator.GetObject(typeof<FSharpCompilationServer>,"ipc://" + channelName + "/" + serverName) 
             :?> FSharpCompilationServer 
@@ -282,17 +296,25 @@ module Driver =
             0 
 
 
-
-
+#if FX_NO_DEFAULT_DEPENDENCY_TYPE
+#else
 [<Dependency("FSharp.Compiler",LoadHint.Always)>] 
+#endif
 do ()
 
 [<EntryPoint>]
 let main(argv) =
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)    
+#if FX_RUNNING_ON_MONO
     if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
+#else
+#if FX_NO_HEAPTERMINATION
+#else
+    Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
+#endif
+#endif
 
-    try 
+    try
         Driver.main(Array.append [| "fsc.exe" |] argv); 
     with e -> 
         errorRecovery e Microsoft.FSharp.Compiler.Range.range0; 

@@ -1405,7 +1405,11 @@ module internal IncrementalFSharpBuild =
                     disposeCleanupItem()
 
                     Trace.PrintLine("FSharpBackgroundBuild", fun _ -> "About to (re)create tcImports")
-                    let tcImports = TcImports.BuildNonFrameworkTcImports(None,tcConfigP,tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences)  
+                    let tcImports = TcImports.BuildNonFrameworkTcImports(
+#if TYPE_PROVIDER_SECURITY
+                                                                         None,
+#endif
+                                                                         tcConfigP,tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences)  
 #if EXTENSIONTYPING
                     for ccu in tcImports.GetCcusExcludingBase() do
                         // When a CCU reports an invalidation, merge them together and just report a 

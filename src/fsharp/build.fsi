@@ -328,9 +328,10 @@ type TcConfigBuilder =
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
-      mutable shadowCopyReferences : bool }
-
-
+#if FX_SHADOWCOPY_IN_FSI
+      mutable shadowCopyReferences : bool
+#endif
+    }
     static member CreateNew : 
         defaultFSharpBinariesDir: string * 
         optimizeForMemory: bool * 
@@ -487,8 +488,9 @@ type TcConfig =
     member sqmSessionGuid : System.Guid option
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
+#if FX_SHADOWCOPY_IN_FSI
     member shadowCopyReferences : bool
- 
+#endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
 
 
@@ -566,7 +568,11 @@ type TcImports =
     member SystemRuntimeContainsType : string -> bool
 
     static member BuildFrameworkTcImports      : TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> TcGlobals * TcImports
+#if TYPE_PROVIDER_SECURITY
     static member BuildNonFrameworkTcImports   : (string->unit) option * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
+#else
+    static member BuildNonFrameworkTcImports   : TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
+#endif
     static member BuildTcImports               : TcConfigProvider -> TcGlobals * TcImports
 
 //----------------------------------------------------------------------------

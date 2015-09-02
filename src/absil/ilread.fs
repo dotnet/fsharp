@@ -3945,7 +3945,13 @@ let rec genOpenBinaryReader infile is opts =
 #if NO_PDB_READER
     let pdb = None
 #else
-    let pdb = if runningOnMono then None else getPdbReader opts infile
+    let pdb = 
+#if FX_RUNNING_ON_MONO
+        if runningOnMono then 
+            None 
+        else 
+#endif
+            getPdbReader opts infile
 #endif
 
     let rowAddr (tab:TableName) idx = tablePhysLocations.[tab.Index] + (idx - 1) * tableRowSizes.[tab.Index]
