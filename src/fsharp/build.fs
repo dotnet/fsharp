@@ -4236,29 +4236,28 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             let attrs = GetCustomAttributesOfIlModule ilModule
             let ilg = defaultArg ilGlobalsOpt EcmaILGlobals
             let phase2 = 
-                let prepareToImportReferencedIlDll =
+                if (List.exists IsSignatureDataVersionAttr attrs) then 
+                    if not (List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs) then 
+                      errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile(filename),m))
 #if TYPE_PROVIDER_SECURITY
                       tcImports.PrepareToImportReferencedIlDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
 #else
                       tcImports.PrepareToImportReferencedIlDll m filename dllinfo
 #endif
-                let prepareToImportReferencedFSharpDll =
+                    else 
+                      try
 #if TYPE_PROVIDER_SECURITY
                         tcImports.PrepareToImportReferencedFSharpDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
 #else
                         tcImports.PrepareToImportReferencedFSharpDll m filename dllinfo
 #endif
-
-                if (List.exists IsSignatureDataVersionAttr attrs) then 
-                    if not (List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs) then 
-                      errorR(Error(FSComp.SR.buildDifferentVersionMustRecompile(filename),m))
-                      prepareToImportReferencedIlDll
-                    else 
-                      try
-                        prepareToImportReferencedFSharpDll
                       with e -> error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message),m))
                 else 
-                    prepareToImportReferencedIlDll
+#if TYPE_PROVIDER_SECURITY
+                  tcImports.PrepareToImportReferencedIlDll tpApprovals m filename displayPSTypeProviderSecurityDialogBlockingUI dllinfo
+#else
+                  tcImports.PrepareToImportReferencedIlDll m filename dllinfo
+#endif
             dllinfo,phase2
 
     member tcImports.RegisterAndImportReferencedAssemblies (
