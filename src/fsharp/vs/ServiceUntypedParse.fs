@@ -219,8 +219,10 @@ type internal UntypedParseInfo(parsed:UntypedParseResults) =
                   | SynExpr.Tuple (es,_,_) -> 
                       yield! walkExprs es
 
-                  | SynExpr.Record (_,_,fs,_) -> 
-                    
+                  | SynExpr.Record (_,copyExprOpt,fs,_) ->
+                      match copyExprOpt with
+                      | Some (e,_) -> yield! walkExpr true e
+                      | None -> ()
                       yield! walkExprs (List.map (fun (_, v, _) -> v) fs |> List.choose id)
 
                   | SynExpr.ObjExpr (_,_,bs,is,_,_) -> 
