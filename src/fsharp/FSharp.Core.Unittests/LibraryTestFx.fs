@@ -10,7 +10,7 @@ open NUnit.Framework
 // Workaround for bug 3601, we are issuing an unnecessary warning
 #nowarn "0004"
 
-/// Check that the lamda throws an exception of the given type. Otherwise
+/// Check that the lambda throws an exception of the given type. Otherwise
 /// calls Assert.Fail()
 let CheckThrowsExn<'a when 'a :> exn> (f : unit -> unit) =
     let funcThrowsAsExpected =

@@ -65,6 +65,7 @@
     <Compile Include="..\..\src\update.fs">
       <Link>update.fs</Link>
     </Compile>
+    <Compile Include="..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs" />
     <Compile Include="nunitConf.fs" />
     <Compile Include="single-test-build.fs" />
     <Compile Include="single-test-run.fs" />
@@ -1104,5 +1105,10 @@
     <None Include="typeProviders\wedgeAssembly\test2b.fsi" />
     <None Include="typeProviders\wedgeAssembly\test3.fsx" />
     <Compile Include="typeProviders\tests_typeProviders.fs" /> 
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="fsc\ProductVersion.fs" />
+    <Compile Include="fsc\FileVersionInfo.fs" />
+    <Compile Include="fsc\warnings\FS2003\Warning_FS2003.fs" />
   </ItemGroup>
 </Project>

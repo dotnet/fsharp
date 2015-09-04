@@ -208,6 +208,9 @@ module FSharpTestSuite =
 
 type FSharpSuiteTestAttribute(dir: string) =
     inherit NUnitAttribute()
+
+    new() = FSharpSuiteTestAttribute(Commands.createTempDir())
+
     interface NUnit.Framework.Interfaces.IApplyToTest with
         member x.ApplyToTest(test: NUnit.Framework.Internal.Test) =
             try
@@ -377,3 +380,74 @@ module Command =
         { RedirectOutput = None; RedirectError = None; RedirectInput = None }
         |> (outF (inF exec))
 
+
+[<AutoOpen>]
+module CommandTypes =
+    type SourceFile = 
+    | File of FilePath
+    | Content of string * (string -> TextWriter -> unit)
+
+module FscCommand =
+
+    type FscOutputLine =
+        | Error of string * string
+        | Warning of string * string
+        | Text of string
+    
+    type FscToLibraryArgs = {
+        OutLibrary: FilePath
+        SourceFiles: SourceFile list 
+        }
+
+    type FscToLibraryResult = {
+        OutLibraryFullPath: FilePath
+        OutText: string list
+        }
+
+    let private parseFscOutLine line =
+        let (|RegexFsc|_|) outType line =
+            let pattern = sprintf "%s (?<code>.+): (?<descr>.*)" outType
+            match System.Text.RegularExpressions.Regex.Match(line, pattern) with
+            | m when m.Success -> Some (m.Groups.["code"].Value, m.Groups.["descr"].Value)
+            | _ -> None
+        
+        match line with
+        | RegexFsc "error" (code, descr) -> FscOutputLine.Error(code, descr)
+        | RegexFsc "warning" (code, descr) -> FscOutputLine.Warning(code, descr)
+        | l -> FscOutputLine.Text(line)
+
+    let parseFscOut = List.map parseFscOutLine
+
+    let fscToLibrary dir exec (fscExe: FilePath) flags (args: FscToLibraryArgs) = processor {
+        let ``exec >a`` a p = exec { RedirectInfo.Output = OutputAndError(a); Input = None; } p >> checkResult
+            
+        let outStream = Path.GetTempFileName ()
+        let fsc = Printf.ksprintf (Commands.fsc (``exec >a`` (Overwrite(outStream))) fscExe)
+    
+        let sourceFiles = 
+            args.SourceFiles 
+            |> List.map (fun sf ->
+                match sf with
+                | SourceFile.Content (name, writer) ->
+                    let filePath = dir/name
+                    use file = File.CreateText(filePath)
+                    writer name file
+                    name
+                | SourceFile.File path -> path )
+
+        let outDll = args.OutLibrary
+        
+        let logOutputOnFailure x =
+            match x with
+            | Success x -> Success x
+            | Failure(e) ->
+                printf "%s" (File.ReadAllText(outStream))
+                Failure(e)
+
+        do! (fsc "%s -a -o:%s" flags outDll sourceFiles) |> logOutputOnFailure
+            
+        let outText = File.ReadAllLines(outStream) |> List.ofArray
+
+        return { FscToLibraryResult.OutLibraryFullPath = (Commands.getfullpath dir outDll)
+                 OutText = outText }
+        }
