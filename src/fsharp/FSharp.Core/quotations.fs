@@ -537,7 +537,7 @@ module Patterns =
         if index < 0 || index >= fields.Length then invalidArg "index" (SR.GetString(SR.QinvalidCaseIndex))
         fields.[index]
  
-    /// Returns type of lambda applciation - something like "(fun a -> ..) b"
+    /// Returns type of lambda application - something like "(fun a -> ..) b"
     let rec typeOfAppliedLambda f =
         let fty = ((typeOf f):Type) 
         match fty.GetGenericArguments() with 
@@ -641,7 +641,7 @@ module Patterns =
         if not (assignableFrom declType (typeOf obj)) then invalidArg "obj" (SR.GetString(SR.QincorrectInstanceType))
 
       
-    // Checks lambda application for correctnes
+    // Checks lambda application for correctness
     let checkAppliedLambda (f, v) =
         let fty = typeOf f
         let ftyG = (if fty.IsGenericType then  fty.GetGenericTypeDefinition()  else fty)

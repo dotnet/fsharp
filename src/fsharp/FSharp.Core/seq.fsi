@@ -263,7 +263,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Empty")>]
         val empty<'T> : seq<'T>
 
-        /// <summary>Returns a new sequence with the distinct elements of the second sequence which do not apear in the first sequence,
+        /// <summary>Returns a new sequence with the distinct elements of the second sequence which do not appear in the first sequence,
         /// using generic hash and equality comparisons to compare values.</summary>
         ///
         /// <remarks>Note that this function returns a sequence that digests the whole of the first input sequence as soon as
