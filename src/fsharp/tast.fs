@@ -253,7 +253,7 @@ type TyparKind =
       | TyparKind.Measure -> "measure"
 
 [<RequireQualifiedAccess>]
-/// Indicates if the type variable can be sovled or given new constraints. The status of a type variable
+/// Indicates if the type variable can be solved or given new constraints. The status of a type variable
 /// evolves towards being either rigid or solved. 
 type TyparRigidity = 
     /// Indicates the type parameter can't be solved
@@ -310,7 +310,7 @@ type TyparFlags(flags:int32) =
                                             | 0b000000001000 -> HeadTypeStaticReq
                                             | _             -> failwith "unreachable"
 
-    /// Indicates if the type variable can be sovled or given new constraints. The status of a type variable
+    /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
     /// generally always evolves towards being either rigid or solved. 
     member x.Rigidity = 
                              match (flags &&& 0b000011100000) with 
@@ -582,7 +582,7 @@ type Entity =
     /// Indicates if this entity is an F# type abbreviation definition
     member x.IsTypeAbbrev = x.TypeAbbrev.IsSome
 
-    /// Get the value representing the accessiblity of the r.h.s. of an F# type definition.
+    /// Get the value representing the accessibility of the r.h.s. of an F# type definition.
     member x.TypeReprAccessibility = x.Data.entity_tycon_repr_accessibility
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
@@ -591,7 +591,7 @@ type Entity =
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
     member x.PublicPath = x.Data.entity_pubpath
 
-    /// Get the value representing the accessiblity of an F# type definition or module.
+    /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility = x.Data.entity_accessiblity
 
     /// Indicates the type prefers the "tycon<a,b>" syntax for display etc. 
@@ -1000,7 +1000,7 @@ and
       // REVIEW: it looks like entity_cpath subsumes this 
       entity_pubpath : PublicPath option 
 
-      /// Indicates how visible is the entitiy is.
+      /// Indicates how visible is the entity is.
       entity_accessiblity: Accessibility   
  
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
@@ -1537,7 +1537,7 @@ and
       member mtyp.AllValsByLogicalName = 
           let addValByName (x:Val) tab = 
              // Note: names may occur twice prior to raising errors about this in PostTypeCheckSemanticChecks
-             // Earlier ones take precedence sice we report errors about the later ones
+             // Earlier ones take precedence since we report errors about the later ones
              if not x.IsMember && not x.IsCompilerGenerated then 
                  NameMap.add x.LogicalName x tab 
              else
@@ -1774,7 +1774,7 @@ and
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
     member x.IsCompilerGenerated = x.Data.typar_flags.IsCompilerGenerated
 
-    /// Indicates if the type variable can be sovled or given new constraints. The status of a type variable
+    /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
     /// generally always evolves towards being either rigid or solved. 
     member x.Rigidity            = x.Data.typar_flags.Rigidity
 
@@ -1834,7 +1834,7 @@ and
         | None -> false
         | _ -> true
 
-    /// Sets the identifier assocaited with a type variable
+    /// Sets the identifier associated with a type variable
     member x.SetIdent id = x.Data.typar_id <- id
 
     /// Sets the rigidity of a type variable
@@ -1858,7 +1858,7 @@ and
     /// Indicates a constraint that a type is a subtype of the given type 
     | CoercesTo              of TType * range
 
-    /// Indicates a default value for an inference type variable should it be netiher generalized nor solved 
+    /// Indicates a default value for an inference type variable should it be neither generalized nor solved 
     | DefaultsTo             of int * TType * range 
     
     /// Indicates a constraint that a type has a 'null' value 
@@ -1869,7 +1869,7 @@ and
     
     /// Indicates a constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 
-    /// generate verifiable code we must attach them to F# generalzied type variables as well. 
+    /// generate verifiable code we must attach them to F# generalized type variables as well. 
     | IsNonNullableStruct     of range 
     
     /// Indicates a constraint that a type is a reference type 
@@ -2009,7 +2009,7 @@ and
     /// functions, and relates to the F# spec for arity analysis.
     /// For module-defined values, the currying is based 
     /// on the number of lambdas, and in each position the elements are 
-    /// based on attempting to deconstruct the type of the argument as a 
+    /// based on attempting to reconstruct the type of the argument as a 
     /// tuple-type.  
     ///
     /// The field is mutable because arities for recursive 
@@ -2058,7 +2058,7 @@ and
 
     /// Is this a member, if so some more data about the member.
     ///
-    /// Note, the value may still be (a) an extension member or (b) and abtract slot without
+    /// Note, the value may still be (a) an extension member or (b) and abstract slot without
     /// a true body. These cases are often causes of bugs in the compiler.
     member x.MemberInfo                 = x.Data.val_member_info
 
@@ -2076,7 +2076,7 @@ and
 
     /// Indicates if this is an F#-defined instance member. 
     ///
-    /// Note, the value may still be (a) an extension member or (b) and abtract slot without
+    /// Note, the value may still be (a) an extension member or (b) and abstract slot without
     /// a true body. These cases are often causes of bugs in the compiler.
     member x.IsInstanceMember = x.IsMember && x.MemberInfo.Value.MemberFlags.IsInstance
 
@@ -2261,7 +2261,7 @@ and
         //    The implicit 'copyOfStruct' variables here:
         //         let dt = System.DateTime.Now - System.DateTime.Now // IsMemberOrModuleBinding = false, IsCompiledAsTopLevel = true, IsMember = false, CompilerGenerated=true
         //    
-        // However we don't need this for CompilerGenerated members such as the imlpementations of IComparable
+        // However we don't need this for CompilerGenerated members such as the implementations of IComparable
         if x.IsCompiledAsTopLevel  && not x.IsMember  && (x.IsCompilerGenerated || not x.IsMemberOrModuleBinding) then 
             globalStableNameGenerator.GetUniqueCompilerGeneratedName(givenName,x.Range,x.Stamp) 
         else 
@@ -2354,7 +2354,7 @@ and
       val_member_info: ValMemberInfo option
 
       /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
-      /// these value references after copying a colelction of values. 
+      /// these value references after copying a collection of values. 
       mutable val_attribs: Attribs
 
       // MUTABILITY CLEANUP: mutability of this field is used by 
@@ -2415,7 +2415,7 @@ and ValPublicPath      =
 and NonLocalEntityRef    = 
     | NonLocalEntityRef of CcuThunk * string[]
 
-    /// Try to find the entity correspondng to the given path in the given CCU
+    /// Try to find the entity corresponding to the given path in the given CCU
     static member TryDerefEntityPath(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
         if i >= path.Length then Some entity
         else  
@@ -2429,7 +2429,7 @@ and NonLocalEntityRef    =
 #endif
 
 #if EXTENSIONTYPING
-    /// Try to find the entity correspondng to the given path, using type-providers to link the data
+    /// Try to find the entity corresponding to the given path, using type-providers to link the data
     static member TryDerefEntityPathViaProvidedType(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
         // Errors during linking are not necessarily given good ranges. This has always been the case in F# 2.0, but also applies to
         // type provider type linking errors in F# 3.0.
@@ -2718,7 +2718,7 @@ and
     /// Indicates if this entity is an F# type abbreviation definition
     member x.IsTypeAbbrev         = x.Deref.IsTypeAbbrev
 
-    /// Get the value representing the accessiblity of the r.h.s. of an F# type definition.
+    /// Get the value representing the accessibility of the r.h.s. of an F# type definition.
     member x.TypeReprAccessibility = x.Deref.TypeReprAccessibility
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
@@ -2727,7 +2727,7 @@ and
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
     member x.PublicPath : PublicPath option = x.Deref.PublicPath
 
-    /// Get the value representing the accessiblity of an F# type definition or module.
+    /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility        = x.Deref.Accessibility
 
     /// Indicates the type prefers the "tycon<a,b>" syntax for display etc. 
@@ -2964,7 +2964,7 @@ and
     member x.CoreDisplayName            = x.Deref.CoreDisplayName
     member x.Range                      = x.Deref.Range
 
-    /// Get the value representing the accessiblity of an F# type definition or module.
+    /// Get the value representing the accessibility of an F# type definition or module.
     member x.Accessibility              = x.Deref.Accessibility
 
     /// The parent type or module, if any (None for expression bindings and parameters)
@@ -3026,7 +3026,7 @@ and
 
     /// Indicates if this is an F#-defined instance member. 
     ///
-    /// Note, the value may still be (a) an extension member or (b) and abtract slot without
+    /// Note, the value may still be (a) an extension member or (b) and abstract slot without
     /// a true body. These cases are often causes of bugs in the compiler.
     member x.IsInstanceMember           = x.Deref.IsInstanceMember
 
@@ -3235,7 +3235,7 @@ and
       IsFSharp: bool 
       
 #if EXTENSIONTYPING
-      /// Is the CCu an assembly inected by a type provider
+      /// Is the CCu an assembly injected by a type provider
       IsProviderGenerated: bool 
 
       /// Triggered when the contents of the CCU are invalidated
@@ -3477,7 +3477,7 @@ and
 
     /// TDBind(binding, body)
     ///
-    /// Bind the given value throught the remaining cases of the dtree. 
+    /// Bind the given value through the remaining cases of the dtree. 
     /// These arise from active patterns and some optimizations to prevent
     /// repeated computations in decision trees.
     ///    binding -- the value and the expression it is bound to
@@ -3516,7 +3516,7 @@ and
     ///     activePatExpr     -- The active pattern function being called, perhaps applied to some active pattern parameters.
     ///     activePatResTys   -- The result types (case types) of the active pattern.
     ///     activePatIdentity -- The value and the types it is applied to. If there are any active pattern parameters then this is empty. 
-    ///     idx               -- The case number of of the active pattern which the test relates to.
+    ///     idx               -- The case number of the active pattern which the test relates to.
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
@@ -3566,7 +3566,7 @@ and ValReprInfo  =
         loop args 0
 
 /// Records the "extra information" for an argument compiled as a real
-/// method argument, specificially the argument name and attributes.
+/// method argument, specifically the argument name and attributes.
 and 
     [<RequireQualifiedAccess>]
     ArgReprInfo = 
@@ -3646,7 +3646,7 @@ and
     /// as the mark for all the decision making and binding that happens during the match. 
     | Match of SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType
 
-    /// If we statically know some infomation then in many cases we can use a more optimized expression 
+    /// If we statically know some information then in many cases we can use a more optimized expression 
     /// This is primarily used by terms in the standard library, particularly those implementing overloaded 
     /// operators. 
     | StaticOptimization of StaticOptimization list * Expr * Expr * range
@@ -3740,7 +3740,7 @@ and
     /// Pseudo method calls. This is used for overloaded operations like op_Addition. 
     | TraitCall of TraitConstraintInfo  
 
-    /// Operation nodes represnting C-style operations on byrefs and mutable vals (l-values) 
+    /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 
 
     /// ILCall(useCallvirt,isProtected,valu,newobj,valUseFlags,isProp,noTailCall,mref,actualTypeInst,actualMethInst, retTy)
@@ -3764,7 +3764,7 @@ and RecordConstructionInfo =
    | RecdExpr
    
 
-/// If this is Some(ty) then it indicates that a .NET 2.0 constrained call is required, witht he given type as the
+/// If this is Some(ty) then it indicates that a .NET 2.0 constrained call is required, with the given type as the
 /// static type of the object argument.
 and ConstrainedCallInfo = TType option
 
@@ -3897,7 +3897,7 @@ and FreeLocals = Zset<Val>
 /// Represents a set of free type parameters
 and FreeTypars = Zset<Typar>
 /// Represents a set of 'free' named type definitions. Used to collect the named type definitions referred to 
-/// from atype or expression.
+/// from a type or expression.
 and FreeTycons = Zset<Tycon>
 /// Represents a set of 'free' record field definitions. Used to collect the record field definitions referred to 
 /// from an expression.
@@ -3922,7 +3922,7 @@ and FreeTyvars =
 /// Represents an amortized computation of the free variables in an expression
 and FreeVarsCache = FreeVars cache
 
-/// Represents the set of free variables in an an expression
+/// Represents the set of free variables in an expression
 and FreeVars = 
     { /// The summary of locally defined variables used in the expression. These may be hidden at let bindings etc. 
       /// or made private by a signature or marked 'internal' or 'private', and we have to check various conditions associated with that. 
@@ -4023,7 +4023,7 @@ let foldTImplFile  f z (TImplFile(_,_,moduleExpr,_,_)) = f z moduleExpr
 
 let typarEq    (lv1:Typar) (lv2:Typar) = (lv1.Stamp = lv2.Stamp)
 
-/// Equality on type varialbes, implemented as reference equality. This should be equivalent to using typarEq.
+/// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.
 let typarRefEq (tp1: Typar) (tp2: Typar) = (tp1 === tp2)
 
 
@@ -4038,7 +4038,7 @@ let ccuEq (mv1: CcuThunk) (mv2: CcuThunk) =
      else 
         mv1.Contents === mv2.Contents)
 
-/// For derefencing in the middle of a pattern
+/// For dereferencing in the middle of a pattern
 let (|ValDeref|) (vr :ValRef) = vr.Deref
 
 
@@ -4319,7 +4319,7 @@ let primEntityRefEq compilingFslib fslibCcu (x : EntityRef) (y : EntityRef) =
 let primUnionCaseRefEq compilingFslib fslibCcu (UCRef(tcr1,c1) as uc1) (UCRef(tcr2,c2) as uc2) = 
     uc1 === uc2 || (primEntityRefEq compilingFslib fslibCcu tcr1 tcr2 && c1 = c2)
 
-/// Primitive routine to compare two ValRef's for equality.  On the whol value identity is not particularly
+/// Primitive routine to compare two ValRef's for equality.  On the whole value identity is not particularly
 /// significant in F#. However it is significant for
 ///    (a) Active Patterns 
 ///    (b) detecting uses of "special known values" from FSharp.Core.dll, such as 'seq' 

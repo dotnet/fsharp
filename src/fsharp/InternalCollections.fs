@@ -17,11 +17,11 @@ type internal ValueStrength<'T when 'T : not struct> =
 
 type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:int, areSame, ?onStrongDiscard : ('TValue -> unit), ?keepMax: int) =
     /// The list of items stored. Youngest is at the end of the list.
-    /// The choice of order is somewhat aribtrary. If the other way then adding
+    /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
     let mutable refs:('TKey*ValueStrength<'TValue>) list = [] 
 
-    // Only set a strong discard function if keepMax is expliclty set to keepStrongly, i.e. there are no weak entries in this lookup.
+    // Only set a strong discard function if keepMax is explicitly set to keepStrongly, i.e. there are no weak entries in this lookup.
     do assert (onStrongDiscard.IsNone || Some keepStrongly = keepMax)
        
     let strongDiscard x = match onStrongDiscard with None -> () | Some f -> f x
@@ -86,7 +86,7 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
     let AssignWithStrength(newdata,discard1) = 
         let actualLength = List.length newdata
         let tossThreshold = max 0 (actualLength - keepMax) // Delete everything less than this threshold
-        let weakThreshhold = max 0 (actualLength - keepStrongly) // Weaken everything less than this threshhold
+        let weakThreshhold = max 0 (actualLength - keepStrongly) // Weaken everything less than this threshold
         
         let newdata = newdata|> List.mapi( fun n kv -> n,kv ) // Place the index.
         let newdata,discard2 = newdata |> List.partition (fun (n:int,_) -> n >= tossThreshold)
@@ -155,7 +155,7 @@ type internal MruCache<'TKey,'TValue when 'TValue : not struct>(keepStrongly,com
     let areSameForSubsumption = defaultArg areSameForSubsumption areSame
         
     /// The list of items in the cache. Youngest is at the end of the list.
-    /// The choice of order is somewhat aribtrary. If the other way then adding
+    /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
     let cache = AgedLookup<'TKey,'TValue>(keepStrongly=keepStrongly,areSame=areSameForSubsumption,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax)
         

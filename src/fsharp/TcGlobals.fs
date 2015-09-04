@@ -1274,7 +1274,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
         
         if compilingFslib then 
             // This map is for use when building FSharp.Core.dll. The backing Tycon's may not yet exist for
-            // the TyconRef's we have inour hands, hence we can't dereference them to find their stamps.
+            // the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
 
             // So this dictionary is indexed by names.
             let dict = 

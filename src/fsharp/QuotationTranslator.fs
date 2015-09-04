@@ -621,7 +621,7 @@ and ConvLetBind cenv env (bind : Binding) =
     //     'let v = isinst e in .... if nonnull v then ...v .... ' 
     // construct arising out the compilation of pattern matching. We decode these back to the form
     //     'if istype e then ...unbox e .... ' 
-    // It's bit annoying that pattern matching does this tranformation. Like all premature optimization we pay a 
+    // It's bit annoying that pattern matching does this transformation. Like all premature optimization we pay a 
     // cost here to undo it.
     | Expr.Op(TOp.ILAsm([ I_isinst _ ],_),[ty],[e],_) -> 
         None, BindIsInstVal env bind.Var (ty,e)
