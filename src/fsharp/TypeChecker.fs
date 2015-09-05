@@ -13413,11 +13413,13 @@ module EstablishTypeDefinitionCores = begin
             elif isConcrete || nonNil fields then TyconClass
             elif isNil slotsigs && inSig  then TyconHiddenRepr
             else TyconInterface
+        | TyconRecord ->
+            if hasStructAttr then TyconStruct
+            else TyconClass
         | k -> 
             if hasClassAttr && not (match k with TyconClass -> true | _ -> false) || 
                hasMeasureAttr && not (match k with TyconClass | TyconAbbrev | TyconHiddenRepr -> true | _ -> false)  || 
-               hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) || 
-               hasStructAttr && not (match k with TyconStruct | TyconRecord -> true | _ -> false) then 
+               hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) then 
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(),m))
             k
 
