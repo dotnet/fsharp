@@ -6299,7 +6299,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | TTyconInterface  -> ILTypeDefKind.Interface
                | TTyconEnum       -> ILTypeDefKind.Enum 
                | TTyconDelegate _ -> ILTypeDefKind.Delegate 
-
+           | TRecdRepr {recd_kind=TyconRecdKind.TyconStruct} -> ILTypeDefKind.ValueType
            | _ -> ILTypeDefKind.Class
 
         let requiresExtraField = 
@@ -6630,7 +6630,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                             ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }, ILDefaultPInvokeEncoding.Ansi 
                         
                     | _ -> 
-                        ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
+                        ILTypeDefLayout.Sequential { Size=None; Pack=None }, ILDefaultPInvokeEncoding.Ansi 
                
                // if the type's layout is Explicit, ensure that each field has a valid offset
                let validateExplicit fdef =
