@@ -456,7 +456,7 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
          errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)),m))
 
 
-let rec CheckExpr   (cenv:cenv) (env:env) expr = 
+let rec CheckExpr   (cenv:cenv) (env:env) expr =
     CheckExprInContext cenv env expr GeneralContext
 
 and CheckVal (cenv:cenv) (env:env) v m context = 
@@ -583,6 +583,20 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
 
 
     | Expr.App(f,fty,tyargs,argsl,m) ->
+        let (|OptionalCoerce|) = function 
+            | Expr.Op(TOp.Coerce _,_,[Expr.App(f, _, _, [], _)],_) -> f 
+            | x -> x
+        if cenv.reportErrors then
+            let g = cenv.g
+            match f with
+            | OptionalCoerce(Expr.Val(v, _, m')) when valRefEq g v g.raise_vref ->
+              match argsl with
+              | [] | [_] -> ()
+              | _ :: _ :: _ ->
+                warning(Error(FSComp.SR.checkRaiseArgumentCount v.DisplayName, m'))
+            | _ ->
+                ()
+
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckTypePermitByrefs cenv env m fty;
         CheckTypeInstPermitByrefs cenv env m tyargs;

@@ -513,6 +513,7 @@ type public TcGlobals =
       seq_empty_vref            : ValRef
       new_format_info           : IntrinsicValRef
       raise_info                : IntrinsicValRef
+      raise_vref                : ValRef
       lazy_force_info           : IntrinsicValRef
       lazy_create_info          : IntrinsicValRef
 
@@ -1352,6 +1353,7 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     equals_operator_info     = equals_operator_info
 
     raise_info                 = raise_info
+    raise_vref                 = ValRefForIntrinsic raise_info
     reraise_info               = reraise_info
     reraise_vref               = ValRefForIntrinsic reraise_info
     methodhandleof_info        = methodhandleof_info
