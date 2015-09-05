@@ -7071,6 +7071,7 @@ let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo:ValMemberInf
 let isSealedTy g ty =
     let ty = stripTyEqnsAndMeasureEqns g ty
     not (isRefTy g ty) ||
+    isStructTy g ty ||
     isUnitTy g ty || 
     isArrayTy g ty || 
 
