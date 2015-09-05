@@ -1670,11 +1670,12 @@ let rec dummy x = x
 and p_tycon_repr x st = 
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with 
-    | TRecdRepr fs             -> p_byte 1 st; p_byte 0 st; p_rfield_table fs st; false
+    | TRecdRepr {recd_kind=TyconRecdKind.TyconClass;recd_fields=fields} -> p_byte 1 st; p_byte 0 st; p_rfield_table fields st; false
     | TFiniteUnionRepr x       -> p_byte 1 st; p_byte 1 st; p_list p_unioncase_spec (Array.toList x.CasesTable.CasesByIndex) st; false
     | TAsmRepr ilty            -> p_byte 1 st; p_byte 2 st; p_ILType ilty st; false
     | TFsObjModelRepr r        -> p_byte 1 st; p_byte 3 st; p_tycon_objmodel_data r st; false
     | TMeasureableRepr ty      -> p_byte 1 st; p_byte 4 st; p_typ ty st; false
+    | TRecdRepr {recd_kind=TyconRecdKind.TyconStruct;recd_fields=fields} -> p_byte 1 st; p_byte 5 st; p_rfield_table fields st; false
     | TNoRepr                  -> p_byte 0 st; false
 #if EXTENSIONTYPING
     | TProvidedTypeExtensionPoint info -> 
@@ -1875,7 +1876,7 @@ and u_tycon_repr st =
         match tag2 with
         | 0 -> 
             let v = u_rfield_table st 
-            (fun _flagBit -> TRecdRepr v)
+            (fun _flagBit -> TRecdRepr {recd_kind=TyconRecdKind.TyconClass;recd_fields=v})
         | 1 -> 
             let v = u_list u_unioncase_spec  st 
             (fun _flagBit -> MakeUnionRepr v)
@@ -1906,6 +1907,9 @@ and u_tycon_repr st =
         | 4 -> 
             let v = u_typ st 
             (fun _flagBit -> TMeasureableRepr v)
+        | 5 ->
+            let v = u_rfield_table st
+            (fun _flagBit -> TRecdRepr {recd_kind=TyconRecdKind.TyconStruct;recd_fields=v})
         | _ -> ufailwith st "u_tycon_repr"
     | _ -> ufailwith st "u_tycon_repr"
   

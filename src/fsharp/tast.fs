@@ -653,7 +653,7 @@ type Entity =
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
     member x.AllFieldTable = 
         match x.TypeReprInfo with 
-        | TRecdRepr x | TFsObjModelRepr {fsobjmodel_rfields=x} -> x
+        | TRecdRepr {recd_fields=x} | TFsObjModelRepr {fsobjmodel_rfields=x} -> x
         |  _ -> 
         match x.ExceptionInfo with 
         | TExnFresh x -> x
@@ -790,6 +790,10 @@ type Entity =
 
     /// Indicates if this is an F#-defined struct or enum type definition , i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon =
+        (x.IsRecordTycon &&
+            match x.TypeReprInfo with
+            | TRecdRepr {recd_kind=TyconRecdKind.TyconStruct} -> true
+            | _ -> false) ||
         x.IsFSharpObjectModelTycon &&
         match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
         | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
@@ -1089,7 +1093,7 @@ and
     | TFsObjModelRepr    of TyconObjModelData
 
     /// Indicates the type is a record 
-    | TRecdRepr          of TyconRecdFields
+    | TRecdRepr          of TyconRecdData
 
     /// Indicates the type is a discriminated union 
     | TFiniteUnionRepr   of TyconUnionData 
@@ -1231,6 +1235,27 @@ and
     member x.AllFieldsAsList = x.FieldsByIndex |> Array.toList
     member x.TrueFieldsAsList = x.AllFieldsAsList |> List.filter (fun f -> not f.IsCompilerGenerated)   
     member x.TrueInstanceFieldsAsList = x.AllFieldsAsList |> List.filter (fun f -> not f.IsStatic && not f.IsCompilerGenerated)   
+
+and
+    [<RequireQualifiedAccess>]
+    TyconRecdKind =
+    /// Indicates the type is a class
+    | TyconClass
+    /// Indicates the type is a struct
+    | TyconStruct
+
+    member x.IsValueType =
+        match x with
+        | TyconClass -> false
+        | TyconStruct -> true
+
+and
+    [<NoEquality; NoComparison>]
+    TyconRecdData =
+    { /// Indicates whether the type declaration is a class or struct
+      recd_kind: TyconRecdKind
+      /// The fields of the record.
+      recd_fields: TyconRecdFields }
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]

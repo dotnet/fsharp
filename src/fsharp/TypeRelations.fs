@@ -719,7 +719,7 @@ module SignatureConformance = begin
                   let names (l: UnionCase list) = l |> List.map (fun c -> c.Id.idText)
                   reportNiceError "union case" (names ucases1) (names ucases2) 
                 else List.forall2 (checkUnionCase aenv) ucases1 ucases2
-            | (TRecdRepr implFields), (TRecdRepr sigFields) -> 
+            | (TRecdRepr {recd_fields=implFields}), (TRecdRepr {recd_fields=sigFields}) -> 
                 checkRecordFields g amap denv err aenv implFields sigFields
             | (TFsObjModelRepr r1), (TFsObjModelRepr r2) -> 
                 if not (match r1.fsobjmodel_kind,r2.fsobjmodel_kind with 

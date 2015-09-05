@@ -4699,11 +4699,15 @@ and remapFsObjData g tmenv x =
           fsobjmodel_vslots  = x.fsobjmodel_vslots  |> List.map (remapValRef tmenv);
           fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields g tmenv } 
 
+and remapRecdData g tmenv x =
+    { x with
+        recd_kind = x.recd_kind
+        recd_fields = remapRecdFields g tmenv x.recd_fields }
 
 and remapTyconRepr g tmenv repr = 
     match repr with 
     | TFsObjModelRepr    x -> TFsObjModelRepr (remapFsObjData g tmenv x)
-    | TRecdRepr          x -> TRecdRepr (remapRecdFields g tmenv x)
+    | TRecdRepr          x -> TRecdRepr (remapRecdData g tmenv x)
     | TFiniteUnionRepr   x -> TFiniteUnionRepr (remapUnionCases g tmenv x)
     | TILObjModelRepr    _ -> failwith "cannot remap IL type definitions"
 #if EXTENSIONTYPING
