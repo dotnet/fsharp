@@ -13413,13 +13413,11 @@ module EstablishTypeDefinitionCores = begin
             elif isConcrete || nonNil fields then TyconClass
             elif isNil slotsigs && inSig  then TyconHiddenRepr
             else TyconInterface
-        | TyconRecord ->
-            if hasStructAttr then TyconStruct
-            else TyconClass
         | k -> 
             if hasClassAttr && not (match k with TyconClass -> true | _ -> false) || 
                hasMeasureAttr && not (match k with TyconClass | TyconAbbrev | TyconHiddenRepr -> true | _ -> false)  || 
-               hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) then 
+               hasInterfaceAttr && not (match k with TyconInterface -> true | _ -> false) ||
+               hasStructAttr && not (match k with TyconStruct | TyconRecord -> true | _ -> false) then
                 error(Error(FSComp.SR.tcKindOfTypeSpecifiedDoesNotMatchDefinition(),m))
             k
 
@@ -13578,12 +13576,12 @@ module EstablishTypeDefinitionCores = begin
                 InferTyconKind cenv.g (TyconILAssemblyCode,attrs,[],[],inSig,true,m) |> ignore
                 TAsmRepr s
 
-            | SynTypeDefnSimpleRepr.Record (_,_,m) -> 
+            | SynTypeDefnSimpleRepr.Record (_,_,m) ->
+                // Run InferTyconKind to raise errors on inconsistent attribute sets
+                InferTyconKind cenv.g (TyconRecord,attrs,[],[],inSig,true,m) |> ignore
                 let kind = 
-                    match InferTyconKind cenv.g (TyconRecord,attrs,[],[],inSig,true,m) with
-                    | TyconClass -> TyconRecdKind.TyconClass
-                    | TyconStruct -> TyconRecdKind.TyconStruct
-                    | _ -> error(InternalError("should have inferred tycon kind",m))
+                    if HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs then TyconRecdKind.TyconStruct
+                    else TyconRecdKind.TyconClass
                 // Note: the table of record fields is initially empty
                 TRecdRepr
                     { recd_kind=kind
@@ -13938,11 +13936,9 @@ module EstablishTypeDefinitionCores = begin
                   | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
                   | SynTypeDefnSimpleRepr.Union _ -> None
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
-                  | SynTypeDefnSimpleRepr.Record (_,_,m) ->
-                    match InferTyconKind cenv.g (TyconRecord,attrs,[],[],inSig,true,m) with
-                    | TyconClass -> None
-                    | TyconStruct -> Some(cenv.g.system_Value_typ)
-                    | _ -> error(InternalError("should have inferred tycon kind",m))
+                  | SynTypeDefnSimpleRepr.Record _ ->
+                    if HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs then Some(cenv.g.system_Value_typ)
+                    else None
                   | SynTypeDefnSimpleRepr.General (kind,_,slotsigs,fields,isConcrete,_,_,_) ->
                       let kind = InferTyconKind cenv.g (kind,attrs,slotsigs,fields,inSig,isConcrete,m)
                                            
@@ -14137,7 +14133,7 @@ module EstablishTypeDefinitionCores = begin
                     writeFakeUnionCtorsToSink unionCases
                     MakeUnionRepr unionCases, None, NoSafeInitInfo
 
-                | SynTypeDefnSimpleRepr.Record (_,fields,m) ->
+                | SynTypeDefnSimpleRepr.Record (_,fields,_) ->
                     noMeasureAttributeCheck()
                     noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedRecord
                     noAbstractClassAttributeCheck()
@@ -14147,13 +14143,9 @@ module EstablishTypeDefinitionCores = begin
                     recdFields |> CheckDuplicates (fun f -> f.Id) "field"  |> ignore
                     writeFakeRecordFieldsToSink recdFields
 
-                    let kind = InferTyconKind cenv.g (TyconRecord,attrs,[],[],inSig,true,m) 
-                    let kind =
-                        match kind with
-                        | TyconClass -> TyconRecdKind.TyconClass
-                        | TyconStruct -> TyconRecdKind.TyconStruct
-                        | _ -> 
-                            error(InternalError("should have inferred tycon kind",m))
+                    let kind = 
+                        if HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs then TyconRecdKind.TyconStruct
+                        else TyconRecdKind.TyconClass
                     
                     let fields = MakeRecdFieldsTable recdFields 
                     TRecdRepr { recd_kind = kind; recd_fields = fields }, None, NoSafeInitInfo
