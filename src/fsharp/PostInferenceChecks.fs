@@ -589,11 +589,17 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
         if cenv.reportErrors then
             let g = cenv.g
             match f with
-            | OptionalCoerce(Expr.Val(v, _, m')) when valRefEq g v g.raise_vref ->
+            | OptionalCoerce(Expr.Val(v, _, m')) 
+                when (valRefEq g v g.raise_vref || valRefEq g v g.failwith_vref || valRefEq g v g.null_arg_vref || valRefEq g v g.invalid_op_vref) ->
               match argsl with
               | [] | [_] -> ()
               | _ :: _ :: _ ->
-                warning(Error(FSComp.SR.checkRaiseArgumentCount v.DisplayName, m'))
+                warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 1), m')) 
+            | OptionalCoerce(Expr.Val(v, _, m')) when  valRefEq g v g.invalid_arg_vref ->
+              match argsl with
+              | [] | [_] | [_; _] -> ()
+              | _ :: _ :: _ :: _ ->
+                warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 2), m')) 
             | _ ->
                 ()
 
