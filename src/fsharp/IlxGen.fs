@@ -6633,7 +6633,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                             ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }, ILDefaultPInvokeEncoding.Ansi 
                         
                     | _ -> 
-                        ILTypeDefLayout.Sequential { Size=None; Pack=None }, ILDefaultPInvokeEncoding.Ansi 
+                        ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
                
                // if the type's layout is Explicit, ensure that each field has a valid offset
                let validateExplicit fdef =
