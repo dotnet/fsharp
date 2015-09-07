@@ -5,6 +5,9 @@ REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
 
 call %~d0%~p0..\..\..\config.bat
 
+call ..\..\single-neg-test.bat neg94
+@if ERRORLEVEL 1 goto Error
+
 call ..\..\single-neg-test.bat neg93
 @if ERRORLEVEL 1 goto Error
 
