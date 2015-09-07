@@ -61,3 +61,57 @@ type Vector3Generic<'T> =
 module Vector3Generic =
     let inline test (v1: Vector3Generic<int>) (v2: Vector3Generic<int>) =
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
+[<Struct>]
+[<StructLayout (LayoutKind.Sequential)>]
+type Vector3Record  =
+    {
+        x: single
+        y: single
+        z: single
+    }
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Vector3Record =
+    let inline dot (v1: Vector3Record) (v2: Vector3Record) =
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
+    let inline dot2 ({ x = x1; y = y1; z = z1}: Vector3Record) ({ x = x2; y = y2; z = z2}: Vector3Record) =
+        x1 * x2 + y1 * y2 + z1 * z2
+
+[<Struct>]
+[<StructLayout (LayoutKind.Sequential)>]
+type Vector3RecordMutableField  =
+    {
+        x: single
+        mutable y: single
+        z: single
+    }
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Vector3RecordMutableField =
+    let inline dot (v1: Vector3RecordMutableField) (v2: Vector3RecordMutableField) =
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+
+    let inline dot2 ({ x = x1; y = y1; z = z1}: Vector3RecordMutableField) ({ x = x2; y = y2; z = z2}: Vector3RecordMutableField) =
+        x1 * x2 + y1 * y2 + z1 * z2
+
+[<Struct>]
+[<StructLayout (LayoutKind.Sequential)>]
+type Vector3RecordGeneric<'T>  =
+    {
+        x: 'T
+        mutable y: 'T
+        z: 'T
+    }
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Vector3RecordGeneric =
+    let inline dotObj (v1: Vector3RecordGeneric<obj>) (v2: Vector3RecordGeneric<obj>) =
+        v2.y
+
+    let inline dot ({ x = x1; y = y1; z = z1}: Vector3RecordGeneric<single>) ({ x = x2; y = y2; z = z2}: Vector3RecordGeneric<single>) =
+        x1 * x2 + y1 * y2 + z1 * z2
