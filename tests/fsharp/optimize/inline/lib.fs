@@ -64,7 +64,7 @@ module Vector3Generic =
 
 [<Struct>]
 [<StructLayout (LayoutKind.Sequential)>]
-type Vector3Record  =
+type Vector3StructRecord  =
     {
         x: single
         y: single
@@ -73,16 +73,13 @@ type Vector3Record  =
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Vector3Record =
-    let inline dot (v1: Vector3Record) (v2: Vector3Record) =
+module Vector3StructRecord =
+    let inline dot (v1: Vector3StructRecord) (v2: Vector3StructRecord) =
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
-
-    let inline dot2 ({ x = x1; y = y1; z = z1}: Vector3Record) ({ x = x2; y = y2; z = z2}: Vector3Record) =
-        x1 * x2 + y1 * y2 + z1 * z2
 
 [<Struct>]
 [<StructLayout (LayoutKind.Sequential)>]
-type Vector3RecordMutableField  =
+type Vector3StructRecordMutableField  =
     {
         x: single
         mutable y: single
@@ -91,16 +88,13 @@ type Vector3RecordMutableField  =
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Vector3RecordMutableField =
-    let inline dot (v1: Vector3RecordMutableField) (v2: Vector3RecordMutableField) =
+module Vector3StructRecordMutableField =
+    let inline dot (v1: Vector3StructRecordMutableField) (v2: Vector3StructRecordMutableField) =
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
-
-    let inline dot2 ({ x = x1; y = y1; z = z1}: Vector3RecordMutableField) ({ x = x2; y = y2; z = z2}: Vector3RecordMutableField) =
-        x1 * x2 + y1 * y2 + z1 * z2
 
 [<Struct>]
 [<StructLayout (LayoutKind.Sequential)>]
-type Vector3RecordGeneric<'T>  =
+type Vector3StructRecordGeneric<'T>  =
     {
         x: 'T
         mutable y: 'T
@@ -109,9 +103,6 @@ type Vector3RecordGeneric<'T>  =
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Vector3RecordGeneric =
-    let inline dotObj (v1: Vector3RecordGeneric<obj>) (v2: Vector3RecordGeneric<obj>) =
-        v2.y
-
-    let inline dot ({ x = x1; y = y1; z = z1}: Vector3RecordGeneric<single>) ({ x = x2; y = y2; z = z2}: Vector3RecordGeneric<single>) =
-        x1 * x2 + y1 * y2 + z1 * z2
+module Vector3StructRecordGeneric =
+    let inline dot (v1: Vector3StructRecordGeneric<single>) (v2: Vector3StructRecordGeneric<single>) =
+        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
