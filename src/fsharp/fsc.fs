@@ -129,7 +129,7 @@ let ConsoleErrorLoggerThatQuitsAfterMaxErrors (tcConfigB:TcConfigBuilder, exiter
                     )
     } :> _
 
-/// This error logger delays the messages it recieves. At the end, call ForwardDelayedErrorsAndWarnings
+/// This error logger delays the messages it receives. At the end, call ForwardDelayedErrorsAndWarnings
 /// to send the held messages.     
 type DelayAndForwardErrorLogger(exiter: Exiter, errorLoggerProvider: ErrorLoggerProvider) =
     inherit ErrorLogger("DelayAndForwardErrorLogger")
@@ -1845,7 +1845,7 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
     end;
 
 
-    // Pass on only the minimimum information required for the next phase to ensure GC kicks in.
+    // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
     Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
@@ -1896,7 +1896,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
         else
             sigDataResources, optDataResources
     
-    // Pass on only the minimimum information required for the next phase to ensure GC kicks in.
+    // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
     Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfile,optimizedImpls,topAttrs,pdbfile,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)

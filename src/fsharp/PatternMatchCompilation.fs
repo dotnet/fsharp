@@ -298,7 +298,7 @@ let rec CombineRefutations g r1 r2 =
            | Const.Decimal(s1), Const.Decimal(s2) -> Const.Decimal(max s1 s2)
            | _ -> max c1 c2 
            
-       (* REVIEW: we couldd return a better enumeration literal field here if a field matches one of the enumeration cases *)
+       (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
        Expr.Const(c12, m1, ty1)
 
    | _ -> r1 
@@ -1024,7 +1024,7 @@ let CompilePatternBasic
             | _ -> 
                 Some(InvestigateFrontiers refuted fallthroughPathFrontiers)
           
-    // Build a new frontire that represents the result of a successful investigation 
+    // Build a new frontier that represents the result of a successful investigation 
     // at rule point (i',discrim,path) 
     and GenerateNewFrontiersAfterSucccessfulInvestigation resPreBindOpt resPostBindOpt (Investigation(i',discrim,path)) (Frontier (i, active,valMap) as frontier) =
         if debug then dprintf "projecting success of investigation encompassing rule %d through rule %d \n" i' i;

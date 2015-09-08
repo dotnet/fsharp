@@ -68,7 +68,7 @@ module internal ExtensionTyping =
                 else
                     loadFromGac()
 
-        // If we've find a desing-time assembly, look for the public types with TypeProviderAttribute
+        // If we've find a design-time assembly, look for the public types with TypeProviderAttribute
         match designTimeAssemblyOpt with
         | Some loadedDesignTimeAssembly ->
             try
@@ -231,7 +231,7 @@ module internal ExtensionTyping =
     // We do _not_ rely on object identity or any other notion of equivalence provided by System.Type
     // itself. The mscorlib implementations of System.Type equality relations are not suitable: for
     // example RuntimeType overrides the equality relation to be reference equality for the Equals(object)
-    // override, but the other subtypes of System.Type do not, making the relation non-reflecive.
+    // override, but the other subtypes of System.Type do not, making the relation non-reflective.
     //
     // Further, avoiding reliance on canonicalization (UnderlyingSystemType) or System.Type object identity means that 
     // providers can implement wrap-and-filter "views" over existing System.Type clusters without needing
@@ -841,7 +841,7 @@ module internal ExtensionTyping =
             let path = String.Join(".",path)
             errorR(Error(FSComp.SR.etProvidedTypeHasUnexpectedPath(expectedPath,path), m))
 
-    /// Eagerly validate a range of conditions on a provided type, after static instantiation (if any) has occured
+    /// Eagerly validate a range of conditions on a provided type, after static instantiation (if any) has occurred
     let ValidateProvidedTypeAfterStaticInstantiation(m,st:Tainted<ProvidedType>, expectedPath : string[], expectedName : string) = 
         // Do all the calling into st up front with recovery
         let fullName, namespaceName, usedMembers =

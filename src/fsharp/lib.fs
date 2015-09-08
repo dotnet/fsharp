@@ -402,7 +402,7 @@ let inline cacheOptRef cache f =
 // what the function 'delayInsertedToWorkaroundKnownNgenBug' is for. If you get this problem, try inserting 
 //    delayInsertedToWorkaroundKnownNgenBug "Delay1" (fun () -> ...)
 // at the top of the function that doesn't seem to be being called correctly. This will help you isolate out the problem
-// and may make the problem go away altogher. Enable the 'print' commands in that function too.
+// and may make the problem go away altogether. Enable the 'print' commands in that function too.
 
 let delayInsertedToWorkaroundKnownNgenBug s f = 
     (* Some random code to prevent inlining of this function *)

@@ -326,7 +326,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tain
          | Some cinfo when cinfo.PUntaint((fun x -> x.DeclaringType.IsGenericType),m) -> 
                 let declaringType = cinfo.PApply((fun x -> x.DeclaringType),m)
                 let declaringGenericTypeDefn =  declaringType.PApply((fun x -> x.GetGenericTypeDefinition()),m)
-                // We have to find the uninstantiated formal signature corresponing to this instantiated constructor.
+                // We have to find the uninstantiated formal signature corresponding to this instantiated constructor.
                 // Annoyingly System.Reflection doesn't give us a MetadataToken to compare on, so we have to look by doing
                 // the instantiation and comparing..
                 let found = 
@@ -377,7 +377,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tain
 /// Import a set of Abstract IL generic parameter specifications as a list of new
 /// F# generic parameters.  
 /// 
-/// Fixup the constrants so that any references to the generic parameters
+/// Fixup the constraints so that any references to the generic parameters
 /// in the constraints now refer to the new generic parameters.
 let ImportILGenericParameters amap m scoref tinst (gps: ILGenericParameterDefs) = 
     match gps with 
