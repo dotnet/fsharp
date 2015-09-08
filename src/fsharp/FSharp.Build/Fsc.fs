@@ -145,7 +145,11 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
     let mutable validateTypeProviders : bool = false
+#if FX_PREFERRED_UI_LANG
+    let mutable vspreferreduilang : string = null
+#else
     let mutable vslcid : string = null
+#endif
     let mutable utf8output : bool = false
     let mutable subsystemVersion : string = null
     let mutable highEntropyVA : bool = false
@@ -313,9 +317,15 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         with get() = validateTypeProviders
         and set(p) = validateTypeProviders <- p
 
+#if FX_PREFERRED_UI_LANG
+    member fsc.PREFERREDUILANG
+        with get() = vspreferreduilang
+        and set(p) = vspreferreduilang <- p
+#else
     member fsc.LCID
         with get() = vslcid
         and set(p) = vslcid <- p
+#endif
 
     member fsc.Utf8Output
         with get() = utf8output
@@ -488,8 +498,11 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         if validateTypeProviders then
             builder.AppendSwitch("--validate-type-providers")           
 
+#if FX_PREFERRED_UI_LANG
+        builder.AppendSwitchIfNotNull("--preferreduilang:", vspreferreduilang)
+#else
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
-        
+#endif
         if utf8output then
             builder.AppendSwitch("--utf8output")
             

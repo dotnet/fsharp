@@ -1993,8 +1993,11 @@ type TcConfigBuilder =
       mutable optsOn        : bool (* optimizations are turned on *)
       mutable optSettings   : Opt.OptimizationSettings 
       mutable emitTailcalls : bool
+#if FX_PREFERRED_UI_LANG
+      mutable preferreduilang: string option
+#else
       mutable lcid          : int option
-
+#endif
       mutable productNameForBannerText : string
       /// show the MS (c) notice, e.g. with help or fsi? 
       mutable showBanner  : bool
@@ -2162,7 +2165,11 @@ type TcConfigBuilder =
           optsOn        = false 
           optSettings   = Opt.OptimizationSettings.Defaults
           emitTailcalls = true
+#if FX_PREFERRED_UI_LANG
+          preferreduilang = None
+#else
           lcid = None
+#endif
           // See bug 6071 for product banner spec
           productNameForBannerText = (FSComp.SR.buildProductName(FSharpEnvironment.DotNetBuildString))
           showBanner  = true 
@@ -2635,19 +2642,23 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.flatErrors = data.flatErrors
     member x.maxErrors  = data.maxErrors
     member x.baseAddress  = data.baseAddress
- #if DEBUG
+#if DEBUG
     member x.writeGeneratedILFiles  = data.writeGeneratedILFiles
     member x.showOptimizationData  = data.showOptimizationData
 #endif
-    member x.showTerms      = data.showTerms
+    member x.showTerms          = data.showTerms
     member x.writeTermsToFiles  = data.writeTermsToFiles
-    member x.doDetuple      = data.doDetuple
-    member x.doTLR          = data.doTLR
-    member x.doFinalSimplify = data.doFinalSimplify
-    member x.optSettings    = data.optSettings
-    member x.emitTailcalls = data.emitTailcalls
-    member x.lcid           = data.lcid
-    member x.optsOn         = data.optsOn
+    member x.doDetuple          = data.doDetuple
+    member x.doTLR              = data.doTLR
+    member x.doFinalSimplify    = data.doFinalSimplify
+    member x.optSettings        = data.optSettings
+    member x.emitTailcalls      = data.emitTailcalls
+#if FX_PREFERRED_UI_LANG
+    member x.preferreduilang    = data.preferreduilang
+#else
+    member x.lcid               = data.lcid
+#endif
+    member x.optsOn             = data.optsOn
     member x.productNameForBannerText  = data.productNameForBannerText
     member x.showBanner   = data.showBanner
     member x.showTimes  = data.showTimes

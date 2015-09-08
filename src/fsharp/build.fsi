@@ -307,7 +307,11 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Opt.OptimizationSettings 
       mutable emitTailcalls : bool
+#if FX_PREFERRED_UI_LANG
+      mutable preferreduilang: string option
+#else
       mutable lcid         : int option
+#endif
       mutable productNameForBannerText : string
       mutable showBanner  : bool
       mutable showTimes : bool
@@ -452,7 +456,11 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Opt.OptimizationSettings 
     member emitTailcalls : bool
-    member lcid          : int option
+#if FX_PREFERRED_UI_LANG
+    member preferreduilang: string option
+#else
+    member lcid         : int option
+#endif
     member optsOn        : bool 
     member productNameForBannerText : string
     member showBanner  : bool

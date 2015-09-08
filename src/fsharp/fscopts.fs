@@ -327,7 +327,7 @@ let codeGenerationFlags (tcConfigB : TcConfigBuilder) =
 //----------------------
 
 let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
-      
+
 let mlCompatibilityFlag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("mlcompatibility", tagNone, OptionUnit   (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff(rangeCmdArgs,"62")),  None,
                            Some (FSComp.SR.optsMlcompatibility()))
@@ -362,6 +362,11 @@ let codePageFlag (tcConfigB : TcConfigBuilder) =
                      tcConfigB.inputCodePage <- Some(n)), None,
                            Some (FSComp.SR.optsCodepage()))
 
+#if FX_PREFERRED_UI_LANG
+let preferreduilang (tcConfigB: TcConfigBuilder) = 
+        CompilerOption("PREFERREDUILANG", tagString, OptionString (fun s -> tcConfigB.preferreduilang <- Some(s)), None, Some(FSComp.SR.optsStrongKeyContainer()));
+#endif
+
 let utf8OutputFlag (tcConfigB: TcConfigBuilder) = 
         CompilerOption("utf8output", tagNone, OptionUnit (fun () -> tcConfigB.utf8output <- true), None,
                            Some (FSComp.SR.optsUtf8output()))
@@ -378,6 +383,9 @@ let advancedFlagsBoth tcConfigB =
     [
         codePageFlag tcConfigB;
         utf8OutputFlag tcConfigB;
+#if FX_PREFERRED_UI_LANG
+        preferreduilang tcConfigB;
+#endif
         fullPathsFlag tcConfigB;
         libFlag tcConfigB;
     ]
@@ -452,7 +460,10 @@ let testFlag tcConfigB =
 let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None);
     CompilerOption("validate-type-providers", tagNone, OptionUnit (fun () -> tcConfigB.validateTypeProviders <- true), None, None);
+#if FX_PREFERRED_UI_LANG
+#else
     CompilerOption("LCID", tagInt, OptionInt (fun n -> tcConfigB.lcid <- Some(n)), None, None);
+#endif
     CompilerOption("flaterrors", tagNone, OptionUnit (fun () -> tcConfigB.flatErrors <- true), None, None); 
     CompilerOption("sqmsessionguid", tagNone, OptionString (fun s -> tcConfigB.sqmSessionGuid <- try System.Guid(s) |> Some  with e -> None), None, None);
     CompilerOption("maxerrors", tagInt, OptionInt (fun n -> tcConfigB.maxErrors <- n), None, None); ]
@@ -1000,8 +1011,3 @@ let DoWithErrorColor isWarn f =
                 f();
               finally
                 ignoreFailureOnMono1_1_16 (fun () -> Console.ForegroundColor <- c)
-
-
-          
-
-        

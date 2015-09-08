@@ -38,7 +38,7 @@
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
-              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' != 'true'">
+              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' != 'true' and '$(TargetFramework)' != 'coreclr'">
                 <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -129,6 +129,7 @@
     <DefineConstants>$(DefineConstants);FX_RUNNING_ON_MONO</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
     <DefineConstants>$(DefineConstants);TYPE_PROVIDER_SECURITY</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
   </PropertyGroup>
 
@@ -146,6 +147,10 @@
     <DefineConstants>$(DefineConstants);FX_RUNNING_ON_MONO</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
     <DefineConstants>$(DefineConstants);TYPE_PROVIDER_SECURITY</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESX_RESOURCE_READER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESIDENT_COMPILER</DefineConstants>
+
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>
@@ -191,6 +196,10 @@
     <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_EXCEPTIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_CONSOLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_APPCONTEXT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_LOGINGUI</DefineConstants>
     <TargetFrameworkProfile>profile7</TargetFrameworkProfile>                            <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
   </PropertyGroup>

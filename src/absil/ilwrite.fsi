@@ -22,7 +22,10 @@ type ILStrongNameSigner =
 type options =
  { ilg: ILGlobals
    pdbfile: string option;
+#if FX_NO_KEY_SIGNING
+#else
    signer : ILStrongNameSigner option;
+#endif
    fixupOverlappingSequencePoints : bool;
    emitTailcalls: bool;
    showTimes : bool;

@@ -99,19 +99,31 @@ module internal Flags =
     let loggingTypes             = System.Environment.GetEnvironmentVariable("mFSharp_Logging")
     let logging                  = not (String.IsNullOrEmpty(loggingTypes))
     let initialLoggingGUITypes   = loggingTypes
+#if FX_NO_LOGINGUI
+#else
     let loggingGUI               = not (String.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("mFSharp_LogToWinForm")))
+#endif
     let loggingStdOut            = not (String.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("mFSharp_LogToStdOut")))
 #else
     let loggingTypes             = ""
     let logging                  = false
     let initialLoggingGUITypes   = ""
+#if FX_NO_LOGINGUI
+#else
     let loggingGUI               = false
+#endif
     let loggingStdOut            = false
 #endif
     let doInit = 
-        if logging && not loggingGUI  && not loggingStdOut then  
-            let logFile = ("c:\\fsharp\\log-m"+System.IO.Path.GetFileName(System.AppDomain.CurrentDomain.FriendlyName)+".log") 
-            let traceFile = ("c:\\fsharp\\trace-m"+System.IO.Path.GetFileName(System.AppDomain.CurrentDomain.FriendlyName)+".txt") 
+        if logging && 
+#if FX_NO_LOGINGUI
+#else
+           not loggingGUI && 
+#endif
+           not loggingStdOut then 
+            let name = System.IO.Path.GetFileName(Guid.NewGuid().ToString())
+            let logFile = ("c:\\fsharp\\log-m"+name+".log") 
+            let traceFile = ("c:\\fsharp\\trace-m"+name+".txt") 
             try
                 let log = (File.CreateText logFile  :> TextWriter)
                 setDiagnosticsChannel(Some(log));
@@ -125,8 +137,9 @@ module internal Flags =
                 dprintf "logging types = %s\n" loggingTypes
             Trace.Log <- loggingTypes
             Trace.Out <- 
-                try 
-                    new StreamWriter(traceFile,append=false,encoding=System.Text.Encoding.UTF8) :> TextWriter
+                try
+                    let fs = new FileStream(traceFile, FileMode.Create, FileAccess.Write, FileShare.Read, 0x1000, FileOptions.SequentialScan)
+                    new StreamWriter(fs,encoding=System.Text.Encoding.UTF8) :> TextWriter
                 with e -> 
                     // Don't kill the language service just because we couldn't log.
                     System.Diagnostics.Debug.Assert(false, e.ToString())                
@@ -135,6 +148,8 @@ module internal Flags =
         elif loggingStdOut then 
             Trace.Log <- initialLoggingGUITypes
             Trace.Out <- System.Console.Out
+#if FX_NO_LOGINGUI
+#else
         elif loggingGUI then 
             let f = new System.Windows.Forms.Form(Visible=true,TopMost=true,Width=600,Height=600)
             let memoryText = new System.Windows.Forms.TextBox(Text = "?? Kb", Width = 200)
@@ -177,6 +192,7 @@ module internal Flags =
             setDiagnosticsChannel(Some(log));
             Trace.Log <- if initialLoggingGUITypes <> null then initialLoggingGUITypes else ""
             Trace.Out <- log
+#endif
         else 
             // Would be nice to leave this at whatever channel was originally assigned.
             // This currently defeats NUnit's ability to capture logging output.

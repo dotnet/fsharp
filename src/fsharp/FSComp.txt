@@ -922,6 +922,7 @@ optsUseHighEntropyVA,"Enable high-entropy ASLR"
 optsSubSystemVersion,"Specify subsystem version of this assembly"
 optsTargetProfile,"Specify target framework profile of this assembly. Valid values are mscorlib or netcore. Default - mscorlib"
 optsEmitDebugInfoInQuotations,"Emit debug information in quotations"
+optsPreferredUiLang,"Specify the preferred output language name (E.g: es-ES, ja-JP)."
 1051,optsInvalidSubSystemVersion,"Invalid version '%s' for '--subsystemversion'. The version must be 4.00 or greater."
 1052,optsInvalidTargetProfile,"Invalid value '%s' for '--targetprofile', valid values are 'mscorlib' or 'netcore'."
 # -----------------------------------------------------------------------------

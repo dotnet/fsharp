@@ -2113,6 +2113,7 @@ let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
 /// text input, writing to the given text output and error writers.
 type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter) = 
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
+#if FX_LCIDFROMCODEPAGE
     // See Bug 735819 
     let lcidFromCodePage = 
         if (Console.OutputEncoding.CodePage <> 65001) &&
@@ -2122,7 +2123,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                 Some 1033
         else
             None
-
+#endif
     let timeReporter = FsiTimeReporter(outWriter)
 
     //----------------------------------------------------------------------------
@@ -2180,9 +2181,11 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 
     // Check if we have a codepage from the console
     do
+#if FX_LCIDFROMCODEPAGE
       match fsiOptions.FsiLCID with
       | Some _ -> ()
       | None -> tcConfigB.lcid <- lcidFromCodePage
+#endif
 
     // Set the ui culture
     do 

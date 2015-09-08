@@ -3893,7 +3893,12 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, _signer: ILStrongNameSigner option, _fixupOverlappingSequencePoints, emitTailcalls, showTimes, _dumpDebugInfo) modul noDebugData =
+let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
+#if FX_NO_KEY_SIGNING
+#else
+                                  signer: ILStrongNameSigner option, 
+#endif
+                                  _fixupOverlappingSequencePoints, emitTailcalls, showTimes, _dumpDebugInfo) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3903,9 +3908,9 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, _signer:
 #if FX_NO_KEY_SIGNING
 #else
     let signer = 
-        match _signer,modul.Manifest with
-        | Some _, _ -> _signer
-        | _, None -> _signer
+        match signer,modul.Manifest with
+        | Some _, _ -> signer
+        | _, None -> signer
         | None, Some {PublicKey=Some pubkey} -> 
             (dprintn "Note: The output assembly will be delay-signed using the original public";
              dprintn "Note: key. In order to load it you will need to either sign it with";
@@ -3915,7 +3920,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, _signer:
              dprintn "Note: private key when converting the assembly, assuming you have access to";
              dprintn "Note: it.";
              Some (ILStrongNameSigner.OpenPublicKey pubkey))
-        | _ -> _signer
+        | _ -> signer
 #endif
 
 #if FX_NO_KEY_SIGNING
@@ -4601,7 +4606,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, _signer:
 type options =
    { ilg: ILGlobals;
      pdbfile: string option;
+#if FX_NO_KEY_SIGNING
+#else
      signer: ILStrongNameSigner option;
+#endif
      fixupOverlappingSequencePoints: bool;
      emitTailcalls : bool;
      showTimes: bool;
@@ -4609,8 +4617,12 @@ type options =
 
 
 let WriteILBinary outfile (args: options) modul noDebugData =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul noDebugData)
-
+    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile,
+#if FX_NO_KEY_SIGNING
+#else
+                                          args.signer, 
+#endif
+                                          args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul noDebugData)
 
 
 (******************************************************

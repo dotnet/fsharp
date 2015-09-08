@@ -60,7 +60,7 @@ module internal Reactor =
      type Reactor() = 
         // We need to store the culture for the VS thread that is executing now,
         // so that when the reactor picks up a thread from the threadpool we can set the culture
-        let culture = new System.Globalization.CultureInfo(System.Threading.Thread.CurrentThread.CurrentUICulture.LCID)
+        let culture = new System.Globalization.CultureInfo(System.Globalization.CultureInfo.CurrentUICulture.Name)
 
         let mutable recentBuild : BuildStepper option = None
 
@@ -185,8 +185,11 @@ module internal Reactor =
             // Async workflow which receives messages and dispatches to worker functions.
             let rec Loop (state: ReactorState) = 
                 async { let! msg = inbox.Receive()
+#if FX_RESHAPED_GLOBALIZATION
+                        System.Globalization.CultureInfo.CurrentUICulture <- culture
+#else
                         System.Threading.Thread.CurrentThread.CurrentUICulture <- culture
-
+#endif
                         match msg with
                         | StartBuild build -> return! Loop(HandleStartBuild build state)
                         | StartRecentBuild -> return! Loop(HandleStartRecentBuild state)
