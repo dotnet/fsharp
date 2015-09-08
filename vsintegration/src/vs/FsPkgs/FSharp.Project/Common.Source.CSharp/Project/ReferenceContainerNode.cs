@@ -130,7 +130,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public override object GetIconHandle(bool open)
         {
-            return this.ProjectMgr.ImageHandler.GetIconHandle(open ? (int)ProjectNode.ImageName.OpenReferenceFolder : (int)ProjectNode.ImageName.ReferenceFolder);
+            return this.ProjectMgr.ImageHandler.GetIconHandle((int)ProjectNode.ImageName.ReferenceFolder);
         }
 
         
