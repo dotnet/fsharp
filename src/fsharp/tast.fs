@@ -2009,7 +2009,7 @@ and
     /// functions, and relates to the F# spec for arity analysis.
     /// For module-defined values, the currying is based 
     /// on the number of lambdas, and in each position the elements are 
-    /// based on attempting to reconstruct the type of the argument as a 
+    /// based on attempting to deconstruct the type of the argument as a 
     /// tuple-type.  
     ///
     /// The field is mutable because arities for recursive 
