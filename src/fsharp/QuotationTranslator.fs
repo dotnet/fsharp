@@ -444,6 +444,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
 
         | TOp.ILAsm(([ I_ldfld(_,_,fspec) ] 
+                    | [ I_ldfld(_,_,fspec); AI_nop ]
                     | [ I_ldsfld (_,fspec) ] 
                     | [ I_ldsfld (_,fspec); AI_nop ]),_),enclTypeArgs,args  -> 
             ConvLdfld  cenv env m fspec enclTypeArgs args
