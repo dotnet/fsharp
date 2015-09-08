@@ -60,9 +60,12 @@ type Vector3Generic<'T> =
 
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Vector3Generic =
+module Vector3GenericInt =
     let inline test (v1: Vector3Generic<int>) (v2: Vector3Generic<int>) =
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
 
-    let inline testObj (v1: Vector3Generic<obj>) (v2: Vector3Generic<obj>) =
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Vector3GenericObj =
+    let inline test (v1: Vector3Generic<obj>) (v2: Vector3Generic<obj>) =
         v1.x

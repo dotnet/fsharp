@@ -11,6 +11,8 @@ let testVector3MutableFieldDotInline (v1: Vector3MutableField) =
 let testVector3NestedMutableFieldTestInline (v1: Vector3NestedMutableField) =
     Vector3NestedMutableField.test v1 v1
 
-let testVector3GenericInline (v1: Vector3Generic<'T>) =
-    Vector3Generic.test v1 v1
-    Vector3Generic.testObj
+let testVector3GenericInline (v1: Vector3Generic<int>) =
+    Vector3GenericInt.test v1 v1
+
+let testVector3GenericInline2 (v1: Vector3Generic<obj>) =
+    Vector3GenericObj.test v1 v1
