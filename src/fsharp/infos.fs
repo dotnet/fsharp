@@ -73,7 +73,7 @@ let GetSuperTypeOfType g amap m typ =
         | Some ilty -> Some (ImportType scoref amap m tinst ilty)
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-        
+
         if isFSharpObjModelTy g typ  || isExnDeclTy g typ then 
             let tcref,_tinst = destAppTy g typ
             Some (instType (mkInstForAppTy g typ) (superOfTycon g tcref.Deref))
