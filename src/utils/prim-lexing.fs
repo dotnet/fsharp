@@ -63,7 +63,7 @@ namespace Internal.Utilities.Text.Lexing
         internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>) = 
         let context = new Dictionary<string,obj>(1) 
         let mutable buffer=[||];
-        /// number of valid charactes beyond bufferScanStart 
+        /// number of valid characters beyond bufferScanStart 
         let mutable bufferMaxScanLength=0;
         /// count into the buffer when scanning 
         let mutable bufferScanStart=0;

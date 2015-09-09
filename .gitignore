@@ -66,12 +66,6 @@ tests/projects/Sample_VS2012_FSharp_ConsoleApp_net45_with_resource/Sample_VS2012
 obj
 extras
 ossreadme*.txt
-tests/fsharp/typecheck/sigs/*.exe
-tests/fsharp/typecheck/sigs/*.diff
-tests/fsharp/typecheck/sigs/*.err
-tests/fsharp/typecheck/sigs/*.vsdiff
-tests/fsharp/typecheck/sigs/*.dll
-tests/fsharp/typecheck/sigs/*.vserr
 src/fsharp/FSharp.LanguageService.Compiler/illex.*
 src/fsharp/FSharp.LanguageService.Compiler/ilpars.*
 src/fsharp/FSharp.LanguageService.Compiler/lex.*
@@ -79,16 +73,9 @@ src/fsharp/FSharp.LanguageService.Compiler/pars.*
 src/fsharp/FSharp.LanguageService.Compiler/pplex.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fs
 src/fsharp/FSharp.LanguageService.Compiler/pppars.fsi
-tests/fsharp/typecheck/sigs/*.dll
-tests/fsharp/typecheck/sigs/*.exe
-tests/fsharp/typeProviders/builtin/SqlDataConnection/DataDirectory/
-tests/fsharp/typeProviders/builtin/SqlDataConnection/ExampleResolutionFolder/
-tests/fsharp/typeProviders/builtin/SqlEntityConnection/DataDirectory/
 vsintegration/src/unittests/Unittests.fsi
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/StaticInit/StaticInit_Module01.pdb
-tests/fsharp/typeProviders/helloWorld/bincompat1/
-tests/fsharp/typeProviders/helloWorld/bincompat2/
 tests/XFSharpQA_Failures.log.*
 vsintegration/src/vs/FsPkgs/FSharp.Project/FS/FSharp.ProjectSystem.FSharp.fsi
 vsintegration/src/vs/FsPkgs/FSharp.Project/FS/ctofiles/
@@ -96,6 +83,7 @@ tests/fsharpqa/Source/CodeGen/EmittedIL/QueryExpressionStepping/Utils.dll
 tests/fsharpqa/Source/CodeGen/EmittedIL/ComputationExpressions/ComputationExprLibrary.dll
 
 *.csproj.user
+*.sln.DotSettings.user
 
 *.ide
 *.log

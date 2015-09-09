@@ -2533,7 +2533,7 @@ let FreshenObjectArgType cenv m rigid tcref isExtrinsic declaredTyconTypars =
 
 
 // The early generalization rule of F# 2.0 can be unsound for members in generic types (Bug DevDiv2 10649).
-// It gives rise to types like "Forall T. ?X -> ?Y" where ?X and ?Y are later discovered to invovled T. 
+// It gives rise to types like "Forall T. ?X -> ?Y" where ?X and ?Y are later discovered to involve T. 
 //
 // For example:
 //      type C<'T>() = 
@@ -4548,7 +4548,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (args: SynT
 
     let tps,_,tinst,_ = infoOfTyconRef m tcref
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
-    // clear the constaint lists of the freshly generated type variables. A little ugly but fairly localized. 
+    // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
     if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.Data.typar_constraints <- [])
     if tinst.Length <> pathTypeArgs.Length + args.Length then 
         error (TyconBadArgs(env.DisplayEnv,tcref,pathTypeArgs.Length + args.Length,m))
@@ -11259,7 +11259,7 @@ module IncrClassChecking = begin
          /// should always be renormalized/canonicalized when used.
          InstanceCtorDeclaredTypars       : Typars     
          /// The value representing the static implicit constructor.
-         /// Lazy to ensure the static ctor value is ony published if needed.
+         /// Lazy to ensure the static ctor value is only published if needed.
          StaticCtorValInfo                : Lazy<(Val list * Val * ValScheme)>
          /// The value representing the implicit constructor.
          InstanceCtorVal                  : Val
@@ -12104,7 +12104,7 @@ module TyconBindingChecking = begin
         // The basic iteration over the declarations in a single type definition
         // State:
         //    tpenv:               floating type parameter environment
-        //    recBindIdx:          index of the recursive bniding
+        //    recBindIdx:          index of the recursive binding
         //    prelimRecValuesRev:  accumulation of prelim value entries
         //    uncheckedBindsRev:   accumulation of unchecked bindings
         let defnsAs, (tpenv,_,prelimRecValuesRev,uncheckedBindsRev) =
@@ -12314,7 +12314,7 @@ module TyconBindingChecking = begin
                         let (tpenv,envInstance,envStatic,envNonRec,generalizedRecBinds,preGeneralizationRecBinds,uncheckedRecBindsTable) = innerState
 
                         match defnA with
-                        // PassB for the definition of an implicit consructor. Enrich the instance environments
+                        // PassB for the definition of an implicit constructor. Enrich the instance environments
                         // with the implicit ctor args.
                         | PassAIncrClassCtor incrClassCtorLhs ->
 
@@ -13435,7 +13435,7 @@ module EstablishTypeDefinitionCores = begin
 
     /// Get the component types that make a record, union or struct type.
     ///
-    /// Used when determining if a structural type supports structual comparison.
+    /// Used when determining if a structural type supports structural comparison.
     let private GetStructuralElementsOfTyconDefn cenv env tpenv (TyconDefnCoreIndexed(_,synTyconRepr,_,_,_,_)) tycon = 
         let thisTyconRef = mkLocalTyconRef tycon
         let m = tycon.Range
@@ -15671,7 +15671,7 @@ let TypeCheckOneImplFile
    
 
 
-/// Check an entire sginature file
+/// Check an entire signature file
 let TypeCheckOneSigFile  
        (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDefines,tcSink) 
        tcEnv 

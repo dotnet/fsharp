@@ -474,7 +474,7 @@ type OptionalArgInfo =
 
     /// Compute the OptionalArgInfo for an IL parameter
     ///
-    /// This includes the Visual Basic rules for IDispatchConstant and IUnknownConstant and optinal arguments.
+    /// This includes the Visual Basic rules for IDispatchConstant and IUnknownConstant and optional arguments.
     static member FromILParameter g amap m ilScope ilTypeInst (ilParam: ILParameter) = 
         if ilParam.IsOptional then 
             match ilParam.Default with 
@@ -1616,12 +1616,12 @@ type ILPropInfo =
         (x.HasGetter && x.GetterMethod(g).IsNewSlot) ||
         (x.HasSetter && x.SetterMethod(g).IsNewSlot) 
 
-    /// Get the names and types of the indexer arguments associated wih the IL property.
+    /// Get the names and types of the indexer arguments associated with the IL property.
     member x.GetParamNamesAndTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
         pdef.Args |> ILList.toList |> List.map (fun ty -> ParamNameAndType(None, ImportTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) )
 
-    /// Get the types of the indexer arguments associated wih the IL property.
+    /// Get the types of the indexer arguments associated with the IL property.
     member x.GetParamTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
         pdef.Args |> ILList.toList |> List.map (fun ty -> ImportTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) 
@@ -1983,7 +1983,7 @@ type ILEventInfo =
 /// Error text: "A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events."
 exception BadEventTransformation of range
 
-/// Properties compatible with type IDelegateEvent and atributed with CLIEvent are special: 
+/// Properties compatible with type IDelegateEvent and attributed with CLIEvent are special: 
 /// we generate metadata and add/remove methods 
 /// to make them into a .NET event, and mangle the name of a property.  
 /// We don't handle static, indexer or abstract properties correctly. 
@@ -2167,7 +2167,7 @@ let CompiledSigOfMeth g amap m (minfo:MethInfo) =
 
     // The formal method typars returned are completely formal - they don't take into account the instantiation 
     // of the enclosing type. For example, they may have constraints involving the _formal_ type parameters 
-    // of the enclosing type. This instaniations can be used to interpret those type parameters 
+    // of the enclosing type. This instantiations can be used to interpret those type parameters 
     let fmtpinst = 
         let parentTyArgs = argsOfAppTy g minfo.EnclosingType
         let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType m 
@@ -2402,7 +2402,7 @@ module AccessibilityLogic =
             let tcrefOfViewedItem,_ = destAppTy g ty
             IsILMemberAccessible g amap m tcrefOfViewedItem ad access
 
-    /// Compute the accessiblity of a provided member
+    /// Compute the accessibility of a provided member
     let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
         if isPublic then ILMemberAccess.Public
         elif isFamily then ILMemberAccess.Family
@@ -2410,7 +2410,7 @@ module AccessibilityLogic =
         elif isFamilyAndAssembly then ILMemberAccess.FamilyAndAssembly
         else ILMemberAccess.Private
 
-    /// IndiCompute the accessiblity of a provided member
+    /// IndiCompute the accessibility of a provided member
     let IsILFieldInfoAccessible g amap m ad x = 
         match x with 
         | ILFieldInfo (tinfo,fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
@@ -3397,7 +3397,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
         // none the elements of 'itemsToAdd' are equivalent. 
         itemsToAdd |> List.filter (fun item -> List.forall (keepTest item) (x.ItemsWithName(nmf item)))
 
-/// Add all the items to the IndexedList, prefering the ones in the super-types. This is used to hide methods
+/// Add all the items to the IndexedList, preferring the ones in the super-types. This is used to hide methods
 /// in super classes and/or hide overrides of methods in subclasses.
 ///
 /// Assume no items in 'items' are equivalent according to 'equivTest'. This is valid because each step in a
@@ -3418,7 +3418,7 @@ let private FilterItemsInSubTypesBasedOnItemsInSuperTypes nmf keepTest itemLists
             ilist.AddItems(itemsToAdd,nmf)
     (loop itemLists).Items
 
-/// Add all the items to the IndexedList, prefering the ones in the sub-types.
+/// Add all the items to the IndexedList, preferring the ones in the sub-types.
 let private FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists  = 
     let rec loop itemLists (indexedItemsInSubTypes:IndexedList<_>) = 
         match itemLists with
@@ -3483,7 +3483,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
           //   [<AbstractClass>]
           //   type PC() =
           //       inherit PB<int>()
-          //       // Here, PA.M amd PB<int>.M have the same signature, so PA.M is unimplementable.
+          //       // Here, PA.M and PB<int>.M have the same signature, so PA.M is unimplementable.
           //       // REVIEW: in future we may give a friendly error at this point
           // 
           //   type PD() = 

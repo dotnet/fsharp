@@ -260,7 +260,7 @@ module internal NoteworthyParamInfoLocationsImpl =
             | None ->
                 let inheritm = mkRange m.FileName m.Start m.End 
                 if AstTraversal.rangeContainsPosEdgesExclusive inheritm pos then
-                    // inherit ty(expr)    ---   treate it like an application (constructor call)
+                    // inherit ty(expr)    ---   treat it like an application (constructor call)
                     let xResult,_cacheOpt = astFindNoteworthyParamInfoLocationsSynExprExactParen defaultTraverse expr
                     match xResult with
                     | Some(parenLoc,args,isThereACloseParen) ->

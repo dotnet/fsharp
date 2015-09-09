@@ -40,7 +40,7 @@ module internal SourceFileImpl =
         let ext = Path.GetExtension(file)
         0 = String.Compare(".fsi",ext,StringComparison.OrdinalIgnoreCase)
 
-    /// Additonal #defines that should be in place when editing a file in a file editor such as VS.
+    /// Additional #defines that should be in place when editing a file in a file editor such as VS.
     let AdditionalDefinesForUseInEditor(filename) =
         if CompileOps.IsScript(filename) then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
         else ["COMPILED";"EDITING"]
@@ -658,7 +658,7 @@ module internal UntypedParseInfoImpl =
                         let residue = if s.Length <> 0 then Some s else None
                         Some(plid, residue)
                     elif posGt x.idRange.Start pos then
-                        // can happen if caret is placed after dot but before the exising identifier A. $ B
+                        // can happen if caret is placed after dot but before the existing identifier A. $ B
                         // return accumulated plid with no residue
                         Some (plid, None)
                     else

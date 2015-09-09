@@ -150,7 +150,7 @@ val mkLetRecBinds : range -> Bindings -> Expr -> Expr
 /// TypeSchme (generalizedTypars, tauTy)
 ///
 ///    generalizedTypars -- the truly generalized type parameters 
-///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type paramaeters stripped off.
+///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.
 type TypeScheme = TypeScheme of Typars  * TType    
 
 val mkGenericBindRhs : TcGlobals -> range -> Typars -> TypeScheme -> Expr -> Expr
@@ -823,7 +823,7 @@ val mkAndSimplifyMatch : SequencePointInfoForBinding  -> range -> range -> TType
 val primMkMatch : SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
 
 //-------------------------------------------------------------------------
-//  Work out what things on the r.h.s. of a letrec need to be fixed up
+//  Work out what things on the r.h.s. of a let rec need to be fixed up
 //------------------------------------------------------------------------- 
 
 val IterateRecursiveFixups : 

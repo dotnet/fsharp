@@ -73,7 +73,7 @@ let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
 //    C2: check type declarations to ensure no object field will have byref type.
 //    C3: check no explicit lambda expressions capture any free byref typed expression.    
 //    C4: check byref type expr occur only as:
-//        C4.a) arg to functions occuring within their known arity.
+//        C4.a) arg to functions occurring within their known arity.
 //        C4.b) arg to IL method calls, e.g. arising from calls to instance methods on mutable structs.
 //        C4.c) arg to property getter on mutable struct (record field projection)
 //        C4.d) rhs of byref typed binding (aliasing).
@@ -350,7 +350,7 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
 // check type instantiations
 //--------------------------------------------------------------------------
 
-/// Check types occuring in the TAST.
+/// Check types occurring in the TAST.
 let CheckType permitByrefs (cenv:cenv) env m ty =
     if cenv.reportErrors then 
         let visitTypar (env,tp) = 
@@ -389,7 +389,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
         CheckTypeDeep (ignore, Some visitTyconRef, Some visitByrefsOfByrefs, Some visitTraitSolution, Some visitTypar) cenv.g env ty
 
 
-/// Check types occuring in TAST (like CheckType) and additionally reject any byrefs.
+/// Check types occurring in TAST (like CheckType) and additionally reject any byrefs.
 /// The additional byref checks are to catch "byref instantiations" - one place were byref are not permitted.  
 let CheckTypeNoByrefs (cenv:cenv) env m ty = CheckType false cenv env m ty
 let CheckTypePermitByrefs (cenv:cenv) env m ty = CheckType true cenv env m ty
@@ -1015,7 +1015,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,e,_) as bind) =
                 | None -> v.Data.val_defn <- Some e
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
-                // front end rather than the back end. We currenly re-run this during ilxgen.fs but there's
+                // front end rather than the back end. We currently re-run this during ilxgen.fs but there's
                 // no real need for that except that it helps us to bundle all reflected definitions up into 
                 // one blob for pickling to the binary format
                 try
@@ -1251,7 +1251,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 //we have added all methods to the dictionary on the previous step
                 let methods = hashOfImmediateMeths.[minfo.LogicalName]
                 for m in methods do
-                    // use referencial identity to filter out 'minfo' method
+                    // use referential identity to filter out 'minfo' method
                     if not(System.Object.ReferenceEquals(m, minfo)) then 
                         yield m
             ]
@@ -1406,7 +1406,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
         AllSuperTypesOfType cenv.g cenv.amap tycon.Range AllowMultiIntfInstantiations.Yes (generalizedTyconRef (mkLocalTyconRef tycon)) 
             |> List.filter (isInterfaceTy cenv.g)
             
-    if tycon.IsFSharpInterfaceTycon then List.iter visitType interfaces // Check inheritted interface is as accessible
+    if tycon.IsFSharpInterfaceTycon then List.iter visitType interfaces // Check inherited interface is as accessible
  
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 
