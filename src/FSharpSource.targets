@@ -3,6 +3,9 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
    <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
+      <PropertyGroup>
+         <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+      </PropertyGroup>
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
@@ -33,14 +36,9 @@
               </PropertyGroup>
             </When>
             <Otherwise>
-              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
+              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true' or '$(TargetFramework)' == 'coreclr'">
                 <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-                <StrongNames>true</StrongNames>
-              </PropertyGroup>
-              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' != 'true' and '$(TargetFramework)' != 'coreclr'">
-                <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
-                <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
             </Otherwise>
@@ -754,7 +752,7 @@
     <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
     <!-- fix this to be not so unfortunate looking -->
-    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00053\lib\</BuildToolsDir>
+    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00085\lib\</BuildToolsDir>
 
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>

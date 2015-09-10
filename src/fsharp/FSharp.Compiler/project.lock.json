@@ -165,17 +165,17 @@
           "lib/DNXCore50/System.Globalization.dll": {}
         }
       },
-      "System.IO/4.0.10-beta-22405": {
+      "System.IO/4.0.11-beta-23308": {
         "dependencies": {
-          "System.Runtime": "4.0.0-beta-22405",
-          "System.Text.Encoding": "4.0.0-beta-22405",
-          "System.Threading.Tasks": "4.0.0-beta-22405"
+          "System.Runtime": "4.0.20",
+          "System.Text.Encoding": "4.0.0",
+          "System.Threading.Tasks": "4.0.0"
         },
         "compile": {
-          "lib/contract/System.IO.dll": {}
+          "ref/dotnet/System.IO.dll": {}
         },
         "runtime": {
-          "lib/aspnetcore50/System.IO.dll": {}
+          "lib/DNXCore50/System.IO.dll": {}
         }
       },
       "System.IO.FileSystem/4.0.1-beta-23308": {
@@ -905,17 +905,37 @@
         "runtimes/win8-aot/lib/netcore50/System.Globalization.dll"
       ]
     },
-    "System.IO/4.0.10-beta-22405": {
-      "sha512": "g14UCZ0ehzBCJ6e97RfnYiYC74HmdP3NF2g72coGSQDZe0T8/fEJ4/FHscDoKJRCf5KdRnAlwsDeO4oyjI8c6g==",
+    "System.IO/4.0.11-beta-23308": {
+      "serviceable": true,
+      "sha512": "b4DVmayDi6lWi7Sk8jD13Rb1gQcRMp1vfM1bPacCvxPvvqoClTgsdxMFlK8QxAKfM6M4+QxP53qTLtFX5zuqeQ==",
       "files": [
-        "License.rtf",
-        "System.IO.4.0.10-beta-22405.nupkg",
-        "System.IO.4.0.10-beta-22405.nupkg.sha512",
+        "System.IO.4.0.11-beta-23308.nupkg",
+        "System.IO.4.0.11-beta-23308.nupkg.sha512",
         "System.IO.nuspec",
-        "lib/aspnetcore50/System.IO.dll",
-        "lib/contract/System.IO.dll",
-        "lib/net45/System.IO.dll",
-        "lib/portable-wpa80+win80+net45+aspnetcore50/System.IO.dll"
+        "System.IO.xml",
+        "de/System.IO.xml",
+        "es/System.IO.xml",
+        "fr/System.IO.xml",
+        "it/System.IO.xml",
+        "ja/System.IO.xml",
+        "ko/System.IO.xml",
+        "lib/DNXCore50/System.IO.dll",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net46/_._",
+        "lib/netcore50/System.IO.dll",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "ref/dotnet/System.IO.dll",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net46/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "ru/System.IO.xml",
+        "runtimes/win8-aot/lib/netcore50/System.IO.dll",
+        "zh-hans/System.IO.xml",
+        "zh-hant/System.IO.xml"
       ]
     },
     "System.IO.FileSystem/4.0.1-beta-23308": {
@@ -1736,7 +1756,7 @@
       "System.Diagnostics.Debug >= 4.0.11-beta-*",
       "System.Diagnostics.Process >= 4.0.0-beta-*",
       "System.Diagnostics.Tools >= 4.0.1-beta-*",
-      "System.IO >= 4.0.1-beta-*",
+      "System.IO >= 4.0.11-beta-*",
       "System.IO.FileSystem >= 4.0.1-beta-*",
       "System.Linq >= 4.0.1-beta-*",
       "System.Linq.Expressions >= 4.0.11-beta-*",

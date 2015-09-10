@@ -12,6 +12,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Build
 open System.Runtime.CompilerServices
 
+#if FX_RESIDENT_COMPILER
 /// Implement the optional resident compilation service
 module FSharpResidentCompiler = 
 
@@ -23,6 +24,10 @@ module FSharpResidentCompiler =
     open System.Runtime.Remoting
     open System.Runtime.Remoting.Lifetime
     open System.Text
+
+#if FX_NO_EXIT
+    let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
+#endif
 
     /// Collect the output from the stdout and stderr streams, character by character,
     /// recording the console color used along the way.
@@ -91,7 +96,7 @@ module FSharpResidentCompiler =
                               // Exit the server if there are no outstanding requests and the 
                               // current memory usage after collection is over 200MB
                               if inbox.CurrentQueueLength = 0 && GC.GetTotalMemory(true) > 200L * 1024L * 1024L then 
-                                  Environment.Exit 0
+                                  exit 0
                        })
 
         member x.Run() = 
@@ -170,6 +175,7 @@ module FSharpResidentCompiler =
                     Some client
                 with _ ->
                     let procInfo = 
+#if FX_RUNNING_ON_MONO
                         if runningOnMono then
                             let shellName, useShellExecute = 
                                 match System.Environment.GetEnvironmentVariable("FSC_MONO") with 
@@ -186,11 +192,11 @@ module FSharpResidentCompiler =
                                              CreateNoWindow = true,
                                              UseShellExecute = useShellExecute)
                          else
+#endif
                             ProcessStartInfo(FileName=typeof<FSharpCompilationServer>.Assembly.Location,
                                              Arguments = "/server",
                                              CreateNoWindow = true,
                                              UseShellExecute = false)
-
                     let cmdProcess = new Process(StartInfo=procInfo)
 
                     //let exitE = cmdProcess.Exited |> Observable.map (fun x -> x)
@@ -253,6 +259,7 @@ module FSharpResidentCompiler =
                    None
             | None -> 
                 None
+#endif
 
 module Driver = 
     let main argv = 
@@ -271,6 +278,7 @@ module Driver =
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
             }
 
+#if FX_RUNNING_ON_MONO
         if runningOnMono && argv |> Array.exists  (fun x -> x = "/resident" || x = "--resident") then 
             let argv = argv |> Array.filter (fun x -> x <> "/resident" && x <> "--resident")
 
@@ -290,11 +298,14 @@ module Driver =
             let exiter = { new Exiter with member x.Exit n = raise StopProcessing }
             FSharpResidentCompiler.FSharpCompilationServer.RunServer(exiter)        
             0
-        
+
         else
             mainCompile (argv, false, quitProcessExiter)
             0 
-
+#else
+        mainCompile (argv, false, quitProcessExiter)
+        0 
+#endif
 
 #if FX_NO_DEFAULT_DEPENDENCY_TYPE
 #else
@@ -304,7 +315,10 @@ do ()
 
 [<EntryPoint>]
 let main(argv) =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)    
+
+    // TODO KEVINR : For reasons I do not understand this produces : 
+    //                   A type mismatch: fscmain.fs(318,9): error FS0193: The type 'System.IDisposable' is not compatible with the type 'System.IDisposable'
+    //  use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
 #if FX_RUNNING_ON_MONO
     if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #else

@@ -55,12 +55,6 @@ open Microsoft.FSharp.Core
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
-#if FX_NO_EXIT
-open Microsoft.FSharp.Core.ReflectionAdapters
-#else
-open Microsoft.FSharp.Core
-#endif
-
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2492,6 +2486,10 @@ module FSharpResidentCompiler =
                    None
             | None -> 
                 None
+#endif
+
+#if FX_NO_EXIT
+let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
 #endif
 
 let main argv =
