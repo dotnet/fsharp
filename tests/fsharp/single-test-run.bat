@@ -173,7 +173,9 @@ goto :EOF
 :FSC_CORECLR
 @echo do :FSC_CORECLR
   if exist test.ok (del /f /q test.ok)
-  %CLIX% %~d0%~p0\testdirectory\corerun.exe .\output\test.exe
+  set packagesDir=%~d0%~p0..\..\packages
+  For %%A in ("%cd%") do ( Set TestCaseName=%%~nxA)
+  %CLIX% %~d0%~p0..\..\%flavor%\coreclr\Testing\fsharp\core\%TestCaseName%\TestDirectory\corerun.exe %~d0%~p0..\..\%flavor%\coreclr\Testing\fsharp\core\%TestCaseName%\output\test.exe
   dir test.ok > NUL 2>&1 ) || (
   @echo :FSC_CORECLR failed
   set ERRORMSG=%ERRORMSG% FSC_CORECLR failed;

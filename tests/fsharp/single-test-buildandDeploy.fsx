@@ -12,37 +12,49 @@ open FSharp.Data.JsonExtensions
 let Arguments = fsi.CommandLineArgs |> Seq.skip 1
 let Sources = Arguments             |> Seq.filter(fun t -> printfn "%s" t; t.StartsWith("--source:")) |> Seq.map(fun t -> t.Remove(0, 9).Trim()) |> Seq.distinct
 let Defines = Arguments             |> Seq.filter(fun t -> printfn "%s" t; t.StartsWith("--define:")) |> Seq.map(fun t -> t.Remove(0, 9).Trim())
-
 let GetArgumentFromCommandLine switchName defaultValue = 
     match Arguments |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Seq.tryHead with
     | Some(file) -> if file.Length <> 0 then file else defaultValue
     | _ -> defaultValue
-
-let TestProjectJson = GetArgumentFromCommandLine "--testProjectJson:" "project.json was not specified"
+let TestProjectJson = GetArgumentFromCommandLine "--testProjectJson:" "test project.json was not specified"
 let TestProjectJsonLock = GetArgumentFromCommandLine "--testProjectJsonLock:" "project.json.lock"
 let PackagesDir = GetArgumentFromCommandLine "--packagesDir:" "."
 let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" "DNXCore,Version=v5.0"
 let Output = GetArgumentFromCommandLine "--output:" @"output"
 let FSharpCore = GetArgumentFromCommandLine "--fsharpCore:" "fsharp.core.dll was not specified"
+let FSC =
+    printfn "fsharpcore: %s" FSharpCore
+    let dir = Path.GetDirectoryName(FSharpCore)
+    printfn "dir: %s" dir
+    seq {
+        yield Path.Combine(dir, "fsc.exe")
+        yield Path.Combine(dir, "fsharp.core.dll")
+        yield Path.Combine(dir, "FSharp.Compiler.dll")
+    }
 let NugetSources = (GetArgumentFromCommandLine "--nugetSources:" "").Split([|';'|]) |> Seq.fold(fun acc src -> acc + " -s:" + src) ""
 let DnuPath = GetArgumentFromCommandLine "--dnuPath:" "..\..\packages\packages\dnx-coreclr-win-x86.1.0.0-beta6-12032\bin\dnu.cmd"
 let FscPath = GetArgumentFromCommandLine "--fscPath:" "Fsc Path not specified"
 let TestPlatform = GetArgumentFromCommandLine "--testPlatform:" "Test Platform not specified"
 let TestDirectory = GetArgumentFromCommandLine "--testDirectory:" "Test Directory not specified"
+let CompilerDirectory = GetArgumentFromCommandLine "--compilerDirectory:" "Compiler Directory not specified"
+let CompilerJsonLock = GetArgumentFromCommandLine "--compilerJsonLock:" "Compiler project.json was not specified"
 
 let copyFile source dir =
+    printfn "dir: %s" dir
     let dest = 
         if not (Directory.Exists(dir)) then Directory.CreateDirectory(dir) |>ignore
-        Path.Combine(dir, Path.GetFileName(source))
+        let result = Path.Combine(dir, Path.GetFileName(source))
+        printfn "source: %s" source
+        printfn "dest: %s" result
+        result
     File.Copy(source, dest, true)
 
-let deletePreviousOutput () =
-    if (Directory.Exists(TestDirectory)) then Directory.Delete(TestDirectory, true) |>ignore
+let deleteDirectory (output) =
+    if (Directory.Exists(output)) then Directory.Delete(output, true) |>ignore
     ()
 
-let makeOutputDirectory () =
-    let dir = Path.GetDirectoryName(Output)
-    if not (Directory.Exists(dir)) then Directory.CreateDirectory(dir) |>ignore
+let makeDirectory (output) =
+    if not (Directory.Exists(output)) then Directory.CreateDirectory(output) |>ignore
     ()
 
 let executeProcess filename arguments =
@@ -95,7 +107,7 @@ let splitNameAndVersion (ref:string) =
     else
         None
 
-let collectReferenciesFromProjectJson assemblyReferenceType = 
+let collectReferenciesFromProjectJson lockFile assemblyReferenceType = 
     let getAssemblyReferenciesFromTargets (targets:JsonValue) =
         let getReferencedFiles (referencedFiles:JsonValue) =
             seq {
@@ -129,7 +141,7 @@ let collectReferenciesFromProjectJson assemblyReferenceType =
     let getReferencesFromJson (filename:string) =
         let projectJson = JsonValue.Load( filename )
         getAssemblyReferenciesFromTargets projectJson?targets
-    (getReferencesFromJson TestProjectJsonLock) |> Seq.distinct
+    (getReferencesFromJson lockFile) |> Seq.distinct
 
 let getNativeFiles package =
     let packageVersion =
@@ -155,11 +167,24 @@ let runtimefiles =
         yield! getNativeFiles "Microsoft.NETCore.Windows.ApiSets-x86"
     }
 
-let dependencies = (collectReferenciesFromProjectJson AssemblyReferenceType.forExecute)
+let dependencies = (collectReferenciesFromProjectJson TestProjectJsonLock AssemblyReferenceType.forExecute)
+let compilerDependencies = (collectReferenciesFromProjectJson CompilerJsonLock AssemblyReferenceType.forExecute)
+let coreDependencies = (collectReferenciesFromProjectJson CompilerJsonLock AssemblyReferenceType.forExecute)
 
-deletePreviousOutput ()
-makeOutputDirectory ()
-let ec = executeCompiler Sources (collectReferenciesFromProjectJson AssemblyReferenceType.forBuild)
+deleteDirectory (CompilerDirectory)
+deleteDirectory (TestDirectory)
+deleteDirectory (Path.GetDirectoryName(Output))
+makeDirectory(CompilerDirectory)
+makeDirectory (TestDirectory)
+makeDirectory (Path.GetDirectoryName(Output))
+
+FSC |> Seq.iter(fun source ->  copyFile source CompilerDirectory)
+compilerDependencies |> Seq.iter(fun source -> copyFile source CompilerDirectory)
+dependencies |> Seq.iter(fun source -> copyFile source CompilerDirectory)
+runtimefiles |> Seq.iter(fun source -> copyFile source CompilerDirectory)
+copyFile FSharpCore CompilerDirectory
+
+let ec = executeCompiler Sources (collectReferenciesFromProjectJson TestProjectJsonLock AssemblyReferenceType.forBuild)
 if ec > 0 then 
     exit ec
 else
