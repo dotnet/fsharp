@@ -87,7 +87,7 @@ let parseInt32 (s:string) =
     let sign = getSign32 s &p l 
     let specifier = get0OXB s &p l
 #if FX_RESHAPED_GLOBALIZATION
-    match CultureInfo.InvariantCulture.TextInfo.ToLower(specifier)
+    match CultureInfo.InvariantCulture.TextInfo.ToLower(specifier) with 
 #else
     match Char.ToLower(specifier,CultureInfo.InvariantCulture) with 
 #endif
