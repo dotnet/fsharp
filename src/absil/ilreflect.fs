@@ -44,12 +44,14 @@ let wrapCustomAttr setCustomAttr (cinfo, bytes) =
 let logRefEmitCalls = false
 
 type System.Reflection.Emit.AssemblyBuilder with 
-    member asmB.DefineDynamicModuleAndLog(a,_b,_c) =
+    member asmB.DefineDynamicModuleAndLog(a,b,c) =
 #if FX_RESHAPED_REFEMIT
+        ignore b
+        ignore c
         let modB = asmB.DefineDynamicModule(a)
 #else
-        let modB = asmB.DefineDynamicModule(a,_b,_c)
-        if logRefEmitCalls then printfn "let moduleBuilder%d = assemblyBuilder%d.DefineDynamicModule(%A,%A,%A)" (abs <| hash modB) (abs <| hash asmB) a _b _c
+        let modB = asmB.DefineDynamicModule(a,b,c)
+        if logRefEmitCalls then printfn "let moduleBuilder%d = assemblyBuilder%d.DefineDynamicModule(%A,%A,%A)" (abs <| hash modB) (abs <| hash asmB) a b c
 #endif
         modB
         
@@ -194,8 +196,11 @@ type System.Reflection.Emit.TypeBuilder with
     member typB.InvokeMemberAndLog(nm,_flags,args) = 
 #if FX_RESHAPED_REFEMIT
         let t = typB.CreateTypeAndLog()
-        let m =  if t <> null then t.GetMethod(nm, (args |> Seq.map(fun x -> x.GetType()) |> Seq.toArray)) else null
-        m.Invoke(null, args)
+        let m =
+            if t <> null then t.GetMethod(nm, (args |> Seq.map(fun x -> x.GetType()) |> Seq.toArray))
+            else null
+        if m <> null then m.Invoke(null, args)
+        else raise (MissingMethodException(nm))
 #else
         if logRefEmitCalls then printfn "typeBuilder%d.InvokeMember(\"%s\",enum %d,null,null,%A,Globalization.CultureInfo.InvariantCulture)" (abs <| hash typB) nm (LanguagePrimitives.EnumToValue _flags) args
         typB.InvokeMember(nm,_flags,null,null,args,Globalization.CultureInfo.InvariantCulture)
@@ -416,7 +421,7 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
             try 
               System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typ) |> ignore
             with e -> ()
-        #endif
+#endif
 #endif
         {emEnv with emTypMap = Zmap.add tref (typT,typB,typeDef,Some typ) emEnv.emTypMap}
     else
@@ -1271,7 +1276,7 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) code =
 let emitLocal cenv emEnv (ilG : ILGenerator) (local: ILLocal) =
     let ty = convType cenv emEnv  local.Type
     let locBuilder = ilG.DeclareLocalAndLog(ty, local.IsPinned)
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
     match local.DebugInfo with
     | Some(nm, start, finish) -> locBuilder.SetLocalSymInfo(nm, start, finish)
@@ -1965,7 +1970,7 @@ let buildModuleTypePass4 visited   emEnv tdef = buildTypeDefPass4 visited [] emE
 // buildModuleFragment - only the types the fragment get written
 //----------------------------------------------------------------------------
     
-let buildModuleFragment cenv emEnv (_asmB : AssemblyBuilder) (modB : ModuleBuilder) (m: ILModuleDef) =
+let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilder) (m: ILModuleDef) =
     let tdefs = m.TypeDefs.AsList 
 
     let emEnv = List.fold (buildModuleTypePass1 cenv modB) emEnv tdefs
@@ -1984,14 +1989,15 @@ let buildModuleFragment cenv emEnv (_asmB : AssemblyBuilder) (modB : ModuleBuild
     let emEnv = Seq.fold envUpdateCreatedTypeRef emEnv created.Keys // update typT with the created typT
     emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs;    
 #if FX_RESHAPED_REFEMIT
+    ignore asmB
 #else
     m.Resources.AsList |> List.iter (fun r -> 
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
         | ILResourceLocation.Local bf -> 
             modB.DefineManifestResourceAndLog(r.Name, new System.IO.MemoryStream(bf()), attribs)
-        | ILResourceLocation.File (mr,_n) -> 
-           _asmB.AddResourceFileAndLog(r.Name, mr.Name, attribs)
+        | ILResourceLocation.File (mr,_) -> 
+           asmB.AddResourceFileAndLog(r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 
            failwith "references to resources other assemblies may not be emitted using System.Reflection");
 #endif
@@ -2001,18 +2007,18 @@ let buildModuleFragment cenv emEnv (_asmB : AssemblyBuilder) (modB : ModuleBuild
 // test hook
 //----------------------------------------------------------------------------
 
-let defineDynamicAssemblyAndLog(asmName,flags,_asmDir:string) =
+let defineDynamicAssemblyAndLog(asmName,flags,asmDir:string) =
 #if FX_NO_APP_DOMAINS
     let asmB = AssemblyBuilder.DefineDynamicAssembly(asmName,flags)
 #else
     let currentDom  = System.AppDomain.CurrentDomain
-    let asmB = currentDom.DefineDynamicAssembly(asmName,flags,_asmDir)
+    let asmB = currentDom.DefineDynamicAssembly(asmName,flags,asmDir)
 #endif
     if logRefEmitCalls then 
         printfn "open System"
         printfn "open System.Reflection"
         printfn "open System.Reflection.Emit"
-        printfn "let assemblyBuilder%d = System.AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName(Name=\"%s\"),enum %d,%A)" (abs <| hash asmB) asmName.Name (LanguagePrimitives.EnumToValue flags) _asmDir
+        printfn "let assemblyBuilder%d = System.AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName(Name=\"%s\"),enum %d,%A)" (abs <| hash asmB) asmName.Name (LanguagePrimitives.EnumToValue flags) asmDir
     asmB
 
 let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo) =

@@ -17,7 +17,7 @@ open System.Collections.Generic
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
 #else
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Support 
 #endif
@@ -1028,7 +1028,7 @@ type ILReaderContext =
   { ilg: ILGlobals;
     dataEndPoints: Lazy<int32 list>;
     sorted: int64;
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
     pdb: obj option;
 #else
     pdb: (PdbReader * (string -> ILSourceDocument)) option;
@@ -1575,7 +1575,7 @@ let readBlobHeapAsDouble ctxt vidx = fst (sigptrGetDouble (readBlobHeap ctxt vid
 //        (e) the start of the native resources attached to the binary if any
 // ----------------------------------------------------------------------*)
 
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
 let readNativeResources _ctxt = []
 #else
 let readNativeResources ctxt = 
@@ -2997,7 +2997,7 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
    let instrs = ibuf.ToArray()
    instrs,rawToLabel, lab2pc, raw2nextLab
 
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
 and seekReadMethodRVA ctxt (_idx,nm,_internalcall,noinline,numtypars) rva = 
 #else
 and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva = 
@@ -3011,7 +3011,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
        //    -- an overall range for the method 
        //    -- the sequence points for the method 
        let localPdbInfos, methRangePdbInfo, seqpoints = 
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
            [], None, []
 #else
            match ctxt.pdb with 
@@ -3070,7 +3070,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
                with e -> 
                    // "* Warning: PDB info for method "+nm+" could not be read and will be ignored: "+e.Message
                    [],None,[]
-#endif // NO_PDB_READER         
+#endif
        
        let baseRVA = ctxt.anyV2P("method rva",rva)
        // ": reading body of method "+nm+" at rva "+string rva+", phys "+string baseRVA
@@ -3369,7 +3369,7 @@ and seekReadTopExportedTypes ctxt () =
            done;
            List.rev !res)
 
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
 #else         
 let getPdbReader opts infile =  
     match opts.pdbPath with 
@@ -3942,7 +3942,7 @@ let rec genOpenBinaryReader infile is opts =
    //-----------------------------------------------------------------------
    // Set up the PDB reader so we can read debug info for methods.
    // ----------------------------------------------------------------------
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
     let pdb = None
 #else
     let pdb = 
@@ -4076,7 +4076,7 @@ let mkDefault ilg =
       pdbPath= None; 
       ilGlobals = ilg } 
 
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
 let ClosePdbReader _x =  ()
 #else
 let ClosePdbReader pdb =  

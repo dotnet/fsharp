@@ -2226,7 +2226,7 @@ type TcConfigBuilder =
             if tcConfigB.debuginfo then
               // assembly name is invalid, we've already reported the error so just skip pdb name checks
               if assemblyNameIsInvalid then None else
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
               Some (match tcConfigB.debugSymbolFile with None -> (Filename.chopExtension outfile) + (
 #if FX_RUNNING_ON_MONO
                                                                     if runningOnMono then

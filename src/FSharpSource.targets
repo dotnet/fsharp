@@ -184,8 +184,8 @@
     <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_HEAPTERMINATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_REDUCEDEXCEPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);NO_PDB_READER</DefineConstants>
-    <DefineConstants>$(DefineConstants);NO_PDB_WRITER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_LINKEDRESOURCES</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_KEY_SIGNING</DefineConstants>

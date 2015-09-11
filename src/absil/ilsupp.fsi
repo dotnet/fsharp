@@ -7,12 +7,12 @@
 /// The implementation of the functions can be found in ilsupp-*.fs
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 type PdbWriter
 val pdbInitialize : string -> string -> PdbWriter
 #endif
-#if NO_PDB_READER
+#if FX_NO_PDB_READER
 #else
 type PdbReader
 val pdbReadClose: PdbReader -> unit
@@ -53,7 +53,7 @@ val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileTy
 val unlinkResource: int32 -> byte[] -> byte[]
 #endif
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 /// PDB reader and associated types
 type PdbDocument
@@ -95,7 +95,7 @@ val pdbVariableGetSignature: PdbVariable -> byte[]
 val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *) * int32 (* addrField1 *)
 #endif
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 //---------------------------------------------------------------------
 // PDB writer.
@@ -112,7 +112,7 @@ type idd =
       iddType: int32;
       iddData: byte[];}
 #endif
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 val pdbInitialize: 
     string (* .exe/.dll already written and closed *) -> 

@@ -862,7 +862,7 @@ let unlinkResource (ulLinkedResourceBaseRVA:int32) (pbLinkedResource:byte[]) =
     pResBuffer
 #endif
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 // PDB Writing
 
@@ -1024,7 +1024,7 @@ type idd =
       iddType: int32;
       iddData: byte[];}
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 let pdbInitialize (binaryName:string) (pdbName:string) =
     // collect necessary COM types
@@ -1160,7 +1160,7 @@ let pdbGetDebugInfo (writer: PdbWriter) =
 #endif
 
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 // PDB reading
 type PdbReader  = { symReader: ISymbolReader }

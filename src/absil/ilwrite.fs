@@ -208,7 +208,7 @@ module SequencePoint =
 /// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
 let sizeof_IMAGE_DEBUG_DIRECTORY = 28 
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
 #else
 [<NoEquality; NoComparison>]
 type PdbData = 
@@ -3363,7 +3363,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILG
             if not isDll then dprintn "warning: no entrypoint specified in executable binary";
             0x0
 
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
     let pdbData = ()
 #else
     let pdbData = 
@@ -3425,7 +3425,7 @@ module FileSystemUtilites =
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission _filename =
+    let setExecutablePermission filename =
 
 #if FX_RUNNING_ON_MONO
       if runningOnMono then 
@@ -3433,7 +3433,7 @@ module FileSystemUtilites =
             let monoPosix = Assembly.Load(new AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n";
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box _filename |],System.Globalization.CultureInfo.InvariantCulture)
+            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],System.Globalization.CultureInfo.InvariantCulture)
             let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],System.Globalization.CultureInfo.InvariantCulture) |> unbox<int>
             // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
             monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| box (prevPermissions ||| 0x000001ED) |],System.Globalization.CultureInfo.InvariantCulture) |> ignore
@@ -3441,6 +3441,8 @@ module FileSystemUtilites =
             if progress then eprintf "failure: %s...\n" (e.ToString());
             // Fail silently
       else
+#else
+        ignore filename
 #endif
         ()
 
@@ -3898,7 +3900,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
 #else
                                   signer: ILStrongNameSigner option, 
 #endif
-                                  _fixupOverlappingSequencePoints, emitTailcalls, showTimes, _dumpDebugInfo) modul noDebugData =
+                                  fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3951,7 +3953,12 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
         with e -> 
             failwith ("Could not open file for writing (binary mode): " + outfile)    
 
-    let  _pdbData, _debugDirectoryChunk, _debugDataChunk, _textV2P,mappings =
+
+#if FX_NO_KEY_SIGNING
+    let pdbData,mappings =
+#else
+    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+#endif
         try 
 
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
@@ -4515,7 +4522,11 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
               FileSystemUtilites.setExecutablePermission outfile
           with _ ->
               ()
+#if FX_NO_KEY_SIGNING
+          pdbData,mappings
+#else
           pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
+#endif
           
         // Looks like a finally
         with e ->
@@ -4527,21 +4538,24 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
 
     reportTime showTimes "Writing Image";
      
-#if NO_PDB_WRITER
+#if FX_NO_PDB_WRITER
+    ignore fixupOverlappingSequencePoints
+    ignore dumpDebugInfo
+    ignore pdbData
 #else
-    if _dumpDebugInfo then 
-        DumpDebugInfo outfile _pdbData
+    if dumpDebugInfo then 
+        DumpDebugInfo outfile pdbData
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     begin match pdbfile with
     | None -> ()
 #if FX_RUNNING_ON_MONO
     | Some fmdb when runningOnMono -> 
-        WriteMdbInfo fmdb outfile _pdbData
+        WriteMdbInfo fmdb outfile pdbData
 #endif
     | Some fpdb -> 
         try 
-            let idd = WritePdbInfo _fixupOverlappingSequencePoints showTimes outfile fpdb _pdbData
+            let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
             reportTime showTimes "Generate PDB Info";
             
           // Now we have the debug data we can go back and fill in the debug directory in the image 
@@ -4549,15 +4563,15 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
             let os2 = new BinaryWriter(fs2)
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
-                os2.BaseStream.Seek (int64 (_textV2P _debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore;
+                os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore;
                 writeInt32 os2 idd.iddCharacteristics; // IMAGE_DEBUG_DIRECTORY.Characteristics 
                 writeInt32 os2 timestamp;
                 writeInt32AsUInt16 os2 idd.iddMajorVersion;
                 writeInt32AsUInt16 os2 idd.iddMinorVersion;
                 writeInt32 os2 idd.iddType;
                 writeInt32 os2 idd.iddData.Length;  // IMAGE_DEBUG_DIRECTORY.SizeOfData 
-                writeInt32 os2 _debugDataChunk.addr;  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
-                writeInt32 os2 (_textV2P _debugDataChunk.addr);// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
+                writeInt32 os2 debugDataChunk.addr;  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
+                writeInt32 os2 (textV2P debugDataChunk.addr);// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
 
                 (* dprintf "idd.iddCharacteristics = %ld\n" idd.iddCharacteristics;
                 dprintf "iddMajorVersion = %ld\n" idd.iddMajorVersion;
@@ -4566,8 +4580,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
                 dprintf "iddData = (%A) = %s\n" idd.iddData (System.Text.Encoding.UTF8.GetString idd.iddData); *)
                   
                 // write the debug raw data as given us by the PDB writer 
-                os2.BaseStream.Seek (int64 (_textV2P _debugDataChunk.addr), SeekOrigin.Begin) |> ignore;
-                if _debugDataChunk.size < idd.iddData.Length then 
+                os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore;
+                if debugDataChunk.size < idd.iddData.Length then 
                     failwith "Debug data area is not big enough.  Debug info may not be usable";
                 writeBytes os2 idd.iddData;
                 os2.Dispose()
