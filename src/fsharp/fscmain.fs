@@ -265,14 +265,14 @@ module Driver =
     let main argv = 
         // Check for --pause as the very first step so that a compiler can be attached here.
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
-            System.Console.WriteLine("Press any key to continue...")
-            System.Console.ReadKey() |> ignore
+            System.Console.WriteLine("Press return to continue...")
+            System.Console.ReadLine() |> ignore
 
         let quitProcessExiter = 
             { new Exiter with 
                 member x.Exit(n) =                    
                     try 
-                      System.Environment.Exit(n)
+                      exit n
                     with _ -> 
                       ()            
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
@@ -316,9 +316,7 @@ do ()
 [<EntryPoint>]
 let main(argv) =
 
-    // TODO KEVINR : For reasons I do not understand this produces : 
-    //                   A type mismatch: fscmain.fs(318,9): error FS0193: The type 'System.IDisposable' is not compatible with the type 'System.IDisposable'
-    //  use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
 #if FX_RUNNING_ON_MONO
     if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #else
