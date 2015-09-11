@@ -316,3 +316,4 @@ Misc02			Stress
 Misc02			XmlDoc\Basic
 Misc02			XmlDoc\OCamlDoc
 Misc02			XmlDoc\UnitOfMeasure
+Diagnostics		Diagnostics\General
