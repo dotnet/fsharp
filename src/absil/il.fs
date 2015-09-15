@@ -18,7 +18,7 @@ open System.Collections
  
 let logging = false 
 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
 // Officially supported way to detect if we are running on Mono.
 // See http://www.mono-project.com/FAQ:_Technical
 // "How can I detect if am running in Mono?" section

@@ -1993,8 +1993,8 @@ type TcConfigBuilder =
       mutable optsOn        : bool (* optimizations are turned on *)
       mutable optSettings   : Opt.OptimizationSettings 
       mutable emitTailcalls : bool
-#if FX_PREFERRED_UI_LANG
-      mutable preferreduilang: string option
+#if PREFERRED_UI_LANG
+      mutable preferredUiLang: string option
 #else
       mutable lcid          : int option
 #endif
@@ -2036,7 +2036,7 @@ type TcConfigBuilder =
       /// if true - every expression in quotations will be augmented with full debug info (filename, location in file)
       mutable emitDebugInfoInQuotations : bool
 
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences : bool
 #endif
@@ -2091,7 +2091,7 @@ type TcConfigBuilder =
           resolutionAssemblyFoldersConditions = "";
           platform = None;
           prefer32Bit = false;
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
           useMonoResolution = runningOnMono
 #else
           useMonoResolution = false
@@ -2165,8 +2165,8 @@ type TcConfigBuilder =
           optsOn        = false 
           optSettings   = Opt.OptimizationSettings.Defaults
           emitTailcalls = true
-#if FX_PREFERRED_UI_LANG
-          preferreduilang = None
+#if PREFERRED_UI_LANG
+          preferredUiLang = None
 #else
           lcid = None
 #endif
@@ -2189,7 +2189,7 @@ type TcConfigBuilder =
           sqmNumOfSourceFiles = 0
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
           shadowCopyReferences = false
 #endif
         }
@@ -2228,7 +2228,7 @@ type TcConfigBuilder =
               if assemblyNameIsInvalid then None else
 #if FX_NO_PDB_WRITER
               Some (match tcConfigB.debugSymbolFile with None -> (Filename.chopExtension outfile) + (
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
                                                                     if runningOnMono then
                                                                         ".mdb"
                                                                     else
@@ -2237,7 +2237,7 @@ type TcConfigBuilder =
 #else
               Some (match tcConfigB.debugSymbolFile with 
                     | None -> Microsoft.FSharp.Compiler.AbstractIL.Internal.Support.getDebugFileName outfile
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
                     | Some _ when runningOnMono ->
                         // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
                         warning(Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning(),rangeCmdArgs)) ; ()
@@ -2327,7 +2327,7 @@ type TcConfigBuilder =
             ri,fileNameOfPath ri,ILResourceAccess.Public 
 
 
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
 let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, pdbPathOption, primaryAssemblyName, noDebugData, shadowCopyReferences) = 
 #else
 let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, pdbPathOption, primaryAssemblyName, noDebugData) = 
@@ -2351,7 +2351,7 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
       then ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
       else
         let location =
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
           if shadowCopyReferences then 
@@ -2468,7 +2468,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some(primaryAssemblyFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
                 let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
 #else
                 let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
@@ -2534,7 +2534,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             try 
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
                 let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData, data.shadowCopyReferences)
 #else
                 let ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.primaryAssembly.Name, data.noDebugData)
@@ -2653,8 +2653,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.doFinalSimplify    = data.doFinalSimplify
     member x.optSettings        = data.optSettings
     member x.emitTailcalls      = data.emitTailcalls
-#if FX_PREFERRED_UI_LANG
-    member x.preferreduilang    = data.preferreduilang
+#if PREFERRED_UI_LANG
+    member x.preferredUiLang    = data.preferredUiLang
 #else
     member x.lcid               = data.lcid
 #endif
@@ -2677,7 +2677,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.sqmSessionGuid = data.sqmSessionGuid
     member x.sqmNumOfSourceFiles = data.sqmNumOfSourceFiles
     member x.sqmSessionStartedTime = data.sqmSessionStartedTime
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
     member x.shadowCopyReferences = data.shadowCopyReferences
 #endif
     static member Create(builder,validate) = 
@@ -2698,7 +2698,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some x -> 
             [tcConfig.MakePathAbsolute x]
         | None -> 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             // When running on Mono we lead everyone to believe we're doing .NET 2.0 compilation 
             // by default. 
             if runningOnMono then 
@@ -3772,7 +3772,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     None 
             else   
                 None
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
         let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData, tcConfig.shadowCopyReferences)
 #else
         let ilILBinaryReader = OpenILBinary(filename,tcConfig.optimizeForMemory,tcConfig.openBinariesInMemory,ilGlobalsOpt,pdbPathOption, tcConfig.primaryAssembly.Name, tcConfig.noDebugData)
@@ -5103,13 +5103,13 @@ let CheckSimulateException(tcConfig:TcConfig) =
     | Some("tc-oom") -> raise(System.OutOfMemoryException())
     | Some("tc-an") -> raise(System.ArgumentNullException("simulated"))
     | Some("tc-invop") -> raise(System.InvalidOperationException())
-#if FX_RESHAPED_EXCEPTIONS
+#if FX_REDUCED_EXCEPTIONS
 #else
     | Some("tc-av") -> raise(System.AccessViolationException())
 #endif
     | Some("tc-aor") -> raise(System.ArgumentOutOfRangeException())
     | Some("tc-dv0") -> raise(System.DivideByZeroException())
-#if FX_RESHAPED_EXCEPTIONS
+#if FX_REDUCED_EXCEPTIONS
 #else
     | Some("tc-nfn") -> raise(System.NotFiniteNumberException())
 #endif

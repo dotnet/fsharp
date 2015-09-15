@@ -295,7 +295,7 @@ type TcConfigBuilder =
       mutable maxErrors : int
       mutable abortOnError : bool
       mutable baseAddress : int32 option
- #if DEBUG
+#if DEBUG
       mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
 #endif
@@ -307,8 +307,8 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Opt.OptimizationSettings 
       mutable emitTailcalls : bool
-#if FX_PREFERRED_UI_LANG
-      mutable preferreduilang: string option
+#if PREFERRED_UI_LANG
+      mutable preferredUiLang: string option
 #else
       mutable lcid         : int option
 #endif
@@ -332,10 +332,11 @@ type TcConfigBuilder =
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
       mutable shadowCopyReferences : bool
 #endif
     }
+
     static member CreateNew : 
         defaultFSharpBinariesDir: string * 
         optimizeForMemory: bool * 
@@ -456,8 +457,8 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Opt.OptimizationSettings 
     member emitTailcalls : bool
-#if FX_PREFERRED_UI_LANG
-    member preferreduilang: string option
+#if PREFERRED_UI_LANG
+    member preferredUiLang: string option
 #else
     member lcid         : int option
 #endif
@@ -496,7 +497,7 @@ type TcConfig =
     member sqmSessionGuid : System.Guid option
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
-#if FX_SHADOWCOPY_IN_FSI
+#if SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
 #endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig

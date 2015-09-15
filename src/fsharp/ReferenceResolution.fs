@@ -17,7 +17,7 @@ module internal MSBuildResolver =
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
-#if FX_RESHAPED_MSBUILD
+#if RESHAPED_MSBUILD
     open Microsoft.FSharp.Compiler.MsBuildAdapters
     open Microsoft.FSharp.Compiler.ToolLocationHelper
 #endif
@@ -263,7 +263,7 @@ module internal MSBuildResolver =
 
         let engine = { new IBuildEngine with 
                     member be.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
-#if FX_RESHAPED_MSBUILD
+#if RESHAPED_MSBUILD
                     member be.LogCustomEvent(e) = logmessage ((e.GetPropertyValue("Message")) :?> string)
                     member be.LogErrorEvent(e) = logerror ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string) 
                     member be.LogMessageEvent(e) = logmessage ((e.GetPropertyValue("Message")) :?> string) 

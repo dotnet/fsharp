@@ -627,7 +627,7 @@ module UnmanagedProcessExecutionOptions =
     [<System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Assert,UnmanagedCode = true)>] 
 #endif
     let EnableHeapTerminationOnCorruption() =
-#if FX_NO_HEAPTERMINATION
+#if NO_HEAPTERMINATION
         ()
 #else
         if (System.Environment.OSVersion.Version.Major >= 6 && // If OS is Vista or higher

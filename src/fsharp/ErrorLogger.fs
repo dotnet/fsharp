@@ -278,6 +278,10 @@ module ErrorLoggerExtensions =
 
     // Reraise an exception if it is one we want to report to Watson.
     let ReraiseIfWatsonable(exn:exn) =
+#if FX_REDUCED_EXCEPTIONS
+        ignore exn
+        ()
+#else
         match  exn with 
         // These few SystemExceptions which we don't report to Watson are because we handle these in some way in Build.fs
         | :? System.Reflection.TargetInvocationException -> ()
@@ -285,13 +289,11 @@ module ErrorLoggerExtensions =
         | :? System.IO.IOException -> () // This covers FileNotFoundException and DirectoryNotFoundException
         | :? System.UnauthorizedAccessException -> ()
         | Failure _ // This gives reports for compiler INTERNAL ERRORs
-#if FX_NO_REDUCEDEXCEPTIONS
-#else
         | :? System.SystemException -> 
             PreserveStackTrace(exn)
             raise exn
-#endif
         | _ -> ()
+#endif
 
     type ErrorLogger with  
         member x.ErrorR  exn = match exn with StopProcessing | ReportedError _ -> raise exn | _ -> x.ErrorSink(PhasedError.Create(exn,CompileThreadStatic.BuildPhase))
@@ -305,7 +307,7 @@ module ErrorLoggerExtensions =
             // Throws StopProcessing and exceptions raised by the ErrorSink(exn) handler.
             match exn with
             (* Don't send ThreadAbortException down the error channel *)
-#if FX_NO_REDUCEDEXCEPTIONS
+#if FX_REDUCED_EXCEPTIONS
 #else
             | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException),_) ->  ()
 #endif

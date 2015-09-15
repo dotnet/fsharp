@@ -720,7 +720,7 @@ module XmlDocWriter =
 
 
 let defaultFSharpBinariesDir = 
-#if FX_RESHAPED_APPCONTEXT
+#if FX_NO_APP_DOMAINS
     System.AppContext.BaseDirectory
 #else
     System.AppDomain.CurrentDomain.BaseDirectory
@@ -1297,7 +1297,7 @@ module MainModuleBuilder =
             if not(tcConfig.win32manifest = "") then
                 tcConfig.win32manifest
             // don't embed a manifest if target is not an exe, if manifest is specifically excluded, if another native resource is being included, or if running on mono
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") || runningOnMono then
 #else
             elif not(tcConfig.target.IsExe) || not(tcConfig.includewin32manifest) || not(tcConfig.win32res = "") then
@@ -1315,7 +1315,7 @@ module MainModuleBuilder =
                   yield Lazy.CreateFromValue av
               if not(tcConfig.win32res = "") then
                   yield Lazy.CreateFromValue (FileSystem.ReadAllBytesShim tcConfig.win32res) 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not(runningOnMono) then
 #else
               if tcConfig.includewin32manifest && not(win32Manifest = "") then
@@ -1964,8 +1964,8 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
                                     lcidFromCodePage, 
 #endif
                                     (fun tcConfigB ->
-#if FX_PREFERRED_UI_LANG
-                                          match tcConfigB.preferreduilang with
+#if PREFERRED_UI_LANG
+                                          match tcConfigB.preferredUiLang with
                                           | Some(s) -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
                                           | None -> ()
 #else
@@ -2277,12 +2277,12 @@ module FSharpResidentCompiler =
         // The channel/socket name is qualified by the user name (and domain on windows)
         static let domainName = if onWindows then Environment.GetEnvironmentVariable "USERDOMAIN" else ""
         static let userName = Environment.GetEnvironmentVariable (if onWindows then "USERNAME" else "USER") 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
         // Use different base channel names on mono and CLR as a CLR remoting process can't talk
         // to a mono server
 #endif
         static let baseChannelName = 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
                 "FSCChannelMono" 
             else 
@@ -2290,7 +2290,7 @@ module FSharpResidentCompiler =
                 "FSCChannel"
         static let channelName = baseChannelName + "_" +  domainName + "_" + userName
         static let serverName = 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
                 "FSCServerMono" 
             else 
@@ -2358,7 +2358,7 @@ module FSharpResidentCompiler =
             ChannelServices.RegisterChannel(chan,false);
             RemotingServices.Marshal(server,serverName)  |> ignore
 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             // On Unix, the file permissions of the implicit socket need to be set correctly to make this
             // private to the user.
             if runningOnMono then 
@@ -2401,7 +2401,7 @@ module FSharpResidentCompiler =
                     Some client
                 with _ ->
                     let procInfo = 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
                         if runningOnMono then
                             let shellName, useShellExecute = 
                                 match System.Environment.GetEnvironmentVariable("FSC_MONO") with 
@@ -2495,7 +2495,7 @@ let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
 let main argv =
     let inline hasArgument name args =
         args |> Array.exists (fun x -> x = ("--" + name) || x = ("/" + name))
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
     let inline stripArgument name args =
         args |> Array.filter (fun x -> x <> ("--" + name) && x <> ("/" + name))
 #endif
@@ -2515,7 +2515,7 @@ let main argv =
                 failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
         }
 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
     if runningOnMono && hasArgument "resident" argv then 
         let argv = stripArgument "resident" argv
 

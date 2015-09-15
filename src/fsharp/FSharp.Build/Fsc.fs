@@ -145,8 +145,8 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
     let mutable validateTypeProviders : bool = false
-#if FX_PREFERRED_UI_LANG
-    let mutable vspreferreduilang : string = null
+#if PREFERRED_UI_LANG
+    let mutable vsPreferredUiLang : string = null
 #else
     let mutable vslcid : string = null
 #endif
@@ -317,10 +317,10 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         with get() = validateTypeProviders
         and set(p) = validateTypeProviders <- p
 
-#if FX_PREFERRED_UI_LANG
-    member fsc.PREFERREDUILANG
-        with get() = vspreferreduilang
-        and set(p) = vspreferreduilang <- p
+#if PREFERRED_UI_LANG
+    member fsc.VsPreferredUiLang
+        with get() = vsPreferredUiLang
+        and set(p) = vsPreferredUiLang <- p
 #else
     member fsc.LCID
         with get() = vslcid
@@ -498,8 +498,8 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         if validateTypeProviders then
             builder.AppendSwitch("--validate-type-providers")           
 
-#if FX_PREFERRED_UI_LANG
-        builder.AppendSwitchIfNotNull("--preferreduilang:", vspreferreduilang)
+#if PREFERRED_UI_LANG
+        builder.AppendSwitchIfNotNull("--preferreduilang:", vsPreferredUiLang)
 #else
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
 #endif

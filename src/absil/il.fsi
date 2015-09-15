@@ -2272,7 +2272,7 @@ type ILPropertyRef =
      member Name: string
      interface System.IComparable
 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
 val runningOnMono: bool
 #endif
 

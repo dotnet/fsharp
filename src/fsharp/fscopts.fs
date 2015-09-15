@@ -362,9 +362,9 @@ let codePageFlag (tcConfigB : TcConfigBuilder) =
                      tcConfigB.inputCodePage <- Some(n)), None,
                            Some (FSComp.SR.optsCodepage()))
 
-#if FX_PREFERRED_UI_LANG
-let preferreduilang (tcConfigB: TcConfigBuilder) = 
-        CompilerOption("PREFERREDUILANG", tagString, OptionString (fun s -> tcConfigB.preferreduilang <- Some(s)), None, Some(FSComp.SR.optsStrongKeyContainer()));
+#if PREFERRED_UI_LANG
+let preferredUiLang (tcConfigB: TcConfigBuilder) = 
+        CompilerOption("preferreduilang", tagString, OptionString (fun s -> tcConfigB.preferredUiLang <- Some(s)), None, Some(FSComp.SR.optsStrongKeyContainer()));
 #endif
 
 let utf8OutputFlag (tcConfigB: TcConfigBuilder) = 
@@ -383,8 +383,8 @@ let advancedFlagsBoth tcConfigB =
     [
         codePageFlag tcConfigB;
         utf8OutputFlag tcConfigB;
-#if FX_PREFERRED_UI_LANG
-        preferreduilang tcConfigB;
+#if PREFERRED_UI_LANG
+        preferredUiLang tcConfigB;
 #endif
         fullPathsFlag tcConfigB;
         libFlag tcConfigB;
@@ -420,7 +420,7 @@ let advancedFlagsFsc tcConfigB =
         yield CompilerOption("staticlink", tagFile, OptionString (fun s -> tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [s]), None,
                              Some (FSComp.SR.optsStaticlink()));
 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
         if runningOnMono then 
             yield CompilerOption("resident", tagFile, OptionUnit (fun () -> ()), None,
                                  Some (FSComp.SR.optsResident()));
@@ -460,7 +460,7 @@ let testFlag tcConfigB =
 let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None);
     CompilerOption("validate-type-providers", tagNone, OptionUnit (fun () -> tcConfigB.validateTypeProviders <- true), None, None);
-#if FX_PREFERRED_UI_LANG
+#if PREFERRED_UI_LANG
 #else
     CompilerOption("LCID", tagInt, OptionInt (fun n -> tcConfigB.lcid <- Some(n)), None, None);
 #endif
@@ -786,13 +786,13 @@ let ReportTime (tcConfig:TcConfig) descr =
         | Some("fsc-oom") -> raise(System.OutOfMemoryException())
         | Some("fsc-an") -> raise(System.ArgumentNullException("simulated"))
         | Some("fsc-invop") -> raise(System.InvalidOperationException())
-#if FX_RESHAPED_EXCEPTIONS
+#if FX_REDUCED_EXCEPTIONS
 #else
         | Some("fsc-av") -> raise(System.AccessViolationException())
 #endif
         | Some("fsc-aor") -> raise(System.ArgumentOutOfRangeException())
         | Some("fsc-dv0") -> raise(System.DivideByZeroException())
-#if FX_RESHAPED_EXCEPTIONS
+#if FX_REDUCED_EXCEPTIONS
 #else
         | Some("fsc-nfn") -> raise(System.NotFiniteNumberException())
 #endif

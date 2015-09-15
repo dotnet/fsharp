@@ -5,7 +5,7 @@ namespace Microsoft.Build.Utilities
 namespace Microsoft.Build.Framework
 namespace Microsoft.Build.BuildEngine
 
-#if FX_RESHAPED_MSBUILD
+#if RESHAPED_MSBUILD
 
 namespace Microsoft.Build.Framework
 open System.Collections

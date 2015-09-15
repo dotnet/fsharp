@@ -18,10 +18,7 @@ module internal XmlAdapters =
         | '&'  -> "&amp;"
         | _ as ch -> ch.ToString()
 
-    let escape str =
-        let sb = new StringBuilder()
-        str |> Seq.iter(fun c -> sb.Append(getEscapeSequence(c)) |>ignore )
-        sb.ToString()
+    let escape str = String.collect getEscapeSequence str
 
 #if FX_RESHAPED_REFLECTION
 module internal ReflectionAdapters = 

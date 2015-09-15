@@ -3427,7 +3427,7 @@ module FileSystemUtilites =
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
     let setExecutablePermission filename =
 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
       if runningOnMono then 
         try
             let monoPosix = Assembly.Load(new AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
@@ -3923,10 +3923,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
              dprintn "Note: it.";
              Some (ILStrongNameSigner.OpenPublicKey pubkey))
         | _ -> signer
-#endif
 
-#if FX_NO_KEY_SIGNING
-#else
     let modul = 
         let pubkey =
           match signer with 
@@ -4095,7 +4092,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
             match modul.NativeResources with
             | [] -> [||]
             | resources ->
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
                 if runningOnMono then
                   [||]
                 else
@@ -4549,7 +4546,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     begin match pdbfile with
     | None -> ()
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
     | Some fmdb when runningOnMono -> 
         WriteMdbInfo fmdb outfile pdbData
 #endif

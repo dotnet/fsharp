@@ -3946,7 +3946,7 @@ let rec genOpenBinaryReader infile is opts =
     let pdb = None
 #else
     let pdb = 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
         if runningOnMono then 
             None 
         else 

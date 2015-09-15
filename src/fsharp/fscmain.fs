@@ -56,7 +56,7 @@ module FSharpResidentCompiler =
         // Use different base channel names on mono and CLR as a CLR remoting process can't talk
         // to a mono server
         static let baseChannelName = 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
                 "FSCChannelMono" 
             else 
@@ -64,7 +64,7 @@ module FSharpResidentCompiler =
                 "FSCChannel"
         static let channelName = baseChannelName + "_" +  domainName + "_" + userName
         static let serverName = 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
                 "FSCServerMono" 
             else
@@ -134,7 +134,7 @@ module FSharpResidentCompiler =
 
             // On Unix, the file permissions of the implicit socket need to be set correctly to make this
             // private to the user.
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
             if runningOnMono then 
               try 
                   let monoPosix = System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
@@ -175,7 +175,7 @@ module FSharpResidentCompiler =
                     Some client
                 with _ ->
                     let procInfo = 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
                         if runningOnMono then
                             let shellName, useShellExecute = 
                                 match System.Environment.GetEnvironmentVariable("FSC_MONO") with 
@@ -278,7 +278,7 @@ module Driver =
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
             }
 
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
         if runningOnMono && argv |> Array.exists  (fun x -> x = "/resident" || x = "--resident") then 
             let argv = argv |> Array.filter (fun x -> x <> "/resident" && x <> "--resident")
 
@@ -317,10 +317,10 @@ do ()
 let main(argv) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
     if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #else
-#if FX_NO_HEAPTERMINATION
+#if NO_HEAPTERMINATION
 #else
     Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #endif

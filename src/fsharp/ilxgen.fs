@@ -2499,7 +2499,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                   false
               elif ilTyArgs.Length = 0 then 
                   false
-#if FX_RUNNING_ON_MONO
+#if ENABLE_MONO_SUPPORT
               elif Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then 
                   false
 #endif
@@ -2514,8 +2514,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
 
           // grab a scope ref for fsi,exe
           let fsiScoRefOpt = 
-#if FX_NO_APP_DOMAINS
-#else
+#if SHADOW_COPY_REFERENCES
               if emitReflectionCode then 
                   let assemblies = System.AppDomain.CurrentDomain.GetAssemblies()
                   assemblies 

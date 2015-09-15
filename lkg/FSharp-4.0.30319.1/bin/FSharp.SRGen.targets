@@ -55,8 +55,10 @@ Copyright (C) Microsoft Corporation. Apache 2.0 License.
     <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx">
       <Output TaskParameter="Include" ItemName="FileWrites"/>
     </CreateItem>
+    <!-- below, turn off this in VS, so that all90.sln does not take forever to load -->
+    <Exec Condition="'$(EnsureThereAreNoUnusedFsSrGenResources)'!='false' And '$(BuildingInsideVisualStudio)'!='true'"
+          Command="$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FindUnusedResources.exe %(FsSrGen.FullPath) $(FSharpSourcesRoot)" />
   </Target>
-
   <ItemGroup>
     <AvailableItemName Include="FsSrGen">
       <Visible>false</Visible>

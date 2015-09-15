@@ -115,7 +115,7 @@ module internal FSharpEnvironment =
 #endif
 
     let hasWow6432Node =
-        use x = Registry.LocalMachine.OpenSubKey("SOFTWARE\Wow6432Node")
+        use x = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node")
         x <> null
 
     let Get32BitRegistryStringValueViaPInvoke(subKey:string) = 

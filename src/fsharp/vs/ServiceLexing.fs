@@ -99,7 +99,7 @@ module internal Flags =
     let loggingTypes             = System.Environment.GetEnvironmentVariable("mFSharp_Logging")
     let logging                  = not (String.IsNullOrEmpty(loggingTypes))
     let initialLoggingGUITypes   = loggingTypes
-#if FX_NO_LOGINGUI
+#if NO_LOGGING_GUI
 #else
     let loggingGUI               = not (String.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("mFSharp_LogToWinForm")))
 #endif
@@ -108,7 +108,7 @@ module internal Flags =
     let loggingTypes             = ""
     let logging                  = false
     let initialLoggingGUITypes   = ""
-#if FX_NO_LOGINGUI
+#if NO_LOGGING_GUI
 #else
     let loggingGUI               = false
 #endif
@@ -116,7 +116,7 @@ module internal Flags =
 #endif
     let doInit = 
         if logging && 
-#if FX_NO_LOGINGUI
+#if NO_LOGGING_GUI
 #else
            not loggingGUI && 
 #endif
@@ -148,7 +148,7 @@ module internal Flags =
         elif loggingStdOut then 
             Trace.Log <- initialLoggingGUITypes
             Trace.Out <- System.Console.Out
-#if FX_NO_LOGINGUI
+#if NO_LOGGING_GUI
 #else
         elif loggingGUI then 
             let f = new System.Windows.Forms.Form(Visible=true,TopMost=true,Width=600,Height=600)
