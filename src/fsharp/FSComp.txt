@@ -1343,3 +1343,4 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3186,pickleMissingDefinition,"An error occurred while reading the F# metadata node at position %d in table '%s' of assembly '%s'. The node had no matching declaration. Please report this warning. You may need to recompile the F# assembly you are using."
 3187,checkNotSufficientlyGenericBecauseOfScope,"Type inference caused the type variable %s to escape its scope. Consider adding an explicit type parameter declaration or adjusting your code to be less generic."
 3188,checkNotSufficientlyGenericBecauseOfScopeAnon,"Type inference caused an inference type variable to escape its scope. Consider adding type annotations to make your code less generic."
+3189,checkRaiseFamilyFunctionArgumentCount,"Redundant arguments are being ignored in function '%s'. Expected %d but got %d arguments."

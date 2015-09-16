@@ -1717,7 +1717,7 @@ module Patterns =
                         ci
                 let paramTypes = mi.GetParameters() |> getTypesFromParamInfos
                 Key(declaringType, tyArgsCount, methodBase.Name, paramTypes, declaringType)
-            | _ -> failwith "Unexpected MethodBase type, %A" (methodBase.GetType()) // per MSDN ConstructorInfo and MethodInfo are the only derived types from MethodBase
+            | _ -> failwithf "Unexpected MethodBase type, %A" (methodBase.GetType()) // per MSDN ConstructorInfo and MethodInfo are the only derived types from MethodBase
 #else
     [<StructuralEquality; NoComparison>]
     type ReflectedDefinitionTableKey = 

@@ -456,7 +456,7 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
          errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)),m))
 
 
-let rec CheckExpr   (cenv:cenv) (env:env) expr = 
+let rec CheckExpr   (cenv:cenv) (env:env) expr =
     CheckExprInContext cenv env expr GeneralContext
 
 and CheckVal (cenv:cenv) (env:env) v m context = 
@@ -583,6 +583,38 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
 
 
     | Expr.App(f,fty,tyargs,argsl,m) ->
+        let (|OptionalCoerce|) = function 
+            | Expr.Op(TOp.Coerce _, _, [Expr.App(f, _, _, [], _)], _) -> f 
+            | x -> x
+        if cenv.reportErrors then
+            let g = cenv.g
+            match f with
+            | OptionalCoerce(Expr.Val(v, _, funcRange)) 
+                when (valRefEq g v g.raise_vref || valRefEq g v g.failwith_vref || valRefEq g v g.null_arg_vref || valRefEq g v g.invalid_op_vref) ->
+                match argsl with
+                | [] | [_] -> ()
+                | _ :: _ :: _ ->
+                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 1, List.length argsl), funcRange)) 
+            | OptionalCoerce(Expr.Val(v, _, funcRange)) when valRefEq g v g.invalid_arg_vref ->
+                match argsl with
+                | [] | [_] | [_; _] -> ()
+                | _ :: _ :: _ :: _ ->
+                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 2, List.length argsl), funcRange))
+            | OptionalCoerce(Expr.Val(failwithfFunc, _, funcRange)) when valRefEq g failwithfFunc g.failwithf_vref  ->
+                match argsl with
+                | Expr.App (Expr.Val(newFormat, _, _), _, [_; typB; typC; _; _], [Expr.Const(Const.String formatString, formatRange, _)], _) :: xs when valRefEq g newFormat g.new_format_vref ->
+                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g formatString typB typC with
+                    | Some n ->
+                        let expected = n + 1
+                        let actual = List.length xs + 1
+                        if expected < actual then
+                            warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(failwithfFunc.DisplayName, expected, actual), funcRange))
+                    | None -> ()
+                | _ ->
+                    ()
+            | _ ->
+                ()
+
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckTypePermitByrefs cenv env m fty;
         CheckTypeInstPermitByrefs cenv env m tyargs;

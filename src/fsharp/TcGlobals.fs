@@ -513,6 +513,18 @@ type public TcGlobals =
       seq_empty_vref            : ValRef
       new_format_info           : IntrinsicValRef
       raise_info                : IntrinsicValRef
+      raise_vref                : ValRef
+      failwith_info             : IntrinsicValRef
+      failwith_vref             : ValRef
+      invalid_arg_info          : IntrinsicValRef
+      invalid_arg_vref          : ValRef
+      null_arg_info             : IntrinsicValRef
+      null_arg_vref             : ValRef
+      invalid_op_info           : IntrinsicValRef
+      invalid_op_vref           : ValRef
+      failwithf_info            : IntrinsicValRef
+      failwithf_vref            : ValRef
+
       lazy_force_info           : IntrinsicValRef
       lazy_create_info          : IntrinsicValRef
 
@@ -911,7 +923,13 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
   let unchecked_unary_minus_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryNegation"                     ,None                 ,None          ,[vara],     mk_unop_ty varaTy)  
   let unchecked_unary_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  ,None                 ,Some "Not"    ,[],     mk_unop_ty bool_ty)  
 
-  let raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                ,None                 ,Some "Raise"  ,[vara],([[mkSysNonGenericTy sys "Exception"]],varaTy))  
+  let raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                ,None                 ,Some "Raise"  ,[vara],     ([[mkSysNonGenericTy sys "Exception"]],varaTy))  
+  let failwith_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "failwith"                             ,None               ,Some "FailWith" ,[vara],     ([[string_ty]],varaTy))  
+  let invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           ,None             ,Some "InvalidArg" ,[vara],     ([[string_ty]; [string_ty]],varaTy))  
+  let null_arg_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nullArg"                              ,None                ,Some "NullArg" ,[vara],     ([[string_ty]],varaTy))  
+  let invalid_op_info            = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidOp"                            ,None              ,Some "InvalidOp" ,[vara],     ([[string_ty]],varaTy))  
+  let failwithf_info             = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "failwithf"                       ,None, Some "PrintFormatToStringThenFail" ,[vara;varb],([[mk_format4_ty varaTy unit_ty string_ty string_ty]], varaTy))  
+  
   let reraise_info               = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "reraise"                              ,None                 ,Some "Reraise",[vara],     ([[unit_ty]],varaTy))
   let typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               ,None                 ,Some "TypeOf" ,[vara],     ([],system_Type_typ))  
   let methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       ,None                 ,Some "MethodHandleOf",[vara;varb],([[varaTy --> varbTy]],system_RuntimeMethodHandle_typ))
@@ -1352,6 +1370,18 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     equals_operator_info     = equals_operator_info
 
     raise_info                 = raise_info
+    raise_vref                 = ValRefForIntrinsic raise_info
+    failwith_info              = failwith_info
+    failwith_vref              = ValRefForIntrinsic failwith_info
+    invalid_arg_info           = invalid_arg_info
+    invalid_arg_vref           = ValRefForIntrinsic invalid_arg_info
+    null_arg_info              = null_arg_info
+    null_arg_vref              = ValRefForIntrinsic null_arg_info
+    invalid_op_info            = invalid_op_info
+    invalid_op_vref            = ValRefForIntrinsic invalid_op_info
+    failwithf_info             = failwithf_info
+    failwithf_vref             = ValRefForIntrinsic failwithf_info
+
     reraise_info               = reraise_info
     reraise_vref               = ValRefForIntrinsic reraise_info
     methodhandleof_info        = methodhandleof_info
