@@ -632,7 +632,8 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
         let ty = tryMkForallTy tps rty in 
         CheckLambdas None cenv env false topValInfo false expr m ty
 
-    | Expr.TyChoose(_,e1,_)  -> 
+    | Expr.TyChoose(tps,e1,_)  -> 
+        let env = BindTypars cenv.g env tps 
         CheckExpr cenv env e1 
 
     | Expr.Match(_,_,dtree,targets,m,ty) -> 

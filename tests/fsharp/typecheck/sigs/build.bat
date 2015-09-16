@@ -1,9 +1,18 @@
 @if "%_echo%"=="" echo off
 
 setlocal
-REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
 
+REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
 call %~d0%~p0..\..\..\config.bat
+
+"%FSC%" %fsc_flags% --target:exe -o:pos22.exe  pos22.fs 
+@if ERRORLEVEL 1 goto Error
+
+"%PEVERIFY%" pos22.exe
+@if ERRORLEVEL 1 goto Error
+
+pos22.exe
+@if ERRORLEVEL 1 goto Error
 
 call ..\..\single-neg-test.bat neg93
 @if ERRORLEVEL 1 goto Error
