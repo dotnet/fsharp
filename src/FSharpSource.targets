@@ -41,6 +41,11 @@
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
               </PropertyGroup>
+              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' != 'true' and '$(TargetFramework)' != 'coreclr'">
+                <OtherFlags>$(OtherFlags) --version:4.4.0.9055 --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
+                <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
+                <StrongNames>true</StrongNames>
+              </PropertyGroup>
             </Otherwise>
           </Choose>
         </When>
