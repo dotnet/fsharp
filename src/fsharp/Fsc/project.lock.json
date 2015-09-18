@@ -3,9 +3,9 @@
   "version": -9996,
   "targets": {
     "DNXCore,Version=v5.0": {
-      "System.Collections/4.0.11-beta-23316": {
+      "System.Collections/4.0.11-beta-23318": {
         "dependencies": {
-          "System.Runtime": "4.0.21-beta-23316"
+          "System.Runtime": "4.0.21-beta-23318"
         },
         "compile": {
           "ref/dotnet/System.Collections.dll": {}
@@ -14,7 +14,7 @@
           "lib/DNXCore50/System.Collections.dll": {}
         }
       },
-      "System.Console/4.0.0-beta-23316": {
+      "System.Console/4.0.0-beta-23318": {
         "dependencies": {
           "System.Runtime": "4.0.0",
           "System.IO": "4.0.0"
@@ -23,7 +23,7 @@
           "ref/dotnet/System.Console.dll": {}
         }
       },
-      "System.Diagnostics.Debug/4.0.11-beta-23316": {
+      "System.Diagnostics.Debug/4.0.11-beta-23318": {
         "dependencies": {
           "System.Runtime": "4.0.0"
         },
@@ -45,7 +45,7 @@
           "lib/DNXCore50/System.Globalization.dll": {}
         }
       },
-      "System.IO/4.0.11-beta-23316": {
+      "System.IO/4.0.11-beta-23318": {
         "dependencies": {
           "System.Runtime": "4.0.20",
           "System.Text.Encoding": "4.0.0",
@@ -73,7 +73,7 @@
           "lib/dotnet/System.Linq.dll": {}
         }
       },
-      "System.Linq.Expressions/4.0.11-beta-23316": {
+      "System.Linq.Expressions/4.0.11-beta-23318": {
         "dependencies": {
           "System.Runtime": "4.0.20",
           "System.Resources.ResourceManager": "4.0.0",
@@ -113,12 +113,12 @@
           "lib/dotnet/System.ObjectModel.dll": {}
         }
       },
-      "System.Private.Uri/4.0.1-beta-23316": {
+      "System.Private.Uri/4.0.1-beta-23318": {
         "runtime": {
           "lib/DNXCore50/System.Private.Uri.dll": {}
         }
       },
-      "System.Reflection/4.1.0-beta-23316": {
+      "System.Reflection/4.1.0-beta-23318": {
         "dependencies": {
           "System.Runtime": "4.0.20",
           "System.IO": "4.0.0",
@@ -207,9 +207,9 @@
           "lib/DNXCore50/System.Resources.ResourceManager.dll": {}
         }
       },
-      "System.Runtime/4.0.21-beta-23316": {
+      "System.Runtime/4.0.21-beta-23318": {
         "dependencies": {
-          "System.Private.Uri": "4.0.1-beta-23316"
+          "System.Private.Uri": "4.0.1-beta-23318"
         },
         "compile": {
           "ref/dotnet/System.Runtime.dll": {}
@@ -260,12 +260,12 @@
     }
   },
   "libraries": {
-    "System.Collections/4.0.11-beta-23316": {
+    "System.Collections/4.0.11-beta-23318": {
       "serviceable": true,
-      "sha512": "Vy7iMYmKHU8xYXUVl+tAKyCmaaLnBf52SwaI5V1jrSStrY4C7m45g0rqpgxGJvnwPvC9+/KcbuBU1g7mMnMLlA==",
+      "sha512": "4qsB9Gpuyym2FQS8LAdkA2xfUWcHDCQ9o5D96KAGpqz6p+54kLuHGmQW2klpd6JRXuqkPAnZ83J/wH4UsIMHBw==",
       "files": [
-        "System.Collections.4.0.11-beta-23316.nupkg",
-        "System.Collections.4.0.11-beta-23316.nupkg.sha512",
+        "System.Collections.4.0.11-beta-23318.nupkg",
+        "System.Collections.4.0.11-beta-23318.nupkg.sha512",
         "System.Collections.nuspec",
         "System.Collections.xml",
         "de/System.Collections.xml",
@@ -293,13 +293,13 @@
         "zh-hant/System.Collections.xml"
       ]
     },
-    "System.Console/4.0.0-beta-23316": {
+    "System.Console/4.0.0-beta-23318": {
       "serviceable": true,
-      "sha512": "pYDflUHKD2oIllR+HsbgfkbwNsjivEgYsFjM3eZWS6KVqa5vYVMl93OvC+WfB0Va3Q9gAZYzxXQJUv6gWoJGLw==",
+      "sha512": "7O8pbiNDUzI4arqyeMUFOFBiUAY1eHh0z4HclT8iPi+P+i5TZcBP65JoqdS784HQGdkdKUAidJlpCIi7knHvzA==",
       "files": [
         "runtime.json",
-        "System.Console.4.0.0-beta-23316.nupkg",
-        "System.Console.4.0.0-beta-23316.nupkg.sha512",
+        "System.Console.4.0.0-beta-23318.nupkg",
+        "System.Console.4.0.0-beta-23318.nupkg.sha512",
         "System.Console.nuspec",
         "lib/MonoAndroid10/_._",
         "lib/MonoTouch10/_._",
@@ -314,12 +314,12 @@
         "ref/xamarinmac20/_._"
       ]
     },
-    "System.Diagnostics.Debug/4.0.11-beta-23316": {
+    "System.Diagnostics.Debug/4.0.11-beta-23318": {
       "serviceable": true,
-      "sha512": "AO24nxhwPNAnYbEMEDW8uVB6ZBTY2KcuDEFAbT+BcWJZrnf4EL8M4oEx8ak/Ocf7y68ArXP+t4D2nhcNJ8Rf5A==",
+      "sha512": "A9yWBcg2aD2498nv1VytJGzFYumz15MWGT67r4c93kYAONj94vTFZtzwiPBO7DTjphrP6nBqcNonXrS3GqIOGw==",
       "files": [
-        "System.Diagnostics.Debug.4.0.11-beta-23316.nupkg",
-        "System.Diagnostics.Debug.4.0.11-beta-23316.nupkg.sha512",
+        "System.Diagnostics.Debug.4.0.11-beta-23318.nupkg",
+        "System.Diagnostics.Debug.4.0.11-beta-23318.nupkg.sha512",
         "System.Diagnostics.Debug.nuspec",
         "System.Diagnostics.Debug.xml",
         "de/System.Diagnostics.Debug.xml",
@@ -379,12 +379,12 @@
         "runtimes/win8-aot/lib/netcore50/System.Globalization.dll"
       ]
     },
-    "System.IO/4.0.11-beta-23316": {
+    "System.IO/4.0.11-beta-23318": {
       "serviceable": true,
-      "sha512": "fzSdqa/Rx6B3WnLI20OVAdvVaf1i7GuLoutbGlm+mCj2fw6ZThwXPB5HwbonExpKDXJjN/YmGBQVypyf4In6bQ==",
+      "sha512": "2boAmDUqiwtkgUViyPYDgsUnIjk+YKeBxmiZHit7oNfRS1q7NmnRngOi4uqyOOZUwNErSgbgU1URTlNTCWVHfg==",
       "files": [
-        "System.IO.4.0.11-beta-23316.nupkg",
-        "System.IO.4.0.11-beta-23316.nupkg.sha512",
+        "System.IO.4.0.11-beta-23318.nupkg",
+        "System.IO.4.0.11-beta-23318.nupkg.sha512",
         "System.IO.nuspec",
         "System.IO.xml",
         "de/System.IO.xml",
@@ -444,13 +444,13 @@
         "ref/wpa81/_._"
       ]
     },
-    "System.Linq.Expressions/4.0.11-beta-23316": {
+    "System.Linq.Expressions/4.0.11-beta-23318": {
       "serviceable": true,
-      "sha512": "UCJjx+OtH+RDmGWE2eTbxWaktSmNVGM/OGD/qWYu6Y43ZY/zyJ9Hujkj26VT6IpM08Bxxlwey54VJTdITCBYEA==",
+      "sha512": "hH1QNpeP5hNqVUej2JN7LKCet8xT0stGTwT14RMUIIR5JDiJNFrzlwqTeYPdjkLl/xtIwi704oyN+VvZfgslhw==",
       "files": [
         "runtime.json",
-        "System.Linq.Expressions.4.0.11-beta-23316.nupkg",
-        "System.Linq.Expressions.4.0.11-beta-23316.nupkg.sha512",
+        "System.Linq.Expressions.4.0.11-beta-23318.nupkg",
+        "System.Linq.Expressions.4.0.11-beta-23318.nupkg.sha512",
         "System.Linq.Expressions.nuspec",
         "System.Linq.Expressions.xml",
         "de/System.Linq.Expressions.xml",
@@ -509,12 +509,12 @@
         "ref/xamarinmac20/_._"
       ]
     },
-    "System.Private.Uri/4.0.1-beta-23316": {
+    "System.Private.Uri/4.0.1-beta-23318": {
       "serviceable": true,
-      "sha512": "Qi0qS3nSviydx/iFXFW607q+dWWRHIrEgTyHEuxgcVJZqbX0G5HsLgg6MWWzCLJP7Ezle6I6LG8AiV/1GxloNA==",
+      "sha512": "9A5d6il+bk2MzcHwkB3NU6iUFkW+jq+pzt1DQtyY2GipPzfE6njwwb1FlAhbr6kjICNmt8GysEqKXHLhN35gKQ==",
       "files": [
-        "System.Private.Uri.4.0.1-beta-23316.nupkg",
-        "System.Private.Uri.4.0.1-beta-23316.nupkg.sha512",
+        "System.Private.Uri.4.0.1-beta-23318.nupkg",
+        "System.Private.Uri.4.0.1-beta-23318.nupkg.sha512",
         "System.Private.Uri.nuspec",
         "lib/DNXCore50/System.Private.Uri.dll",
         "lib/netcore50/System.Private.Uri.dll",
@@ -523,12 +523,12 @@
         "runtimes/win8-aot/lib/netcore50/System.Private.Uri.dll"
       ]
     },
-    "System.Reflection/4.1.0-beta-23316": {
+    "System.Reflection/4.1.0-beta-23318": {
       "serviceable": true,
-      "sha512": "OYyjvBVU5zxz6pb3rlJFVQhajQVoKJKg3VanXAD9N+A5NRuvuYVkAEYr4dpzc5ELLXIadPWP2aHOWbbMrzsXDg==",
+      "sha512": "fY0Q71yAn/EQDdfs0UWrgSD/mzosfksuxegYaQiAYyWi8QEuvvQOLohuhQeNxZ7tA/LPg7BO462oyvpgeJqtSA==",
       "files": [
-        "System.Reflection.4.1.0-beta-23316.nupkg",
-        "System.Reflection.4.1.0-beta-23316.nupkg.sha512",
+        "System.Reflection.4.1.0-beta-23318.nupkg",
+        "System.Reflection.4.1.0-beta-23318.nupkg.sha512",
         "System.Reflection.nuspec",
         "lib/DNXCore50/System.Reflection.dll",
         "lib/MonoAndroid10/_._",
@@ -730,12 +730,12 @@
         "runtimes/win8-aot/lib/netcore50/System.Resources.ResourceManager.dll"
       ]
     },
-    "System.Runtime/4.0.21-beta-23316": {
+    "System.Runtime/4.0.21-beta-23318": {
       "serviceable": true,
-      "sha512": "EcW4YvGNjv1r3l+mNCDUQNtDWIoe1Qnb2LcOcn1lBMAfC37w0n6bgJq3dssH0LXg/QX1GmD5jDrRjRGjVai35Q==",
+      "sha512": "Hd/muCfg7dmlM8JHXav2ga0sbo9onqdQrKO6e4FKZISoLmrwiHgZn+dWRokQIPHy75Ln63obTPknrBdF4a/xYQ==",
       "files": [
-        "System.Runtime.4.0.21-beta-23316.nupkg",
-        "System.Runtime.4.0.21-beta-23316.nupkg.sha512",
+        "System.Runtime.4.0.21-beta-23318.nupkg",
+        "System.Runtime.4.0.21-beta-23318.nupkg.sha512",
         "System.Runtime.nuspec",
         "System.Runtime.xml",
         "de/System.Runtime.xml",
