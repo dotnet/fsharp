@@ -136,9 +136,9 @@ set command_line_args=%command_line_args% --dnuPath:"%~d0%~p0..\..\packages\dnx-
 set command_line_args=%command_line_args% --nugetSources:https://www.myget.org/F/dotnet-core;https://www.myget.org/F/dotnet-corefx;https://www.myget.org/F/dotnet-buildtools
 set command_line_args=%command_line_args% --define:CoreClr --define:NetCore
 set command_line_args=%command_line_args% --InitializeForTests:true
-set command_line_args=%command_line_args% --output:%~d0%~p0..\..\%flavor%\coreclr\Testing\fsharp\core\%TestCaseName%\output\test.exe
-set command_line_args=%command_line_args% --testDirectory:%~d0%~p0..\..\%flavor%\coreclr\Testing\fsharp\core\%TestCaseName%\TestDirectory
-set command_line_args=%command_line_args% --compilerDirectory:%~d0%~p0..\..\%flavor%\coreclr\Testing\fsharp\core\%TestCaseName%\Compiler
+set command_line_args=%command_line_args% --output:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
+set command_line_args=%command_line_args% --testDirectory:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\TestDirectory
+set command_line_args=%command_line_args% --compilerDirectory:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\Compiler
 set command_line_args=%command_line_args% --compilerJsonLock:"%~d0%~p0..\..\src\fsharp\Fsc\project.lock.json"
 echo %command_line_args%
 fsi %command_line_args%
