@@ -17,9 +17,11 @@
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <TargetFrameworkVersion Condition="'$(TargetFramework)'=='net20'">v2.0</TargetFrameworkVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags) --targetprofile:netcore</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="InternalsVisibleTo.fs" />
@@ -33,12 +35,21 @@
       <Link>fsc.exe.config</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="..\..\windows\default.win32manifest">
+      <Link>default.win32manifest</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+      <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Runtime.Remoting" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
       <Name>FSharp.Compiler</Name>

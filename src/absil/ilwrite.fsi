@@ -7,6 +7,9 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 
+#if FX_NO_KEY_SIGNING
+type ILStrongNameSigner = unit
+#else
 [<Sealed>]
 type ILStrongNameSigner =
     member PublicKey: byte[]
@@ -14,11 +17,15 @@ type ILStrongNameSigner =
     static member OpenPublicKey: byte[] -> ILStrongNameSigner
     static member OpenKeyPairFile: string -> ILStrongNameSigner
     static member OpenKeyContainer: string -> ILStrongNameSigner
+#endif
 
 type options =
  { ilg: ILGlobals
    pdbfile: string option;
+#if FX_NO_KEY_SIGNING
+#else
    signer : ILStrongNameSigner option;
+#endif
    fixupOverlappingSequencePoints : bool;
    emitTailcalls: bool;
    showTimes : bool;

@@ -2499,8 +2499,10 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                   false
               elif ilTyArgs.Length = 0 then 
                   false
+#if ENABLE_MONO_SUPPORT
               elif Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then 
                   false
+#endif
               elif newobj then
                   false
               else
@@ -2512,6 +2514,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
 
           // grab a scope ref for fsi,exe
           let fsiScoRefOpt = 
+#if SHADOW_COPY_REFERENCES
               if emitReflectionCode then 
                   let assemblies = System.AppDomain.CurrentDomain.GetAssemblies()
                   assemblies 
@@ -2520,6 +2523,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                             Some (ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName (a.GetName()))) 
                         else None )
               else
+#endif
                   None                             
 
           

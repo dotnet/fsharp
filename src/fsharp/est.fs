@@ -7,7 +7,6 @@ namespace Microsoft.FSharp.Compiler
 module internal ExtensionTyping =
     open System
     open System.IO
-    open System.Reflection
     open System.Collections.Generic
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Compiler.ErrorLogger
@@ -16,6 +15,12 @@ module internal ExtensionTyping =
     open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
     open Internal.Utilities.FileSystem
+
+#if FX_RESHAPED_REFLECTION
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#else
+    type BindingFlags = System.Reflection.BindingFlags
+#endif
 
 #if TYPE_PROVIDER_SECURITY
     module internal GlobalsTheLanguageServiceCanPoke =
@@ -262,7 +267,7 @@ module internal ExtensionTyping =
             if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
                 loadFromDir designTimeAssemblyNameString
             else
-                let name = AssemblyName designTimeAssemblyNameString
+                let name = System.Reflection.AssemblyName designTimeAssemblyNameString
                 if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
                     let fileName = designTimeAssemblyNameString+".dll"
                     loadFromDir fileName
@@ -303,7 +308,7 @@ module internal ExtensionTyping =
             with err ->
                 let strip (e:exn) =
                     match e with
-                    |   :? TargetInvocationException as e -> e.InnerException
+                    |   :? System.Reflection.TargetInvocationException as e -> e.InnerException
                     |   :? TypeInitializationException as e -> e.InnerException
                     |   _ -> e
                 let e = strip (strip err)
@@ -331,9 +336,10 @@ module internal ExtensionTyping =
             raise (TypeProviderError(FSComp.SR.etProviderDoesNotHaveValidConstructor(), typeProviderImplementationType.FullName, m))
 
     let GetTypeProvidersOfAssembly
-            (displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
-             validateTypeProviders:bool, 
+            (
 #if TYPE_PROVIDER_SECURITY
+            displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option, 
+             validateTypeProviders:bool, 
              approvals, 
 #endif
              runTimeAssemblyFileName:string, 
@@ -367,7 +373,7 @@ module internal ExtensionTyping =
                 try
                     let designTimeAssemblyName = 
                         try
-                            Some (AssemblyName designTimeAssemblyNameString)
+                            Some (System.Reflection.AssemblyName designTimeAssemblyNameString)
                         with :? ArgumentException ->
                             errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runTimeAssemblyFileName,designTimeAssemblyNameString),m))
                             None
@@ -449,8 +455,11 @@ module internal ExtensionTyping =
                     | -1 -> ()
                     | n -> errorR(Error(FSComp.SR.etIllegalCharactersInNamespaceName(string s.[n],s),m))  
 
-
-    let bindingFlags = BindingFlags.DeclaredOnly ||| BindingFlags.Static ||| BindingFlags.Instance ||| BindingFlags.Public
+    let bindingFlags =
+        BindingFlags.DeclaredOnly |||
+        BindingFlags.Static |||
+        BindingFlags.Instance |||
+        BindingFlags.Public
 
     // NOTE: for the purposes of remapping the closure of generated types, the FullName is sufficient.
     // We do _not_ rely on object identity or any other notion of equivalence provided by System.Type
@@ -518,22 +527,34 @@ module internal ExtensionTyping =
     type CustomAttributeData = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeData
     type CustomAttributeNamedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeNamedArgument
     type CustomAttributeTypedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeTypedArgument
+#else
+    type CustomAttributeData = System.Reflection.CustomAttributeData
+    type CustomAttributeNamedArgument = System.Reflection.CustomAttributeNamedArgument
+    type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
 #endif
-
 
     [<AllowNullLiteral; Sealed>]
     type ProvidedType (x:System.Type, ctxt: ProvidedTypeContext) =
+#if FX_RESHAPED_REFLECTION
+        inherit ProvidedMemberInfo(x.GetTypeInfo(),ctxt)
+#if FX_NO_CUSTOMATTRIBUTEDATA
+        let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x.GetTypeInfo()))
+#else
+        let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetTypeInfo().GetCustomAttributesData())
+#endif
+#else
         inherit ProvidedMemberInfo(x,ctxt)
 #if FX_NO_CUSTOMATTRIBUTEDATA
         let provide () = ProvidedCustomAttributeProvider.Create (fun provider -> provider.GetMemberCustomAttributesData(x))
 #else
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetCustomAttributesData())
 #endif
+#endif
         interface IProvidedCustomAttributeProvider with 
             member __.GetHasTypeProviderEditorHideMethodsAttribute(provider) = provide().GetHasTypeProviderEditorHideMethodsAttribute(provider)
             member __.GetDefinitionLocationAttribute(provider) = provide().GetDefinitionLocationAttribute(provider)
             member __.GetXmlDocAttributes(provider) = provide().GetXmlDocAttributes(provider)
-        
+
         // The type provider spec distinguishes between 
         //   - calls that can be made on provided types (i.e. types given by ReturnType, ParameterType, and generic argument types)
         //   - calls that can be made on provided type definitions (types returned by ResolveTypeName, GetTypes etc.)
@@ -557,7 +578,7 @@ module internal ExtensionTyping =
         member __.GetConstructors() = x.GetConstructors(bindingFlags) |> ProvidedConstructorInfo.CreateArray ctxt
         member __.GetFields() = x.GetFields(bindingFlags) |> ProvidedFieldInfo.CreateArray ctxt
         member __.GetField nm = x.GetField(nm, bindingFlags) |> ProvidedFieldInfo.Create ctxt
-        member __.GetAllNestedTypes() = x.GetNestedTypes(bindingFlags ||| System.Reflection.BindingFlags.NonPublic) |> ProvidedType.CreateArray ctxt
+        member __.GetAllNestedTypes() = x.GetNestedTypes(bindingFlags ||| BindingFlags.NonPublic) |> ProvidedType.CreateArray ctxt
         member __.GetNestedTypes() = x.GetNestedTypes(bindingFlags) |> ProvidedType.CreateArray ctxt
         /// Type.GetNestedType(string) can return null if there is no nested type with given name
         member __.GetNestedType nm = x.GetNestedType (nm, bindingFlags) |> ProvidedType.Create ctxt
@@ -662,6 +683,7 @@ module internal ExtensionTyping =
 #else
         let provide () = ProvidedCustomAttributeProvider.Create (fun _provider -> x.GetCustomAttributesData())
 #endif
+
         member __.Name = x.Name
         /// DeclaringType can be null if MemberInfo belongs to Module, not to Type
         member __.DeclaringType = ProvidedType.Create ctxt x.DeclaringType
@@ -687,7 +709,7 @@ module internal ExtensionTyping =
 #endif
         member __.IsOptional = x.IsOptional
         member __.RawDefaultValue = x.RawDefaultValue
-        member __.HasDefaultValue = x.Attributes.HasFlag(ParameterAttributes.HasDefault)
+        member __.HasDefaultValue = x.Attributes.HasFlag(System.Reflection.ParameterAttributes.HasDefault)
         /// ParameterInfo.ParameterType cannot be null
         member __.ParameterType = ProvidedType.CreateWithNullCheck ctxt "ParameterType" x.ParameterType 
         static member Create ctxt x = match x with null -> null | t -> ProvidedParameterInfo (t,ctxt)
@@ -743,10 +765,10 @@ module internal ExtensionTyping =
                     itp2.GetStaticParametersForMethod(x)  
                 | _ -> 
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement an appropriate method called GetStaticParametersForMethod
-                    let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<MethodBase> |], null)  
+                    let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase> |], null)  
                     if isNull meth then [| |] else
                     let paramsAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x |], null) 
-                    paramsAsObj :?> ParameterInfo[] 
+                    paramsAsObj :?> System.Reflection.ParameterInfo[] 
 
             staticParams |> ProvidedParameterInfo.CreateArray ctxt
 
@@ -759,17 +781,17 @@ module internal ExtensionTyping =
                     itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)  
                 | _ -> 
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement a method called GetStaticParametersForMethod
-                    let meth = provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null, [| typeof<MethodBase>; typeof<string>; typeof<obj[]> |], null)  
+                    let meth = provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase>; typeof<string>; typeof<obj[]> |], null)  
                     match meth with 
                     | null -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
                     | _ -> 
                     let mbAsObj = meth.Invoke(provider, bindingFlags ||| BindingFlags.InvokeMethod, null, [| box x; box fullNameAfterArguments; box staticArgs  |], null) 
                     match mbAsObj with 
-                    | :? MethodBase as mb -> mb
+                    | :? System.Reflection.MethodBase as mb -> mb
                     | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
             match mb with 
-            | :? MethodInfo as mi -> (mi |> ProvidedMethodInfo.Create ctxt : ProvidedMethodInfo) :> ProvidedMethodBase
-            | :? ConstructorInfo as ci -> (ci |> ProvidedConstructorInfo.Create ctxt : ProvidedConstructorInfo) :> ProvidedMethodBase
+            | :? System.Reflection.MethodInfo as mi -> (mi |> ProvidedMethodInfo.Create ctxt : ProvidedMethodInfo) :> ProvidedMethodBase
+            | :? System.Reflection.ConstructorInfo as ci -> (ci |> ProvidedConstructorInfo.Create ctxt : ProvidedConstructorInfo) :> ProvidedMethodBase
             | _ -> failwith (FSComp.SR.estApplyStaticArgumentsForMethodNotImplemented())
 
 
@@ -806,7 +828,10 @@ module internal ExtensionTyping =
 
         static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedMethodInfo.Create ctxt)
         member __.Handle = x
+#if FX_NO_REFLECTION_METADATA_TOKENS
+#else
         member __.MetadataToken = x.MetadataToken
+#endif
         override __.Equals y = assert false; match y with :? ProvidedMethodInfo as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
 

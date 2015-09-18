@@ -284,7 +284,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         member this.SystemRuntimeAssemblyVersion  with get() = systemRuntimeAssemblyVersion and set v = systemRuntimeAssemblyVersion <- v
         member this.SystemRuntimeContainsType (typeName : string) = systemRuntimeContainsType typeName
 
-#if SILVERLIGHT_COMPILER_FSHARP_CORE
+#if FX_NO_CUSTOMATTRIBUTEDATA
     type IProvidedCustomAttributeTypedArgument =
         abstract ArgumentType: System.Type
         abstract Value: System.Object
@@ -292,6 +292,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type IProvidedCustomAttributeNamedArgument =
         abstract ArgumentType: System.Type
         abstract MemberInfo: System.Reflection.MemberInfo
+        abstract MemberName: System.String
         abstract TypedValue: IProvidedCustomAttributeTypedArgument
 
     type IProvidedCustomAttributeData =
@@ -318,7 +319,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract Invalidate : Microsoft.FSharp.Control.IEvent<System.EventHandler, System.EventArgs>
         abstract GetGeneratedAssemblyContents : assembly:System.Reflection.Assembly -> byte[]
 
-#if SILVERLIGHT_COMPILER_FSHARP_CORE
+#if FX_NO_CUSTOMATTRIBUTEDATA
         abstract GetMemberCustomAttributesData : assembly:System.Reflection.MemberInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
         abstract GetParameterCustomAttributesData : assembly:System.Reflection.ParameterInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
 #endif

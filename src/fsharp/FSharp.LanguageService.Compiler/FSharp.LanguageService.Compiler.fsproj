@@ -18,9 +18,10 @@
     <DefineConstants>EXTENSIBLE_DUMPER;$(DefineConstants)</DefineConstants>
     <DefineConstants>TYPE_PROVIDER_SECURITY;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_COMPILER_BACKEND;$(DefineConstants)</DefineConstants>
-    <DefineConstants>NO_PDB_READER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>NO_PDB_WRITER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>FX_NO_PDB_READER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>FX_NO_PDB_WRITER;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(TargetFramework)'=='coreclr'">$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <NoWarn>$(NoWarn);62;9;75</NoWarn>
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -33,6 +34,9 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="..\..\utils\reshaped_reflection.fs">
+      <Link>Reflection\reshaped_reflection.fs</Link>
+    </Compile>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
     </Compile>

@@ -203,7 +203,12 @@ namespace Internal.Utilities.Text.Lexing
                         // which covers all Unicode characters not covered in other
                         // ways
                         let baseForUnicodeCategories = numLowUnicodeChars+numSpecificUnicodeChars*2
-                        let unicodeCategory = System.Char.GetUnicodeCategory(inp)
+                        let unicodeCategory = 
+#if FX_RESHAPED_GLOBALIZATION
+                            System.Globalization.CharUnicodeInfo.GetUnicodeCategory(inp)
+#else
+                            System.Char.GetUnicodeCategory(inp)
+#endif
                         //System.Console.WriteLine("inp = {0}, unicodeCategory = {1}", [| box inp; box unicodeCategory |]);
                         int trans.[state].[baseForUnicodeCategories + int32 unicodeCategory]
                     else 

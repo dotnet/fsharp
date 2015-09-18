@@ -295,7 +295,7 @@ type TcConfigBuilder =
       mutable maxErrors : int
       mutable abortOnError : bool
       mutable baseAddress : int32 option
- #if DEBUG
+#if DEBUG
       mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
 #endif
@@ -307,7 +307,11 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Opt.OptimizationSettings 
       mutable emitTailcalls : bool
+#if PREFERRED_UI_LANG
+      mutable preferredUiLang: string option
+#else
       mutable lcid         : int option
+#endif
       mutable productNameForBannerText : string
       mutable showBanner  : bool
       mutable showTimes : bool
@@ -328,8 +332,10 @@ type TcConfigBuilder =
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
-      mutable shadowCopyReferences : bool }
-
+#if SHADOW_COPY_REFERENCES
+      mutable shadowCopyReferences : bool
+#endif
+    }
 
     static member CreateNew : 
         defaultFSharpBinariesDir: string * 
@@ -451,7 +457,11 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Opt.OptimizationSettings 
     member emitTailcalls : bool
-    member lcid          : int option
+#if PREFERRED_UI_LANG
+    member preferredUiLang: string option
+#else
+    member lcid         : int option
+#endif
     member optsOn        : bool 
     member productNameForBannerText : string
     member showBanner  : bool
@@ -487,8 +497,9 @@ type TcConfig =
     member sqmSessionGuid : System.Guid option
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
+#if SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
- 
+#endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
 
 
@@ -566,7 +577,11 @@ type TcImports =
     member SystemRuntimeContainsType : string -> bool
 
     static member BuildFrameworkTcImports      : TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> TcGlobals * TcImports
+#if TYPE_PROVIDER_SECURITY
     static member BuildNonFrameworkTcImports   : (string->unit) option * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
+#else
+    static member BuildNonFrameworkTcImports   : TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
+#endif
     static member BuildTcImports               : TcConfigProvider -> TcGlobals * TcImports
 
 //----------------------------------------------------------------------------

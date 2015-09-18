@@ -23,11 +23,11 @@ module coreclrutilities
 
     type System.Environment with 
         static member GetCommandLineArgs() = 
-        let cl = 
-            let c = UnsafeNativeMethods.GetCommandLine()
-            if c = IntPtr.Zero then "" 
-            else Marshal.PtrToStringUni(c)
-        cl.Split(' ')
+            let cl = 
+                let c = UnsafeNativeMethods.GetCommandLine()
+                if c = IntPtr.Zero then "" 
+                else Marshal.PtrToStringUni(c)
+            cl.Split(' ')
 
     [<Flags>]
     type BindingFlags =

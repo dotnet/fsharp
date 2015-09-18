@@ -1959,10 +1959,10 @@ namespace Microsoft.FSharp.Control
 #if FX_ATLEAST_PORTABLE
                         let invokeMeth = (typeof<Closure<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
                         System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
-#else                    
+#else
                         System.Delegate.CreateDelegate(typeof<'Delegate>, obj, "Invoke") :?> 'Delegate
-#endif                        
-                    
+#endif
+
                     // Start listening to events
                     event.AddHandler(del)
 

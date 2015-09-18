@@ -14,6 +14,14 @@ namespace Microsoft.FSharp.Compiler
 
 module internal MSBuildResolver = 
 
+#if FX_RESHAPED_REFLECTION
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+#if RESHAPED_MSBUILD
+    open Microsoft.FSharp.Compiler.MsBuildAdapters
+    open Microsoft.FSharp.Compiler.ToolLocationHelper
+#endif
+
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
     exception ResolutionFailure
     
@@ -25,10 +33,12 @@ module internal MSBuildResolver =
         | GlobalAssemblyCache
         | Path of string
         | Unknown
-            
-    type ResolutionEnvironment = CompileTimeLike | RuntimeLike | DesigntimeLike
-    
 
+#if FX_MSBUILDRESOLVER_RUNTIMELIKE
+    type ResolutionEnvironment = CompileTimeLike | RuntimeLike | DesigntimeLike
+#else
+    type ResolutionEnvironment = CompileTimeLike | DesigntimeLike
+#endif
     open System
     open Microsoft.Build.Tasks
     open Microsoft.Build.Utilities
@@ -134,7 +144,7 @@ module internal MSBuildResolver =
             match ToolLocationHelper.GetPathToDotNetFrameworkReferenceAssemblies v with
             | null -> []
             | x -> [x]
-        | None -> []        
+        | None -> []
 #else
         // FX_ATLEAST_45 is not defined for step when we build compiler with proto compiler.
         ignore version
@@ -249,15 +259,21 @@ module internal MSBuildResolver =
                     logerror code message
                 with e ->
                     backgroundException := Some(e)     
-                    foregrounded := ForegroundedError(code,message) :: !foregrounded                             
-                
-                
+                    foregrounded := ForegroundedError(code,message) :: !foregrounded
+
         let engine = { new IBuildEngine with 
                     member be.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
+#if RESHAPED_MSBUILD
+                    member be.LogCustomEvent(e) = logmessage ((e.GetPropertyValue("Message")) :?> string)
+                    member be.LogErrorEvent(e) = logerror ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string) 
+                    member be.LogMessageEvent(e) = logmessage ((e.GetPropertyValue("Message")) :?> string) 
+                    member be.LogWarningEvent(e) = logwarning ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string) 
+#else
                     member be.LogCustomEvent(e) = logmessage e.Message
                     member be.LogErrorEvent(e) = logerror e.Code e.Message
                     member be.LogMessageEvent(e) = logmessage e.Message
                     member be.LogWarningEvent(e) = logwarning e.Code e.Message
+#endif
                     member be.ColumnNumberOfTaskNode with get() = 1
                     member be.LineNumberOfTaskNode with get() = 1
                     member be.ContinueOnError with get() = true
@@ -283,20 +299,23 @@ module internal MSBuildResolver =
         rar.FindSerializationAssemblies <- false
 #if BUILDING_WITH_LKG
         ignore targetProcessorArchitecture
-#else       
+#else
+#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
         rar.TargetedRuntimeVersion <- typeof<obj>.Assembly.ImageRuntimeVersion
+#endif
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
-#endif        
+#endif
         rar.Assemblies <- [|for (referenceName,baggage) in references -> 
-                                        let item = new Microsoft.Build.Utilities.TaskItem(referenceName)
+                                        let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
                                         item.SetMetadata("Baggage", baggage)
-                                        item:>ITaskItem|]
+                                        item|]
 
         let rawFileNamePath = if allowRawFileName then ["{RawFileName}"] else []
         let searchPaths = 
             match resolutionEnvironment with
             | DesigntimeLike
+#if FX_MSBUILDRESOLVER_RUNTIMELIKE
             | RuntimeLike ->
                 logmessage("Using scripting resolution precedence.")                      
                 // These are search paths for runtime-like or scripting resolution. GAC searching is present.
@@ -308,6 +327,7 @@ module internal MSBuildResolver =
                 [sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions] @
                 ["{AssemblyFolders}"] @
                 ["{GAC}"] 
+#endif
             | CompileTimeLike -> 
                 logmessage("Using compilation resolution precedence.")                      
                 // These are search paths for compile-like resolution. GAC searching is not present.
@@ -321,13 +341,13 @@ module internal MSBuildResolver =
                 [outputDirectory] @
                 ["{GAC}"] @
                 GetPathToDotNetFramework targetFrameworkVersion // use path to implementation assemblies as the last resort
-    
+
         rar.SearchPaths <- searchPaths |> Array.ofList
-                                  
+
         rar.AllowedAssemblyExtensions <- [| ".dll" ; ".exe" |]     
-        
+
         let succeeded = rar.Execute()
-        
+
         // Unroll any foregrounded messages
         match !backgroundException with
         | Some(backGroundException) ->

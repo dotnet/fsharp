@@ -122,23 +122,24 @@ goto :DOBASIC
 
 rem Build references currently hard coded need a better long term solution
 set packagesDir=%~d0%~p0..\..\packages
-set
+For %%A in ("%cd%") do (Set TestCaseName=%%~nxA)
 set command_line_args=
 set command_line_args=%command_line_args% --exec %~d0%~p0single-test-buildandDeploy.fsx
 set command_line_args=%command_line_args% --testPlatform:win7-x86
 set command_line_args=%command_line_args% --source:"%~d0%~p0coreclr_utilities.fs" --source:"%sources%" 
 set command_line_args=%command_line_args% --fscPath:%~d0%~p0..\..\%flavor%\net40\bin\fsc.exe
-set command_line_args=%command_line_args% --output:output\test.exe
-set command_line_args=%command_line_args% --testDirectory:%~d0%~p0\TestDirectory
 set command_line_args=%command_line_args% --packagesDir:%packagesDir% 
-set command_line_args=%command_line_args% --projectJson:%~d0%~p0..\..\src\fsharp\fsharp.core\project.lock.json
-set command_line_args=%command_line_args% --nugetProjectJson:%~d0%~p0project.json
-set command_line_args=%command_line_args% --lclProjectJson:%~d0%~p0project.lock.json
+set command_line_args=%command_line_args% --testProjectJson:%~d0%~p0project.json
+set command_line_args=%command_line_args% --testProjectJsonLock:%~d0%~p0project.lock.json
 set command_line_args=%command_line_args% --fsharpCore:%FSCOREDLL_CORECLR_PATH%
-set command_line_args=%command_line_args% --dnuPath:%~d0%~p0..\..\packages\dnx-coreclr-win-x86.1.0.0-beta6-12032\bin\dnu.cmd
+set command_line_args=%command_line_args% --dnuPath:"%~d0%~p0..\..\packages\dnx-coreclr-win-x86.1.0.0-beta6-12032\bin\dnu.cmd"
 set command_line_args=%command_line_args% --nugetSources:https://www.myget.org/F/dotnet-core;https://www.myget.org/F/dotnet-corefx;https://www.myget.org/F/dotnet-buildtools
 set command_line_args=%command_line_args% --define:CoreClr --define:NetCore
 set command_line_args=%command_line_args% --InitializeForTests:true
+set command_line_args=%command_line_args% --output:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\output\test.exe
+set command_line_args=%command_line_args% --testDirectory:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\TestDirectory
+set command_line_args=%command_line_args% --compilerDirectory:%~d0%~p0..\testbin\%flavor%\coreclr\fsharp\core\%TestCaseName%\Compiler
+set command_line_args=%command_line_args% --compilerJsonLock:"%~d0%~p0..\..\src\fsharp\Fsc\project.lock.json"
 echo %command_line_args%
 fsi %command_line_args%
 echo Errorlevel: %errorlevel%

@@ -33,11 +33,14 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library build failed && goto :failure
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
-
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
 @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
+
+%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+@if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
+
+%_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure

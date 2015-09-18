@@ -922,6 +922,7 @@ optsUseHighEntropyVA,"Enable high-entropy ASLR"
 optsSubSystemVersion,"Specify subsystem version of this assembly"
 optsTargetProfile,"Specify target framework profile of this assembly. Valid values are mscorlib or netcore. Default - mscorlib"
 optsEmitDebugInfoInQuotations,"Emit debug information in quotations"
+optsPreferredUiLang," Specify the preferred output language culture name (e.g. es-ES, ja-JP)"
 1051,optsInvalidSubSystemVersion,"Invalid version '%s' for '--subsystemversion'. The version must be 4.00 or greater."
 1052,optsInvalidTargetProfile,"Invalid value '%s' for '--targetprofile', valid values are 'mscorlib' or 'netcore'."
 # -----------------------------------------------------------------------------
@@ -1140,6 +1141,8 @@ lexIndentOffForML,"Consider using a file with extension '.ml' or '.mli' instead"
 1243,parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString,"Unexpected quotation operator '<@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '<' and '@' characters."
 1244,parsErrorParsingAsOperatorName,"Attempted to parse this as an operator name, but failed"
 1245,lexInvalidUnicodeLiteral,"\U%s is not a valid Unicode character escape sequence"
+# reshaped_msbuild.fs
+1300,toolLocationHelperUnsupportedFrameworkVersion,"The specified .NET Framework version "%s" is not supported. Please specify a value from the enumeration Microsoft.Build.Utilities.TargetDotNetFrameworkVersion."
 # Fsc.exe resource strings
 fscTooManyErrors,"Exiting - too many errors"
 2001,docfileNoXmlSuffix,"The documentation file has no .xml suffix"

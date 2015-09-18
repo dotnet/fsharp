@@ -14,7 +14,7 @@ open Internal.Utilities.Collections
 // Code that uses this should probably be adjusted to use unsigned integer types.
 let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 
-let notlazy v = Lazy.CreateFromValue v
+let notlazy v = Lazy<_>.CreateFromValue v
 
 let isSome x = match x with None -> false | _ -> true
 let isNone x = match x with None -> true | _ -> false
@@ -166,6 +166,11 @@ module Option =
 
 module List = 
 
+#if FX_RESHAPED_REFLECTION
+    open PrimReflectionAdapters
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
     let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
     
     let splitAfter n l = 
@@ -175,7 +180,7 @@ module List =
     let existsi f xs = 
        let rec loop i xs = match xs with [] -> false | h::t -> f i h || loop (i+1) t
        loop 0 xs
-    
+
     let lengthsEqAndForall2 p l1 l2 = 
         List.length l1 = List.length l2 &&
         List.forall2 p l1 l2
@@ -920,6 +925,12 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
 module Shim =
 
     open System.IO
+
+#if FX_RESHAPED_REFLECTION
+    open PrimReflectionAdapters
+    open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
     [<AbstractClass>]
     type FileSystem() = 
         abstract ReadAllBytesShim: fileName:string -> byte[] 

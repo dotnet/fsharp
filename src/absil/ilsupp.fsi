@@ -7,23 +7,35 @@
 /// The implementation of the functions can be found in ilsupp-*.fs
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 
-
-type PdbReader
+#if FX_NO_PDB_WRITER
+#else
 type PdbWriter
-val pdbReadClose: PdbReader -> unit
 val pdbInitialize : string -> string -> PdbWriter
+#endif
+#if FX_NO_PDB_READER
+#else
+type PdbReader
+val pdbReadClose: PdbReader -> unit
+#endif
+
 val absilWriteGetTimeStamp: unit -> int32
 
 
 open System
 open System.Runtime.InteropServices
+#if FX_NO_SYMBOLSTORE
+#else
 open System.Diagnostics.SymbolStore
+#endif
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 
+#if FX_NO_LINKEDRESOURCES
+#else
 type IStream = System.Runtime.InteropServices.ComTypes.IStream
+#endif
 
 
 /// Takes the output file name and returns debug file name.
@@ -35,9 +47,14 @@ val getDebugFileName: string -> string
 /// required buffer is returned.
 type PEFileType = X86 | X64
 
+#if FX_NO_LINKEDRESOURCES
+#else
 val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> tempFilePath:string -> byte[]
 val unlinkResource: int32 -> byte[] -> byte[]
+#endif
 
+#if FX_NO_PDB_WRITER
+#else
 /// PDB reader and associated types
 type PdbDocument
 type PdbMethod
@@ -76,21 +93,27 @@ val pdbScopeGetLocals: PdbMethodScope -> PdbVariable array
 val pdbVariableGetName: PdbVariable -> string
 val pdbVariableGetSignature: PdbVariable -> byte[]
 val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *) * int32 (* addrField1 *)
+#endif
 
-
+#if FX_NO_PDB_WRITER
+#else
 //---------------------------------------------------------------------
 // PDB writer.
 //---------------------------------------------------------------------
-
 type PdbDocumentWriter
+#endif
 
+#if FX_NO_LINKEDRESOURCES
+#else
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddMinorVersion: int32; (* acutally u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
       iddData: byte[];}
-
+#endif
+#if FX_NO_PDB_WRITER
+#else
 val pdbInitialize: 
     string (* .exe/.dll already written and closed *) -> 
     string  (* .pdb to write *) ->
@@ -107,7 +130,10 @@ val pdbDefineLocalVariable: PdbWriter -> string -> byte[] -> int32 -> unit
 val pdbSetMethodRange: PdbWriter -> PdbDocumentWriter -> int -> int -> PdbDocumentWriter -> int -> int -> unit
 val pdbDefineSequencePoints: PdbWriter -> PdbDocumentWriter -> (int * int * int * int * int) array -> unit
 val pdbGetDebugInfo: PdbWriter -> idd
+#endif
 
+#if FX_NO_KEY_SIGNING
+#else
 //---------------------------------------------------------------------
 // Strong name signing
 //---------------------------------------------------------------------
@@ -124,3 +150,4 @@ val signerCloseKeyContainer: keyContainerName -> unit
 val signerSignatureSize: pubkey -> int 
 val signerSignFileWithKeyPair: string -> keyPair -> unit 
 val signerSignFileWithKeyContainer: string -> keyContainerName -> unit
+#endif

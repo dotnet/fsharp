@@ -270,6 +270,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         open System
         open System.Reflection
 
+#if FX_RESHAPED_REFLECTION
+        open PrimReflectionAdapters
+        open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
         [<NoEquality; NoComparison>]
         type TypeInfo =
           | TupleType of Type list
@@ -279,7 +284,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           | UnitType
           | ObjectType of Type
 
-             
         let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
         let equivHeadTypes (ty1:Type) (ty2:Type) = 
             isNamedType(ty1) &&
