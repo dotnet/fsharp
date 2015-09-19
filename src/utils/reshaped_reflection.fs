@@ -120,8 +120,8 @@ module internal ReflectionAdapters =
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredProperties else this.GetRuntimeProperties())
             |> Seq.filter (fun pi-> 
                 let mi = if pi.GetMethod <> null then pi.GetMethod else pi.SetMethod
-                assert (mi <> null)
-                isAcceptable bindingFlags mi.IsStatic mi.IsPublic
+                if mi = null then ()
+                else isAcceptable bindingFlags mi.IsStatic mi.IsPublic
                 )
             |> Seq.toArray
 #if FX_RESHAPED_REFLECTION_CORECLR
@@ -130,8 +130,8 @@ module internal ReflectionAdapters =
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredEvents else this.GetRuntimeEvents())
             |> Seq.filter (fun ei-> 
                 let m = ei.GetAddMethod(true)
-                assert (m <> null)
-                isAcceptable bindingFlags m.IsStatic m.IsPublic
+                if mi = null then ()
+                else isAcceptable bindingFlags m.IsStatic m.IsPublic
                 )
             |> Seq.toArray
         member this.GetEvent(name, ?bindingFlags) = 
