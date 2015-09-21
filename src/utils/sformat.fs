@@ -466,7 +466,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           else str
 
         let catchExn f = try Choice1Of2 (f ()) with e -> Choice2Of2 e
-        
+
         // An implementation of break stack.
         // Uses mutable state, relying on linear threading of the state.
 
@@ -757,9 +757,18 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let getProperty (obj: obj) name =
             let ty = obj.GetType()
 #if FX_ATLEAST_PORTABLE
+            let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
+
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
-            prop.GetValue(obj,[||])
-#else            
+            if prop <> null then prop.GetValue(obj,[||])
+#if FX_NO_MISSINGMETHODEXCEPTION
+            // Profile 7, 47, 78 and 259 raise MissingMemberException
+            else raise (System.MissingMemberException(msg))
+#else
+            // Others raise MissingMethodException
+            else raise (System.MissingMethodException(msg))
+#endif
+#else
 #if FX_NO_CULTURE_INFO_ARGS
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |])
 #else

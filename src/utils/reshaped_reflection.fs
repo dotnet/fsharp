@@ -105,7 +105,7 @@ module internal ReflectionAdapters =
                 |> Option.map (fun ti -> ti.AsType())
             defaultArg nestedTyOpt null
         // use different sources based on Declared flag
-        member this.GetMethods(bindingFlags) = 
+        member this.GetMethods(bindingFlags) =
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredMethods else this.GetRuntimeMethods())
             |> Seq.filter (fun m -> isAcceptable bindingFlags m.IsStatic m.IsPublic)
             |> Seq.toArray
@@ -120,7 +120,7 @@ module internal ReflectionAdapters =
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredProperties else this.GetRuntimeProperties())
             |> Seq.filter (fun pi-> 
                 let mi = if pi.GetMethod <> null then pi.GetMethod else pi.SetMethod
-                if mi = null then ()
+                if mi = null then false
                 else isAcceptable bindingFlags mi.IsStatic mi.IsPublic
                 )
             |> Seq.toArray
@@ -130,7 +130,7 @@ module internal ReflectionAdapters =
             (if isDeclaredFlag bindingFlags then this.GetTypeInfo().DeclaredEvents else this.GetRuntimeEvents())
             |> Seq.filter (fun ei-> 
                 let m = ei.GetAddMethod(true)
-                if mi = null then ()
+                if m = null then false
                 else isAcceptable bindingFlags m.IsStatic m.IsPublic
                 )
             |> Seq.toArray
@@ -171,10 +171,12 @@ module internal ReflectionAdapters =
             |> Seq.toArray
         member this.GetEnumUnderlyingType() =
             Enum.GetUnderlyingType(this)
+#if FX_RESHAPED_REFLECTION_CORECLR
         member this.InvokeMember(memberName, bindingFlags, _binder, target:obj, arguments:obj[], _cultureInfo) =
             let m = this.GetMethod(memberName, (arguments |> Seq.map(fun x -> x.GetType()) |> Seq.toArray), bindingFlags)
             if m <> null then m.Invoke(target, arguments)
-            else null
+            else raise <| System.MissingMethodException(String.Format("Method '{0}.{1}' not found.", this.FullName, memberName))
+#endif
         member this.IsGenericType = this.GetTypeInfo().IsGenericType
         member this.IsGenericTypeDefinition = this.GetTypeInfo().IsGenericTypeDefinition
         member this.GetGenericArguments() = 

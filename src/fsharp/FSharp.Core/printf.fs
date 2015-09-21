@@ -33,7 +33,7 @@ module internal PrintfImpl =
     /// 1. creating specialized version of any part requires only one reflection call. This means that we can handle up to 5 simple format specifiers
     /// with just one reflection call
     /// 2. we can make combinable parts independent from particular printf implementation. Thus final result can be cached and shared. 
-    /// i.e when first calll to printf "%s %s" will trigger creation of the specialization. Subsequent calls will pick existing specialization
+    /// i.e when first call to printf "%s %s" will trigger creation of the specialization. Subsequent calls will pick existing specialization
     open System
 
     open System.Collections.Generic
