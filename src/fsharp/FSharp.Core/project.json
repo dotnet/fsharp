@@ -5,6 +5,7 @@
     "System.Console": "4.0.0-beta-*",
     "System.Diagnostics.Debug": "4.0.11-beta-23318",
     "System.Diagnostics.Tools": "4.0.1-beta-*",
+    "System.Diagnostics.Process": "4.0.0-beta-23302",
     "System.Globalization": "4.0.11-beta-*",
     "System.IO": "4.0.11-beta-*",
     "System.Linq": "4.0.1-beta-*",
@@ -30,5 +31,12 @@
     "System.Threading.Thread": "4.0.0-beta-*",
     "System.Threading.ThreadPool": "4.0.10-beta-*",
     "System.Threading.Timer": "4.0.1-beta-*"
+  },
+  "runtimes": {
+    "win7-x86": { },
+    "win7-x64": { }
+  },
+  "frameworks": {
+    "dnxcore50": { }
   }
 }

@@ -7,5 +7,12 @@
     "System.Linq.Expressions": "4.0.11-beta-*",
     "System.Runtime": "4.0.21-beta-*",
     "System.Reflection": "4.1.0-beta-*"
+  },
+  "runtimes": {
+    "win7-x86": { },
+    "win7-x64": { }
+  },
+  "frameworks": {
+    "dnxcore50": { }
   }
 }

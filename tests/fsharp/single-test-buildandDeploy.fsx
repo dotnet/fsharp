@@ -40,13 +40,12 @@ let CompilerDirectory = GetArgumentFromCommandLine "--compilerDirectory:" "Compi
 let CompilerJsonLock = GetArgumentFromCommandLine "--compilerJsonLock:" "Compiler project.json was not specified"
 
 let copyFile source dir =
-    printfn "dir: %s" dir
     let dest = 
         if not (Directory.Exists(dir)) then Directory.CreateDirectory(dir) |>ignore
         let result = Path.Combine(dir, Path.GetFileName(source))
-        printfn "source: %s" source
-        printfn "dest: %s" result
         result
+    printfn "%s" source
+    printfn "%s" dest
     File.Copy(source, dest, true)
 
 let deleteDirectory (output) =
@@ -182,7 +181,11 @@ FSC |> Seq.iter(fun source ->  copyFile source CompilerDirectory)
 compilerDependencies |> Seq.iter(fun source -> copyFile source CompilerDirectory)
 dependencies |> Seq.iter(fun source -> copyFile source CompilerDirectory)
 runtimefiles |> Seq.iter(fun source -> copyFile source CompilerDirectory)
+
 copyFile FSharpCore CompilerDirectory
+copyFile (Path.ChangeExtension(FSharpCore, "sigdata")) CompilerDirectory
+copyFile (Path.ChangeExtension(FSharpCore, "optdata")) CompilerDirectory
+copyFile (Path.Combine(Path.GetDirectoryName(FSharpCore), "default.win32Manifest")) CompilerDirectory
 
 let ec = executeCompiler Sources (collectReferenciesFromProjectJson TestProjectJsonLock AssemblyReferenceType.forBuild)
 if ec > 0 then 
