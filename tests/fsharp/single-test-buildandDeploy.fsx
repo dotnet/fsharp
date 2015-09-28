@@ -23,9 +23,7 @@ let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" "DNX
 let Output = GetArgumentFromCommandLine "--output:" @"output"
 let FSharpCore = GetArgumentFromCommandLine "--fsharpCore:" "fsharp.core.dll was not specified"
 let FSC =
-    printfn "fsharpcore: %s" FSharpCore
     let dir = Path.GetDirectoryName(FSharpCore)
-    printfn "dir: %s" dir
     seq {
         yield Path.Combine(dir, "fsc.exe")
         yield Path.Combine(dir, "fsharp.core.dll")
@@ -33,19 +31,18 @@ let FSC =
     }
 let NugetSources = (GetArgumentFromCommandLine "--nugetSources:" "").Split([|';'|]) |> Seq.fold(fun acc src -> acc + " -s:" + src) ""
 let DnuPath = GetArgumentFromCommandLine "--dnuPath:" "..\..\packages\packages\dnx-coreclr-win-x86.1.0.0-beta6-12032\bin\dnu.cmd"
-let FscPath = GetArgumentFromCommandLine "--fscPath:" "Fsc Path not specified"
+
 let TestPlatform = GetArgumentFromCommandLine "--testPlatform:" "Test Platform not specified"
 let TestDirectory = GetArgumentFromCommandLine "--testDirectory:" "Test Directory not specified"
 let CompilerDirectory = GetArgumentFromCommandLine "--compilerDirectory:" "Compiler Directory not specified"
 let CompilerJsonLock = GetArgumentFromCommandLine "--compilerJsonLock:" "Compiler project.json was not specified"
-
+let CoreRunPath = System.IO.Path.Combine(CompilerDirectory, "CoreRun.exe")
+let Win32manifest =  System.IO.Path.Combine(CompilerDirectory, "default.win32manifest")
 let copyFile source dir =
     let dest = 
         if not (Directory.Exists(dir)) then Directory.CreateDirectory(dir) |>ignore
         let result = Path.Combine(dir, Path.GetFileName(source))
         result
-    printfn "%s" source
-    printfn "%s" dest
     File.Copy(source, dest, true)
 
 let deleteDirectory (output) =
@@ -84,13 +81,12 @@ let executeCompiler sources references =
     let listToPrefixedSpaceSeperatedString prefix list = list |> Seq.fold(fun a t -> sprintf "%s %s%s" a prefix t) ""
     let listToSpaceSeperatedString list = list |> Seq.fold(fun a t -> sprintf "%s %s" a t) ""
     let addReferenceSwitch list = list |> Seq.map(fun i -> sprintf "--reference:%s" i)
-    let arguments = sprintf @"--out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --noframework %s -r:%s %s %s" (Output) (listToSpaceSeperatedString (addReferenceSwitch references)) (FSharpCore) (listToPrefixedSpaceSeperatedString "--define:" Defines) (listToSpaceSeperatedString sources)
-    printfn "%s %s" FscPath arguments
-    executeProcess FscPath arguments
+    let arguments = sprintf @"%s --noframework --simpleresolution  --out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --win32manifest:%s %s -r:%s %s %s" (System.IO.Path.Combine(CompilerDirectory, "fsc.exe")) (Output) (Win32manifest) (listToSpaceSeperatedString (addReferenceSwitch references)) (FSharpCore) (listToPrefixedSpaceSeperatedString "--define:" Defines) (listToSpaceSeperatedString sources)
+    printfn "%s %s" CoreRunPath arguments
+    executeProcess CoreRunPath arguments
 
 let restorePackages () =
     let arguments = "restore " + "--packages " + PackagesDir + " " + NugetSources + " " + TestProjectJson
-    printfn "%s %s" DnuPath arguments
     executeProcess DnuPath arguments
 
 restorePackages()
