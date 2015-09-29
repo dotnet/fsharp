@@ -997,7 +997,7 @@ module MainModuleBuilder =
             |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) -> 
                 let reflectedDefinitionResourceName = QuotationPickler.SerializedReflectedDefinitionsResourceNameBase+"-"+assemblyName+"-"+string(newUnique())+"-"+string(hash reflectedDefinitionBytes)
                 let reflectedDefinitionAttrs = 
-                    match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g with
+                    match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat tcGlobals with
                     | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
                         [ mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs) ]
                     | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
