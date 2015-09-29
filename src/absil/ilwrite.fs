@@ -4033,9 +4033,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           
           let metadataChunk,next = chunk metadata.Length next
 
-#if FX_NO_KEY_SIGNING
-#else
           let strongnameChunk,next = 
+#if FX_NO_KEY_SIGNING
+            nochunk next
+#else
             match signer with 
             | None -> nochunk next
             | Some s -> chunk s.SignatureSize next
@@ -4059,7 +4060,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           let next = next + 0x03
           let entrypointCodeChunk,next = chunk 0x06 next
           let globalpointerCodeChunk,next = chunk (if isItanium then 0x8 else 0x0) next
-          
+
           let debugDirectoryChunk,next = chunk (if pdbfile = None then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
           // The debug data is given to us by the PDB writer and appears to 
           // typically be the type of the data plus the PDB file name.  We fill 
@@ -4083,11 +4084,9 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           let dataSectionPhysLoc =  nextPhys
           let dataSectionAddr = next
           let dataSectionVirtToPhys v = v - dataSectionAddr + dataSectionPhysLoc
-          
-#if FX_NO_LINKEDRESOURCES
-#else
+
           let resourceFormat = if modul.Is64Bit then Support.X64 else Support.X86
-          
+
           let nativeResources = 
             match modul.NativeResources with
             | [] -> [||]
@@ -4097,23 +4096,28 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
                   [||]
                 else
 #endif
+#if FX_NO_LINKEDRESOURCES
+                  ignore resources
+                  ignore resourceFormat
+                  [||]
+#else
                   let unlinkedResources = List.map Lazy.force resources
                   begin
                     try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName(outfile))
                     with e -> failwith ("Linking a native resource failed: "+e.Message+"")
                   end
-
+#endif
           let nativeResourcesSize = nativeResources.Length
 
           let nativeResourcesChunk,next = chunk nativeResourcesSize next
-#endif        
+
           let dummydatap,next = chunk (if next = dataSectionAddr then 0x01 else 0x0) next
-          
+
           let dataSectionSize = next - dataSectionAddr
           let nextPhys = align alignPhys (dataSectionPhysLoc + dataSectionSize)
           let dataSectionPhysSize = nextPhys - dataSectionPhysLoc
           let next = align alignVirt (dataSectionAddr + dataSectionSize)
-          
+
           // .RELOC SECTION  base reloc table: 0x0c size 
           let relocSectionPhysLoc =  nextPhys
           let relocSectionAddr = next
@@ -4271,11 +4275,10 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           writeInt32 os 0x00; // Export Table Always 0 (see Section 23.1). 
        // 00000100  
           writeDirectory os importTableChunk; // Import Table RVA of Import Table, (see clause 24.3.1). e.g. 0000b530  
-#if FX_NO_LINKEDRESOURCES
-#else
+
           // Native Resource Table: ECMA says Always 0 (see Section 23.1), but mscorlib and other files with resources bound into executable do not.  For the moment assume the resources table is always the first resource in the file. 
           writeDirectory os nativeResourcesChunk;
-#endif
+
        // 00000110  
           writeInt32 os 0x00; // Exception Table Always 0 (see Section 23.1). 
           writeInt32 os 0x00; // Exception Table Always 0 (see Section 23.1). 
@@ -4389,16 +4392,14 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           // e.g. 0x0210 
           writeDirectory os metadataChunk;
           writeInt32 os flags;
-          
+
           writeInt32 os entryPointToken; 
           write None os "rest of cli header" [| |];
-          
+
           // e.g. 0x0220 
           writeDirectory os resourcesChunk;
-#if FX_NO_KEY_SIGNING
-#else
           writeDirectory os strongnameChunk;
-#endif
+
           // e.g. 0x0230 
           writeInt32 os 0x00; // code manager table, always 0 
           writeInt32 os 0x00; // code manager table, always 0 
@@ -4411,9 +4412,9 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
           
           writeBytes os code;
           write None os "code padding" codePadding;
-          
+
           writeBytes os metadata;
-          
+
           // write 0x80 bytes of empty space for encrypted SHA1 hash, written by SN.EXE or call to signing API 
 #if FX_NO_KEY_SIGNING
 #else

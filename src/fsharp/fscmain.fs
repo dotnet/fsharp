@@ -316,7 +316,8 @@ do ()
 [<EntryPoint>]
 let main(argv) =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parameter)
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+
 #if ENABLE_MONO_SUPPORT
     if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 #else
@@ -331,4 +332,3 @@ let main(argv) =
     with e -> 
         errorRecovery e Microsoft.FSharp.Compiler.Range.range0; 
         1
-
