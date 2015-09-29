@@ -996,14 +996,20 @@ module MainModuleBuilder =
             codegenResults.quotationResourceInfo 
             |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) -> 
                 let reflectedDefinitionResourceName = QuotationPickler.SerializedReflectedDefinitionsResourceNameBase+"-"+assemblyName+"-"+string(newUnique())+"-"+string(hash reflectedDefinitionBytes)
-                let reflectedDefinitionAttr = mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs)
+                let reflectedDefinitionAttrs = 
+                    match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g with
+                    | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
+                        [ mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs) ]
+                    | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
+                        [  ]
                 let reflectedDefinitionResource = 
                   { Name=reflectedDefinitionResourceName;
                     Location = ILResourceLocation.Local (fun () -> reflectedDefinitionBytes);
                     Access= ILResourceAccess.Public;
                     CustomAttrs = emptyILCustomAttrs }
-                reflectedDefinitionAttr, reflectedDefinitionResource) 
+                reflectedDefinitionAttrs, reflectedDefinitionResource) 
             |> List.unzip
+            |> (fun (attrs, resource) -> List.concat attrs, resource)
 
         let manifestAttrs = 
             mkILCustomAttrs
