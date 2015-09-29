@@ -129,7 +129,6 @@ type public TcGlobals =
       fslibCcu: CcuThunk 
       sysCcu: CcuThunk 
       using40environment: bool
-      indirectCallArrayMethods: bool
       better_tcref_map: TyconRef -> TypeInst -> TType option
       refcell_tcr_canon: TyconRef
       option_tcr_canon : TyconRef
@@ -575,7 +574,7 @@ let global_g = ref (None : TcGlobals option)
 #endif
 
 let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePaths,mlCompatibility,
-                 using40environment,indirectCallArrayMethods,isInteractive,getTypeCcu, emitDebugInfoInQuotations) = 
+                 using40environment,isInteractive,getTypeCcu, emitDebugInfoInQuotations) = 
   let int_tcr        = mk_MFCore_tcref fslibCcu "int"
   let nativeint_tcr  = mk_MFCore_tcref fslibCcu "nativeint"
   let unativeint_tcr = mk_MFCore_tcref fslibCcu "unativeint"
@@ -1008,7 +1007,6 @@ let mkTcGlobals (compilingFslib,sysCcu,ilg,fslibCcu,directoryToResolveRelativePa
     valRefEq                 = valRefEq
     fslibCcu                 = fslibCcu
     using40environment       = using40environment
-    indirectCallArrayMethods = indirectCallArrayMethods
     sysCcu                   = sysCcu
     refcell_tcr_canon    = mk_MFCore_tcref     fslibCcu "Ref`1"
     option_tcr_canon     = mk_MFCore_tcref     fslibCcu "Option`1"
