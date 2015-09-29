@@ -260,7 +260,19 @@ type SeqModule() =
         let expectedNullSeq = seq [null;null]
         
         VerifySeqsEqual expectedNullSeq NullSeq
+
+        CheckThrowsExn<System.InvalidCastException>(fun () -> 
+            let strings = 
+                integerArray 
+                |> Seq.cast<string>               
+            for o in strings do ()) 
         
+        CheckThrowsExn<System.InvalidCastException>(fun () -> 
+            let strings = 
+                integerArray 
+                |> Seq.cast<string>
+                :> System.Collections.IEnumerable // without this upcast the for loop throws, so it should with this upcast too
+            for o in strings do ()) 
         
         ()
         
