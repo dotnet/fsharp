@@ -1418,12 +1418,11 @@ let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) =
       else
         
         GetTypeAccessFlags td.Access |||
-        begin 
-          match td.Layout with 
+        (int td.Flags) |||
+        (match td.Layout with 
           | ILTypeDefLayout.Auto ->  0x00000000
           | ILTypeDefLayout.Sequential _  -> 0x00000008
-          | ILTypeDefLayout.Explicit _ -> 0x00000010
-        end |||
+          | ILTypeDefLayout.Explicit _ -> 0x00000010) |||
         (if not td.SecurityDecls.AsList.IsEmpty then 0x00040000 else 0x00000000)
 
     let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env td.Extends
