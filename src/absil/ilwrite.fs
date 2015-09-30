@@ -2885,9 +2885,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           | MethodKind.Ctor | MethodKind.Cctor -> true 
           | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
         (if not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
-    let implflags = 
-        (int md.ImplementationFlags) |||
-        (if (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false) then 0x0008 else 0x0000)
+    let implflags = int md.ImplementationFlags
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"

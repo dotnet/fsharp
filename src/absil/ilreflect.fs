@@ -1242,7 +1242,6 @@ let emitLocal cenv emEnv (ilG : ILGenerator) (local: ILLocal) =
 
 let emitILMethodBody cenv modB emEnv (ilG:ILGenerator) ilmbody =
     // XXX - REVIEW:
-    //      NoInlining: bool;
     //      SourceMarker: source option }
     // emit locals and record emEnv
     let localBs = Array.map (emitLocal cenv emEnv ilG) (ILList.toArray ilmbody.Locals)
@@ -1354,18 +1353,6 @@ let convMethodAttributes (mdef: ILMethodDef) =
    
     mdef.Flags ||| attrAccess 
 
-let convMethodImplFlags mdef =    
-    (match  mdef.mdCodeKind with 
-     | MethodCodeKind.Native -> MethodImplAttributes.Native
-     | MethodCodeKind.Runtime -> MethodImplAttributes.Runtime
-     | MethodCodeKind.IL  -> MethodImplAttributes.IL) 
-    ||| flagsIf mdef.IsInternalCall MethodImplAttributes.InternalCall
-    ||| (if mdef.IsManaged then MethodImplAttributes.Managed else MethodImplAttributes.Unmanaged)
-    ||| flagsIf mdef.IsForwardRef MethodImplAttributes.ForwardRef
-    ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
-    ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
-
 //----------------------------------------------------------------------------
 // buildMethodPass2
 //----------------------------------------------------------------------------
@@ -1376,7 +1363,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
    // IsUnmanagedExport: bool; (* -- The method is exported to unmanaged code using COM interop. *)
    // IsMustRun: bool; (* Whidbey feature: SafeHandle finalizer must be run *)
     let attrs = convMethodAttributes mdef
-    let implflags = convMethodImplFlags mdef
+    let implflags = mdef.ImplementationFlags
     let cconv = convCallConv mdef.CallingConv
     let mref = mkRefToILMethod (tref,mdef)   
     let emEnv = if mdef.IsEntryPoint && mdef.ParameterTypes.Length = 0 then 

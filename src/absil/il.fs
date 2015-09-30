@@ -1192,7 +1192,6 @@ let mkILLocals xs = (match xs with [] -> emptyILLocals | _ -> ILList.ofList xs)
 type ILMethodBody = 
     { IsZeroInit: bool;
       MaxStack: int32;
-      NoInlining: bool;
       Locals: ILLocals;
       Code:  ILCode;
       SourceMarker: ILSourceMarker option }
@@ -3026,7 +3025,6 @@ type ILFieldSpec with
 let mkILMethodBody (zeroinit,locals,maxstack,code,tag) = 
   { IsZeroInit=zeroinit;
     MaxStack=maxstack;
-    NoInlining=false;
     Locals= locals ;
     Code= code;
     SourceMarker=tag }

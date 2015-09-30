@@ -2287,7 +2287,6 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let codetype = implflags &&& 0x0003
      let unmanaged = (implflags &&& 0x0004) <> 0x0
      let internalcall = (implflags &&& 0x1000) <> 0x0
-     let noinline = (implflags &&& 0x0008) <> 0x0
      let cctor = (nm = ".cctor")
      let ctor = (nm = ".ctor")
      let _generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt numtypars typeIdx
@@ -2314,7 +2313,6 @@ and seekReadMethod ctxt numtypars (idx:int) =
        ImplementationFlags=enum implflags
        Flags=enum flags
        IsEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx);
-       mdCodeKind = (if (codetype = 0x00) then MethodCodeKind.IL elif (codetype = 0x01) then MethodCodeKind.Native elif (codetype = 0x03) then MethodCodeKind.Runtime else (dprintn  "unsupported code type"; MethodCodeKind.Native));
        GenericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef,idx);
        CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef,idx)); 
        Parameters= ilParams;
@@ -2329,7 +2327,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
            if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA";
            mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
          else 
-           seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,numtypars) codeRVA;   
+           seekReadMethodRVA ctxt (idx,nm,internalcall,numtypars) codeRVA;   
      }
      
      
@@ -2853,9 +2851,9 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
    instrs,rawToLabel, lab2pc, raw2nextLab
 
 #if NO_PDB_READER
-and seekReadMethodRVA ctxt (_idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (_idx,nm,_internalcall,numtypars) rva = 
 #else
-and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (idx,nm,_internalcall,numtypars) rva = 
 #endif
   mkMethBodyLazyAux 
    (lazy
@@ -2941,7 +2939,6 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
            MethodBody.IL
              { IsZeroInit=false;
                MaxStack= 8;
-               NoInlining=noinline;
                Locals=ILList.empty;
                SourceMarker=methRangePdbInfo; 
                Code=code }
@@ -3066,7 +3063,6 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
            MethodBody.IL
              { IsZeroInit=initlocals;
                MaxStack= maxstack;
-               NoInlining=noinline;
                Locals=mkILLocals locals;
                Code=code;
                SourceMarker=methRangePdbInfo}

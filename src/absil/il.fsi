@@ -981,9 +981,7 @@ type ILLocals = ILList<ILLocal>
 [<NoComparison; NoEquality>]
 type ILMethodBody = 
     { IsZeroInit: bool;
-      /// strictly speakin should be a uint16 
       MaxStack: int32; 
-      NoInlining: bool;
       Locals: ILLocals;
       Code: ILCode;
       SourceMarker: ILSourceMarker option }

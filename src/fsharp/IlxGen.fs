@@ -52,6 +52,7 @@ type MethodAttributes with
     member x.SetCheckAccessOnOverride v = setEnumFlag x MethodAttributes.CheckAccessOnOverride  v
     member x.SetHideBySig v = setEnumFlag x MethodAttributes.HideBySig  v
     member x.SetNewSlot v = setEnumFlag x MethodAttributes.NewSlot  v
+    member x.SetHasSecurity v = setEnumFlag x MethodAttributes.HasSecurity v
 
 type MethodImplAttributes with 
     member x.SetPreserveSig(v) = setEnumFlag x MethodImplAttributes.PreserveSig v
@@ -5058,13 +5059,11 @@ and GenMethodForBinding
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
         
         let implflags = 
-            mdef.ImplementationFlags 
-            ||| (if hasSynchronizedImplFlag then MethodImplAttributes.Synchronized else enum 0)
-            ||| (if hasNoInliningFlag then MethodImplAttributes.NoInlining else enum 0)
-            ||| (if hasPreserveSigImplFlag || hasPreserveSigNamedArg then MethodImplAttributes.PreserveSig else enum 0)
-        let flags = 
-            mdef.Flags 
-            ||| (if securityAttributes.Length > 0 then MethodAttributes.HasSecurity else enum 0)
+            mdef.ImplementationFlags
+                .SetSynchronized(hasSynchronizedImplFlag)
+                .SetNoInlining(hasNoInliningFlag)
+                .SetPreserveSig(hasPreserveSigImplFlag || hasPreserveSigNamedArg)
+        let flags = mdef.Flags.SetHasSecurity(securityAttributes.Length > 0)
 
         let mdef = 
             {mdef with 
@@ -6603,9 +6602,10 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                 match cenv.g.ilg.tref_SecurityPermissionAttribute with
                 | None -> ilMethodDef
                 | Some securityPermissionAttributeType ->
+                    let flags = ilMethodDef.Flags.SetHasSecurity(true)
                     { ilMethodDef with 
                            SecurityDecls=mkILSecurityDecls [ IL.mkPermissionSet cenv.g.ilg (ILSecurityAction.Demand,[(securityPermissionAttributeType, [("SerializationFormatter",cenv.g.ilg.typ_Bool, ILAttribElem.Bool(true))])])];
-                           HasSecurity=true }
+                           Flags=flags }
             [ilCtorDefForSerialziation; getObjectDataMethodForSerialization]
 #endif                
 
