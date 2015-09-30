@@ -2,6 +2,8 @@
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
 
+open System.Reflection
+
 open Internal.Utilities
 
 open Microsoft.FSharp.Compiler.AbstractIL 
@@ -510,15 +512,9 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                   GenericParams= td.GenericParams;
                   Access=td.Access;
                   Implements = ILList.empty;
-                  IsAbstract = false;
                   NestedTypes = emptyILTypeDefs;
-                  IsSealed = false;
-                  IsSerializable=td.IsSerializable; 
-                  IsComInterop=false;
-                  IsSpecialName=false;
                   Layout=ILTypeDefLayout.Auto;
-                  Encoding=ILDefaultPInvokeEncoding.Ansi;
-                  InitSemantics=ILTypeInit.BeforeField;
+                  Flags=TypeAttributes.AnsiClass.SetSerializable(td.IsSerializable).SetInitSemantics(ILTypeInit.BeforeField);
                   Extends= Some cenv.mkILTyFuncTy;
                   Methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]); 
                   Fields= mkILFields (mkILCloFldDefs cenv nowFields);
@@ -526,7 +522,6 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                   MethodImpls=emptyILMethodImpls;
                   Properties=emptyILProperties;
                   Events=emptyILEvents;
-                  HasSecurity=false; 
                   SecurityDecls=emptyILSecurityDecls; 
                   tdKind = ILTypeDefKind.Class;}
               [ cloTypeDef], []
@@ -604,14 +599,8 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                       GenericParams= td.GenericParams;
                       Access = td.Access;
                       Implements = mkILTypes [];
-                      IsAbstract = false;
-                      IsSealed = false;
-                      IsSerializable=td.IsSerializable; 
-                      IsComInterop=false;
-                      IsSpecialName=false;
                       Layout=ILTypeDefLayout.Auto;
-                      Encoding=ILDefaultPInvokeEncoding.Ansi;
-                      InitSemantics=ILTypeInit.BeforeField;
+                      Flags=TypeAttributes.AnsiClass.SetSerializable(td.IsSerializable).SetInitSemantics(ILTypeInit.BeforeField);
                       NestedTypes = emptyILTypeDefs; 
                       Extends= Some nowEnvParentClass;
                       Methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]); 
@@ -620,7 +609,6 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                       MethodImpls=emptyILMethodImpls;
                       Properties=emptyILProperties;
                       Events=emptyILEvents;
-                      HasSecurity=false; 
                       SecurityDecls=emptyILSecurityDecls; 
                       tdKind = ILTypeDefKind.Class; } 
                 [cloTypeDef],[]

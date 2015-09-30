@@ -7,6 +7,8 @@
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
 
+open System.Reflection
+
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -16,6 +18,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Morphs
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+
 
 [<Literal>]
 let TagNil = 0
@@ -836,7 +839,7 @@ let convAlternativeDef cenv num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (
                                           emptyILEvents,
                                           emptyILCustomAttrs,
                                           ILTypeInit.BeforeField)
-                    [ { debugProxyTypeDef with IsSpecialName=true } ],
+                    [ { debugProxyTypeDef with Flags=debugProxyTypeDef.Flags.SetSpecialName(true) } ],
                     ( [cenv.ilg.mkDebuggerTypeProxyAttribute debugProxyTy] @ cud.cudDebugDisplayAttributes)
                                     
               let altTypeDef = 
@@ -883,8 +886,7 @@ let convAlternativeDef cenv num (td:ILTypeDef) cud info cuspec (baseTy:ILType) (
                                         emptyILEvents,
                                         mkILCustomAttrs debugAttrs,
                                         ILTypeInit.BeforeField)
-                  { altTypeDef with IsSerializable=td.IsSerializable; 
-                                    IsSpecialName=true }
+                  { altTypeDef with Flags=altTypeDef.Flags.SetSerializable(td.IsSerializable).SetSpecialName(true)  }
 
               [ altTypeDef ], altDebugTypeDefs 
 
@@ -1063,25 +1065,28 @@ let rec convClassUnionDef cenv enc td cud =
                   NestedTypes = emptyILTypeDefs;
                   GenericParams= td.GenericParams;
                   Access = ILTypeDefAccess.Nested cud.cudReprAccess;
-                  IsAbstract = true;
-                  IsSealed = true;
-                  IsSerializable=false;
-                  IsComInterop=false;
+                  Flags = TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.AnsiClass;
                   Layout=ILTypeDefLayout.Auto; 
-                  IsSpecialName=false;
-                  Encoding=ILDefaultPInvokeEncoding.Ansi;
                   Implements = mkILTypes [];
                   Extends= Some cenv.ilg.typ_Object ;
                   Methods= emptyILMethods;
                   SecurityDecls=emptyILSecurityDecls;
-                  HasSecurity=false; 
                   Fields=mkILFields tagEnumFields;
                   MethodImpls=emptyILMethodImpls;
-                  InitSemantics=ILTypeInit.OnAny;
                   Events=emptyILEvents;
                   Properties=emptyILProperties;
                   CustomAttrs= emptyILCustomAttrs;
                   tdKind = ILTypeDefKind.Enum; }
+
+    let baseTypeDefFlags = 
+        (enum<TypeAttributes>(0))
+            .SetAbstract(isAbstract)
+            .SetSealed(altTypeDefs.IsEmpty)
+            .SetSerializable(td.IsSerializable)
+            .SetEncoding(td.Encoding)
+            .SetSpecialName(td.IsSpecialName)
+            .SetHasSecurity(td.HasSecurity)
+            .SetInitSemantics(ILTypeInit.BeforeField)
 
     let baseTypeDef = 
         { Name = td.Name;
@@ -1091,13 +1096,8 @@ let rec convClassUnionDef cenv enc td cud =
                                (convTypeDefs cenv (enc@[td]) td.NestedTypes).AsList);
           GenericParams= td.GenericParams;
           Access = td.Access;
-          IsAbstract = isAbstract;
-          IsSealed = altTypeDefs.IsEmpty;
-          IsSerializable=td.IsSerializable;
-          IsComInterop=false;
+          Flags =  baseTypeDefFlags
           Layout=td.Layout; 
-          IsSpecialName=td.IsSpecialName;
-          Encoding=td.Encoding ;
           Implements = td.Implements;
           Extends= (match td.Extends with None -> Some cenv.ilg.typ_Object | _ -> td.Extends) ;
           Methods= mkILMethods (ctorMeths @ 
@@ -1108,10 +1108,8 @@ let rec convClassUnionDef cenv enc td cud =
                                   existingMeths);
 
           SecurityDecls=td.SecurityDecls;
-          HasSecurity=td.HasSecurity; 
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList);
           MethodImpls=td.MethodImpls;
-          InitSemantics=ILTypeInit.BeforeField;
           Events=td.Events;
           Properties=mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps);
           CustomAttrs=td.CustomAttrs;

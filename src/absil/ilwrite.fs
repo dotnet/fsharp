@@ -1424,29 +1424,7 @@ let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) =
           | ILTypeDefLayout.Sequential _  -> 0x00000008
           | ILTypeDefLayout.Explicit _ -> 0x00000010
         end |||
-        begin 
-          match td.tdKind with
-          | ILTypeDefKind.Interface -> 0x00000020
-          | _ -> 0x00000000
-        end |||
-        (if td.IsAbstract then 0x00000080l else 0x00000000) |||
-        (if td.IsSealed then 0x00000100l else 0x00000000) ||| 
-        (if td.IsComInterop then 0x00001000l else 0x00000000)  |||
-        (if td.IsSerializable then 0x00002000l else 0x00000000) |||
-        begin 
-          match td.Encoding with 
-          | ILDefaultPInvokeEncoding.Ansi -> 0x00000000
-          | ILDefaultPInvokeEncoding.Auto -> 0x00020000
-          | ILDefaultPInvokeEncoding.Unicode ->  0x00010000
-        end |||
-        begin 
-          match td.InitSemantics with
-          |  ILTypeInit.BeforeField when not (match td.tdKind with ILTypeDefKind.Interface -> true | _ -> false) -> 0x00100000 
-          | _ -> 0x00000000
-        end |||
-        (if td.IsSpecialName then 0x00000400 else 0x00000000) |||
-          // @REVIEW    (if rtspecialname_of_tdef td then 0x00000800 else 0x00000000) ||| 
-        (if td.HasSecurity || not td.SecurityDecls.AsList.IsEmpty then 0x00040000 else 0x00000000)
+        (if not td.SecurityDecls.AsList.IsEmpty then 0x00040000 else 0x00000000)
 
     let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env td.Extends
     UnsharedRow 

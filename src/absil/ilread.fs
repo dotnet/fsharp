@@ -12,6 +12,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 
 open System
 open System.IO
+open System.Reflection
 open System.Runtime.InteropServices
 open System.Collections.Generic
 open Internal.Utilities
@@ -1651,7 +1652,7 @@ and typeLayoutOfFlags ctxt flags tidx =
     elif f = 0x00000010 then  ILTypeDefLayout.Explicit (seekReadClassLayout ctxt tidx)
     else ILTypeDefLayout.Auto
 
-and typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
+and typeKindOfFlags nm (super:ILType option) flags =
     if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface 
     else 
          let isEnum = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Enum")
@@ -1664,11 +1665,6 @@ and typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
          elif isValueType then ILTypeDefKind.ValueType 
          else ILTypeDefKind.Class 
 
-and typeEncodingOfFlags flags = 
-    let f = (flags &&& 0x00030000)
-    if f = 0x00020000 then ILDefaultPInvokeEncoding.Auto 
-    elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode 
-    else ILDefaultPInvokeEncoding.Ansi
 
 and isTopTypeDef flags =
     (typeAccessOfFlags flags =  ILTypeDefAccess.Private) ||
@@ -1727,39 +1723,29 @@ and seekReadTypeDef ctxt toponly (idx:int) =
            let hasLayout = (match layout with ILTypeDefLayout.Explicit _ -> true | _ -> false)
            let mdefs = seekReadMethods ctxt numtypars methodsIdx endMethodsIdx
            let fdefs = seekReadFields ctxt (numtypars,hasLayout) fieldsIdx endFieldsIdx
-           let kind = typeKindOfFlags nm mdefs fdefs super flags
+           let kind = typeKindOfFlags nm super flags
            let nested = seekReadNestedTypeDefs ctxt idx 
            let impls  = seekReadInterfaceImpls ctxt numtypars idx
            let sdecls =  seekReadSecurityDecls ctxt (TaggedIndex(hds_TypeDef,idx))
            let mimpls = seekReadMethodImpls ctxt numtypars idx
            let props  = seekReadProperties ctxt numtypars idx
            let events = seekReadEvents ctxt numtypars idx
-           { tdKind= kind;
-             Name=nm;
-             GenericParams=typars; 
-             Access= typeAccessOfFlags flags;
-             IsAbstract= (flags &&& 0x00000080) <> 0x0;
-             IsSealed= (flags &&& 0x00000100) <> 0x0; 
-             IsSerializable= (flags &&& 0x00002000) <> 0x0; 
-             IsComInterop= (flags &&& 0x00001000) <> 0x0; 
-             Layout = layout;
-             IsSpecialName= (flags &&& 0x00000400) <> 0x0;
-             Encoding=typeEncodingOfFlags flags;
-             NestedTypes= nested;
-             Implements = mkILTypes impls;  
-             Extends = super; 
-             Methods = mdefs; 
-             SecurityDecls = sdecls;
-             HasSecurity=(flags &&& 0x00040000) <> 0x0;
-             Fields=fdefs;
-             MethodImpls=mimpls;
-             InitSemantics=
-                 if kind = ILTypeDefKind.Interface then ILTypeInit.OnAny
-                 elif (flags &&& 0x00100000) <> 0x0 then ILTypeInit.BeforeField
-                 else ILTypeInit.OnAny; 
-             Events= events;
-             Properties=props;
-             CustomAttrs=cas; }
+           { tdKind= kind
+             Name=nm
+             GenericParams=typars 
+             Access= typeAccessOfFlags flags
+             Flags = enum<TypeAttributes> flags
+             Layout = layout
+             NestedTypes= nested
+             Implements = mkILTypes impls  
+             Extends = super 
+             Methods = mdefs 
+             SecurityDecls = sdecls
+             Fields=fdefs
+             MethodImpls=mimpls
+             Events= events
+             Properties=props
+             CustomAttrs=cas }
      Some (ns,n,cas,rest) 
 
 and seekReadTopTypeDefs ctxt () =

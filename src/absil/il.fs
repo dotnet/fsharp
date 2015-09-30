@@ -1645,6 +1645,32 @@ and IlxExtensionTypeKind = Ext_type_def_kind of obj
 type internal_type_def_kind_extension = 
     { internalTypeDefKindExtIs: IlxExtensionTypeKind -> bool; }
 
+let inline setEnumFlag x flag v = if v then x ||| flag else x &&& ~~~flag
+let inline setEnumFlagWithMask x mask v = (x  &&& ~~~mask) ||| v
+
+type TypeAttributes with 
+    member x.SetSerializable v = setEnumFlag x TypeAttributes.Serializable v
+    member x.SetComInterop v = setEnumFlag x TypeAttributes.Import v
+    member x.SetSealed v = setEnumFlag x TypeAttributes.Sealed v
+    member x.SetAbstract v = setEnumFlag x TypeAttributes.Abstract v
+    member x.SetHasSecurity v = setEnumFlag x TypeAttributes.HasSecurity v
+    member x.SetEncoding v = setEnumFlagWithMask x TypeAttributes.StringFormatMask (match v with ILDefaultPInvokeEncoding.Ansi -> TypeAttributes.AnsiClass | ILDefaultPInvokeEncoding.Auto -> TypeAttributes.AutoClass | ILDefaultPInvokeEncoding.Unicode -> TypeAttributes.UnicodeClass)
+    member x.SetSpecialName v = setEnumFlag x TypeAttributes.SpecialName v
+    member x.SetInitSemantics v = setEnumFlag x TypeAttributes.BeforeFieldInit (v = ILTypeInit.BeforeField)
+
+type MethodAttributes with 
+    member x.SetFinal v = setEnumFlag x MethodAttributes.Final v
+    member x.SetAbstract v = setEnumFlag x MethodAttributes.Abstract v
+    member x.SetCheckAccessOnOverride v = setEnumFlag x MethodAttributes.CheckAccessOnOverride  v
+    member x.SetHideBySig v = setEnumFlag x MethodAttributes.HideBySig  v
+    member x.SetNewSlot v = setEnumFlag x MethodAttributes.NewSlot  v
+    member x.SetHasSecurity v = setEnumFlag x MethodAttributes.HasSecurity v
+
+type MethodImplAttributes with 
+    member x.SetPreserveSig(v) = setEnumFlag x MethodImplAttributes.PreserveSig v
+    member x.SetSynchronized(v) = setEnumFlag x MethodImplAttributes.Synchronized v
+    member x.SetNoInlining(v) = setEnumFlag x MethodImplAttributes.NoInlining v
+
 
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
@@ -1652,22 +1678,15 @@ type ILTypeDef =
       Name: string;  
       GenericParams: ILGenericParameterDefs;   (* class is generic *)
       Access: ILTypeDefAccess;  
-      IsAbstract: bool;
-      IsSealed: bool; 
-      IsSerializable: bool; 
-      IsComInterop: bool; (* Class or interface generated for COM interop *) 
+      Flags : TypeAttributes;
       Layout: ILTypeDefLayout;
-      IsSpecialName: bool;
-      Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
       Methods: ILMethodDefs;
       SecurityDecls: ILPermissions;
-      HasSecurity: bool;
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
-      InitSemantics: ILTypeInit;
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
@@ -1676,10 +1695,28 @@ type ILTypeDef =
     member x.IsEnum =      (match x.tdKind with ILTypeDefKind.Enum -> true | _ -> false)
     member x.IsDelegate =  (match x.tdKind with ILTypeDefKind.Delegate -> true | _ -> false)
 
-    member tdef.IsStructOrEnum = 
-        match tdef.tdKind with
+    member x.Encoding = 
+        let f = (x.Flags &&& TypeAttributes.StringFormatMask)
+        if f = TypeAttributes.AutoClass then ILDefaultPInvokeEncoding.Auto 
+        elif f = TypeAttributes.UnicodeClass then ILDefaultPInvokeEncoding.Unicode 
+        else ILDefaultPInvokeEncoding.Ansi
+
+    member x.IsStructOrEnum = 
+        match x.tdKind with
         | ILTypeDefKind.ValueType | ILTypeDefKind.Enum -> true
         | _ -> false
+
+    member x.InitSemantics =
+        if x.IsInterface then ILTypeInit.OnAny
+        elif (x.Flags &&& TypeAttributes.BeforeFieldInit <> enum 0) then ILTypeInit.BeforeField
+        else ILTypeInit.OnAny
+
+    member x.IsAbstract = x.Flags &&& TypeAttributes.Abstract <> enum 0
+    member x.IsSealed = x.Flags &&& TypeAttributes.Sealed <> enum 0
+    member x.IsSerializable = x.Flags &&& TypeAttributes.Serializable <> enum 0
+    member x.IsComInterop = x.Flags &&& TypeAttributes.Import <> enum 0
+    member x.IsSpecialName = x.Flags &&& TypeAttributes.SpecialName <> enum 0
+    member x.HasSecurity = x.Flags &&& TypeAttributes.HasSecurity <> enum 0
 
 
 and ILTypeDefs = 
@@ -3328,14 +3365,8 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
     GenericParams= genparams;
     Access = access;
     Implements = mkILTypes impl;
-    IsAbstract = false;
-    IsSealed = false;
-    IsSerializable = false;
-    IsComInterop=false;
-    IsSpecialName=false;
     Layout=ILTypeDefLayout.Auto;
-    Encoding=ILDefaultPInvokeEncoding.Ansi;
-    InitSemantics=init;
+    Flags = TypeAttributes.AnsiClass.SetInitSemantics(init);
     Extends = Some extends;
     Methods= methods; 
     Fields= fields;
@@ -3345,7 +3376,6 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
     Properties=props;
     Events=events;
     SecurityDecls=emptyILSecurityDecls; 
-    HasSecurity=false;
 } 
     
 let mkRawDataValueTypeDef ilg (nm,size,pack) =
@@ -3354,15 +3384,9 @@ let mkRawDataValueTypeDef ilg (nm,size,pack) =
     GenericParams= [];
     Access = ILTypeDefAccess.Private;
     Implements = emptyILTypes;
-    IsAbstract = false;
-    IsSealed = true;
+    Flags = (TypeAttributes.Sealed ||| TypeAttributes.AnsiClass).SetInitSemantics(ILTypeInit.BeforeField)
     Extends = Some ilg.typ_ValueType;
-    IsComInterop=false;    
-    IsSerializable = false;
-    IsSpecialName=false;
     Layout=ILTypeDefLayout.Explicit { Size=Some size; Pack=Some pack };
-    Encoding=ILDefaultPInvokeEncoding.Ansi;
-    InitSemantics=ILTypeInit.BeforeField;
     Methods= emptyILMethods; 
     Fields= emptyILFields;
     NestedTypes=emptyILTypeDefs;
@@ -3370,8 +3394,7 @@ let mkRawDataValueTypeDef ilg (nm,size,pack) =
     MethodImpls=emptyILMethodImpls;
     Properties=emptyILProperties;
     Events=emptyILEvents;
-    SecurityDecls=emptyILSecurityDecls; 
-    HasSecurity=false;  }
+    SecurityDecls=emptyILSecurityDecls }
 
 
 let mkILSimpleClass ilg (nm, access, methods, fields, nestedTypes, props, events, attrs, init) =

@@ -1421,32 +1421,34 @@ and [<NoComparison; NoEquality>]
       Name: string;  
       GenericParams: ILGenericParameterDefs;  
       Access: ILTypeDefAccess;  
-      IsAbstract: bool;
-      IsSealed: bool; 
-      IsSerializable: bool; 
-      /// Class or interface generated for COM interop 
-      IsComInterop: bool; 
+      Flags : System.Reflection.TypeAttributes
       Layout: ILTypeDefLayout;
-      IsSpecialName: bool;
-      Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
       Methods: ILMethodDefs;
       SecurityDecls: ILPermissions;
     /// Note: some classes are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-      HasSecurity: bool; 
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
-      InitSemantics: ILTypeInit;
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
-    member IsClass: bool;
-    member IsInterface: bool;
-    member IsEnum: bool;
-    member IsDelegate: bool;
+    member IsClass: bool
+    member IsInterface: bool
+    member IsEnum: bool
+    member IsDelegate: bool
     member IsStructOrEnum : bool
+
+    member IsAbstract: bool
+    member IsSealed: bool
+    member IsSerializable: bool
+      /// Class or interface generated for COM interop 
+    member IsComInterop: bool
+    member IsSpecialName: bool
+    member HasSecurity: bool
+    member Encoding: ILDefaultPInvokeEncoding
+    member InitSemantics: ILTypeInit
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1603,6 +1605,30 @@ type ILModuleDef =
 /// or event. This is useful especially if your code is not using the Ilbind 
 /// API to bind references. 
 val resolveILMethodRef: ILTypeDef -> ILMethodRef -> ILMethodDef
+
+type TypeAttributes with 
+    member SetSerializable : bool -> TypeAttributes
+    member SetComInterop : bool -> TypeAttributes
+    member SetSealed : bool -> TypeAttributes
+    member SetAbstract : bool -> TypeAttributes
+    member SetHasSecurity : bool -> TypeAttributes
+    member SetEncoding : ILDefaultPInvokeEncoding -> TypeAttributes
+    member SetSpecialName : bool -> TypeAttributes
+    member SetInitSemantics : ILTypeInit -> TypeAttributes
+
+type MethodAttributes with 
+    member SetFinal : bool -> MethodAttributes
+    member SetAbstract : bool -> MethodAttributes
+    member SetCheckAccessOnOverride : bool -> MethodAttributes
+    member SetHideBySig : bool -> MethodAttributes
+    member SetNewSlot : bool -> MethodAttributes
+    member SetHasSecurity : bool -> MethodAttributes
+
+type MethodImplAttributes with 
+    member SetPreserveSig : bool -> MethodImplAttributes
+    member SetSynchronized : bool -> MethodImplAttributes
+    member SetNoInlining : bool -> MethodImplAttributes
+
 
 // ------------------------------------------------------------------ 
 // Type Names
