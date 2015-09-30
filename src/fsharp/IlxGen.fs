@@ -1156,7 +1156,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
                  let vtdef  = mkRawDataValueTypeDef cenv.g.ilg (name,size,0us)
                  let vtref = NestedTypeRefForCompLoc cloc vtdef.Name 
                  let vtspec = mkILTySpec(vtref,[])
-                 let vtdef = {vtdef with Access= ComputeTypeAccess vtref true}
+                 let vtdef = {vtdef with Flags= vtdef.Flags.SetAccess(ComputeTypeAccess vtref true) }
                  mgbuf.AddTypeDef(vtref, vtdef, false, true);
                  vtspec), 
                keyComparer=HashIdentity.Structural)
@@ -3358,9 +3358,7 @@ and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) =
     {mdef with Name=nameOfOverridingMethod }
 
 and fixupMethodImplFlags (mdef: ILMethodDef) = 
-    {mdef with 
-               Access=ILMemberAccess.Private;
-               Flags=mdef.Flags.SetHideBySig(true).SetFinal(true).SetNewSlot(true).SetCheckAccessOnOverride(false) }
+    {mdef with Flags=mdef.Flags.SetHideBySig(true).SetFinal(true).SetNewSlot(true).SetCheckAccessOnOverride(false).SetAccess(ILMemberAccess.Private) }
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
 
@@ -3538,13 +3536,16 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
 /// Generate the class for a closure type definition
 and GenClosureTypeDef cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls,ext, ilIntfTys) =
 
+    let flags = 
+        (TypeAttributes.Sealed ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass)
+            .SetSerializable(cenv.opts.netFxHasSerializableAttribute)
+            .SetAccess(ComputeTypeAccess tref true)
     { Name = tref.Name; 
       Layout = ILTypeDefLayout.Auto;
-      Access =  ComputeTypeAccess tref true;
+      Flags = flags;
       GenericParams = ilGenParams;
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]);
       Fields = emptyILFields;
-      Flags = (TypeAttributes.Sealed ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass).SetSerializable(cenv.opts.netFxHasSerializableAttribute);
       tdKind=mkIlxTypeDefKind (IlxTypeDefKind.Closure  { cloSource=None;
                                                        cloFreeVars=ilCloFreeVars;  
                                                        cloStructure=ilCloLambdas;
@@ -3587,14 +3588,21 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
 
                 let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,ilContractMethTyargs,[],mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
 
+                let ilContractTypeDefFlags = 
+                    TypeAttributes.Abstract
+                        .SetSpecialName(true)
+                        .SetEncoding(ILDefaultPInvokeEncoding.Auto)
+                        .SetInitSemantics(ILTypeInit.BeforeField)
+                        .SetSerializable(cenv.opts.netFxHasSerializableAttribute)
+                        .SetAccess(ComputeTypeAccess ilContractTypeRef true); // the contract type is an abstract type
+
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name; 
                       Layout = ILTypeDefLayout.Auto;
-                      Access =  ComputeTypeAccess ilContractTypeRef true;
                       GenericParams = ilContractGenericParams;
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ];
                       Fields = emptyILFields;
-                      Flags=(TypeAttributes.Abstract ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass).SetSerializable(cenv.opts.netFxHasSerializableAttribute); // the contract type is an abstract type
+                      Flags=ilContractTypeDefFlags;
                       tdKind=ILTypeDefKind.Class;
                       Events= emptyILEvents;
                       Properties = emptyILProperties;
@@ -6294,7 +6302,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              | paraml -> paraml
                          GenActualSlotsig m cenv eenvinner (TSlotSig(nm,typ,ctps,mtps,paraml,returnTy)) []
                      for ilMethodDef in mkILDelegateMethods cenv.g.ilg (p,r) do
-                        yield { ilMethodDef with Access=reprAccess }
+                        yield { ilMethodDef with Flags=ilMethodDef.Flags.SetAccess(reprAccess) }
                  | _ -> 
                      ()
 
@@ -6311,7 +6319,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                        
            match tycon.TypeReprInfo with 
            | TILObjModelRepr (_,_,td) ->
-               {td with Access = access;
+               {td with Flags = td.Flags.SetAccess(access);
                         CustomAttrs = mkILCustomAttrs CustomAttrs;
                         GenericParams = ilGenParams; }
 
@@ -6437,7 +6445,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
                { Name = ilTypeName;
                  Layout = ILTypeDefLayout.Auto;
-                 Access = access;
                  GenericParams = ilGenParams;
                  CustomAttrs = 
                      mkILCustomAttrs (CustomAttrs @ 
@@ -6445,7 +6452,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                           (int (if hiddenRepr
                                                 then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                                 else SourceConstructFlags.SumType)) ]);
-                 Flags = (TypeAttributes.BeforeFieldInit ||| TypeAttributes.Sealed ||| TypeAttributes.AutoClass).SetSerializable(IsSerializable);      
+                 Flags = (TypeAttributes.BeforeFieldInit ||| TypeAttributes.Sealed ||| TypeAttributes.AutoClass).SetSerializable(IsSerializable).SetAccess(access);      
                  tdKind=
                      mkIlxTypeDefKind
                        (IlxTypeDefKind.Union

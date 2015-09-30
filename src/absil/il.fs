@@ -1459,7 +1459,6 @@ type ILMethodDef =
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      Access: ILMemberAccess;
       mdBody: ILLazyMethodBody;   
       ImplementationFlags : MethodImplAttributes
       Flags : MethodAttributes
@@ -1467,6 +1466,18 @@ type ILMethodDef =
       IsEntryPoint:bool;
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
+
+    member x.Access = 
+        let f = (x.Flags &&& MethodAttributes.MemberAccessMask)
+        match f with 
+        | MethodAttributes.Private -> ILMemberAccess.Private 
+        | MethodAttributes.Public -> ILMemberAccess.Public 
+        | MethodAttributes.Family -> ILMemberAccess.Family 
+        | MethodAttributes.FamANDAssem -> ILMemberAccess.FamilyAndAssembly 
+        | MethodAttributes.FamORAssem -> ILMemberAccess.FamilyOrAssembly 
+        | MethodAttributes.Assembly -> ILMemberAccess.Assembly 
+        | _ -> ILMemberAccess.CompilerControlled
+
     member x.IsStatic = x.Flags &&& MethodAttributes.Static <> enum 0
     member x.IsAbstract = x.Flags &&& MethodAttributes.Abstract <> enum 0
     member x.IsVirtual = x.Flags &&& MethodAttributes.Virtual <> enum 0
@@ -1654,9 +1665,29 @@ type TypeAttributes with
     member x.SetSealed v = setEnumFlag x TypeAttributes.Sealed v
     member x.SetAbstract v = setEnumFlag x TypeAttributes.Abstract v
     member x.SetHasSecurity v = setEnumFlag x TypeAttributes.HasSecurity v
-    member x.SetEncoding v = setEnumFlagWithMask x TypeAttributes.StringFormatMask (match v with ILDefaultPInvokeEncoding.Ansi -> TypeAttributes.AnsiClass | ILDefaultPInvokeEncoding.Auto -> TypeAttributes.AutoClass | ILDefaultPInvokeEncoding.Unicode -> TypeAttributes.UnicodeClass)
+    member x.SetEncoding v = 
+        let v2 = 
+            match v with 
+            | ILDefaultPInvokeEncoding.Ansi -> TypeAttributes.AnsiClass 
+            | ILDefaultPInvokeEncoding.Auto -> TypeAttributes.AutoClass 
+            | ILDefaultPInvokeEncoding.Unicode -> TypeAttributes.UnicodeClass
+        setEnumFlagWithMask x TypeAttributes.StringFormatMask v2
     member x.SetSpecialName v = setEnumFlag x TypeAttributes.SpecialName v
     member x.SetInitSemantics v = setEnumFlag x TypeAttributes.BeforeFieldInit (v = ILTypeInit.BeforeField)
+    member x.SetAccess v = 
+        let v2 = 
+            match v with 
+            | ILTypeDefAccess.Public -> TypeAttributes.Public 
+            | ILTypeDefAccess.Nested ILMemberAccess.Public -> TypeAttributes.NestedPublic 
+            | ILTypeDefAccess.Nested ILMemberAccess.Private -> TypeAttributes.NestedPrivate
+            | ILTypeDefAccess.Nested ILMemberAccess.Family -> TypeAttributes.NestedFamily
+            | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
+            | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
+            | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
+            | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> TypeAttributes.None
+            | ILTypeDefAccess.Private -> TypeAttributes.NotPublic
+        setEnumFlagWithMask x TypeAttributes.VisibilityMask v2
+    static member None = enum<TypeAttributes> 0
 
 type MethodAttributes with 
     member x.SetFinal v = setEnumFlag x MethodAttributes.Final v
@@ -1665,6 +1696,19 @@ type MethodAttributes with
     member x.SetHideBySig v = setEnumFlag x MethodAttributes.HideBySig  v
     member x.SetNewSlot v = setEnumFlag x MethodAttributes.NewSlot  v
     member x.SetHasSecurity v = setEnumFlag x MethodAttributes.HasSecurity v
+    member x.SetAccess v = 
+        let v2 = 
+            match v with 
+            | ILMemberAccess.Public -> MethodAttributes.Public
+            | ILMemberAccess.Private -> MethodAttributes.Private
+            | ILMemberAccess.Family -> MethodAttributes.Family
+            | ILMemberAccess.FamilyAndAssembly -> MethodAttributes.FamANDAssem
+            | ILMemberAccess.FamilyOrAssembly -> MethodAttributes.FamORAssem
+            | ILMemberAccess.Assembly -> MethodAttributes.Assembly
+            | ILMemberAccess.CompilerControlled -> MethodAttributes.PrivateScope
+        setEnumFlagWithMask x MethodAttributes.MemberAccessMask v2
+    static member None = enum<MethodAttributes> 0
+
 
 type MethodImplAttributes with 
     member x.SetPreserveSig(v) = setEnumFlag x MethodImplAttributes.PreserveSig v
@@ -1677,7 +1721,6 @@ type ILTypeDef =
     { tdKind: ILTypeDefKind;
       Name: string;  
       GenericParams: ILGenericParameterDefs;   (* class is generic *)
-      Access: ILTypeDefAccess;  
       Flags : TypeAttributes;
       Layout: ILTypeDefLayout;
       NestedTypes: ILTypeDefs;
@@ -1690,6 +1733,18 @@ type ILTypeDef =
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
+
+    member x.Access = 
+        match x.Flags &&& TypeAttributes.VisibilityMask with 
+        | TypeAttributes.Public -> ILTypeDefAccess.Public 
+        | TypeAttributes.NestedPublic -> ILTypeDefAccess.Nested ILMemberAccess.Public 
+        | TypeAttributes.NestedPrivate -> ILTypeDefAccess.Nested ILMemberAccess.Private 
+        | TypeAttributes.NestedFamily -> ILTypeDefAccess.Nested ILMemberAccess.Family 
+        | TypeAttributes.NestedFamANDAssem ->  ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly 
+        | TypeAttributes.NestedFamORAssem -> ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly 
+        | TypeAttributes.NestedAssembly ->  ILTypeDefAccess.Nested ILMemberAccess.Assembly 
+        | _ -> ILTypeDefAccess.Private
+
     member x.IsClass =     (match x.tdKind with ILTypeDefKind.Class -> true | _ -> false)
     member x.IsInterface = (match x.tdKind with ILTypeDefKind.Interface -> true | _ -> false)
     member x.IsEnum =      (match x.tdKind with ILTypeDefKind.Enum -> true | _ -> false)
@@ -3080,10 +3135,9 @@ let mkILCtor (access,args,impl) =
       CallingConv=ILCallingConv.Instance;
       Parameters=mkILParametersRaw args;
       Return= mkILVoidReturn;
-      Access=access;
       mdBody= mkMethBodyAux impl;
       ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-      Flags = MethodAttributes.SpecialName;
+      Flags = MethodAttributes.SpecialName.SetAccess(access);
       SecurityDecls=emptyILSecurityDecls;
       IsEntryPoint=false;
       GenericParams=mkILEmptyGenericParams;
@@ -3121,13 +3175,12 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
       mdKind=MethodKind.Static;
       Parameters=  mkILParametersRaw args;
       Return= ret;
-      Access=access;
       SecurityDecls=emptyILSecurityDecls;
       IsEntryPoint=false;
       CustomAttrs = emptyILCustomAttrs;
       mdBody= mkMethBodyAux impl;
       ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-      Flags = enum<MethodAttributes> 0 }
+      Flags = MethodAttributes.None.SetAccess(access) }
 
 let mkILNonGenericStaticMethod (nm,access,args,ret,impl) = 
     mkILStaticMethod (mkILEmptyGenericParams,nm,access,args,ret,impl)
@@ -3139,10 +3192,9 @@ let mkILClassCtor impl =
       mdKind=MethodKind.Cctor;
       Parameters=emptyILParameters;
       Return=mkILVoidReturn;
-      Access=ILMemberAccess.Private; 
       IsEntryPoint=false;
       ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-      Flags = MethodAttributes.SpecialName;
+      Flags = MethodAttributes.SpecialName.SetAccess(ILMemberAccess.Private);
       SecurityDecls=emptyILSecurityDecls;
       CustomAttrs = emptyILCustomAttrs;
       mdBody= mkMethBodyAux impl } 
@@ -3152,9 +3204,6 @@ let mkILClassCtor impl =
 // (i.e. overrides by name/signature)
 // -------------------------------------------------------------------- 
 
-let mk_ospec (typ:ILType,callconv,nm,genparams,formal_args,formal_ret) =
-  OverridesSpec (mkILMethRef (typ.TypeRef, callconv, nm, genparams, formal_args,formal_ret), typ)
-
 let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) = 
   { Name=nm;
     GenericParams=genparams;
@@ -3162,14 +3211,15 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
     mdKind=MethodKind.Instance;
     Parameters= mkILParametersRaw actual_args;
     Return=actual_ret;
-    Access=access;
     IsEntryPoint=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
     mdBody= mkMethBodyAux impl;
     ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-    Flags = MethodAttributes.Virtual ||| MethodAttributes.CheckAccessOnOverride ||| (match impl with MethodBody.Abstract -> MethodAttributes.Abstract | _ -> enum 0)
-    }
+    Flags = 
+        (MethodAttributes.Virtual ||| MethodAttributes.CheckAccessOnOverride)
+            .SetAbstract(match impl with MethodBody.Abstract -> true | _ -> false)
+            .SetAccess(access) }
     
 let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =  
   mkILGenericVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -3181,14 +3231,13 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
     mdKind=MethodKind.Instance;
     Parameters= mkILParametersRaw actual_args;
     Return=actual_ret;
-    Access=access;
     IsEntryPoint=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
     mdBody= mkMethBodyAux impl;
     ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
     // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads. 
-    Flags = MethodAttributes.HideBySig }
+    Flags = MethodAttributes.HideBySig.SetAccess(access) }
     
 let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =  
   mkILGenericNonVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -3363,10 +3412,9 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
   { tdKind=ILTypeDefKind.Class;
     Name=nm;
     GenericParams= genparams;
-    Access = access;
     Implements = mkILTypes impl;
     Layout=ILTypeDefLayout.Auto;
-    Flags = TypeAttributes.AnsiClass.SetInitSemantics(init);
+    Flags = TypeAttributes.AnsiClass.SetInitSemantics(init).SetAccess(access);
     Extends = Some extends;
     Methods= methods; 
     Fields= fields;
@@ -3382,9 +3430,8 @@ let mkRawDataValueTypeDef ilg (nm,size,pack) =
   { tdKind=ILTypeDefKind.ValueType;
     Name = nm;
     GenericParams= [];
-    Access = ILTypeDefAccess.Private;
     Implements = emptyILTypes;
-    Flags = (TypeAttributes.Sealed ||| TypeAttributes.AnsiClass).SetInitSemantics(ILTypeInit.BeforeField)
+    Flags = (TypeAttributes.Sealed ||| TypeAttributes.AnsiClass).SetInitSemantics(ILTypeInit.BeforeField).SetAccess(ILTypeDefAccess.Private)
     Extends = Some ilg.typ_ValueType;
     Layout=ILTypeDefLayout.Explicit { Size=Some size; Pack=Some pack };
     Methods= emptyILMethods; 

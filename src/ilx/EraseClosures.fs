@@ -455,7 +455,7 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
               let laterTypeDefs = 
                 convIlxClosureDef cenv mdefGen encl
                   {td with GenericParams=laterGenericParams;
-                            Access=laterAccess;
+                            Flags=td.Flags.SetAccess(laterAccess);
                             Name=laterTypeName} 
                   {clo with cloStructure=laterStruct;
                             cloFreeVars=laterFields;
@@ -507,14 +507,20 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                      mkILCloFldSpecs cenv nowFields,
                      ILMemberAccess.Assembly)
 
+              let cloTypeDefFlags =
+                  TypeAttributes.None
+                      .SetEncoding(ILDefaultPInvokeEncoding.Ansi)
+                      .SetSerializable(td.IsSerializable)
+                      .SetInitSemantics(ILTypeInit.BeforeField)
+                      .SetAccess(td.Access)
+
               let cloTypeDef = 
                 { Name = td.Name;
                   GenericParams= td.GenericParams;
-                  Access=td.Access;
                   Implements = ILList.empty;
                   NestedTypes = emptyILTypeDefs;
                   Layout=ILTypeDefLayout.Auto;
-                  Flags=TypeAttributes.AnsiClass.SetSerializable(td.IsSerializable).SetInitSemantics(ILTypeInit.BeforeField);
+                  Flags=cloTypeDefFlags;
                   Extends= Some cenv.mkILTyFuncTy;
                   Methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]); 
                   Fields= mkILFields (mkILCloFldDefs cenv nowFields);
@@ -567,7 +573,7 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
               let laterTypeDefs = 
                 convIlxClosureDef cenv mdefGen encl
                   {td with GenericParams=laterGenericParams;
-                             Access=laterAccess;
+                             Flags=td.Flags.SetAccess(laterAccess);
                              Name=laterTypeName} 
                   {clo with cloStructure=laterStruct;
                         cloFreeVars=laterFields;
@@ -581,6 +587,14 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                 // CASE 2b2. Build a term application as a virtual method. 
                 
                 let nowEnvParentClass = typ_Func cenv (typesOfILParamsList nowParams) nowReturnTy 
+
+                let cloTypeDefFlags =
+                  TypeAttributes.None
+                      .SetEncoding(ILDefaultPInvokeEncoding.Ansi)
+                      .SetSerializable(td.IsSerializable)
+                      .SetInitSemantics(ILTypeInit.BeforeField)
+                      .SetAccess(td.Access)
+
                 let cloTypeDef = 
                     let nowApplyMethDef =
                         mkILNonGenericVirtualMethod
@@ -597,10 +611,9 @@ let rec convIlxClosureDef cenv mdefGen encl (td: ILTypeDef) clo =
                             ILMemberAccess.Assembly)
                     { Name = td.Name;
                       GenericParams= td.GenericParams;
-                      Access = td.Access;
                       Implements = mkILTypes [];
                       Layout=ILTypeDefLayout.Auto;
-                      Flags=TypeAttributes.AnsiClass.SetSerializable(td.IsSerializable).SetInitSemantics(ILTypeInit.BeforeField);
+                      Flags=cloTypeDefFlags;
                       NestedTypes = emptyILTypeDefs; 
                       Extends= Some nowEnvParentClass;
                       Methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]); 

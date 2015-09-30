@@ -1060,12 +1060,17 @@ let rec convClassUnionDef cenv enc td cud =
         if tagEnumFields.Length <= 1 then 
             None
         else
+            let flags = 
+                TypeAttributes.None
+                    .SetAbstract(true)
+                    .SetSealed(true)
+                    .SetEncoding(ILDefaultPInvokeEncoding.Ansi)
+                    .SetAccess(ILTypeDefAccess.Nested cud.cudReprAccess)
             Some 
                 { Name = "Tags";
                   NestedTypes = emptyILTypeDefs;
                   GenericParams= td.GenericParams;
-                  Access = ILTypeDefAccess.Nested cud.cudReprAccess;
-                  Flags = TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.AnsiClass;
+                  Flags = flags
                   Layout=ILTypeDefLayout.Auto; 
                   Implements = mkILTypes [];
                   Extends= Some cenv.ilg.typ_Object ;
@@ -1079,7 +1084,7 @@ let rec convClassUnionDef cenv enc td cud =
                   tdKind = ILTypeDefKind.Enum; }
 
     let baseTypeDefFlags = 
-        (enum<TypeAttributes>(0))
+        TypeAttributes.None
             .SetAbstract(isAbstract)
             .SetSealed(altTypeDefs.IsEmpty)
             .SetSerializable(td.IsSerializable)
@@ -1087,6 +1092,7 @@ let rec convClassUnionDef cenv enc td cud =
             .SetSpecialName(td.IsSpecialName)
             .SetHasSecurity(td.HasSecurity)
             .SetInitSemantics(ILTypeInit.BeforeField)
+            .SetAccess(td.Access)
 
     let baseTypeDef = 
         { Name = td.Name;
@@ -1095,7 +1101,6 @@ let rec convClassUnionDef cenv enc td cud =
                                altDebugTypeDefs @
                                (convTypeDefs cenv (enc@[td]) td.NestedTypes).AsList);
           GenericParams= td.GenericParams;
-          Access = td.Access;
           Flags =  baseTypeDefFlags
           Layout=td.Layout; 
           Implements = td.Implements;

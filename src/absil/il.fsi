@@ -1195,7 +1195,6 @@ type ILMethodDef =
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      Access: ILMemberAccess;
       mdBody: ILLazyMethodBody;   
       ImplementationFlags : MethodImplAttributes
       Flags : MethodAttributes
@@ -1205,7 +1204,8 @@ type ILMethodDef =
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
       
-    member ParameterTypes: ILTypes;
+    member Access: ILMemberAccess
+    member ParameterTypes: ILTypes
     member IsIL : bool
     member Code : ILCode option
     member Locals : ILLocals
@@ -1420,7 +1420,6 @@ and [<NoComparison; NoEquality>]
     { tdKind: ILTypeDefKind;
       Name: string;  
       GenericParams: ILGenericParameterDefs;  
-      Access: ILTypeDefAccess;  
       Flags : System.Reflection.TypeAttributes
       Layout: ILTypeDefLayout;
       NestedTypes: ILTypeDefs;
@@ -1434,6 +1433,8 @@ and [<NoComparison; NoEquality>]
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
+
+    member Access: ILTypeDefAccess
     member IsClass: bool
     member IsInterface: bool
     member IsEnum: bool
@@ -1615,6 +1616,8 @@ type TypeAttributes with
     member SetEncoding : ILDefaultPInvokeEncoding -> TypeAttributes
     member SetSpecialName : bool -> TypeAttributes
     member SetInitSemantics : ILTypeInit -> TypeAttributes
+    member SetAccess : ILTypeDefAccess -> TypeAttributes
+    static member None : TypeAttributes
 
 type MethodAttributes with 
     member SetFinal : bool -> MethodAttributes
@@ -1623,6 +1626,8 @@ type MethodAttributes with
     member SetHideBySig : bool -> MethodAttributes
     member SetNewSlot : bool -> MethodAttributes
     member SetHasSecurity : bool -> MethodAttributes
+    member SetAccess : ILMemberAccess -> MethodAttributes
+    static member None : MethodAttributes
 
 type MethodImplAttributes with 
     member SetPreserveSig : bool -> MethodImplAttributes

@@ -1625,16 +1625,6 @@ and seekReadClassLayout ctxt idx =
     | Some (pack,size) -> { Size = Some size; 
                            Pack = Some pack; }
 
-and memberAccessOfFlags flags =
-    let f = (flags &&& 0x00000007)
-    if f = 0x00000001 then  ILMemberAccess.Private 
-    elif f = 0x00000006 then  ILMemberAccess.Public 
-    elif f = 0x00000004 then  ILMemberAccess.Family 
-    elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
-    elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
-    elif f = 0x00000003 then  ILMemberAccess.Assembly 
-    else ILMemberAccess.CompilerControlled
-
 and typeAccessOfFlags flags =
     let f = (flags &&& 0x00000007)
     if f = 0x00000001 then ILTypeDefAccess.Public 
@@ -1645,6 +1635,16 @@ and typeAccessOfFlags flags =
     elif f = 0x00000007 then ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly 
     elif f = 0x00000005 then ILTypeDefAccess.Nested ILMemberAccess.Assembly 
     else ILTypeDefAccess.Private
+
+and memberAccessOfFlags flags =
+    let f = (flags &&& 0x00000007)
+    if f = 0x00000001 then  ILMemberAccess.Private 
+    elif f = 0x00000006 then  ILMemberAccess.Public 
+    elif f = 0x00000004 then  ILMemberAccess.Family 
+    elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
+    elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
+    elif f = 0x00000003 then  ILMemberAccess.Assembly 
+    else ILMemberAccess.CompilerControlled
 
 and typeLayoutOfFlags ctxt flags tidx = 
     let f = (flags &&& 0x00000018)
@@ -1667,8 +1667,8 @@ and typeKindOfFlags nm (super:ILType option) flags =
 
 
 and isTopTypeDef flags =
-    (typeAccessOfFlags flags =  ILTypeDefAccess.Private) ||
-     typeAccessOfFlags flags =  ILTypeDefAccess.Public
+    let f = (flags &&& 0x00000007)
+    (f = 0x00000000 || f = 0x00000001)
        
 and seekIsTopTypeDefOfIdx ctxt idx =
     let (flags,_,_, _, _,_) = seekReadTypeDefRow ctxt idx
@@ -1733,7 +1733,6 @@ and seekReadTypeDef ctxt toponly (idx:int) =
            { tdKind= kind
              Name=nm
              GenericParams=typars 
-             Access= typeAccessOfFlags flags
              Flags = enum<TypeAttributes> flags
              Layout = layout
              NestedTypes= nested
@@ -2291,7 +2290,6 @@ and seekReadMethod ctxt numtypars (idx:int) =
             elif ctor then MethodKind.Ctor 
             elif isStatic then MethodKind.Static 
             else MethodKind.Instance);
-       Access = memberAccessOfFlags flags;
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef,idx));
        ImplementationFlags=enum implflags
        Flags=enum flags
