@@ -1417,12 +1417,17 @@ let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) =
       if (isTypeNameForGlobalFunctions td.Name) then 0x00000000
       else
         
-        GetTypeAccessFlags td.Access |||
         (int td.Flags) |||
+        // TODO: put the access in the flags
+        GetTypeAccessFlags td.Access |||
+        // TODO: put the kind in the flags
+        (match td.tdKind with ILTypeDefKind.Interface -> 0x00000020  | _ -> 0x00000000) |||
+        // TODO: put the layout in the flags
         (match td.Layout with 
           | ILTypeDefLayout.Auto ->  0x00000000
           | ILTypeDefLayout.Sequential _  -> 0x00000008
           | ILTypeDefLayout.Explicit _ -> 0x00000010) |||
+        // TODO: this should always be set 
         (if not td.SecurityDecls.AsList.IsEmpty then 0x00040000 else 0x00000000)
 
     let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env td.Extends
@@ -2851,9 +2856,10 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
 
 let GenMethodDefAsRow cenv env midx (md: ILMethodDef) = 
     let flags = 
+        (int md.Flags) |||
+        // TODO: put these in the flags
         GetMemberAccessFlags md.Access |||
         (match md.mdKind with MethodKind.Static | MethodKind.Cctor -> 0x0010 | _ -> 0x0) |||
-        (int md.Flags) |||
         (match md.mdBody.Contents with MethodBody.PInvoke _ -> 0x2000 | _ -> 0x0) |||
         (match md.mdKind with MethodKind.Ctor | MethodKind.Cctor -> 0x1000 | _ -> 0x0) ||| // RTSpecialName 
         (if not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)

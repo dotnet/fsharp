@@ -3188,7 +3188,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
     mdBody= mkMethBodyAux impl;
     ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
     // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads. 
-    Flags = MethodAttributes.Virtual ||| MethodAttributes.HideBySig }
+    Flags = MethodAttributes.HideBySig }
     
 let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =  
   mkILGenericNonVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
