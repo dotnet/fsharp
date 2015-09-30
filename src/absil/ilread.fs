@@ -2280,26 +2280,14 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt idx
      let nm = readStringHeap ctxt nameIdx
      let isStatic = (flags &&& 0x0010) <> 0x0
-     let final = (flags &&& 0x0020) <> 0x0
      let virt = (flags &&& 0x0040) <> 0x0
-     let strict = (flags &&& 0x0200) <> 0x0
-     let hidebysig = (flags &&& 0x0080) <> 0x0
-     let newslot = (flags &&& 0x0100) <> 0x0
      let abstr = (flags &&& 0x0400) <> 0x0
-     let specialname = (flags &&& 0x0800) <> 0x0
      let pinvoke = (flags &&& 0x2000) <> 0x0
-     let export = (flags &&& 0x0008) <> 0x0
      let _rtspecialname = (flags &&& 0x1000) <> 0x0
-     let reqsecobj = (flags &&& 0x8000) <> 0x0
-     let hassec = (flags &&& 0x4000) <> 0x0
      let codetype = implflags &&& 0x0003
      let unmanaged = (implflags &&& 0x0004) <> 0x0
-     let forwardref = (implflags &&& 0x0010) <> 0x0
-     let preservesig = (implflags &&& 0x0080) <> 0x0
      let internalcall = (implflags &&& 0x1000) <> 0x0
-     let synchronized = (implflags &&& 0x0020) <> 0x0
      let noinline = (implflags &&& 0x0008) <> 0x0
-     let mustrun = (implflags &&& 0x0040) <> 0x0
      let cctor = (nm = ".cctor")
      let ctor = (nm = ".ctor")
      let _generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt numtypars typeIdx
@@ -2319,28 +2307,13 @@ and seekReadMethod ctxt numtypars (idx:int) =
            (if cctor then MethodKind.Cctor 
             elif ctor then MethodKind.Ctor 
             elif isStatic then MethodKind.Static 
-            elif virt then 
-             MethodKind.Virtual 
-               { IsFinal=final; 
-                 IsNewSlot=newslot; 
-                 IsCheckAccessOnOverride=strict;
-                 IsAbstract=abstr; }
+            elif virt then MethodKind.Virtual 
             else MethodKind.NonVirtual);
        Access = memberAccessOfFlags flags;
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef,idx));
-       HasSecurity=hassec;
+       ImplementationFlags=enum implflags
+       Flags=enum flags
        IsEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx);
-       IsReqSecObj=reqsecobj;
-       IsHideBySig=hidebysig;
-       IsSpecialName=specialname;
-       IsUnmanagedExport=export;
-       IsSynchronized=synchronized;
-       IsNoInline=noinline;
-       IsMustRun=mustrun;
-       IsPreserveSig=preservesig;
-       IsManaged = not unmanaged;
-       IsInternalCall = internalcall;
-       IsForwardRef = forwardref;
        mdCodeKind = (if (codetype = 0x00) then MethodCodeKind.IL elif (codetype = 0x01) then MethodCodeKind.Native elif (codetype = 0x03) then MethodCodeKind.Runtime else (dprintn  "unsupported code type"; MethodCodeKind.Native));
        GenericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef,idx);
        CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef,idx)); 

@@ -2878,33 +2878,16 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         (if (match md.mdKind with
               | MethodKind.Static | MethodKind.Cctor -> true
               | _ -> false) then 0x0010 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsFinal | _ -> false) then 0x0020 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual _ -> true | _ -> false) then 0x0040 else 0x0) |||
-        (if md.IsHideBySig then 0x0080 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsCheckAccessOnOverride | _ -> false) then 0x0200 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsNewSlot | _ -> false) then 0x0100 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsAbstract | _ -> false) then 0x0400 else 0x0) |||
-        (if md.IsSpecialName then 0x0800 else 0x0) |||
+        (int md.Flags) |||
         (if (match md.mdBody.Contents with MethodBody.PInvoke _ -> true | _ -> false) then 0x2000 else 0x0) |||
-        (if md.IsUnmanagedExport then 0x0008 else 0x0) |||
         (if 
           (match md.mdKind with
           | MethodKind.Ctor | MethodKind.Cctor -> true 
           | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
-        (if md.IsReqSecObj then 0x8000 else 0x0) |||
-        (if md.HasSecurity || not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
+        (if not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
     let implflags = 
-        (match  md.mdCodeKind with 
-         | MethodCodeKind.Native -> 0x0001
-         | MethodCodeKind.Runtime -> 0x0003
-         | MethodCodeKind.IL  -> 0x0000) |||
-        (if md.IsInternalCall then 0x1000 else 0x0000) |||
-        (if md.IsManaged then 0x0000 else 0x0004) |||
-        (if md.IsForwardRef then 0x0010 else 0x0000) |||
-        (if md.IsPreserveSig then 0x0080 else 0x0000) |||
-        (if md.IsSynchronized then 0x0020 else 0x0000) |||
-        (if md.IsMustRun then 0x0040 else 0x0000) |||
-        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000)
+        (int md.ImplementationFlags) |||
+        (if (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false) then 0x0008 else 0x0000)
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"

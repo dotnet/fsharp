@@ -10,6 +10,7 @@ module internal Microsoft.FSharp.Compiler.IlxGen
 
 open System.IO
 open System.Collections.Generic
+open System.Reflection
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 
@@ -41,7 +42,21 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 let IsNonErasedTypar (tp:Typar) = not tp.IsErased
 let DropErasedTypars (tps:Typar list) = tps |> List.filter IsNonErasedTypar
 let DropErasedTyargs tys = tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true) 
-let AddSpecialNameFlag (mdef:ILMethodDef) = { mdef with IsSpecialName = true }
+let AddSpecialNameFlag (mdef:ILMethodDef) = { mdef with Flags = mdef.Flags ||| MethodAttributes.SpecialName }
+
+let inline setEnumFlag x flag v = if v then x ||| flag else x &&& ~~~flag
+
+type MethodAttributes with 
+    member x.SetFinal v = setEnumFlag x MethodAttributes.Final v
+    member x.SetAbstract v = setEnumFlag x MethodAttributes.Abstract v
+    member x.SetCheckAccessOnOverride v = setEnumFlag x MethodAttributes.CheckAccessOnOverride  v
+    member x.SetHideBySig v = setEnumFlag x MethodAttributes.HideBySig  v
+    member x.SetNewSlot v = setEnumFlag x MethodAttributes.NewSlot  v
+
+type MethodImplAttributes with 
+    member x.SetPreserveSig(v) = setEnumFlag x MethodImplAttributes.PreserveSig v
+    member x.SetSynchronized(v) = setEnumFlag x MethodImplAttributes.Synchronized v
+    member x.SetNoInlining(v) = setEnumFlag x MethodImplAttributes.NoInlining v
 
 let AddNonUserCompilerGeneratedAttribs g (mdef:ILMethodDef) = addMethodGeneratedAttrs  g.ilg mdef
 
@@ -3350,15 +3365,8 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
     | None -> eenv
     | Some basev -> AddStorageForVal cenv.g (basev,notlazy (Arg 0))  eenv  
 
-and fixupVirtualSlotFlags mdef = 
-    {mdef with
-        IsHideBySig=true; 
-        mdKind = (match mdef.mdKind with 
-                   | MethodKind.Virtual vinfo -> 
-                      MethodKind.Virtual
-                         {vinfo with 
-                             IsCheckAccessOnOverride=false }
-                   | _ -> failwith "fixupVirtualSlotFlags") } 
+and fixupVirtualSlotFlags (mdef: ILMethodDef) = 
+    {mdef with Flags = mdef.Flags.SetHideBySig(true).SetCheckAccessOnOverride(true) }
 
 and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
     {mdef with Name=nameOfOverridingMethod }
@@ -3366,15 +3374,7 @@ and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) =
 and fixupMethodImplFlags mdef = 
     {mdef with 
                Access=ILMemberAccess.Private;
-               IsHideBySig=true; 
-               mdKind=(match mdef.mdKind with 
-                         | MethodKind.Virtual vinfo -> 
-                            MethodKind.Virtual
-                               {vinfo with 
-                                   IsCheckAccessOnOverride=false;
-                                   IsFinal=true;
-                                   IsNewSlot=true;  }
-                         | _ -> failwith "fixupMethodImpl") }
+               Flags=mdef.Flags.SetHideBySig(true).SetFinal(true).SetNewSlot(true).SetCheckAccessOnOverride(false) }
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
 
@@ -5057,13 +5057,20 @@ and GenMethodForBinding
         // Does the function have an explicit [<EntryPoint>] attribute? 
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
         
+        let implflags = 
+            mdef.ImplementationFlags 
+            ||| (if hasSynchronizedImplFlag then MethodImplAttributes.Synchronized else enum 0)
+            ||| (if hasNoInliningFlag then MethodImplAttributes.NoInlining else enum 0)
+            ||| (if hasPreserveSigImplFlag || hasPreserveSigNamedArg then MethodImplAttributes.PreserveSig else enum 0)
+        let flags = 
+            mdef.Flags 
+            ||| (if securityAttributes.Length > 0 then MethodAttributes.HasSecurity else enum 0)
+
         let mdef = 
             {mdef with 
-                IsPreserveSig = hasPreserveSigImplFlag || hasPreserveSigNamedArg;
-                IsSynchronized = hasSynchronizedImplFlag;
-                IsEntryPoint = isExplicitEntryPoint;
-                IsNoInline = hasNoInliningFlag;
-                HasSecurity = mdef.HasSecurity || (securityAttributes.Length > 0)
+                ImplementationFlags =  implflags
+                Flags = flags
+                IsEntryPoint = isExplicitEntryPoint
                 SecurityDecls = secDecls }
 
         let mdef = 
@@ -5072,10 +5079,9 @@ and GenMethodForBinding
                // active pattern names
                mdef.Name.StartsWith("|",System.StringComparison.Ordinal) ||
                // event add/remove method
-               v.Data.val_flags.IsGeneratedEventVal then
-                {mdef with IsSpecialName=true} 
-            else 
-                mdef
+               v.Data.val_flags.IsGeneratedEventVal 
+            then AddSpecialNameFlag mdef 
+            else mdef
         CountMethodDef();
         cgbuf.mgbuf.AddMethodDef(tref,mdef)
                 
@@ -5124,14 +5130,8 @@ and GenMethodForBinding
                let tcref =  v.MemberApparentParent
                not tcref.Deref.IsFSharpDelegateTycon
 
-           let mdef = 
-               {mdef with 
-                    mdKind=match mdef.mdKind with 
-                           | MethodKind.Virtual vinfo -> 
-                               MethodKind.Virtual {vinfo with IsFinal=memberInfo.MemberFlags.IsFinal;
-                                                             IsAbstract=isAbstract; } 
-                           | k -> k }
-
+           let flags = mdef.Flags.SetFinal(memberInfo.MemberFlags.IsFinal).SetAbstract(isAbstract)
+           let mdef = {mdef with Flags = flags }
            match memberInfo.MemberFlags.MemberKind with 
                
            | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
@@ -5919,15 +5919,16 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
 
         let mdef = fixupVirtualSlotFlags mdef
         let mdef = 
-          {mdef with 
-            IsPreserveSig=hasPreserveSigImplFlag;
-            IsSynchronized=hasSynchronizedImplFlag;
-            IsNoInline=hasNoInliningFlag;
-            mdKind=match mdef.mdKind with 
-                    | MethodKind.Virtual vinfo -> 
-                        MethodKind.Virtual {vinfo with IsFinal=memberInfo.MemberFlags.IsFinal;
-                                                      IsAbstract=memberInfo.MemberFlags.IsDispatchSlot; } 
-                    | k -> k }
+            {mdef with 
+                ImplementationFlags=
+                    mdef.ImplementationFlags
+                        .SetPreserveSig(hasPreserveSigImplFlag)
+                        .SetSynchronized(hasSynchronizedImplFlag)
+                        .SetNoInlining(hasNoInliningFlag)
+                Flags = 
+                    mdef.Flags
+                        .SetFinal(memberInfo.MemberFlags.IsFinal)
+                        .SetAbstract(memberInfo.MemberFlags.IsDispatchSlot) } 
         
         match memberInfo.MemberFlags.MemberKind with 
         | MemberKind.ClassConstructor 

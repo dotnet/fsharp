@@ -709,10 +709,7 @@ type ILMethInfo =
     member x.IsFinal = x.RawMetadata.IsFinal
 
     /// Indicates if the IL method is marked abstract.
-    member x.IsAbstract = 
-        match x.RawMetadata.mdKind with 
-        | MethodKind.Virtual vinfo -> vinfo.IsAbstract 
-        | _ -> false
+    member x.IsAbstract = x.RawMetadata.IsAbstract
 
     /// Does it appear to the user as a static method?
     member x.IsStatic = 
@@ -720,10 +717,7 @@ type ILMethInfo =
         x.RawMetadata.CallingConv.IsStatic
 
     /// Does it have the .NET IL 'newslot' flag set, and is also a virtual?
-    member x.IsNewSlot = 
-        match x.RawMetadata.mdKind with 
-        | MethodKind.Virtual vinfo -> vinfo.IsNewSlot 
-        | _ -> false
+    member x.IsNewSlot = x.RawMetadata.IsNewSlot
     
     /// Does it appear to the user as an instance method?
     member x.IsInstance = not x.IsConstructor &&  not x.IsStatic

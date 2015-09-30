@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 
 open System.Text
 open System.IO
+open System.Reflection
 
 #if DEBUG
 let pretty () = true
@@ -891,11 +892,12 @@ let goutput_ilmbody env os il =
 
   goutput_topcode env os il.Code;
 
-let goutput_mbody is_entrypoint env os md =
-  match md.mdCodeKind with 
-  | MethodCodeKind.Native -> output_string os "native "
-  | MethodCodeKind.IL -> output_string os "cil "
-  | MethodCodeKind.Runtime -> output_string os "runtime "
+let goutput_mbody is_entrypoint env os (md : ILMethodDef) =
+  match md.ImplementationFlags &&& MethodImplAttributes.ManagedMask with 
+  | MethodImplAttributes.Native -> output_string os "native "
+  | MethodImplAttributes.IL -> output_string os "cil "
+  | MethodImplAttributes.Runtime -> output_string os "runtime "
+  | _ -> ()
   
   output_string os (if md.IsInternalCall then "internalcall " else " ");
   output_string os (if md.IsManaged then "managed " else " ");
@@ -910,43 +912,40 @@ let goutput_mbody is_entrypoint env os md =
   output_string os "\n";
   output_string os "}\n"
   
-let goutput_mdef env os md =
+let goutput_mdef env os (md: ILMethodDef) =
   let attrs = 
-      match md.mdKind with
-        | MethodKind.Virtual vinfo -> 
-            "virtual "^
-            (if vinfo.IsFinal then "final " else "")^
-            (if vinfo.IsNewSlot then "newslot " else "")^
-            (if vinfo.IsCheckAccessOnOverride then " strict " else "")^
-            (if vinfo.IsAbstract then " abstract " else "")^
-              "  "
-        | MethodKind.NonVirtual ->     ""
-        | MethodKind.Ctor -> "rtspecialname"
-        | MethodKind.Static -> 
-            "static "^
-            (match md.mdBody.Contents with 
-              MethodBody.PInvoke (attr) -> 
-                "pinvokeimpl(\""^ attr.Where.Name^"\" as \""^ attr.Name ^"\""^
-                (match attr.CallingConv with 
-                | PInvokeCallingConvention.None -> ""
-                | PInvokeCallingConvention.Cdecl -> " cdecl"
-                | PInvokeCallingConvention.Stdcall -> " stdcall"
-                | PInvokeCallingConvention.Thiscall -> " thiscall" 
-                | PInvokeCallingConvention.Fastcall -> " fastcall"
-                | PInvokeCallingConvention.WinApi -> " winapi" ) +
+      (if md.IsVirtual then "virtual" else "")^
+      (if md.IsFinal then " final " else "")^
+      (if md.IsNewSlot then " newslot " else "")^
+      (if md.IsCheckAccessOnOverride then " strict " else "")^
+      (if md.IsAbstract then " abstract " else "")^
+      (if md.IsStatic then " static " else "")^
+      (match md.mdKind with 
+       | MethodKind.Ctor -> "rtspecialname" 
+       | MethodKind.Cctor -> "specialname rtspecialname static" 
+       | _ -> "")^
+        
+      (match md.mdBody.Contents with 
+        | MethodBody.PInvoke (attr) -> 
+        "pinvokeimpl(\""^ attr.Where.Name^"\" as \""^ attr.Name ^"\""^
+        (match attr.CallingConv with 
+        | PInvokeCallingConvention.None -> ""
+        | PInvokeCallingConvention.Cdecl -> " cdecl"
+        | PInvokeCallingConvention.Stdcall -> " stdcall"
+        | PInvokeCallingConvention.Thiscall -> " thiscall" 
+        | PInvokeCallingConvention.Fastcall -> " fastcall"
+        | PInvokeCallingConvention.WinApi -> " winapi" ) +
 
-                (match attr.CharEncoding with 
-                | PInvokeCharEncoding.None -> ""
-                | PInvokeCharEncoding.Ansi -> " ansi"
-                | PInvokeCharEncoding.Unicode -> " unicode"
-                | PInvokeCharEncoding.Auto -> " autochar") +
+        (match attr.CharEncoding with 
+        | PInvokeCharEncoding.None -> ""
+        | PInvokeCharEncoding.Ansi -> " ansi"
+        | PInvokeCharEncoding.Unicode -> " unicode"
+        | PInvokeCharEncoding.Auto -> " autochar") +
 
-                (if attr.NoMangle then " nomangle" else "") +
-                (if attr.LastError then " lasterr" else "") +
-                ")"
-              | _ -> 
-                  "")
-        | MethodKind.Cctor -> "specialname rtspecialname static" 
+        (if attr.NoMangle then " nomangle" else "") +
+        (if attr.LastError then " lasterr" else "") +
+        ")"
+        | _ -> "")
   let is_entrypoint = md.IsEntryPoint 
   let menv = ppenv_enter_method (List.length md.GenericParams) env 
   output_string os " .method ";
