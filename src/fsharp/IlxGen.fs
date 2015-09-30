@@ -3586,7 +3586,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
                 let ilContractCtor =  mkILNonGenericEmptyCtor None cenv.g.ilg.typ_Object
 
-                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,ilContractMethTyargs,[],mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
+                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,ilContractMethTyargs,[],mkILReturn ilContractFormalRetTy, MethodBody.None) ]
 
                 let ilContractTypeDefFlags = 
                     TypeAttributes.Abstract
@@ -5893,7 +5893,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
         let ilParams = GenParams cenv eenvForMeth mspec argInfos None
         
         let compileAsInstance = ValRefIsCompiledAsInstanceMember cenv.g vref
-        let mdef = mkILGenericVirtualMethod (vref.CompiledName,ILMemberAccess.Public,ilMethTypars,ilParams,ilReturn,MethodBody.Abstract)
+        let mdef = mkILGenericVirtualMethod (vref.CompiledName,ILMemberAccess.Public,ilMethTypars,ilParams,ilReturn,MethodBody.None)
 
         let mdef = fixupVirtualSlotFlags mdef
         let mdef = 

@@ -1154,7 +1154,7 @@ type MethodKind =
 type MethodBody =
     | IL of ILMethodBody
     | PInvoke of PInvokeMethod       (* platform invoke to native  *)
-    | Abstract
+    | None
     | Native
 
 /// Generic parameters.  Formal generic parameter declarations

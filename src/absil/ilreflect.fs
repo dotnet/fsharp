@@ -1257,7 +1257,7 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     match mbody.Contents with
     | MethodBody.IL ilmbody       -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody
     | MethodBody.PInvoke  _pinvoke -> () (* printf "EMIT: pinvoke method %s\n" name *) (* XXX - check *)
-    | MethodBody.Abstract         -> () (* printf "EMIT: abstract method %s\n" name *) (* XXX - check *)
+    | MethodBody.None             -> () (* printf "EMIT: abstract method %s\n" name *) (* XXX - check *)
     | MethodBody.Native           -> failwith "emitMethodBody cenv: native"               (* XXX - gap *)
 
 
@@ -1336,22 +1336,6 @@ let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * stri
     let parB = defineParameter(i,attrs,name)
     emitCustomAttrs cenv emEnv (wrapCustomAttr parB.SetCustomAttribute) param.CustomAttrs
 
-//----------------------------------------------------------------------------
-// convMethodAttributes
-//----------------------------------------------------------------------------
-
-let convMethodAttributes (mdef: ILMethodDef) =    
-    let attrAccess = 
-        match mdef.Access with
-        | ILMemberAccess.Assembly -> MethodAttributes.Assembly
-        | ILMemberAccess.CompilerControlled -> failwith "Method access compiler controled."
-        | ILMemberAccess.FamilyAndAssembly        -> MethodAttributes.FamANDAssem
-        | ILMemberAccess.FamilyOrAssembly         -> MethodAttributes.FamORAssem
-        | ILMemberAccess.Family             -> MethodAttributes.Family
-        | ILMemberAccess.Private            -> MethodAttributes.Private
-        | ILMemberAccess.Public             -> MethodAttributes.Public
-   
-    mdef.Flags ||| attrAccess 
 
 //----------------------------------------------------------------------------
 // buildMethodPass2
@@ -1362,7 +1346,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
    // SecurityDecls: Permissions;
    // IsUnmanagedExport: bool; (* -- The method is exported to unmanaged code using COM interop. *)
    // IsMustRun: bool; (* Whidbey feature: SafeHandle finalizer must be run *)
-    let attrs = convMethodAttributes mdef
+    let attrs = mdef.Flags
     let implflags = mdef.ImplementationFlags
     let cconv = convCallConv mdef.CallingConv
     let mref = mkRefToILMethod (tref,mdef)   
@@ -1655,16 +1639,8 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
     // -InitSemantics: ILTypeInit;
     // TypeAttributes
     let attrsKind   = typeAttrbutesOfTypeDefKind tdef.tdKind 
-    let attrsAccess = typeAttrbutesOfTypeAccess  tdef.Access
-    let attrsLayout,cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout
-    let attrsEnc    = typeAttributesOfTypeEncoding tdef.Encoding
-    let attrsOther  = flagsIf tdef.IsAbstract     TypeAttributes.Abstract |||
-                      flagsIf tdef.IsSealed       TypeAttributes.Sealed |||
-                      flagsIf tdef.IsSerializable TypeAttributes.Serializable |||
-                      flagsIf tdef.IsSpecialName  TypeAttributes.SpecialName |||
-                      flagsIf tdef.HasSecurity  TypeAttributes.HasSecurity
-     
-    let attrsType = attrsKind ||| attrsAccess ||| attrsLayout ||| attrsEnc ||| attrsOther
+    let attrsLayout,cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout     
+    let attrsType = tdef.Flags ||| attrsKind ||| attrsLayout 
 
     // TypeBuilder from TypeAttributes.
     let typB : TypeBuilder = rootTypeBuilder  (tdef.Name,attrsType)

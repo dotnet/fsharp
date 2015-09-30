@@ -1420,7 +1420,7 @@ type MethodKind =
 type MethodBody =
     | IL of ILMethodBody
     | PInvoke of PInvokeMethod       (* platform invoke to native  *)
-    | Abstract
+    | None
     | Native
 
 type ILLazyMethodBody = 
@@ -1714,7 +1714,7 @@ type MethodImplAttributes with
     member x.SetPreserveSig(v) = setEnumFlag x MethodImplAttributes.PreserveSig v
     member x.SetSynchronized(v) = setEnumFlag x MethodImplAttributes.Synchronized v
     member x.SetNoInlining(v) = setEnumFlag x MethodImplAttributes.NoInlining v
-
+    member x.SetCodeType(v) = setEnumFlagWithMask x MethodImplAttributes.CodeTypeMask v
 
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
@@ -3218,7 +3218,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
     ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
     Flags = 
         (MethodAttributes.Virtual ||| MethodAttributes.CheckAccessOnOverride)
-            .SetAbstract(match impl with MethodBody.Abstract -> true | _ -> false)
+            .SetAbstract(match impl with MethodBody.None -> true | _ -> false)
             .SetAccess(access) }
     
 let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =  
@@ -3414,7 +3414,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
     GenericParams= genparams;
     Implements = mkILTypes impl;
     Layout=ILTypeDefLayout.Auto;
-    Flags = TypeAttributes.AnsiClass.SetInitSemantics(init).SetAccess(access);
+    Flags = TypeAttributes.None.SetEncoding(ILDefaultPInvokeEncoding.Ansi).SetInitSemantics(init).SetAccess(access);
     Extends = Some extends;
     Methods= methods; 
     Fields= fields;
@@ -4056,14 +4056,14 @@ let buildILCode methName lab2pc instrs tryspecs localspecs =
 let mkILDelegateMethods ilg (parms,rtv:ILReturn) = 
     let rty = rtv.Type
     let one nm args ret =
-        let mdef = mkILNonGenericVirtualMethod (nm,ILMemberAccess.Public,args,mkILReturn ret,MethodBody.Abstract)
+        let mdef = mkILNonGenericVirtualMethod (nm,ILMemberAccess.Public,args,mkILReturn ret,MethodBody.None)
         {mdef with 
-                   ImplementationFlags= (mdef.ImplementationFlags &&& ~~~MethodImplAttributes.ManagedMask) ||| MethodImplAttributes.Runtime;
-                   Flags = (mdef.Flags ||| MethodAttributes.HideBySig) &&& ~~~MethodAttributes.Abstract }
-    let ctor = mkILCtor(ILMemberAccess.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
+                   ImplementationFlags= mdef.ImplementationFlags.SetCodeType(MethodImplAttributes.Runtime);
+                   Flags = mdef.Flags.SetHideBySig(true).SetAbstract(false) }
+    let ctor = mkILCtor(ILMemberAccess.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.None)
     let ctor = { ctor with  
-                   ImplementationFlags= (ctor.ImplementationFlags &&& ~~~MethodImplAttributes.ManagedMask) ||| MethodImplAttributes.Runtime;
-                   Flags = ctor.Flags ||| MethodAttributes.HideBySig }
+                   ImplementationFlags= mdef.ImplementationFlags.SetCodeType(MethodImplAttributes.Runtime);
+                   Flags = ctor.Flags.SetHideBySig(true) }
     [ ctor;
       one "Invoke" parms rty;
       one "BeginInvoke" (parms @ [mkILParamNamed("callback",ilg.typ_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) ilg.typ_IAsyncResult;
