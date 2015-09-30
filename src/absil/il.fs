@@ -1414,8 +1414,7 @@ type MethodKind =
     | Static 
     | Cctor 
     | Ctor 
-    | NonVirtual // remove this pair in favour of "Instance" since there is an IsVirtual flag
-    | Virtual 
+    | Instance
 
 [<RequireQualifiedAccess>]
 type MethodBody =
@@ -1504,7 +1503,7 @@ type ILMethodDef =
 
     member x.IsClassInitializer   = match x.mdKind with | MethodKind.Cctor      -> true | _ -> false
     member x.IsConstructor        = match x.mdKind with | MethodKind.Ctor       -> true | _ -> false
-    member x.IsNonVirtualInstance = match x.mdKind with | MethodKind.NonVirtual -> true | _ -> false
+    member x.IsNonVirtualInstance = not x.IsVirtual && (match x.mdKind with | MethodKind.Instance -> true | _ -> false)
 
     member md.CallingSignature =  mkILCallSigRaw (md.CallingConv,md.ParameterTypes,md.Return.Type)
 
@@ -3123,7 +3122,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
   { Name=nm;
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=MethodKind.Virtual 
+    mdKind=MethodKind.Instance;
     Parameters= mkILParametersRaw actual_args;
     Return=actual_ret;
     Access=access;
@@ -3132,7 +3131,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
     CustomAttrs = emptyILCustomAttrs;
     mdBody= mkMethBodyAux impl;
     ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-    Flags = MethodAttributes.CheckAccessOnOverride ||| (match impl with MethodBody.Abstract -> MethodAttributes.Abstract | _ -> enum 0)
+    Flags = MethodAttributes.Virtual ||| MethodAttributes.CheckAccessOnOverride ||| (match impl with MethodBody.Abstract -> MethodAttributes.Abstract | _ -> enum 0)
     }
     
 let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =  
@@ -3142,7 +3141,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
   { Name=nm;
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=MethodKind.NonVirtual;
+    mdKind=MethodKind.Instance;
     Parameters= mkILParametersRaw actual_args;
     Return=actual_ret;
     Access=access;
@@ -3152,7 +3151,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
     mdBody= mkMethBodyAux impl;
     ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
     // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads. 
-    Flags = MethodAttributes.HideBySig }
+    Flags = MethodAttributes.Virtual ||| MethodAttributes.HideBySig }
     
 let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =  
   mkILGenericNonVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)

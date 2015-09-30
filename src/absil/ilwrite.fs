@@ -2875,15 +2875,10 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
 let GenMethodDefAsRow cenv env midx (md: ILMethodDef) = 
     let flags = 
         GetMemberAccessFlags md.Access |||
-        (if (match md.mdKind with
-              | MethodKind.Static | MethodKind.Cctor -> true
-              | _ -> false) then 0x0010 else 0x0) |||
+        (match md.mdKind with MethodKind.Static | MethodKind.Cctor -> 0x0010 | _ -> 0x0) |||
         (int md.Flags) |||
-        (if (match md.mdBody.Contents with MethodBody.PInvoke _ -> true | _ -> false) then 0x2000 else 0x0) |||
-        (if 
-          (match md.mdKind with
-          | MethodKind.Ctor | MethodKind.Cctor -> true 
-          | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
+        (match md.mdBody.Contents with MethodBody.PInvoke _ -> 0x2000 | _ -> 0x0) |||
+        (match md.mdKind with MethodKind.Ctor | MethodKind.Cctor -> 0x1000 | _ -> 0x0) ||| // RTSpecialName 
         (if not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
     let implflags = int md.ImplementationFlags
 

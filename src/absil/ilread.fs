@@ -2280,10 +2280,8 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt idx
      let nm = readStringHeap ctxt nameIdx
      let isStatic = (flags &&& 0x0010) <> 0x0
-     let virt = (flags &&& 0x0040) <> 0x0
      let abstr = (flags &&& 0x0400) <> 0x0
      let pinvoke = (flags &&& 0x2000) <> 0x0
-     let _rtspecialname = (flags &&& 0x1000) <> 0x0
      let codetype = implflags &&& 0x0003
      let unmanaged = (implflags &&& 0x0004) <> 0x0
      let internalcall = (implflags &&& 0x1000) <> 0x0
@@ -2306,8 +2304,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
            (if cctor then MethodKind.Cctor 
             elif ctor then MethodKind.Ctor 
             elif isStatic then MethodKind.Static 
-            elif virt then MethodKind.Virtual 
-            else MethodKind.NonVirtual);
+            else MethodKind.Instance);
        Access = memberAccessOfFlags flags;
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef,idx));
        ImplementationFlags=enum implflags
@@ -2327,7 +2324,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
            if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA";
            mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
          else 
-           seekReadMethodRVA ctxt (idx,nm,internalcall,numtypars) codeRVA;   
+           seekReadMethodRVA ctxt (idx,nm,numtypars) codeRVA;   
      }
      
      
@@ -2851,9 +2848,9 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
    instrs,rawToLabel, lab2pc, raw2nextLab
 
 #if NO_PDB_READER
-and seekReadMethodRVA ctxt (_idx,nm,_internalcall,numtypars) rva = 
+and seekReadMethodRVA ctxt (_idx,nm,numtypars) rva = 
 #else
-and seekReadMethodRVA ctxt (idx,nm,_internalcall,numtypars) rva = 
+and seekReadMethodRVA ctxt (idx,nm,numtypars) rva = 
 #endif
   mkMethBodyLazyAux 
    (lazy

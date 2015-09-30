@@ -1147,8 +1147,7 @@ type MethodKind =
     | Static 
     | Cctor 
     | Ctor 
-    | NonVirtual 
-    | Virtual 
+    | Instance
 
 // REVIEW: fold this into ILMethodDef
 [<RequireQualifiedAccess>]
