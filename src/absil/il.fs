@@ -4062,7 +4062,7 @@ let mkILDelegateMethods ilg (parms,rtv:ILReturn) =
                    Flags = mdef.Flags.SetHideBySig(true).SetAbstract(false) }
     let ctor = mkILCtor(ILMemberAccess.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.None)
     let ctor = { ctor with  
-                   ImplementationFlags= mdef.ImplementationFlags.SetCodeType(MethodImplAttributes.Runtime);
+                   ImplementationFlags= ctor.ImplementationFlags.SetCodeType(MethodImplAttributes.Runtime);
                    Flags = ctor.Flags.SetHideBySig(true) }
     [ ctor;
       one "Invoke" parms rty;
