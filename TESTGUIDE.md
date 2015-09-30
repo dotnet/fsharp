@@ -35,17 +35,40 @@ Note: **Don't** run tests from a Visual Studio developer command prompt (see bel
 
 The script `tests\RunTests.cmd` has been provided to make execution of the above suites simple.  You can kick off a full test run of any of the above suites like this:
 
-```
-RunTests.cmd <debug|release> fsharp [tags to run] [tags not to run]
-RunTests.cmd <debug|release> fsharpqa [tags to run] [tags not to run]
-RunTests.cmd <debug|release> compilerunit
-RunTests.cmd <debug|release> coreunit
-RunTests.cmd <debug|release> coreunitportable47
-RunTests.cmd <debug|release> coreunitportable7
-RunTests.cmd <debug|release> coreunitportable78
-RunTests.cmd <debug|release> coreunitportable259
-RunTests.cmd <debug|release> ideunit
-```
+
+    RunTests.cmd <debug|release> fsharp [tags to run] [tags not to run]
+    RunTests.cmd <debug|release> fsharpqa [tags to run] [tags not to run]
+    RunTests.cmd <debug|release> compilerunit
+    RunTests.cmd <debug|release> coreunit
+    RunTests.cmd <debug|release> coreunitportable47
+    RunTests.cmd <debug|release> coreunitportable7
+    RunTests.cmd <debug|release> coreunitportable78
+    RunTests.cmd <debug|release> coreunitportable259
+    RunTests.cmd <debug|release> ideunit
+
+Debug runs look like this:
+
+    RunTests.cmd debug fsharp 
+    RunTests.cmd debug fsharpqa
+    RunTests.cmd debug compilerunit
+    RunTests.cmd debug coreunit
+    RunTests.cmd debug coreunitportable47
+    RunTests.cmd debug coreunitportable7
+    RunTests.cmd debug coreunitportable78
+    RunTests.cmd debug coreunitportable259
+    RunTests.cmd debug ideunit
+
+Release runs look like this:
+
+    RunTests.cmd release fsharp 
+    RunTests.cmd release fsharpqa
+    RunTests.cmd release compilerunit
+    RunTests.cmd release coreunit
+    RunTests.cmd release coreunitportable47
+    RunTests.cmd release coreunitportable7
+    RunTests.cmd release coreunitportable78
+    RunTests.cmd release coreunitportable259
+    RunTests.cmd release ideunit
 
 `RunTests.cmd` sets a handful of environment variables which allow for the tests to work, then puts together and executes the appropriate command line to start the specified test suite.
 

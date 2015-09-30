@@ -2264,14 +2264,11 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
 and seekReadMethod ctxt numtypars (idx:int) =
      let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt idx
      let nm = readStringHeap ctxt nameIdx
-     let isStatic = (flags &&& 0x0010) <> 0x0
      let abstr = (flags &&& 0x0400) <> 0x0
      let pinvoke = (flags &&& 0x2000) <> 0x0
      let codetype = implflags &&& 0x0003
      let unmanaged = (implflags &&& 0x0004) <> 0x0
      let internalcall = (implflags &&& 0x1000) <> 0x0
-     let cctor = (nm = ".cctor")
-     let ctor = (nm = ".ctor")
      let _generic,_genarity,cc,retty,argtys,varargs = readBlobHeapAsMethodSig ctxt numtypars typeIdx
      if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef signature";
      
@@ -2285,11 +2282,6 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let ret,ilParams = seekReadParams ctxt (retty,argtys) paramIdx endParamIdx
 
      { Name=nm;
-       mdKind = 
-           (if cctor then MethodKind.Cctor 
-            elif ctor then MethodKind.Ctor 
-            elif isStatic then MethodKind.Static 
-            else MethodKind.Instance);
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef,idx));
        ImplementationFlags=enum implflags
        Flags=enum flags

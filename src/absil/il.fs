@@ -1410,12 +1410,6 @@ type ILOverridesSpec =
     member x.MethodRef = let (OverridesSpec(mr,_ty)) = x in mr
     member x.EnclosingType = let (OverridesSpec(_mr,ty)) = x in ty
 
-type MethodKind =
-    | Static 
-    | Cctor 
-    | Ctor 
-    | Instance
-
 [<RequireQualifiedAccess>]
 type MethodBody =
     | IL of ILMethodBody
@@ -1455,7 +1449,6 @@ type ILGenericParameterDefs = ILGenericParameterDef list
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
-      mdKind: MethodKind;
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
@@ -1512,9 +1505,9 @@ type ILMethodDef =
     member x.MaxStack     = x.MethodBody.MaxStack  
     member x.IsZeroInit   = x.MethodBody.IsZeroInit
 
-    member x.IsClassInitializer   = match x.mdKind with | MethodKind.Cctor      -> true | _ -> false
-    member x.IsConstructor        = match x.mdKind with | MethodKind.Ctor       -> true | _ -> false
-    member x.IsNonVirtualInstance = not x.IsVirtual && (match x.mdKind with | MethodKind.Instance -> true | _ -> false)
+    member x.IsClassInitializer   = (x.IsRTSpecialName && x.IsStatic && x.Name = ".cctor")
+    member x.IsConstructor        = (x.IsRTSpecialName && not x.IsStatic && x.Name = ".ctor")
+    member x.IsNonVirtualInstance = not x.IsVirtual && not x.IsStatic && not x.IsConstructor
 
     member md.CallingSignature =  mkILCallSigRaw (md.CallingConv,md.ParameterTypes,md.Return.Type)
 
@@ -1696,6 +1689,9 @@ type MethodAttributes with
     member x.SetHideBySig v = setEnumFlag x MethodAttributes.HideBySig  v
     member x.SetNewSlot v = setEnumFlag x MethodAttributes.NewSlot  v
     member x.SetHasSecurity v = setEnumFlag x MethodAttributes.HasSecurity v
+    member x.SetSpecialName v = setEnumFlag x MethodAttributes.SpecialName v
+    member x.SetRTSpecialName v = setEnumFlag x MethodAttributes.RTSpecialName v
+    member x.SetStatic v = setEnumFlag x MethodAttributes.Static v
     member x.SetAccess v = 
         let v2 = 
             match v with 
@@ -3131,13 +3127,12 @@ let mkILVoidReturn = mkILReturn ILType.Void
 
 let mkILCtor (access,args,impl) = 
     { Name=".ctor";
-      mdKind=MethodKind.Ctor;
       CallingConv=ILCallingConv.Instance;
       Parameters=mkILParametersRaw args;
       Return= mkILVoidReturn;
       mdBody= mkMethBodyAux impl;
       ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-      Flags = MethodAttributes.SpecialName.SetAccess(access);
+      Flags = MethodAttributes.None.SetSpecialName(true).SetRTSpecialName(true).SetAccess(access);
       SecurityDecls=emptyILSecurityDecls;
       IsEntryPoint=false;
       GenericParams=mkILEmptyGenericParams;
@@ -3172,7 +3167,6 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
     { GenericParams=genparams;
       Name=nm;
       CallingConv = ILCallingConv.Static;
-      mdKind=MethodKind.Static;
       Parameters=  mkILParametersRaw args;
       Return= ret;
       SecurityDecls=emptyILSecurityDecls;
@@ -3180,7 +3174,9 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
       CustomAttrs = emptyILCustomAttrs;
       mdBody= mkMethBodyAux impl;
       ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-      Flags = MethodAttributes.None.SetAccess(access) }
+      Flags = MethodAttributes.None
+                .SetAccess(access)
+                .SetStatic(true) }
 
 let mkILNonGenericStaticMethod (nm,access,args,ret,impl) = 
     mkILStaticMethod (mkILEmptyGenericParams,nm,access,args,ret,impl)
@@ -3189,12 +3185,15 @@ let mkILClassCtor impl =
     { Name=".cctor";
       CallingConv=ILCallingConv.Static;
       GenericParams=mkILEmptyGenericParams;
-      mdKind=MethodKind.Cctor;
       Parameters=emptyILParameters;
       Return=mkILVoidReturn;
       IsEntryPoint=false;
       ImplementationFlags = MethodImplAttributes.IL ||| MethodImplAttributes.Managed;
-      Flags = MethodAttributes.SpecialName.SetAccess(ILMemberAccess.Private);
+      Flags = MethodAttributes.None
+                .SetSpecialName(true)
+                .SetRTSpecialName(true)
+                .SetAccess(ILMemberAccess.Private)
+                .SetStatic(true);
       SecurityDecls=emptyILSecurityDecls;
       CustomAttrs = emptyILCustomAttrs;
       mdBody= mkMethBodyAux impl } 
@@ -3208,7 +3207,6 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
   { Name=nm;
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=MethodKind.Instance;
     Parameters= mkILParametersRaw actual_args;
     Return=actual_ret;
     IsEntryPoint=false;
@@ -3228,7 +3226,6 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
   { Name=nm;
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=MethodKind.Instance;
     Parameters= mkILParametersRaw actual_args;
     Return=actual_ret;
     IsEntryPoint=false;

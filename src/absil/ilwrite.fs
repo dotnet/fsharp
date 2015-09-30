@@ -2851,10 +2851,7 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
 let GenMethodDefAsRow cenv env midx (md: ILMethodDef) = 
     let flags = 
         (int md.Flags) |||
-        // TODO: put these in the flags
-        (match md.mdKind with MethodKind.Static | MethodKind.Cctor -> 0x0010 | _ -> 0x0) |||
         (match md.mdBody.Contents with MethodBody.PInvoke _ -> 0x2000 | _ -> 0x0) |||
-        (match md.mdKind with MethodKind.Ctor | MethodKind.Cctor -> 0x1000 | _ -> 0x0) ||| // RTSpecialName 
         (if not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
     let implflags = int md.ImplementationFlags
 

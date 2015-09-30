@@ -920,11 +920,9 @@ let goutput_mdef env os (md: ILMethodDef) =
       (if md.IsCheckAccessOnOverride then " strict " else "")^
       (if md.IsAbstract then " abstract " else "")^
       (if md.IsStatic then " static " else "")^
-      (match md.mdKind with 
-       | MethodKind.Ctor -> "rtspecialname" 
-       | MethodKind.Cctor -> "specialname rtspecialname static" 
-       | _ -> "")^
-        
+      (if md.IsRTSpecialName then " rtspecialname " else "")^
+      (if md.IsSpecialName then " specialname " else "")^
+       
       (match md.mdBody.Contents with 
         | MethodBody.PInvoke (attr) -> 
         "pinvokeimpl(\""^ attr.Where.Name^"\" as \""^ attr.Name ^"\""^

@@ -42,7 +42,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 let IsNonErasedTypar (tp:Typar) = not tp.IsErased
 let DropErasedTypars (tps:Typar list) = tps |> List.filter IsNonErasedTypar
 let DropErasedTyargs tys = tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true) 
-let AddSpecialNameFlag (mdef:ILMethodDef) = { mdef with Flags = mdef.Flags ||| MethodAttributes.SpecialName }
+let AddSpecialNameFlag (mdef:ILMethodDef) = { mdef with Flags = mdef.Flags.SetSpecialName(true) }
 
 let AddNonUserCompilerGeneratedAttribs g (mdef:ILMethodDef) = addMethodGeneratedAttrs  g.ilg mdef
 
@@ -3352,7 +3352,7 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
     | Some basev -> AddStorageForVal cenv.g (basev,notlazy (Arg 0))  eenv  
 
 and fixupVirtualSlotFlags (mdef: ILMethodDef) = 
-    {mdef with Flags = mdef.Flags.SetHideBySig(true).SetCheckAccessOnOverride(true) }
+    {mdef with Flags = mdef.Flags.SetHideBySig(true).SetCheckAccessOnOverride(false) }
 
 and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
     {mdef with Name=nameOfOverridingMethod }
@@ -3537,7 +3537,10 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
 and GenClosureTypeDef cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, ilCloLambdas, ilCtorBody, mdefs, mimpls,ext, ilIntfTys) =
 
     let flags = 
-        (TypeAttributes.Sealed ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass)
+        TypeAttributes.Sealed
+            .SetSpecialName(true)
+            .SetInitSemantics(ILTypeInit.BeforeField)
+            .SetEncoding(ILDefaultPInvokeEncoding.Auto)
             .SetSerializable(cenv.opts.netFxHasSerializableAttribute)
             .SetAccess(ComputeTypeAccess tref true)
     { Name = tref.Name; 
@@ -5108,8 +5111,7 @@ and GenMethodForBinding
                let tcref =  v.MemberApparentParent
                not tcref.Deref.IsFSharpDelegateTycon
 
-           let flags = mdef.Flags.SetFinal(memberInfo.MemberFlags.IsFinal).SetAbstract(isAbstract)
-           let mdef = {mdef with Flags = flags }
+           let mdef = if mdef.IsVirtual then {mdef with Flags = mdef.Flags.SetFinal(memberInfo.MemberFlags.IsFinal).SetAbstract(isAbstract) } else mdef
            match memberInfo.MemberFlags.MemberKind with 
                
            | (MemberKind.PropertySet | MemberKind.PropertyGet)  ->
@@ -6452,7 +6454,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                           (int (if hiddenRepr
                                                 then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                                 else SourceConstructFlags.SumType)) ]);
-                 Flags = (TypeAttributes.BeforeFieldInit ||| TypeAttributes.Sealed ||| TypeAttributes.AutoClass).SetSerializable(IsSerializable).SetAccess(access);      
+                 Flags = TypeAttributes.Sealed
+                            .SetInitSemantics(ILTypeInit.BeforeField)
+                            .SetEncoding(ILDefaultPInvokeEncoding.Auto)
+                            .SetSerializable(IsSerializable)
+                            .SetAccess(access);      
                  tdKind=
                      mkIlxTypeDefKind
                        (IlxTypeDefKind.Union
@@ -6577,10 +6583,9 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                 match cenv.g.ilg.tref_SecurityPermissionAttribute with
                 | None -> ilMethodDef
                 | Some securityPermissionAttributeType ->
-                    let flags = ilMethodDef.Flags.SetHasSecurity(true)
                     { ilMethodDef with 
                            SecurityDecls=mkILSecurityDecls [ IL.mkPermissionSet cenv.g.ilg (ILSecurityAction.Demand,[(securityPermissionAttributeType, [("SerializationFormatter",cenv.g.ilg.typ_Bool, ILAttribElem.Bool(true))])])];
-                           Flags=flags }
+                           Flags=ilMethodDef.Flags.SetHasSecurity(true) }
             [ilCtorDefForSerialziation; getObjectDataMethodForSerialization]
 #endif                
 

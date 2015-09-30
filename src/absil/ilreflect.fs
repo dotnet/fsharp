@@ -1400,13 +1400,11 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
         envBindMethodRef emEnv mref methB
 
     | _ -> 
-      match mdef.Name with
-      | ".cctor" 
-      | ".ctor" ->
+      if mdef.IsConstructor || mdef.IsClassInitializer then 
           let consB = typB.DefineConstructorAndLog(attrs,cconv,convTypesToArray cenv emEnv mdef.ParameterTypes)
           consB.SetImplementationFlagsAndLog(implflags);
           envBindConsRef emEnv mref consB
-      | _name    ->
+      else
           // Note the return/argument types may involve the generic parameters
           let methB = typB.DefineMethodAndLog(mdef.Name,attrs,cconv) 
         
@@ -1433,8 +1431,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
         match mdef.mdBody.Contents with
         | MethodBody.PInvoke  _p -> true
         | _ -> false
-    match mdef.Name with
-    | ".cctor" | ".ctor" ->
+    if mdef.IsConstructor || mdef.IsClassInitializer then 
           let consB = envGetConsB emEnv mref
           // Constructors can not have generic parameters
           assert isNil mdef.GenericParams
@@ -1445,7 +1442,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
           emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.mdBody;
           emitCustomAttrs cenv emEnv (wrapCustomAttr consB.SetCustomAttribute) mdef.CustomAttrs;
           ()
-     | _name ->
+    else
        
           let methB = envGetMethB emEnv mref
           let emEnv = envPushTyvars emEnv (Array.append

@@ -1142,13 +1142,6 @@ type ILOverridesSpec =
     member MethodRef: ILMethodRef
     member EnclosingType: ILType 
 
-[<RequireQualifiedAccess>]
-type MethodKind =
-    | Static 
-    | Cctor 
-    | Ctor 
-    | Instance
-
 // REVIEW: fold this into ILMethodDef
 [<RequireQualifiedAccess>]
 type MethodBody =
@@ -1191,7 +1184,6 @@ type ILLazyMethodBody =
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
-      mdKind: MethodKind;
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
@@ -1230,6 +1222,7 @@ type ILMethodDef =
     member IsReqSecObj : bool
     member IsUnmanagedExport : bool
     member IsSpecialName : bool
+    member IsRTSpecialName : bool
     member IsSynchronized : bool
     member IsMustRun : bool
     member IsPreserveSig : bool
@@ -1625,8 +1618,10 @@ type MethodAttributes with
     member SetCheckAccessOnOverride : bool -> MethodAttributes
     member SetHideBySig : bool -> MethodAttributes
     member SetNewSlot : bool -> MethodAttributes
+    member SetSpecialName : bool -> MethodAttributes
     member SetHasSecurity : bool -> MethodAttributes
     member SetAccess : ILMemberAccess -> MethodAttributes
+    member SetStatic : bool -> MethodAttributes
     static member None : MethodAttributes
 
 type MethodImplAttributes with 
