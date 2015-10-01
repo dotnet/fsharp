@@ -50,17 +50,17 @@ let main (argv : string array) =
                     compareAux resta restb (i+1)
                 else
                     printfn "Files differ at line %d:" i
-                    printfn "\t>> %s" a
-                    printfn "\t<< %s" b
+                    for x in (a::resta) do printfn "\t>> %s" x
+                    for x in (b::restb) do printfn "\t<< %s" x
                     false
         | [], b :: restb -> 
                     printfn "Files differ at line %d:" i
                     printfn "\t>> %s" "EOF"
-                    printfn "\t<< %s" b
+                    for x in (b::restb) do printfn "\t<< %s" x
                     false
         | a :: resta, [] -> 
                     printfn "Files differ at line %d:" i
-                    printfn "\t>> %s" a
+                    for x in (a::resta) do printfn "\t>> %s" x
                     printfn "\t<< %s" "EOF"
                     false
         | [], [] -> true
