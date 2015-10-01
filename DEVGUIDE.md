@@ -2,12 +2,10 @@
 
 This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
 
-To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org).
+To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 
-To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
-
-The primary technical guide to the F# Compiler is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
-maintained by various contributors and hosted by the F# Software Foundation.  Please read
+Our primary technical guide to the F# compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
+maintained by contributors to this repository.  Please read
 and contribute to that guide.
 
 
