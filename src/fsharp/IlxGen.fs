@@ -1120,11 +1120,11 @@ and TypeDefsBuilder() =
               let tdef = b.Close() 
               // Skip the <PrivateImplementationDetails$> type if it is empty
               if not eliminateIfEmpty 
-                 || tdef.NestedTypes.AsList.IsEmpty
+                 || tdef.NestedTypes.AsList.IsEmpty 
                  || not tdef.Fields.AsList.IsEmpty 
                  || not tdef.Events.AsList.IsEmpty 
                  || not tdef.Properties.AsList.IsEmpty 
-                 || tdef.Methods.AsList.Length <> 0 then 
+                 || tdef.Methods.AsList.IsEmpty then 
                   yield tdef  ]
 
     member b.FindTypeDefBuilder(nm) = 
@@ -3936,7 +3936,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
                 let tcref = tcrefOfAppTy cenv.g delegateTy
                 let _,_,tdef = tcref.ILTyconInfo
                 match tdef.Methods.FindByName ".ctor" with 
-                | [ ctorMDef ] -> 
+                | [ctorMDef] -> 
                     match ctorMDef.Parameters |> ILList.toList with 
                     | [ _;p2 ] -> (p2.Type.TypeSpec.Name = "System.UIntPtr")
                     | _ -> false

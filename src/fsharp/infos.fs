@@ -2983,7 +2983,7 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
         | ILTypeMetadata (_,tdef) -> 
             let mdefs = tdef.Methods
             let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
-            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef))
+            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             if not (isAppTy g typ) then []
             else SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) (tcrefOfAppTy g typ)

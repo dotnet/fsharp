@@ -1308,7 +1308,7 @@ module StaticLinker =
                 { ilxMainModule with 
                     Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrs = mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs) });
                     CustomAttrs = mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsList ];
-                    TypeDefs = mkILTypeDefs [ yield topTypeDef ; yield! List.concat normalTypeDefs ];
+                    TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs);
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList);
                     NativeResources = savedNativeResources }
 
@@ -1629,8 +1629,8 @@ module StaticLinker =
                               let rec rw enc (tdefs: ILTypeDefs) = 
                                   mkILTypeDefs
                                    [ for tdef in tdefs do 
-                                       let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
-                                       if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
+                                        let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
+                                        if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
                                           if debugStaticLinking then printfn "Keep provided type %s in place because it wasn't relocated" ilOrigTyRef.QualifiedName
                                           yield { tdef with NestedTypes = rw (enc@[tdef.Name]) tdef.NestedTypes  } ]
                               rw [] ilModule.TypeDefs

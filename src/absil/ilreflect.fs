@@ -1918,21 +1918,21 @@ let buildModuleTypePass4 visited   emEnv tdef = buildTypeDefPass4 visited [] emE
 //----------------------------------------------------------------------------
     
 let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilder) (m: ILModuleDef) =
-    let tdefs = m.TypeDefs.AsArray
+    let tdefs = m.TypeDefs.AsList
 
-    let emEnv = (emEnv, tdefs) ||> Array.fold (buildModuleTypePass1 cenv modB) 
-    tdefs |> Array.iter (buildModuleTypePass1b cenv emEnv) 
-    let emEnv = (emEnv, tdefs) ||> Array.fold (buildModuleTypePass2 cenv) 
+    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass1 cenv modB) 
+    tdefs |> List.iter (buildModuleTypePass1b cenv emEnv) 
+    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass2 cenv) 
     
     for delayedFieldInit in emEnv.delayedFieldInits do
         delayedFieldInit()
 
     let emEnv = { emEnv with delayedFieldInits = [] }
 
-    let emEnv = (emEnv, tdefs) ||> Array.fold (buildModuleTypePass3 cenv modB) 
+    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass3 cenv modB) 
     let visited = new Dictionary<_,_>(10) 
     let created = new Dictionary<_,_>(10) 
-    tdefs |> Array.iter (buildModuleTypePass4  (visited,created) emEnv) 
+    tdefs |> List.iter (buildModuleTypePass4  (visited,created) emEnv) 
     let emEnv = Seq.fold envUpdateCreatedTypeRef emEnv created.Keys // update typT with the created typT
     emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs;    
     m.Resources.AsList |> List.iter (fun r -> 

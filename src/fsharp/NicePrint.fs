@@ -476,9 +476,9 @@ module private PrintIL =
 
             let bodyStatic   = 
                 memberBlockLs (typeDef.Fields.AsList |> List.filter (fun fd -> fd.IsStatic)                 |> mkILFields,
-                               typeDef.Methods.AsList |> List.filter (fun md -> md.IsStatic)                |> mkILMethods,
-                               typeDef.Properties.AsList |> List.filter (fun pd -> isStaticILProperty pd)     |> mkILProperties,
-                               typeDef.Events.AsList |> List.filter (fun ed -> isStaticILEvent ed)            |> mkILEvents)
+                                typeDef.Methods.AsList |> List.filter (fun md -> md.IsStatic)                |> mkILMethods,
+                                typeDef.Properties.AsList |> List.filter (fun pd -> isStaticILProperty pd)     |> mkILProperties,
+                                typeDef.Events.AsList |> List.filter (fun ed -> isStaticILEvent ed)            |> mkILEvents)
 
             let bodyInstance = 
                 memberBlockLs (typeDef.Fields.AsList |> List.filter (fun fd -> not(fd.IsStatic))                |> mkILFields,

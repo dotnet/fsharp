@@ -1038,7 +1038,7 @@ let rec convClassUnionDef cenv enc td cud =
     let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
 
     let existingMeths = 
-        td.Methods.AsList
+        td.Methods.AsList 
             // Filter out the F#-compiler supplied implementation of the get_Empty method. This is because we will replace
             // its implementation by one that loads the unique private static field for lists
             |> List.filter (fun md -> not (cud.cudHasHelpers = SpecialFSharpListHelpers && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty")) &&
