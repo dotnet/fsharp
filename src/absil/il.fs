@@ -1546,7 +1546,7 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.AsArray = array.Value
     member x.AsList = x.AsArray |> Array.toList
-    member x.FindByName nm  =  dict.Value.[nm]
+    member x.FindByName nm  =  if dict.Value.ContainsKey nm then dict.Value.[nm] else []
     member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> x.Parameters.Length = arity) 
 
 
