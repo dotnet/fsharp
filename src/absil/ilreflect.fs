@@ -1828,7 +1828,7 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
             if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
             tdef.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2));
             if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
-            tdef.Methods.AsList |> Seq.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2)));
+            tdef.Methods.AsList |> List.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> ILList.iter (traverseType false 2)));
             
         // We absolutely need the parent type...
         if priority >= 1 then 
@@ -1843,7 +1843,7 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
         // We have to define all struct types in all methods before a class is defined. This only has any effect when there is a struct type
         // being defined simultaneously with this type.
         if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Doing value types in method signatures of %s, #mdefs = %d\n" tdef.Name tdef.Methods.AsList.Length; 
+            if verbose2 then dprintf "buildTypeDefPass4: Doing value types in method signatures of %s\n" tdef.Name  
             tdef.Methods |> Seq.iter   (fun md -> md.Parameters |> ILList.iter (fun p -> p.Type |> (traverseType true 1))
                                                   md.Return.Type |> traverseType true 1);
         
@@ -1918,21 +1918,21 @@ let buildModuleTypePass4 visited   emEnv tdef = buildTypeDefPass4 visited [] emE
 //----------------------------------------------------------------------------
     
 let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilder) (m: ILModuleDef) =
-    let tdefs = m.TypeDefs.AsList 
+    let tdefs = m.TypeDefs.AsArray
 
-    let emEnv = List.fold (buildModuleTypePass1 cenv modB) emEnv tdefs
-    tdefs |> List.iter (buildModuleTypePass1b cenv emEnv) 
-    let emEnv = List.fold (buildModuleTypePass2 cenv) emEnv  tdefs
+    let emEnv = (emEnv, tdefs) ||> Array.fold (buildModuleTypePass1 cenv modB) 
+    tdefs |> Array.iter (buildModuleTypePass1b cenv emEnv) 
+    let emEnv = (emEnv, tdefs) ||> Array.fold (buildModuleTypePass2 cenv) 
     
     for delayedFieldInit in emEnv.delayedFieldInits do
         delayedFieldInit()
 
     let emEnv = { emEnv with delayedFieldInits = [] }
 
-    let emEnv = List.fold (buildModuleTypePass3 cenv modB) emEnv  tdefs
+    let emEnv = (emEnv, tdefs) ||> Array.fold (buildModuleTypePass3 cenv modB) 
     let visited = new Dictionary<_,_>(10) 
     let created = new Dictionary<_,_>(10) 
-    tdefs |> List.iter (buildModuleTypePass4  (visited,created) emEnv) 
+    tdefs |> Array.iter (buildModuleTypePass4  (visited,created) emEnv) 
     let emEnv = Seq.fold envUpdateCreatedTypeRef emEnv created.Keys // update typT with the created typT
     emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs;    
     m.Resources.AsList |> List.iter (fun r -> 

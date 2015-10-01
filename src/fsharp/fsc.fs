@@ -971,8 +971,6 @@ module MainModuleBuilder =
         let ilTypeDefs = 
             //let topTypeDef = mkILTypeDefForGlobalFunctions tcGlobals.ilg (mkILMethods [], emptyILFields)
             mkILTypeDefs codegenResults.ilTypeDefs
-            
-
 
         let mainModule = 
             let hashAlg = AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyAlgorithmIdAttribute" topAttrs.assemblyAttrs
@@ -1310,7 +1308,7 @@ module StaticLinker =
                 { ilxMainModule with 
                     Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrs = mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs) });
                     CustomAttrs = mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsList ];
-                    TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs);
+                    TypeDefs = mkILTypeDefs [ yield topTypeDef ; yield! List.concat normalTypeDefs ];
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList);
                     NativeResources = savedNativeResources }
 
@@ -1355,14 +1353,14 @@ module StaticLinker =
                 TypeDefs = 
                   mkILTypeDefs 
                       ([ for td in fakeModule.TypeDefs do 
-                              yield {td with 
+                            yield {td with 
                                       Methods =
-                                        mkILMethods (List.map (fun (md:ILMethodDef) ->
-                                                            {md with                                                            
-                                                              CustomAttrs = 
-                                                                mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                                   ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
-                                                          (td.Methods.AsList))}])}
+                                        td.Methods.AsList
+                                        |> List.map (fun md ->
+                                            {md with CustomAttrs = 
+                                                        mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                            ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
+                                        |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
 
@@ -1631,8 +1629,8 @@ module StaticLinker =
                               let rec rw enc (tdefs: ILTypeDefs) = 
                                   mkILTypeDefs
                                    [ for tdef in tdefs do 
-                                      let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
-                                      if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
+                                       let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
+                                       if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
                                           if debugStaticLinking then printfn "Keep provided type %s in place because it wasn't relocated" ilOrigTyRef.QualifiedName
                                           yield { tdef with NestedTypes = rw (enc@[tdef.Name]) tdef.NestedTypes  } ]
                               rw [] ilModule.TypeDefs

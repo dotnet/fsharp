@@ -1268,6 +1268,7 @@ type ILMethodDef =
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
+    member AsArray : ILMethodDef[]
     member AsList : ILMethodDef list
     member FindByName : string -> ILMethodDef list
 
@@ -1416,10 +1417,11 @@ type ILTypeDefKind =
 [<Sealed>]
 type ILTypeDefs =
     interface IEnumerable<ILTypeDef>
+    member AsArray : ILTypeDef[]
     member AsList : ILTypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves
-    member AsListOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>) list
+    member AsArrayOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>)[]
 
     /// Calls to [FindByName] will result in any laziness in the overall 
     /// set of ILTypeDefs being read in in addition 
@@ -1792,7 +1794,7 @@ val EcmaILGlobals : ILGlobals
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned list as an empty typedef if it 
 /// doesn't already exist.
-val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef list
+val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef[]
 
 /// Note: not all custom attribute data can be decoded without binding types.  In particular 
 /// enums must be bound in order to discover the size of the underlying integer. 
@@ -2023,7 +2025,8 @@ val mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
 val mkILCustomAttrs: ILAttribute list -> ILAttributes
-val mkILComputedCustomAttrs: (unit -> ILAttribute list) -> ILAttributes
+val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
+val mkILComputedCustomAttrs: (unit -> ILAttribute[]) -> ILAttributes
 val emptyILCustomAttrs: ILAttributes
 
 val mkILSecurityDecls: ILPermission list -> ILPermissions
@@ -2042,8 +2045,8 @@ val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
 val mkILMethods: ILMethodDef list -> ILMethodDefs
-val mkILMethodsLazy: Lazy<ILMethodDef list> -> ILMethodDefs
-val addILMethod:  ILMethodDef -> ILMethodDefs -> ILMethodDefs
+val mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
+val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs
 
 val mkILFields: ILFieldDef list -> ILFieldDefs
@@ -2054,7 +2057,8 @@ val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
 val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
 val emptyILMethodImpls: ILMethodImplDefs
 
-val mkILTypeDefs: ILTypeDef  list -> ILTypeDefs
+val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
+val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
 val emptyILTypeDefs: ILTypeDefs
 
 /// Create table of types which is loaded/computed on-demand, and whose individual 
@@ -2065,7 +2069,7 @@ val emptyILTypeDefs: ILTypeDefs
 /// 
 /// Note that individual type definitions may contain further delays 
 /// in their method, field and other tables. 
-val mkILTypeDefsLazy: Lazy<(string list * string * ILAttributes * Lazy<ILTypeDef>) list> -> ILTypeDefs
+val mkILTypeDefsComputed: (unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) -> ILTypeDefs
 val addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
@@ -2251,25 +2255,6 @@ val getTyOfILEnumInfo: ILEnumInfo -> ILType
 
 val computeILEnumInfo: string * ILFieldDefs -> ILEnumInfo
 
-// -------------------------------------------------------------------- 
-// For completeness.  These do not occur in metadata but tools that
-// care about the existence of properties and events in the metadata
-// can benefit from them.
-// -------------------------------------------------------------------- 
-
-[<Sealed>]
-type ILEventRef =
-    static member Create : ILTypeRef * string -> ILEventRef
-    member EnclosingTypeRef: ILTypeRef
-    member Name: string
-
-[<Sealed>]
-type ILPropertyRef =
-     static member Create : ILTypeRef * string -> ILPropertyRef
-     member EnclosingTypeRef: ILTypeRef
-     member Name: string
-     interface System.IComparable
-
 val runningOnMono: bool
 
 type ILReferences = 
@@ -2286,3 +2271,22 @@ val emptyILRefs: ILReferences
 type ILTypeDefKindExtension<'Extension> = TypeDefKindExtension
 
 val RegisterTypeDefKindExtension: ILTypeDefKindExtension<'Extension> -> ('Extension -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> 'Extension)
+
+// --------------------------------------------------------------------
+// For completeness.  These do not occur in metadata but tools that
+// care about the existence of properties and events in the metadata
+// can benefit from them.
+// --------------------------------------------------------------------
+
+[<Sealed>]
+type ILEventRef =
+    static member Create : ILTypeRef * string -> ILEventRef
+    member EnclosingTypeRef: ILTypeRef
+    member Name: string
+
+[<Sealed>]
+type ILPropertyRef =
+     static member Create : ILTypeRef * string -> ILPropertyRef
+     member EnclosingTypeRef: ILTypeRef
+     member Name: string
+     interface System.IComparable
