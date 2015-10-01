@@ -3,7 +3,7 @@
 This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
 To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 
-** Compiler Technical Documentation **
+**Compiler Technical Documentation**
 
 The primary technical documents for the F# compiler code are
 
