@@ -98,6 +98,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
+    <Compile Include="FSharp.Core\ComparersRegression.fs" />
     <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" /> 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />

@@ -2522,8 +2522,8 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // results of attribute lookups in the TAST
 let HasILAttribute tref (attrs: ILAttributes) = List.exists (isILAttrib tref) attrs.AsList
 
-let TryDecodeILAttribute g tref scope (attrs: ILAttributes) = 
-    attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x scope)  else None)
+let TryDecodeILAttribute g tref (attrs: ILAttributes) = 
+    attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
@@ -2590,7 +2590,7 @@ let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref,_) as args) (tcref:T
         | None -> None
 #endif
     | ILTypeMetadata (_,tdef) -> 
-        match TryDecodeILAttribute g atref (Some(atref.Scope)) tdef.CustomAttrs with 
+        match TryDecodeILAttribute g atref tdef.CustomAttrs with 
         | Some attr -> f1 attr
         | _ -> None
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -6111,8 +6111,7 @@ let isTypeProviderAssemblyAttr (cattr:ILAttribute) =
 
 let TryDecodeTypeProviderAssemblyAttr ilg (cattr:ILAttribute) = 
     if isTypeProviderAssemblyAttr cattr then 
-        // ok to use ecmaILGlobals here since we're querying metadata, not making it 
-        let parms, _args = decodeILAttribData ilg cattr None 
+        let parms, _args = decodeILAttribData ilg cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
         | (ILAttribElem.String (Some assemblyName))::_ -> Some assemblyName
         | (ILAttribElem.String None)::_ -> Some null
@@ -6144,8 +6143,7 @@ let tref_AutoOpenAttr () = mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), tn
 let IsSignatureDataVersionAttr cattr = isILAttrib (tref_SignatureDataVersionAttr ()) cattr
 let TryFindAutoOpenAttr (ilg : IL.ILGlobals) cattr = 
     if isILAttrib (tref_AutoOpenAttr ()) cattr then 
-        // ok to use ecmaILGlobals here since we're querying metadata, not making it
-        match decodeILAttribData ilg cattr None with 
+        match decodeILAttribData ilg cattr with 
         |  [ILAttribElem.String s],_ -> s
         |  [],_ -> None
         | _ -> 
@@ -6159,8 +6157,7 @@ let tref_InternalsVisibleToAttr (ilg : IL.ILGlobals) =
 
 let TryFindInternalsVisibleToAttr ilg cattr = 
     if isILAttrib (tref_InternalsVisibleToAttr ilg) cattr then 
-        // ok to use ecmaILGlobals here since we're querying metadata, not making it
-        match decodeILAttribData ilg cattr None with 
+        match decodeILAttribData ilg cattr with 
         |  [ILAttribElem.String s],_ -> s
         |  [],_ -> None
         | _ -> 
@@ -6171,8 +6168,7 @@ let TryFindInternalsVisibleToAttr ilg cattr =
 
 let IsMatchingSignatureDataVersionAttr ilg ((v1,v2,v3,_) : ILVersionInfo)  cattr = 
     IsSignatureDataVersionAttr cattr &&
-    // ok to use ecmaILGlobals here since we're querying metadata, not making it 
-    match decodeILAttribData ilg cattr None with 
+    match decodeILAttribData ilg cattr with 
     |  [ILAttribElem.Int32 u1; ILAttribElem.Int32 u2;ILAttribElem.Int32 u3 ],_ -> 
         (v1 = uint16 u1) && (v2 = uint16 u2) && (v3 = uint16 u3)
     | _ -> 
