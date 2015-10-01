@@ -1008,9 +1008,9 @@ let GetTypeNameAsElemPair cenv n =
 
 let rec GenTypeDefPass1 enc cenv (td:ILTypeDef) = 
   ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_,n)) -> n) (TdKey (enc,td.Name)))
-  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsArray
+  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
 
-and GenTypeDefsPass1 enc cenv tds = Array.iter (GenTypeDefPass1 enc cenv) tds
+and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
 
 //=====================================================================
 // Pass 2 - allocate indexes for methods and fields and write rows for types 
@@ -1545,12 +1545,12 @@ and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
       events |> List.iter (GenEventDefPass2 cenv tidx)
       td.Fields.AsList |> List.iter (GenFieldDefPass2 cenv tidx)
       td.Methods |> Seq.iter (GenMethodDefPass2 cenv tidx)
-      td.NestedTypes.AsArray |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
+      td.NestedTypes.AsList |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
    with e ->
      failwith ("Error in pass2 for type "+td.Name+", error: "+e.Message)
 
 and GenTypeDefsPass2 pidx enc cenv tds =
-    Array.iter (GenTypeDefPass2 pidx enc cenv) tds
+    List.iter (GenTypeDefPass2 pidx enc cenv) tds
 
 //=====================================================================
 // Pass 3 - write details of methods, fields, IL code, custom attrs etc.
@@ -3141,14 +3141,14 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
       td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx)
       td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef,tidx)
       td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp)  
-      td.NestedTypes.AsArray |> GenTypeDefsPass3 (enc@[td.Name]) cenv
+      td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
       failwith  ("Error in pass3 for type "+td.Name+", error: "+e.Message)
       reraise()
       raise e
 
 and GenTypeDefsPass3 enc cenv tds =
-  Array.iter (GenTypeDefPass3 enc cenv) tds
+  List.iter (GenTypeDefPass3 enc cenv) tds
 
 /// ILTypeDef --> generate generic params on ILMethodDef: ensures
 /// GenericParam table is built sorted by owner.
@@ -3159,14 +3159,14 @@ let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) =
        let tidx = GetIdxForTypeDef cenv (TdKey(enc,td.Name))
        td.Methods |> Seq.iter (GenMethodDefPass4 cenv env) 
        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams 
-       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsArray
+       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
    with e ->
        failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)
        reraise()
        raise e
 
 and GenTypeDefsPass4 enc cenv tds =
-    Array.iter (GenTypeDefPass4 enc cenv) tds
+    List.iter (GenTypeDefPass4 enc cenv) tds
 
 // -------------------------------------------------------------------- 
 // ILExportedTypesAndForwarders --> ILExportedTypeOrForwarder table 

@@ -1421,7 +1421,7 @@ type ILTypeDefs =
     member AsList : ILTypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves
-    member AsArrayOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>)[]
+    member AsArrayOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>) array
 
     /// Calls to [FindByName] will result in any laziness in the overall 
     /// set of ILTypeDefs being read in in addition 
@@ -1794,7 +1794,7 @@ val EcmaILGlobals : ILGlobals
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned list as an empty typedef if it 
 /// doesn't already exist.
-val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef[]
+val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef list
 
 /// Note: not all custom attribute data can be decoded without binding types.  In particular 
 /// enums must be bound in order to discover the size of the underlying integer. 
@@ -2069,7 +2069,7 @@ val emptyILTypeDefs: ILTypeDefs
 /// 
 /// Note that individual type definitions may contain further delays 
 /// in their method, field and other tables. 
-val mkILTypeDefsComputed: (unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) -> ILTypeDefs
+val mkILTypeDefsComputed: (unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>) array) -> ILTypeDefs
 val addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
@@ -2255,22 +2255,6 @@ val getTyOfILEnumInfo: ILEnumInfo -> ILType
 
 val computeILEnumInfo: string * ILFieldDefs -> ILEnumInfo
 
-val runningOnMono: bool
-
-type ILReferences = 
-    { AssemblyReferences: ILAssemblyRef list; 
-      ModuleReferences: ILModuleRef list; }
-
-/// Find the full set of assemblies referenced by a module 
-val computeILRefs: ILModuleDef -> ILReferences
-val emptyILRefs: ILReferences
-
-// -------------------------------------------------------------------- 
-// The following functions are used to define an extension to the  In reality the only extension is ILX
-
-type ILTypeDefKindExtension<'Extension> = TypeDefKindExtension
-
-val RegisterTypeDefKindExtension: ILTypeDefKindExtension<'Extension> -> ('Extension -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> 'Extension)
 
 // --------------------------------------------------------------------
 // For completeness.  These do not occur in metadata but tools that
@@ -2290,3 +2274,20 @@ type ILPropertyRef =
      member EnclosingTypeRef: ILTypeRef
      member Name: string
      interface System.IComparable
+
+val runningOnMono: bool
+
+type ILReferences = 
+    { AssemblyReferences: ILAssemblyRef list; 
+      ModuleReferences: ILModuleRef list; }
+
+/// Find the full set of assemblies referenced by a module 
+val computeILRefs: ILModuleDef -> ILReferences
+val emptyILRefs: ILReferences
+
+// -------------------------------------------------------------------- 
+// The following functions are used to define an extension to the  In reality the only extension is ILX
+
+type ILTypeDefKindExtension<'Extension> = TypeDefKindExtension
+
+val RegisterTypeDefKindExtension: ILTypeDefKindExtension<'Extension> -> ('Extension -> IlxExtensionTypeKind) * (IlxExtensionTypeKind -> bool) * (IlxExtensionTypeKind -> 'Extension)

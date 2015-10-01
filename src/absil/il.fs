@@ -3263,8 +3263,8 @@ let cdef_cctorCode2CodeOrCreate tag f cd =
     let mdefs = cd.Methods
     let cctor = 
         match mdefs.FindByName ".cctor" with 
-        | [ mdef ] -> mdef
-        | [ ] -> mkILClassCtor (mkMethodBody (false,emptyILLocals,1,nonBranchingInstrsToCode [ ],tag))
+        | [mdef] -> mdef
+        | [] -> mkILClassCtor (mkMethodBody (false,emptyILLocals,1,nonBranchingInstrsToCode [ ],tag))
         | _ -> failwith "bad method table: more than one .cctor found"
         
     let methods = ILMethodDefs (fun () -> [| yield f cctor; for md in mdefs do if md.Name <> ".cctor" then yield md |])
@@ -3458,10 +3458,10 @@ let mkILSimpleClass ilg (nm, access, methods, fields, nestedTypes, props, events
 let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, ILTypeDefAccess.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
 
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
-  let l = tdefs.AsArray
-  let top,nontop = l |> Array.partition (fun td -> td.Name = typeNameForGlobalFunctions)
-  let top2 = if top.Length = 0 then [| mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) |] else top
-  Array.append top2 nontop
+  let l = tdefs.AsList
+  let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
+  let top2 = if top.Length = 0 then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
+  top2@nontop
 
 let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
     { Manifest= 
@@ -5101,8 +5101,8 @@ let resolveILMethodRef td (mref:ILMethodRef) =
           (md.Parameters,mref.ArgTypes) ||>  ILList.lengthsEqAndForall2 (fun p1 p2 -> p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
           md.Return.Type = mref.ReturnType)  with 
-    | [ ] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name);
-    | [ mdef ] ->  mdef
+    | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name);
+    | [mdef] ->  mdef
     | _ -> failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)
         
 let mkRefToILModule m =
