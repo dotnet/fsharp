@@ -16,9 +16,6 @@ type ErrorLoggerProvider =
     new : unit -> ErrorLoggerProvider
     abstract CreateErrorLoggerThatQuitsAfterMaxErrors : tcConfigBuilder : TcConfigBuilder * exiter : Exiter -> ErrorLogger
 
-/// The F# project system calls this to pop up type provider security dialog if needed
-val internal ProcessCommandLineArgsAndImportAssemblies : (string -> unit) * string[] * string * string * Exiter -> unit
-
 #if NO_COMPILER_BACKEND
 #else
 

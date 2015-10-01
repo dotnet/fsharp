@@ -53,7 +53,7 @@ val internal moduleInfoL : TcGlobals -> LazyModuleInfo -> Layout.layout
 /// Saving and re-reading optimization information 
 val p_CcuOptimizationInfo : CcuOptimizationInfo -> TastPickle.WriterState -> unit 
 
-/// Rewrite the modul info using the export remapping 
+/// Rewrite the module info using the export remapping 
 val RemapOptimizationInfo : TcGlobals -> Tastops.Remap -> (CcuOptimizationInfo -> CcuOptimizationInfo)
 
 /// Ensure that 'internal' items are not exported in the optimization info

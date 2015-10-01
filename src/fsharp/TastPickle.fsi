@@ -12,7 +12,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
 
-/// Represents desereialized data with a dangling set of CCU fixup thunks indexed by name
+/// Represents deserialized data with a dangling set of CCU fixup thunks indexed by name
 [<NoEquality; NoComparison>]
 type PickledDataWithReferences<'RawData> = 
     { /// The data that uses a collection of CcuThunks internally
@@ -73,7 +73,7 @@ val internal p_tcref : string -> pickler<TyconRef>
 /// Serialize a TAST union case reference
 val internal p_ucref : pickler<UnionCaseRef>
 
-/// Serialize a TAST expresion
+/// Serialize a TAST expression
 val internal p_expr : pickler<Expr>
 
 /// Serialize a TAST type

@@ -409,7 +409,7 @@ module internal ItemDescriptionsImpl =
     
     // Like Seq.distinctBy but only filters out duplicates for some of the elements
     let partialDistinctBy (per:IPartialEqualityComparer<_>) seq =
-        // Wrap a Wrap _ aroud all keys in case the key type is itself a type using null as a representation
+        // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
         let dict = new Dictionary<WrapType<'T>,obj>(per)
         seq |> List.filter (fun v -> 
             let v = Wrap(v)

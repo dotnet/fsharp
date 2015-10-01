@@ -98,7 +98,7 @@ let TryMkValRefInModRef modref vspec =
 
 /// Get the active pattern elements defined by a given value, if any
 let ActivePatternElemsOfVal modref vspec = 
-    // If the assembly load set is incomplete then dont add anything to the table
+    // If the assembly load set is incomplete then don't add anything to the table
     match TryMkValRefInModRef modref vspec with 
     | None -> []
     | Some vref -> ActivePatternElemsOfValRef vref
@@ -146,7 +146,7 @@ type Item =
     | RecdField of RecdFieldInfo
 
     // The following are never in the items table but are valid results of binding 
-    // an identitifer in different circumstances. 
+    // an identifier in different circumstances. 
 
     /// Represents the resolution of a name at the point of its own definition.
     | NewDef of Ident
@@ -287,7 +287,7 @@ type NameResolutionEnv =
       
       /// REVIEW (old comment)
       /// "The boolean flag is means the namespace or module entry shouldn't 'really' be in the 
-      ///  map, and if it is everr used to resolve a name then we give a warning. 
+      ///  map, and if it is ever used to resolve a name then we give a warning. 
       ///  This is used to give warnings on unqualified namespace accesses, e.g. 
       ///    open System 
       ///    open Collections                            <--- give a warning 
@@ -1023,7 +1023,7 @@ let LookupTypeNameInEntityMaybeHaveArity (amap, m, nm, staticResInfo:TypeNameRes
 
 /// Make a type that refers to a nested type.
 ///
-/// Handle the .NET/C# business where nested generic types implictly accumulate the type parameters 
+/// Handle the .NET/C# business where nested generic types implicitly accumulate the type parameters 
 /// from their enclosing types.
 let MakeNestedType (ncenv:NameResolver) (tinst:TType list) m (tcrefNested:TyconRef) = 
     let tps = List.drop tinst.Length (tcrefNested.Typars m)
@@ -1072,7 +1072,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
 // into a global variable. A little unpleasant. 
 //------------------------------------------------------------------------- 
 
-/// Represents the kind of the occurence when reporting a name in name resolution
+/// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess>]
 type ItemOccurence = 
     /// This is a binding / declaration of the item
@@ -1131,10 +1131,10 @@ let CallExprHasTypeSink (sink:TcResultsSink) (m:range,nenv,typ,denv,ad) =
     | Some sink -> sink.NotifyExprHasType(m.End,typ,denv,nenv,ad,m)
 
 //-------------------------------------------------------------------------
-// Check inferrability of type parameters in resolved items.
+// Check inferability of type parameters in resolved items.
 //------------------------------------------------------------------------- 
 
-/// Checks if the type variables associated with the result of a resolution are inferrable,
+/// Checks if the type variables associated with the result of a resolution are inferable,
 /// i.e. occur in the arguments or return type of the resolution. If not give a warning
 /// about a type instantiation being needed.
 type ResultTyparChecker = ResultTyparChecker of (unit -> bool)
@@ -1186,7 +1186,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.SetterArg _ -> true
     
 //-------------------------------------------------------------------------
-// Check inferrability of type parameters in resolved items.
+// Check inferability of type parameters in resolved items.
 //------------------------------------------------------------------------- 
 
 /// Keeps track of information relevant to the chosen resolution of a long identifier
@@ -1533,7 +1533,7 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
         None
 
 
-// REVIEW: this shows up on performance logs. Consider for example endles resolutions  of "List.map" to 
+// REVIEW: this shows up on performance logs. Consider for example endless resolutions  of "List.map" to 
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
 let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo:ResolutionInfo) depth m ad (lid:Ident list) findFlag (typeNameResInfo: TypeNameResolutionInfo) typ =
     let g = ncenv.g
@@ -1612,7 +1612,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
 and ResolveLongIdentInTypes (ncenv:NameResolver) nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo typs = 
     typs |> CollectResults (ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad lid findFlag typeNameResInfo >> AtMostOneResult m) 
 
-/// Resolve a long identifer using type-qualified name resolution.
+/// Resolve a long identifier using type-qualified name resolution.
 let ResolveLongIdentInType sink ncenv nenv lookupKind m ad lid findFlag typeNameResInfo typ =
     let resInfo,item,rest = 
         ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind ResolutionInfo.Empty 0 m ad lid findFlag typeNameResInfo typ
@@ -1792,7 +1792,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
     | id :: rest -> 
     
         let m = unionRanges m id.idRange
-        // Values in the environment take total priority, but contructors do NOT for compound lookups, e.g. if someone in some imported  
+        // Values in the environment take total priority, but constructors do NOT for compound lookups, e.g. if someone in some imported  
         // module has defined a constructor "String" (common enough) then "String.foo" doesn't give an error saying 'constructors have no members' 
         // Instead we go lookup the String module or type.
         let ValIsInEnv nm = 
@@ -2294,15 +2294,15 @@ let NeedsOverloadResolution namedItem =
 
 /// An adjustment to perform to the name resolution results if overload resolution fails.
 /// If overload resolution succeeds, the specific overload resolution is reported. If it fails, the 
-/// set of possibile overlods is reported via this adjustment.
+/// set of possible overloads is reported via this adjustment.
 type IfOverloadResolutionFails = IfOverloadResolutionFails of (unit -> unit)
 
 /// Specifies if overload resolution needs to notify Language Service of overload resolution
 [<RequireQualifiedAccess>]
 type AfterOverloadResolution =
-    /// Notfication is not needed
+    /// Notification is not needed
     |   DoNothing
-    /// Notfy the sink
+    /// Notify the sink
     |   SendToSink of (Item -> unit) * IfOverloadResolutionFails // Overload resolution failure fallback
     /// Find override among given overrides and notify the sink. The 'Item' contains the candidate overrides.
     |   ReplaceWithOverrideAndSendToSink of Item * (Item -> unit) * IfOverloadResolutionFails // Overload resolution failure fallback
@@ -2387,7 +2387,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink:TcResultsSink) (ncenv:NameResol
 //
 // There are some inefficiencies in this code - e.g. we often 
 // create potentially large lists of methods/fields/properties and then
-// immiediately List.filter them.  We also use lots of "map/concats".  Dosen't
+// immediately List.filter them.  We also use lots of "map/concats".  Doesn't
 // seem to hit the interactive experience too badly though.
 //------------------------------------------------------------------------- 
 
@@ -2711,7 +2711,7 @@ let InfosForTyconConstructors (ncenv:NameResolver) m ad (tcref:TyconRef) =
 let notFakeContainerModule tyconNames nm = 
     not (Set.contains nm tyconNames)
 
-/// Check is a namesapce or module contains something accessible 
+/// Check is a namespace or module contains something accessible 
 let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad (modref:ModuleOrNamespaceRef) = 
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
@@ -2740,7 +2740,7 @@ let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad 
           not tc.IsModuleOrNamespace && 
           not (IsTyconUnseen ad g ncenv.amap m (modref.NestedTyconRef tc)))) ||
 
-    // Search the sub-modules of the namespace/modulefor something accessible 
+    // Search the sub-modules of the namespace/module for something accessible 
     (mty.ModulesAndNamespacesByDemangledName 
      |> NameMap.exists (fun _ submod -> 
         let submodref = modref.NestedTyconRef submod

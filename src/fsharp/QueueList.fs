@@ -6,7 +6,7 @@ open System.Collections
 open System.Collections.Generic
 
 /// Iterable functional collection with O(1) append-1 time. Useful for data structures where elements get added at the
-/// end but the collection must occadionally be iterated. Iteration is slower and may allocate because 
+/// end but the collection must occasionally be iterated. Iteration is slower and may allocate because 
 /// a suffix of elements is stored in reverse order.
 ///
 /// The type doesn't support structural hashing or comparison.

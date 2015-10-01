@@ -15,6 +15,8 @@ if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
 
 rem fsc.exe building
 
+    %CSC% /nologo  /target:library /out:cslib.dll cslib.cs
+    @if ERRORLEVEL 1 goto Error
 
     "%FSC%" %fsc_flags% -o:test.exe -r cslib.dll -g test.fsx
     @if ERRORLEVEL 1 goto Error

@@ -509,7 +509,8 @@ module MembersTest =
     let s = 2.0f<kg>
     let d = 2.0M<kg>
 
-#if !NetCore
+#if NetCore
+#else
     let tmpCulture = System.Threading.Thread.CurrentThread.CurrentCulture
     System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo("en-US")
     test "f" (f.ToString().Equals("2"))

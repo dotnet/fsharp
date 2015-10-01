@@ -330,11 +330,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         VisualStudioStyleErrors,
 
         /// <summary>
-        /// The ValidateTypeProviders property
-        /// </summary>
-        ValidateTypeProviders,
-
-        /// <summary>
         /// The SqmSessionGuid property
         /// </summary>
         SqmSessionGuid

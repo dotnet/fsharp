@@ -115,15 +115,25 @@ module internal TPModule =
 module GlobalCounters = 
     let mutable creations = 0
     let mutable disposals = 0
+    let mutable configs = ([]: TypeProviderConfig list)
     let GetTotalCreations() = creations
     let GetTotalDisposals() = disposals
+    let CheckAllConfigsDisposed() = 
+        for c in configs do 
+            try 
+                c.SystemRuntimeContainsType("System.Object") |> ignore
+                failwith "expected configuration object to be disposed"
+            with :? System.ObjectDisposedException -> 
+                ()
+
 
 
 [<TypeProvider>]
-type HelloWorldProvider() = 
+type HelloWorldProvider(config: TypeProviderConfig) = 
     inherit TypeProviderForNamespaces(TPModule.namespaceName,TPModule.types)
     do GlobalCounters.creations <- GlobalCounters.creations + 1                         
     let mutable disposed = false
+    do GlobalCounters.configs <- config :: GlobalCounters.configs
     interface System.IDisposable with 
         member x.Dispose() = 
             System.Diagnostics.Debug.Assert(not disposed)

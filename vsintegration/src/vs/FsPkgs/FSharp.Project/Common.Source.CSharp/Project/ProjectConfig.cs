@@ -323,7 +323,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             
         private bool getBool(string projectFileConstant)
         {
-            return "true" == GetConfigurationProperty(projectFileConstant, false);
+            return getNullableBool(projectFileConstant) ?? false;
+        }
+
+        private bool? getNullableBool(string projectFileConstant)
+        {
+            var p = GetConfigurationProperty(projectFileConstant, false);
+
+            if (string.IsNullOrWhiteSpace(p))
+                return null;
+
+            return p == "true";
         }
 
         private void setBool(string projectFileConstant, bool p)
@@ -397,7 +407,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-                return getBool(ProjectFileConstants.Optimize);
+                return getNullableBool(ProjectFileConstants.Optimize) ?? true;
             }
             set
             {
@@ -409,7 +419,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-                return getBool(ProjectFileConstants.Tailcalls);
+                return getNullableBool(ProjectFileConstants.Tailcalls) ?? true;
             }
             set
             {

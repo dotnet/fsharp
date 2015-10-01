@@ -444,6 +444,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
 
         | TOp.ILAsm(([ I_ldfld(_,_,fspec) ] 
+                    | [ I_ldfld(_,_,fspec); AI_nop ]
                     | [ I_ldsfld (_,fspec) ] 
                     | [ I_ldsfld (_,fspec); AI_nop ]),_),enclTypeArgs,args  -> 
             ConvLdfld  cenv env m fspec enclTypeArgs args
@@ -621,7 +622,7 @@ and ConvLetBind cenv env (bind : Binding) =
     //     'let v = isinst e in .... if nonnull v then ...v .... ' 
     // construct arising out the compilation of pattern matching. We decode these back to the form
     //     'if istype e then ...unbox e .... ' 
-    // It's bit annoying that pattern matching does this tranformation. Like all premature optimization we pay a 
+    // It's bit annoying that pattern matching does this transformation. Like all premature optimization we pay a 
     // cost here to undo it.
     | Expr.Op(TOp.ILAsm([ I_isinst _ ],_),[ty],[e],_) -> 
         None, BindIsInstVal env bind.Var (ty,e)

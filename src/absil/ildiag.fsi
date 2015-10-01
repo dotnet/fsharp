@@ -2,7 +2,7 @@
 
 /// Diagnostics from the AbsIL toolkit. You can reset the diagnostics 
 /// stream to point elsewhere, or turn it
-/// off altogether by setting it to 'None'.  The logging channel initally
+/// off altogether by setting it to 'None'.  The logging channel initially
 /// points to stderr.  All functions call flush() automatically.
 ///
 /// REVIEW: review if we should just switch to System.Diagnostics

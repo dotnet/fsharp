@@ -97,7 +97,7 @@ type ErrorListTests() as this =
         if (num = errorList.Length) then 
                 ()
             else
-                failwith "The error list number is not the expected %d" num
+                failwithf "The error list number is not the expected %d" num
     
     [<Test>]
     member public this.``OverloadsAndExtensionMethodsForGenericTypes``() = 

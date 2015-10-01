@@ -336,11 +336,11 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
             | None ->
                 let asmName    = convAssemblyRef asmref
                 FileSystem.AssemblyLoad(asmName)
-        let typT       = assembly.GetType(qualifiedName)
+        let typT = assembly.GetType(qualifiedName, throwOnError=true)
         typT |> nonNull "convTypeRefAux" 
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
-        let typT = Type.GetType(qualifiedName,true) 
+        let typT = Type.GetType(qualifiedName, throwOnError=true) 
         typT |> nonNull "convTypeRefAux" 
 
 
