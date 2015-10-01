@@ -168,14 +168,14 @@ type TypeNameResolutionInfo =
   static member Default : TypeNameResolutionInfo
   static member ResolveToTypeRefs : TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
 
-/// Represents the kind of the occurence when reporting a name in name resolution
+/// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess>]
 type internal ItemOccurence = 
-    | Binding = 0
-    | Use = 1
-    | UseInType = 2
-    | UseInAttribute = 3
-    | Pattern = 4
+    | Binding 
+    | Use 
+    | UseInType 
+    | UseInAttribute 
+    | Pattern 
   
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
@@ -248,10 +248,10 @@ type PermitDirectReferenceToGeneratedType =
 /// Resolve a long identifier to a namespace or module.
 val internal ResolveLongIndentAsModuleOrNamespace   : Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
 
-/// Resolve a long identifer to an object constructor.
+/// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>
 
-/// Resolve a long identifer using type-qualified name resolution.
+/// Resolve a long identifier using type-qualified name resolution.
 val internal ResolveLongIdentInType                 : TcResultsSink -> NameResolver -> NameResolutionEnv -> LookupKind -> range -> AccessorDomain -> Ident list -> FindMemberFlag -> TypeNameResolutionInfo -> TType -> Item * Ident list
 
 /// Resolve a long identifier when used in a pattern.
@@ -264,7 +264,7 @@ val internal ResolveTypeLongIdentInTyconRef         : TcResultsSink -> NameResol
 val internal ResolveTypeLongIdent                   : TcResultsSink -> NameResolver -> ItemOccurence -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> TypeNameResolutionStaticArgsInfo -> PermitDirectReferenceToGeneratedType -> ResultOrException<TyconRef>
 
 /// Resolve a long identifier to a field
-val internal ResolveField                           : NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> FieldResolution list
+val internal ResolveField                           : TcResultsSink -> NameResolver -> NameResolutionEnv -> AccessorDomain -> TType -> Ident list * Ident -> FieldResolution list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent                   : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * Ident list
@@ -277,15 +277,15 @@ val internal ResolveRecordOrClassFieldsOfType       : NameResolver -> range -> A
 
 /// An adjustment to perform to the name resolution results if overload resolution fails.
 /// If overload resolution succeeds, the specific overload resolution is reported. If it fails, the 
-/// set of possibile overlods is reported via this adjustment.
+/// set of possible overloads is reported via this adjustment.
 type IfOverloadResolutionFails = IfOverloadResolutionFails of (unit -> unit)
 
 /// Specifies if overload resolution needs to notify Language Service of overload resolution
 [<RequireQualifiedAccess>]
 type AfterOverloadResolution =
-    /// Notfication is not needed
+    /// Notification is not needed
     |   DoNothing
-    /// Notfy the sink
+    /// Notify the sink
     |   SendToSink of (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback
     /// Find override among given overrides and notify the sink. The 'Item' contains the candidate overrides.
     |   ReplaceWithOverrideAndSendToSink of Item * (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback

@@ -569,22 +569,32 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
     //IsActivePatternName "||S|" = true
 
     type ActivePatternInfo = 
-        | APInfo of bool * string list
-        member x.IsTotal = let (APInfo(p,_)) = x in p
-        member x.ActiveTags = let (APInfo(_,tags)) = x in tags
+        | APInfo of bool * (string  * Range.range) list * Range.range
+        member x.IsTotal = let (APInfo(p,_,_)) = x in p
+        member x.ActiveTags = let (APInfo(_,tags,_)) = x in List.map fst tags
+        member x.ActiveTagsWithRanges = let (APInfo(_,tags,_)) = x in tags
+        member x.Range = let (APInfo(_,_,m)) = x in m
 
-    let ActivePatternInfoOfValName nm = 
-        let rec loop (nm:string) = 
+    let ActivePatternInfoOfValName nm (m:Range.range) = 
+        // Note: The approximate range calculations in this code assume the name is of the form "(|A|B|)" not "(|  A   |   B   |)"
+        // The ranges are used for IDE refactoring support etc.  If names of the second type are used,
+        // renaming may be inaccurate/buggy. However names of the first form are dominant in F# code.
+        let rec loop (nm:string) (mp:Range.range) = 
             let n = nm.IndexOf '|'
             if n > 0 then 
-               nm.[0..n-1] :: loop nm.[n+1..]
+               let m1 = Range.mkRange mp.FileName mp.Start (Range.mkPos mp.StartLine (mp.StartColumn + n))
+               let m2 = Range.mkRange mp.FileName (Range.mkPos mp.StartLine (mp.StartColumn + n + 1)) mp.End
+               (nm.[0..n-1], m1) :: loop nm.[n+1..] m2
             else
-               [nm]
+               let m1 = Range.mkRange mp.FileName mp.Start (Range.mkPos mp.StartLine (mp.StartColumn + nm.Length))
+               [(nm, m1)]
         let nm = DecompileOpName nm
         if IsActivePatternName nm then 
-            let res = loop nm.[1..nm.Length-2]
-            let resH,resT = List.frontAndBack res
-            Some(if resT = "_" then APInfo(false,resH) else APInfo(true,res))
+            // Skip the '|' at each end when recovering ranges
+            let m0 = Range.mkRange m.FileName (Range.mkPos m.StartLine (m.StartColumn + 1)) (Range.mkPos m.EndLine (m.EndColumn - 1)) 
+            let names = loop nm.[1..nm.Length-2] m0
+            let resH,resT = List.frontAndBack names
+            Some(if fst resT = "_" then APInfo(false,resH,m) else APInfo(true,names,m))
         else 
             None
     

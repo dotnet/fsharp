@@ -1001,7 +1001,6 @@ classMemberSpfnGetSetElements:
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired());
       MemberKind.PropertyGetSet }
 
-
 memberSpecFlags: 
   | memberFlags { $1 }  
   | ABSTRACT        { (false,AbstractMemberFlags) }
@@ -1445,8 +1444,10 @@ tyconDefn:
          match tcDefRepr with
          | SynTypeDefnRepr.ObjectModel (k,cspec,m) -> SynTypeDefnRepr.ObjectModel (k,memberCtorPattern::cspec,m)
          | _ -> reportParseErrorAt (rhs2 parseState 1 5) (FSComp.SR.parsOnlyClassCanTakeValueArguments()); tcDefRepr
-      
-       TypeDefn($1,tcDefRepr,members, unionRanges (rhs parseState 1) tcDefRepr.Range)  }
+       let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
+       let mWhole = (declRange, members) ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
+       
+       TypeDefn($1,tcDefRepr,members,mWhole) }
 
 
 /* The right-hand-side of a type definition */

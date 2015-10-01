@@ -31,24 +31,31 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateSet")>]
     let set l = Collections.Set.ofSeq l
 
+    let dummyArray = [||]
+    let inline dont_tail_call f = 
+        let result = f ()
+        dummyArray.Length |> ignore // pretty stupid way to avoid tail call, would be better if attribute existed, but this should be inlineable by the JIT
+        result
+
+    let inline ICollection_Contains<'collection,'item when 'collection :> ICollection<'item>> (collection:'collection) (item:'item) =
+        collection.Contains item
+
     let inline dictImpl (comparer:IEqualityComparer<'SafeKey>) (makeSafeKey:'Key->'SafeKey) (getKey:'SafeKey->'Key) (l:seq<'Key*'T>) = 
         let t = Dictionary comparer
         for (k,v) in l do 
             t.[makeSafeKey k] <- v
-        let d = (t :> IDictionary<_,_>)
-        let c = (t :> ICollection<_>)
         // Give a read-only view of the dictionary
         { new IDictionary<'Key, 'T> with 
                 member s.Item 
-                    with get x = d.[makeSafeKey x]
+                    with get x = dont_tail_call (fun () -> t.[makeSafeKey x])
                     and  set x v = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
                 member s.Keys = 
-                    let keys = d.Keys
+                    let keys = t.Keys
                     { new ICollection<'Key> with 
                           member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                           member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                           member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-                          member s.Contains(x) = keys.Contains(makeSafeKey x)
+                          member s.Contains(x) = t.ContainsKey (makeSafeKey x)
                           member s.CopyTo(arr,i) = 
                               let mutable n = 0 
                               for k in keys do 
@@ -61,31 +68,31 @@ module ExtraTopLevelOperators =
                       interface System.Collections.IEnumerable with
                             member s.GetEnumerator() = ((keys |> Seq.map getKey) :> System.Collections.IEnumerable).GetEnumerator() }
                     
-                member s.Values = d.Values
+                member s.Values = upcast t.Values
                 member s.Add(k,v) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)))
-                member s.ContainsKey(k) = d.ContainsKey(makeSafeKey k)
+                member s.ContainsKey(k) = dont_tail_call (fun () -> t.ContainsKey(makeSafeKey k))
                 member s.TryGetValue(k,r) = 
                     let safeKey = makeSafeKey k
-                    if d.ContainsKey(safeKey) then (r <- d.[safeKey]; true) else false
+                    if t.ContainsKey(safeKey) then (r <- t.[safeKey]; true) else false
                 member s.Remove(k : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
           interface ICollection<KeyValuePair<'Key, 'T>> with 
                 member s.Add(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                 member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                 member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
-                member s.Contains(KeyValue(k,v)) = c.Contains(KeyValuePair<_,_>(makeSafeKey k,v))
+                member s.Contains(KeyValue(k,v)) = ICollection_Contains t (KeyValuePair<_,_>(makeSafeKey k,v))
                 member s.CopyTo(arr,i) = 
                     let mutable n = 0 
-                    for (KeyValue(k,v)) in c do 
+                    for (KeyValue(k,v)) in t do 
                         arr.[i+n] <- KeyValuePair<_,_>(getKey k,v)
                         n <- n + 1
                 member s.IsReadOnly = true
-                member s.Count = c.Count
+                member s.Count = t.Count
           interface IEnumerable<KeyValuePair<'Key, 'T>> with
                 member s.GetEnumerator() = 
-                    (c |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))).GetEnumerator()
+                    (t |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))).GetEnumerator()
           interface System.Collections.IEnumerable with
                 member s.GetEnumerator() = 
-                    ((c |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))) :> System.Collections.IEnumerable).GetEnumerator() }
+                    ((t |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))) :> System.Collections.IEnumerable).GetEnumerator() }
 
     // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
     let dictValueType (l:seq<'Key*'T>) = dictImpl HashIdentity.Structural<'Key> id id l

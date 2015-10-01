@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
@@ -130,7 +129,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public override object GetIconHandle(bool open)
         {
-            return this.ProjectMgr.ImageHandler.GetIconHandle(open ? (int)ProjectNode.ImageName.OpenReferenceFolder : (int)ProjectNode.ImageName.ReferenceFolder);
+            return this.ProjectMgr.ImageHandler.GetIconHandle((int)ProjectNode.ImageName.ReferenceFolder);
         }
 
         

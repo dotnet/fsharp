@@ -54,7 +54,6 @@ open Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
-open Internal.Utilities.FileSystem
 
 //----------------------------------------------------------------------------
 // Hardbinding dependencies should we NGEN fsi.exe
@@ -427,6 +426,9 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
 
     let executableFileName = 
         lazy 
+            match tcConfigB.exename with
+            | Some s -> s
+            | None -> 
             let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
             Path.GetFileName(currentProcess.MainModule.FileName)
 
@@ -1004,7 +1006,7 @@ type internal FsiDynamicCompiler
         SynModuleDecl.DoExpr(SequencePointInfoForBinding.NoSequencePointAtDoBinding, breakStatement, m)
 
     member __.EvalRequireReference istate m path = 
-        if Path.IsInvalidPath(path) then
+        if FileSystem.IsInvalidPathShim(path) then
             error(Error(FSIstrings.SR.fsiInvalidAssembly(path),m))
         // Check the file can be resolved before calling requireDLLReference 
         let resolutions = tcImports.ResolveAssemblyReference(AssemblyReference(m,path),ResolveAssemblyReferenceMode.ReportErrors)

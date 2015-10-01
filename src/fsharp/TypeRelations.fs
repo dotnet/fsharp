@@ -42,7 +42,7 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 //     patcompile.fs: IsDiscrimSubsumedBy (approximate warning for redundancy of 'isinst' patterns)
 //     tc.fs: TcRuntimeTypeTest (approximate warning for redundant runtime type tests)
 //     tc.fs: TcExnDefnCore (error for bad exception abbreviation)
-//     ilxgen.fs: GenCoerce (omit unecessary castclass or isinst instruction)
+//     ilxgen.fs: GenCoerce (omit unnecessary castclass or isinst instruction)
 //
 let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 = 
   if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = "^(DebugPrint.showType ty1),m))
@@ -350,7 +350,7 @@ module SignatureConformance = begin
                 let (Attrib(signTcref,_,_,_,_,_,_)) = attrib2
                 tyconRefEq g signTcref implTcref 
 
-            // For each implementation attribute, only keep if it it is not mentioned in the signature.
+            // For each implementation attribute, only keep if it is not mentioned in the signature.
             // Emit a warning if it is mentioned in the signature and the arguments to the attributes are 
             // not identical.
             let rec check keptImplAttribsRev implAttribs sigAttribs = 
@@ -390,7 +390,7 @@ module SignatureConformance = begin
                   if implTypar.StaticReq <> sigTypar.StaticReq then 
                       errorR (Error(FSComp.SR.typrelSigImplNotCompatibleCompileTimeRequirementsDiffer(), m))          
                   
-                  // Adjust the actual type parameter name to look look like the signature
+                  // Adjust the actual type parameter name to look like the signature
                   implTypar.SetIdent (mkSynId implTypar.Range sigTypar.Id.idText)     
 
                   // Mark it as "not compiler generated", now that we've got a good name for it
@@ -513,7 +513,7 @@ module SignatureConformance = begin
                   // Propagate some information signature to implementation. 
 
                   // Check the attributes on each argument, and update the ValReprInfo for
-                  // the value to reflect the information in the the signature.
+                  // the value to reflect the information in the signature.
                   // This ensures that the compiled form of the value matches the signature rather than 
                   // the implementation. This also propagates argument names from signature to implementation
                   let res = 
@@ -612,7 +612,7 @@ module SignatureConformance = begin
                //     abstract have non-final CompareTo/Hash methods 
                //     records  have final CompareTo/Hash methods 
                //     unions  have final CompareTo/Hash methods 
-               // This is an example where it is OK for the signaure to say 'non-final' when the implementation says 'final' 
+               // This is an example where it is OK for the signature to say 'non-final' when the implementation says 'final' 
                 elif not implMembInfo.MemberFlags.IsFinal && sigMembInfo.MemberFlags.IsFinal then 
                   err(FSComp.SR.ValueNotContainedMutabilityFinalsDiffer)
                 elif not (implMembInfo.MemberFlags.IsOverrideOrExplicitImpl = sigMembInfo.MemberFlags.IsOverrideOrExplicitImpl) then 
@@ -1087,7 +1087,7 @@ module DispatchSlotChecking =
         //        fvtmps[ctps]  @ ttpinst     -- gives fvtmps[dtps]
         //        fvtmps[dtps] @ rev(mtpinst) -- gives fvtmps[ttps]
         //        
-        //     Now fvtmps[ttps] and mtpinst[ttps] are comparable, i.e. have contraints w.r.t. the same set of type variables 
+        //     Now fvtmps[ttps] and mtpinst[ttps] are comparable, i.e. have constraints w.r.t. the same set of type variables 
         //         
         // i.e.  Compose the substitutions ttpinst and rev(mtpinst) 
         
@@ -1453,10 +1453,10 @@ module DispatchSlotChecking =
                                                   virtMember.MemberInfo.Value.IsImplemented <- true
                                              | None -> () // not an F# slot
 
-                                        // Get the slotsig of the overriden method 
+                                        // Get the slotsig of the overridden method 
                                         let slotsig = dispatchSlot.GetSlotSig(amap, m)
 
-                                        // The slotsig from the overriden method is in terms of the type parameters on the parent type of the overriding method,
+                                        // The slotsig from the overridden method is in terms of the type parameters on the parent type of the overriding method,
                                         // Modify map the slotsig so it is in terms of the type parameters for the overriding method 
                                         let slotsig = ReparentSlotSigToUseMethodTypars g m overrideBy slotsig
                      
@@ -1500,7 +1500,7 @@ type CalledArg =
       OptArgInfo : OptionalArgInfo
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
-      NameOpt: string option
+      NameOpt: Ident option
       CalledArgumentType : TType }
 
 let CalledArg(pos,isParamArray,optArgInfo,isOutArg,nameOpt,reflArgInfo,calledArgTy) =
@@ -1676,7 +1676,7 @@ type CalledMeth<'T>
             let unnamedCalledArgs = 
                 fullCalledArgs |> List.filter (fun calledArg -> 
                     match calledArg.NameOpt with 
-                    | Some nm -> namedCallerArgs |> List.forall (fun (CallerNamedArg(nm2,_e)) -> nm <> nm2.idText)   
+                    | Some nm -> namedCallerArgs |> List.forall (fun (CallerNamedArg(nm2,_e)) -> nm.idText <> nm2.idText)   
                     | None -> true)
 
             // See if any of them are 'out' arguments being returned as part of a return tuple 
@@ -1715,7 +1715,7 @@ type CalledMeth<'T>
                     match calledArg.NameOpt with 
                     | Some nm -> 
                         namedCallerArgs |> List.tryPick (fun (CallerNamedArg(nm2,callerArg)) -> 
-                            if nm = nm2.idText then Some { NamedArgIdOpt = Some nm2; CallerArg=callerArg; CalledArg=calledArg } 
+                            if nm.idText = nm2.idText then Some { NamedArgIdOpt = Some nm2; CallerArg=callerArg; CalledArg=calledArg } 
                             else None) 
                     | _ -> None)
 
@@ -1723,7 +1723,7 @@ type CalledMeth<'T>
                 namedCallerArgs |> List.filter (fun (CallerNamedArg(nm,_e)) -> 
                     fullCalledArgs |> List.forall (fun calledArg -> 
                         match calledArg.NameOpt with 
-                        | Some nm2 -> nm.idText <> nm2
+                        | Some nm2 -> nm.idText <> nm2.idText
                         | None -> true))
 
             let attributeAssignedNamedItems,unassignedNamedItem = 
@@ -1810,7 +1810,7 @@ type CalledMeth<'T>
     member x.AssociatedPropertyInfo=pinfoOpt
       /// unassigned args
     member x.UnassignedNamedArgs=unassignedNamedItems
-      /// args assigned to specifiy values for attribute fields and properties (these are not necessarily "property sets")
+      /// args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
     member x.AttributeAssignedNamedArgs=attributeAssignedNamedItems
       /// unnamed called optional args: pass defaults for these
     member x.UnnamedCalledOptArgs=unnamedCalledOptArgs
@@ -1998,7 +1998,7 @@ let FindUniqueFeasibleSupertype g amap m ty1 ty2 =
     
 
 
-/// Get the methods relevant to deterimining if a uniquely-identified-override exists based on the syntactic information 
+/// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
 let GetAbstractMethInfosForSynMethodDecl(infoReader:InfoReader,ad,memberName:Ident,bindm,typToSearchForAbstractMembers,valSynData) =
     let minfos = 
@@ -2013,7 +2013,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader:InfoReader,ad,memberName:Ide
     let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = topValSynArities) 
     dispatchSlots,dispatchSlotsArityMatch 
 
-/// Get the proeprties relevant to deterimining if a uniquely-identified-override exists based on the syntactic information 
+/// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
 let GetAbstractPropInfosForSynPropertyDecl(infoReader:InfoReader,ad,memberName:Ident,bindm,typToSearchForAbstractMembers,_k,_valSynData) = 
     let pinfos = 
@@ -2197,7 +2197,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
         | FSMeth(_, _, vref, _) -> 
 
             // Go see if this is a use of a recursive definition... Note we know the value instantiation 
-            // we want to use so we pass that in in order not to create a new one. 
+            // we want to use so we pass that in order not to create a new one. 
             let vexp, vexpty = tcVal vref valUseFlags (minfo.DeclaringTypeInst @ minst) m
             BuildFSharpMethodApp g m vref vexp vexpty allArgs
 

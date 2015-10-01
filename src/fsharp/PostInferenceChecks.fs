@@ -73,7 +73,7 @@ let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
 //    C2: check type declarations to ensure no object field will have byref type.
 //    C3: check no explicit lambda expressions capture any free byref typed expression.    
 //    C4: check byref type expr occur only as:
-//        C4.a) arg to functions occuring within their known arity.
+//        C4.a) arg to functions occurring within their known arity.
 //        C4.b) arg to IL method calls, e.g. arising from calls to instance methods on mutable structs.
 //        C4.c) arg to property getter on mutable struct (record field projection)
 //        C4.d) rhs of byref typed binding (aliasing).
@@ -350,7 +350,7 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
 // check type instantiations
 //--------------------------------------------------------------------------
 
-/// Check types occuring in the TAST.
+/// Check types occurring in the TAST.
 let CheckType permitByrefs (cenv:cenv) env m ty =
     if cenv.reportErrors then 
         let visitTypar (env,tp) = 
@@ -389,7 +389,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
         CheckTypeDeep (ignore, Some visitTyconRef, Some visitByrefsOfByrefs, Some visitTraitSolution, Some visitTypar) cenv.g env ty
 
 
-/// Check types occuring in TAST (like CheckType) and additionally reject any byrefs.
+/// Check types occurring in TAST (like CheckType) and additionally reject any byrefs.
 /// The additional byref checks are to catch "byref instantiations" - one place were byref are not permitted.  
 let CheckTypeNoByrefs (cenv:cenv) env m ty = CheckType false cenv env m ty
 let CheckTypePermitByrefs (cenv:cenv) env m ty = CheckType true cenv env m ty
@@ -456,7 +456,7 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
          errorR(Error(FSComp.SR.chkMultipleGenericInterfaceInstantiations((NicePrint.minimalStringOfType cenv.denv typ1), (NicePrint.minimalStringOfType cenv.denv typ2)),m))
 
 
-let rec CheckExpr   (cenv:cenv) (env:env) expr = 
+let rec CheckExpr   (cenv:cenv) (env:env) expr =
     CheckExprInContext cenv env expr GeneralContext
 
 and CheckVal (cenv:cenv) (env:env) v m context = 
@@ -583,6 +583,38 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
 
 
     | Expr.App(f,fty,tyargs,argsl,m) ->
+        let (|OptionalCoerce|) = function 
+            | Expr.Op(TOp.Coerce _, _, [Expr.App(f, _, _, [], _)], _) -> f 
+            | x -> x
+        if cenv.reportErrors then
+            let g = cenv.g
+            match f with
+            | OptionalCoerce(Expr.Val(v, _, funcRange)) 
+                when (valRefEq g v g.raise_vref || valRefEq g v g.failwith_vref || valRefEq g v g.null_arg_vref || valRefEq g v g.invalid_op_vref) ->
+                match argsl with
+                | [] | [_] -> ()
+                | _ :: _ :: _ ->
+                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 1, List.length argsl), funcRange)) 
+            | OptionalCoerce(Expr.Val(v, _, funcRange)) when valRefEq g v g.invalid_arg_vref ->
+                match argsl with
+                | [] | [_] | [_; _] -> ()
+                | _ :: _ :: _ :: _ ->
+                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 2, List.length argsl), funcRange))
+            | OptionalCoerce(Expr.Val(failwithfFunc, _, funcRange)) when valRefEq g failwithfFunc g.failwithf_vref  ->
+                match argsl with
+                | Expr.App (Expr.Val(newFormat, _, _), _, [_; typB; typC; _; _], [Expr.Const(Const.String formatString, formatRange, _)], _) :: xs when valRefEq g newFormat g.new_format_vref ->
+                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g formatString typB typC with
+                    | Some n ->
+                        let expected = n + 1
+                        let actual = List.length xs + 1
+                        if expected < actual then
+                            warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(failwithfFunc.DisplayName, expected, actual), funcRange))
+                    | None -> ()
+                | _ ->
+                    ()
+            | _ ->
+                ()
+
         CheckTypeInstNoByrefs cenv env m tyargs;
         CheckTypePermitByrefs cenv env m fty;
         CheckTypeInstPermitByrefs cenv env m tyargs;
@@ -600,7 +632,8 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
         let ty = tryMkForallTy tps rty in 
         CheckLambdas None cenv env false topValInfo false expr m ty
 
-    | Expr.TyChoose(_,e1,_)  -> 
+    | Expr.TyChoose(tps,e1,_)  -> 
+        let env = BindTypars cenv.g env tps 
         CheckExpr cenv env e1 
 
     | Expr.Match(_,_,dtree,targets,m,ty) -> 
@@ -1015,7 +1048,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,e,_) as bind) =
                 | None -> v.Data.val_defn <- Some e
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
-                // front end rather than the back end. We currenly re-run this during ilxgen.fs but there's
+                // front end rather than the back end. We currently re-run this during ilxgen.fs but there's
                 // no real need for that except that it helps us to bundle all reflected definitions up into 
                 // one blob for pickling to the binary format
                 try
@@ -1251,7 +1284,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 //we have added all methods to the dictionary on the previous step
                 let methods = hashOfImmediateMeths.[minfo.LogicalName]
                 for m in methods do
-                    // use referencial identity to filter out 'minfo' method
+                    // use referential identity to filter out 'minfo' method
                     if not(System.Object.ReferenceEquals(m, minfo)) then 
                         yield m
             ]
@@ -1406,7 +1439,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
         AllSuperTypesOfType cenv.g cenv.amap tycon.Range AllowMultiIntfInstantiations.Yes (generalizedTyconRef (mkLocalTyconRef tycon)) 
             |> List.filter (isInterfaceTy cenv.g)
             
-    if tycon.IsFSharpInterfaceTycon then List.iter visitType interfaces // Check inheritted interface is as accessible
+    if tycon.IsFSharpInterfaceTycon then List.iter visitType interfaces // Check inherited interface is as accessible
  
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 

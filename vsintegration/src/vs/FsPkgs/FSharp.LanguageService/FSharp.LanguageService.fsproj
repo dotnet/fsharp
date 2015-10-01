@@ -24,7 +24,6 @@
   <ItemGroup>
     <EmbeddedResource Include="VSPackage.resx" />
     <EmbeddedResource Include="FSLangSvcStrings.resx" />
-    <Resource Include="SecurityIconForTypeProviders.ico" />
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fsi" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalCollections.fs" />
@@ -45,8 +44,6 @@
     <Compile Include="Source.fs" />
     <Compile Include="XmlDocumentation.fsi" />
     <Compile Include="XmlDocumentation.fs" />
-    <Compile Include="GetVerifiedPublisherInfo.fs" />
-    <Compile Include="Security.fs" />
     <Compile Include="Servicem.fsi" />
     <Compile Include="Servicem.fs" />
   </ItemGroup>

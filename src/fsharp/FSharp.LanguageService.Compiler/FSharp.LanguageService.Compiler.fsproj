@@ -16,7 +16,6 @@
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
     <DefineConstants>EXTENSIBLE_DUMPER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>TYPE_PROVIDER_SECURITY;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_COMPILER_BACKEND;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_PDB_READER;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_PDB_WRITER;$(DefineConstants)</DefineConstants>
@@ -126,12 +125,6 @@
     </Compile>
     <Compile Include="..\InternalCollections.fs">
       <Link>Utilities\InternalCollections.fs</Link>
-    </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fsi">
-      <Link>Utilities\InternalFileSystemUtils.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fs">
-      <Link>Utilities\InternalFileSystemUtils.fs</Link>
     </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>

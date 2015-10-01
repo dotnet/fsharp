@@ -78,7 +78,8 @@ type ErrorStyle =
     | DefaultErrors 
     | EmacsErrors 
     | TestErrors 
-    | VSErrors    
+    | VSErrors
+    | GccErrors
 
 /// Get the location associated with an error
 val GetRangeOfError : PhasedError -> range option
@@ -277,7 +278,6 @@ type TcConfigBuilder =
       mutable linkResources : string list
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
-      mutable validateTypeProviders : bool
       mutable utf8output : bool
       mutable flatErrors : bool
       mutable maxErrors : int
@@ -305,7 +305,6 @@ type TcConfigBuilder =
       mutable showExtensionTypeMessages : bool
 #endif
       mutable pause : bool 
-      mutable indirectCallArrayMethods : bool
       mutable alwaysCallVirt : bool
       mutable noDebugData : bool
 
@@ -316,6 +315,7 @@ type TcConfigBuilder =
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
+      mutable exename : string option 
       mutable shadowCopyReferences : bool }
 
 
@@ -422,7 +422,6 @@ type TcConfig =
     member linkResources : string list
     member showFullPaths : bool
     member errorStyle : ErrorStyle
-    member validateTypeProviders : bool
     member utf8output : bool
     member flatErrors : bool
 
@@ -450,7 +449,6 @@ type TcConfig =
     member showExtensionTypeMessages : bool
 #endif
     member pause : bool 
-    member indirectCallArrayMethods : bool
     member alwaysCallVirt : bool
     member noDebugData : bool
 
@@ -565,7 +563,7 @@ type TcImports =
     member SystemRuntimeContainsType : string -> bool
 
     static member BuildFrameworkTcImports      : TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> TcGlobals * TcImports
-    static member BuildNonFrameworkTcImports   : (string->unit) option * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
+    static member BuildNonFrameworkTcImports   : TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
     static member BuildTcImports               : TcConfigProvider -> TcGlobals * TcImports
 
 //----------------------------------------------------------------------------
@@ -580,6 +578,7 @@ val IsOptimizationDataResource : ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assemnly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource : ILResource -> bool
+val GetSignatureDataResourceName : ILResource -> string
 
 #if NO_COMPILER_BACKEND
 #else

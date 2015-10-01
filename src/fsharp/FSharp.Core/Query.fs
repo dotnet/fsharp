@@ -148,7 +148,7 @@ type QueryBuilder() =
             acc <- plus acc (selector e.Current)
             count <- count + 1
         if count = 0 then 
-            invalidOp "source" (System.Linq.Enumerable.Average ([| |]: int[])) // raise the same error as LINQ
+            invalidOp "source"
         LanguagePrimitives.DivideByInt< (^U) > acc count
 
     member inline __.SumBy< 'T, 'Q, ^Value 

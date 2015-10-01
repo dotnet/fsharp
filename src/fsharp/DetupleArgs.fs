@@ -86,7 +86,7 @@ open Microsoft.FSharp.Compiler.Lib
 //      - extend call patterns to length n with _ (no tuple info known)
 //      - component-wise intersect argument tuple-structures over call patterns.
 //      - gives least known call-pattern of length n.
-//      - can trim to minimum non-trivual length.
+//      - can trim to minimum non-trivial length.
 //
 //    [Used to] have INVARIANT on this chosen call pattern:
 //
@@ -100,7 +100,7 @@ open Microsoft.FSharp.Compiler.Lib
 //    [PS: now defn arg projection info can override call site info]
 //
 // 2b.Choosing CallPattern also needs to check type of formals for the function.
-//    If function is not expecting a tuple (accoring to types) do not split them.
+//    If function is not expecting a tuple (according to types) do not split them.
 //
 // 3. Given CallPattern for selected fOrig,
 //    (a) Can choose replacement formals, ybi where needed. (b, bar, means vector of formals).
@@ -144,7 +144,7 @@ open Microsoft.FSharp.Compiler.Lib
 
 // Note:  ids can occur in several ways in expr at this point in compiler.
 //      val id                                        - freely
-//      app (val id) tys args                         - applied to tys/args (if no args, then free occurance)
+//      app (val id) tys args                         - applied to tys/args (if no args, then free occurrence)
 //      app (reclink (val id)) tys args               - applied (recursive case)
 //      app (reclink (app (val id) tys' []) tys args  - applied (recursive type instanced case)
 // So, taking care counting callpatterns.
@@ -269,7 +269,7 @@ module GlobalUsageAnalysis =
           let rec recognise context expr = 
             match expr with
              | Expr.Val (v,_,_)                  -> 
-                 // YES: count free occurance 
+                 // YES: count free occurrence 
                  let z = foldLocalVal (fun z v -> logUse v (context,[],[]) z) z v
                  Some z
              | TyappAndApp(f,_,tys,args,_)       -> 

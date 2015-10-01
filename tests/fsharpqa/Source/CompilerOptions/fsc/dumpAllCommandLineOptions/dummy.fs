@@ -47,7 +47,6 @@
 //<Expects status="success">section='NoSection                ' ! option=ranges                         kind=OptionSet</Expects>
 //<Expects status="success">section='NoSection                ' ! option=terms                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=termsfile                      kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=use-incremental-build          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=pause                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=detuple                        kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=simulateException              kind=OptionString</Expects>
@@ -74,7 +73,6 @@
 //<Expects status="success">section='NoSection                ' ! option=alwayscallvirt                 kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=nodebugdata                    kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=test                           kind=OptionString</Expects>
-//<Expects status="success">section='NoSection                ' ! option=use-incremental-build          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=vserrors                       kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=validate-type-providers        kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=LCID                           kind=OptionInt</Expects>
@@ -117,6 +115,8 @@
 //<Expects status="success">section='NoSection                ' ! option=no-string-interning            kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=statistics                     kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=generate-filter-blocks         kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=gccerrors                      kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=exename                        kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=max-errors                     kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=debug-file                     kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-debug-file                  kind=OptionUnit</Expects>
