@@ -1120,11 +1120,11 @@ and TypeDefsBuilder() =
               let tdef = b.Close() 
               // Skip the <PrivateImplementationDetails$> type if it is empty
               if not eliminateIfEmpty 
-                 || tdef.NestedTypes.AsList.IsEmpty 
+                 || not tdef.NestedTypes.AsList.IsEmpty 
                  || not tdef.Fields.AsList.IsEmpty 
                  || not tdef.Events.AsList.IsEmpty 
                  || not tdef.Properties.AsList.IsEmpty 
-                 || tdef.Methods.AsList.IsEmpty then 
+                 || not tdef.Methods.AsList.IsEmpty then 
                   yield tdef  ]
 
     member b.FindTypeDefBuilder(nm) = 
