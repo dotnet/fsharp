@@ -1530,7 +1530,8 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
     let mutable dict = InlineDelayInit<_>(fun () -> 
             let arr = array.Value
             let t = Dictionary<_,_>()
-            for y in arr do 
+            for i = arr.Length - 1 downto 0 do 
+                let y = arr.[i]
                 let key = y.Name
                 if t.ContainsKey key then 
                     t.[key] <- y :: t.[key]
@@ -2340,8 +2341,6 @@ let addILTypeDefToTable (ns,n,_cas,ltd) tab =
     prev.[n] <- ltd;
     Map.add ns prev tab
 
-let addLazyTypeDefToTable ltd larr = lazyMap (fun arr -> Array.ofList (getName ltd :: Array.toList arr)) larr
-
 (* this is not performance critical *)
 let addILTypeDef td (tdefs: ILTypeDefs) = ILTypeDefs (fun () -> [| yield getName (notlazy td); yield! tdefs.AsArrayOfLazyTypeDefs |])
 let mkILTypeDefsFromArray l =  ILTypeDefs (fun () -> Array.map (notlazy >> getName) l)
@@ -2354,11 +2353,6 @@ let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 //
 // REVIEW: this data structure looks substandard
 // -------------------------------------------------------------------- 
-
-let addILMethodToTable (y: ILMethodDef) tab =
-  let key = y.Name
-  let prev = Map.tryFindMulti key tab
-  Map.add key (y::prev) tab
 
 let mkILMethodsFromArray xs =  ILMethodDefs (fun () -> xs)
 let mkILMethods xs =  xs |> Array.ofList |> mkILMethodsFromArray
