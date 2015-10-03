@@ -2329,19 +2329,6 @@ let getName (ltd: Lazy<ILTypeDef>) =
     let ns,n = splitILTypeName td.Name
     (ns,n,td.CustomAttrs,ltd)
 
-let addILTypeDefToTable (ns,n,_cas,ltd) tab = 
-    let prev = 
-       (match Map.tryFind ns tab with 
-        | None -> Dictionary<_,_>(1, HashIdentity.Structural) 
-        | Some prev -> prev)
-    if prev.ContainsKey n then  
-        let msg = sprintf "not unique type %s" (unsplitTypeName (ns,n));
-        System.Diagnostics.Debug.Assert(false,msg)
-        failwith msg
-    prev.[n] <- ltd;
-    Map.add ns prev tab
-
-(* this is not performance critical *)
 let addILTypeDef td (tdefs: ILTypeDefs) = ILTypeDefs (fun () -> [| yield getName (notlazy td); yield! tdefs.AsArrayOfLazyTypeDefs |])
 let mkILTypeDefsFromArray l =  ILTypeDefs (fun () -> Array.map (notlazy >> getName) l)
 let mkILTypeDefs l =  mkILTypeDefsFromArray (Array.ofList l)
