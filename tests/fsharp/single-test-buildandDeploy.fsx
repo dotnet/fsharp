@@ -19,7 +19,7 @@ let GetArgumentFromCommandLine switchName defaultValue =
 let TestProjectJson = GetArgumentFromCommandLine "--testProjectJson:" "test project.json was not specified"
 let TestProjectJsonLock = GetArgumentFromCommandLine "--testProjectJsonLock:" "project.json.lock"
 let PackagesDir = GetArgumentFromCommandLine "--packagesDir:" "."
-let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" "DNXCore,Version=v5.0"
+let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" "DNXCore,Version=v5.0/ubuntu.14.04-x64"
 let Output = GetArgumentFromCommandLine "--output:" @"output"
 let FSharpCore = GetArgumentFromCommandLine "--fsharpCore:" "fsharp.core.dll was not specified"
 let FSC =
@@ -156,10 +156,13 @@ let getNativeFiles package =
 
 let runtimefiles = 
     seq { 
-        yield! getNativeFiles "Microsoft.NETCore.Runtime.CoreCLR-x86"
-        yield! getNativeFiles "Microsoft.NETCore.ConsoleHost-x86"
-        yield! getNativeFiles "Microsoft.NETCore.TestHost-x86"
-        yield! getNativeFiles "Microsoft.NETCore.Windows.ApiSets-x86"
+//        yield! getNativeFiles "Microsoft.NETCore.Runtime.CoreCLR-x86"
+//        yield! getNativeFiles "Microsoft.NETCore.ConsoleHost-x86"
+//        yield! getNativeFiles "Microsoft.NETCore.TestHost-x86"
+//        yield! getNativeFiles "Microsoft.NETCore.Windows.ApiSets-x86"
+        yield! getNativeFiles "Microsoft.NETCore.Runtime.CoreCLR"
+        yield! getNativeFiles "Microsoft.NETCore.ConsoleHost"
+        yield! getNativeFiles "Microsoft.NETCore.TestHost"
     }
 
 let dependencies = (collectReferenciesFromProjectJson TestProjectJsonLock AssemblyReferenceType.forExecute)

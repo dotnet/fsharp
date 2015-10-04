@@ -211,6 +211,8 @@ module internal ToolLocationHelper =
         let dotNetFrameworkFolderPrefix = dotNetFrameworkVersionFolderPrefix
         let frameworkName = FrameworkName(dotNetFrameworkIdentifier, version)
 
+#if NO_WIN_REGISTRY
+#else
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName registryView =
             use baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryView)
             use subKey = baseKey.OpenSubKey(registryBaseKeyName)
@@ -221,10 +223,16 @@ module internal ToolLocationHelper =
                 match keyValue with
                 | null -> None
                 | _ as x -> Some (x.ToString())
+#endif
 
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName =
+#if NO_WIN_REGISTRY
+            ignore registryBaseKeyName 
+            ignore registryKeyName 
+            None
+#else
             findRegistryValueUnderKey registryBaseKeyName registryKeyName RegistryView.Default
-
+#endif
         let CheckForFrameworkInstallation registryEntryToCheckInstall registryValueToCheckInstall =
             // Complus is not set we need to make sure the framework we are targeting is installed. Check the registry key before trying to find the directory.
             // If complus is set then we will return that directory as the framework directory, there is no need to check the registry value for the framework and it may not even be installed.

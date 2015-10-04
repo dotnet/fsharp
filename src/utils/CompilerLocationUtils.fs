@@ -64,6 +64,8 @@ module internal FSharpEnvironment =
     // WARNING: Do not change this revision number unless you absolutely know what you're doing.
     let FSharpBinaryMetadataFormatRevision = "2.0.0.0"
 
+#if NO_WIN_REGISTRY
+#else
     [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
     extern uint32 RegOpenKeyExW(UIntPtr _hKey, string _lpSubKey, uint32 _ulOptions, int _samDesired, UIntPtr & _phkResult);
 
@@ -72,7 +74,7 @@ module internal FSharpEnvironment =
 
     [<DllImport("Advapi32.dll")>]
     extern uint32 RegCloseKey(UIntPtr _hKey)
-
+#endif
     module Option = 
         /// Convert string into Option string where null and String.Empty result in None
         let ofString s = 
@@ -83,6 +85,8 @@ module internal FSharpEnvironment =
     // See: ndp\clr\src\BCL\System\IO\Path.cs
     let maxPath = 260;
     let maxDataLength = (new System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
+#if NO_WIN_REGISTRY
+#else
     let KEY_WOW64_DEFAULT = 0x0000
     let KEY_WOW64_32KEY = 0x0200
     let HKEY_LOCAL_MACHINE = UIntPtr(0x80000002u)
@@ -183,6 +187,8 @@ module internal FSharpEnvironment =
             Get32BitRegistryStringValueViaPInvoke(subKey) 
 #endif
 
+#endif
+
     let internal tryCurrentDomain() =
 #if FX_NO_APP_DOMAINS
         None
@@ -218,6 +224,14 @@ module internal FSharpEnvironment =
     //     - default location of fsi.exe in FSharp.VS.FSI.dll
     //     - default location of fsc.exe in FSharp.Compiler.CodeDom.dll
     //     - default F# binaries directory in (project system) Project.fs
+#if NO_WIN_REGISTRY
+    let BinFolderOfDefaultFSharpCompiler = 
+#if FX_NO_APP_DOMAINS
+        Some System.AppContext.BaseDirectory
+#else
+    Some System.AppDomain.CurrentDomain.BaseDirectory
+#endif
+#else
     let BinFolderOfDefaultFSharpCompiler = 
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
@@ -296,4 +310,6 @@ module internal FSharpEnvironment =
             major > 4 || (major = 4 && IsNetFx45OrAboveInstalled)
 #else
     let IsRunningOnNetFx45OrAbove = false
+#endif
+
 #endif
