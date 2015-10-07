@@ -3193,7 +3193,7 @@ and OptimizeModuleDefs cenv (env,bindInfosColl) defs =
     let defs,minfos = List.unzip defs
     (defs,UnionOptimizationInfos minfos),(env,bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment (TImplFile(qname, pragmas, (ModuleOrNamespaceExprWithSig(mty,_,_) as mexpr), hasExplicitEntryPoint,isScript)) =
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, (ModuleOrNamespaceExprWithSig(mty,_,_) as mexpr), hasExplicitEntryPoint,isScript)) =
     let env,mexpr',minfo  = 
         match mexpr with 
         // FSI: FSI compiles everything as if you're typing incrementally into one module 
@@ -3209,16 +3209,16 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment (TImplFile(qname, pr
             let env = { env with localExternalVals=env.localExternalVals.MarkAsCollapsible() } // take the chance to flatten to a dictionary
             env, mexpr', minfo
 
-    let hidden = ComputeHidingInfoAtAssemblyBoundary mty
+    let hidden = ComputeHidingInfoAtAssemblyBoundary mty hidden
 
     let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile(qname,pragmas,mexpr',hasExplicitEntryPoint,isScript), minfo
+    env, TImplFile(qname,pragmas,mexpr',hasExplicitEntryPoint,isScript), minfo, hidden
 
 //-------------------------------------------------------------------------
 // Entry point
 //------------------------------------------------------------------------- 
 
-let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementalFragment,emitTailcalls,mimpls) =
+let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementalFragment,emitTailcalls,hidden,mimpls) =
     let cenv = 
         { settings=settings;
           scope=ccu; 
@@ -3229,7 +3229,7 @@ let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementa
           localInternalVals=new System.Collections.Generic.Dictionary<Stamp,ValInfo>(10000);
           emitTailcalls=emitTailcalls;
           casApplied=new Dictionary<Stamp,bool>() }
-    OptimizeImplFileInternal cenv optEnv isIncrementalFragment mimpls 
+    OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
 
 
 //-------------------------------------------------------------------------

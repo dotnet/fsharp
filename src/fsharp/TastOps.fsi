@@ -745,10 +745,11 @@ type SignatureHidingInfo =
       mhiVals       : Zset<Val>; 
       mhiRecdFields : Zset<RecdFieldRef>;
       mhiUnionCases : Zset<UnionCaseRef> }
+    static member Empty : SignatureHidingInfo
 
 val ComputeRemappingFromInferredSignatureToExplicitSignature : TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 val ComputeRemappingFromImplementationToSignature : TcGlobals -> ModuleOrNamespaceExpr -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
-val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidingInfo
+val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
 val mkRepackageRemapping : SignatureRepackageInfo -> Remap 
 
 val wrapModuleOrNamespaceExprInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
