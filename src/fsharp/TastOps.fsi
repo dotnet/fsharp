@@ -311,7 +311,8 @@ type ValRemap = ValMap<ValRef>
 type Remap =
     { tpinst : TyparInst;
       valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap }
+      tyconRefRemap : TyconRefRemap;
+      removeTraitSolutions: bool }
 
     static member Empty : Remap
 
