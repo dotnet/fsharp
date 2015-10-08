@@ -1344,3 +1344,4 @@ estApplyStaticArgumentsForMethodNotImplemented,"A type provider implemented GetS
 3187,checkNotSufficientlyGenericBecauseOfScope,"Type inference caused the type variable %s to escape its scope. Consider adding an explicit type parameter declaration or adjusting your code to be less generic."
 3188,checkNotSufficientlyGenericBecauseOfScopeAnon,"Type inference caused an inference type variable to escape its scope. Consider adding type annotations to make your code less generic."
 3189,checkRaiseFamilyFunctionArgumentCount,"Redundant arguments are being ignored in function '%s'. Expected %d but got %d arguments."
+3190,tcLiteralDoesNotTakeArguments,"This literal pattern does not take arguments"
