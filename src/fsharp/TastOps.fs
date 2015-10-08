@@ -3695,9 +3695,9 @@ let rec accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc =
     let acc = QueueList.foldBack accValHidingInfoAtAssemblyBoundary mty.AllValsAndMembers acc
     acc 
 
-let ComputeHidingInfoAtAssemblyBoundary mty = 
+let ComputeHidingInfoAtAssemblyBoundary mty acc = 
 //     dprintf "ComputeRemappingFromInferredSignatureToExplicitSignature,\nmty = %s\nmmsigty=%s\n" (showL(entityTypeL mty)) (showL(entityTypeL msigty)); 
-    accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty SignatureHidingInfo.Empty
+    accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc
 
 //--------------------------------------------------------------------------
 // Compute instances of the above for mexpr -> mty
