@@ -528,7 +528,7 @@ and CheckExprInContext (cenv:cenv) (env:env) expr (context:ByrefCallContext) =
           CheckMultipleInterfaceInstantiations cenv interfaces m
 
     // Allow base calls to F# methods
-    | Expr.App((InnerExprPat(Expr.Val(v,vFlags,_) as f)),fty,tyargs,(Expr.Val(baseVal,_,_)::rest),m) 
+    | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),fty,tyargs,(Expr.Val(baseVal,_,_)::rest),m) 
           when ((match vFlags with VSlotDirectCall -> true | _ -> false) && 
                 baseVal.BaseOrThisInfo = BaseVal) ->
         // dprintfn "GOT BASE VAL USE"
