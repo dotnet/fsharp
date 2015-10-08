@@ -82,12 +82,14 @@ let emptyTyparInst = ([] : TyparInst)
 type Remap =
     { tpinst : TyparInst;
       valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap }
+      tyconRefRemap : TyconRefRemap;
+      removeTraitSolutions: bool }
 
 let emptyRemap = 
     { tpinst        = emptyTyparInst; 
       tyconRefRemap = emptyTyconRefRemap;
-      valRemap      = ValMap.Empty }
+      valRemap      = ValMap.Empty;
+      removeTraitSolutions = false }
 
 type Remap with 
     static member Empty = emptyRemap
@@ -228,6 +230,7 @@ and remapTraitAux tyenv (TTrait(typs,nm,mf,argtys,rty,slnCell)) =
     let slnCell = 
         match !slnCell with 
         | None -> None
+        | _ when tyenv.removeTraitSolutions -> None
         | Some sln -> 
             let sln = 
                 match sln with 
@@ -343,7 +346,8 @@ let remapSlotSig remapAttrib tyenv (TSlotSig(nm,typ, ctps,methTypars,paraml, rty
 let mkInstRemap tpinst = 
     { tyconRefRemap = emptyTyconRefRemap; 
       tpinst        = tpinst; 
-      valRemap      = ValMap.Empty }
+      valRemap      = ValMap.Empty;
+      removeTraitSolutions = false }
 
 // entry points for "typar -> TType" instantiation 
 let instType              tpinst x = if List.isEmpty tpinst then x else remapTypeAux  (mkInstRemap tpinst) x
@@ -1264,6 +1268,8 @@ let tryRescopeEntity viewedCcu (entity:Entity) : EntityRef option =
 let tryRescopeVal viewedCcu (entityRemap:Remap) (vspec:Val) : ValRef option = 
     match vspec.PublicPath with 
     | Some (ValPubPath(p,fullLinkageKey)) -> 
+        // The type information in the val linkage doesn't need to keep any information to trait solutions.
+        let entityRemap = { entityRemap with removeTraitSolutions = true }
         let fullLinkageKey = remapValLinkage entityRemap fullLinkageKey
         let vref = 
             // This compensates for the somewhat poor design decision in the F# compiler and metadata where
@@ -3482,7 +3488,8 @@ let addValRemap v v' tmenv =
 let mkRepackageRemapping mrpi = 
     { valRemap = ValMap.OfList (mrpi.mrpiVals |> List.map (fun (vref,x) -> vref.Deref, x));
       tpinst = emptyTyparInst; 
-      tyconRefRemap = TyconRefMap.OfList mrpi.mrpiEntities }
+      tyconRefRemap = TyconRefMap.OfList mrpi.mrpiEntities
+      removeTraitSolutions = false }
 
 //--------------------------------------------------------------------------
 // Compute instances of the above for mty -> mty
