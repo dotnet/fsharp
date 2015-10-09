@@ -4691,7 +4691,7 @@ and TcSimplePatsOfUnknownType cenv optArgsOK checkCxs env tpenv spats =
     let argty = NewInferenceType ()
     TcSimplePats cenv optArgsOK checkCxs argty env (tpenv,NameMap.empty,Set.empty) spats
 
-and TcPatBindingName _cenv env id ty isMemberThis vis1 topValData (inlineFlag,declaredTypars,argAttribs,isMutable,vis2,compgen) (names,takenNames:Set<string>) = 
+and TcPatBindingName _cenv _env id ty isMemberThis vis1 topValData (inlineFlag,declaredTypars,argAttribs,isMutable,vis2,compgen) (names,takenNames:Set<string>) = 
     let vis = if isSome vis1 then vis1 else vis2
     if takenNames.Contains id.idText then errorR (VarBoundTwice id)
     let baseOrThis = if isMemberThis then MemberThisVal else NormalVal
@@ -4700,14 +4700,7 @@ and TcPatBindingName _cenv env id ty isMemberThis vis1 topValData (inlineFlag,de
     (fun (TcPatPhase2Input values) -> 
         let (vspec,typeScheme) = 
             match values.TryFind id.idText with
-            | Some value ->
-                let name = id.idText
-                if not (String.IsNullOrEmpty name) && Char.IsLower(name.[0]) then
-                    match TryFindPatternByName name env.eNameResEnv with
-                    | Some (Item.Value vref) when vref.LiteralValue.IsSome ->
-                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern(id.idText),id.idRange))
-                    | Some _ | None -> ()
-                value
+            | Some x -> x
             | None -> error(Error(FSComp.SR.tcNameNotBoundInPattern(id.idText),id.idRange))
         PBind(vspec,typeScheme)),
     names,takenNames
