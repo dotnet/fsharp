@@ -22,7 +22,7 @@ if ERRORLEVEL 1 goto Error
 "%FSC%" %fsc_flags% --optimize --target:library -o:lib--optimize.dll -g lib.fs  lib2.fs
 if ERRORLEVEL 1 goto Error
 
-"%FSC%" %fsc_flags% --optimize --target:library -o:lib3--optimize.dll -r lib-optimize.dll -g lib3.fs  
+"%FSC%" %fsc_flags% --optimize --target:library -o:lib3--optimize.dll -r:lib--optimize.dll -g lib3.fs  
 if ERRORLEVEL 1 goto Error
 
 "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -g test.fs -r:lib--optimize.dll  -r:lib3--optimize.dll
