@@ -303,3 +303,4 @@ let TryCountFormatStringArguments m g fmt bty cty =
         Some argtys.Length
     with _ ->
         None
+
