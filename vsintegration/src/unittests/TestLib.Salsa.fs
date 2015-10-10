@@ -119,9 +119,3 @@ module HiddenFunctions =
     /// if you really need it - use qualified form: GlobalFunctions.AddDisabledWarning
     let AddDisabledWarning() : unit = failwith "Should not be called"
 
-// Common type provider approval code
-
-let ApproveAllMockTypeProviders() =
-    ClearAllTypeProviderApprovals()      
-    for file in System.IO.Directory.EnumerateFiles(System.IO.Path.Combine(System.Environment.CurrentDirectory,@"UnitTestsResources\MockTypeProviders\")) do
-        AddTypeProviderApprovedForDevelopment(file)       

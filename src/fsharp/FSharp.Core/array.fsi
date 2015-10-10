@@ -716,7 +716,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="array">The input array.</param>
         /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
         /// <exception cref="System.ArgumentException">Thrown when the input array is empty.</exception>
-        /// <returns>The final result of the redcutions.</returns>
+        /// <returns>The final result of the reductions.</returns>
         [<CompiledName("Reduce")>]
         val reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
 
@@ -1171,7 +1171,7 @@ namespace Microsoft.FSharp.Collections
             /// <summary>Create an array given the dimension and a generator function to compute the elements.</summary>
             ///
             /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
-            /// The order in which the given function is applied to indicies is not specified.</remarks>
+            /// The order in which the given function is applied to indices is not specified.</remarks>
             /// <param name="count"></param>
             /// <param name="initializer"></param>
             /// <returns>'T[]</returns>
@@ -1183,7 +1183,7 @@ namespace Microsoft.FSharp.Collections
             /// respectively </summary>
             ///
             /// <remarks>Performs the operation in parallel using System.Threading.Parallel.For.
-            /// The order in which the given function is applied to indicies is not specified.</remarks>
+            /// The order in which the given function is applied to indices is not specified.</remarks>
             /// <param name="predicate">The function to test the input elements.</param>
             /// <param name="array">The input array.</param>
             /// <returns>'T[] * 'T[]</returns>

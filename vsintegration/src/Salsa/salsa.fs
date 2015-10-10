@@ -1334,7 +1334,7 @@ module internal Salsa =
                         match o with
                         | (:? Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch as m) -> 
                             yield (m.a, m.b)
-                        | x -> failwith "Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch expected, but got %A" (if box x = null then "null" else (x.GetType()).FullName)
+                        | x -> failwithf "Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch expected, but got %A" (if box x = null then "null" else (x.GetType()).FullName)
                 |]
 
                 

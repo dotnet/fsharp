@@ -8,9 +8,6 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TypeChecker
 
-/// the F# project system calls this to pop up type provider security dialog if needed
-val internal ProcessCommandLineArgsAndImportAssemblies : (string -> unit) * string[] * string * string * Exiter -> unit
-
 #if NO_COMPILER_BACKEND
 #else
 

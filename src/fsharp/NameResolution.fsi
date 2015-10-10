@@ -101,6 +101,9 @@ type FullyQualifiedFlag =
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
 
+/// Lookup patterns in name resolution environment
+val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
+
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
 
@@ -168,7 +171,7 @@ type TypeNameResolutionInfo =
   static member Default : TypeNameResolutionInfo
   static member ResolveToTypeRefs : TypeNameResolutionStaticArgsInfo -> TypeNameResolutionInfo
 
-/// Represents the kind of the occurence when reporting a name in name resolution
+/// Represents the kind of the occurrence when reporting a name in name resolution
 [<RequireQualifiedAccess>]
 type internal ItemOccurence = 
     | Binding = 0
@@ -248,10 +251,10 @@ type PermitDirectReferenceToGeneratedType =
 /// Resolve a long identifier to a namespace or module.
 val internal ResolveLongIndentAsModuleOrNamespace   : Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
 
-/// Resolve a long identifer to an object constructor.
+/// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>
 
-/// Resolve a long identifer using type-qualified name resolution.
+/// Resolve a long identifier using type-qualified name resolution.
 val internal ResolveLongIdentInType                 : TcResultsSink -> NameResolver -> NameResolutionEnv -> LookupKind -> range -> AccessorDomain -> Ident list -> FindMemberFlag -> TypeNameResolutionInfo -> TType -> Item * Ident list
 
 /// Resolve a long identifier when used in a pattern.
@@ -277,15 +280,15 @@ val internal ResolveRecordOrClassFieldsOfType       : NameResolver -> range -> A
 
 /// An adjustment to perform to the name resolution results if overload resolution fails.
 /// If overload resolution succeeds, the specific overload resolution is reported. If it fails, the 
-/// set of possibile overlods is reported via this adjustment.
+/// set of possible overloads is reported via this adjustment.
 type IfOverloadResolutionFails = IfOverloadResolutionFails of (unit -> unit)
 
 /// Specifies if overload resolution needs to notify Language Service of overload resolution
 [<RequireQualifiedAccess>]
 type AfterOverloadResolution =
-    /// Notfication is not needed
+    /// Notification is not needed
     |   DoNothing
-    /// Notfy the sink
+    /// Notify the sink
     |   SendToSink of (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback
     /// Find override among given overrides and notify the sink. The 'Item' contains the candidate overrides.
     |   ReplaceWithOverrideAndSendToSink of Item * (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback

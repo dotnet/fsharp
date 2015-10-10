@@ -5,6 +5,7 @@ module internal Microsoft.FSharp.Compiler.Optimizer
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -43,7 +44,7 @@ type IncrementalOptimizationEnv =
 val internal BindCcu : CcuThunk -> CcuOptimizationInfo -> IncrementalOptimizationEnv -> TcGlobals -> IncrementalOptimizationEnv
 
 /// Optimize one implementation file in the given environment
-val internal OptimizeImplFile : OptimizationSettings *  CcuThunk * TcGlobals * ConstraintSolver.TcValF * Import.ImportMap * IncrementalOptimizationEnv * isIncrementalFragment: bool * emitTaicalls: bool * TypedImplFile -> IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo
+val internal OptimizeImplFile : OptimizationSettings *  CcuThunk * TcGlobals * ConstraintSolver.TcValF * Import.ImportMap * IncrementalOptimizationEnv * isIncrementalFragment: bool * emitTaicalls: bool * SignatureHidingInfo * TypedImplFile -> IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo
 
 #if DEBUG
 /// Displaying optimization data
@@ -53,7 +54,7 @@ val internal moduleInfoL : TcGlobals -> LazyModuleInfo -> Layout.layout
 /// Saving and re-reading optimization information 
 val p_CcuOptimizationInfo : CcuOptimizationInfo -> TastPickle.WriterState -> unit 
 
-/// Rewrite the modul info using the export remapping 
+/// Rewrite the module info using the export remapping 
 val RemapOptimizationInfo : TcGlobals -> Tastops.Remap -> (CcuOptimizationInfo -> CcuOptimizationInfo)
 
 /// Ensure that 'internal' items are not exported in the optimization info

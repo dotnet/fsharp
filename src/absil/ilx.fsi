@@ -89,7 +89,7 @@ type IlxClosureApps =
     | Apps_app of ILType * IlxClosureApps 
     | Apps_done of ILType
 
-/// ILX extensions to the intruction set
+/// ILX extensions to the instruction set
 ///
 
 type IlxInstr = 
