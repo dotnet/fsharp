@@ -507,9 +507,9 @@ type ReflectedArgInfo =
 [<NoComparison; NoEquality>]
 /// Partial information about a parameter returned for use by the Language Service
 type ParamNameAndType = 
-    | ParamNameAndType of string option * TType
+    | ParamNameAndType of Ident option * TType
 
-    static member FromArgInfo (ty,argInfo : ArgReprInfo) = ParamNameAndType(Option.map textOfId argInfo.Name, ty)
+    static member FromArgInfo (ty,argInfo : ArgReprInfo) = ParamNameAndType(argInfo.Name, ty)
     static member FromMember isCSharpExtMem g vref = GetArgInfosOfMember isCSharpExtMem g vref |> List.mapSquared ParamNameAndType.FromArgInfo
     static member Instantiate inst p = let (ParamNameAndType(nm,ty)) = p in ParamNameAndType(nm, instType inst ty)
     static member InstantiateCurried inst paramTypes = paramTypes |> List.mapSquared (ParamNameAndType.Instantiate inst)
@@ -518,7 +518,7 @@ type ParamNameAndType =
 /// Full information about a parameter returned for use by the type checker and language service.
 type ParamData = 
     /// ParamData(isParamArray, isOut, optArgInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * OptionalArgInfo * string option * ReflectedArgInfo * TType
+    ParamData of bool * bool * OptionalArgInfo * Ident option * ReflectedArgInfo * TType
 
 
 //-------------------------------------------------------------------------
@@ -741,7 +741,7 @@ type ILMethInfo =
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then 
     /// drop the object argument.
     member x.GetParamNamesAndTypes(amap,m,minst) = 
-        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(p.Name, ImportTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) )
+        x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) )
 
     /// Get a reference to the method (dropping all generic instantiations), as an Abstract IL ILMethodRef.
     member x.ILMethodRef = 
@@ -1359,7 +1359,7 @@ type MethInfo =
                         let pname = 
                             match p.PUntaint((fun p -> p.Name), m) with
                             | null -> None
-                            | name -> Some name
+                            | name -> Some (mkSynId m name)
                         let ptyp =
                             match p.PApply((fun p -> p.ParameterType), m) with
                             | Tainted.Null ->  amap.g.unit_ty
@@ -1870,7 +1870,7 @@ type PropInfo =
 #if EXTENSIONTYPING
         | ProvidedProp (_,pi,m) -> 
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
-                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some s), m)
+                let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
                 let paramType = Import.ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                 yield ParamNameAndType(paramName, paramType) ]
 #endif

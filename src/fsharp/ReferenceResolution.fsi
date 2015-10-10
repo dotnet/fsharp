@@ -27,9 +27,6 @@ module internal MSBuildResolver =
         | RuntimeLike      // Don't allow stubbed-out reference assemblies
         | DesigntimeLike 
 
-#if SILVERLIGHT
-#else
-
     /// Get the Reference Assemblies directory for the .NET Framework on Window
     val DotNetFrameworkReferenceAssembliesRootDirectoryOnWindows : string
 
@@ -85,4 +82,3 @@ module internal MSBuildResolver =
                 logwarning:(string->string->unit) *
                 logerror:(string->string->unit)
              -> ResolutionResults
-#endif

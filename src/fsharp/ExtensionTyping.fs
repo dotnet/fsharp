@@ -4,6 +4,8 @@
 
 namespace Microsoft.FSharp.Compiler
 
+#if EXTENSIONTYPING
+
 module internal ExtensionTyping =
     open System
     open System.IO
@@ -15,7 +17,6 @@ module internal ExtensionTyping =
     open Microsoft.FSharp.Compiler.AbstractIL.IL
     open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
-    open Internal.Utilities.FileSystem
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
@@ -1218,3 +1219,4 @@ module internal ExtensionTyping =
     let IsGeneratedTypeDirectReference (st: Tainted<ProvidedType>, m) =
         st.PUntaint((fun st -> st.TryGetTyconRef() |> isNone), m)
 
+#endif
