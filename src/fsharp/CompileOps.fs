@@ -40,7 +40,6 @@ open Microsoft.FSharp.Compiler.MSBuildResolver
 open Microsoft.FSharp.Compiler.TypeRelations
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
-open Internal.Utilities.FileSystem
 open Internal.Utilities.Collections
 open Internal.Utilities.Filename
 open Microsoft.FSharp.Compiler.Import
@@ -1353,7 +1352,7 @@ let SanitizeFileName fileName implicitIncludeDir =
     //  - if you have a #line directive, e.g. 
     //        # 1000 "Line01.fs"
     //    then it also asserts.  But these are edge cases that can be fixed later, e.g. in bug 4651.
-    //System.Diagnostics.Debug.Assert(System.IO.Path.IsPathRooted(fileName), sprintf "filename should be absolute: '%s'" fileName)
+    //System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(fileName), sprintf "filename should be absolute: '%s'" fileName)
     try
         let fullPath = FileSystem.GetFullPathShim(fileName)
         let currentDir = implicitIncludeDir
@@ -2220,7 +2219,7 @@ type TcConfigBuilder =
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
            
     member tcConfigB.AddLoadedSource(m,path,pathLoadedFrom) =
-        if Path.IsInvalidPath(path) then
+        if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidFilename(path),m))    
         else 
             let path = 
@@ -2237,7 +2236,7 @@ type TcConfigBuilder =
         tcConfigB.embedResources <- tcConfigB.embedResources ++ filename
 
     member tcConfigB.AddReferencedAssemblyByPath (m,path) = 
-        if Path.IsInvalidPath(path) then
+        if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path),m))
         elif not (List.mem (AssemblyReference(m,path)) tcConfigB.referencedDLLs) then // NOTE: We keep same paths if range is different.
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path)
@@ -2614,16 +2613,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some x -> 
             [tcConfig.MakePathAbsolute x]
         | None -> 
-            // When running on Mono we lead everyone to believe we're doing .NET 2.0 compilation 
-            // by default. 
             if runningOnMono then 
-                let mono10SysDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() 
-                assert(mono10SysDir.EndsWith("1.0",StringComparison.Ordinal));
-                let mono20SysDir = Path.Combine(Path.GetDirectoryName mono10SysDir, "2.0")
-                if Directory.Exists(mono20SysDir) then
-                     [mono20SysDir]
-                else 
-                     [mono10SysDir]
+                [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()]
             else                                
                 try 
                     match tcConfig.resolutionEnvironment with
@@ -3838,7 +3829,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                    outputFile             = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
                    referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
-                   temporaryFolder        = Path.GetTempPath() }
+                   temporaryFolder        = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
             // TcImport objects.  So the callbacks provided in the type provider config
@@ -4637,7 +4628,7 @@ module private ScriptPreprocessClosure =
         
     let SourceFileOfFilename(filename,m,inputCodePage:int option) : ClosureDirective list = 
         try
-            let filename = FileSystem.SafeGetFullPath(filename)
+            let filename = FileSystem.GetFullPathShim(filename)
             use stream = FileSystem.FileStreamReadShim filename
             use reader = 
                 match inputCodePage with 
@@ -4676,7 +4667,7 @@ module private ScriptPreprocessClosure =
             match closureDirective with 
             | ClosedSourceFile _ as csf -> [csf]
             | SourceFile(filename,m,source) ->
-                let filename = FileSystem.SafeGetFullPath(filename)
+                let filename = FileSystem.GetFullPathShim(filename)
                 if observedSources.HaveSeen(filename) then [] 
                 else     
                     observedSources.SetSeen(filename)
@@ -4727,7 +4718,7 @@ module private ScriptPreprocessClosure =
         for directive in closureDirectives do
             match directive with 
             | ClosedSourceFile(filename,m,input,_,_,noWarns) -> 
-                let filename = FileSystem.SafeGetFullPath(filename)
+                let filename = FileSystem.GetFullPathShim(filename)
                 sourceFiles := (filename,m) :: !sourceFiles  
                 globalNoWarns := (!globalNoWarns @ noWarns) 
                 sourceInputs := (filename,input) :: !sourceInputs                 
