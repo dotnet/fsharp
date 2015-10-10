@@ -388,7 +388,7 @@ type ``UpToDate PreserveNewest`` () =
         let test (input, inputTimestamp) (output, outputTimestamp) =
             let logs = ref []
             let outputPanel = VsMocks.vsOutputWindowPane(logs)
-            let logger = OutputWindowLogger.CreateUpToDateCheckLogger(outputPanel)
+            let logger = OutputWindowLogger((fun () -> true), outputPanel)
         
             let tryTimestamp (path: string) (_l: OutputWindowLogger) =
                 let toN = function Some d -> Nullable<_>(d) | None -> Nullable<_>()

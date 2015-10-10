@@ -40,6 +40,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\debug
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
+CompilerOptions02,NoMT				CompilerOptions\fsc\gccerrors
 CompilerOptions01,NoMT				CompilerOptions\fsc\help
 CompilerOptions01,NoMT				CompilerOptions\fsc\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
@@ -65,6 +66,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsi\times
+CompilerOptions02,NoMT				CompilerOptions\fsi\exename
 
 
 Conformance01			Conformance\BasicGrammarElements\Constants
@@ -316,3 +318,4 @@ Misc02			Stress
 Misc02			XmlDoc\Basic
 Misc02			XmlDoc\OCamlDoc
 Misc02			XmlDoc\UnitOfMeasure
+Diagnostics		Diagnostics\General

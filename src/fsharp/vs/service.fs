@@ -553,7 +553,7 @@ type TypeCheckInfo
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true typ 
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members 
         
-        // Value reference from the name resolution. Primarilly to disallow "let x.$ = 1"
+        // Value reference from the name resolution. Primarily to disallow "let x.$ = 1"
         // In most of the cases, value references can be obtained from expression typings or from environment,
         // so we wouldn't have to handle values here. However, if we have something like:
         //   let varA = "string"
@@ -709,7 +709,7 @@ type TypeCheckInfo
                     | None -> 
                         // TODO In theory I think we should never get to this code path; it would be nice to add an assert.
                         // In practice, we do get here in some weird cases like "2.0 .. 3.0" and hitting Ctrl-Space in between the two dots of the range operator.
-                        // I wasn't able to track down what was happening in those werid cases, not worth worrying about, it doesn't manifest as a product bug or anything.
+                        // I wasn't able to track down what was happening in those weird cases, not worth worrying about, it doesn't manifest as a product bug or anything.
                         None, false
                 | _ -> None, false
 
@@ -1322,13 +1322,13 @@ module internal Parser =
           let errHandler = new ErrorHandler(reportErrors, mainInputFileName, tcConfig, source)
 
           // Very old comment: This helps reason=MethodTip to work. reason=MethodTip 
-          // calls with only partial text.  Preumably adding this causes the final EndParameters 
+          // calls with only partial text.  Presumably adding this causes the final EndParameters 
           // call to refer to a different line than the StartParameters call we're really interested in 
           // Or something like that.  
           let source = source + "\n\n\n"
           let lexbuf = UnicodeLexing.StringAsLexbuf source
 
-          // Colelctor for parens matching
+          // Collector for parens matching
           let matchPairRef = new ResizeArray<_>()
 
           use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _oldLogger -> errHandler.ErrorLogger)
@@ -1764,7 +1764,7 @@ type TypeCheckResults(errors: ErrorInfo[], details: (TypeCheckInfo * Incremental
 /// Information about the compilation environment    
 module internal CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
-    /// are not asscociated with a project
+    /// are not associated with a project
     let DefaultReferencesForOrphanSources = DefaultBasicReferencesForOutOfProjectSources
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
@@ -1869,7 +1869,7 @@ type BackgroundCompiler(notifyFileTypeCheckStateIsDirty:NotifyFileTypeCheckState
                  onDiscard = (fun (_, _, decrement) -> decrement.Dispose()))
 
     
-    /// Helper: get the antecedant typecheck state for the give file (in the options). Return none if not available.        
+    /// Helper: get the antecedent typecheck state for the give file (in the options). Return none if not available.        
     let GetAntecendantResultWithoutSideEffects(filename:string, options:CheckOptions) = 
         match incrementalBuildersCache.GetAvailable options with
         | Some(builder, createErrors, _) ->
@@ -1896,9 +1896,6 @@ type BackgroundCompiler(notifyFileTypeCheckStateIsDirty:NotifyFileTypeCheckState
             Trace.PrintLine("CompilerServices", fun _ -> "Service.UntypedParseImpl")
             use t = Trace.CallByThreadNamed("Reactor", "UntypedParseImpl", "ThreadPool", fun _->"")  
         
-#if TYPE_PROVIDER_SECURITY
-            ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked <- Some filename
-#endif
             let builder,_,_ = incrementalBuildersCache.Get(options) // Q: Whis it it ok to ignore createErrors in the build cache? A: These errors will be appended into the typecheck results
             
             // Do the parsing.

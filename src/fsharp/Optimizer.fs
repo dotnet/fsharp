@@ -1189,7 +1189,7 @@ let RemapOptimizationInfo g tmenv =
            ValInfos = ss.ValInfos.Map (fun (vref,vinfo) -> 
                                                      let vref' = remapValRef tmenv vref 
                                                      let vinfo = remapValInfo vinfo
-                                                     // Propogate any inferred ValMakesNoCriticalTailcalls flag from implementation to signature information
+                                                     // Propagate any inferred ValMakesNoCriticalTailcalls flag from implementation to signature information
                                                      if vinfo.ValMakesNoCriticalTailcalls then vref'.Deref.SetMakesNoCriticalTailcalls() 
                                                      (vref',vinfo)) } 
 
@@ -1723,7 +1723,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
     let expr = stripExpr expr
 
     match expr with
-    // treat the common linear cases to avoid stack overflows, using an explicit continutation 
+    // treat the common linear cases to avoid stack overflows, using an explicit continuation 
     | Expr.Sequential _ | Expr.Let _ ->  OptimizeLinearExpr cenv env expr (fun x -> x)
 
     | Expr.Const (c,m,ty) -> OptimizeConst cenv env expr (c,m,ty)
@@ -1903,7 +1903,7 @@ and OptimizeExprOpFallback cenv env (op,tyargs,args',m) arginfos valu =
     let cost,valu = 
       match op with
       | TOp.UnionCase c -> 2,MakeValueInfoForUnionCase c (Array.ofList argValues)
-      | TOp.ExnConstr _ -> 2,valu (* REVIEW: information collection possilbe here *)
+      | TOp.ExnConstr _ -> 2,valu (* REVIEW: information collection possible here *)
       | TOp.Tuple       -> 1, MakeValueInfoForTuple (Array.ofList argValues)
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
@@ -2804,7 +2804,7 @@ and OptimizeExprThenConsiderSplit cenv env e =
 
 and ComputeSplitToMethodCondition flag threshold cenv env (e,einfo) = 
     flag &&
-    // REVIEW: The method splitting optimization is compeltely disabled if we are not taking tailcalls.
+    // REVIEW: The method splitting optimization is completely disabled if we are not taking tailcalls.
     // REVIEW: This should only apply to methods that actually make self-tailcalls (tested further below).
     // Old comment "don't mess with taking guaranteed tailcalls if used with --no-tailcalls!" 
     cenv.emitTailcalls &&
@@ -2816,7 +2816,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e,einfo) =
      not fvs.UsesUnboundRethrow  &&
      not fvs.UsesMethodLocalConstructs &&
      fvs.FreeLocals |> Zset.forall (fun v -> 
-          // no direct-self-recursive refrences
+          // no direct-self-recursive references
           not (env.dontSplitVars.ContainsVal v) &&
           (v.ValReprInfo.IsSome ||
             // All the free variables (apart from things with an arity, i.e. compiled as methods) should be normal, i.e. not base/this etc. 
@@ -3193,7 +3193,7 @@ and OptimizeModuleDefs cenv (env,bindInfosColl) defs =
     let defs,minfos = List.unzip defs
     (defs,UnionOptimizationInfos minfos),(env,bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment (TImplFile(qname, pragmas, (ModuleOrNamespaceExprWithSig(mty,_,_) as mexpr), hasExplicitEntryPoint,isScript)) =
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, (ModuleOrNamespaceExprWithSig(mty,_,_) as mexpr), hasExplicitEntryPoint,isScript)) =
     let env,mexpr',minfo  = 
         match mexpr with 
         // FSI: FSI compiles everything as if you're typing incrementally into one module 
@@ -3209,16 +3209,16 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment (TImplFile(qname, pr
             let env = { env with localExternalVals=env.localExternalVals.MarkAsCollapsible() } // take the chance to flatten to a dictionary
             env, mexpr', minfo
 
-    let hidden = ComputeHidingInfoAtAssemblyBoundary mty
+    let hidden = ComputeHidingInfoAtAssemblyBoundary mty hidden
 
     let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile(qname,pragmas,mexpr',hasExplicitEntryPoint,isScript), minfo
+    env, TImplFile(qname,pragmas,mexpr',hasExplicitEntryPoint,isScript), minfo, hidden
 
 //-------------------------------------------------------------------------
 // Entry point
 //------------------------------------------------------------------------- 
 
-let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementalFragment,emitTailcalls,mimpls) =
+let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementalFragment,emitTailcalls,hidden,mimpls) =
     let cenv = 
         { settings=settings;
           scope=ccu; 
@@ -3229,7 +3229,7 @@ let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementa
           localInternalVals=new System.Collections.Generic.Dictionary<Stamp,ValInfo>(10000);
           emitTailcalls=emitTailcalls;
           casApplied=new Dictionary<Stamp,bool>() }
-    OptimizeImplFileInternal cenv optEnv isIncrementalFragment mimpls 
+    OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
 
 
 //-------------------------------------------------------------------------

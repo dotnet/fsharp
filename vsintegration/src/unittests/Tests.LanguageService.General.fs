@@ -155,7 +155,7 @@ type GeneralTests() =
     [<Test>]
     member public this.``PublicSurfaceArea.DotNetReflection``() =
         let ps = publicTypesInAsm @"fsharp.projectsystem.fsharp.dll"
-        Assert.AreEqual(3, ps)  // TPTOP(x2) stuff and BuildPropertyDescriptor
+        Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
         let ls = publicTypesInAsm @"fsharp.languageservice.dll"
         Assert.AreEqual(0, ls)
         let comp = publicTypesInAsm @"fsharp.compiler.dll"

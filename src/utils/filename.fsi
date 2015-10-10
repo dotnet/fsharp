@@ -22,7 +22,7 @@ val hasExtension: string -> bool
 /// Get the filename of the given path
 val fileNameOfPath: string -> string
 
-/// Get the filename without extenstion of the given path
+/// Get the filename without extension of the given path
 val fileNameWithoutExtension: string -> string
 
 

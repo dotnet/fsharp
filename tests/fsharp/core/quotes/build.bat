@@ -15,6 +15,8 @@ if NOT "%FSC:NOTAVAIL=X%" == "%FSC%" (
 
 rem fsc.exe building
 
+    %CSC% /nologo  /target:library /out:cslib.dll cslib.cs
+    @if ERRORLEVEL 1 goto Error
 
     "%FSC%" %fsc_flags% -o:test.exe -r cslib.dll -g test.fsx
     @if ERRORLEVEL 1 goto Error
@@ -34,6 +36,22 @@ rem fsc.exe building
 
     "%PEVERIFY%" test--optimize.exe 
     @if ERRORLEVEL 1 goto Error
+
+    rmdir /s /q test--downtarget
+    mkdir test--downtarget
+
+	dir "%FSCOREDLLVPREVPATH%"
+	dir "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\"
+	REM Compile with FSharp.Core 4.3.1.0.  Add the FSHARP_CORE_31 and Portable defines.
+	"%FSC%" %fsc_flags% -o:test--downtarget\test--downtarget.exe --noframework -r "%FSCOREDLLVPREVPATH%" -r "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r System.dll -r System.Runtime.dll -r System.Xml.dll -r System.Data.dll -r System.Web.dll -r System.Core.dll -r System.Numerics.dll -r cslib.dll -g test.fsx --define:FSHARP_CORE_31 --define:Portable
+    @if ERRORLEVEL 1 goto Error
+
+	copy /y "%FSCOREDLLVPREVPATH%" test--downtarget\FSharp.Core.dll
+    @if ERRORLEVEL 1 goto Error
+
+    "%PEVERIFY%" test--downtarget\test--downtarget.exe 
+    @if ERRORLEVEL 1 goto Error
+
 
 :Ok
 echo Built fsharp %~f0 ok.

@@ -25,11 +25,11 @@ namespace Microsoft.FSharp.Collections
 
       let cast (e : IEnumerator) : IEnumerator<'T> = 
           { new IEnumerator<'T> with 
-                member x.Current = unbox e.Current
+                member x.Current = unbox<'T> e.Current
             interface IEnumerator with 
-                member x.Current = unbox  e.Current
+                member x.Current = unbox<'T> e.Current :> obj
                 member x.MoveNext() = e.MoveNext()
-                member x.Reset() = noReset();
+                member x.Reset() = noReset()
             interface System.IDisposable with 
                 member x.Dispose() = 
                     match e with 
@@ -416,7 +416,7 @@ namespace Microsoft.FSharp.Collections
         
         // Binding. 
         //
-        // We use a type defintion to apply a local dynamic optimization. 
+        // We use a type definition to apply a local dynamic optimization. 
         // We automatically right-associate binding, i.e. push the continuations to the right.
         // That is, bindG (bindG G1 cont1) cont2 --> bindG G1 (cont1 o cont2)
         // This makes constructs such as the following linear rather than quadratic:
@@ -1450,7 +1450,7 @@ namespace Microsoft.FSharp.Collections
 
             let dict = Dictionary<_,ResizeArray<_>> comparer
 
-            // Previously this was 1, but I think this is rather stingy, considering that we are alreadying paying
+            // Previously this was 1, but I think this is rather stingy, considering that we are already paying
             // for at least a key, the ResizeArray reference, which includes an array reference, an Entry in the
             // Dictionary, plus any empty space in the Dictionary of unfilled hash buckets.
             let minimumBucketSize = 4

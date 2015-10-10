@@ -150,7 +150,7 @@ val mkLetRecBinds : range -> Bindings -> Expr -> Expr
 /// TypeSchme (generalizedTypars, tauTy)
 ///
 ///    generalizedTypars -- the truly generalized type parameters 
-///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type paramaeters stripped off.
+///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.
 type TypeScheme = TypeScheme of Typars  * TType    
 
 val mkGenericBindRhs : TcGlobals -> range -> Typars -> TypeScheme -> Expr -> Expr
@@ -311,7 +311,8 @@ type ValRemap = ValMap<ValRef>
 type Remap =
     { tpinst : TyparInst;
       valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap }
+      tyconRefRemap : TyconRefRemap;
+      removeTraitSolutions: bool }
 
     static member Empty : Remap
 
@@ -745,10 +746,11 @@ type SignatureHidingInfo =
       mhiVals       : Zset<Val>; 
       mhiRecdFields : Zset<RecdFieldRef>;
       mhiUnionCases : Zset<UnionCaseRef> }
+    static member Empty : SignatureHidingInfo
 
 val ComputeRemappingFromInferredSignatureToExplicitSignature : TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 val ComputeRemappingFromImplementationToSignature : TcGlobals -> ModuleOrNamespaceExpr -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
-val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidingInfo
+val ComputeHidingInfoAtAssemblyBoundary : ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
 val mkRepackageRemapping : SignatureRepackageInfo -> Remap 
 
 val wrapModuleOrNamespaceExprInNamespace : Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
@@ -823,7 +825,7 @@ val mkAndSimplifyMatch : SequencePointInfoForBinding  -> range -> range -> TType
 val primMkMatch : SequencePointInfoForBinding * range * DecisionTree * DecisionTreeTarget array * range * TType -> Expr
 
 //-------------------------------------------------------------------------
-//  Work out what things on the r.h.s. of a letrec need to be fixed up
+//  Work out what things on the r.h.s. of a let rec need to be fixed up
 //------------------------------------------------------------------------- 
 
 val IterateRecursiveFixups : 

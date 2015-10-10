@@ -48,7 +48,7 @@ let newInfo ()=
     addZeros       = false
     precision      = false}
 
-let ParseFormatString (m: Range.range) g (source: string option) fmt bty cty dty = 
+let parseFormatStringInternal m g (source: string option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
@@ -83,10 +83,7 @@ let ParseFormatString (m: Range.range) g (source: string option) fmt bty cty dty
                    acc |> List.map snd |> List.rev
                else  
                    failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
-          
-           let aty = List.foldBack (-->) argtys dty
-           let ety = mkTupledTy g argtys
-           aty,ety
+           argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
           parseLoop acc (i+2, relLine, relCol+2)
        else 
@@ -292,3 +289,17 @@ let ParseFormatString (m: Range.range) g (source: string option) fmt bty cty dty
            
     let results = parseLoop [] (0, 0, m.StartColumn)
     results, Seq.toList specifierLocations
+
+let ParseFormatString m g source fmt bty cty dty = 
+    let argtys = parseFormatStringInternal m g source fmt bty cty
+    let aty = List.foldBack (-->) argtys dty
+    let ety = mkTupledTy g argtys
+    aty, ety
+
+let TryCountFormatStringArguments m g fmt bty cty =
+    try
+        parseFormatStringInternal m g None fmt bty cty
+        |> List.length
+        |> Some
+    with _ ->
+        None
