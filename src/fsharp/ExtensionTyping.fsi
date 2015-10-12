@@ -4,8 +4,6 @@
 
 namespace Microsoft.FSharp.Compiler
 
-#if EXTENSIONTYPING
-
 module internal ExtensionTyping =
 
     open System
@@ -369,5 +367,3 @@ module internal ExtensionTyping =
     /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
     /// We check by seeing if the type is absent from the remapping context.
     val IsGeneratedTypeDirectReference         : Tainted<ProvidedType> * range -> bool
-
-#endif

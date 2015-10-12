@@ -578,7 +578,6 @@ val IsOptimizationDataResource : ILResource -> bool
 
 /// Determine if an IL resource attached to an F# assemnly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource : ILResource -> bool
-val GetSignatureDataResourceName : ILResource -> string
 
 #if NO_COMPILER_BACKEND
 #else

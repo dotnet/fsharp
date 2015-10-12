@@ -117,6 +117,12 @@
     <Compile Include="..\lib.fs">
       <Link>Utilities\lib.fs</Link>
     </Compile>
+    <Compile Include="..\InternalFileSystemUtils.fsi">
+      <Link>Utilities\InternalFileSystemUtils.fsi</Link>
+    </Compile>
+    <Compile Include="..\InternalFileSystemUtils.fs">
+      <Link>Utilities\InternalFileSystemUtils.fs</Link>
+    </Compile>
     <Compile Include="..\TraceCall.fsi">
       <Link>Utilities\TraceCall.fsi</Link>
     </Compile>

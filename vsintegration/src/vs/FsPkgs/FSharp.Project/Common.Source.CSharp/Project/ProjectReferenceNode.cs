@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
+using FSSafe = Internal.Utilities.FileSystem;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
@@ -750,7 +750,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return false;
             }
 
-            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && FSLib.Shim.FileSystem.SafeExists(this.referencedProjectFullPath));
+            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && FSSafe.File.SafeExists(this.referencedProjectFullPath));
         }
 
         /// <summary>

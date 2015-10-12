@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
+using FSSafe = Internal.Utilities.FileSystem;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
@@ -2807,7 +2807,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         {
                             // Cleanup.
                             this.DeleteFromStorage(docNew);
-                            if (this is ProjectNode && FSLib.Shim.FileSystem.SafeExists(docNew))
+                            if (this is ProjectNode && FSSafe.File.SafeExists(docNew))
                             {
                                 File.Delete(docNew);
                             }

@@ -338,7 +338,7 @@ module Keywords =
                 let dirname  = if filename = stdinMockFilename then
                                    System.IO.Directory.GetCurrentDirectory()
                                else
-                                   filename |> FileSystem.GetFullPathShim (* asserts that path is already absolute *)
+                                   filename |> FileSystem.SafeGetFullPath (* asserts that path is already absolute *)
                                             |> System.IO.Path.GetDirectoryName
                 KEYWORD_STRING dirname
             | "__SOURCE_FILE__" -> 

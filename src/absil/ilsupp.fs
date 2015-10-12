@@ -676,10 +676,10 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 // Conversion was successful, so read the object file
                 objBytes <- FileSystem.ReadAllBytesShim(tempObjFileName) ; 
                 //Array.Copy(objBytes, pbUnlinkedResource, pbUnlinkedResource.Length)
-                FileSystem.FileDelete(tempObjFileName)
+                System.IO.File.Delete(tempObjFileName)
             finally
                 // clean up the temp files
-                List.iter (fun tempResFileName -> FileSystem.FileDelete(tempResFileName)) tempResFiles
+                List.iter (fun tempResFileName -> System.IO.File.Delete(tempResFileName)) tempResFiles
             
         // Part 2: Read the COFF file held in pbUnlinkedResource, spit it out into pResBuffer and apply the COFF fixups
         // pResBuffer will become  the .rsrc section of the PE file
@@ -1090,7 +1090,7 @@ let hashSizeOfMD5 = 16
 // In this case, catch the failure, and not set a checksum. 
 let internal setCheckSum (url:string, writer:ISymUnmanagedDocumentWriter) =
     try
-        use file = FileSystem.FileStreamReadShim(url)
+        use file = new FileStream(url, FileMode.Open, FileAccess.Read, FileShare.Read)
         use md5 = System.Security.Cryptography.MD5.Create()
         let checkSum = md5.ComputeHash(file)
         if (checkSum.Length = hashSizeOfMD5) then

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
+using FSSafe = Internal.Utilities.FileSystem;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -305,7 +305,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         protected virtual bool CanShowUrlInOnObjectBrowser()
         {
-            return !string.IsNullOrEmpty(Url) && FSLib.Shim.FileSystem.SafeExists(Url);
+            return !string.IsNullOrEmpty(Url) && FSSafe.File.SafeExists(Url);
         }
 
         /// <summary>

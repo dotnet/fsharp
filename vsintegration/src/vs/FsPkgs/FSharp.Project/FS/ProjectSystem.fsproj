@@ -38,6 +38,8 @@
     <Compile Include="..\..\Common.fs" />
     <Compile Include="ProjectPrelude.fs" />
     <Compile Include="MSBuildUtilities.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalFileSystemUtils.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\InternalFileSystemUtils.fs" />
     <Compile Include="AppConfigHelper.fs" />
     <Compile Include="Project.fs" />
   </ItemGroup>

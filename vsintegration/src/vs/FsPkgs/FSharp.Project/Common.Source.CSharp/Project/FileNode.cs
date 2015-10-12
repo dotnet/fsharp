@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
+using FSSafe = Internal.Utilities.FileSystem;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -360,7 +360,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="path"></param>
         public override void DeleteFromStorage(string path)
         {
-            if (FSLib.Shim.FileSystem.SafeExists(path))
+            if (FSSafe.File.SafeExists(path))
             {
                 File.SetAttributes(path, FileAttributes.Normal); // make sure it's not readonly.
                 File.Delete(path);
@@ -644,7 +644,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             string moniker = this.GetMkDocument();
 
-            if (String.IsNullOrEmpty(moniker) || !FSLib.Shim.FileSystem.SafeExists(moniker))
+            if (String.IsNullOrEmpty(moniker) || !FSSafe.File.SafeExists(moniker))
             {
                 return false;
             }
@@ -694,7 +694,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <returns>True if the file exist</returns>
         public virtual bool IsFileOnDisk(string path)
         {
-            return FSLib.Shim.FileSystem.SafeExists(path);
+            return FSSafe.File.SafeExists(path);
         }
 
         /// <summary>

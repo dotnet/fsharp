@@ -1872,7 +1872,7 @@ and CanMemberSigsMatchUpToCheck
                     let calledArgTy = rfinfo.FieldType
                     rfinfo.Name, calledArgTy
             
-            subsumeArg (CalledArg((-1, 0), false, NotOptional, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller) )) ++ (fun () -> 
+            subsumeArg (CalledArg((-1, 0), false, NotOptional, false, Some name, ReflectedArgInfo.None, calledArgTy)) caller) )) ++ (fun () -> 
         
         // - Always take the return type into account for
         //      -- op_Explicit, op_Implicit
@@ -2004,7 +2004,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                                 let missingArgs = List.drop nReqd cmeth.AllUnnamedCalledArgs
                                 match NamesOfCalledArgs missingArgs with 
                                 | [] -> (false, "")
-                                | names -> (true, String.concat ";" (List.map textOfId names))
+                                | names -> (true, String.concat ";" names)
                             else (false, "")
 
                         match suggestNamesForMissingArguments with
