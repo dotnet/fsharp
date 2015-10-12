@@ -30,7 +30,7 @@ type ILResource with
     member internal Bytes : byte[]
 
 /// Proccess the given set of command line arguments
-val internal ProcessCommandLineFlags : TcConfigBuilder * argv:string[] -> string list
+val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
 
 //---------------------------------------------------------------------------
 // The entry point used by fsc.exe

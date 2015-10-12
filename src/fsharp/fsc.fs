@@ -246,7 +246,7 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder,commandLineSourceFiles,lexR
 
     List.rev !allSources
 
-let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, argv) =
+let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals, lcidFromCodePage, argv) =
     let inputFilesRef   = ref ([] : string list)
     let collect name = 
         let lower = String.lowercase name
@@ -260,6 +260,13 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, argv) =
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
     let inputFiles = List.rev !inputFilesRef
+
+    // Check if we have a codepage from the console
+    match tcConfigB.lcid with
+    | Some _ -> ()
+    | None -> tcConfigB.lcid <- lcidFromCodePage
+
+    setProcessThreadLocals(tcConfigB)
 
     (* step - get dll references *)
     let dllFiles,sourceFiles = List.partition Filename.isDll inputFiles
@@ -311,16 +318,9 @@ let GetTcImportsFromCommandLine
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them. 
         try 
-            let sourceFiles = ProcessCommandLineFlags (tcConfigB, argv)
+            let sourceFiles = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
 
             let sourceFiles = AdjustForScriptCompile(tcConfigB,sourceFiles,lexResourceManager)                     
-
-            // Check if we have a codepage from the console
-            match tcConfigB.lcid with
-            | Some _ -> ()
-            | None -> tcConfigB.lcid <- lcidFromCodePage
-
-            setProcessThreadLocals(tcConfigB)
 
             sourceFiles
 
