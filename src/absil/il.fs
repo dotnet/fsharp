@@ -165,7 +165,7 @@ let splitTypeNameRight nm =
 
 /// This is used to store event, property and field maps.
 ///
-/// Review: this is not such a great data structure.
+/// REVIEW: this is not such a great data structure.
 type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, lazyItems : Lazy<'Data list>) = 
 
     let quickMap= 
@@ -433,7 +433,7 @@ type AssemblyRefData =
       assemRefVersion: ILVersionInfo option;
       assemRefLocale: Locale option; } 
 
-/// Global state: table of all assembly references keyed by AssemblyRefData
+/// Global state: table of all assembly references keyed by AssemblyRefData.
 let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
 
 [<Sealed>]
@@ -579,7 +579,7 @@ and ILArrayShapeStatics() =
     static let singleDimensional = ILArrayShape [(Some 0, None)]    
     static member SingleDimensional = singleDimensional
 
-/// Calling conventions.  These are used in method pointer types.
+/// Calling conventions. These are used in method pointer types.
 [<StructuralEquality; StructuralComparison; RequireQualifiedAccess>]
 type ILArgConvention = 
     | Default
@@ -607,7 +607,7 @@ type ILCallingConv =
     static member Instance = ILCallingConvStatics.Instance
     static member Static = ILCallingConvStatics.Static
 
-/// Static storage to amortize the allocation of ILCallingConv.Instance and ILCallingConv.Static
+/// Static storage to amortize the allocation of <c>ILCallingConv.Instance</c> and <c>ILCallingConv.Static</c>.
 and ILCallingConvStatics() = 
     static let instanceCallConv = Callconv(ILThisConvention.Instance,ILArgConvention.Default)
     static let staticCallConv =  Callconv(ILThisConvention.Static,ILArgConvention.Default)
@@ -696,7 +696,7 @@ and
     [<StructuralEquality; StructuralComparison>]
     ILTypeSpec = 
     { tspecTypeRef: ILTypeRef;    
-      /// The type instantiation if the type is generic
+      /// The type instantiation if the type is generic.
       tspecInst: ILGenericArgs }    
     member x.TypeRef=x.tspecTypeRef
     member x.Scope=x.TypeRef.Scope
@@ -1713,7 +1713,7 @@ and ILTypeDefs =
         m.Force().[ns].[n].Force()
 
         
-/// keyed first on namespace then on type name.  The namespace is often a unique key for a given type map.
+/// Keyed first on namespace then on type name.  The namespace is often a unique key for a given type map.
 and ILTypeDefsMap = 
      Map<string list,Dictionary<string,Lazy<ILTypeDef>>>
 
@@ -1831,8 +1831,6 @@ type ILModuleDef =
 // Add fields and types to tables, with decent error messages
 // when clashes occur...
 // -------------------------------------------------------------------- 
-
-
 
 let mkILEmptyGenericParams = ([]: ILGenericParameterDefs)
 let emptyILGenericArgsList = ([ ]: ILType list)
@@ -2108,7 +2106,7 @@ let exitsOfCode c = CodeLabels.toList (exitsOfCodeAsSet c)
 /// Finds all labels defined within this code block, seeing through restrictions.
 /// This assumes that labels are unique within the code blocks, even if hidden behind restrictions.
 ///
-// Note: Repeats in the list indicate this invariant is broken.
+// NOTE: Repeats in the list indicate this invariant is broken.
 let rec accLabelsOfCode acc c =
     match c with
     | ILBasicBlock bb        -> bb.Label::acc
@@ -2462,7 +2460,7 @@ let tname_RuntimeMethodHandle = "System.RuntimeMethodHandle"
 let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 
 /// Represents the capabilities of target framework profile.
-/// Different profiles may omit some types or contain them in different assemblies
+/// Different profiles may omit some types or contain them in different assemblies.
 type IPrimaryAssemblyTraits = 
     
     abstract TypedReferenceTypeScopeRef : ILScopeRef option
@@ -2893,7 +2891,6 @@ let isILDoubleTy       ty = typ_is_value_mscorlib_typ ty tname_Double
 // Rescoping
 // -------------------------------------------------------------------- 
 
-
 let qrescope_scoref scoref scoref_old = 
     match scoref,scoref_old with 
     | _,ILScopeRef.Local -> Some scoref
@@ -3032,7 +3029,6 @@ type ILFieldSpec with
 // Make a method mbody
 // -------------------------------------------------------------------- 
 
-
 let mkILMethodBody (zeroinit,locals,maxstack,code,tag) = 
   { IsZeroInit=zeroinit;
     MaxStack=maxstack;
@@ -3101,6 +3097,7 @@ let mkILNonGenericEmptyCtor tag superTy =
 // Make a static, top level monomophic method - very useful for
 // creating helper ILMethodDefs for internal use.
 // -------------------------------------------------------------------- 
+
 let mkILStaticMethod (genparams,nm,access,args,ret,impl) = 
     { GenericParams=genparams;
       Name=nm;
@@ -3777,7 +3774,7 @@ let blockForInnerTrySpec (codeOffsetView:CodeOffsetViewOfLabelledItems,
         let newBlock =  maker (tryBlock,clauseEntryLabel,clauseBlock)
         // None of the entries to the clause block are visible outside the 
         // entire try-clause construct, nor the other entries to the try block 
-        // apart from the one at the. top 
+        // apart from the one at the top. 
         let newStarts = CodeLabels.diff remainingBasicBlockStarts (CodeLabels.union tryHiddn (entriesOfCodeAsSet clauseBlock))
         // Now return the new block, the remaining blocks and the new set 
         // of entries. 
@@ -3882,7 +3879,7 @@ let doStructure' (codeOffsetView:CodeOffsetViewOfLabelledItems,
 
             
 // REVIEW: this function shows up on performance traces. If we eliminated the last ILX->IL rewrites from the
-// F# compiler we could get rid of this structured code representation from Abstract IL altogether, and 
+// F# compiler we could get rid of this structured code representation from Abstract IL altogether and 
 // never convert F# code into this form.
 let buildILCode methName lab2pc instrs tryspecs localspecs =
 
@@ -4022,7 +4019,7 @@ let buildILCode methName lab2pc instrs tryspecs localspecs =
             try 
                 doStructure (specs1 @ specs2) (bblocks,bbstartToCodeLabelMap.BasicBlockStartCodeLabels) 
             with :? KeyNotFoundException->
-                // NOTE#overlap.
+                // NOTE: #overlap.
                 // Here, "Not_found" indicates overlapping scopes were found.
                 // Maybe the calling code got the locspecs scopes wrong.
                 // Try recovery by discarding locspec info...
@@ -4203,7 +4200,6 @@ let sigptr_get_serstring_possibly_null  bytes sigptr =
 // Get the public key token from the public key.
 //---------------------------------------------------------------------
 
-
 let mkRefToILAssembly (m: ILAssemblyManifest) = 
     ILAssemblyRef.Create(m.Name, None, (match m.PublicKey with Some k -> Some (PublicKey.KeyAsToken(k)) | None -> None), m.Retargetable, m.Version, m.Locale)
 
@@ -4308,7 +4304,7 @@ let rec encodeCustomAttrElemType x =
           Array.append [| et_SZARRAY |] (encodeCustomAttrElemType elemType)
     | _ ->  failwith "encodeCustomAttrElemType: unrecognized custom element type"
 
-/// Given a custom attribute element, work out the type of the .NET argument for that element
+/// Given a custom attribute element, work out the type of the .NET argument for that element.
 let rec encodeCustomAttrElemTypeForObject x = 
     match x with
     | ILAttribElem.String _  -> [| et_STRING |]
@@ -4501,7 +4497,7 @@ type ILGlobals with
 
     member this.mkCompilerGeneratedAttribute () = mkILCustomAttribute this (tref_CompilerGeneratedAttribute this, [], [], [])
 
-// Bug 2129. Requests attributes to be added to compiler generated methods 
+// Bug 2129. Requests attributes to be added to compiler generated methods.
 let addGeneratedAttrs ilg (attrs: ILAttributes) = 
     let attribs = 
        match ilg.generatedAttribsCache with 

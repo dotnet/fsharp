@@ -16,16 +16,16 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 
 type 'T morph = 'T -> 'T
 
-/// Morph each scope reference inside a type signature 
+/// Morph each scope reference inside a type signature.
 val morphILScopeRefsInILTypeRef: ILScopeRef morph -> ILTypeRef -> ILTypeRef 
 
 val morphILMethodDefs: ILMethodDef morph -> ILMethodDefs -> ILMethodDefs
-/// nb. does not do nested tdefs
+/// nb. does not do nested tdefs.
 val morphILTypeDefs: ILTypeDef morph -> ILTypeDefs -> ILTypeDefs 
 
 val morphExpandILTypeDefs: (ILTypeDef -> ILTypeDef list) -> ILTypeDefs -> ILTypeDefs
 
-/// Morph all tables of ILTypeDefs in "ILModuleDef"
+/// Morph all tables of ILTypeDefs in "ILModuleDef".
 val morphILTypeDefsInILModule: ILTypeDefs morph -> ILModuleDef -> ILModuleDef
 
 /// Morph all type references throughout an entire module.
@@ -44,6 +44,6 @@ type InstrMorph =
 
 val morphExpandILInstrsInILCode: (ILCodeLabel -> ILCodeLabel -> ILInstr -> InstrMorph) -> ILCode -> ILCode
 
-// REVIEW: Consider removing Post-Dev11 M3
+// REVIEW: Consider removing Post-Dev11 M3.
 val enablemorphCustomAttributeData : unit -> unit
 val disablemorphCustomAttributeData : unit -> unit
