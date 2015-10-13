@@ -1703,7 +1703,7 @@ module StaticLinker =
 type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
 
 module FileWriter = 
-    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, _signingInfo:SigningInfo, exiter:Exiter) =
+    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
 #if FX_NO_KEY_SIGNING
 #else
         let (SigningInfo(delaysign, signerOpt, container)) = signingInfo
@@ -1839,7 +1839,7 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
              (fun tcConfigB -> 
                         // display the banner text, if necessary
                         if not bannerAlreadyPrinted then 
-                        Microsoft.FSharp.Compiler.CompilerOptions.DisplayBannerText tcConfigB),
+                            Microsoft.FSharp.Compiler.CompileOptions.DisplayBannerText tcConfigB),
              false, // optimizeForMemory - fsc.exe can use as much memory as it likes to try to compile as fast as possible
              exiter,
              errorLoggerProvider,

@@ -516,7 +516,6 @@
       <Link>Service\service.fs</Link>
     </Compile>
     <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
-    <Compile Include="InternalsVisibleTo.fs">
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
   </ItemGroup>

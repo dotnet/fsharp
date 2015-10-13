@@ -284,8 +284,6 @@ module internal MSBuildResolver =
         let searchPaths = 
 
             let explicitIncludeDirs = explicitIncludeDirs |> List.filter(String.IsNullOrEmpty >> not)
-                                        let item = new Microsoft.Build.Utilities.TaskItem(referenceName)
-                                        item:>ITaskItem|]
 
             let rawFileNamePath = if allowRawFileName then ["{RawFileName}"] else []
 
