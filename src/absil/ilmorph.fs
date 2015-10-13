@@ -292,7 +292,7 @@ let cattr_typ2typ ilg f c =
     // dev11 M3 defensive coding: if anything goes wrong with attribute decoding or encoding, then back out.
     if morphCustomAttributeData then
         try 
-           let elems,namedArgs = IL.decodeILAttribData ilg c (Some(meth.MethodRef.EnclosingTypeRef.Scope))
+           let elems,namedArgs = IL.decodeILAttribData ilg c 
            let elems = elems |> List.map (celem_typ2typ f)
            let namedArgs = namedArgs |> List.map (cnamedarg_typ2typ f)
            IL.mkILCustomAttribMethRef ilg (meth, elems, namedArgs)       

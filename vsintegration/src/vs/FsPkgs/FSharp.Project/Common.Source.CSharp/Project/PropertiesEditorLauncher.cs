@@ -23,7 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     {
         private ServiceProvider serviceProvider;
 
-        #region ctor
         public PropertiesEditorLauncher(ServiceProvider serviceProvider)
         {
             if (serviceProvider == null)
@@ -31,8 +30,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             this.serviceProvider = serviceProvider;
         }
-        #endregion
-        #region overridden methods
+
         /// <summary>
         /// Launch the Project Properties Editor (properties pages)
         /// </summary>
@@ -52,7 +50,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return false;
         }
-        #endregion
 
     }
 }

@@ -17,15 +17,15 @@ open Internal.Utilities.Debug
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Build
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Lib
 
 /// Methods for dealing with F# sources files.
 module internal SourceFile =
     /// Source file extensions
-    let private compilableExtensions = Build.sigSuffixes @ Build.implSuffixes @ Build.scriptSuffixes
+    let private compilableExtensions = CompileOps.FSharpSigFileSuffixes @ CompileOps.FSharpImplFileSuffixes @ CompileOps.FSharpScriptFileSuffixes
     /// Single file projects extensions
-    let private singleFileProjectExtensions = Build.scriptSuffixes
+    let private singleFileProjectExtensions = CompileOps.FSharpScriptFileSuffixes
     /// Whether or not this file is compilable
     let IsCompilable file =
         let ext = Path.GetExtension(file)
@@ -40,9 +40,9 @@ module internal SourceFileImpl =
         let ext = Path.GetExtension(file)
         0 = String.Compare(".fsi",ext,StringComparison.OrdinalIgnoreCase)
 
-    /// Additonal #defines that should be in place when editing a file in a file editor such as VS.
+    /// Additional #defines that should be in place when editing a file in a file editor such as VS.
     let AdditionalDefinesForUseInEditor(filename) =
-        if Build.IsScript(filename) then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
+        if CompileOps.IsScript(filename) then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
         else ["COMPILED";"EDITING"]
            
 type CompletionPath = string list * string option // plid * residue
@@ -219,8 +219,10 @@ type internal UntypedParseInfo(parsed:UntypedParseResults) =
                   | SynExpr.Tuple (es,_,_) -> 
                       yield! walkExprs es
 
-                  | SynExpr.Record (_,_,fs,_) -> 
-                    
+                  | SynExpr.Record (_,copyExprOpt,fs,_) ->
+                      match copyExprOpt with
+                      | Some (e,_) -> yield! walkExpr true e
+                      | None -> ()
                       yield! walkExprs (List.map (fun (_, v, _) -> v) fs |> List.choose id)
 
                   | SynExpr.ObjExpr (_,_,bs,is,_,_) -> 
@@ -656,7 +658,7 @@ module internal UntypedParseInfoImpl =
                         let residue = if s.Length <> 0 then Some s else None
                         Some(plid, residue)
                     elif posGt x.idRange.Start pos then
-                        // can happen if caret is placed after dot but before the exising identifier A. $ B
+                        // can happen if caret is placed after dot but before the existing identifier A. $ B
                         // return accumulated plid with no residue
                         Some (plid, None)
                     else

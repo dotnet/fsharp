@@ -26,15 +26,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAFileItem : OAProjectItem<FileNode>
     {
-        #region ctors
         internal OAFileItem(OAProject project, FileNode node)
             : base(project, node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         /// <summary>
         /// Returns the dirty state of the document.
         /// </summary>
@@ -222,10 +218,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// </summary>
         /// <param name="fileName">The name with which to save the project or project item.</param>
         /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
-        /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>
         public override void Save(string fileName)
         {
-            this.DoSave(false, fileName);
+            this.DoSave(false, fileName ?? string.Empty);
         }
 
         /// <summary>
@@ -233,6 +228,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// </summary>
         /// <param name="fileName">The file name with which to save the solution, project, or project item. If the file exists, it is overwritten</param>
         /// <returns>true if the rename was successful. False if Save as failes</returns>
+        /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>
         public override bool SaveAs(string fileName)
         {
             try
@@ -307,9 +303,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             });
         }
 
-        /// <summary>
-        /// Gets the ProjectItems for the object.
-        /// </summary>
         public override ProjectItems ProjectItems
         {
             get
@@ -324,10 +317,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-
-        #endregion
-
-        #region helpers
         /// <summary>
         /// Saves or Save As the  file
         /// </summary>
@@ -432,7 +421,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 }
             });
         }
-        #endregion
 
     }
 }

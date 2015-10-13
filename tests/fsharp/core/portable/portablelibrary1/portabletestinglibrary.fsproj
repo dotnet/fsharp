@@ -57,6 +57,7 @@
     <Compile Include="..\..\controlMailbox\test.fsx"><Link>controlMailbox-test.fsx</Link></Compile>
     <Compile Include="..\..\controlStackOverflow\test.fsx"><Link>controlStackOverflow-test.fsx</Link></Compile>
     <Compile Include="..\..\csext\test.fsx"><Link>csext-test.fsx</Link></Compile>
+    <Compile Include="..\..\forexpression\test.fsx"><Link>forexpression-test.fsx</Link></Compile>
     <Compile Include="..\..\innerpoly\test.fsx"><Link>innerpoly-test.fsx</Link></Compile>
     <Compile Include="..\..\int32\test.fsx"><Link>int32-test.fsx</Link></Compile>
     <Compile Include="..\..\lazy\test.fsx"><Link>lazy-test.fsx</Link></Compile>

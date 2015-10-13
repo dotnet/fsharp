@@ -184,7 +184,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
     // DocumentTask is associated with an IVsTextLineMarker in a specified document and 
     // implements Navigate() to jump to that marker.
-    /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask"]/*' />
     [CLSCompliant(false)]
     [System.Runtime.InteropServices.ComVisible(true)]
 #if DEBUG
@@ -201,7 +200,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         IVsTextLines buffer;
         MARKERTYPE markerType;
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.DocumentTask"]/*' />
         internal DocumentTask(IServiceProvider site, IVsTextLines buffer, MARKERTYPE markerType, TextSpan span, string fileName, string subcategory) {
             this.site = site;
             this.fileName = fileName;
@@ -214,7 +212,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.markerType = markerType;
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.Finalize"]/*' />
         ~DocumentTask() {
             Dispose();
         }
@@ -266,25 +263,21 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\TaskProvider.uex' path='docs/doc[@for="DocumentTask.IsMarkerValid"]/*' />
         public bool IsMarkerValid {
             get {
                 return this.markerValid;
             }
         }
 
-        /// <include file='doc\TaskProvider.uex' path='docs/doc[@for="DocumentTask.Site"]/*' />
         public IServiceProvider Site {
             get { return this.site; }
         }
 
-        /// <include file='doc\TaskProvider.uex' path='docs/doc[@for="DocumentTask.Dispose"]/*' />
         public void Dispose() {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        /// <include file='doc\TaskProvider.uex' path='docs/doc[@for="DocumentTask.Dispose1"]/*' />
         protected virtual void Dispose(bool disposing) {
             if (this.textLineMarker != null) {
                 NativeMethods.ThrowOnFailure(textLineMarker.Invalidate());
@@ -350,7 +343,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return 1;
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.OnNavigate"]/*' />
         // It is important that this function not throw an exception.
         protected override void OnNavigate(EventArgs e) {
             try {
@@ -397,7 +389,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.OnRemoved"]/*' />
         protected override void OnRemoved(EventArgs e) {
             if (this.textLineMarker != null) {
                 NativeMethods.ThrowOnFailure(textLineMarker.Invalidate());
@@ -406,7 +397,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             base.OnRemoved(e);
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.Span"]/*' />
         public TextSpan Span {
             get {
                 if (textLineMarker != null) {
@@ -418,45 +408,35 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.TextLineMarker"]/*' />
         public IVsTextLineMarker TextLineMarker {
             get { return this.textLineMarker; }
         }
 
-        #region IVsTextMarkerClient methods
-
         /*---------------------------------------------------------
             IVsTextMarkerClient
         -----------------------------------------------------------*/
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.MarkerInvalidated"]/*' />
         public virtual void MarkerInvalidated() {
             this.markerValid = false;
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.OnBufferSave"]/*' />
         public virtual void OnBufferSave(string fileName) {
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.OnBeforeBufferClose"]/*' />
         public virtual void OnBeforeBufferClose() {
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.OnAfterSpanReload"]/*' />
         public virtual void OnAfterSpanReload() {
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.OnAfterMarkerChange"]/*' />
         public virtual int OnAfterMarkerChange(IVsTextMarker marker) {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.GetTipText"]/*' />
         public virtual int GetTipText(IVsTextMarker marker, string[] tipText) {
             if (this.Text != null && this.Text.Length > 0) tipText[0] = this.Text;
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.GetMarkerCommandInfo"]/*' />
         public virtual int GetMarkerCommandInfo(IVsTextMarker marker, int item, string[] text, uint[] commandFlags) {
             // Returning S_OK results in error message appearing in editor's
             // context menu when you right click over the error message.
@@ -467,11 +447,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.E_NOTIMPL;
         }
 
-        /// <include file='doc\DocumentTask.uex' path='docs/doc[@for="DocumentTask.ExecMarkerCommand"]/*' />
         public virtual int ExecMarkerCommand(IVsTextMarker marker, int item) {
             return NativeMethods.S_OK;
         }
-        #endregion
 
         int IVsProvideUserContext.GetUserContext(out IVsUserContext ppctx)
         {

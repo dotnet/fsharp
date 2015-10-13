@@ -104,7 +104,7 @@ type internal CheckOptions =
 /// Information about the compilation environment    
 module internal CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
-    /// are not asscociated with a project.
+    /// are not associated with a project.
     val DefaultReferencesForOrphanSources : string list
     /// Return the compilation defines that should be used when editing the given file.
     val GetCompilationDefinesForEditing : filename : string * compilerFlags : string list -> string list
@@ -148,7 +148,7 @@ type internal InteractiveChecker =
     static member Create : NotifyFileTypeCheckStateIsDirty -> InteractiveChecker
 
     /// Parse a source code file, returning information about brace matching in the file
-    /// Return an enumeration of the matching parethetical tokens in the file
+    /// Return an enumeration of the matching parenthetical tokens in the file
     member MatchBraces : filename : string * source: string * options: CheckOptions -> (Range * Range)[]
 
     /// Parse a source code file, returning a handle that can be used for obtaining navigation bar information
@@ -158,7 +158,7 @@ type internal InteractiveChecker =
     /// Typecheck a source code file, returning a handle to the results of the parse including
     /// the reconstructed types in the file.
     ///
-    /// Return None if the background builder is not yet done prepring the type check results for the antecedent to the 
+    /// Return None if the background builder is not yet done preparing the type check results for the antecedent to the 
     /// file.
     member TypeCheckSource : parsed: UntypedParseInfo * filename: string * fileversion: int * source: string * options: CheckOptions * isResultObsolete: IsResultObsolete * textSnapshotInfo: obj -> TypeCheckAnswer
     
@@ -177,7 +177,7 @@ type internal InteractiveChecker =
     /// results if the InteractiveChecker would like a chance to recheck the file, in which case
     /// UntypedParse and TypeCheckSource should be called. If the source of the file
     /// has changed the results returned by this function may be out of date, though may
-    /// still be usable for generating intellsense menus and information.
+    /// still be usable for generating intellisense menus and information.
     member TryGetRecentTypeCheckResultsForFile : filename: string * options:CheckOptions -> (UntypedParseInfo * TypeCheckResults * (*version*)int) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the CheckOptions of any project/compilation.
@@ -215,7 +215,7 @@ type internal InteractiveChecker =
 #if FSI_SERVER_INTELLISENSE
 // These functions determine all declarations, called by fsi.fs for fsi-server requests.
 module internal FsiIntelisense =
-    val getDeclarations : Build.TcConfig * Env.TcGlobals * Build.TcImports * Build.TcState -> string -> string[] -> (string * string * string * int)[]
+    val getDeclarations : Build.TcConfig * TcGlobals * Build.TcImports * Build.TcState -> string -> string[] -> (string * string * string * int)[]
 #endif
 
 module internal PrettyNaming =

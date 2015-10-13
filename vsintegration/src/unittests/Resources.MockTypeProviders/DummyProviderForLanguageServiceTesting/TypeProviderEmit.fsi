@@ -280,4 +280,10 @@ type TypeProviderForNamespaces =
     member Invalidate : unit -> unit
 
     interface ITypeProvider
+
+// Used by unit testing to check that invalidation handlers are being disconnected
+module GlobalCountersForInvalidation = 
+    val GetInvalidationHandlersAdded : unit -> int
+    val GetInvalidationHandlersRemoved : unit -> int
+
 #endif
