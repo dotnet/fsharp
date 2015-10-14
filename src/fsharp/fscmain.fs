@@ -265,8 +265,8 @@ module Driver =
     let main argv = 
         // Check for --pause as the very first step so that a compiler can be attached here.
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
-            System.Console.WriteLine("Press any key to continue...")
-            System.Console.ReadKey() |> ignore
+            System.Console.WriteLine("Press return to continue...")
+            System.Console.ReadLine() |> ignore
 
         let quitProcessExiter = 
             { new Exiter with 

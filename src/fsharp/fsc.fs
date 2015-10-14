@@ -1703,10 +1703,10 @@ module StaticLinker =
 type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
 
 module FileWriter = 
-    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
+    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, _signingInfo:SigningInfo, exiter:Exiter) =
 #if FX_NO_KEY_SIGNING
 #else
-        let (SigningInfo(delaysign, signerOpt, container)) = signingInfo
+        let (SigningInfo(delaysign, signerOpt, container)) = _signingInfo
 #endif
         try
             if !progress then dprintn "Writing assembly...";
