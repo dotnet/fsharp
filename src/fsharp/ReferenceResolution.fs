@@ -257,10 +257,10 @@ module internal MSBuildResolver =
             { new IBuildEngine with 
                     member __.BuildProjectFile(projectFileName, targetNames, globalProperties, targetOutputs) = true
 #if RESHAPED_MSBUILD
-                    member __.LogCustomEvent(e) = protect (fun () -> logmessage ((e.GetPropertyValue("Message")) :?> string))
-                    member __.LogErrorEvent(e) = protect (fun () -> logerror ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string)) 
-                    member __.LogMessageEvent(e) = protect (fun () -> logmessage ((e.GetPropertyValue("Message")) :?> string) )
-                    member __.LogWarningEvent(e) = protect (fun () -> logwarning ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string))
+                    member __.LogCustomEvent(e) = protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string))
+                    member __.LogErrorEvent(e) = protect (fun () -> logError ((e.GetPropertyValue("Code")) :?> string) ((e.GetPropertyValue("Message")) :?> string)) 
+                    member __.LogMessageEvent(e) = protect (fun () -> logMessage ((e.GetPropertyValue("Message")) :?> string) )
+                    member __.LogWarningEvent(e) = protect (fun () -> logWarning ((e.GetPropertyValue("Code")) :?> string)  ((e.GetPropertyValue("Message")) :?> string))
 #else
                     member __.LogCustomEvent(e) = protect (fun () -> logMessage e.Message)
                     member __.LogErrorEvent(e) = protect (fun () -> logError e.Code e.Message)
