@@ -355,7 +355,10 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
             | None ->
                 let asmName    = convAssemblyRef asmref
                 FileSystem.AssemblyLoad(asmName)
-        let typT = assembly.GetType(qualifiedName, throwOnError=true)
+        //ROJEPP: dnx does not support 'throwOnErrors'?
+        //error FS0507: No accessible member or object constructor named 'GetType' takes 1 arguments. Note the call to this member also provides 1 named arguments.
+        //let typT = assembly.GetType(qualifiedName, throwOnError=true)
+        let typT = assembly.GetType(qualifiedName)
         typT |> nonNull "convTypeRefAux" 
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->

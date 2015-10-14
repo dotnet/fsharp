@@ -1212,16 +1212,16 @@ module MainModuleBuilder =
 #endif
         let nativeResources = 
             [ for av in assemblyVersionResources do
-                  yield Lazy.CreateFromValue av
+                  yield Lazy<_>.CreateFromValue av
               if not(tcConfig.win32res = "") then
-                  yield Lazy.CreateFromValue (FileSystem.ReadAllBytesShim tcConfig.win32res) 
+                  yield Lazy<_>.CreateFromValue (FileSystem.ReadAllBytesShim tcConfig.win32res) 
 #if ENABLE_MONO_SUPPORT
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not(runningOnMono) then
 #else
               if tcConfig.includewin32manifest && not(win32Manifest = "") then
 #endif
-                  yield  Lazy.CreateFromValue [|   yield! ResFileFormat.ResFileHeader() 
-                                                   yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = Dll))|]]
+                  yield  Lazy<_>.CreateFromValue [| yield! ResFileFormat.ResFileHeader() 
+                                                    yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = Dll))|]]
 
 
         // Add attributes, version number, resources etc. 
@@ -1735,7 +1735,10 @@ module FileWriter =
                       pdbfile = pdbfile
                       emitTailcalls = tcConfig.emitTailcalls
                       showTimes = tcConfig.showTimes
+#if FX_NO_KEY_SIGNING
+#else
                       signer = signer
+#endif
                       fixupOverlappingSequencePoints = false
                       dumpDebugInfo = tcConfig.dumpDebugInfo } 
                 ILBinaryWriter.WriteILBinary (outfile, options, ilxMainModule, tcConfig.noDebugData)

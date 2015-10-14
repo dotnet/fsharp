@@ -109,7 +109,12 @@ let compilerOptionUsage (CompilerOption(s,tag,spec,_,_)) =
 let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption) =
     let flagWidth = 30 // fixed width for printing of flags, e.g. --warnaserror:<warn;...>
     let defaultLineWidth = 80 // the fallback width
-    let lineWidth = try System.Console.BufferWidth with e -> defaultLineWidth
+    let lineWidth = 
+    #if FX_RESHAPED_CONSOLE
+            defaultLineWidth
+    #else
+            try System.Console.BufferWidth with e -> defaultLineWidth
+    #endif
     let lineWidth = if lineWidth=0 then defaultLineWidth else lineWidth (* Have seen BufferWidth=0 on Linux/Mono *)
     // Lines have this form: <flagWidth><space><description>
     //   flagWidth chars - for flags description or padding on continuation lines.
@@ -749,7 +754,10 @@ let testFlag tcConfigB =
 let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None);
     CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None);  // preserved for compatibility's sake, no longer has any effect
+#if PREFERRED_UI_LANG
+#else
     CompilerOption("LCID", tagInt, OptionInt (fun n -> tcConfigB.lcid <- Some(n)), None, None);
+#endif
     CompilerOption("flaterrors", tagNone, OptionUnit (fun () -> tcConfigB.flatErrors <- true), None, None); 
     CompilerOption("sqmsessionguid", tagNone, OptionString (fun s -> tcConfigB.sqmSessionGuid <- try System.Guid(s) |> Some  with e -> None), None, None);
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None); 

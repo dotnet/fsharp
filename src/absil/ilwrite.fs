@@ -4512,7 +4512,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option,
                  b0 reloc2; b1 reloc2; |]
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
-          os.Close();
+          os.Dispose()
 
           try
               FileSystemUtilites.setExecutablePermission outfile
