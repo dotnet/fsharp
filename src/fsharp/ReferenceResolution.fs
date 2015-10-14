@@ -322,9 +322,9 @@ module internal MSBuildResolver =
 
         let assemblies = 
             [| for (referenceName,baggage) in references -> 
-                    let item = new Microsoft.Build.Utilities.TaskItem(referenceName)
+                    let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
                     item.SetMetadata("Baggage", baggage)
-                    item:>ITaskItem |]
+                    item|]
 
         let rar = 
             ResolveAssemblyReference(BuildEngine=engine, TargetFrameworkDirectories=targetFrameworkDirectories,
@@ -335,7 +335,9 @@ module internal MSBuildResolver =
 #if BUILDING_WITH_LKG
         ignore targetProcessorArchitecture
 #else       
+#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
         rar.TargetedRuntimeVersion <- typeof<obj>.Assembly.ImageRuntimeVersion
+#endif
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif        

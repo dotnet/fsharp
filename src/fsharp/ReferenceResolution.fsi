@@ -22,10 +22,16 @@ module internal MSBuildResolver =
         | Unknown
     
     /// Indicates whether the resolve should follow compile-time rules or runtime rules.                      
+#if FX_MSBUILDRESOLVER_RUNTIMELIKE
     type ResolutionEnvironment = 
         | CompileTimeLike 
-        | RuntimeLike      // Don't allow stubbed-out reference assemblies
-        | DesigntimeLike 
+        | RuntimeLike 
+        | DesigntimeLike
+#else
+    type ResolutionEnvironment = 
+        | CompileTimeLike 
+        | DesigntimeLike
+#endif
 
 #if SILVERLIGHT
 #else
