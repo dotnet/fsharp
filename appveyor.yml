@@ -10,8 +10,9 @@ install:
 
 build_script:
   - ps: .\install-dnx.ps1
+  - ps: cp .\.nuget\NuGet.Config $env:appdata\NuGet\NuGet.config
   - cmd: dnu restore --packages packages
-  - cmd: appveyor-build.cmd
+  - cmd: appveyor-build-coreclr.cmd
 
 test: off
 version: '{build}'

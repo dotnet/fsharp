@@ -27,8 +27,8 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_ngenexe% install Proto\net40\bin\fsc-proto.exe
 @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
+#%_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library build failed && goto :failure
 
 %_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
@@ -36,44 +36,47 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
+#%_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: compiler build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
+#%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library portable47 build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
+#%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library portable7 build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
+#%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library portable78 build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
+#%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library portable259 build failed && goto :failure
 
-%_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
+#%_msbuildexe% src/fsharp-compiler-unittests-build.proj /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: compiler unittests build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
+#%_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
+#%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
+#%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library unittests build failed portable7 && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
+#%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library unittests build failed portable78 && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
+#%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: library unittests build failed portable259 && goto :failure
 
-%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
 
-%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
+#%_msbuildexe% vsintegration\fsharp-vsintegration-build.proj /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: VS integration build failed && goto :failure
+
+#%_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
+#@if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
 
 @echo on
 call src\update.cmd release -ngen
@@ -85,17 +88,17 @@ call tests\BuildTestTools.cmd release
 @echo on
 pushd tests
 
-call RunTests.cmd release fsharp Smoke
-@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
+#call RunTests.cmd release fsharp Smoke
+#@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
 
-call RunTests.cmd release fsharpqa Smoke
-@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
+#call RunTests.cmd release fsharpqa Smoke
+#@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
 
-call RunTests.cmd release compilerunit
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
+#call RunTests.cmd release compilerunit
+#@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
 
-call RunTests.cmd release coreunit
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+#call RunTests.cmd release coreunit
+#@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
 
 call RunTests.cmd release fsharp coreclr
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreclr' failed && goto :failure
