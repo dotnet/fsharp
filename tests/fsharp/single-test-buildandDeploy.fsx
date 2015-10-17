@@ -156,10 +156,10 @@ let getNativeFiles package =
 
 let runtimefiles = 
     seq { 
-        yield! getNativeFiles "Microsoft.NETCore.Runtime.CoreCLR-x86"
-        yield! getNativeFiles "Microsoft.NETCore.ConsoleHost-x86"
-        yield! getNativeFiles "Microsoft.NETCore.TestHost-x86"
-        yield! getNativeFiles "Microsoft.NETCore.Windows.ApiSets-x86"
+        yield! getNativeFiles "Microsoft.NETCore.Runtime.CoreCLR"
+        yield! getNativeFiles "Microsoft.NETCore.ConsoleHost"
+        yield! getNativeFiles "Microsoft.NETCore.TestHost"
+        yield! getNativeFiles "Microsoft.NETCore.Windows.ApiSets"
     }
 
 let dependencies = (collectReferenciesFromProjectJson TestProjectJsonLock AssemblyReferenceType.forExecute)
