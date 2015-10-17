@@ -10,8 +10,8 @@ install:
 
 build_script: 
   - ps: |
-    .\install-dnx.ps1
-    dnu restore --packages packages
+      .\install-dnx.ps1
+      dnu restore --packages packages
   - cmd: appveyor-build.cmd
 
 test: off
