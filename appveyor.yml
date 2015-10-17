@@ -1,16 +1,19 @@
-os: Windows Server 2012 R2
+os: Visual Studio 2015
 
-init: 
-build_script: 
-  - cmd: appveyor-build.cmd
+init:
+  - git config --global core.autocrlf input
 
 # scripts that run after cloning repository
 install:
   # by default, all script lines are interpreted as batch
   - set PATH=%ProgramFiles(x86)%\MSBuild\14.0\Bin;%PATH%
 
-test: off 
-version: 0.0.1.{build} 
+build_script: 
+  - ps: install-dnx.ps1
+  - cmd: appveyor-build.cmd
+
+test: off
+version: {build} 
 artifacts: 
   - path: Release
     name: Release
