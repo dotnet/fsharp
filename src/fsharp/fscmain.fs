@@ -268,6 +268,11 @@ module Driver =
             System.Console.WriteLine("Press return to continue...")
             System.Console.ReadLine() |> ignore
 
+#if FX_NO_EXIT
+        let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
+#endif
+            
+
         let quitProcessExiter = 
             { new Exiter with 
                 member x.Exit(n) =                    
