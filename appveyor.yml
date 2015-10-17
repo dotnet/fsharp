@@ -1,4 +1,4 @@
-os: Visual Studio 2015
+os: Windows Server 2012 R2
 
 init:
   - git config --global core.autocrlf input
@@ -8,13 +8,14 @@ install:
   # by default, all script lines are interpreted as batch
   - set PATH=%ProgramFiles(x86)%\MSBuild\14.0\Bin;%PATH%
 
-build_script: 
+build_script:
   - ps: .\install-dnx.ps1
+  - ps: cp .\.nuget\NuGet.Config $env:appdata\NuGet\NuGet.config
   - cmd: dnu restore --packages packages
-  - cmd: appveyor-build.cmd
+  - cmd: appveyor-build-coreclr.cmd
 
 test: off
 version: '{build}'
-artifacts: 
+artifacts:
   - path: Release
     name: Release
