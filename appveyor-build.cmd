@@ -85,17 +85,17 @@ call tests\BuildTestTools.cmd release
 @echo on
 pushd tests
 
-#call RunTests.cmd release fsharp Smoke
-#@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
+call RunTests.cmd release fsharp Smoke
+@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
 
-#call RunTests.cmd release fsharpqa Smoke
-#@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
+call RunTests.cmd release fsharpqa Smoke
+@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
 
-#call RunTests.cmd release compilerunit
-#@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
+call RunTests.cmd release compilerunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release compilerunit' failed && goto :failure
 
-#call RunTests.cmd release coreunit
-#@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+call RunTests.cmd release coreunit
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
 
 call RunTests.cmd release fsharp coreclr
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreclr' failed && goto :failure
