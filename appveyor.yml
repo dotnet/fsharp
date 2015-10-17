@@ -11,8 +11,8 @@ install:
 build_script: 
   - ps: |
       .\install-dnx.ps1
-	  # https://github.com/aspnet/dnx/issues/3004
-	  cp .\.nuget\NuGet.Config $env:appdata\NuGet\NuGet.config
+      # https://github.com/aspnet/dnx/issues/3004
+      cp .\.nuget\NuGet.Config $env:appdata\NuGet\NuGet.config
       dnu restore --packages packages
   - cmd: appveyor-build.cmd
 
