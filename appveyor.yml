@@ -9,8 +9,9 @@ install:
   - set PATH=%ProgramFiles(x86)%\MSBuild\14.0\Bin;%PATH%
 
 build_script: 
-  - ps: .\install-dnx.ps1
-  - cmd: dnu restore --packages packages
+  - ps: |
+    .\install-dnx.ps1
+    dnu restore --packages packages
   - cmd: appveyor-build.cmd
 
 test: off
