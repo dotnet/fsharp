@@ -13,7 +13,7 @@ build_script:
   - cmd: appveyor-build.cmd
 
 test: off
-version: {build} 
+version: '{build}'
 artifacts: 
   - path: Release
     name: Release
