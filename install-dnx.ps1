@@ -2,4 +2,4 @@
 &{$Branch='dev';iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.ps1'))}
 dnvm version
 dnvm install -r coreclr -arch x64 latest -u
-dnvm --version
+dnx --version

@@ -20,9 +20,6 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :eof
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
-.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config
-@if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
-
 :: Build
 %_msbuildexe% src\fsharp-proto-build.proj
 @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
@@ -33,10 +30,10 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
 
-%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+%_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: compiler coreclr build failed && goto :failure
 
 %_msbuildexe% src/fsharp-compiler-build.proj /p:Configuration=Release
