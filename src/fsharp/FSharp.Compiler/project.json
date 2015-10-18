@@ -46,10 +46,6 @@
     "System.Threading.ThreadPool": "4.0.10-beta-23413",
     "System.Threading.Timer": "4.0.1-beta-23413"
   },
-  "runtimes": {
-    "win7-x86": { },
-    "win7-x64": { }
-  },
   "frameworks": {
     "dnxcore50": { }
   }
