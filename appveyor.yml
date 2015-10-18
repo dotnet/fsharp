@@ -10,6 +10,7 @@ install:
 
 build_script: 
   - ps: |
+      ls env: | Write-Output
       .\install-dnx.ps1
       # https://github.com/aspnet/dnx/issues/3004
       cp .\.nuget\NuGet.Config $env:appdata\NuGet\NuGet.config
