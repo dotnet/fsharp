@@ -3,6 +3,9 @@
   "version": 2,
   "targets": {
     "DNXCore,Version=v5.0": {
+      "FSharp.Data/2.2.5": {
+        "type": "package"
+      },
       "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
         "type": "package"
       },
@@ -14,6 +17,9 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x86": {
+      "FSharp.Data/2.2.5": {
+        "type": "package"
+      },
       "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
         "type": "package"
       },
@@ -25,6 +31,9 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x64": {
+      "FSharp.Data/2.2.5": {
+        "type": "package"
+      },
       "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
         "type": "package"
       },
@@ -37,6 +46,27 @@
     }
   },
   "libraries": {
+    "FSharp.Data/2.2.5": {
+      "type": "package",
+      "sha512": "OMrowzbBTIbhqZRzsESj+FYh58CdzXSX0L5hpgSLeJJQwSLdgoGTMBilHAwvDQGzkLUQiGChjmhpBOOo5uq26A==",
+      "files": [
+        "FSharp.Data.2.2.5.nupkg",
+        "FSharp.Data.2.2.5.nupkg.sha512",
+        "FSharp.Data.nuspec",
+        "lib/net40/FSharp.Data.DesignTime.dll",
+        "lib/net40/FSharp.Data.DesignTime.pdb",
+        "lib/net40/FSharp.Data.DesignTime.xml",
+        "lib/net40/FSharp.Data.dll",
+        "lib/net40/FSharp.Data.pdb",
+        "lib/net40/FSharp.Data.xml",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.DesignTime.dll",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.DesignTime.pdb",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.DesignTime.xml",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.dll",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.pdb",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.xml"
+      ]
+    },
     "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
       "type": "package",
       "serviceable": true,
@@ -175,7 +205,8 @@
     "": [
       "Microsoft.DotNet.BuildTools >= 1.0.25-prerelease-00107",
       "NUnit >= 2.6.4",
-      "NUnit.Runners >= 2.6.4"
+      "NUnit.Runners >= 2.6.4",
+      "FSharp.Data >= 2.2.5"
     ],
     "DNXCore,Version=v5.0": []
   }

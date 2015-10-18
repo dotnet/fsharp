@@ -2,7 +2,8 @@
   "dependencies": {
     "Microsoft.DotNet.BuildTools": "1.0.25-prerelease-00107",
     "NUnit": "2.6.4",
-    "NUnit.Runners": "2.6.4"
+    "NUnit.Runners": "2.6.4",
+    "FSharp.Data":  "2.2.5"
   },
   "frameworks": {
     "dnxcore50": { }

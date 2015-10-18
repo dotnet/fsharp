@@ -1,4 +1,4 @@
-﻿#r @"..\..\packages\FSharp.Data.2.2.5\lib\net40\FSharp.Data.dll"
+﻿#r @"..\..\packages\FSharp.Data\2.2.5\lib\net40\FSharp.Data.dll"
 
 open System
 open System.Collections.Generic
@@ -30,7 +30,8 @@ let FSC =
         yield Path.Combine(dir, "FSharp.Compiler.dll")
     }
 let NugetSources = (GetArgumentFromCommandLine "--nugetSources:" "").Split([|';'|]) |> Seq.fold(fun acc src -> acc + " -s:" + src) ""
-let DnuPath = GetArgumentFromCommandLine "--dnuPath:" "..\..\packages\packages\dnx-coreclr-win-x86.1.0.0-beta6-12032\bin\dnu.cmd"
+let dnuCmd = Path.Combine(Environment.GetEnvironmentVariable("homedrive") + Environment.GetEnvironmentVariable("homepath"), @".dnx\runtimes\dnx-coreclr-win-x64.1.0.0-beta8\bin\dnu.cmd")
+let DnuPath = GetArgumentFromCommandLine "--dnuPath:" dnuCmd
 
 let TestPlatform = GetArgumentFromCommandLine "--testPlatform:" "Test Platform not specified"
 let TestDirectory = GetArgumentFromCommandLine "--testDirectory:" "Test Directory not specified"
