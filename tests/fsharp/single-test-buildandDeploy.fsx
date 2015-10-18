@@ -67,6 +67,7 @@ let executeProcess filename arguments =
     info.RedirectStandardError <- true
     info.CreateNoWindow <- true
     info.FileName <- filename
+    printfn "executeProcess %s> %s %s" info.WorkingDirectory info.FileName info.Arguments
     p.StartInfo <- info
     p.OutputDataReceived.Add(fun x -> processWriteMessage stdout x.Data)
     p.ErrorDataReceived.Add(fun x ->  processWriteMessage stderr x.Data)

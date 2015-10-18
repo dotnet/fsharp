@@ -79,7 +79,7 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 call src\update.cmd release -ngen
 
 @echo on
-call tests\BuildTestTools.cmd release 
+call tests\BuildTestTools.cmd release
 @if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd release' failed && goto :failure
 
 @echo on
@@ -98,7 +98,7 @@ call RunTests.cmd release coreunit
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
 
 call RunTests.cmd release fsharp coreclr
-@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreclr' failed && goto :failure
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release fsharp coreclr' failed && goto :failure
 
 popd
 
