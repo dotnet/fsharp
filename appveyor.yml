@@ -10,12 +10,17 @@ install:
 
 build_script: 
   - ps: |
-      ls env: | Write-Output
-      .\install-dnx.ps1
+      $x64items = @(Get-ChildItem "HKLM:SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall")
+      $x64items + @(Get-ChildItem "HKLM:SOFTWARE\wow6432node\Microsoft\Windows\CurrentVersion\Uninstall") `
+         | ForEach-object { Get-ItemProperty Microsoft.PowerShell.Core\Registry::$_ } `
+         | Sort-Object -Property DisplayName `
+         | Select-Object -Property DisplayName,DisplayVersion
+      #ls env: | Write-Output
+      #.\install-dnx.ps1
       # https://github.com/aspnet/dnx/issues/3004
-      cp .\.nuget\NuGet.Config $env:appdata\NuGet\NuGet.config
-      dnu restore --packages packages
-  - cmd: appveyor-build.cmd
+      #cp .\.nuget\NuGet.Config $env:appdata\NuGet\NuGet.config
+      #dnu restore --packages packages
+  #- cmd: appveyor-build.cmd
 
 test: off
 version: '{build}'
