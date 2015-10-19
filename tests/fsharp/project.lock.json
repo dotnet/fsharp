@@ -3,46 +3,46 @@
   "version": 2,
   "targets": {
     "DNXCore,Version=v5.0": {
-      "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+      "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Platforms/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Platforms/1.0.1-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
-          "Microsoft.NETCore.Windows.ApiSets": "1.0.1-beta-23321",
-          "System.Collections": "[4.0.11-beta-23321]",
-          "System.Diagnostics.Contracts": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Debug": "[4.0.11-beta-23321]",
-          "System.Diagnostics.StackTrace": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Tools": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Tracing": "[4.0.21-beta-23321]",
-          "System.Globalization": "[4.0.11-beta-23321]",
-          "System.Globalization.Calendars": "[4.0.1-beta-23321]",
-          "System.IO": "[4.0.11-beta-23321]",
-          "System.ObjectModel": "[4.0.11-beta-23321]",
-          "System.Private.Uri": "[4.0.1-beta-23321]",
-          "System.Reflection": "[4.1.0-beta-23321]",
-          "System.Reflection.Extensions": "[4.0.1-beta-23321]",
-          "System.Reflection.Primitives": "[4.0.1-beta-23321]",
-          "System.Resources.ResourceManager": "[4.0.1-beta-23321]",
-          "System.Runtime": "[4.0.21-beta-23321]",
-          "System.Runtime.Extensions": "[4.0.11-beta-23321]",
-          "System.Runtime.Handles": "[4.0.1-beta-23321]",
-          "System.Runtime.InteropServices": "[4.0.21-beta-23321]",
-          "System.Text.Encoding": "[4.0.11-beta-23321]",
-          "System.Text.Encoding.Extensions": "[4.0.11-beta-23321]",
-          "System.Threading": "[4.0.11-beta-23321]",
-          "System.Threading.Tasks": "[4.0.11-beta-23321]",
-          "System.Threading.Timer": "[4.0.1-beta-23321]"
+          "Microsoft.NETCore.Windows.ApiSets": "1.0.1-beta-23413",
+          "System.Collections": "[4.0.11-beta-23413]",
+          "System.Diagnostics.Contracts": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Debug": "[4.0.11-beta-23413]",
+          "System.Diagnostics.StackTrace": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Tools": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Tracing": "[4.0.21-beta-23413]",
+          "System.Globalization": "[4.0.11-beta-23413]",
+          "System.Globalization.Calendars": "[4.0.1-beta-23413]",
+          "System.IO": "[4.0.11-beta-23413]",
+          "System.ObjectModel": "[4.0.11-beta-23413]",
+          "System.Private.Uri": "[4.0.1-beta-23413]",
+          "System.Reflection": "[4.1.0-beta-23413]",
+          "System.Reflection.Extensions": "[4.0.1-beta-23413]",
+          "System.Reflection.Primitives": "[4.0.1-beta-23413]",
+          "System.Resources.ResourceManager": "[4.0.1-beta-23413]",
+          "System.Runtime": "[4.0.21-beta-23413]",
+          "System.Runtime.Extensions": "[4.0.11-beta-23413]",
+          "System.Runtime.Handles": "[4.0.1-beta-23413]",
+          "System.Runtime.InteropServices": "[4.0.21-beta-23413]",
+          "System.Text.Encoding": "[4.0.11-beta-23413]",
+          "System.Text.Encoding.Extensions": "[4.0.11-beta-23413]",
+          "System.Threading": "[4.0.11-beta-23413]",
+          "System.Threading.Tasks": "[4.0.11-beta-23413]",
+          "System.Threading.Timer": "[4.0.1-beta-23413]"
         }
       },
-      "Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+      "Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
         "type": "package"
       },
       "Microsoft.Win32.Primitives/4.0.0": {
@@ -58,7 +58,7 @@
           "lib/dotnet/Microsoft.Win32.Primitives.dll": {}
         }
       },
-      "Microsoft.Win32.Registry/4.0.0-beta-23321": {
+      "Microsoft.Win32.Registry/4.0.0-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.10",
@@ -180,7 +180,7 @@
           "ref/dotnet/System.Console.dll": {}
         }
       },
-      "System.Diagnostics.Contracts/4.0.1-beta-23321": {
+      "System.Diagnostics.Contracts/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -213,7 +213,7 @@
           "ref/dotnet/System.Diagnostics.Process.dll": {}
         }
       },
-      "System.Diagnostics.StackTrace/4.0.1-beta-23321": {
+      "System.Diagnostics.StackTrace/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -262,7 +262,7 @@
           "lib/DNXCore50/System.Globalization.dll": {}
         }
       },
-      "System.Globalization.Calendars/4.0.1-beta-23321": {
+      "System.Globalization.Calendars/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Globalization": "4.0.0",
@@ -791,46 +791,46 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x86": {
-      "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+      "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Platforms/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Platforms/1.0.1-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
-          "Microsoft.NETCore.Windows.ApiSets": "1.0.1-beta-23321",
-          "System.Collections": "[4.0.11-beta-23321]",
-          "System.Diagnostics.Contracts": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Debug": "[4.0.11-beta-23321]",
-          "System.Diagnostics.StackTrace": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Tools": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Tracing": "[4.0.21-beta-23321]",
-          "System.Globalization": "[4.0.11-beta-23321]",
-          "System.Globalization.Calendars": "[4.0.1-beta-23321]",
-          "System.IO": "[4.0.11-beta-23321]",
-          "System.ObjectModel": "[4.0.11-beta-23321]",
-          "System.Private.Uri": "[4.0.1-beta-23321]",
-          "System.Reflection": "[4.1.0-beta-23321]",
-          "System.Reflection.Extensions": "[4.0.1-beta-23321]",
-          "System.Reflection.Primitives": "[4.0.1-beta-23321]",
-          "System.Resources.ResourceManager": "[4.0.1-beta-23321]",
-          "System.Runtime": "[4.0.21-beta-23321]",
-          "System.Runtime.Extensions": "[4.0.11-beta-23321]",
-          "System.Runtime.Handles": "[4.0.1-beta-23321]",
-          "System.Runtime.InteropServices": "[4.0.21-beta-23321]",
-          "System.Text.Encoding": "[4.0.11-beta-23321]",
-          "System.Text.Encoding.Extensions": "[4.0.11-beta-23321]",
-          "System.Threading": "[4.0.11-beta-23321]",
-          "System.Threading.Tasks": "[4.0.11-beta-23321]",
-          "System.Threading.Timer": "[4.0.1-beta-23321]"
+          "Microsoft.NETCore.Windows.ApiSets": "1.0.1-beta-23413",
+          "System.Collections": "[4.0.11-beta-23413]",
+          "System.Diagnostics.Contracts": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Debug": "[4.0.11-beta-23413]",
+          "System.Diagnostics.StackTrace": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Tools": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Tracing": "[4.0.21-beta-23413]",
+          "System.Globalization": "[4.0.11-beta-23413]",
+          "System.Globalization.Calendars": "[4.0.1-beta-23413]",
+          "System.IO": "[4.0.11-beta-23413]",
+          "System.ObjectModel": "[4.0.11-beta-23413]",
+          "System.Private.Uri": "[4.0.1-beta-23413]",
+          "System.Reflection": "[4.1.0-beta-23413]",
+          "System.Reflection.Extensions": "[4.0.1-beta-23413]",
+          "System.Reflection.Primitives": "[4.0.1-beta-23413]",
+          "System.Resources.ResourceManager": "[4.0.1-beta-23413]",
+          "System.Runtime": "[4.0.21-beta-23413]",
+          "System.Runtime.Extensions": "[4.0.11-beta-23413]",
+          "System.Runtime.Handles": "[4.0.1-beta-23413]",
+          "System.Runtime.InteropServices": "[4.0.21-beta-23413]",
+          "System.Text.Encoding": "[4.0.11-beta-23413]",
+          "System.Text.Encoding.Extensions": "[4.0.11-beta-23413]",
+          "System.Threading": "[4.0.11-beta-23413]",
+          "System.Threading.Tasks": "[4.0.11-beta-23413]",
+          "System.Threading.Timer": "[4.0.1-beta-23413]"
         }
       },
-      "Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+      "Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
         "type": "package"
       },
       "Microsoft.Win32.Primitives/4.0.0": {
@@ -846,7 +846,7 @@
           "lib/dotnet/Microsoft.Win32.Primitives.dll": {}
         }
       },
-      "Microsoft.Win32.Registry/4.0.0-beta-23321": {
+      "Microsoft.Win32.Registry/4.0.0-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.10",
@@ -995,13 +995,13 @@
           "runtimes/win7/lib/DNXCore50/System.Threading.dll": {}
         }
       },
-      "runtime.win7-x86.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+      "runtime.win7-x86.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
         "type": "package",
         "native": {
           "runtimes/win7-x86/native/CoreConsole.exe": {}
         }
       },
-      "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+      "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
         "type": "package",
         "compile": {
           "ref/dotnet/_._": {}
@@ -1019,13 +1019,13 @@
           "runtimes/win7-x86/native/mscorrc.dll": {}
         }
       },
-      "runtime.win7-x86.Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+      "runtime.win7-x86.Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
         "type": "package",
         "native": {
           "runtimes/win7-x86/native/CoreRun.exe": {}
         }
       },
-      "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+      "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
         "type": "package",
         "native": {
           "runtimes/win7-x86/native/API-MS-Win-Base-Util-L1-1-0.dll": {},
@@ -1256,7 +1256,7 @@
           "ref/dotnet/System.Console.dll": {}
         }
       },
-      "System.Diagnostics.Contracts/4.0.1-beta-23321": {
+      "System.Diagnostics.Contracts/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -1289,7 +1289,7 @@
           "ref/dotnet/System.Diagnostics.Process.dll": {}
         }
       },
-      "System.Diagnostics.StackTrace/4.0.1-beta-23321": {
+      "System.Diagnostics.StackTrace/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -1338,7 +1338,7 @@
           "lib/DNXCore50/System.Globalization.dll": {}
         }
       },
-      "System.Globalization.Calendars/4.0.1-beta-23321": {
+      "System.Globalization.Calendars/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Globalization": "4.0.0",
@@ -1928,46 +1928,46 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x64": {
-      "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+      "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Platforms/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Platforms/1.0.1-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
-          "Microsoft.NETCore.Windows.ApiSets": "1.0.1-beta-23321",
-          "System.Collections": "[4.0.11-beta-23321]",
-          "System.Diagnostics.Contracts": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Debug": "[4.0.11-beta-23321]",
-          "System.Diagnostics.StackTrace": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Tools": "[4.0.1-beta-23321]",
-          "System.Diagnostics.Tracing": "[4.0.21-beta-23321]",
-          "System.Globalization": "[4.0.11-beta-23321]",
-          "System.Globalization.Calendars": "[4.0.1-beta-23321]",
-          "System.IO": "[4.0.11-beta-23321]",
-          "System.ObjectModel": "[4.0.11-beta-23321]",
-          "System.Private.Uri": "[4.0.1-beta-23321]",
-          "System.Reflection": "[4.1.0-beta-23321]",
-          "System.Reflection.Extensions": "[4.0.1-beta-23321]",
-          "System.Reflection.Primitives": "[4.0.1-beta-23321]",
-          "System.Resources.ResourceManager": "[4.0.1-beta-23321]",
-          "System.Runtime": "[4.0.21-beta-23321]",
-          "System.Runtime.Extensions": "[4.0.11-beta-23321]",
-          "System.Runtime.Handles": "[4.0.1-beta-23321]",
-          "System.Runtime.InteropServices": "[4.0.21-beta-23321]",
-          "System.Text.Encoding": "[4.0.11-beta-23321]",
-          "System.Text.Encoding.Extensions": "[4.0.11-beta-23321]",
-          "System.Threading": "[4.0.11-beta-23321]",
-          "System.Threading.Tasks": "[4.0.11-beta-23321]",
-          "System.Threading.Timer": "[4.0.1-beta-23321]"
+          "Microsoft.NETCore.Windows.ApiSets": "1.0.1-beta-23413",
+          "System.Collections": "[4.0.11-beta-23413]",
+          "System.Diagnostics.Contracts": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Debug": "[4.0.11-beta-23413]",
+          "System.Diagnostics.StackTrace": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Tools": "[4.0.1-beta-23413]",
+          "System.Diagnostics.Tracing": "[4.0.21-beta-23413]",
+          "System.Globalization": "[4.0.11-beta-23413]",
+          "System.Globalization.Calendars": "[4.0.1-beta-23413]",
+          "System.IO": "[4.0.11-beta-23413]",
+          "System.ObjectModel": "[4.0.11-beta-23413]",
+          "System.Private.Uri": "[4.0.1-beta-23413]",
+          "System.Reflection": "[4.1.0-beta-23413]",
+          "System.Reflection.Extensions": "[4.0.1-beta-23413]",
+          "System.Reflection.Primitives": "[4.0.1-beta-23413]",
+          "System.Resources.ResourceManager": "[4.0.1-beta-23413]",
+          "System.Runtime": "[4.0.21-beta-23413]",
+          "System.Runtime.Extensions": "[4.0.11-beta-23413]",
+          "System.Runtime.Handles": "[4.0.1-beta-23413]",
+          "System.Runtime.InteropServices": "[4.0.21-beta-23413]",
+          "System.Text.Encoding": "[4.0.11-beta-23413]",
+          "System.Text.Encoding.Extensions": "[4.0.11-beta-23413]",
+          "System.Threading": "[4.0.11-beta-23413]",
+          "System.Threading.Tasks": "[4.0.11-beta-23413]",
+          "System.Threading.Timer": "[4.0.1-beta-23413]"
         }
       },
-      "Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+      "Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
         "type": "package"
       },
-      "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+      "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
         "type": "package"
       },
       "Microsoft.Win32.Primitives/4.0.0": {
@@ -1983,7 +1983,7 @@
           "lib/dotnet/Microsoft.Win32.Primitives.dll": {}
         }
       },
-      "Microsoft.Win32.Registry/4.0.0-beta-23321": {
+      "Microsoft.Win32.Registry/4.0.0-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.10",
@@ -2132,13 +2132,13 @@
           "runtimes/win7/lib/DNXCore50/System.Threading.dll": {}
         }
       },
-      "runtime.win7-x64.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+      "runtime.win7-x64.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
         "type": "package",
         "native": {
           "runtimes/win7-x64/native/CoreConsole.exe": {}
         }
       },
-      "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+      "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
         "type": "package",
         "compile": {
           "ref/dotnet/_._": {}
@@ -2156,13 +2156,13 @@
           "runtimes/win7-x64/native/mscorrc.dll": {}
         }
       },
-      "runtime.win7-x64.Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+      "runtime.win7-x64.Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
         "type": "package",
         "native": {
           "runtimes/win7-x64/native/CoreRun.exe": {}
         }
       },
-      "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+      "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
         "type": "package",
         "native": {
           "runtimes/win7-x64/native/API-MS-Win-Base-Util-L1-1-0.dll": {},
@@ -2393,7 +2393,7 @@
           "ref/dotnet/System.Console.dll": {}
         }
       },
-      "System.Diagnostics.Contracts/4.0.1-beta-23321": {
+      "System.Diagnostics.Contracts/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -2426,7 +2426,7 @@
           "ref/dotnet/System.Diagnostics.Process.dll": {}
         }
       },
-      "System.Diagnostics.StackTrace/4.0.1-beta-23321": {
+      "System.Diagnostics.StackTrace/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -2475,7 +2475,7 @@
           "lib/DNXCore50/System.Globalization.dll": {}
         }
       },
-      "System.Globalization.Calendars/4.0.1-beta-23321": {
+      "System.Globalization.Calendars/4.0.1-beta-23413": {
         "type": "package",
         "dependencies": {
           "System.Globalization": "4.0.0",
@@ -3066,7 +3066,7 @@
     }
   },
   "libraries": {
-    "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+    "Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
       "type": "package",
       "sha512": "Ul5TJhoj1FFvXMtXYD5fJRH5+A3++etqspm8QJgW2sOUs7VTKPrumFyjZYs+O79TMSeRPF01MlHKshMP8zCg0g==",
       "files": [
@@ -3077,7 +3077,7 @@
         "runtime.json"
       ]
     },
-    "Microsoft.NETCore.Platforms/1.0.1-beta-23321": {
+    "Microsoft.NETCore.Platforms/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "lKmkPSHwJJofKodv616I5e9B3IjapVIZd1F/XAMWnNAaRSc8PMBvVwnQ2fTgH9xIFnXoTAYLjoTrynF/1RoxkA==",
       "files": [
@@ -3088,7 +3088,7 @@
         "runtime.json"
       ]
     },
-    "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+    "Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "zKcosHNyizG5bd6etmmGl7TPQ1JZ7+NCULxAmXacspM/+cJiQorNNuAiaJf8nEbLhdq36OhLrgRzhzlx576yrQ==",
       "files": [
@@ -3099,7 +3099,7 @@
         "runtime.json"
       ]
     },
-    "Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+    "Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
       "type": "package",
       "sha512": "DrGjBXZWFWnsOEJiVsqgEu3DFumzjouK9CaZdR8YC1eb9AIWcElJ2OkMT5bji3cEUFKtxXaYoK6BI4kGCZg0nw==",
       "files": [
@@ -3110,7 +3110,7 @@
         "runtime.json"
       ]
     },
-    "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+    "Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "KAkWVwJ1cIzjw8ZLVxxVDUz/EYxoNNrYRYLD6JhFOkP5B8e+/AcKP2t8ainf2792ifWCy/Wv7w4G9YG1HkDcvA==",
       "files": [
@@ -3153,7 +3153,7 @@
         "ref/xamarinmac20/_._"
       ]
     },
-    "Microsoft.Win32.Registry/4.0.0-beta-23321": {
+    "Microsoft.Win32.Registry/4.0.0-beta-23413": {
       "type": "package",
       "sha512": "CgQojFhkkhN/v3W3/kqre1KHc8oq3/7CgZ6GkMaCC/AVRq8Me0N+PKFXNz4L9c/QDL2cGoOnmPejLPXVvTEfmA==",
       "files": [
@@ -3291,23 +3291,23 @@
         "runtimes/win8-aot/lib/netcore50/System.Threading.dll"
       ]
     },
-    "runtime.win7-x64.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+    "runtime.win7-x64.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
       "type": "package",
       "sha512": "0NDw4cNzzXJzTv8gpiLAUrTD581Z9CwHFZNR2sHRmMBzKJ/ZP26wiN6W/RkGrOJGvjMRQ+rFALPXiti4FsIBKA==",
       "files": [
-        "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23321.nupkg",
-        "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23321.nupkg.sha512",
+        "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg",
+        "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg.sha512",
         "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.nuspec",
         "runtimes/win7-x64/native/CoreConsole.exe"
       ]
     },
-    "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+    "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "Pk2hUQvi2iXY6pZtXI+U0YQqq3ojZaGrb0pBtYkcbRu9WgvzPmXTy0Ye2+h0v0THc1sQd4ySKR7IZomDK1yfGA==",
       "files": [
         "ref/dotnet/_._",
-        "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23321.nupkg",
-        "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23321.nupkg.sha512",
+        "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23413.nupkg",
+        "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23413.nupkg.sha512",
         "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR.nuspec",
         "runtimes/win7-x64/lib/dotnet/mscorlib.ni.dll",
         "runtimes/win7-x64/native/clretwrc.dll",
@@ -3321,22 +3321,22 @@
         "tools/sos.dll"
       ]
     },
-    "runtime.win7-x64.Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+    "runtime.win7-x64.Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
       "type": "package",
       "sha512": "LGX+uhGoeB1smwtM9/08gxcAv3wz3fiHnnGFxlzlaIxKgBBKFSM9bwoqscMGdWrFeeg6JIPVu/OAkSzkB73YVA==",
       "files": [
-        "runtime.win7-x64.Microsoft.NETCore.TestHost.1.0.0-beta-23321.nupkg",
-        "runtime.win7-x64.Microsoft.NETCore.TestHost.1.0.0-beta-23321.nupkg.sha512",
+        "runtime.win7-x64.Microsoft.NETCore.TestHost.1.0.0-beta-23413.nupkg",
+        "runtime.win7-x64.Microsoft.NETCore.TestHost.1.0.0-beta-23413.nupkg.sha512",
         "runtime.win7-x64.Microsoft.NETCore.TestHost.nuspec",
         "runtimes/win7-x64/native/CoreRun.exe"
       ]
     },
-    "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+    "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "A1/dGg9TpjOgGKkvS1nkaI68CKwiyUjzIKxZJBIhcCg9CZ/b1VoKmbTBYli+GpWd+ERzsX6soh1qi29k+Tfh8g==",
       "files": [
-        "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23321.nupkg",
-        "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23321.nupkg.sha512",
+        "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23413.nupkg",
+        "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23413.nupkg.sha512",
         "runtime.win7-x64.Microsoft.NETCore.Windows.ApiSets.nuspec",
         "runtimes/win10-x64/native/_._",
         "runtimes/win7-x64/native/API-MS-Win-Base-Util-L1-1-0.dll",
@@ -3497,23 +3497,23 @@
         "runtimes/win8-x64/native/api-ms-win-service-private-l1-1-1.dll"
       ]
     },
-    "runtime.win7-x86.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23321": {
+    "runtime.win7-x86.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
       "type": "package",
       "sha512": "VoH+m8O96SKDRlgraJcUkCvhj2pmecm07Tdi84ttM5rLnr9Lw/rlrR+qoWvLSnxb2+Fj8pd7MRZwj/JrXS9M2Q==",
       "files": [
-        "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23321.nupkg",
-        "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23321.nupkg.sha512",
+        "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg",
+        "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg.sha512",
         "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.nuspec",
         "runtimes/win7-x86/native/CoreConsole.exe"
       ]
     },
-    "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23321": {
+    "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "tN37AJiF44EXA0G1iiT17ig6qige3vrwDnUtWJGCioG9VwPD0sRl8myDaX/OmBX7/Jg1U43TCNdLnU6cQvZgTQ==",
       "files": [
         "ref/dotnet/_._",
-        "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23321.nupkg",
-        "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23321.nupkg.sha512",
+        "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23413.nupkg",
+        "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR.1.0.1-beta-23413.nupkg.sha512",
         "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR.nuspec",
         "runtimes/win7-x86/lib/dotnet/mscorlib.ni.dll",
         "runtimes/win7-x86/native/clretwrc.dll",
@@ -3527,22 +3527,22 @@
         "tools/sos.dll"
       ]
     },
-    "runtime.win7-x86.Microsoft.NETCore.TestHost/1.0.0-beta-23321": {
+    "runtime.win7-x86.Microsoft.NETCore.TestHost/1.0.0-beta-23413": {
       "type": "package",
       "sha512": "0NgNhg3s/8lSUlQBOMjvj97c8SQZg6PIUvxtirfinmytsdJWD4uoyiW+bMTQtEX8Kc938ExwDHdweoSdsik0yQ==",
       "files": [
-        "runtime.win7-x86.Microsoft.NETCore.TestHost.1.0.0-beta-23321.nupkg",
-        "runtime.win7-x86.Microsoft.NETCore.TestHost.1.0.0-beta-23321.nupkg.sha512",
+        "runtime.win7-x86.Microsoft.NETCore.TestHost.1.0.0-beta-23413.nupkg",
+        "runtime.win7-x86.Microsoft.NETCore.TestHost.1.0.0-beta-23413.nupkg.sha512",
         "runtime.win7-x86.Microsoft.NETCore.TestHost.nuspec",
         "runtimes/win7-x86/native/CoreRun.exe"
       ]
     },
-    "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23321": {
+    "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "delLAeSCBuRCQ5LQgs8tJVNEJUemxMWt7cB8gkR4rq8HmpXwoKv1oSLpuKKOTFg5Y6fDOae7MUpcYTAym5CwwQ==",
       "files": [
-        "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23321.nupkg",
-        "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23321.nupkg.sha512",
+        "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23413.nupkg",
+        "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets.1.0.1-beta-23413.nupkg.sha512",
         "runtime.win7-x86.Microsoft.NETCore.Windows.ApiSets.nuspec",
         "runtimes/win10-x86/native/_._",
         "runtimes/win7-x86/native/API-MS-Win-Base-Util-L1-1-0.dll",
@@ -3930,7 +3930,7 @@
         "System.Console.nuspec"
       ]
     },
-    "System.Diagnostics.Contracts/4.0.1-beta-23321": {
+    "System.Diagnostics.Contracts/4.0.1-beta-23413": {
       "type": "package",
       "sha512": "uQBLdUyCPp0fwVdlmDb002cVwqDfgdwZOKyAMCQFIaYVvgrDc5LVhBdUC5DbTnD9yoNmKaudN4wphEUZc7UmKw==",
       "files": [
@@ -4017,7 +4017,7 @@
         "System.Diagnostics.Process.nuspec"
       ]
     },
-    "System.Diagnostics.StackTrace/4.0.1-beta-23321": {
+    "System.Diagnostics.StackTrace/4.0.1-beta-23413": {
       "type": "package",
       "sha512": "Z6ISAYpE/EFWjHKlKHIwaYKmJdQfTNGFg/It2XXZnVC0iK9wU6n3nCJEQQPtNGCsUFOuS1lR4IcZ1DJg2zOcDw==",
       "files": [
@@ -4193,7 +4193,7 @@
         "System.Globalization.nuspec"
       ]
     },
-    "System.Globalization.Calendars/4.0.1-beta-23321": {
+    "System.Globalization.Calendars/4.0.1-beta-23413": {
       "type": "package",
       "sha512": "nPrmcTQHZGygVw8njyFVXDMNyHDyA5YLrfnBR8Do0vR02OmWAkfLA8jETZIiroIBHfynPda56GVVyUxHjXDhoQ==",
       "files": [
@@ -5436,12 +5436,12 @@
   },
   "projectFileDependencyGroups": {
     "": [
-      "Microsoft.NETCore.ConsoleHost >= 1.0.0-beta-23321",
-      "Microsoft.NETCore.Platforms >= 1.0.1-beta-23321",
-      "Microsoft.NETCore.Runtime.CoreCLR >= 1.0.1-beta-23321",
-      "Microsoft.NETCore.TestHost >= 1.0.0-beta-23321",
-      "Microsoft.NETCore.Windows.ApiSets >= 1.0.1-beta-23321",
-      "Microsoft.Win32.Registry >= 4.0.0-beta-23321",
+      "Microsoft.NETCore.ConsoleHost >= 1.0.0-beta-23413",
+      "Microsoft.NETCore.Platforms >= 1.0.1-beta-23413",
+      "Microsoft.NETCore.Runtime.CoreCLR >= 1.0.1-beta-23413",
+      "Microsoft.NETCore.TestHost >= 1.0.0-beta-23413",
+      "Microsoft.NETCore.Windows.ApiSets >= 1.0.1-beta-23413",
+      "Microsoft.Win32.Registry >= 4.0.0-beta-23413",
       "System.AppContext >= 4.0.1-beta-23413",
       "System.Collections >= 4.0.11-beta-23413",
       "System.Collections.Concurrent >= 4.0.11-beta-23413",

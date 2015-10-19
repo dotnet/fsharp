@@ -1090,7 +1090,6 @@
     },
     "System.Collections/4.0.11-beta-23413": {
       "type": "package",
-      "serviceable": true,
       "sha512": "GtOvKwziKL5iVrxdDnIoMpH1vRnnUR9iyYMSeeJB6tgCyXGpKt8zMjBXXnD9UHFALjUioYMX8AoU0mjnzfEkiQ==",
       "files": [
         "lib/DNXCore50/System.Collections.dll",
@@ -1124,7 +1123,6 @@
     },
     "System.Console/4.0.0-beta-23413": {
       "type": "package",
-      "serviceable": true,
       "sha512": "7Iy21hAO/kaxNXC9En4Pa/O/gSEoGTXN7TlwxM0pXQT9ub+a1eBgmkzDBloXtBf8epk1BowpcMhVWsGfSDv2fw==",
       "files": [
         "lib/MonoAndroid10/_._",
@@ -1156,7 +1154,6 @@
     },
     "System.Diagnostics.Debug/4.0.11-beta-23413": {
       "type": "package",
-      "serviceable": true,
       "sha512": "YRY+AivzB4LbF/2kULG37n+acGPPSm3jlxO5gGYAIgqaBZqdK20TzfBqWQaeFTq5y4/TGQLHt7ytWianbHEmgw==",
       "files": [
         "lib/MonoAndroid10/_._",
@@ -1221,7 +1218,6 @@
     },
     "System.IO/4.0.11-beta-23413": {
       "type": "package",
-      "serviceable": true,
       "sha512": "T3GUTbLpvFadw6B0x4FCsAcZVb6xjP5rKSbJJ1AEWp/JB6nDCIzhB8Ai3rhfF2gq6gdkLNC6KzVe9jtkikTa8Q==",
       "files": [
         "lib/DNXCore50/System.IO.dll",
@@ -1287,7 +1283,6 @@
     },
     "System.Linq/4.0.0": {
       "type": "package",
-      "serviceable": true,
       "sha512": "r6Hlc+ytE6m/9UBr+nNRRdoJEWjoeQiT3L3lXYFDHoXk3VYsRBCDNXrawcexw7KPLaH0zamQLiAb6avhZ50cGg==",
       "files": [
         "lib/dotnet/System.Linq.dll",
@@ -1320,7 +1315,6 @@
     },
     "System.Linq.Expressions/4.0.11-beta-23413": {
       "type": "package",
-      "serviceable": true,
       "sha512": "brW2RRhV4Kdxo3rk2E09EzZLo0GdDhbZvOWNgGjCyg59ze8+lpZ9nm3XuT8CrjtZZpz0Ib8/Da5SVvnud0xn7A==",
       "files": [
         "lib/DNXCore50/System.Linq.Expressions.dll",
@@ -1355,7 +1349,6 @@
     },
     "System.ObjectModel/4.0.10": {
       "type": "package",
-      "serviceable": true,
       "sha512": "Djn1wb0vP662zxbe+c3mOhvC4vkQGicsFs1Wi0/GJJpp3Eqp+oxbJ+p2Sx3O0efYueggAI5SW+BqEoczjfr1cA==",
       "files": [
         "lib/dotnet/System.ObjectModel.dll",
@@ -1399,7 +1392,6 @@
     },
     "System.Reflection/4.1.0-beta-23413": {
       "type": "package",
-      "serviceable": true,
       "sha512": "/A2UNQB8CM+WWiGVICXgEsGZ1mGySCc0BBTKnpvsWsucpbvXmvztMJi1a3Mqedy8mYfvMmBPQiP0nyN+Z/gHLg==",
       "files": [
         "lib/DNXCore50/System.Reflection.dll",
@@ -1513,7 +1505,6 @@
     },
     "System.Reflection.Extensions/4.0.0": {
       "type": "package",
-      "serviceable": true,
       "sha512": "dbYaZWCyFAu1TGYUqR2n+Q+1casSHPR2vVW0WVNkXpZbrd2BXcZ7cpvpu9C98CTHtNmyfMWCLpCclDqly23t6A==",
       "files": [
         "lib/DNXCore50/System.Reflection.Extensions.dll",
@@ -1547,7 +1538,6 @@
     },
     "System.Reflection.Primitives/4.0.0": {
       "type": "package",
-      "serviceable": true,
       "sha512": "n9S0XpKv2ruc17FSnaiX6nV47VfHTZ1wLjKZlAirUZCvDQCH71mVp+Ohabn0xXLh5pK2PKp45HCxkqu5Fxn/lA==",
       "files": [
         "lib/DNXCore50/System.Reflection.Primitives.dll",
@@ -1581,7 +1571,6 @@
     },
     "System.Reflection.TypeExtensions/4.0.0": {
       "type": "package",
-      "serviceable": true,
       "sha512": "YRM/msNAM86hdxPyXcuZSzmTO0RQFh7YMEPBLTY8cqXvFPYIx2x99bOyPkuU81wRYQem1c1HTkImQ2DjbOBfew==",
       "files": [
         "lib/DNXCore50/System.Reflection.TypeExtensions.dll",
@@ -1615,7 +1604,6 @@
     },
     "System.Resources.ResourceManager/4.0.0": {
       "type": "package",
-      "serviceable": true,
       "sha512": "qmqeZ4BJgjfU+G2JbrZt4Dk1LsMxO4t+f/9HarNY6w8pBgweO6jT+cknUH7c3qIrGvyUqraBhU45Eo6UtA0fAw==",
       "files": [
         "lib/DNXCore50/System.Resources.ResourceManager.dll",
@@ -1649,7 +1637,6 @@
     },
     "System.Runtime/4.0.21-beta-23413": {
       "type": "package",
-      "serviceable": true,
       "sha512": "Q/97nVZaPDNf0Rh9vWohXVxPB11sQ6E5CV7ZXEAjckSJ8pIfAu+RCYliHegNMXhQnfpO+X63861GVjNicH5fYg==",
       "files": [
         "lib/DNXCore50/System.Runtime.dll",
@@ -1683,7 +1670,6 @@
     },
     "System.Runtime.Extensions/4.0.10": {
       "type": "package",
-      "serviceable": true,
       "sha512": "5dsEwf3Iml7d5OZeT20iyOjT+r+okWpN7xI2v+R4cgd3WSj4DeRPTvPFjDpacbVW4skCAZ8B9hxXJYgkCFKJ1A==",
       "files": [
         "lib/DNXCore50/System.Runtime.Extensions.dll",
@@ -1899,7 +1885,6 @@
     },
     "System.Threading/4.0.10": {
       "type": "package",
-      "serviceable": true,
       "sha512": "0w6pRxIEE7wuiOJeKabkDgeIKmqf4ER1VNrs6qFwHnooEE78yHwi/bKkg5Jo8/pzGLm0xQJw0nEmPXt1QBAIUA==",
       "files": [
         "lib/DNXCore50/System.Threading.dll",

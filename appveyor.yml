@@ -8,7 +8,7 @@ install:
   # by default, all script lines are interpreted as batch
   - set PATH=%ProgramFiles(x86)%\MSBuild\14.0\Bin;%PATH%
 
-build_script: 
+build_script:
   - ps: |
       .\install-dnx.ps1
       # https://github.com/aspnet/dnx/issues/3004
@@ -18,6 +18,6 @@ build_script:
 
 test: off
 version: '{build}'
-artifacts: 
+artifacts:
   - path: Release
     name: Release
