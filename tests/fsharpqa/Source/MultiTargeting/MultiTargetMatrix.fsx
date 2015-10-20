@@ -8,6 +8,7 @@ module Helpers =
     // runs a program, and exits the script if nonzero exit code is encountered
     let private run exePath args =
         let args = String.concat " " args
+        printfn "%s %s" exePath args
         let psi = ProcessStartInfo(FileName = exePath, Arguments = args, CreateNoWindow = true, UseShellExecute = false, RedirectStandardError = true)
         let p = Process.Start(psi)
         match p.WaitForExit(10 * 60 * 1000) with
@@ -33,7 +34,7 @@ module Helpers =
             File.Delete("consumer.exe.config")
 
         let content = File.ReadAllText("consumer.exe.config.txt").Replace("{ver}", redirectVer)
-        File.WriteAllText("consumer.exe.config", content)    
+        File.WriteAllText("consumer.exe.config", content)
 
         run "consumer.exe" []
 
@@ -58,7 +59,7 @@ module Helpers =
         authorCompile authorCompiler authorRuntime authorSource
         consumerRunFsi consumerFsi consumerSource
 
-module Test = 
+module Test =
     let private env s =
         match Environment.GetEnvironmentVariable(s) with
         | var when not (String.IsNullOrWhiteSpace(var)) -> var
@@ -89,7 +90,7 @@ module Test =
           8,  Helpers.testFsi vCurrentCompiler vPrevRuntime     vPrevFsi
           9,  Helpers.testFsi vCurrentCompiler vCurrentRuntime  vCurrentFsi
          ]
- 
+
 // parse command line args
 // final 'exclusions' arg allows for certain scenarios to be skipped if they are not expected to work
 let authorSource, consumerSource, exclusions =

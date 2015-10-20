@@ -20,8 +20,9 @@ if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :eof
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
-#dnu restore --packages packages
-#@if ERRORLEVEL 1 echo Error: dnu restore failed  && goto :failure
+# `dnu restore` is exiting the process, so I wrapped it with `cmd /c`
+cmd /c dnu restore --packages packages
+@if ERRORLEVEL 1 echo Error: dnu restore failed  && goto :failure
 
 :: Build
 %_msbuildexe% src\fsharp-proto-build.proj

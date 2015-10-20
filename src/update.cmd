@@ -1,5 +1,5 @@
 @rem ===========================================================================================================
-@rem Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, 
+@rem Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License,
 @rem               Version 2.0.  See License.txt in the project root for license information.
 @rem ===========================================================================================================
 
@@ -26,9 +26,17 @@ set BINDIR=%~dp0..\%1\net40\bin
 if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
 if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%
 
-set GACUTIL="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\gacutil.exe"
-set SN32="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\sn.exe"
-set SN64="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\x64\sn.exe"
+rem Use Windows 10 SDK NETFX tools if available. Fallback to Windows 8 SDK.
+if exist "%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6 Tools\gacutil.exe" (
+    set GACUTIL="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6 Tools\gacutil.exe"
+    set SN32="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6 Tools\sn.exe"
+    set SN64="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6 Tools\x64\sn.exe"
+) else (
+    set GACUTIL="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\gacutil.exe"
+    set SN32="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\sn.exe"
+    set SN64="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\x64\sn.exe"
+)
+
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 

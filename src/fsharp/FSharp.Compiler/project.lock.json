@@ -995,6 +995,12 @@
           "runtimes/win7/lib/DNXCore50/System.Threading.dll": {}
         }
       },
+      "runtime.win7-x86.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
+        "type": "package",
+        "native": {
+          "runtimes/win7-x86/native/CoreConsole.exe": {}
+        }
+      },
       "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
         "type": "package",
         "compile": {
@@ -2124,6 +2130,12 @@
         },
         "runtime": {
           "runtimes/win7/lib/DNXCore50/System.Threading.dll": {}
+        }
+      },
+      "runtime.win7-x64.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
+        "type": "package",
+        "native": {
+          "runtimes/win7-x64/native/CoreConsole.exe": {}
         }
       },
       "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
@@ -3264,6 +3276,16 @@
         "runtimes/win8-aot/lib/netcore50/System.Threading.dll"
       ]
     },
+    "runtime.win7-x64.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
+      "type": "package",
+      "sha512": "wLvPNm+LETgXfVqdA66oUfQyeY/ZZh3Go8daapzSXIZX1wvcknqzlQ8sxr7X/lNvKUBRH5TCLJKwlTj6awnhFQ==",
+      "files": [
+        "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg",
+        "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg.sha512",
+        "runtime.win7-x64.Microsoft.NETCore.ConsoleHost.nuspec",
+        "runtimes/win7-x64/native/CoreConsole.exe"
+      ]
+    },
     "runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {
       "type": "package",
       "sha512": "SEGXhod2QhuXear+lANcd0k33LMXbJib4BZM+/WQW/jyXZ8hHgYgxgWjbe8/D1E1hV79vH8mUkUFjiIkwiTL2w==",
@@ -3458,6 +3480,16 @@
         "runtimes/win8-x64/native/api-ms-win-security-cryptoapi-l1-1-0.dll",
         "runtimes/win8-x64/native/api-ms-win-security-lsalookup-l2-1-1.dll",
         "runtimes/win8-x64/native/api-ms-win-service-private-l1-1-1.dll"
+      ]
+    },
+    "runtime.win7-x86.Microsoft.NETCore.ConsoleHost/1.0.0-beta-23413": {
+      "type": "package",
+      "sha512": "ppHJ57f/GhOMH98eoJxUg4fvIWffOEKrYEzhUzFgPvBZvVCB2Jxuq47p1hMebLKnUkmxDlymdkF15tZCNuGFqw==",
+      "files": [
+        "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg",
+        "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.1.0.0-beta-23413.nupkg.sha512",
+        "runtime.win7-x86.Microsoft.NETCore.ConsoleHost.nuspec",
+        "runtimes/win7-x86/native/CoreConsole.exe"
       ]
     },
     "runtime.win7-x86.Microsoft.NETCore.Runtime.CoreCLR/1.0.1-beta-23413": {

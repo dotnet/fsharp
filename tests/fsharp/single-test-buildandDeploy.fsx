@@ -7,12 +7,12 @@ open System.Globalization
 open System.IO
 open System.Linq
 open FSharp.Data
-open FSharp.Data.JsonExtensions 
+open FSharp.Data.JsonExtensions
 
 let Arguments = fsi.CommandLineArgs |> Seq.skip 1
 let Sources = Arguments             |> Seq.filter(fun t -> printfn "%s" t; t.StartsWith("--source:")) |> Seq.map(fun t -> t.Remove(0, 9).Trim()) |> Seq.distinct
 let Defines = Arguments             |> Seq.filter(fun t -> printfn "%s" t; t.StartsWith("--define:")) |> Seq.map(fun t -> t.Remove(0, 9).Trim())
-let GetArgumentFromCommandLine switchName defaultValue = 
+let GetArgumentFromCommandLine switchName defaultValue =
     match Arguments |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Seq.tryHead with
     | Some(file) -> if file.Length <> 0 then file else defaultValue
     | _ -> defaultValue
@@ -40,7 +40,7 @@ let CompilerJsonLock = GetArgumentFromCommandLine "--compilerJsonLock:" "Compile
 let CoreRunPath = System.IO.Path.Combine(CompilerDirectory, "CoreRun.exe")
 let Win32manifest =  System.IO.Path.Combine(CompilerDirectory, "default.win32manifest")
 let copyFile source dir =
-    let dest = 
+    let dest =
         if not (Directory.Exists(dir)) then Directory.CreateDirectory(dir) |>ignore
         let result = Path.Combine(dir, Path.GetFileName(source))
         result
@@ -83,8 +83,8 @@ let executeCompiler sources references =
     let listToPrefixedSpaceSeperatedString prefix list = list |> Seq.fold(fun a t -> sprintf "%s %s%s" a prefix t) ""
     let listToSpaceSeperatedString list = list |> Seq.fold(fun a t -> sprintf "%s %s" a t) ""
     let addReferenceSwitch list = list |> Seq.map(fun i -> sprintf "--reference:%s" i)
-    let arguments = sprintf @"%s --noframework --simpleresolution  --out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --win32manifest:%s %s -r:%s %s %s" (System.IO.Path.Combine(CompilerDirectory, "fsc.exe")) (Output) (Win32manifest) (listToSpaceSeperatedString (addReferenceSwitch references)) (FSharpCore) (listToPrefixedSpaceSeperatedString "--define:" Defines) (listToSpaceSeperatedString sources)
-    printfn "%s %s" CoreRunPath arguments
+    let arguments = sprintf @"/v %s --noframework --simpleresolution  --out:%s --define:BASIC_TEST --targetprofile:netcore --target:exe -g --times --win32manifest:%s %s -r:%s %s %s" (System.IO.Path.Combine(CompilerDirectory, "fsc.exe")) (Output) (Win32manifest) (listToSpaceSeperatedString (addReferenceSwitch references)) (FSharpCore) (listToPrefixedSpaceSeperatedString "--define:" Defines) (listToSpaceSeperatedString sources)
+    printfn "%s /v %s" CoreRunPath arguments
     executeProcess CoreRunPath arguments
 
 let restorePackages () =
@@ -104,7 +104,7 @@ let splitNameAndVersion (ref:string) =
     else
         None
 
-let collectReferenciesFromProjectJson lockFile assemblyReferenceType = 
+let collectReferenciesFromProjectJson lockFile assemblyReferenceType =
     let getAssemblyReferenciesFromTargets (targets:JsonValue) =
         let getReferencedFiles (referencedFiles:JsonValue) =
             seq {
@@ -118,16 +118,16 @@ let collectReferenciesFromProjectJson lockFile assemblyReferenceType =
             }
         seq {
             let target = targets.TryGetProperty(TargetPlatformName)
-            match target with 
+            match target with
             | Some(t) ->
                 for ref, value in  t.Properties do
                     match splitNameAndVersion ref with
-                    | Some(name,version) -> 
-                        if assemblyReferenceType = AssemblyReferenceType.forBuild then 
+                    | Some(name,version) ->
+                        if assemblyReferenceType = AssemblyReferenceType.forBuild then
                             match value.TryGetProperty("compile") with
                             | None -> ()
                             | Some x -> yield! buildReferencePaths name version (getReferencedFiles x)
-                        else 
+                        else
                             match value.TryGetProperty("runtime") with
                             | None -> ()
                             | Some x -> yield! buildReferencePaths name version (getReferencedFiles value?runtime)
@@ -143,21 +143,22 @@ let collectReferenciesFromProjectJson lockFile assemblyReferenceType =
 let getNativeFiles package =
     let packageVersion =
         try
-            let pv = Directory.EnumerateDirectories(sprintf @"%s\%s" PackagesDir package) |> Seq.sortDescending |> Seq.head
+            let pv = Directory.EnumerateDirectories(sprintf @"%s\runtime.%s.%s" PackagesDir TestPlatform package) |> Seq.sortDescending |> Seq.head
             Some(pv)
         with e -> None
     seq {
         match packageVersion with
         | None -> ()
         | Some p ->
+            printfn "path: %s" p
             let path = sprintf @"%s\runtimes\%s\native" p TestPlatform
             yield!
                 try  Directory.EnumerateFiles(path)
                 with e -> Enumerable.Empty()
     }
 
-let runtimefiles = 
-    seq { 
+let runtimefiles =
+    seq {
         yield! getNativeFiles "Microsoft.NETCore.Runtime.CoreCLR"
         yield! getNativeFiles "Microsoft.NETCore.ConsoleHost"
         yield! getNativeFiles "Microsoft.NETCore.TestHost"
@@ -186,7 +187,7 @@ copyFile (Path.ChangeExtension(FSharpCore, "optdata")) CompilerDirectory
 copyFile (Path.Combine(Path.GetDirectoryName(FSharpCore), "default.win32Manifest")) CompilerDirectory
 
 let ec = executeCompiler Sources (collectReferenciesFromProjectJson TestProjectJsonLock AssemblyReferenceType.forBuild)
-if ec > 0 then 
+if ec > 0 then
     exit ec
 else
     copyFile FSharpCore TestDirectory
