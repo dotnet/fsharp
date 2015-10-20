@@ -25,8 +25,6 @@ if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.ex
 if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%VS120COMNTOOLS%" set VisualStudioVersion=12.0
 
-
-
 :vsversionset
 if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :eof
 
@@ -54,6 +52,16 @@ if exist %~dp0\..\%1\net40\bin (
     xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.sigdata %~dp0\fsharpqa\testenv\bin  || goto :error
     xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.optdata %~dp0\fsharpqa\testenv\bin  || goto :error
 )
+
+set NUNITPATH=%~dp0%..\packages\NUnit.Runners.2.6.4\tools\
+if not exist "%NUNITPATH%" (
+    pushd %~dp0..
+    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    popd
+)    
+xcopy "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+xcopy "%~dp0\fsharpqa\testenv\src\nunit\*.*" "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+
 
 goto :EOF
 
