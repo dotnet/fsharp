@@ -104,3 +104,4 @@ tests/fsharp/optimize/stats/stats.txt
 *.chk
 *.bak
 *.orig
+.vs/

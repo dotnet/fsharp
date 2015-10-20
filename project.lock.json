@@ -1,0 +1,213 @@
+{
+  "locked": false,
+  "version": 2,
+  "targets": {
+    "DNXCore,Version=v5.0": {
+      "FSharp.Data/2.2.5": {
+        "type": "package"
+      },
+      "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
+        "type": "package"
+      },
+      "NUnit/2.6.4": {
+        "type": "package"
+      },
+      "NUnit.Runners/2.6.4": {
+        "type": "package"
+      }
+    },
+    "DNXCore,Version=v5.0/win7-x86": {
+      "FSharp.Data/2.2.5": {
+        "type": "package"
+      },
+      "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
+        "type": "package"
+      },
+      "NUnit/2.6.4": {
+        "type": "package"
+      },
+      "NUnit.Runners/2.6.4": {
+        "type": "package"
+      }
+    },
+    "DNXCore,Version=v5.0/win7-x64": {
+      "FSharp.Data/2.2.5": {
+        "type": "package"
+      },
+      "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
+        "type": "package"
+      },
+      "NUnit/2.6.4": {
+        "type": "package"
+      },
+      "NUnit.Runners/2.6.4": {
+        "type": "package"
+      }
+    }
+  },
+  "libraries": {
+    "FSharp.Data/2.2.5": {
+      "type": "package",
+      "sha512": "OMrowzbBTIbhqZRzsESj+FYh58CdzXSX0L5hpgSLeJJQwSLdgoGTMBilHAwvDQGzkLUQiGChjmhpBOOo5uq26A==",
+      "files": [
+        "FSharp.Data.2.2.5.nupkg",
+        "FSharp.Data.2.2.5.nupkg.sha512",
+        "FSharp.Data.nuspec",
+        "lib/net40/FSharp.Data.DesignTime.dll",
+        "lib/net40/FSharp.Data.DesignTime.pdb",
+        "lib/net40/FSharp.Data.DesignTime.xml",
+        "lib/net40/FSharp.Data.dll",
+        "lib/net40/FSharp.Data.pdb",
+        "lib/net40/FSharp.Data.xml",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.DesignTime.dll",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.DesignTime.pdb",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.DesignTime.xml",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.dll",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.pdb",
+        "lib/portable-net40+sl5+wp8+win8/FSharp.Data.xml"
+      ]
+    },
+    "Microsoft.DotNet.BuildTools/1.0.25-prerelease-00107": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "75DkLRIB+XYlNimeo14SNCEiWd5k4IyS91bXzXl4pvYXCBkxvqbL0jgbskX9jPgpBBkbZwMtOmxRfbK3qHV5tA==",
+      "files": [
+        "lib/AssemblyInfoPartial.cs",
+        "lib/AssemblyInfoPartial.vb",
+        "lib/BclRewriter.exe",
+        "lib/Build.Common.targets",
+        "lib/CodeCoverage.targets",
+        "lib/coreAssembly.rsp",
+        "lib/depProj.targets",
+        "lib/ECMA.snk",
+        "lib/encoding.targets",
+        "lib/FrameworkTargeting.targets",
+        "lib/GenFacades.exe",
+        "lib/gitpush.targets",
+        "lib/IL.targets",
+        "lib/LibGit2Sharp.dll",
+        "lib/localization.targets",
+        "lib/Microsoft.Cci.Extensions.dll",
+        "lib/Microsoft.DotNet.Build.Tasks.dll",
+        "lib/Microsoft.Web.XmlTransform.dll",
+        "lib/MSFT.snk",
+        "lib/NativeBinaries/amd64/git2-69db893.dll",
+        "lib/NativeBinaries/x86/git2-69db893.dll",
+        "lib/NativeVersion.rc",
+        "lib/Newtonsoft.Json.dll",
+        "lib/NuGet.Core.dll",
+        "lib/NuGet.NuManifest.dll",
+        "lib/NuGet.NuManifest.DotNet.dll",
+        "lib/PackageLibs.targets",
+        "lib/packageresolve.targets",
+        "lib/packages.targets",
+        "lib/partialfacades.targets",
+        "lib/PerfTesting.targets",
+        "lib/PriConfig.xml",
+        "lib/publishtest.targets",
+        "lib/ReferenceAssemblies.targets",
+        "lib/resources.targets",
+        "lib/sign.targets",
+        "lib/System.Collections.Immutable.dll",
+        "lib/System.Reflection.Metadata.dll",
+        "lib/test-runtime/project.json",
+        "lib/test-runtime/project.lock.json",
+        "lib/test-runtime/readme.txt",
+        "lib/tests.targets",
+        "lib/toolruntime.targets",
+        "lib/tool-runtime/project.json",
+        "lib/tool-runtime/project.lock.json",
+        "lib/UpdateBuildValues.targets",
+        "lib/versioning.targets",
+        "Microsoft.DotNet.BuildTools.1.0.25-prerelease-00107.nupkg",
+        "Microsoft.DotNet.BuildTools.1.0.25-prerelease-00107.nupkg.sha512",
+        "Microsoft.DotNet.BuildTools.nuspec"
+      ]
+    },
+    "NUnit/2.6.4": {
+      "type": "package",
+      "sha512": "cmSPvaCMRSP0DI19FP1Liw9DyJY3E/vOY1OrVaeJBZpZFWHkmT3fB9ngGWnZX/ftvA7zJEbghEaw3Yd+u4YFAw==",
+      "files": [
+        "lib/nunit.framework.dll",
+        "lib/nunit.framework.xml",
+        "license.txt",
+        "NUnit.2.6.4.nupkg",
+        "NUnit.2.6.4.nupkg.sha512",
+        "NUnit.nuspec"
+      ]
+    },
+    "NUnit.Runners/2.6.4": {
+      "type": "package",
+      "sha512": "LZWCxtXCKTa1EV0vod/ovTzExhjEJ9yoLUiORzMydF7aSOHi+NfIuqaQ9QzBYE28qH0fDgqRNkvAO4u0UTFLxw==",
+      "files": [
+        "license.txt",
+        "NUnit.Runners.2.6.4.nupkg",
+        "NUnit.Runners.2.6.4.nupkg.sha512",
+        "NUnit.Runners.nuspec",
+        "tools/agent.conf",
+        "tools/agent.log.conf",
+        "tools/launcher.log.conf",
+        "tools/lib/Images/Tree/Circles/Failure.jpg",
+        "tools/lib/Images/Tree/Circles/Ignored.jpg",
+        "tools/lib/Images/Tree/Circles/Inconclusive.jpg",
+        "tools/lib/Images/Tree/Circles/Skipped.jpg",
+        "tools/lib/Images/Tree/Circles/Success.jpg",
+        "tools/lib/Images/Tree/Classic/Failure.jpg",
+        "tools/lib/Images/Tree/Classic/Ignored.jpg",
+        "tools/lib/Images/Tree/Classic/Inconclusive.jpg",
+        "tools/lib/Images/Tree/Classic/Skipped.jpg",
+        "tools/lib/Images/Tree/Classic/Success.jpg",
+        "tools/lib/Images/Tree/Default/Failure.png",
+        "tools/lib/Images/Tree/Default/Ignored.png",
+        "tools/lib/Images/Tree/Default/Inconclusive.png",
+        "tools/lib/Images/Tree/Default/Skipped.png",
+        "tools/lib/Images/Tree/Default/Success.png",
+        "tools/lib/Images/Tree/Visual Studio/Failure.png",
+        "tools/lib/Images/Tree/Visual Studio/Ignored.png",
+        "tools/lib/Images/Tree/Visual Studio/Inconclusive.png",
+        "tools/lib/Images/Tree/Visual Studio/SeriousWarning.png",
+        "tools/lib/Images/Tree/Visual Studio/Skipped.png",
+        "tools/lib/Images/Tree/Visual Studio/Success.png",
+        "tools/lib/log4net.dll",
+        "tools/lib/nunit.core.dll",
+        "tools/lib/nunit.core.interfaces.dll",
+        "tools/lib/nunit.uiexception.dll",
+        "tools/lib/nunit.uikit.dll",
+        "tools/lib/nunit.util.dll",
+        "tools/lib/nunit-console-runner.dll",
+        "tools/lib/nunit-gui-runner.dll",
+        "tools/nunit.exe",
+        "tools/nunit.exe.config",
+        "tools/nunit.framework.dll",
+        "tools/nunit-agent.exe",
+        "tools/nunit-agent.exe.config",
+        "tools/nunit-agent-x86.exe",
+        "tools/nunit-agent-x86.exe.config",
+        "tools/nunit-console.exe",
+        "tools/nunit-console.exe.config",
+        "tools/nunit-console-x86.exe",
+        "tools/nunit-console-x86.exe.config",
+        "tools/nunit-editor.exe",
+        "tools/nunit-x86.exe",
+        "tools/nunit-x86.exe.config",
+        "tools/pnunit.framework.dll",
+        "tools/pnunit.tests.dll",
+        "tools/pnunit-agent.exe",
+        "tools/pnunit-agent.exe.config",
+        "tools/pnunit-launcher.exe",
+        "tools/pnunit-launcher.exe.config",
+        "tools/runpnunit.bat",
+        "tools/test.conf"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "": [
+      "Microsoft.DotNet.BuildTools >= 1.0.25-prerelease-00107",
+      "NUnit >= 2.6.4",
+      "NUnit.Runners >= 2.6.4",
+      "FSharp.Data >= 2.2.5"
+    ],
+    "DNXCore,Version=v5.0": []
+  }
+}

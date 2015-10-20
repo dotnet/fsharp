@@ -101,13 +101,13 @@
 
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);OPEN_BUILD</DefineConstants>
-  </PropertyGroup>  
-  
+  </PropertyGroup>
+
   <PropertyGroup>
     <NUnitVersion>2.6.4</NUnitVersion>
     <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
-    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
-    <NunitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NunitToolsLibDir>
+    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit\$(NUnitVersion)\lib\</NUnitLibDir>
+    <NunitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners\$(NUnitVersion)\tools\lib\</NunitToolsLibDir>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
@@ -258,7 +258,7 @@
     <TargetFrameworkProfile>Profile47</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
-  
+
    <!-- Target Portable Profile 7 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable7'">
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
@@ -290,11 +290,11 @@
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants> 
-    <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants> 
+    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <TargetingNetCorePortable>true</TargetingNetCorePortable>
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>    
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
   <!-- Target Portable Profile 78 -->
@@ -752,42 +752,15 @@
 
   <!-- Hook up DNX to enable solution refresh of packages -->
   <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
-    
     <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
     <!-- fix this to be not so unfortunate looking -->
-    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00085\lib\</BuildToolsDir>
+    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools\1.0.25-prerelease-00107\lib\</BuildToolsDir>
 
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
 
-    <DnxVersion Condition="'$(OsEnvironment)'!='Unix'">1.0.0-beta6-12032</DnxVersion>
-    <DnxVersion Condition="'$(OsEnvironment)'=='Unix'">1.0.0-beta5-12077</DnxVersion>
-    <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'!='Unix'">dnx-coreclr-win-x86.$(DnxVersion)</DnxPackageName>
-    <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'=='Unix'">dnx-mono.$(DnxVersion)</DnxPackageName>
-
-    <NuGetToolPath Condition="'$(NuGetToolPath)' == ''">$(FSharpSourcesRoot)\..\.nuget\</NuGetToolPath>
-    <NuGetConfigCommandLine>-ConfigFile "$(NuGetConfigFile)"</NuGetConfigCommandLine>
-
-    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe"</NugetRestoreCommand>
-    <NugetRestoreCommand>$(NugetRestoreCommand) install</NugetRestoreCommand>
-    <NugetRestoreCommand>$(NugetRestoreCommand) -OutputDirectory "$(NuGetPackagesPath)"</NugetRestoreCommand>
-    <NugetRestoreCommand>$(NugetRestoreCommand) -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
-
-    <DnxPackageDir Condition="'$(DnxPackageDir)'==''">$(NuGetPackagesPath)\$(DnxPackageName)/</DnxPackageDir>
-    <DnuToolPath Condition="'$(DnuToolPath)'=='' and '$(OS)' == 'Windows_NT'">$(DnxPackageDir)\bin\dnu.cmd</DnuToolPath>
-    <DnuToolPath Condition="'$(DnuToolPath)'=='' and '$(OS)' != 'Windows_NT'">$(DnxPackageDir)/bin/dnu</DnuToolPath>
-
-    <DnuRestoreCommand>"$(DnuToolPath)"</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) restore</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) --packages "$(PackagesDir.TrimEnd('/').TrimEnd('\\'))"</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-core/"</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-corefx/"</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-buildtools"</DnuRestoreCommand>
-
-    <!-- Current version of DNX does not support all semantics used in our packages, 
-         so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
-    <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
+    <DnuRestoreCommand Condition="'$(DnuToolPath)'=='' and '$(OS)' == 'Windows_NT'">$(homedrive)$(homepath)\.dnx\runtimes\dnx-coreclr-win-x64.1.0.0-beta8\bin\dnu.cmd restore --packages "$(NuGetPackagesPath)"</DnuRestoreCommand>
   </PropertyGroup>
   <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(BuildToolsDir)Build.Common.Targets" />
 
@@ -815,19 +788,19 @@
             Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
     <Error
             Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, coreclr, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
-            Condition="! ('$(TargetFramework)' == 'net40' or 
-                          '$(TargetFramework)' == 'net20' or 
-                          '$(TargetFramework)' == 'coreclr' or 
-                          '$(TargetFramework)' == 'sl5' or 
-                          '$(TargetFramework)' == 'sl3-wp' or 
+            Condition="! ('$(TargetFramework)' == 'net40' or
+                          '$(TargetFramework)' == 'net20' or
+                          '$(TargetFramework)' == 'coreclr' or
+                          '$(TargetFramework)' == 'sl5' or
+                          '$(TargetFramework)' == 'sl3-wp' or
                           '$(TargetFramework)' == 'portable47' or
                           '$(TargetFramework)' == 'portable7' or
-                          '$(TargetFramework)' == 'portable78' or 
+                          '$(TargetFramework)' == 'portable78' or
                           '$(TargetFramework)' == 'portable259')"/>
     <Error
         Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
         Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40' and '$(TargetFramework)' != 'coreclr'"/>
-        
+
   </Target>
 
   <!-- This build step copies files to the output folder while replacing build variables in the text of
@@ -846,18 +819,14 @@
   </Target>
 
   <Import Project="..\lkg\FSharp-$(LkgVersion)\bin\FSharp.SRGen.targets" />
-  
+
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
-      Condition="'$(GenerateTargetFrameworkAttribute)' == 'true' AND '$(AssemblyName)' == 'FSharp.Core'">  
+      Condition="'$(GenerateTargetFrameworkAttribute)' == 'true' AND '$(AssemblyName)' == 'FSharp.Core'">
     <ItemGroup>
         <!-- Infrastructure puts AssemblyAttributes.fs at the beginning of the list and this will result and error when compiling FSharp.Core because all primitive types are not defined yet - fixup is required-->
         <CompileAfter Include="@(CompileBefore)"/>
-        <CompileBefore Remove="@(CompileBefore)"/>   
+        <CompileBefore Remove="@(CompileBefore)"/>
     </ItemGroup>
-  </Target>
-  <Target Name="BeforeBuild" BeforeTargets="Build">
-    <Exec Command=".\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
-    <Exec Command=".\.nuget\NuGet.exe restore .\tests\fsharp\project.json -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.."/>
   </Target>
 </Project>
