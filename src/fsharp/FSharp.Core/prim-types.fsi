@@ -764,6 +764,24 @@ namespace Microsoft.FSharp.Core
     type int64<[<Measure>] 'Measure> = int64
 
 
+    /// <summary>For compiler use only</summary>
+    module SharedResources =
+
+        /// <summary>The value of the resource localized for the caller's current UI culture</summary>
+        /// <remarks>Dont call this method, should be used only by inlined code outsite FSharp.Core assembly.
+        /// use <see cref="Microsoft.FSharp.Core.Resources"/> functions instead</remarks>
+        [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        val GetString : string -> string
+
+    /// <summary>For compiler use only</summary>
+    module internal Resources =
+
+        val inline addressOpNotFirstClass : unit -> string
+        val inline noNegateMinValue : unit -> string
+        val inline inputSequenceEmpty : unit -> string
+        val inline inputArrayEmpty : unit -> string
+        val inline inputMustBeNonNegative : unit -> string
+
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =
 
@@ -881,10 +899,10 @@ namespace Microsoft.FSharp.Core
         val inline FastLimitedGenericEqualityComparer<'T> : limit: int -> System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
 
         /// <summary>Make an F# hash/equality object for the given type</summary>
-        [<CompilerMessage("This function is a compiler instrinsic should not be used directly", 1204, IsHidden=true)>]
+        [<CompilerMessage("This function is a compiler intrinsic should not be used directly", 1204, IsHidden=true)>]
         val FastGenericEqualityComparerFromTable<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
 
-        [<CompilerMessage("This function is a compiler instrinsic should not be used directly", 1204, IsHidden=true)>]
+        [<CompilerMessage("This function is a compiler intrinsic should not be used directly", 1204, IsHidden=true)>]
         /// <summary>Make an F# comparer object for the given type</summary>
         val FastGenericComparerFromTable<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
 
@@ -1015,6 +1033,10 @@ namespace Microsoft.FSharp.Core
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
 
         /// <summary>For compiler use only</summary>
+        /// <remarks>
+        /// Deprecated, exists for backward compatibility
+        /// https://github.com/Microsoft/visualfsharp/issues/486
+        /// </remarks>
         module (* internal *) ErrorStrings = 
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
@@ -1097,7 +1119,7 @@ namespace Microsoft.FSharp.Core
             val inline GetString : source:string -> index:int -> char
 
             /// <summary>This function implements calls to default constructors
-            /// acccessed by 'new' constraints.</summary>
+            /// accessed by 'new' constraints.</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val inline CreateInstance : unit -> 'T when 'T : (new : unit -> 'T)
 
@@ -1564,7 +1586,7 @@ namespace Microsoft.FSharp.Core
 
     [<AbstractClass>]
     [<Sealed>]
-    /// <summary>Helper functions for converting F# first class function values to and from CLI representaions
+    /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
     type FuncConvert = 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
@@ -2121,7 +2143,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Ignore")>]
         val inline ignore : value:'T -> unit
 
-        /// <summary>Unboxes a strongly typed value.</summary>
+        /// <summary>Unbox a strongly typed value.</summary>
         /// <param name="value">The boxed value.</param>
         /// <returns>The unboxed result.</returns>
         [<CompiledName("Unbox")>]
@@ -3389,7 +3411,7 @@ namespace Microsoft.FSharp.Control
     /// <summary>First class event values for arbitrary delegate types.</summary>
     ///
     /// <remarks>F# gives special status to member properties compatible with type IDelegateEvent and 
-    /// tagged with the CLIEventAttribute. In this case the F# compiler generates approriate 
+    /// tagged with the CLIEventAttribute. In this case the F# compiler generates appropriate 
     /// CLI metadata to make the member appear to other CLI languages as a CLI event.</remarks>
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
         /// <summary>Connect a handler delegate object to the event. A handler can

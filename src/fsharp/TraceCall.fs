@@ -117,7 +117,7 @@ type internal Trace private() =
                                        threadInfo
                                        (Trace.ElapsedTime(start)))}
 #else
-                    Trace.LogMessage(sprintf "Exitting %s\n" 
+                    Trace.LogMessage(sprintf "Exiting %s\n" 
                                        functionName)}
 #endif
         else 

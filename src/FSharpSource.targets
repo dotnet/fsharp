@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+   <PropertyGroup>
+       <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
+       <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.0.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.0.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.4.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.4.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.4.9055</FSCoreVersion>
+       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.4.9055</FSCoreVersion>
+   </PropertyGroup>
    <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
             <When Condition="'$(AssemblyName)' == 'FSharp.Core'">
-              <PropertyGroup Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">
-                <IsPortableProfile>true</IsPortableProfile>
-              </PropertyGroup>
-              <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">$(OtherFlags) --version:4.4.0.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'net20'">$(OtherFlags) --version:2.4.0.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable7'">$(OtherFlags) --version:3.7.4.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable47'">$(OtherFlags) --version:3.47.4.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable78'">$(OtherFlags) --version:3.78.4.9055</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' == 'portable259'">$(OtherFlags) --version:3.259.4.9055</OtherFlags>
+               <PropertyGroup>
+                <OtherFlags>$(OtherFlags) --version:$(FSCoreVersion)</OtherFlags>
                 <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -27,6 +28,12 @@
                 <OtherFlags>$(OtherFlags) --version:14.0.0.9055 --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
+              </PropertyGroup>
+            </When>
+            <!-- do not strong-name the runtime unit tests, as they have non-strong-named dependencies -->
+            <When Condition="'$(AssemblyName)' == 'FSharp.Core.Unittests'">
+              <PropertyGroup>
+                <OtherFlags>$(OtherFlags) --version:4.4.0.9055</OtherFlags>
               </PropertyGroup>
             </When>
             <Otherwise>
@@ -101,7 +108,10 @@
     <NUnitVersion>2.6.4</NUnitVersion>
     <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
-    <NunitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NunitToolsLibDir>
+    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NUnitToolsLibDir>
+    <FsCheckVersion>2.0.3</FsCheckVersion>
+    <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
+    <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
   </PropertyGroup>
 
   <!-- v2.0-specific flags -->
@@ -729,7 +739,7 @@
           Outputs="@(CustomCopyLocal->'$(OutDir)%(TargetFilename)')"
           Condition="'$(targetCLIDir)'!='Silverlight/4.0/'"
                 >
-    <Exec Command="$(FSharpSourcesRoot)\fsharp\FSharp.Build\subst.exe &quot;%(CustomCopyLocal.FullPath)&quot; {VisualStudioVersion} $(VisualStudioVersion) {FinalDir} &quot;$([System.IO.Path]::GetFullPath('$(OutputPath)'))\&quot; {LkgVersion} $(LkgVersion) {BuildSuffix} &quot;$(FsBuildSuffix)&quot; {FSharpTargetsDir} &quot;%24(MSBuildThisFileDirectory)&quot; &gt; $(OutDir)%(CustomCopyLocal.TargetFilename)  "/>
+    <Exec Command="$(FSharpSourcesRoot)\fsharp\FSharp.Build\subst.exe &quot;%(CustomCopyLocal.FullPath)&quot; {VisualStudioVersion} $(VisualStudioVersion) {FinalDir} &quot;$([System.IO.Path]::GetFullPath('$(OutputPath)'))\&quot; {LkgVersion} $(LkgVersion) {BuildSuffix} &quot;$(FsBuildSuffix)&quot; {FSharpTargetsDir} &quot;%24(MSBuildThisFileDirectory)&quot; {FSCoreVersion} &quot;$(FSCoreVersion)&quot; &gt; $(OutDir)%(CustomCopyLocal.TargetFilename)  "/>
     <!-- Make sure it will get cleaned  -->
     <CreateItem Include="$(OutDir)%(CustomCopyLocal.TargetFilename)">
       <Output TaskParameter="Include" ItemName="FileWrites"/>

@@ -55,8 +55,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return ErrorHandler.Succeeded(get_Property(name, out value)) ? value as string : null;
         }
 
-        #region IVsOutput2 Members
-
         public int get_CanonicalName(out string pbstrCanonicalName)
         {
             pbstrCanonicalName = MSBuildItem.GetEvaluatedInclude(output);
@@ -134,7 +132,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             pguidType = Guid.Empty;
             throw new NotImplementedException();
         }
-
-        #endregion
 }
 }

@@ -28,14 +28,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAProjectItems : OANavigableProjectItems
     {
-        #region ctor
         internal OAProjectItems(OAProject project, HierarchyNode nodeWithItems)
             : base(project, nodeWithItems)
         {
         }
-        #endregion
 
-        #region EnvDTE.ProjectItems
         /// <summary>
         /// Creates a new project item from an existing item template file and adds it to the project. 
         /// </summary>
@@ -192,16 +189,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             return this.AddItem(fileName, VSADDITEMOPERATION.VSADDITEMOP_OPENFILE);
         }
 
-        #endregion
-
-        #region helper methods
         /// <summary>
         /// Adds an item to the project.
         /// </summary>
         /// <param name="path">The full path of the item to add.</param>
         /// <param name="op">The VSADDITEMOPERATION to use when adding the item.</param>
         /// <returns>A ProjectItem object. </returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual EnvDTE.ProjectItem AddItem(string path, VSADDITEMOPERATION op)
+        public virtual EnvDTE.ProjectItem AddItem(string path, VSADDITEMOPERATION op)
         {
             return UIThread.DoOnUIThread(delegate() {
                 if (this.Project == null || this.Project.Project == null || this.Project.Project.Site == null || this.Project.Project.IsClosed)
@@ -247,7 +241,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// <param name="result">The VSADDRESULT returned by the Add methods</param>
         /// <param name="path">The full path of the item added.</param>
         /// <returns>A ProjectItem object.</returns>
-        public /*protected, but public for FSharp.Project.dll*/ virtual EnvDTE.ProjectItem EvaluateAddResult(VSADDRESULT result, string path)
+        public virtual EnvDTE.ProjectItem EvaluateAddResult(VSADDRESULT result, string path)
         {
             return UIThread.DoOnUIThread(delegate() {
                 if (result == VSADDRESULT.ADDRESULT_Success)
@@ -261,12 +255,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                         {
                             item = new OAFileItem(this.Project, nodeAdded as FileNode);
                         }
-#if UNUSED_NESTED_PROJECTS
-                        else if (nodeAdded is NestedProjectNode)
-                        {
-                            item = new OANestedProjectItem(this.Project, nodeAdded as NestedProjectNode);
-                        }
-#endif
                         else
                         {
                             item = new OAProjectItem<HierarchyNode>(this.Project, nodeAdded);
@@ -313,7 +301,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
             return Path.Combine(components);
         }
-
-        #endregion
     }
 }

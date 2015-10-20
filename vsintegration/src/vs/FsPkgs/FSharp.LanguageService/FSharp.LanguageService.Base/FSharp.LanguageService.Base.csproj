@@ -88,7 +88,6 @@
     <Compile Include="DocumentProperties.cs" />
     <Compile Include="DocumentTask.cs" />
     <Compile Include="EditArray.cs" />
-    <Compile Include="EditorFactory.cs" />
     <Compile Include="EditorView.cs" />
     <Compile Include="ExpansionProvider.cs" />
     <Compile Include="ExternDll.cs" />

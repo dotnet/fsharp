@@ -25,11 +25,11 @@ namespace Microsoft.FSharp.Collections
 
       let cast (e : IEnumerator) : IEnumerator<'T> = 
           { new IEnumerator<'T> with 
-                member x.Current = unbox e.Current
+                member x.Current = unbox<'T> e.Current
             interface IEnumerator with 
-                member x.Current = unbox  e.Current
+                member x.Current = unbox<'T> e.Current :> obj
                 member x.MoveNext() = e.MoveNext()
-                member x.Reset() = noReset();
+                member x.Reset() = noReset()
             interface System.IDisposable with 
                 member x.Dispose() = 
                     match e with 
@@ -416,7 +416,7 @@ namespace Microsoft.FSharp.Collections
         
         // Binding. 
         //
-        // We use a type defintion to apply a local dynamic optimization. 
+        // We use a type definition to apply a local dynamic optimization. 
         // We automatically right-associate binding, i.e. push the continuations to the right.
         // That is, bindG (bindG G1 cont1) cont2 --> bindG G1 (cont1 o cont2)
         // This makes constructs such as the following linear rather than quadratic:
@@ -847,6 +847,7 @@ namespace Microsoft.FSharp.Collections
     open System.Diagnostics
     open System.Collections
     open System.Collections.Generic
+    open System.Reflection
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
@@ -1160,7 +1161,7 @@ namespace Microsoft.FSharp.Collections
         let reduce f (source : seq<'T>)  = 
             checkNonNull "source" source
             use e = source.GetEnumerator() 
-            if not (e.MoveNext()) then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+            if not (e.MoveNext()) then invalidArg "source" (Resources.inputSequenceEmpty ())
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             let mutable state = e.Current 
             while e.MoveNext() do
@@ -1264,7 +1265,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             let arr = toArray source
             match arr.Length with
-            | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | 0 -> invalidArg "source" (Resources.inputSequenceEmpty ())
             | len ->
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
@@ -1444,32 +1445,50 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             mkSeq (fun () -> source.GetEnumerator())
 
+        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
+            checkNonNull "seq" seq
 
+            let dict = Dictionary<_,ResizeArray<_>> comparer
+
+            // Previously this was 1, but I think this is rather stingy, considering that we are already paying
+            // for at least a key, the ResizeArray reference, which includes an array reference, an Entry in the
+            // Dictionary, plus any empty space in the Dictionary of unfilled hash buckets.
+            let minimumBucketSize = 4
+
+            // Build the groupings
+            seq |> iter (fun v -> 
+                let safeKey = keyf v
+                let mutable prev = Unchecked.defaultof<_>
+                match dict.TryGetValue (safeKey, &prev) with
+                | true -> prev.Add v
+                | false ->
+                    let prev = ResizeArray ()
+                    dict.[safeKey] <- prev
+                    prev.Add v)
+
+            // Trim the size of each result group, don't trim very small buckets, as excessive work, and garbage for 
+            // minimal gain 
+            dict |> iter (fun group -> if group.Value.Count > minimumBucketSize then group.Value.TrimExcess())
+                         
+            // Return the sequence-of-sequences. Don't reveal the 
+            // internal collections: just reveal them as sequences
+            dict |> map (fun group -> (getKey group.Key, readonly group.Value))
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let groupByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl HashIdentity.Structural<'Key> keyf id 
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let groupByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value)
 
         [<CompiledName("GroupBy")>]
-        let groupBy keyf seq =
-
-            mkDelayedSeq (fun () -> 
-                // Wrap a StructBox(_) around all keys in case the key type is itself a type using null as a representation
-                let dict = new Dictionary<StructBox<'Key>,ResizeArray<'T>>(StructBox<'Key>.Comparer)
-
-                // Build the groupings
-                seq |> iter (fun v -> 
-                    let key = StructBox (keyf v)
-                    let ok,prev = dict.TryGetValue(key)
-                    if ok then 
-                        prev.Add(v)
-                    else 
-                        let prev = new ResizeArray<'T>(1)
-                        dict.[key] <- prev
-                        prev.Add(v))
-
-                // Trim the size of each result group.
-                dict |> iter (fun group -> group.Value.TrimExcess())
-                         
-                // Return the sequence-of-sequences. Don't reveal the 
-                // internal collections: just reveal them as sequences
-                dict |> map (fun group -> (group.Key.Value, readonly group.Value)))
+        let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then mkDelayedSeq (fun () -> groupByValueType keyf seq)
+                else mkDelayedSeq (fun () -> groupByRefType   keyf seq)
 
         [<CompiledName("Distinct")>]
         let distinct source =
@@ -1523,19 +1542,38 @@ namespace Microsoft.FSharp.Collections
             let inline compareDescending a b = compare b a
             sortWith compareDescending source
 
-        [<CompiledName("CountBy")>]
-        let countBy keyf source =
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:seq<'T>) =
             checkNonNull "source" source
-            mkDelayedSeq (fun () -> 
-                let dict = new Dictionary<StructBox<'Key>,int>(StructBox<'Key>.Comparer)
 
-                // Build the groupings
-                source |> iter (fun v -> 
-                    let key = StructBox (keyf v )
-                    let mutable prev = Unchecked.defaultof<_>
-                    if dict.TryGetValue(key, &prev) then dict.[key] <- prev + 1 else dict.[key] <- 1)
+            let dict = Dictionary comparer
 
-                dict |> map (fun group -> (group.Key.Value, group.Value)))
+            // Build the groupings
+            source |> iter (fun v -> 
+                let safeKey = keyf v
+                let mutable prev = Unchecked.defaultof<_>
+                if dict.TryGetValue(safeKey, &prev)
+                    then dict.[safeKey] <- prev + 1
+                    else dict.[safeKey] <- 1)
+
+            dict |> map (fun group -> (getKey group.Key, group.Value))
+
+        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
+        let countByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl HashIdentity.Structural<'Key> keyf id 
+
+        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
+        let countByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value)
+
+        [<CompiledName("CountBy")>]
+        let countBy (keyf:'T->'Key) (source:seq<'T>) =
+            checkNonNull "source" source
+
+#if FX_RESHAPED_REFLECTION
+            if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+            if typeof<'Key>.IsValueType
+#endif
+                then mkDelayedSeq (fun () -> countByValueType keyf source)
+                else mkDelayedSeq (fun () -> countByRefType   keyf source)
 
         [<CompiledName("Sum")>]
         let inline sum (source: seq< (^a) >) : ^a = 
@@ -1563,7 +1601,7 @@ namespace Microsoft.FSharp.Collections
                 acc <- Checked.(+) acc e.Current
                 count <- count + 1
             if count = 0 then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             LanguagePrimitives.DivideByInt< (^a) > acc count
 
         [<CompiledName("AverageBy")>]
@@ -1576,7 +1614,7 @@ namespace Microsoft.FSharp.Collections
                 acc <- Checked.(+) acc (f e.Current)
                 count <- count + 1
             if count = 0 then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             LanguagePrimitives.DivideByInt< (^U) > acc count
             
         [<CompiledName("Min")>]
@@ -1584,7 +1622,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let mutable acc = e.Current
             while e.MoveNext() do
                 let curr = e.Current 
@@ -1597,7 +1635,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             let mutable accv = first
@@ -1615,7 +1653,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             while e.MoveNext() do
@@ -1631,7 +1669,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let mutable acc = e.Current
             while e.MoveNext() do
                 let curr = e.Current 
@@ -1644,7 +1682,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             let mutable accv = first
@@ -1663,7 +1701,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if not (e.MoveNext()) then 
-                invalidArg "source" InputSequenceEmptyString;
+                invalidArg "source" (Resources.inputSequenceEmpty ())
             let first = e.Current
             let mutable acc = f first
             while e.MoveNext() do
@@ -1734,7 +1772,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             use e = source.GetEnumerator() 
             if (e.MoveNext()) then e.Current
-            else invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            else invalidArg "source" (Resources.inputSequenceEmpty ())
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
@@ -1761,7 +1799,7 @@ namespace Microsoft.FSharp.Collections
                 while (e.MoveNext()) do res <- e.Current
                 res
             else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (Resources.inputSequenceEmpty ())
 
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
@@ -1785,7 +1823,7 @@ namespace Microsoft.FSharp.Collections
                 else
                     v
             else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+                invalidArg "source" (Resources.inputSequenceEmpty ())
 
         [<CompiledName("Reverse")>]
         let rev source =

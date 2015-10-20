@@ -22,7 +22,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.IL (* Abstract IL  *)
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
@@ -704,8 +704,8 @@ module private PrintTypes =
     /// Layout a single type parameter declaration, taking TypeSimplificationInfo into account  
     /// There are several printing-cases for a typar:
     ///
-    ///  'a              - is multiple  occurance.
-    ///  _               - singleton occurrence, an underscore prefered over 'b. (OCAML accepts but does not print)
+    ///  'a              - is multiple  occurrence.
+    ///  _               - singleton occurrence, an underscore preferred over 'b. (OCAML accepts but does not print)
     ///  #Type           - inplace coercion constraint and singleton.
     ///  ('a :> Type)    - inplace coercion constraint not singleton.
     ///  ('a.opM : S->T) - inplace operator constraint.
@@ -1239,7 +1239,7 @@ module InfoMemberPrinting =
 
 
     /// Format a method to a buffer using "standalone" display style. 
-    /// For example, these are the formats used when printing signatures of methods that have not been overriden,
+    /// For example, these are the formats used when printing signatures of methods that have not been overridden,
     /// and the format used when showing the individual member in QuickInfo and DeclarationInfo.
     /// The formats differ between .NET/provided methods and F# methods. Surprisingly people don't really seem 
     /// to notice this, or they find it helpful. It feels that moving from this position should not be done lightly.
@@ -1274,7 +1274,7 @@ module InfoMemberPrinting =
             formatMethInfoToBufferCSharpStyle amap m denv os minfo minfo.FormalMethodInst
     #endif
 
-    /// Format a method to a layotu (actually just containing a string) using "free style" (aka "standalone"). 
+    /// Format a method to a layout (actually just containing a string) using "free style" (aka "standalone"). 
     let layoutMethInfoFSharpStyle amap m denv (minfo: MethInfo) = 
         wordL (bufs (fun buf -> formatMethInfoToBufferFSharpStyle amap m denv buf minfo minfo.FormalMethodInst))
 
@@ -1323,7 +1323,7 @@ module private TastDefinitionPrinting =
             let isGenerated = if isUnionCase then isGeneratedUnionCaseField else isGeneratedExceptionField
             sepListL (wordL "*") (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
 
-    let layoutUnionCase denv  prefixL ucase =
+    let layoutUnionCase denv  prefixL (ucase:UnionCase) =
         let nmL = wordL (DemangleOperatorName ucase.Id.idText) 
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
         match ucase.RecdFields with
@@ -1331,7 +1331,7 @@ module private TastDefinitionPrinting =
         | fields -> (prefixL ^^ nmL ^^ wordL "of") --- layoutUnionCaseFields denv true fields
 
     let layoutUnionCases denv  ucases =
-        let prefixL = wordL "|" // See bug://2964 - always prefix in case preceeded by accessibility modifier
+        let prefixL = wordL "|" // See bug://2964 - always prefix in case preceded by accessibility modifier
         List.map (layoutUnionCase denv prefixL) ucases
 
     /// When to force a break? "type tyname = <HERE> repn"
@@ -1552,7 +1552,7 @@ module private TastDefinitionPrinting =
               | TFsObjModelRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
               | _ -> tycon.ImmediateInterfacesOfFSharpTycon
           let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
-          // if TTyconInterface, the iimpls should be printed as inheritted interfaces 
+          // if TTyconInterface, the iimpls should be printed as inherited interfaces 
           let iimplsLs = iimpls |> List.map (fun (ty,_,_) -> wordL "interface" --- layoutType denv ty)
           let adhocCtorsLs    = adhoc |> List.filter (fun v -> v.IsConstructor)                               |> List.map (fun vref -> PrintTastMemberOrVals.layoutValOrMember denv vref.Deref)
           let adhocInstanceLs = adhoc |> List.filter (fun v -> not v.IsConstructor && v.IsInstanceMember)     |> List.map (fun vref -> PrintTastMemberOrVals.layoutValOrMember denv vref.Deref)
@@ -1760,7 +1760,7 @@ module private InferredSigPrinting =
                             // module now.
                             ((wordL "module" ^^ nmL ^^ wordL "=" ^^ wordL "begin") @@-- basic) @@ wordL "end"
                     else
-                        // OK, wer'e in F# Interactive, presumably the implicit module for each interaction.
+                        // OK, we're in F# Interactive, presumably the implicit module for each interaction.
                         basic
                 else
                     // OK, this is a nested module

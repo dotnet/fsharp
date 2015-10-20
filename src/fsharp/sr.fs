@@ -86,7 +86,7 @@ namespace Microsoft.FSharp.Compiler
                     b.AppendFormat(messageString, (Array.ofList (List.rev args))) |> ignore
                     box(b.ToString())
                 // REVIEW: For these purposes, this should be a nop, but I'm leaving it
-                // in incase we ever decide to support labels for the error format string
+                // in case we ever decide to support labels for the error format string
                 // E.g., "<name>%s<foo>%d"
                 elif System.Char.IsSurrogatePair(fmt,i) then 
                    capture args ty (i+2)

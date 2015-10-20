@@ -24,7 +24,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         internal IVsTrackSelectionEx tracker;
         private bool visible;
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.DocumentProperties"]/*' />
         protected DocumentProperties(CodeWindowManager mgr) {
             this.mgr = mgr;
             this.visible = true;
@@ -43,7 +42,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             set { if (this.visible != value) { this.visible = value; Refresh(); } }
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.UpdateSelection"]/*' />
         /// <summary>
         /// Call this method when you want the document properties window updated with new information.
         /// </summary>
@@ -64,7 +62,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return this.mgr;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.Close"]/*' />
         public void Close() {
             if (this.tracker != null && this.visible)
                 NativeMethods.ThrowOnFailure(tracker.OnSelectChange(null));
@@ -72,10 +69,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.Dispose(true);
         }
 
-        #region IDisposable Members
-
-
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.Dispose"]/*' />
         public void Dispose() {
             Dispose(true);
             // This object will be cleaned up by the Dispose method.
@@ -84,7 +77,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.Dispose"]/*' />
         protected virtual void Dispose(bool disposing) {
             // If disposing equals true, dispose all managed 
             // and unmanaged resources.
@@ -96,31 +88,24 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.mgr = null;
         }
 
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.Finalize"]/*' />
         ~DocumentProperties() {
             Dispose(false);
         }
-        #endregion
 
-        #region ISelectionContainer methods.
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.CountObjects"]/*' />
         public virtual int CountObjects(uint flags, out uint pc) {
             pc = this.visible ? (uint)1 : (uint)0;
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.GetObjects"]/*' />
         public virtual int GetObjects(uint flags, uint count, object[] ppUnk) {
             if (count == 1) {
                 ppUnk[0] = this;
             }
             return NativeMethods.S_OK;
         }
-        /// <include file='doc\CodeWindowManager.uex' path='docs/doc[@for="DocumentProperties.SelectObjects"]/*' />
         public virtual int SelectObjects(uint sel, object[] selobj, uint flags) {
             // nop
             return NativeMethods.S_OK;
         }
-    #endregion
     }
 
 }

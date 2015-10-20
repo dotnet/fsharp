@@ -67,6 +67,24 @@ type S =
 
 module TypedTest = begin 
 
+    // Checks the shape of the quotation to match that of
+    // foreach implemented in terms of GetEnumerator ()
+    let (|ForEachShape|_|) = function
+        | Let (
+                inputSequence,
+                inputSequenceBinding,
+                Let (
+                        enumerator,
+                        enumeratorBinding,
+                        TryFinally (
+                            WhileLoop (
+                                guard,
+                                Let (i, currentExpr, body)),
+                            cleanup)
+                        )
+                ) -> Some inputSequence
+        | _ -> None
+
     let x = <@ 1 @>
 
     test "check SByte"    ((<@  1y   @> |> (function SByte 1y ->   true | _ -> false))) 
@@ -77,7 +95,6 @@ module TypedTest = begin
     test "check UInt16"   ((<@  1us  @> |> (function UInt16 1us -> true | _ -> false))) 
     test "check UInt32"   ((<@  1u   @> |> (function UInt32 1u ->  true | _ -> false))) 
     test "check UInt64"   ((<@  1UL  @> |> (function UInt64 1UL -> true | _ -> false))) 
-    test "check Decimal"  ((<@  1M   @> |> (function Decimal 1M -> true | _ -> false))) 
     test "check String"   ((<@  "1"  @> |> (function String "1" -> true | _ -> false))) 
 
     test "check ~SByte"   ((<@  "1"  @> |> (function SByte _ ->    false | _ -> true))) 
@@ -88,10 +105,14 @@ module TypedTest = begin
     test "check ~UInt16"  ((<@  "1"  @> |> (function UInt16 _ ->   false | _ -> true))) 
     test "check ~UInt32"  ((<@  "1"  @> |> (function UInt32 _ ->   false | _ -> true))) 
     test "check ~UInt64"  ((<@  "1"  @> |> (function UInt64 _ ->   false | _ -> true))) 
-    test "check ~Decimal" ((<@  "1"  @> |> (function Decimal _ ->  false | _ -> true))) 
     test "check ~String"  ((<@  1    @> |> (function String "1" -> false | _ -> true))) 
 
+#if FSHARP_CORE_31
+#else
+    test "check Decimal"  ((<@  1M   @> |> (function Decimal 1M -> true | _ -> false))) 
+    test "check ~Decimal" ((<@  "1"  @> |> (function Decimal _ ->  false | _ -> true))) 
     test "check ~Decimal neither" ((<@ 1M + 1M @> |> (function Decimal _ ->  false | _ -> true))) 
+#endif
 
     test "check AndAlso" ((<@ true && true  @> |> (function AndAlso(Bool(true),Bool(true)) -> true | _ -> false))) 
     test "check OrElse"  ((<@ true || true  @> |> (function OrElse(Bool(true),Bool(true)) -> true | _ -> false))) 
@@ -108,7 +129,11 @@ module TypedTest = begin
     // In this example, the types of the start and end points are not known at the point the loop
     // is typechecked. There was a bug (6064) where the transformation to a ForIntegerRangeLoop was only happening
     // when types were known
-    test "check ForIntegerRangeLoop"   (<@ for i in failwith "" .. failwith "" do printf "hello" @> |> (function ForIntegerRangeLoop(v,_,_,b) -> true | _ -> false))
+    test "check ForIntegerRangeLoop"    (<@ for i in failwith "" .. failwith "" do printf "hello" @> |> (function ForIntegerRangeLoop(v,_,_,b) -> true | _ -> false))
+    // Checks that foreach over non-integer ranges should have the shape of foreach implemented in terms of GetEnumerator
+    test "check ForEachInSeq"           (<@ for i in seq {for x in 0..10 -> x} do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
+    test "check ForEachInList"          (<@ for i in "123" do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
+    test "check ForEachInString"        (<@ for i in [1;2;3] do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
     // A slight non orthogonality is that all other 'for' loops go to (quite complex) the desugared form
     test "check Other Loop"   (<@ for i in 1 .. 2 .. 10 do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
     test "check Other Loop"   (<@ for i in 1L .. 10L do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
@@ -505,6 +530,17 @@ module TypedTest = begin
             |   FieldGet(Some (Value (v,t)), _) -> Object.ReferenceEquals(v, foo)
             |   _ -> false
         end
+
+#if FSHARP_CORE_31
+#else
+    test "check accesses to readonly fields in ReflectedDefinitions" 
+        begin
+            let c1 = Class1("a")
+            match <@ c1.myReadonlyField @> with
+            |   FieldGet(Some (ValueWithName (_, v, "c1")), field) -> (v.Name = "Class1") && (field.Name = "myReadonlyField")
+            |   _ -> false
+        end
+#endif
 
 end
 
@@ -1639,10 +1675,13 @@ module QuotationConstructionTests =
     check "vcknwwe099" (Expr.PropertySet(<@@ (new System.Windows.Forms.Form()) @@>, setof <@@ (new System.Windows.Forms.Form()).Text <- "2" @@>, <@@ "3" @@> )) <@@ (new System.Windows.Forms.Form()).Text <- "3" @@>
     #endif
     check "vcknwwe099" (Expr.PropertySet(<@@ (new Foo()) @@>, setof <@@ (new Foo()).[3] <- 1 @@>, <@@ 2 @@> , [ <@@ 3 @@> ] )) <@@ (new Foo()).[3] <- 2 @@>
+#if FSHARP_CORE_31
+#else
     check "vcknwwe0qq1" (Expr.QuoteRaw(<@ "1" @>)) <@@ <@@ "1" @@> @@>
     check "vcknwwe0qq2" (Expr.QuoteRaw(<@@ "1" @@>)) <@@ <@@ "1" @@> @@>
     check "vcknwwe0qq3" (Expr.QuoteTyped(<@ "1" @>)) <@@ <@ "1" @> @@>
     check "vcknwwe0qq4" (Expr.QuoteTyped(<@@ "1" @@>)) <@@ <@ "1" @> @@>
+#endif
     check "vcknwwe0ww" (Expr.Sequential(<@@ () @@>, <@@ 1 @@>)) <@@ (); 1 @@>
     check "vcknwwe0ee" (Expr.TryFinally(<@@ 1 @@>, <@@ () @@>)) <@@ try 1 finally () @@>
     check "vcknwwe0rr" (match Expr.TryWith(<@@ 1 @@>, Var.Global("e1",typeof<exn>), <@@ 1 @@>, Var.Global("e2",typeof<exn>), <@@ 2 @@>) with TryWith(b,v1,ef,v2,eh) -> b = <@@ 1 @@> && eh = <@@ 2 @@> && ef = <@@ 1 @@> && v1 = Var.Global("e1",typeof<exn>) && v2 = Var.Global("e2",typeof<exn>)| _ -> false) true 
@@ -2418,6 +2457,8 @@ module QuotationOfResizeArrayIteration =
         
 
 
+#if FSHARP_CORE_31
+#else
 module TestAutoQuoteAtStaticMethodCalls = 
     open Microsoft.FSharp.Quotations
 
@@ -2722,6 +2763,10 @@ module ExtensionMembersWithSameName =
         | _ -> failwith "unexpected shape"
 
     runAll()
+#endif
+
+module TestAssemblyAttributes = 
+    let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
 
 let aa =
   if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 

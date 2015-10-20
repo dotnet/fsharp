@@ -1222,39 +1222,6 @@ module internal VsMocks =
             member this.UnadviseFileChange(vscookie) = nothing()
         }
 
-#if NOT_YET_NEEDED
-    let vsExtensibility3 =
-        { new IVsExtensibility3 with
-            member this.GetProperties(pParent, pdispPropObj, ppProperties) = err(__LINE__)
-            member this.RunWizardFile(bstrWizFilename,  hwndOwner,  vContextParams,  pResult) = err(__LINE__)
-            member this.EnterAutomationFunction() = err(__LINE__)
-            member this.ExitAutomationFunction() = err(__LINE__)
-            member this.IsInAutomationFunction(pfInAutoFunc) = err(__LINE__)
-            member this.GetUserControl( fUserControl) = err(__LINE__)
-            member this.SetUserControl( fUserControl) = err(__LINE__)
-            member this.SetUserControlUnlatched( fUserControl) = err(__LINE__)
-            member this.LockServer( vb) = err(__LINE__)
-            member this.GetLockCount( pCount) = err(__LINE__)
-            member this.TestForShutdown( fShutdown) = err(__LINE__)
-            member this.GetGlobalsObject( extractFrom,  ppGlobals) = err(__LINE__)
-            member this.GetConfigMgr( pIVsProject,  itemid,  ppCfgMgr) = err(__LINE__)
-            member this.FireMacroReset() = err(__LINE__)
-            member this.GetDocumentFromDocCookie( lDocCookie,  ppDoc) = err(__LINE__)
-            member this.IsMethodDisabled( pGUID,  dispid) = err(__LINE__)
-            member this. SetSuppressUI( In) = err(__LINE__)
-            member this.GetSuppressUI( pOut) = err(__LINE__)
-            member this.FireProjectsEvent_ItemAdded( project) = err(__LINE__)
-            member this.FireProjectsEvent_ItemRemoved( project) = err(__LINE__)
-            member this.FireProjectsEvent_ItemRenamed( project,  oldName) = err(__LINE__)
-            member this.FireProjectItemsEvent_ItemAdded( projectItem) = err(__LINE__)
-            member this.FireProjectItemsEvent_ItemRemoved( projectItem) = err(__LINE__)
-            member this.FireProjectItemsEvent_ItemRenamed( projectItem,  oldName) = err(__LINE__)
-            member this.IsFireCodeModelEventNeeded( vbNeeded) = err(__LINE__)
-            member this.RunWizardFileEx( bstrWizFilename,  hwndOwner,  vContextParams,  vCustomParams,  pResult) = err(__LINE__)
-            member this.FireCodeModelEvent3( dispid,  pParent,  pElement,  changeKind) = err(__LINE__)
-        }
-#endif
-
     let vsSolution =
         { new IVsSolution with
             member x.GetProjectEnum(grfEnumFlags, rguidEnumOnlyThisType, ppenum) = err(__LINE__)
@@ -1566,9 +1533,6 @@ module internal VsMocks =
         sp.AddService(typeof<SVsTaskList>, box(vsTaskList()), false) 
         sp.AddService(typeof<SVsShellMonitorSelection>, box vsMonitorSelection, false) 
         sp.AddService(typeof<SVsFileChangeEx>, box vsFileChangeManager, false)
-#if NOT_YET_NEEDED
-        sp.AddService(typeof<EnvDTE.IVsExtensibility>, box vsExtensibility3, false)
-#endif        
         sp.AddService(typeof<SVsSolution>, box vsSolution, false)
         sp.AddService(typeof<SVsSolutionBuildManager>, box vsSolutionBuildManager, false)
         sp.AddService(typeof<SVsRunningDocumentTable>, box vsRunningDocumentTable, false)

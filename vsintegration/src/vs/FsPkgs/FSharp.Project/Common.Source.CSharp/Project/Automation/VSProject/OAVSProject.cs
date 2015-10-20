@@ -24,19 +24,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAVSProject : VSProject
     {
-        #region fields
         private ProjectNode project;
         private OAVSProjectEvents events;
-        #endregion
 
-        #region ctors
         internal OAVSProject(ProjectNode project)
         {
             this.project = project;
         }
-        #endregion
-
-        #region VSProject Members
 
         public ProjectItem AddWebReference(string bstrUrl)
         {
@@ -168,8 +162,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 throw new NotImplementedException();
             }
         }
-
-        #endregion
     }
 
     /// <summary>
@@ -179,18 +171,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAVSProjectEvents : VSProjectEvents
     {
-        #region fields
         private OAVSProject vsProject;
-        #endregion
 
-        #region ctors
         internal OAVSProjectEvents(OAVSProject vsProject)
         {
             this.vsProject = vsProject;
         }
-        #endregion
-
-        #region VSProjectEvents Members
 
         public BuildManagerEvents BuildManagerEvents
         {
@@ -216,8 +202,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return vsProject.References as ReferencesEvents;
             }
         }
-
-        #endregion
     }
 
 }

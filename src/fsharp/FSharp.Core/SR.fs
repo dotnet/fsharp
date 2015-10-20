@@ -26,13 +26,11 @@ module internal SR =
     let inputMustBeNonNegative = "inputMustBeNonNegative"
     let inputMustBePositive = "inputMustBePositive"
     let enumerationPastIntMaxValue = "enumerationPastIntMaxValue"
-    let inputSequenceEmpty = "inputSequenceEmpty"
     let inputSequenceTooLong = "inputSequenceTooLong"
     let mapCannotBeMutated = "mapCannotBeMutated"
     let notComparable = "notComparable"
     let outOfRange = "outOfRange"
     let arraysHadDifferentLengths = "arraysHadDifferentLengths"
-    let arrayWasEmpty = "arrayWasEmpty"
     let nonZeroBasedDisallowed = "nonZeroBasedDisallowed"
     let mismatchIAREnd = "mismatchIAREnd"
     let mismatchIARCancel = "mismatchIARCancel"
@@ -45,7 +43,6 @@ module internal SR =
     let cannotMutate = "cannotMutate"
     let notAPermutation = "notAPermutation"
     let failedReadEnoughBytes = "failedReadEnoughBytes"
-    let addressOpNotFirstClass = "addressOpNotFirstClass"
     let genericCompareFail1 = "genericCompareFail1"
     let notUsedForHashing = "notUsedForHashing"
     let badFormatString = "badFormatString"
@@ -61,7 +58,6 @@ module internal SR =
     let endCannotBeNaN = "endCannotBeNaN"
     let checkInit = "checkInit"
     let checkStaticInit = "checkStaticInit"
-    let noNegateMinValue = "noNegateMinValue"
     let delegateExpected = "delegateExpected"
     let invalidTupleTypes = "invalidTupleTypes"
     let notATupleType = "notATupleType"
@@ -166,4 +162,3 @@ module internal SR =
         System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1, arg2)
     let GetString3(name:System.String, arg1:System.String, arg2:System.String, arg3:System.String) : System.String = 
         System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1, arg2, arg3)
-

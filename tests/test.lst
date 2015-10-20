@@ -23,6 +23,7 @@ Core02		fsharp\core\csext
 Core02		..\testsprivate\fsharp\core\csfromfs
 Core02		fsharp\core\events
 Core02		fsharp\core\forwarders
+Core02		fsharp\core\forexpression
 Core02		fsharp\core\fsfromcs
 Core02		fsharp\core\fsfromfsviacs
 Core02		fsharp\core\fsiAndModifiers
@@ -34,6 +35,7 @@ Core03		fsharp\core\innerpoly
 Core03,Smoke		fsharp\core\int32
 Core03		fsharp\core\internalsvisible
 Core03		fsharp\core\interop
+Core03		fsharp\core\ilread
 Core03		fsharp\core\lazy
 Core03		fsharp\core\letrec
 Core03,Smoke		fsharp\core\libtest

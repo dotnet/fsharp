@@ -10,7 +10,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open System.Collections.Generic
 
-/// Represents encoded information for the end-of-line continutation of lexing
+/// Represents encoded information for the end-of-line continuation of lexing
 type internal LexState = int64
 
 /// A line/column pair

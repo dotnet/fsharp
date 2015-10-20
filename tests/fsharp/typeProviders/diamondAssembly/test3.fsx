@@ -3,6 +3,9 @@
 #r "test1.dll"
 #r "test2a.dll"
 #r "test2b.dll"
+#load "./test1.fsx"
+#load "./test2a.fsx"
+#load "./test2b.fsx"
 
 
 let mutable failures = []

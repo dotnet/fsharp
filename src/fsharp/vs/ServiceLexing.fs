@@ -45,7 +45,7 @@ type TokenColorKind =
     | TypeName = 11
 #endif
 
-/// Categorize an action the editor should take in respons to a token, e.g. brace matching
+/// Categorize an action the editor should take in response to a token, e.g. brace matching
 /// 
 /// NOTE: This corresponds to a token categorization originally used in Visual Studio 2003 and the original Babel source code.
 /// It is not clear it is a primary logical classification that should be being used in the 
@@ -535,14 +535,14 @@ type internal LineTokenizer(text:string,
     let lexbuf = UnicodeLexing.StringAsLexbuf text
     
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
-    let fsx = Build.IsScript(filename)
+    let fsx = CompileOps.IsScript(filename)
 
     // ----------------------------------------------------------------------------------
     // This implements post-processing of #directive tokens - not very elegant, but it works...
     // We get the whole "   #if IDENT // .. .. " thing as a single token from the lexer,
     // so we need to split it into tokens that are used by VS for colorization
     
-    // Stack for tokens that are split during postrpocessing    
+    // Stack for tokens that are split during postpocessing    
     let mutable tokenStack = new Stack<_>()
     let delayToken tok = tokenStack.Push(tok)
 
@@ -633,7 +633,7 @@ type internal LineTokenizer(text:string,
                   let leftc, rightc = ColumnsOfCurrentToken()
                   
                   // Splits tokens like ">." into multiple tokens - this duplicates behavior from the 'lexfilter'
-                  // which cannot be (easily) used from the langauge service. The rules here are not always valid,
+                  // which cannot be (easily) used from the language service. The rules here are not always valid,
                   // because sometimes token shouldn't be split. However it is just for colorization & 
                   // for VS (which needs to recognize when user types ".").
                   match token with
@@ -646,7 +646,7 @@ type internal LineTokenizer(text:string,
                   | RQUOTE_DOT (s,raw) -> 
                       delayToken(DOT, rightc, rightc)
                       false, (RQUOTE (s,raw), leftc, rightc - 1)
-                  | INFIX_COMPARE_OP (Lexfilter.TyparsCloseOp(greaters,afterOp) as opstr) -> 
+                  | INFIX_COMPARE_OP (LexFilter.TyparsCloseOp(greaters,afterOp) as opstr) -> 
                       match afterOp with
                       | None -> ()
                       | Some tok -> delayToken(tok, leftc + greaters.Length, rightc)

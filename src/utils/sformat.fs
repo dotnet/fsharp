@@ -145,12 +145,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
         let aboveL  l r = mkNode l r (Broken 0)
 
-        let joinN i l r = mkNode l r (Breakable i)                                      
-        let join  = joinN 0
-        let join1 = joinN 1
-        let join2 = joinN 2
-        let join3 = joinN 3
-
         let tagAttrL tag attrs l = Attr(tag,attrs,l)
 
         let apply2 f l r = if isEmptyL l then r else
@@ -168,9 +162,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | [x]   -> x
             | x::xs ->
                 let rec process' prefixL = function
-                    []    -> prefixL
+                  | []    -> prefixL
                   | y::ys -> process' ((tagger prefixL) ++ y) ys
-                in  process' x xs
+                process' x xs
             
         let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL ",") x
         let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL ";") x
@@ -184,7 +178,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
         let optionL xL = function
-            None   -> wordL "None"
+          | None   -> wordL "None"
           | Some x -> wordL "Some" -- (xL x)
 
         let listL xL xs = leftL "[" ^^ sepListL (sepL ";") (List.map xL xs) ^^ rightL "]"
@@ -787,7 +781,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
         let formatStringInWidth (width:int) (str:string) =
             // Return a truncated version of the string, e.g.
-            //   "This is the initial text, which has been truncat"+[12 chars]
+            //   "This is the initial text, which has been truncated"+[12 chars]
             //
             // Note: The layout code forces breaks based on leaf size and possible break points.
             //       It does not force leaf size based on width.
@@ -899,7 +893,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                   let alternativeObjL = 
                                                     match alternativeObj with 
                                                         // A particular rule is that if the alternative property
-                                                        // returns a string, we turn off auto-quoting and esaping of
+                                                        // returns a string, we turn off auto-quoting and escaping of
                                                         // the string, i.e. just treat the string as display text.
                                                         // This allows simple implementations of 
                                                         // such as
@@ -1165,31 +1159,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         // pprinter: leafFormatter
         // --------------------------------------------------------------------
 
-#if Suggestion4299
-        // See bug 4299. Suppress FSI_dddd+<etc> from fsi printer.
-        let fixupForInteractiveFSharpClassesWithNoToString obj (text:string) =
-              // Given obj:T.
-              // If T is a nested type inside a parent type called FSI_dddd, then it looks like an F# Interactive type.
-              // Further, if the .ToString() text starts with "FSI_dddd+T" then it looks like it's the default ToString.
-              // A better test: it is default ToString if the MethodInfo.DeclaringType is System.Object.
-              // In this case, replace "FSI_dddd+T" by "T".
-              // assert(obj <> null)
-              let fullName = obj.GetType().FullName // e.g. "FSI_0123+Name"
-              let name     = obj.GetType().Name     // e.g. "Name"
-              let T = obj.GetType()      
-              if text.StartsWith(fullName) then
-                  // text could be a default .ToString() since it starts with the FullName of the type. More checks...
-                  if T.IsNested &&
-                     T.DeclaringType.Name.StartsWith("FSI_") &&                             // Name has "FSI_" which is 
-                     T.DeclaringType.Name.Substring(4) |> Seq.forall System.Char.IsDigit    // followed by digits?
-                  then
-                      name ^ text.Substring(fullName.Length)    // replace fullName by name at start of text
-                  else
-                      text
-              else
-                text
-#endif
-
         let leafFormatter (opts:FormatOptions) (obj :obj) =
             match obj with 
             | null -> "null"
@@ -1225,10 +1194,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | :? bool   as b -> (if b then "true" else "false")
             | :? char   as c -> "\'" + formatChar true c + "\'"
             | _ -> try  let text = obj.ToString()
-//Suggestion4299. Not yet fixed.
-//#if COMPILER
-//                      let text = fixupForInteractiveFSharpClassesWithNoToString obj text
-//#endif  
                         text
                    with e ->
                      // If a .ToString() call throws an exception, catch it and use the message as the result.

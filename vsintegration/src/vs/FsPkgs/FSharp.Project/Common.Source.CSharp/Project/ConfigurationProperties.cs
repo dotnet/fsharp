@@ -24,18 +24,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     public class ProjectConfigProperties : 
          VSLangProj.ProjectConfigurationProperties
     {
-        #region fields
         private ProjectConfig projectConfig;
-        #endregion
 
-        #region ctors
         internal ProjectConfigProperties(ProjectConfig projectConfig)
         {
             this.projectConfig = projectConfig;
         }
-        #endregion
-
-        #region IProjectConfigProperties Members
 
         public virtual string OutputPath
         {
@@ -49,8 +43,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        #endregion
-        #region VSLangProj.ProjectConfigurationProperties
         public string __id
         {
             get { return UIThread.DoOnUIThread(() => projectConfig.ConfigName); }
@@ -336,7 +328,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return UIThread.DoOnUIThread(() => projectConfig.RemoteDebugMachine); }
             set { UIThread.DoOnUIThread(() => { projectConfig.RemoteDebugMachine = value; }); }
         }
-        #endregion
 
     }
 }

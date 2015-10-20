@@ -1,0 +1,16 @@
+build.ok
+test.ok
+test*.exe
+test*.pdb
+test*.dll
+failures.log
+
+lib*.dll
+lib*.pdb
+lib*.xml
+
+Library1.dll
+
+
+cd.tmp
+

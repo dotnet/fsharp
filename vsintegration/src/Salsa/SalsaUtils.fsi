@@ -25,10 +25,6 @@ module internal VsOpsUtils =
     val GetOutputWindowPaneLines          : VisualStudio -> string list
     val CloseSolution                     : OpenSolution -> unit
 
-    /// pass absolute filename
-    val AddTypeProviderApprovedForDevelopment : string -> unit
-    val ClearAllTypeProviderApprovals : unit -> unit
-
     val CreateProject                     : OpenSolution * string -> OpenProject
     /// Add a new file not in any particulare project.
     val NewFile                           : VisualStudio * string * string list -> File
