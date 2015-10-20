@@ -25,11 +25,11 @@ namespace Microsoft.FSharp.Collections
 
       let cast (e : IEnumerator) : IEnumerator<'T> = 
           { new IEnumerator<'T> with 
-                member x.Current = unbox e.Current
+                member x.Current = unbox<'T> e.Current
             interface IEnumerator with 
-                member x.Current = unbox  e.Current
+                member x.Current = unbox<'T> e.Current :> obj
                 member x.MoveNext() = e.MoveNext()
-                member x.Reset() = noReset();
+                member x.Reset() = noReset()
             interface System.IDisposable with 
                 member x.Dispose() = 
                     match e with 

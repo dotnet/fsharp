@@ -2411,7 +2411,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                       | _ -> false) ->
 
       let storage = StorageForValRef m vref eenv
-      begin match storage with   
+      match storage with   
       | Method (topValInfo,vref,mspec,_,_,_) ->
           let nowArgs,laterArgs = 
               let _,curriedArgInfos,_,_ = GetTopValTypeInFSharpForm cenv.g topValInfo vref.Type m
@@ -2472,251 +2472,50 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                   elif useICallVirt then I_callvirt (isTailCall, mspec, None) 
                   else I_call (isTailCall, mspec, None)
 
-          // An F# multi dimension array type "int32[,]" should normally map to the ILDASM type "int32[0...,0...]", just like C#.
-          //
-          // However, System.Reflection.Emit has a nasty bug that means it can't emit calls to C# generic methods involving multi-dimensional arrays
-          //    void M<T>(int32[,])
-          // because MakeGenericMethod on this method returns a handle that causes an invalid call to be emitted by the IL code generator for dynamic assemblies
-          // 
-          // We have to pay a price here, either:
-          //    -- always emit no bounds, i.e. the ILDASM type "int32[,]" (without lower bounds), and not be able to implement C# virtual slots involving multi-dimensional array types
-          //    -- always emit bounds, i.e. the ILDASM type "int32[0...,0...]" (without lower bounds), and not be able to call C# or F# generic code such as the Array2 module
-          //    -- emit no bounds within the signatures of F# generic methods
-          // We follow the the second one.  This bug was "fixed" for 4.0, but is still broken, since it no longer accounts for the case
-          // were you have no bounds.
-          //  
-          // The code below provides a workaround for fsi 2.0 - we'll grab a MethodRef via reflection, and then call it indirectly.
-          // We need to use reflection to get the MethodRef because ldtoken, ldftn etc. may leak typars into the IL stream, resulting in a bad PE image.  The indirect call
-          // is also necessary (as opposed to MethodBase::Invoke), because Invoke() requires an array of System.Type objects representing the method's argument types, and may
-          // provide another opportunity to leak "rogue" typars into the IL stream
-          
-          let emitReflectionCode = 
-              if cenv.g.indirectCallArrayMethods then 
-                  true
-              elif cenv.opts.ilxBackend <> IlxGenBackend.IlReflectBackend then 
-                  false
-              elif cenv.g.using40environment then 
-                  false
-              elif ilTyArgs.Length = 0 then 
-                  false
-              elif Microsoft.FSharp.Compiler.AbstractIL.IL.runningOnMono then 
-                  false
-              elif newobj then
-                  false
-              else
-                  // test if emitting the reflection code is appropriate
-                  let hasMDArrayReturnType = match mspec.FormalReturnType with | ILType.Array(shape,_) when shape.Rank > 1 -> true | _ -> false
-                  let hasMDArrayParameter  = mspec.FormalArgTypes |> ILList.exists (fun p -> match p with | ILType.Array(shape,_) when shape.Rank > 1 -> true | _ -> false)
-                  
-                  (hasMDArrayReturnType || hasMDArrayParameter)
-
-          // grab a scope ref for fsi,exe
-          let fsiScoRefOpt = 
-              if emitReflectionCode then 
-                  let assemblies = System.AppDomain.CurrentDomain.GetAssemblies()
-                  assemblies 
-                  |> Array.tryPick (fun a-> 
-                        if a.FullName.Contains("Fsi,") then
-                            Some (ILScopeRef.Assembly(ILAssemblyRef.FromAssemblyName (a.GetName()))) 
-                        else None )
-              else
-                  None                             
-
-          
-          if emitReflectionCode && fsiScoRefOpt.IsSome then 
-                                     
-              // System.Reflection.MethodInfo
-              let methodInfoTyRef = ILTypeRef.Create(cenv.g.ilg.traits.SystemReflectionScopeRef.Value,[],"System.Reflection.MethodInfo")
-              let methodInfoTySpec = ILTypeSpec.Create(methodInfoTyRef,emptyILGenericArgs)
-              let methodInfoTy = mkILBoxedType methodInfoTySpec
+          // ok, now we're ready to generate 
+          if isSuperInit || isSelfInit then 
+              CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType ]) [ mkLdarg0 ] ;
               
-              // System.Reflection.MethodBase
-              let methodBaseTyRef = ILTypeRef.Create(cenv.g.ilg.traits.SystemReflectionScopeRef.Value,[],"System.Reflection.MethodBase")
-              let methodBaseTySpec = ILTypeSpec.Create(methodBaseTyRef,emptyILGenericArgs)
-              let methodBaseTy = mkILBoxedType methodBaseTySpec
+          GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs;
               
-              // System.RuntimeMethodHandle
-              let runtimeMethodHandleTyRef = ILTypeRef.Create(cenv.g.ilg.traits.ScopeRef,[],"System.RuntimeMethodHandle")
-              let runtimeMethodHandleTySpec = ILTypeSpec.Create(runtimeMethodHandleTyRef,emptyILGenericArgs)
-              let runtimeMethodHandleTy = ILType.Value runtimeMethodHandleTySpec
-              
-              // Microsoft.FSharp.Compiler.Interactive.Utils
-              let methodFinderTyRef = ILTypeRef.Create(fsiScoRefOpt.Value,[],"Microsoft.FSharp.Compiler.Interactive.Utils")
-              let methodFinderTySpec = ILTypeSpec.Create(methodFinderTyRef,emptyILGenericArgs)
-              let methodFinderTy = mkILBoxedType methodFinderTySpec            
-              
-              let typeArrayTy = mkILArr1DTy cenv.g.ilg.typ_Type          
-              let stringArrayTy = mkILArr1DTy cenv.g.ilg.typ_String
+          // Generate laterArgs (for effects) and save
+          LocalScope "callstack" cgbuf (fun scopeMarks ->
+            let whereSaved,eenv = 
+                (eenv,laterArgs) ||> List.mapFold (fun eenv laterArg -> 
+                    // Only save arguments that have effects
+                    if Optimizer.ExprHasEffect cenv.g laterArg then 
+                        let ilTy = laterArg |> tyOfExpr cenv.g |> GenType cenv.amap m cenv.g eenv.tyenv
+                        let loc,eenv = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("arg",m), ilTy) scopeMarks
+                        GenExpr cenv cgbuf eenv SPSuppress laterArg Continue
+                        EmitSetLocal cgbuf loc
+                        Choice1Of2 (ilTy,loc),eenv
+                    else
+                        Choice2Of2 laterArg, eenv) 
 
-              // System.Reflection.MethodInfo::MakeGenericMethod
-              let makeGenericMethodRef = mkILMethRef(methodInfoTyRef,ILCallingConv.Instance,"MakeGenericMethod",0,[typeArrayTy],methodInfoTy)
-              let makeGenericMethodSpec = ILMethodSpec.Create(methodInfoTy,makeGenericMethodRef,emptyILGenericArgs)
-              
-              // System.Reflection.MethodBase::getMethodHandle
-              let getMethodHandleRef = mkILMethRef(methodBaseTyRef, ILCallingConv.Instance,"get_MethodHandle",0,[],runtimeMethodHandleTy)
-              let getMethodHandleSpec = ILMethodSpec.Create(methodBaseTy,getMethodHandleRef,emptyILGenericArgs)
-              
-              // Microsoft.FSharp.MethodFinder::findMethod
-              let findMethodRef = mkILMethRef(methodFinderTyRef, ILCallingConv.Static,"findMethod",0,[cenv.g.ilg.typ_Type; cenv.g.ilg.typ_String; cenv.g.ilg.typ_Int32; stringArrayTy; cenv.g.ilg.typ_String],methodInfoTy)
-              let findMethodSpec = ILMethodSpec.Create(methodFinderTy,findMethodRef,emptyILGenericArgs)
-              
-              // System.RuntimeMethodHandle::GetFunctionPointer
-              // Some framework profiles don't expose RuntimeMethodHandle::GetFunctionPointer. However this code seems to be used only from FSI and FSI always use desktop version of framework - should be OK
-              let getFunctionPointerRef = mkILMethRef(runtimeMethodHandleTyRef,ILCallingConv.Instance,"GetFunctionPointer",0,[],cenv.g.ilg.typ_IntPtr)
-              let getFunctionPointerSpec = ILMethodSpec.Create(runtimeMethodHandleTy,getFunctionPointerRef,emptyILGenericArgs)              
+            let nargs = mspec.FormalArgTypes.Length
+            CG.EmitInstr cgbuf (pop (nargs + (if mspec.CallingConv.IsStatic || newobj then 0 else 1)))
+                                    (if mustGenerateUnitAfterCall || isSuperInit || isSelfInit then Push0 else (Push [(GenType cenv.amap m cenv.g eenv.tyenv actualRetTy)])) callInstr;
 
-              let typeofGenericArgs = ilTyArgs |> List.collect (fun ilt -> [mkTypeOfExpr cenv m ilt])              
-              let getNameExprs = mspec.FormalArgTypes |> ILList.toList |> List.map (fun t -> mkGetNameExpr cenv t m)
-              
-              let ilActualRetTy = GenType cenv.amap m cenv.g eenv.tyenv actualRetTy
-              let objargs = if vref.NumObjArgs = 1 then List.tail nowArgs else nowArgs
-              let ilActualArgs = objargs |> List.map (tyOfExpr cenv.g) |> List.filter (fun ty -> not (isUnitTy cenv.g ty)) |> List.map (GenType cenv.amap m cenv.g eenv.tyenv)
+            // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation.  It will be popped again in most cases 
+            if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] ;
 
-              LocalScope "callstack" cgbuf 
-                (fun scopeMarks ->
-              
-                  let stack,eenvinner = EmitSaveStack cenv cgbuf eenv m scopeMarks
-                  let eenvinner = {eenvinner with withinSEH = true}
-                  let savedVal,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("res",m),ilActualRetTy) scopeMarks
-                  let startTryMark = CG.GenerateMark cgbuf "startTryMark"
-                  let endTryMark = CG.GenerateDelayMark cgbuf "endTryMark"
-                  let afterHandler = CG.GenerateDelayMark cgbuf "afterHandler"
-                  let localMethodHandle,eenvinner = AllocLocal cenv cgbuf eenvinner true (ilxgenGlobalNng.FreshCompilerGeneratedName ("handle",m),runtimeMethodHandleTy) scopeMarks       
-                  
-                  // push args
-                  GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenvinner m vref.NumObjArgs curriedArgInfos nowArgs
-                  
-                  if isSuperInit || isSelfInit then 
-                      CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] 
-                    
-                  // set up indirect call
-                  // push the method's enclosing type on the top of the stack
-                  GenExpr cenv cgbuf eenvinner SPSuppress (mkTypeOfExpr cenv m mspec.EnclosingType) Continue       
+            // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
+            // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
+            if cenv.opts.generateDebugSymbols && mustGenerateUnitAfterCall && (isTailCall = Normalcall) then 
+                CG.EmitInstrs cgbuf (pop 0) Push0  [ AI_nop ]
 
-                  // push the name of the method
-                  CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_String]) (I_ldstr mspec.Name)
+            if isNil laterArgs then 
+                assert isNil whereSaved 
+                // Generate the "unit" value if necessary 
+                CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel 
+            else 
+                //printfn "%d EXTRA ARGS IN TOP APP at %s" laterArgs.Length (stringOfRange m)
+                whereSaved |>  List.iter (function 
+                    | Choice1Of2 (ilTy,loc) -> EmitGetLocal cgbuf ilTy loc 
+                    | Choice2Of2 expr -> GenExpr cenv cgbuf eenv SPSuppress expr Continue)
+                GenIndirectCall cenv cgbuf eenv (actualRetTy,[],laterArgs,m) sequel)
                   
-                  // push the method's arity
-                  CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) (mkLdcInt32 mspec.FormalArgTypes.Length)
-                  
-                  // push the names of the method's arg tys
-                  GenNewArraySimple cenv cgbuf eenvinner (getNameExprs,cenv.g.string_ty,m) Continue
-                  
-                  // push the name of the return type
-                  CG.EmitInstr cgbuf (pop 0) (Push [cenv.g.ilg.typ_String]) (I_ldstr mspec.FormalReturnType.BasicQualifiedName)
-                  
-                  // call Microsoft.FSharp.Core.MethodFinder.findMethod
-                  CG.EmitInstr cgbuf (pop 5) (Push [methodInfoTy]) (I_call (Normalcall,findMethodSpec,None))
-                  
-                  // create the generic method, if necessary
-                  if mspec.GenericArgs.Length > 0 then
-                      // create an array of System.Type objects - cenv.g.system_Type_typ
-                      // and assign the type arg types to the array                      
-                      GenNewArraySimple cenv cgbuf eenvinner (typeofGenericArgs,cenv.g.system_Type_typ,m) Continue
-                        
-                      // Pop the Type list, push the resulting MethodInfo object
-                      CG.EmitInstr cgbuf (pop 2) (Push [methodInfoTy]) (I_callvirt (Normalcall, makeGenericMethodSpec, None));                      
-                  
-                  // call System.Reflection.MethodBase::MethodHandle
-                  CG.EmitInstr cgbuf (pop 1) (Push [runtimeMethodHandleTy]) (I_callvirt (Normalcall,getMethodHandleSpec,None))
-                  
-                  EmitSetLocal cgbuf localMethodHandle
-                  
-                  CG.EmitInstr cgbuf (pop 0) (Push [runtimeMethodHandleTy]) (I_ldloca (uint16 localMethodHandle)) 
-                  
-                  // get the function pointer
-                  CG.EmitInstr cgbuf (pop 1) (Push [cenv.g.ilg.typ_IntPtr]) (I_call (Normalcall,getFunctionPointerSpec,None))
-                  
-                  // make the actual indirect call
-                  let nargs = mspec.FormalArgTypes.Length
-                  // +1 Pop for the function pointer
-                  CG.EmitInstr cgbuf (pop (nargs + 1 + (if mspec.CallingConv.IsStatic || newobj then 0 else 1)))
-                                       (if mustGenerateUnitAfterCall || isSuperInit || isSelfInit then Push0 else (Push [ilActualRetTy])) (I_calli(Normalcall,{mspec.MethodRef.CallingSignature with ReturnType=ilActualRetTy ; ArgTypes=mkILTypes ilActualArgs},None));
-
-                  // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation.  It will be popped again in most cases 
-                  if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] ;
-                  
-                  CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall (LeaveHandler (false,savedVal,afterHandler))
-                                                     
-                  // catch block
-                  // On 2.0 x64, Reflection.Emit has another bug that if you don't wrap your indirect call in a try block, you'll
-                  // get "System.InvalidProgramException: JIT Compiler encountered an internal limitation."
-                  // The code below inserts a dummy try block that just rethrows the exception 
-                  CG.SetMarkToHere cgbuf endTryMark;
-                  let tryMarks = (startTryMark.CodeLabel, endTryMark.CodeLabel)
-                  
-                  let seh =            
-                      let startOfHandler = CG.GenerateMark cgbuf "startOfHandler" 
-                      begin
-
-                           CG.SetStack cgbuf [cenv.g.ilg.typ_Exception]
-                           
-                           // rethrow the inner exception
-                           CG.EmitInstr cgbuf (pop 1) Push0 I_throw
-                      end;
-                      let endOfHandler = CG.GenerateMark cgbuf "endOfHandler"
-                      let handlerMarks = (startOfHandler.CodeLabel, endOfHandler.CodeLabel)
-                      ILExceptionClause.TypeCatch(cenv.g.ilg.typ_Exception, handlerMarks)
-
-                  cgbuf.EmitExceptionClause
-                    { exnClauses = [ seh ];
-                      exnRange= tryMarks } ;
-                  CG.SetMarkToHere cgbuf afterHandler;
-                  CG.SetStack cgbuf [];
-                  cgbuf.EmitStartOfHiddenCode();
-
-                  // Restore the stack and load the result
-                  EmitRestoreStack cgbuf stack;
-
-                  EmitGetLocal cgbuf ilActualRetTy savedVal;
-                  GenSequel cenv eenv.cloc cgbuf sequel) // end LocalScope
-          else   begin
-              // ok, now we're ready to generate 
-              if isSuperInit || isSelfInit then 
-                  CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType ]) [ mkLdarg0 ] ;
-              
-              GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs;
-              
-              // Generate laterArgs (for effects) and save
-              LocalScope "callstack" cgbuf (fun scopeMarks ->
-                let whereSaved,eenv = 
-                    (eenv,laterArgs) ||> List.mapFold (fun eenv laterArg -> 
-                        // Only save arguments that have effects
-                        if Optimizer.ExprHasEffect cenv.g laterArg then 
-                            let ilTy = laterArg |> tyOfExpr cenv.g |> GenType cenv.amap m cenv.g eenv.tyenv
-                            let loc,eenv = AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("arg",m), ilTy) scopeMarks
-                            GenExpr cenv cgbuf eenv SPSuppress laterArg Continue
-                            EmitSetLocal cgbuf loc
-                            Choice1Of2 (ilTy,loc),eenv
-                        else
-                            Choice2Of2 laterArg, eenv) 
-
-                let nargs = mspec.FormalArgTypes.Length
-                CG.EmitInstr cgbuf (pop (nargs + (if mspec.CallingConv.IsStatic || newobj then 0 else 1)))
-                                     (if mustGenerateUnitAfterCall || isSuperInit || isSelfInit then Push0 else (Push [(GenType cenv.amap m cenv.g eenv.tyenv actualRetTy)])) callInstr;
-
-                // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation.  It will be popped again in most cases 
-                if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] ;
-
-                // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
-                // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
-                if cenv.opts.generateDebugSymbols && mustGenerateUnitAfterCall && (isTailCall = Normalcall) then 
-                    CG.EmitInstrs cgbuf (pop 0) Push0  [ AI_nop ] ;
-
-                if isNil laterArgs then 
-                    assert isNil whereSaved 
-                    // Generate the "unit" value if necessary 
-                    CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel 
-                else 
-                    //printfn "%d EXTRA ARGS IN TOP APP at %s" laterArgs.Length (stringOfRange m)
-                    whereSaved |>  List.iter (function 
-                        | Choice1Of2 (ilTy,loc) -> EmitGetLocal cgbuf ilTy loc 
-                        | Choice2Of2 expr -> GenExpr cenv cgbuf eenv SPSuppress expr Continue)
-                    GenIndirectCall cenv cgbuf eenv (actualRetTy,[],laterArgs,m) sequel)
-                  
-          end                  
       | _ -> failwith "??"
-      end
         
     // This case is for getting/calling a value, when we can't call it directly. 
     // However, we know the type instantiation for the value.  

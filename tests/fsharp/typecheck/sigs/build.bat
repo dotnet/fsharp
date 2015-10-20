@@ -5,6 +5,9 @@ setlocal
 REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
 call %~d0%~p0..\..\..\config.bat
 
+call ..\..\single-neg-test.bat neg94
+@if ERRORLEVEL 1 goto Error
+
 "%FSC%" %fsc_flags% --target:exe -o:pos22.exe  pos22.fs 
 @if ERRORLEVEL 1 goto Error
 
@@ -22,6 +25,7 @@ call ..\..\single-neg-test.bat neg93
 
 call ..\..\single-neg-test.bat neg92
 @if ERRORLEVEL 1 goto Error
+
 
 call ..\..\single-neg-test.bat neg91
 @if ERRORLEVEL 1 goto Error
@@ -337,7 +341,6 @@ call ..\..\single-neg-test.bat neg42
 "%PEVERIFY%" pos03a.dll
 @if ERRORLEVEL 1 goto Error
 
-
 call ..\..\single-neg-test.bat neg34
 @if ERRORLEVEL 1 goto Error
 
@@ -534,6 +537,8 @@ call ..\..\single-neg-test.bat neg35
 
 "%FSC%" %fsc_flags% -a -o:pos05.dll  pos05.fs
 @if ERRORLEVEL 1 goto Error
+
+REM --------Exit points------------------------
 
 :Ok
 echo Built fsharp %~f0 ok.

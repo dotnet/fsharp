@@ -1,10 +1,17 @@
 # F# Compiler, Core Library and Visual F# Tools Open Contribution Repository
 
 This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
+To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 
-To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org).
+**Compiler Technical Documentation**
 
-To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
+The primary technical documents for the F# compiler code are
+
+* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
+
+* [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
+  maintained by contributors to this repository.  Please read
+  and contribute to that guide.
 
 **License**
 > Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A copy of the license can be found in the [License.txt](License.txt) file at the root of this distribution.
@@ -15,7 +22,7 @@ To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 ## 0.  A Shortcut to Build and Smoke Test
 
 You can build a subset of functionality (including bootstrapped compiler and library) and run a very 
-small number of 'smoke' tests using the script used by continuous integration:
+small number of 'smoke' tests using the script used by continuous integration on Windows:
 
     .\appveyor-build.cmd
 
@@ -132,3 +139,8 @@ Restart Visual Studio, it should now be running your freshly-built Visual F# IDE
  - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+
+### Further technical resources
+
+The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
+
