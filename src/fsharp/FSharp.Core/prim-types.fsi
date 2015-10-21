@@ -764,6 +764,24 @@ namespace Microsoft.FSharp.Core
     type int64<[<Measure>] 'Measure> = int64
 
 
+    /// <summary>For compiler use only</summary>
+    module SharedResources =
+
+        /// <summary>The value of the resource localized for the caller's current UI culture</summary>
+        /// <remarks>Dont call this method, should be used only by inlined code outsite FSharp.Core assembly.
+        /// use <see cref="Microsoft.FSharp.Core.Resources"/> functions instead</remarks>
+        [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+        val GetString : string -> string
+
+    /// <summary>For compiler use only</summary>
+    module internal Resources =
+
+        val inline addressOpNotFirstClass : unit -> string
+        val inline noNegateMinValue : unit -> string
+        val inline inputSequenceEmpty : unit -> string
+        val inline inputArrayEmpty : unit -> string
+        val inline inputMustBeNonNegative : unit -> string
+
     /// <summary>Language primitives associated with the F# language</summary>
     module LanguagePrimitives =
 
@@ -1015,6 +1033,10 @@ namespace Microsoft.FSharp.Core
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
 
         /// <summary>For compiler use only</summary>
+        /// <remarks>
+        /// Deprecated, exists for backward compatibility
+        /// https://github.com/Microsoft/visualfsharp/issues/486
+        /// </remarks>
         module (* internal *) ErrorStrings = 
 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
