@@ -33,7 +33,7 @@ if '%VisualStudioVersion%' == '14.0' (
 )
 
 if '%VisualStudioVersion%' == '12.0' (
-	if exist "%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v3.1\fsi.exe" set _fsiexe="%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v3.1\fsi.exe"
+	if exist "%ProgramFiles(x86)%\Microsoft SDKs\F#\4.0\Framework\v3.1\fsi.exe" set _fsiexe="%ProgramFiles(x86)%\Microsoft SDKs\F#\3.1\Framework\v4.0\fsi.exe"
 )
 
 if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
