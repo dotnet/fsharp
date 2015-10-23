@@ -198,6 +198,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_CONSOLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_LOGGING_GUI</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_WIN_REGISTRY</DefineConstants>
     <TargetFrameworkProfile>profile7</TargetFrameworkProfile>                            <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
   </PropertyGroup>
@@ -761,7 +762,7 @@
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
 
-    <DnxVersion Condition="'$(OsEnvironment)'!='Unix'">1.0.0-beta6-12032</DnxVersion>
+    <DnxVersion Condition="'$(OsEnvironment)'!='Unix'">1.0.0-beta7</DnxVersion>
     <DnxVersion Condition="'$(OsEnvironment)'=='Unix'">1.0.0-beta5-12077</DnxVersion>
     <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'!='Unix'">dnx-coreclr-win-x86.$(DnxVersion)</DnxPackageName>
     <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'=='Unix'">dnx-mono.$(DnxVersion)</DnxPackageName>
