@@ -21,7 +21,7 @@ let tryHead (source : seq<_>) =
 let Arguments = fsi.CommandLineArgs |> Seq.skip 1
 
 let GetArgumentFromCommandLine switchName defaultValue = 
-    match Arguments |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> Seq.tryHead with
+    match Arguments |> Seq.filter(fun t -> t.StartsWith(switchName)) |> Seq.map(fun t -> t.Remove(0, switchName.Length).Trim()) |> tryHead with
     | Some(file) -> if file.Length <> 0 then file else defaultValue
     | _ -> defaultValue
 
