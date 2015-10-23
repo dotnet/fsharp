@@ -7,6 +7,17 @@ open FSharp.Data.JsonExtensions
 
 type AssemblyReferenceType = | forBuild = 0 | forExecute = 1
 
+// Try head was introduced in F# 4.0
+let tryHead (source : seq<_>) =
+    let checkNonNull argName arg = 
+        match box arg with 
+        | null -> nullArg argName 
+        | _ -> ()
+    checkNonNull "source" source
+    use e = source.GetEnumerator() 
+    if (e.MoveNext()) then Some e.Current
+    else None
+
 let Arguments = fsi.CommandLineArgs |> Seq.skip 1
 
 let GetArgumentFromCommandLine switchName defaultValue = 
