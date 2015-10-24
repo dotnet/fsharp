@@ -4,7 +4,8 @@
    <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
       <PropertyGroup>
-         <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+         <SkipSigning>false</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+         <UseOpenSourceSign>true</UseOpenSourceSign>
       </PropertyGroup>
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
