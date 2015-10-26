@@ -1,7 +1,9 @@
+
 module UpdateCmd
 
 open System.IO
 open NUnit.Framework
+open Microsoft.Win32
 
 open PlatformHelpers
 open FSharpTestSuiteTypes
@@ -17,6 +19,8 @@ type Configuration =
 type updateCmdArgs = 
     { Configuration : Configuration
       Ngen : bool }
+
+let private regQuery = WindowsPlatform.regQuery
 
 let private checkResult result =
     match result with
@@ -57,12 +61,33 @@ let updateCmd envVars args = processor {
 
     let! windir = env "windir"
 
-    // set GACUTIL="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\gacutil.exe"
-    let GACUTIL = x86_ProgramFiles/"Microsoft SDKs"/"Windows"/"v8.0A"/"bin"/"NETFX 4.0 Tools"/"gacutil.exe"
-    // set SN32="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\sn.exe"
-    let SN32 = x86_ProgramFiles/"Microsoft SDKs"/"Windows"/"v8.0A"/"bin"/"NETFX 4.0 Tools"/"sn.exe"
-    // set SN64="%X86_PROGRAMFILES%\Microsoft SDKs\Windows\v8.0A\bin\NETFX 4.0 Tools\x64\sn.exe"
-    let SN64 = x86_ProgramFiles/"Microsoft SDKs"/"Windows"/"v8.0A"/"bin"/"NETFX 4.0 Tools"/"x64"/"sn.exe"
+    let REGEXE32BIT path value =
+        let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
+        match hklm32 |> regQuery path value with
+        | Some (:? string as d) -> Some d
+        | Some _ | None -> None
+
+    let allWINSDKNETFXTOOLS = seq {
+    //                             FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder"
+    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder"
+    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" "InstallationFolder"
+    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" "InstallationFolder"
+    // if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+        yield REGEXE32BIT @"Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" "InstallationFolder"
+        }
+
+    let WINSDKNETFXTOOLS = match allWINSDKNETFXTOOLS |> Seq.tryPick id with Some sdk -> sdk | None -> ""
+
+    // set GACUTIL="%WINSDKNETFXTOOLS%gacutil.exe"
+    let GACUTIL = WINSDKNETFXTOOLS/"gacutil.exe"
+    // set SN32="%WINSDKNETFXTOOLS%sn.exe"
+    let SN32 = WINSDKNETFXTOOLS/"sn.exe"
+    // set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
+    let SN64 = WINSDKNETFXTOOLS/"x64"/"sn.exe"
     // set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
     let NGEN32 = windir/"Microsoft.NET"/"Framework"/"v4.0.30319"/"ngen.exe"
     // set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe

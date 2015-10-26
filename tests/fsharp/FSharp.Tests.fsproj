@@ -633,13 +633,6 @@
     <None Include="regression\86\build.bat" />
     <None Include="regression\86\run.bat" />
     <None Include="regression\86\test.ml" />
-    <None Include="regression\ml-1\build.bat" />
-    <None Include="regression\ml-1\chan.fs" />
-    <None Include="regression\ml-1\chan.fsi" />
-    <None Include="regression\ml-1\JSTM.dll" />
-    <None Include="regression\ml-1\main.fs" />
-    <None Include="regression\ml-1\ml2.exe" />
-    <None Include="regression\ml-1\run.bat" />
     <None Include="regression\tuple-bug-1\build.bat" />
     <None Include="regression\tuple-bug-1\run.bat" />
     <None Include="regression\tuple-bug-1\test.ml" />

@@ -70,39 +70,59 @@ module Sigs =
         // call ..\..\single-neg-test.bat neg91
         do! singleNegTest "neg91"
 
+        // "%FSC%" %fsc_flags% --target:exe -o:pos20.exe  pos20.fs 
+        do! fsc "%s --target:exe -o:pos20.exe" fsc_flags ["pos20.fs"]
+        // "%PEVERIFY%" pos20.exe
+        do! peverify "pos20.exe"
+        // pos20.exe
+        do! exec ("."/"pos20.exe") ""
+
+        // "%FSC%" %fsc_flags% --target:exe -o:pos19.exe  pos19.fs 
+        do! fsc "%s --target:exe -o:pos19.exe" fsc_flags ["pos19.fs"]
+        // "%PEVERIFY%" pos19.exe
+        do! peverify "pos19.exe"
+        // pos19.exe
+        do! exec ("."/"pos19.exe") ""
+
+        // "%FSC%" %fsc_flags% --target:exe -o:pos18.exe  pos18.fs 
+        do! fsc "%s --target:exe -o:pos18.exe" fsc_flags ["pos18.fs"]
+        // "%PEVERIFY%" pos18.exe
+        do! peverify "pos18.exe"
+        // pos18.exe
+        do! exec ("."/"pos18.exe") ""
+
         // "%FSC%" %fsc_flags% --target:exe -o:pos16.exe  pos16.fs 
         do! fsc "%s --target:exe -o:pos16.exe" fsc_flags ["pos16.fs"]
-
         // "%PEVERIFY%" pos16.exe
         do! peverify "pos16.exe"
-
         // pos16.exe
         do! exec ("."/"pos16.exe") ""
 
+        // "%FSC%" %fsc_flags% --target:exe -o:pos17.exe  pos17.fs 
+        do! fsc "%s --target:exe -o:pos17.exe" fsc_flags ["pos17.fs"]
+        // "%PEVERIFY%" pos17.exe
+        do! peverify "pos17.exe"
+        // pos17.exe
+        do! exec ("."/"pos17.exe") ""
+
         // "%FSC%" %fsc_flags% --target:exe -o:pos15.exe  pos15.fs 
         do! fsc "%s --target:exe -o:pos15.exe" fsc_flags ["pos15.fs"]
-
         // "%PEVERIFY%" pos15.exe
         do! peverify "pos15.exe"
-
         // pos15.exe
         do! exec ("."/"pos15.exe") ""
 
         // "%FSC%" %fsc_flags% --target:exe -o:pos14.exe  pos14.fs 
         do! fsc "%s --target:exe -o:pos14.exe" fsc_flags ["pos14.fs"]
-
         // "%PEVERIFY%" pos14.exe
         do! peverify "pos14.exe"
-
         // pos14.exe
         do! exec ("."/"pos14.exe") ""
 
         // "%FSC%" %fsc_flags% --target:exe -o:pos13.exe  pos13.fs
         do! fsc "%s --target:exe -o:pos13.exe" fsc_flags ["pos13.fs"]
-
         // "%PEVERIFY%" pos13.exe
         do! peverify "pos13.exe"
-
         // pos13.exe
         do! exec ("."/"pos13.exe") ""
 

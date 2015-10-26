@@ -45,6 +45,7 @@ type TestConfig =
       FSCOREDLLNETCORE78PATH : string
       FSCOREDLLNETCORE259PATH : string
       FSDATATPPATH : string
+      FSCOREDLLVPREVPATH : string
       FSDIFF : string
       FSI : string
       fsi_flags : string

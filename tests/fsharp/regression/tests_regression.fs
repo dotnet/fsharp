@@ -248,67 +248,6 @@ module ``86`` =
         })
 
 
-module ``ML-1`` = 
-
-    let build cfg dir = processor {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
-
-        // "%FSC%" %fsc_flags% --optimize -r:jstm.dll -a chan.fsi chan.fs -o:dbwlib2--optimize.dll
-        do! fsc "%s --optimize -r:jstm.dll -a -o:dbwlib2--optimize.dll" cfg.fsc_flags ["chan.fsi"; "chan.fs"]
-   
-        // "%PEVERIFY%" dbwlib2--optimize.dll
-        do! peverify "dbwlib2--optimize.dll"
-   
-        // "%FSC%" %fsc_flags% --optimize -r:jstm.dll -r:dbwlib2--optimize.dll main.fs -o:main--optimize.exe
-        do! fsc "%s --optimize -r:jstm.dll -r:dbwlib2--optimize.dll -o:main--optimize.exe" cfg.fsc_flags ["main.fs"]
-   
-        // "%PEVERIFY%" dbwlib2--optimize.dll
-        do! peverify "dbwlib2--optimize.dll"
-   
-        // "%FSC%" %fsc_flags% -r:jstm.dll -a -o:dbwlib2.dll  chan.fsi chan.fs
-        do! fsc "%s -r:jstm.dll -a -o:dbwlib2.dll" cfg.fsc_flags ["chan.fsi"; "chan.fs"]
-   
-        // "%PEVERIFY%" dbwlib2.dll
-        do! peverify "dbwlib2.dll"
-    
-        // "%FSC%" %fsc_flags% -r:jstm.dll -r:dbwlib2.dll -o:main.exe main.fs
-        do! fsc "%s -r:jstm.dll -r:dbwlib2.dll -o:main.exe" cfg.fsc_flags ["main.fs"]
-   
-        // "%PEVERIFY%" main.exe
-        do! peverify "main.exe"
-
-        }
-
-    let run cfg dir = processor {
-
-        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-
-        // REM only a valid test if generics supported
-
-        // %CLIX% .\main--optimize.exe
-        do! exec ("."/"main--optimize.exe") ""
-
-        // %CLIX% .\main.exe
-        do! exec ("."/"main.exe") ""
-        }
-
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "ml-1" ]
-
-    [<Test; TestCaseSource("testData")>]
-    let ``ml-1`` () = check (processor {
-        let { Directory = dir; Config = cfg } = testContext ()
-
-        do! build cfg dir
-
-        do! run cfg dir
-                
-        })
-
-
-
 module ``Tuple-bug-1`` = 
     let permutations = 
         FSharpTestSuite.allPermutation

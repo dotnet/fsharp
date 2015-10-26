@@ -19,15 +19,15 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     // )
     ignore "already checked"
 
-    let fsdiff a = 
-        let exec p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None } p >> checkResult
-        Commands.fsdiff exec cfg.FSDIFF true a
+    let exec p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None } p >> checkResult
+    let fsdiff a = Commands.fsdiff exec cfg.FSDIFF true a
     let envOrFail key =
         cfg.EnvironmentVariables 
         |> Map.tryFind key 
         |> function Some x -> (fun () -> Success x) | None -> NUnitConf.genericError (sprintf "environment variable '%s' required " key)
     let fullpath = Commands.getfullpath workDir
     let fileExists = fullpath >> Commands.fileExists workDir >> Option.isSome
+    let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
     let fsc_flags = cfg.fsc_flags
 
     // if not exist "%FSC%" (
@@ -81,6 +81,13 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
         // if exist "helloWorldProvider.dll" (set sources=%sources% -r:helloWorldProvider.dll)
         if fileExists "helloWorldProvider.dll"
         then yield "-r:helloWorldProvider.dll"
+
+        // if exist "%testname%-pre.fs" (
+        //     set sources=%sources% -r:%testname%-pre.dll
+        // )
+        if fileExists (testname + "-pre.fs")
+        then yield (sprintf "-r:%s-pre.dll" testname)
+
         ]
 
     // REM check negative tests for bootstrapped fsc.exe due to line-ending differences
@@ -88,6 +95,17 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     do! if cfg.FSC.Contains("fscp")
         then NUnitConf.skip "bootstrapped fsc.exe due to line-ending differences"
         else Success
+
+    // if exist "%testname%-pre.fs" (
+    do! if fileExists (testname + "-pre.fs")
+    //     "%FSC%" %fsc_flags% -a -o:%testname%-pre.dll  "%testname%-pre.fs" 
+        then fsc "%s -a -o:%s-pre.dll" fsc_flags testname [testname + "-pre.fs"] 
+        else Success ()
+    //     @if ERRORLEVEL 1 (
+    //         set ERRORMSG=%ERRORMSG% FSC failed for precursor library code for  %sources%;
+    //         goto SetError
+    // 	)
+    // )
 
     // echo Negative typechecker testing: %testname%
     log "Negative typechecker testing: %s" testname

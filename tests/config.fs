@@ -20,7 +20,8 @@ type private FSLibPaths =
       FSCOREDLLNETCOREPATH : string
       FSCOREDLLNETCORE78PATH : string
       FSCOREDLLNETCORE259PATH : string
-      FSDATATPPATH : string }
+      FSDATATPPATH : string
+      FSCOREDLLVPREVPATH : string }
 
 
 let private checkResult result = 
@@ -46,20 +47,22 @@ let private GetFSLibPaths env osArch fscBinPath =
     let X86_PROGRAMFILES = WindowsPlatform.x86ProgramFilesDirectory env osArch
 
     // REM == Default VS install locations
-    // set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0
-    let mutable FSCOREDLLPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.3.1.0"
+    // set FSCOREDLLPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.0.0
+    let mutable FSCOREDLLPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.4.0.0"
     // set FSCOREDLL20PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v2.0\2.3.0.0
     let mutable FSCOREDLL20PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v2.0"/"2.3.0.0"
-    // set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\2.3.5.1
-    let mutable FSCOREDLLPORTABLEPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETPortable"/"2.3.5.1"
-    // set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.3.1.0
-    let mutable FSCOREDLLNETCOREPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.3.1.0"
-    // set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.3.1
-    let mutable FSCOREDLLNETCORE78PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.78.3.1"
-    // set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.3.1
-    let mutable FSCOREDLLNETCORE259PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.259.3.1"
+    // set FSCOREDLLPORTABLEPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.4.0
+    let mutable FSCOREDLLPORTABLEPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETPortable"/"3.47.4.0"
+    // set FSCOREDLLNETCOREPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.4.0
+    let mutable FSCOREDLLNETCOREPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.7.4.0"
+    // set FSCOREDLLNETCORE78PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.4.0
+    let mutable FSCOREDLLNETCORE78PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.78.4.0"
+    // set FSCOREDLLNETCORE259PATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.4.0
+    let mutable FSCOREDLLNETCORE259PATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETCore"/"3.259.4.0"
     // set FSDATATPPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers
-    let mutable FSDATATPPATH =  X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.3.0.0"/"Type Providers"
+    let mutable FSDATATPPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.3.0.0"/"Type Providers"
+    // set FSCOREDLLVPREVPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0
+    let mutable FSCOREDLLVPREVPATH = X86_PROGRAMFILES/"Reference Assemblies"/"Microsoft"/"FSharp"/".NETFramework"/"v4.0"/"4.3.1.0"
 
     // REM == Check if using open build instead
 
@@ -112,6 +115,8 @@ let private GetFSLibPaths env osArch fscBinPath =
     FSCOREDLLNETCORE259PATH <- FSCOREDLLNETCORE259PATH/"FSharp.Core.dll"
     // set FSDATATPPATH=%FSDATATPPATH%\FSharp.Data.TypeProviders.dll
     FSDATATPPATH <- FSDATATPPATH/"FSharp.Data.TypeProviders.dll"
+    // set FSCOREDLLVPREVPATH=%FSCOREDLLVPREVPATH%\FSharp.Core.dll
+    FSCOREDLLVPREVPATH <- FSCOREDLLVPREVPATH/"FSharp.Core.dll"
 
     X86_PROGRAMFILES, {
         FSCOREDLLPATH = FSCOREDLLPATH;
@@ -120,7 +125,8 @@ let private GetFSLibPaths env osArch fscBinPath =
         FSCOREDLLNETCOREPATH = FSCOREDLLNETCOREPATH;
         FSCOREDLLNETCORE78PATH = FSCOREDLLNETCORE78PATH;
         FSCOREDLLNETCORE259PATH = FSCOREDLLNETCORE259PATH;
-        FSDATATPPATH = FSDATATPPATH }
+        FSDATATPPATH = FSDATATPPATH;
+        FSCOREDLLVPREVPATH = FSCOREDLLVPREVPATH }
 
 // REM ===
 // REM === Find path to FSC/FSI looking up the registry
@@ -130,11 +136,11 @@ let private GetFSLibPaths env osArch fscBinPath =
 // REM === Works on 32bit and 64 bit, no matter what cmd prompt it is invoked from
 // REM === 
 let private SetFSCBinPath45 () =
-    // FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\3.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
-    // FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\3.1\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
+    // FOR /F "tokens=1-2*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%c
+    // FOR /F "tokens=1-3*" %%a IN ('reg query "%REG_SOFTWARE%\Microsoft\FSharp\4.0\Runtime\v4.0" /ve') DO set FSCBinPath=%%d
     // IF EXIST "%FSCBinPath%" goto :EOF
     let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-    match hklm32 |> regQuery @"SOFTWARE\Microsoft\FSharp\3.1\Runtime\v4.0" "" with
+    match hklm32 |> regQuery @"SOFTWARE\Microsoft\FSharp\4.0\Runtime\v4.0" "" with
     | Some (:? string as d) when directoryExists d -> Some d
     | Some _ | None -> None
 
@@ -143,9 +149,9 @@ let private attendedLog envVars x86_ProgramFiles corDir corDir40 =
         // rem first see if we have got msbuild installed
         let mutable MSBuildToolsPath = envVars |> Map.tryFind "MSBuildToolsPath"
 
-        // if exist "%X86_PROGRAMFILES%\MSBuild\12.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\12.0\Bin\
-        if x86_ProgramFiles/"MSBuild"/"12.0"/"Bin"/"MSBuild.exe" |> fileExists
-        then  MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"12.0"/"Bin" |> Commands.pathAddBackslash)
+        // if exist "%X86_PROGRAMFILES%\MSBuild\14.0\Bin\MSBuild.exe" SET MSBuildToolsPath=%X86_PROGRAMFILES%\MSBuild\14.0\Bin\
+        if x86_ProgramFiles/"MSBuild"/"14.0"/"Bin"/"MSBuild.exe" |> fileExists
+        then  MSBuildToolsPath <- Some (x86_ProgramFiles/"MSBuild"/"14.0"/"Bin" |> Commands.pathAddBackslash)
         // if not "%MSBuildToolsPath%" == "" goto done_MsBuildToolsPath
         match MSBuildToolsPath with
         | Some x -> Some x
@@ -219,8 +225,10 @@ let config envVars =
     // if ERRORLEVEL 1    set PATH=%PATH%;%FSCBinPath%
     //REVIEW add it? or better use only env var?
 
-    // if "%FSDIFF%"=="" set FSDIFF=%SCRIPT_ROOT%fsharpqa\testenv\bin\%processor_architecture%\diff.exe -dew
-    let FSDIFF = envOrDefault "FSDIFF" (SCRIPT_ROOT/"fsharpqa"/"testenv"/"bin"/(PROCESSOR_ARCHITECTURE.ToString())/"diff.exe")
+    // if "%FSDIFF%"=="" set FSDIFF=%SCRIPT_ROOT%fsharpqa\testenv\bin\diff.exe
+    let FSDIFF = envOrDefault "FSDIFF" (SCRIPT_ROOT/"fsharpqa"/"testenv"/"bin"/"diff.exe")
+    // if not exist "%FSDIFF%" echo FSDIFF not found at expected path of %fsdiff% && exit /b 1
+    ignore "check exists diff.exe"
 
     // rem check if we're already configured, if not use the configuration from the last line of the config file
     // if "%fsc%"=="" ( 
@@ -332,25 +340,28 @@ let config envVars =
     | X86 -> () 
     | _ -> CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
-    // FOR /F "tokens=2*" %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
-    let mutable CORSDK = 
+
+
+    let regQueryREG_SOFTWARE path value =
         let hklm32 = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-        match hklm32 |> regQuery @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder" with
+        match hklm32 |> regQuery path value with
         | Some (:? string as d) -> Some d
-        | Some _ | None -> env "CORSDK"
+        | Some _ | None -> None
 
-    // IF "%CORSDK%"=="" FOR /F "tokens=2*" %%A IN ('reg QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows" /v CurrentInstallFolder') DO SET CORSDK=%%BBin
-    if CORSDK |> Option.isNone then
-        let hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default)
-        match hklm |> regQuery @"Software\Microsoft\Microsoft SDKs\Windows" "CurrentInstallFolder" with
-        | Some (:? string as x) -> CORSDK <- Some x
-        | Some _ | None -> ()
+    let allSDK = seq {
+    // FOR /F "tokens=2* delims=	 "  %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+            yield regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" "InstallationFolder";
+    // if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+            yield regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" "InstallationFolder";
+    // if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+            yield regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" "InstallationFolder";
+    // if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+            yield regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" "InstallationFolder";
+    // if "%CORSDK%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('reg QUERY "%REG_SOFTWARE%\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET CORSDK=%%B
+            yield regQueryREG_SOFTWARE @"Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" "InstallationFolder";
+        }
 
-    // IF NOT "%CORDIR40%"=="" IF EXIST "%CORSDK%\NETFX 4.0 Tools" set CORSDK=%CORSDK%\NETFX 4.0 Tools
-    if not (CORDIR40 |> Option.isNone) then
-        match CORSDK |> Option.map(fun d -> d/"NETFX 4.0 Tools") with
-        | Some d when directoryExists d -> CORSDK <- Some d
-        | Some _ | None -> ()
+    let mutable CORSDK = allSDK |> Seq.tryPick id
 
     // REM == Fix up CORSDK for 64bit platforms...
     // IF /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" SET CORSDK=%CORSDK%\x64
@@ -511,6 +522,7 @@ let config envVars =
       FSCOREDLLNETCORE78PATH = libs.FSCOREDLLNETCORE78PATH;
       FSCOREDLLNETCORE259PATH = libs.FSCOREDLLNETCORE259PATH;
       FSDATATPPATH = libs.FSDATATPPATH;
+      FSCOREDLLVPREVPATH = libs.FSCOREDLLVPREVPATH;
       FSDIFF = FSDIFF;
       GACUTIL = GACUTIL;
       ILDASM = ILDASM;
@@ -558,6 +570,7 @@ let logConfig (cfg: TestConfig) =
     log "FSCOREDLLNETCOREPATH=%s" cfg.FSCOREDLLNETCOREPATH
     log "FSCOREDLLNETCORE78PATH=%s" cfg.FSCOREDLLNETCORE78PATH
     log "FSCOREDLLNETCORE259PATH=%s" cfg.FSCOREDLLNETCORE259PATH
+    log "FSCOREDLLVPREVPATH=%s" cfg.FSCOREDLLVPREVPATH
     log "FSDATATPPATH        =%s" cfg.FSDATATPPATH
     log "FSDIFF              =%s" cfg.FSDIFF
     log "FSI                 =%s" cfg.FSI

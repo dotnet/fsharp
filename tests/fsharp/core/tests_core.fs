@@ -468,9 +468,12 @@ module ``FSI-reload`` =
     let ``fsi-reload`` () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
+        let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let ``exec <`` l p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = Some(RedirectInput(l)) } p >> checkResult
         let ``fsi <`` = Printf.ksprintf (fun flags l -> Commands.fsi (``exec <`` l) cfg.FSI flags [])
+        let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
         let fileguard = (Commands.getfullpath dir) >> FileGuard.create
+        let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
 
         /////// build.bat ///////
 
@@ -479,15 +482,41 @@ module ``FSI-reload`` =
 
         /////// run.bat  ////////
 
-        // if exist test.ok (del /f /q test.ok)
-        use testOkFile = fileguard "test.ok"
-
-        // "%FSI%" %fsi_flags%  --maxerrors:1 < test1.ml
-        do! ``fsi <`` "%s  --maxerrors:1" cfg.fsi_flags "test1.ml"
-
-        // if NOT EXIST test.ok goto SetError
-        do! testOkFile |> NUnitConf.checkGuardExists
+        do! processor {
+            // if exist test.ok (del /f /q test.ok)
+            use testOkFile = fileguard "test.ok"
+            // "%FSI%" %fsi_flags%  --maxerrors:1 < test1.ml
+            do! ``fsi <`` "%s  --maxerrors:1" cfg.fsi_flags "test1.ml"
+            // if NOT EXIST test.ok goto SetError
+            do! testOkFile |> NUnitConf.checkGuardExists
+            }
                 
+        do! processor {
+            // if exist test.ok (del /f /q test.ok)
+            use testOkFile = fileguard "test.ok"
+            // "%FSI%" %fsi_flags%  --maxerrors:1 load1.fsx
+            do! fsi "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
+            // if NOT EXIST test.ok goto SetError
+            do! testOkFile |> NUnitConf.checkGuardExists
+            }
+
+        do! processor {
+            // if exist test.ok (del /f /q test.ok)
+            use testOkFile = fileguard "test.ok"
+            // "%FSI%" %fsi_flags%  --maxerrors:1 load2.fsx
+            do! fsi "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
+            // if NOT EXIST test.ok goto SetError
+            do! testOkFile |> NUnitConf.checkGuardExists
+            }
+
+        // REM Check we can also compile, for sanity's sake
+        // "%FSC%" load1.fsx
+        do! fsc "" ["load1.fsx"]
+
+        // REM Check we can also compile, for sanity's sake
+        // "%FSC%" load2.fsx
+        do! fsc "" ["load2.fsx"]
+
         })
 
 
@@ -727,19 +756,7 @@ module Printing =
                 >> checkResult
             Printf.ksprintf (fun flags in' out -> Commands.fsi (``exec <a >b 2>&1`` in' out) cfg.FSI flags [])
         
-        // rem recall  >fred.txt 2>&1 merges stderr into the stdout redirect
-        // rem however 2>&1  >fred.txt did not seem to do it.
-
-        // REM Here we use diff.exe without -dew option to trap whitespace changes, like bug 4429.
-        // REM Any whitespace change needs to be investigated, these tests are to check exact output.
-        // REM Base line updates are easy: sd edit and delete the .bsl and rerun the test.
-        // set PRDIFF=%~d0%~p0..\..\..\fsharpqa\testenv\bin\%processor_architecture%\diff.exe
-        // echo Diff tool is %PRDIFF%
-        // if NOT EXIST %PRDIFF% (
-        //     echo ERROR: Diff tool not found at %PRDIFF%
-        //     exit /b 1
-        // )
-        let prdiff a b = 
+        let fsdiff a b = 
             let ``exec >`` f p = Command.exec dir cfg.EnvironmentVariables { Output = Output(Overwrite(f)); Input = None} p >> checkResult
             let diffFile = Path.ChangeExtension(a, ".diff")
             Commands.fsdiff (``exec >`` diffFile) cfg.FSDIFF false a b
@@ -785,7 +802,7 @@ module Printing =
         // %PRDIFF% z.output.test.1000.txt    z.output.test.1000.bsl    > z.output.test.1000.diff
         // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
         // %PRDIFF% z.output.test.quiet.txt   z.output.test.quiet.bsl   > z.output.test.quiet.diff
-        do! prdiff diffFile expectedFile
+        do! fsdiff diffFile expectedFile
 
         // echo ======== Differences From ========
         // TYPE  z.output.test.default.diff
@@ -832,6 +849,12 @@ module Quotes =
         // "%PEVERIFY%" test.exe 
         do! peverify "test.exe"
 
+        // "%FSC%" %fsc_flags% -o:test-with-debug-data.exe --quotations-debug+ -r cslib.dll -g test.fsx
+        do! fsc "%s -o:test-with-debug-data.exe --quotations-debug+ -r cslib.dll -g" fsc_flags ["test.fsx"]
+
+        // "%PEVERIFY%" test-with-debug-data.exe 
+        do! peverify "test-with-debug-data.exe"
+
         // "%FSC%" %fsc_flags% --optimize -o:test--optimize.exe -r cslib.dll -g test.fsx
         do! fsc "%s --optimize -o:test--optimize.exe -r cslib.dll -g" fsc_flags ["test.fsx"]
 
@@ -862,6 +885,17 @@ module Quotes =
 
             // %CLIX% test.exe
             do! exec ("."/"test.exe") ""
+
+            // if NOT EXIST test.ok goto SetError
+            do! testOkFile |> NUnitConf.checkGuardExists
+            }
+
+        do! processor {
+            // if exist test.ok (del /f /q test.ok)
+            use testOkFile = fileguard "test.ok"
+
+            // %CLIX% test-with-debug-data.exe
+            do! exec ("."/"test-with-debug-data.exe") ""
 
             // if NOT EXIST test.ok goto SetError
             do! testOkFile |> NUnitConf.checkGuardExists
@@ -2280,6 +2314,12 @@ module QuotesInMultipleModules =
 
         // "%PEVERIFY%" module2.exe 
         do! peverify "module2.exe"
+    
+        // "%FSC%" %fsc_flags% --staticlink:module1 -o:module2-staticlink.exe -r:module1.dll module2.fsx
+        do! fsc "%s --staticlink:module1 -o:module2-staticlink.exe -r:module1.dll" cfg.fsc_flags ["module2.fsx"]
+
+        // "%PEVERIFY%" module2-staticlink.exe
+        do! peverify "module2-staticlink.exe"
 
         // "%FSC%" %fsc_flags% -o:module1-opt.dll --target:library --optimize module1.fsx
         do! fsc "%s -o:module1-opt.dll --target:library --optimize" cfg.fsc_flags ["module1.fsx"]
@@ -2327,6 +2367,13 @@ module QuotesInMultipleModules =
         use testOkFile = fileguard "test.ok"
         // %CLIX% module2-opt.exe
         do! exec ("."/"module2-opt.exe") ""
+        // if NOT EXIST test.ok goto SetError
+        do! testOkFile |> NUnitConf.checkGuardExists
+
+        // if exist test.ok (del /f /q test.ok)
+        use testOkFile = fileguard "test.ok"
+        // %CLIX% module2-staticlink.exe
+        do! exec ("."/"module2-staticlink.exe") ""
         // if NOT EXIST test.ok goto SetError
         do! testOkFile |> NUnitConf.checkGuardExists
 

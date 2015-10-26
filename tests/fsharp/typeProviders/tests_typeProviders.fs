@@ -318,8 +318,11 @@ module HelloWorld =
 
 
         //REM overwrite provider.dll
-        //"%FSC%" --define:ADD_AN_OPTIONAL_STATIC_PARAMETER --out:provider.dll -g -a ..\provider.fsx
-        do! fsc' (execIn bincompat2) "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --out:provider.dll -g -a" [".."/"provider.fsx"]
+        //"%FSC%" --define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a ..\provider.fsx
+        do! fsc' (execIn bincompat2) "%s" "--define:ADD_AN_OPTIONAL_STATIC_PARAMETER --define:USE_IMPLICIT_ITypeProvider2 --out:provider.dll -g -a" [".."/"provider.fsx"]
+
+        // "%FSC%" -g -a -o:test_lib_recompiled.dll -r:provider.dll ..\test.fsx
+        do! fsc' (execIn bincompat2) "-g -a -o:test_lib_recompiled.dll -r:provider.dll" [".."/"test.fsx"]
 
         //REM This is the important part of the binary compatibility part of the test: the new provider is being used, but 
         //REM with a binary that was generated w.r.t. the old provider. The new provider can still resolve the references
@@ -332,6 +335,9 @@ module HelloWorld =
 
         //"%PEVERIFY%" test_lib.dll
         do! peverify (bincompat2/"test_lib.dll")
+
+        // "%PEVERIFY%" test_lib_recompiled.dll
+        do! peverify (bincompat2/"test_lib_recompiled.dll")
 
         //"%PEVERIFY%" testlib_client.exe
         do! peverify (bincompat2/"testlib_client.exe")
