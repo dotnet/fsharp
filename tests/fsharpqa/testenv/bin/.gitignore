@@ -1,3 +1,4 @@
+nunit
 FSharp.Compiler.*
 FSharp.Core.*
 HostedCompilerServer.*

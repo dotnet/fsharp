@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>runtime.osx.10.10-x64.Microsoft.FSharp.Compiler.netcore</id>
+        <description>
+            netcore compatible version of the fsharp compiler fsc.exe.
+
+            Supported Platforms:
+            - .NET Core (dnxcore50)
+        </description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+            <group>
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="coreconsole" />
+        <file src="corerun" />
+        <file src="default.win32manifest" />
+        <file src="filelist" />
+        <file src="fsc.exe" />
+        <file src="FSharp.Compiler.dll" />
+        <file src="fsharp.core.dll" />
+        <file src="fsharp.core.optdata" />
+        <file src="fsharp.core.sigdata" />
+        <file src="libcoreclr.so" />
+        <file src="libdbgshim.so" />
+        <file src="libmscordaccore.so" />
+        <file src="libmscordbi.so" />
+        <file src="libsos.so" />
+        <file src="libsosplugin.so" />
+        <file src="Microsoft.Win32.Primitives.dll" />
+        <file src="Microsoft.Win32.Registry.dll" />
+        <file src="mscorlib.dll" />
+        <file src="System.AppContext.dll" />
+        <file src="System.Collections.Concurrent.dll" />
+        <file src="System.Collections.dll" />
+        <file src="System.Collections.NonGeneric.dll" />
+        <file src="System.Collections.Specialized.dll" />
+        <file src="System.ComponentModel.EventBasedAsync.dll" />
+        <file src="System.Console.dll" />
+        <file src="System.Diagnostics.Contracts.dll" />
+        <file src="System.Diagnostics.Debug.dll" />
+        <file src="System.Diagnostics.Process.dll" />
+        <file src="System.Diagnostics.StackTrace.dll" />
+        <file src="System.Diagnostics.Tools.dll" />
+        <file src="System.Diagnostics.Tracing.dll" />
+        <file src="System.Globalization.Calendars.dll" />
+        <file src="System.Globalization.dll" />
+        <file src="System.Globalization.Extensions.dll" />
+        <file src="System.Globalization.Native.so" />
+        <file src="System.IO.Compression.dll" />
+        <file src="System.IO.dll" />
+        <file src="System.IO.FileSystem.dll" />
+        <file src="System.IO.FileSystem.Primitives.dll" />
+        <file src="System.Linq.dll" />
+        <file src="System.Linq.Expressions.dll" />
+        <file src="System.Linq.Queryable.dll" />
+        <file src="System.Native.so" />
+        <file src="System.Net.Http.dll" />
+        <file src="System.Net.Http.Native.so" />
+        <file src="System.Net.Primitives.dll" />
+        <file src="System.Net.Requests.dll" />
+        <file src="System.Net.WebHeaderCollection.dll" />
+        <file src="System.ObjectModel.dll" />
+        <file src="System.Private.Networking.dll" />
+        <file src="System.Private.Uri.dll" />
+        <file src="System.Reflection.dll" />
+        <file src="System.Reflection.Emit.dll" />
+        <file src="System.Reflection.Emit.ILGeneration.dll" />
+        <file src="System.Reflection.Emit.Lightweight.dll" />
+        <file src="System.Reflection.Extensions.dll" />
+        <file src="System.Reflection.Primitives.dll" />
+        <file src="System.Reflection.TypeExtensions.dll" />
+        <file src="System.Resources.ResourceManager.dll" />
+        <file src="System.Runtime.dll" />
+        <file src="System.Runtime.Extensions.dll" />
+        <file src="System.Runtime.Handles.dll" />
+        <file src="System.Runtime.InteropServices.dll" />
+        <file src="System.Runtime.Loader.dll" />
+        <file src="System.Runtime.Numerics.dll" />
+        <file src="System.Security.Cryptography.Native.so" />
+        <file src="System.Security.Cryptography.Primitives.dll" />
+        <file src="System.Security.SecureString.dll" />
+        <file src="System.Text.Encoding.dll" />
+        <file src="System.Text.Encoding.Extensions.dll" />
+        <file src="System.Text.RegularExpressions.dll" />
+        <file src="System.Threading.dll" />
+        <file src="System.Threading.Overlapped.dll" />
+        <file src="System.Threading.Tasks.dll" />
+        <file src="System.Threading.Tasks.Parallel.dll" />
+        <file src="System.Threading.Thread.dll" />
+        <file src="System.Threading.ThreadPool.dll" />
+        <file src="System.Threading.Timer.dll" />
+    </files>
+</package>
