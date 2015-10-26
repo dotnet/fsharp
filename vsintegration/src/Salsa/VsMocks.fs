@@ -1655,11 +1655,7 @@ module internal VsActual =
 
         // copy this private assembly next to unit tests, otherwise assembly loader cannot find it
         let neededLocalAssem = vsInstallDir + @"\PrivateAssemblies\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll"
-#if FX_ATLEAST_45
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").CodeBase)).LocalPath)
-#else
-        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)).LocalPath)
-#endif
+        let curDir = System.IO.Path.GetDirectoryName((new System.Uri(System.Reflection.Assembly.Load("nunit.util").EscapedCodeBase)).LocalPath)
         let localCopy = System.IO.Path.Combine(curDir, System.IO.Path.GetFileName(neededLocalAssem))
         System.IO.File.Copy(neededLocalAssem, localCopy, true)
         

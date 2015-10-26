@@ -103,7 +103,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
-    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(OpenBuild)' != 'True' ">
+    <None Include="closed\App.config" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(OpenBuild)' == 'True' ">
+    <None Include="open\App.config" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

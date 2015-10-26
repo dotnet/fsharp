@@ -1591,7 +1591,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // in batch build it is possible that config is out of sync.
             // in this case, don't assume we are up to date
             ConfigCanonicalName activeConfig = default(ConfigCanonicalName);
-            if(!Utilities.TryGetActiveConfigurationAndPlatform(ServiceProvider.GlobalProvider, this.project, out activeConfig) ||
+           
+            if(!Utilities.TryGetActiveConfigurationAndPlatform(ServiceProvider.GlobalProvider, this.project.ProjectIDGuid, out activeConfig) ||
                 activeConfig != this.ConfigCanonicalName)
             {
                 logger.WriteLine("Not up to date: active confic does not match project config. Active: {0} Project: {1}", activeConfig, this.ConfigCanonicalName);
@@ -1836,12 +1837,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             CCITracing.TraceCall();
             config.PrepareBuild(false);
 
-            int utdSupported = config.IsFastUpToDateCheckEnabled() ? 1 : 0;
+            // criteria (same as C# project system):
+            // - Fast UTD never enabled for package operations
+            // - Fast UTD always enabled for DTEE operations
+            // - Otherwise fast UTD enabled as long as it's not explicitly disabled by the project
+            bool utdSupported =
+                ((options & VSConstants.VSUTDCF_PACKAGE) == 0) &&
+                (((options & VSConstants.VSUTDCF_DTEEONLY) != 0) || config.IsFastUpToDateCheckEnabled());
+
+            int utdSupportedFlag = utdSupported ? 1 : 0;
 
             if (supported != null && supported.Length > 0)
-                supported[0] = utdSupported;
+                supported[0] = utdSupportedFlag;
             if (ready != null && ready.Length > 0)
-                ready[0] = utdSupported;
+                ready[0] = utdSupportedFlag;
+
             return VSConstants.S_OK;
         }
 

@@ -112,15 +112,15 @@ type ListModule() =
     member this.ChunkBySize() =
 
         // int list
-        Assert.AreEqual([ [1..4]; [5..8] ], List.chunkBySize 4 [1..8])
-        Assert.AreEqual([ [1..4]; [5..8]; [9..10] ], List.chunkBySize 4 [1..10])
-        Assert.AreEqual([ [1]; [2]; [3]; [4] ], List.chunkBySize 1 [1..4])
+        Assert.IsTrue([ [1..4]; [5..8] ] = List.chunkBySize 4 [1..8])
+        Assert.IsTrue([ [1..4]; [5..8]; [9..10] ] = List.chunkBySize 4 [1..10])
+        Assert.IsTrue([ [1]; [2]; [3]; [4] ] = List.chunkBySize 1 [1..4])
 
         // string list
-        Assert.AreEqual([ ["a"; "b"]; ["c";"d"]; ["e"] ], List.chunkBySize 2 ["a";"b";"c";"d";"e"])
+        Assert.IsTrue([ ["a"; "b"]; ["c";"d"]; ["e"] ] = List.chunkBySize 2 ["a";"b";"c";"d";"e"])
 
         // empty list
-        Assert.AreEqual([], List.chunkBySize 3 [])
+        Assert.IsTrue([] = List.chunkBySize 3 [])
 
         // invalidArg
         CheckThrowsArgumentException (fun () -> List.chunkBySize 0 [1..10] |> ignore)
@@ -132,18 +132,18 @@ type ListModule() =
     member this.SplitInto() =
 
         // int list
-        Assert.AreEqual([ [1..4]; [5..7]; [8..10] ], List.splitInto 3 [1..10])
-        Assert.AreEqual([ [1..4]; [5..8]; [9..11] ], List.splitInto 3 [1..11])
-        Assert.AreEqual([ [1..4]; [5..8]; [9..12] ], List.splitInto 3 [1..12])
+        Assert.IsTrue([ [1..4]; [5..7]; [8..10] ] = List.splitInto 3 [1..10])
+        Assert.IsTrue([ [1..4]; [5..8]; [9..11] ] = List.splitInto 3 [1..11])
+        Assert.IsTrue([ [1..4]; [5..8]; [9..12] ] = List.splitInto 3 [1..12])
 
-        Assert.AreEqual([ [1..2]; [3]; [4]; [5] ], List.splitInto 4 [1..5])
-        Assert.AreEqual([ [1]; [2]; [3]; [4] ], List.splitInto 20 [1..4])
+        Assert.IsTrue([ [1..2]; [3]; [4]; [5] ] = List.splitInto 4 [1..5])
+        Assert.IsTrue([ [1]; [2]; [3]; [4] ] = List.splitInto 20 [1..4])
 
         // string list
-        Assert.AreEqual([ ["a"; "b"]; ["c";"d"]; ["e"] ], List.splitInto 3 ["a";"b";"c";"d";"e"])
+        Assert.IsTrue([ ["a"; "b"]; ["c";"d"]; ["e"] ] = List.splitInto 3 ["a";"b";"c";"d";"e"])
 
         // empty list
-        Assert.AreEqual([], List.splitInto 3 [])
+        Assert.IsTrue([] = List.splitInto 3 [])
 
         // invalidArg
         CheckThrowsArgumentException (fun () -> List.splitInto 0 [1..10] |> ignore)
@@ -335,7 +335,7 @@ type ListModule() =
         Assert.AreEqual(expectedStrList, List.except strList2 strList1)
 
         // empty list
-        let emptyIntList = []
+        let emptyIntList : int list = []
         Assert.AreEqual([1..100], List.except emptyIntList intList1)
         Assert.AreEqual(emptyIntList, List.except intList1 emptyIntList)
         Assert.AreEqual(emptyIntList, List.except emptyIntList emptyIntList)
