@@ -34,7 +34,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             container.OnChildRemoved += new EventHandler<HierarchyNodeEventArgs>(OnReferenceRemoved);
         }
 
-        #region Private Members
         private Reference AddFromSelectorData(VSCOMPONENTSELECTORDATA selector)
         {
             ReferenceNode refNode = container.AddReferenceFromSelectorData(selector);
@@ -57,9 +56,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
             return null;
         }
-        #endregion
-
-        #region References Members
 
         public Reference Add(string bstrPath)
         {
@@ -258,15 +254,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             }
         }
 
-        #endregion
-
-        #region _dispReferencesEvents_Event Members
         public event _dispReferencesEvents_ReferenceAddedEventHandler ReferenceAdded;
         public event _dispReferencesEvents_ReferenceChangedEventHandler ReferenceChanged;
         public event _dispReferencesEvents_ReferenceRemovedEventHandler ReferenceRemoved;
-        #endregion
 
-        #region Callbacks for the HierarchyNode events
         private void OnReferenceAdded(object sender, HierarchyNodeEventArgs args)
         {
             // Validate the parameters.
@@ -336,9 +327,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 ReferenceRemoved(reference);
             }
         }
-        #endregion
 
-        #region IEventSource<_dispReferencesEvents> Members
         void IEventSource<_dispReferencesEvents>.OnSinkAdded(_dispReferencesEvents sink)
         {
             ReferenceAdded += new _dispReferencesEvents_ReferenceAddedEventHandler(sink.ReferenceAdded);
@@ -352,6 +341,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
             ReferenceChanged -= new _dispReferencesEvents_ReferenceChangedEventHandler(sink.ReferenceChanged);
             ReferenceRemoved -= new _dispReferencesEvents_ReferenceRemovedEventHandler(sink.ReferenceRemoved);
         }
-        #endregion
     }
 }

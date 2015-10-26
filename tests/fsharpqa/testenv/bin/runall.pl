@@ -2797,14 +2797,14 @@ sub get_env_file
 			$envlist[$envnum][4]{uc($1)} and $sublist[$envnum][4]{$var} = $envlist[$envnum][4]{uc($1)};
 		    }
 
-            if($var == "FSIMODE")
+            if($var eq "FSIMODE")
             {
-                $sublist[$envnum][1] = $sublist[$envnum][1] . ",FSI";
+                $sublist[$envnum][1] = $sublist[$envnum][1] . ",FSI,NoMT";
             }
             
-            if($var == "SCFLAGS" && $sublist[$envnum][4]{$var} =~ /--noframework\b/)
+            if($var eq "SCFLAGS" && $sublist[$envnum][4]{$var} =~ /--noframework\b/)
             {
-                $sublist[$envnum][1] = $sublist[$envnum][1] . ",NoCrossVer";
+                $sublist[$envnum][1] = $sublist[$envnum][1] . ",NoCrossVer,NoMT";
             }
 		} else {
 		    print_noise("Bad assignment '$_', skipping...\n", 1);

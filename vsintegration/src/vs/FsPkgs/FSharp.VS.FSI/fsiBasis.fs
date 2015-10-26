@@ -33,7 +33,6 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.TextManager.Interop
 
 module internal AssemblyAttributes = 
-    //[<assembly: System.Security.SecurityTransparent>]
     [<assembly:ComVisible(true)>]
     do()
 

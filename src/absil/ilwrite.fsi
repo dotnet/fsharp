@@ -20,24 +20,19 @@ type ILStrongNameSigner =
 #endif
 
 type options =
- { ilg: ILGlobals
-   pdbfile: string option;
+    { ilg: ILGlobals
+      pdbfile: string option
 #if FX_NO_KEY_SIGNING
 #else
-   signer : ILStrongNameSigner option;
+      signer : ILStrongNameSigner option
 #endif
-   fixupOverlappingSequencePoints : bool;
-   emitTailcalls: bool;
-   showTimes : bool;
-   dumpDebugInfo : bool }
+      fixupOverlappingSequencePoints : bool
+      emitTailcalls: bool
+      showTimes : bool
+      dumpDebugInfo : bool }
 
 /// Write a binary to the file system. Extra configuration parameters can also be specified. 
-val WriteILBinary: 
-    filename: string ->
-    options:  options ->
-    input:    ILModuleDef -> 
-    noDebugData: bool ->
-    unit
+val WriteILBinary: filename: string * options:  options * input: ILModuleDef * noDebugData: bool -> unit
 
 
 

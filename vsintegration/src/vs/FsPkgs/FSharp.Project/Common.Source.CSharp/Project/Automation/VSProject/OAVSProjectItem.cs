@@ -25,18 +25,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAVSProjectItem : VSProjectItem
     {
-        #region fields
         private FileNode fileNode;
-        #endregion
 
-        #region ctors
         internal OAVSProjectItem(FileNode fileNode)
         {
             this.FileNode = fileNode;
         }
-        #endregion
-
-        #region VSProjectItem Members
 
         public virtual Project ContainingProject
         {
@@ -55,17 +49,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
         public virtual void RunCustomTool()
         {
-#if SINGLE_FILE_GENERATOR
-            this.FileNode.RunGenerator();
-#endif
         }
 
-        #endregion
-
-        #region public properties
-        /// <summary>
-        /// File Node property
-        /// </summary>
         public FileNode FileNode
         {
             get
@@ -77,7 +62,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 fileNode = value;
             }
         }
-        #endregion
-
     }
 }

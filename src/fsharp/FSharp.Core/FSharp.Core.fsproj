@@ -220,7 +220,7 @@
   </ItemGroup>
 
   <!-- References -->
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+  <Import Project="$(FSharpSourcesRoot)\..\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\..\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <!-- Hook compilation phase to do custom work -->

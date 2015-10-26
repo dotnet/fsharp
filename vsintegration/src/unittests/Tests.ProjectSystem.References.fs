@@ -559,7 +559,7 @@ type References() =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             let dirName = Path.GetDirectoryName(projFile)
             let libDirName = Directory.CreateDirectory(Path.Combine(dirName, "lib")).FullName
-            let codeBase = (new Uri(Assembly.GetExecutingAssembly().CodeBase)).LocalPath |> Path.GetDirectoryName
+            let codeBase = (new Uri(Assembly.GetExecutingAssembly().EscapedCodeBase)).LocalPath |> Path.GetDirectoryName
             let refLibPath = Path.Combine(libDirName, "nunit.core.dll")
             File.Copy(Path.Combine(codeBase, "nunit.core.dll"), refLibPath)
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [refLibPath], ""))
@@ -574,7 +574,7 @@ type References() =
                 let l = new List<ReferenceContainerNode>()
                 project.FindNodesOfType(l)
                 l.[0]
-            let mscorlibPath = (new Uri("".GetType().Assembly.CodeBase)).LocalPath
+            let mscorlibPath = (new Uri("".GetType().Assembly.EscapedCodeBase)).LocalPath
             let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus, bstrFile = mscorlibPath)
             refContainer.AddReferenceFromSelectorData(selectorData) |> Assert.IsNotNull
             let l = new List<AssemblyReferenceNode>()

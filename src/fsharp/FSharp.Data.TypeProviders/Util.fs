@@ -102,15 +102,18 @@ module internal Util =
                     | null -> () 
                     | _ -> key.Dispose()
                     reg32view.Dispose()     // if reg32view were really null, we would not be here and the user would have more serious issues not being able to access HKLM
-        useKey @"SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" (fun key -> 
-            match tryResult key with
-            | Some r -> r
-            | None -> 
-                useKey @"SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" (fun key -> 
-                    match tryResult key with
-                    | Some r -> r
-                    | None -> 
-                    raise <| System.NotSupportedException(FSData.SR.unsupportedFramework())))
+
+        let SDK_REGPATHS = [ @"Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools"
+                             @"Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools"
+                             @"Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools"
+                             @"Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools"
+                             @"Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" ]
+    
+        SDK_REGPATHS 
+        |> Seq.tryPick (fun p -> useKey p tryResult) 
+        |> function 
+           | Some p -> p
+           | _      -> raise <| System.NotSupportedException(FSData.SR.unsupportedFramework())
 
     let sdkUtil name = Path.Combine(sdkPath(), name)
 

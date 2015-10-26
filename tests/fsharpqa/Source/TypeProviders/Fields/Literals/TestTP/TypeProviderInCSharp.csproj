@@ -46,5 +46,11 @@
     <Compile Include="Helpers.cs" />
     <Compile Include="TypeProviderInCSharp.cs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(FSCBinPath)\fsharp.core.optdata"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
+    <None Include="$(FSCBinPath)\fsharp.core.sigdata"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
+  </ItemGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

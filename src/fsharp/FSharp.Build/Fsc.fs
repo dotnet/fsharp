@@ -144,7 +144,6 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
-    let mutable validateTypeProviders : bool = false
 #if PREFERRED_UI_LANG
     let mutable vsPreferredUiLang : string = null
 #else
@@ -312,10 +311,6 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.VisualStudioStyleErrors
         with get() = vserrors
         and set(p) = vserrors <- p
-
-    member fsc.ValidateTypeProviders
-        with get() = validateTypeProviders
-        and set(p) = validateTypeProviders <- p
 
 #if PREFERRED_UI_LANG
     member fsc.VsPreferredUiLang
@@ -493,10 +488,6 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         // VisualStudioStyleErrors 
         if vserrors then
             builder.AppendSwitch("--vserrors")      
-
-        // ValidateTypeProviders 
-        if validateTypeProviders then
-            builder.AppendSwitch("--validate-type-providers")           
 
 #if PREFERRED_UI_LANG
         builder.AppendSwitchIfNotNull("--preferreduilang:", vsPreferredUiLang)

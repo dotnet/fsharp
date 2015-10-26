@@ -73,7 +73,7 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateSet")>]
     val set : elements:seq<'T> -> Set<'T>
 
-    /// <summary>Builds an aysnchronous workflow using computation expression syntax.</summary>
+    /// <summary>Builds an asynchronous workflow using computation expression syntax.</summary>
     [<CompiledName("DefaultAsyncBuilder")>]
     val async : Microsoft.FSharp.Control.AsyncBuilder  
 

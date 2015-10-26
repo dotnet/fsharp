@@ -23,7 +23,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
         }
 
-        #region Reference override
         public override string Culture
         {
             get { return string.Empty; }
@@ -82,6 +81,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         {
             get { return string.Empty; }
         }
-        #endregion
     }
 }

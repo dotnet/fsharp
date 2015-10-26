@@ -13,23 +13,23 @@ open System.Threading
 open System.Collections.Generic
  
 open Microsoft.FSharp.Core.Printf
+open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal  
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.MSBuildResolver
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Internal.Utilities.Collections
 open Internal.Utilities.Debug
 
-open Microsoft.FSharp.Compiler.Env 
+open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lexhelp
-open Microsoft.FSharp.Compiler.Build
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
@@ -38,7 +38,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.Nameres
+open Microsoft.FSharp.Compiler.NameResolution
 open Internal.Utilities.StructuredFormat
 open ItemDescriptionIcons 
 open ItemDescriptionsImpl 
@@ -375,7 +375,7 @@ type Names = string list
 type NamesWithResidue = Names * string 
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
-type CapturedNameResolution(p:pos, i:Item, io:ItemOccurence, de:DisplayEnv, nre:Nameres.NameResolutionEnv, ad:AccessorDomain, m:range) =
+type CapturedNameResolution(p:pos, i:Item, io:ItemOccurence, de:DisplayEnv, nre:NameResolution.NameResolutionEnv, ad:AccessorDomain, m:range) =
     member this.Pos = p
     member this.Item = i
     member this.ItemOccurence = io
@@ -393,8 +393,8 @@ type CapturedNameResolution(p:pos, i:Item, io:ItemOccurence, de:DisplayEnv, nre:
 [<Sealed>]
 type TypeCheckInfo
           (/// Information corresponding to miscellaneous command-line options (--define, etc).
-           _sTcConfig: Build.TcConfig,
-           g: Env.TcGlobals,
+           _sTcConfig: TcConfig,
+           g: TcGlobals,
            /// AssemblyName -> IL-Module 
            amap: Import.ImportMap,
            /// project directory, or directory containing the file that generated this scope if no project directory given 
@@ -402,9 +402,9 @@ type TypeCheckInfo
            sFile:string,
            /// Name resolution environments for every interesting region in the file. These regions may
            /// overlap, in which case the smallest region applicable should be used.
-           sEnvs: ResizeArray<range * Nameres.NameResolutionEnv * AccessorDomain>,
+           sEnvs: ResizeArray<range * NameResolution.NameResolutionEnv * AccessorDomain>,
            /// This is a name resolution environment to use if no better match can be found.
-           sFallback:Nameres.NameResolutionEnv,
+           sFallback:NameResolution.NameResolutionEnv,
            /// Information of exact types found for expressions, that can be to the left of a dot.
            /// Also for exact name resolutions
            /// pos -- line and column
@@ -413,9 +413,9 @@ type TypeCheckInfo
            /// DisplayEnv -- information about printing. For example, should redundant keywords be hidden?
            /// NameResolutionEnv -- naming environment--for example, currently open namespaces.
            /// range -- the starting and ending position      
-           capturedExprTypings: ResizeArray<(pos * TType * DisplayEnv * Nameres.NameResolutionEnv * AccessorDomain * range)>,
-           capturedNameResolutions: ResizeArray<(pos * Item * ItemOccurence * DisplayEnv * Nameres.NameResolutionEnv * AccessorDomain * range)>,
-           capturedResolutionsWithMethodGroups: ResizeArray<(pos * Item * ItemOccurence * DisplayEnv * Nameres.NameResolutionEnv * AccessorDomain * range)>,
+           capturedExprTypings: ResizeArray<(pos * TType * DisplayEnv * NameResolution.NameResolutionEnv * AccessorDomain * range)>,
+           capturedNameResolutions: ResizeArray<(pos * Item * ItemOccurence * DisplayEnv * NameResolution.NameResolutionEnv * AccessorDomain * range)>,
+           capturedResolutionsWithMethodGroups: ResizeArray<(pos * Item * ItemOccurence * DisplayEnv * NameResolution.NameResolutionEnv * AccessorDomain * range)>,
            loadClosure : LoadClosure option,
            syncop:(unit->unit)->unit,
            checkAlive : (unit -> bool),
@@ -435,7 +435,7 @@ type TypeCheckInfo
     let getDataTipTextCache = AgedLookup<int*int*string,DataTipText>(recentForgroundTypeCheckLookupSize,areSame=(fun (x,y) -> x = y))
     
     let infoReader = new InfoReader(g,amap)
-    let ncenv = new NameResolver(g,amap,infoReader,Nameres.FakeInstantiationGenerator)
+    let ncenv = new NameResolver(g,amap,infoReader,NameResolution.FakeInstantiationGenerator)
     
     /// Find the most precise naming environment for the given line and column
     let GetBestEnvForPos cursorPos  =
@@ -552,7 +552,7 @@ type TypeCheckInfo
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true typ 
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members 
         
-        // Value reference from the name resolution. Primarilly to disallow "let x.$ = 1"
+        // Value reference from the name resolution. Primarily to disallow "let x.$ = 1"
         // In most of the cases, value references can be obtained from expression typings or from environment,
         // so we wouldn't have to handle values here. However, if we have something like:
         //   let varA = "string"
@@ -575,7 +575,7 @@ type TypeCheckInfo
                     // check that type of value is the same or subtype of tcref
                     // yes - allow access to protected members
                     // no - strip ability to access protected members
-                    if Microsoft.FSharp.Compiler.Typrelns.TypeFeasiblySubsumesType 0 g amap m tcref Microsoft.FSharp.Compiler.Typrelns.CanCoerce ty then
+                    if Microsoft.FSharp.Compiler.TypeRelations.TypeFeasiblySubsumesType 0 g amap m tcref Microsoft.FSharp.Compiler.TypeRelations.CanCoerce ty then
                         ad
                     else
                         AccessibleFrom(paths, None)
@@ -669,7 +669,7 @@ type TypeCheckInfo
                                             posEq r.Start rq.Start)
         match bestQual with
         | Some (_,typ,denv,_nenv,ad,m) when isRecdTy denv.g typ ->
-            let items = Nameres.ResolveRecordOrClassFieldsOfType ncenv m ad typ false
+            let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad typ false
             Some (items, denv, m)
         | _ -> None
 
@@ -708,7 +708,7 @@ type TypeCheckInfo
                     | None -> 
                         // TODO In theory I think we should never get to this code path; it would be nice to add an assert.
                         // In practice, we do get here in some weird cases like "2.0 .. 3.0" and hitting Ctrl-Space in between the two dots of the range operator.
-                        // I wasn't able to track down what was happening in those werid cases, not worth worrying about, it doesn't manifest as a product bug or anything.
+                        // I wasn't able to track down what was happening in those weird cases, not worth worrying about, it doesn't manifest as a product bug or anything.
                         None, false
                 | _ -> None, false
 
@@ -730,7 +730,7 @@ type TypeCheckInfo
         Trace.PrintLine("CompilerServicesVerbose", fun () -> sprintf "GetEnvironmentLookupResolutions: line = %d, colAtEndOfNamesAndResidue = %d, plid = %+A, showObsolete = %b\n" line colAtEndOfNamesAndResidue plid showObsolete)
         let cursorPos = Pos.fromVS line colAtEndOfNamesAndResidue
         let (nenv,ad),m = GetBestEnvForPos cursorPos
-        let items = Nameres.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
+        let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
         let items = items |> FilterItemsForCtors filterCtors 
@@ -742,7 +742,7 @@ type TypeCheckInfo
     let GetClassOrRecordFieldsEnvironmentLookupResolutions(line,colAtEndOfNamesAndResidue, plid, (_residue : string option)) = 
         let cursorPos = Pos.fromVS line colAtEndOfNamesAndResidue
         let (nenv, ad),m = GetBestEnvForPos cursorPos
-        let items = Nameres.ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
+        let items = NameResolution.ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
         items, nenv.DisplayEnv,m 
@@ -1260,20 +1260,20 @@ module internal Parser =
                 else exn
             if reportErrors then 
                 let report exn = 
-                    let warn = warn && not (ReportWarningAsError tcConfig.globalWarnLevel tcConfig.specificWarnOff tcConfig.specificWarnOn tcConfig.specificWarnAsError tcConfig.specificWarnAsWarn tcConfig.globalWarnAsError exn)                
-                    if (not warn || ReportWarning tcConfig.globalWarnLevel tcConfig.specificWarnOff tcConfig.specificWarnOn exn) then 
+                    let warn = warn && not (ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn)                
+                    if (not warn || ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn) then 
                         let oneError trim exn = 
                             // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                             // Not ideal, but it's hard to see what else to do.
                             let fallbackRange = rangeN mainInputFileName 1
                             let ei = ErrorInfo.CreateFromExceptionAndAdjustEof(exn,warn,trim,fallbackRange,fileInfo)
-                            if (ei.FileName=mainInputFileName) || (ei.FileName=Microsoft.FSharp.Compiler.Env.DummyFileNameForRangesWithoutASpecificLocation) then
+                            if (ei.FileName=mainInputFileName) || (ei.FileName=Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
                                 Trace.PrintLine("UntypedParseAux", fun _ -> sprintf "Reporting one error: %s\n" (ei.ToString()))
                                 errorsAndWarningsCollector.Add ei
                                 if not warn then 
                                     errorCount <- errorCount + 1
                       
-                        let mainError,relatedErrors = Build.SplitRelatedErrors exn 
+                        let mainError,relatedErrors = CompileOps.SplitRelatedErrors exn 
                         oneError false mainError
                         List.iter (oneError true) relatedErrors
                 match exn with
@@ -1321,13 +1321,13 @@ module internal Parser =
           let errHandler = new ErrorHandler(reportErrors, mainInputFileName, tcConfig, source)
 
           // Very old comment: This helps reason=MethodTip to work. reason=MethodTip 
-          // calls with only partial text.  Preumably adding this causes the final EndParameters 
+          // calls with only partial text.  Presumably adding this causes the final EndParameters 
           // call to refer to a different line than the StartParameters call we're really interested in 
           // Or something like that.  
           let source = source + "\n\n\n"
           let lexbuf = UnicodeLexing.StringAsLexbuf source
 
-          // Colelctor for parens matching
+          // Collector for parens matching
           let matchPairRef = new ResizeArray<_>()
 
           use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _oldLogger -> errHandler.ErrorLogger)
@@ -1356,7 +1356,7 @@ module internal Parser =
               Lexhelp.usingLexbufForParsing (lexbuf, mainInputFileName) (fun lexbuf -> 
                   try 
                     let skip = true
-                    let tokenizer = Lexfilter.LexFilter (lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
+                    let tokenizer = LexFilter.LexFilter (lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
                     let lexfun = tokenizer.Lexer
                     if matchBracesOnly then 
                         // Quick bracket matching parse  
@@ -1391,7 +1391,7 @@ module internal Parser =
                             tcConfig.target.IsExe && 
                             projectSourceFiles.Length >= 1 && 
                             System.String.Compare(List.last projectSourceFiles,mainInputFileName,StringComparison.CurrentCultureIgnoreCase)=0
-                        let isLastCompiland = isLastCompiland || Build.IsScript(mainInputFileName)  
+                        let isLastCompiland = isLastCompiland || CompileOps.IsScript(mainInputFileName)  
 
                         let parseResult = ParseInput(lexfun,errHandler.ErrorLogger,lexbuf,None,mainInputFileName,isLastCompiland)
                         Some parseResult
@@ -1421,7 +1421,7 @@ module internal Parser =
                                             member __.Equals((p1,i1),(p2,i2)) = posEq p1 p2 && i1 =  i2 } )
         let capturedMethodGroupResolutions = new ResizeArray<_>(100)
         let allowedRange (m:range) = not m.IsSynthetic
-        interface Nameres.ITypecheckResultsSink with
+        interface NameResolution.ITypecheckResultsSink with
             member sink.NotifyEnvWithScope(m,nenv,ad) = 
                 if allowedRange m then 
                     capturedEnvs.Add((m,nenv,ad)) 
@@ -1515,7 +1515,7 @@ module internal Parser =
                 loadClosure.RootWarnings |> List.iter warnSink
                 
 
-                let fileOfBackgroundError err = (match RangeOfError (fst err) with Some m-> m.FileName | None -> null)
+                let fileOfBackgroundError err = (match GetRangeOfError (fst err) with Some m-> m.FileName | None -> null)
                 let sameFile file hashLoadInFile = 
                     (0 = String.Compare(fst hashLoadInFile, file, StringComparison.OrdinalIgnoreCase))
 
@@ -1576,7 +1576,7 @@ module internal Parser =
                     let checkForErrors() = (parseHadErrors || errHandler.ErrorCount > 0)
                     // Typecheck is potentially a long running operation. We chop it up here with an Eventually continuation and, at each slice, give a chance
                     // for the client to claim the result as obsolete and have the typecheck abort.
-                    let computation = TypecheckSingleInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
+                    let computation = TypeCheckSingleInputAndFinishEventually(checkForErrors,tcConfig, tcImports, tcGlobals, None, TcResultsSink.WithSink sink, tcState, parsedMainInput)
                     match computation |> Eventually.forceWhile (fun () -> not (isResultObsolete())) with
                     | Some((tcEnvAtEnd,_,_),_) -> Some tcEnvAtEnd
                     | None -> None // Means 'aborted'
@@ -1608,7 +1608,7 @@ module internal Parser =
         reraise()
 
 type internal UnresolvedReferencesSet = 
-    val private set : System.Collections.Generic.HashSet<Build.UnresolvedAssemblyReference>
+    val private set : System.Collections.Generic.HashSet<UnresolvedAssemblyReference>
     new(unresolved) = {set = System.Collections.Generic.HashSet(unresolved, HashIdentity.Structural)}
 
     override this.Equals(o) = 
@@ -1763,7 +1763,7 @@ type TypeCheckResults(errors: ErrorInfo[], details: (TypeCheckInfo * Incremental
 /// Information about the compilation environment    
 module internal CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
-    /// are not asscociated with a project
+    /// are not associated with a project
     let DefaultReferencesForOrphanSources = DefaultBasicReferencesForOutOfProjectSources
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
@@ -1866,7 +1866,7 @@ type BackgroundCompiler(notifyFileTypeCheckStateIsDirty:NotifyFileTypeCheckState
                  onDiscard = (fun (_, _, decrement) -> decrement.Dispose()))
 
     
-    /// Helper: get the antecedant typecheck state for the give file (in the options). Return none if not available.        
+    /// Helper: get the antecedent typecheck state for the give file (in the options). Return none if not available.        
     let GetAntecendantResultWithoutSideEffects(filename:string, options:CheckOptions) = 
         match incrementalBuildersCache.GetAvailable options with
         | Some(builder, createErrors, _) ->
@@ -1893,9 +1893,6 @@ type BackgroundCompiler(notifyFileTypeCheckStateIsDirty:NotifyFileTypeCheckState
             Trace.PrintLine("CompilerServices", fun _ -> "Service.UntypedParseImpl")
             use t = Trace.CallByThreadNamed("Reactor", "UntypedParseImpl", "ThreadPool", fun _->"")  
         
-#if TYPE_PROVIDER_SECURITY
-            ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked <- Some filename
-#endif
             let builder,_,_ = incrementalBuildersCache.Get(options) // Q: Whis it it ok to ignore createErrors in the build cache? A: These errors will be appended into the typecheck results
             
             // Do the parsing.
@@ -2212,7 +2209,7 @@ module internal PrettyNaming =
 #if DEBUG
 
 namespace Internal.Utilities.Diagnostic
-open Microsoft.FSharp.Compiler.Env
+open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tastops 
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler

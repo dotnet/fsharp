@@ -1,14 +1,9 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-#region Using directives
-
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics.CodeAnalysis;
-
-#endregion
-
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -169,9 +164,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string CanUseTargetFSharpCoreVersion = "CanUseTargetFSharpCoreVersion";
     }
 
-    /*internal, but public for FSharp.Project.dll*/ public static class ProjectFileValues
+    public static class ProjectFileValues
     {
-        /*internal, but public for FSharp.Project.dll*/ public const string AnyCPU = "AnyCPU";
+        public const string AnyCPU = "AnyCPU";
     }
 
     internal enum WrapperToolAttributeValue
@@ -186,9 +181,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     internal static class DefaultSortOrderNode
     {
         public const int HierarchyNode = 1000;
-#if UNUSED_NESTED_PROJECTS
-        public const int NestedProjectNode = 200;
-#endif
         public const int ReferenceContainerNode = 300;
     }
 

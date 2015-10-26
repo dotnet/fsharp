@@ -1311,7 +1311,7 @@ type internal LanguageServiceState() =
                 // We may have missed a file change event for a dependent file (e.g. after the user added a project reference, he might immediately build that project, but 
                 // we haven't yet started listening for changes to that file on disk - the call to SetDependencyFiles() below starts listening).  This can only happen if 
                 // the set of dependencies has changed (otherwise we were _already_ listening and would not have missed the event)...
-                let anyDependenciesChanged = source.SetDependencyFiles(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ApprovalsAbsoluteFileName :: untypedParse.DependencyFiles())
+                let anyDependenciesChanged = source.SetDependencyFiles(untypedParse.DependencyFiles())
                 // .. so if dependencies have changed, and we may have missed an event, let's behave as though this typecheck is failing and the file still needs to be re-type-checked
                 if anyDependenciesChanged then
                     req.ResultClearsDirtinessOfFile <- false
@@ -1933,64 +1933,10 @@ module FSharpIntellisenseProvider =
 
         member x.Name = filename
 
-#if UNUSED
-module Setup = 
-    /// This attribute adds a intellisense provider for a specific language 
-    /// type. 
-    /// For Example:
-    ///   [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\8.0Exp\Languages\IntellisenseProviders\
-    ///         [Custom_Provider]
-    /// 
-    [<AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)>]
-    type ProvideIntellisenseProviderAttribute(provider:Type, providerName:string, addItemLanguageName:string, defaultExtension:string, shortLanguageName:string, templateFolderName:string) =
-        inherit RegistrationAttribute() 
-        let mutable additionalExtensions : Option<string> = None
-
-        /// Private function to get the provider base key name
-        let providerRegKey() = String.Format(CultureInfo.InvariantCulture, @"Languages\IntellisenseProviders\{0}", [| box providerName |])
-        
-            /// Gets the Type of the intellisense provider.
-        member x.Provider = provider
-            /// Get the Guid representing the generator type
-        member x.ProviderGuid = provider.GUID
-            /// Get the ProviderName
-        member x.ProviderName = providerName
-            /// Get item language
-        member x.AddItemLanguageName = addItemLanguageName
-            /// Get the Default extension
-        member x.DefaultExtension = defaultExtension
-            /// Get the short language name
-        member x.ShortLanguageName = shortLanguageName
-            /// Get the tempalte folder name
-        member x.TemplateFolderName = templateFolderName
-            /// Get/Set Additional extensions
-        member x.AdditionalExtensions 
-            with get() = additionalExtensions
-            and set v = additionalExtensions <- Some(v)
-            ///     Called to register this attribute with the given context.  The context
-            ///     contains the location where the registration inforomation should be placed.
-            ///     It also contains other information such as the type being registered and path information.
-        override x.Register(context:RegistrationAttribute.RegistrationContext) =
-            Check.ArgumentNotNull context "context"
-            use childKey = context.CreateKey(providerRegKey())
-            let mutable providerGuid = provider.GUID
-            childKey.SetValue("GUID", providerGuid.ToString("B"))
-            childKey.SetValue("AddItemLanguageName", addItemLanguageName)
-            childKey.SetValue("DefaultExtension", defaultExtension)
-            childKey.SetValue("ShortLanguageName", shortLanguageName)
-            childKey.SetValue("TemplateFolderName", templateFolderName)
-            match additionalExtensions with 
-            | None | Some "" -> ()
-            | Some(s) ->  childKey.SetValue("AdditionalExtensions", s)
-
-            /// <summary>
-            /// Unregister this file extension.
-            /// </summary>
-            /// <param name="context"></param>
-        override x.Unregister(context:RegistrationAttribute.RegistrationContext) =
-            if (null <> context) then
-                context.RemoveKey(providerRegKey())
-#endif
+// Workaround to access non-public settings persistence type.
+// GetService( ) with this will work as long as the GUID matches the real type.
+[<Guid("9B164E40-C3A2-4363-9BC5-EB4039DEF653")>]
+type internal SVsSettingsPersistenceManager = class end
 
 [<Guid("871D2A70-12A2-4e42-9440-425DD92A4116")>]
 type FSharpPackage() as self =
@@ -2016,11 +1962,40 @@ type FSharpPackage() as self =
     let callback = new ServiceCreatorCallback(CreateIfEnabled)
     
     let mutable mgr : IOleComponentManager = null
-    
+
+#if !VS_VERSION_DEV12
+    let fsharpSpecificProfileSettings =
+        [| "TextEditor.F#.Insert Tabs", box false
+           "TextEditor.F#.Brace Completion", box true
+           "TextEditor.F#.Make URLs Hot", box false
+           "TextEditor.F#.Indent Style", box 1u |]
+#endif
+
     override self.Initialize() =
         UIThread.CaptureSynchronizationContext()
+        self.EstablishDefaultSettingsIfMissing()
         (self :> IServiceContainer).AddService(typeof<FSharpLanguageService>, callback, true)
         base.Initialize()
+
+    /// In case custom VS profile settings for F# are not applied, explicitly set them here.
+    /// e.g. 'keep tabs' is the text editor default, but F# requires 'insert spaces'.
+    /// We specify our customizations in the General profile for VS, but we have found that in some cases
+    /// those customizations are incorrectly ignored.
+    member private this.EstablishDefaultSettingsIfMissing() =
+#if VS_VERSION_DEV12
+        ()  // ISettingsManager only implemented for VS 14.0+
+#else
+        match this.GetService(typeof<SVsSettingsPersistenceManager>) with
+        | :? Microsoft.VisualStudio.Settings.ISettingsManager as settingsManager ->
+            for settingName,defaultValue in fsharpSpecificProfileSettings do
+                // Only take action if the setting has no current custom value
+                // If cloud-synced settings have already been applied or the user has made an explicit change, do nothing
+                match settingsManager.TryGetValue(settingName) with
+                | Microsoft.VisualStudio.Settings.GetValueResult.Missing, _ ->
+                    settingsManager.SetValueAsync(settingName, defaultValue, false) |> ignore
+                | _ -> ()
+        | _ -> ()
+#endif
 
     member self.RegisterForIdleTime() =
         mgr <- (self.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager)
@@ -2043,25 +2018,6 @@ type FSharpPackage() as self =
             let language = new FSharpLanguageService()
             language.SetSite(self)
             language.Initialize()
-            TypeProviderSecurityGlobals.invalidationCallback <- fun () -> language.LanguageServiceState.InteractiveChecker.InvalidateAll()
-            Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.displayLSTypeProviderSecurityDialogBlockingUI <- Some(fun (typeProviderRunTimeAssemblyFileName) ->
-                let pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
-                let filename = 
-                    match Microsoft.FSharp.Compiler.ExtensionTyping.GlobalsTheLanguageServiceCanPoke.theMostRecentFileNameWeChecked with
-                    | None -> assert false; ""  // this should never happen
-                    | Some fn -> fn
-                UIThread.RunSync(fun() ->
-                    // need to access the RDT on the UI thread
-                    match language.LanguageServiceState.Artifacts.TryFindOwningProject((ServiceProvider language.GetService).Rdt, filename) with
-                    | Some owningProjectSite ->
-                        let projectName = Path.GetFileNameWithoutExtension(owningProjectSite.ProjectFileName())
-                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, null, projectName, typeProviderRunTimeAssemblyFileName, pubInfo) 
-                    | None -> 
-                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.A, filename, null, typeProviderRunTimeAssemblyFileName, pubInfo) 
-                    )
-                // the 'displayLSTypeProviderSecurityDialogBlockingUI' callback is run async to the background typecheck, so after the user has interacted with the dialog, request a re-typecheck
-                TypeProviderSecurityGlobals.invalidationCallback() 
-                )
             self.RegisterForIdleTime()
             box language
         | _ -> null
