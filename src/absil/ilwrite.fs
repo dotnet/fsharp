@@ -222,7 +222,6 @@ type PdbData =
 //---------------------------------------------------------------------
 
 let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info = 
-    (try FileSystem.FileDelete fpdb with _ -> ())
     let pdbw = ref Unchecked.defaultof<PdbWriter>
     
     try
@@ -381,10 +380,10 @@ let createWriter (f:string) =
 // MDB Writer.  Generate debug symbols using the MDB format
 //---------------------------------------------------------------------
 
-let WriteMdbInfo fmdb f info = 
-    // Note, if we can’t delete it code will fail later
+let WriteMdbInfo info f fmdb = 
+    // Note, if we cant delete it code will fail later
     (try FileSystem.FileDelete fmdb with _ -> ())
-
+    
     // Try loading the MDB symbol writer from an assembly available on Mono dynamically
     // Report an error if the assembly is not available.    
     let wr = 
@@ -442,8 +441,8 @@ let WriteMdbInfo fmdb f info =
 //---------------------------------------------------------------------
 open Printf
 
-let DumpDebugInfo (outfile:string) (info:PdbData) = 
-    use sw = new StreamWriter(outfile + ".debuginfo")
+let DumpDebugInfo (outfile:Stream) (info:PdbData) = 
+    use sw = new StreamWriter(outfile)
 
     fprintfn sw "ENTRYPOINT\r\n  %b\r\n" info.EntryPoint.IsSome
     fprintfn sw "DOCUMENTS"
@@ -3875,7 +3874,28 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul noDebugData =
+type EmitStreamProvider = Lazy<Choice<EmitTo, Diagnostic>>
+and EmitTo =
+    | EmittedFile of string
+    | EmittedStream of Stream
+and Diagnostic = string
+
+
+// Either
+let (|Success|Failure|) = function
+    | Choice1Of2 s -> Success s
+    | Choice2Of2 f -> Failure f
+
+let private succeed x = Choice1Of2 x
+let private fail x = Choice2Of2 x
+
+let private tryDeleteFile path = 
+    try
+        if FileSystem.SafeExists path
+        then FileSystem.FileDelete path
+    with _ -> ()
+
+let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitStreamProvider option, mdbP: EmitStreamProvider option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitStreamProvider option) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3916,15 +3936,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
 
     let timestamp = absilWriteGetTimeStamp ()
 
-    let os = 
-        try  
-            new BinaryWriter(FileSystem.FileStreamCreateShim(outfile))
-        with e -> 
-            failwith ("Could not open file for writing (binary mode): " + outfile)    
-
-    let  pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
-        try 
-      
+    let gen os (pdbfile: bool) =
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
           let alignVirt = modul.VirtualAlignment // FIXED CHOICE
           let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
@@ -4117,7 +4129,6 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
               match p with 
               | None -> () 
               | Some pExpected -> 
-                  os.Flush(); 
                   let pCurrent =  int32 os.BaseStream.Position
                   if pCurrent <> pExpected then 
                     failwith ("warning: "+chunkName+" not where expected, pCurrent = "+string pCurrent+", p.addr = "+string pExpected) 
@@ -4463,105 +4474,146 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                  b0 reloc2; b1 reloc2; |]
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
-          os.Close()
-          
-          try 
-              FileSystemUtilites.setExecutablePermission outfile
-          with _ -> 
-              ()
           pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
-          
-        // Looks like a finally...
-        with e ->   
-            (try 
-                os.Close() 
-                FileSystem.FileDelete outfile 
-             with _ -> ()) 
-            reraise()
-   
 
-    reportTime showTimes "Writing Image"
-     
-    if dumpDebugInfo then 
-        DumpDebugInfo outfile pdbData
+    let writeDumpDebugInfo pdbData dumpTo =
+        reportTime showTimes "Dump Debug Info"
+        let dump stream = DumpDebugInfo stream pdbData
+        match dumpTo with
+        | EmittedStream stream -> dump stream
+        | EmittedFile file ->
+            use stream = FileSystem.FileStreamCreateShim(file)
+            dump stream
+
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
-    begin match pdbfile with
-    | None -> ()
-    | Some fmdb when runningOnMono -> 
-        WriteMdbInfo fmdb outfile pdbData
+    let writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) outfile pdbpath =
+        reportTime showTimes "Generate PDB Info"
+        // The ISymUnmanagedWriter2 require a file name. This is frequently used during PDB writing.
+        // Ensure a name is provided here in the case we were given only a Stream value.
+        let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile pdbpath pdbData
             
-    | Some fpdb -> 
+        // Now we have the debug data we can go back and fill in the debug directory in the image 
+        let fs2 = new FileStream(outfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read, 0x1000, false)
+        use os2 = new BinaryWriter(fs2)
         try 
-            let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
-            reportTime showTimes "Generate PDB Info"
-            
-          // Now we have the debug data we can go back and fill in the debug directory in the image 
-            let fs2 = new FileStream(outfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read, 0x1000, false)
-            let os2 = new BinaryWriter(fs2)
-            try 
-                // write the IMAGE_DEBUG_DIRECTORY 
-                os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
-                writeInt32 os2 idd.iddCharacteristics // IMAGE_DEBUG_DIRECTORY.Characteristics 
-                writeInt32 os2 timestamp
-                writeInt32AsUInt16 os2 idd.iddMajorVersion
-                writeInt32AsUInt16 os2 idd.iddMinorVersion
-                writeInt32 os2 idd.iddType
-                writeInt32 os2 idd.iddData.Length  // IMAGE_DEBUG_DIRECTORY.SizeOfData 
-                writeInt32 os2 debugDataChunk.addr  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
-                writeInt32 os2 (textV2P debugDataChunk.addr)// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
+            // write the IMAGE_DEBUG_DIRECTORY 
+            os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
+            writeInt32 os2 idd.iddCharacteristics // IMAGE_DEBUG_DIRECTORY.Characteristics 
+            writeInt32 os2 timestamp
+            writeInt32AsUInt16 os2 idd.iddMajorVersion
+            writeInt32AsUInt16 os2 idd.iddMinorVersion
+            writeInt32 os2 idd.iddType
+            writeInt32 os2 idd.iddData.Length  // IMAGE_DEBUG_DIRECTORY.SizeOfData 
+            writeInt32 os2 debugDataChunk.addr  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
+            writeInt32 os2 (textV2P debugDataChunk.addr)// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
 
-                (* dprintf "idd.iddCharacteristics = %ld\n" idd.iddCharacteristics
-                dprintf "iddMajorVersion = %ld\n" idd.iddMajorVersion
-                dprintf "iddMinorVersion = %ld\n" idd.iddMinorVersion
-                dprintf "iddType = %ld\n" idd.iddType
-                dprintf "iddData = (%A) = %s\n" idd.iddData (System.Text.Encoding.UTF8.GetString idd.iddData) *)
+            (* dprintf "idd.iddCharacteristics = %ld\n" idd.iddCharacteristics
+            dprintf "iddMajorVersion = %ld\n" idd.iddMajorVersion
+            dprintf "iddMinorVersion = %ld\n" idd.iddMinorVersion
+            dprintf "iddType = %ld\n" idd.iddType
+            dprintf "iddData = (%A) = %s\n" idd.iddData (System.Text.Encoding.UTF8.GetString idd.iddData) *)
                   
-                // write the debug raw data as given us by the PDB writer 
-                os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
-                if debugDataChunk.size < idd.iddData.Length then 
-                    failwith "Debug data area is not big enough.  Debug info may not be usable"
-                writeBytes os2 idd.iddData
-                os2.Close()
-            with e -> 
-                failwith ("Error while writing debug directory entry: "+e.Message)
-                (try os2.Close(); FileSystem.FileDelete outfile with _ -> ()) 
-                reraise()
+            // write the debug raw data as given us by the PDB writer 
+            os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
+            if debugDataChunk.size < idd.iddData.Length then 
+                failwith "Debug data area is not big enough.  Debug info may not be usable"
+            writeBytes os2 idd.iddData
         with e -> 
-            reraise()
-            
-    end
-    reportTime showTimes "Finalize PDB"
+            failwith ("Error while writing debug directory entry: "+e.Message)
 
-    /// Sign the binary.  No further changes to binary allowed past this point! 
-    match signer with 
-    | None -> ()
-    | Some s -> 
-        try 
-            s.SignFile outfile
-            s.Close() 
+        reportTime showTimes "Finalize PDB"
+
+    /// Sign the binary.  No further changes to binary allowed past this point!
+    let signTo filePath (s: ILStrongNameSigner) =
+        try
+            reportTime showTimes "Signing Image"
+            use closeS = { new System.IDisposable with member x.Dispose() = try s.Close() with _ -> () }
+            s.SignFile filePath
         with e -> 
             failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
-            (try s.Close() with _ -> ())
-            (try FileSystem.FileDelete outfile with _ -> ()) 
-            ()
+        reportTime showTimes "Signed Image"
 
-    reportTime showTimes "Signing Image"
-    //Finished writing and signing the binary and debug info...
+    let serializeToFile extension f emitter =
+        match emitter with
+        | EmittedFile path ->
+            tryDeleteFile path
+            f path
+        | EmittedStream stream ->
+            let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), extension)
+            tryDeleteFile tempFilePath
+            f tempFilePath
+            use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
+            tempFileStream.CopyTo(stream)
+
+    let serializeToPdb = serializeToFile ".pdb"
+    let serializeToMdb = serializeToFile ".mdb"
+
+    let emitOrFail (e: EmitStreamProvider) = 
+        match e.Value with
+        | Success stream -> stream
+        | Failure failure -> failwith failure
+
+    use outfileStream = new MemoryStream()
+    let os =  new BinaryWriter(outfileStream)
+
+    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+        gen os (pdbP |> Option.isSome)
+
+    os.Flush()
+    outfileStream.Position <- 0L
+
+    dumpDebugInfo |> Option.map emitOrFail |> Option.iter (writeDumpDebugInfo pdbData)
+
+    match outfileP |> emitOrFail, pdbP |> Option.map emitOrFail, mdbP |> Option.map emitOrFail, signer with
+    | EmittedStream(s), None, None, None ->
+        outfileStream.CopyTo(s)
+    | EmittedStream(s), pdb, mdb, signer ->
+        // both pdb, mdb and signer implementation require the output file, so let's create it
+        let path = FileSystem.GetTempFilePathShim()
+        using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
+
+        pdb |> Option.iter (serializeToPdb (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
+        mdb |> Option.iter (serializeToMdb (WriteMdbInfo pdbData path))
+        signer |> Option.iter (signTo path)
+
+        use oStream  = FileSystem.FileStreamReadShim(path)
+        oStream.CopyTo(s)
+    | EmittedFile(path), pdb, mdb, signer ->
+        using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
+        path |> FileSystemUtilites.setExecutablePermission 
+
+        pdb |> Option.iter (serializeToPdb (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
+        mdb |> Option.iter (serializeToMdb (WriteMdbInfo pdbData path))
+        signer |> Option.iter (signTo path)
 
     mappings
 
 
+let private optionOfLazy (l: Lazy<'T>) =
+    if l.IsValueCreated
+    then Some(l.Value)
+    else None
+
 type options =
    { ilg: ILGlobals
-     pdbfile: string option
+     pdbfile: EmitStreamProvider option
+     mdbfile: EmitStreamProvider option
      signer: ILStrongNameSigner option
      fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
      showTimes: bool
-     dumpDebugInfo:bool }
-
+     dumpDebugInfo: EmitStreamProvider option }
 
 let WriteILBinary (outfile, args, ilModule, noDebugData) =
-    ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) ilModule noDebugData)
+    try
+        ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.mdbfile, args.signer, args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) ilModule noDebugData)
+    with e ->
+        [Some outfile; args.pdbfile; args.mdbfile; args.dumpDebugInfo]
+        |> List.choose id
+        |> List.choose optionOfLazy
+        |> List.choose (function Success(EmittedFile(path)) -> Some path | _ -> None)
+        |> List.iter tryDeleteFile
+
+        reraise()
 
