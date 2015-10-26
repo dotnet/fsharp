@@ -33,7 +33,7 @@ let envVars () =
 
 let initializeSuite () =
 
-    let configurationName = DEBUG
+    let configurationName = RELEASE
     let doNgen = true;
 
     let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/(sprintf "%O" configurationName)/"net40"/"bin"
@@ -103,38 +103,16 @@ let suiteHelpers = lazy (
 
 [<AttributeUsage(AttributeTargets.Assembly)>]
 type public InitializeSuiteAttribute () =
-    inherit Attribute()
+    inherit TestActionAttribute()
 
-    interface ITestAction with
-        member x.Targets = ActionTargets.Test ||| ActionTargets.Suite
-        member x.BeforeTest details =
-            if details.IsSuite 
-            then suiteHelpers.Force() |> ignore
+    override x.BeforeTest details =
+        if details.IsSuite 
+        then suiteHelpers.Force() |> ignore
 
-        member x.AfterTest details =
-            ()
-    
-    // Workaround: NUnit try to find a *public* instance property Targets (ignoring cast to ITestAction)
-    //
-    // x.Targets doesn't work because is implemented as method instead of readonly property, as follow
-    //
-    //    [SpecialName]
-    //    ActionTargets ITestAction.NUnit\u002DFramework\u002DITestAction\u002Dget_Targets()
-    //    {
-    //      return (ActionTargets) (1 | 2);
-    //    }
-    //
-    // instead of
-    //
-    //    public ActionTargets Targets
-    //    {
-    //      get
-    //      {
-    //        return (ActionTargets) (1 | 2);
-    //      }
-    //    }
-    //
-    member x.Targets = ActionTargets.Test ||| ActionTargets.Suite
+    override x.AfterTest details =
+        ()
+
+    override x.Targets with get() = ActionTargets.Test ||| ActionTargets.Suite
 
 
 [<assembly:InitializeSuite()>]
@@ -142,17 +120,8 @@ type public InitializeSuiteAttribute () =
 
 module FSharpTestSuite =
 
-    let allPermutation = 
-        [ FSI_FILE; FSI_STDIN; FSI_STDIN_OPT; FSI_STDIN_GUI;
-          FSC_BASIC; FSC_HW; FSC_O3;
-          GENERATED_SIGNATURE; EMPTY_SIGNATURE; EMPTY_SIGNATURE_OPT; 
-          FSC_OPT_MINUS_DEBUG; FSC_OPT_PLUS_DEBUG; 
-          FRENCH; SPANISH;
-          AS_DLL; 
-          WRAPPER_NAMESPACE; WRAPPER_NAMESPACE_OPT ]
-
     let getTagsOfFile path =
-        match File.ReadLines(path) |> Seq.tryFind (fun _ -> true) with
+        match File.ReadLines(path) |> Seq.take 5 |> Seq.tryFind (fun s -> s.StartsWith("// #")) with
         | None -> []
         | Some line -> 
             line.TrimStart('/').Split([| '#' |], StringSplitOptions.RemoveEmptyEntries)
@@ -175,9 +144,10 @@ module FSharpTestSuite =
             |> Array.filter (not << String.IsNullOrWhiteSpace)
         let parse (t: string) =
             let a = t.Split([| '\t'; '\t' |], StringSplitOptions.RemoveEmptyEntries)
-            a.[0], (Commands.getfullpath dir a.[1])
+            let testDir = Commands.getfullpath dir a.[1]
+            [| for x in a.[0].Split(',') do yield (x, testDir) |]
 
-        lines |> Array.map parse |> List.ofArray
+        lines |> Array.collect parse |> List.ofArray
 
     let ``test.lst`` = lazy ( 
         parseTestLst ( __SOURCE_DIRECTORY__/".."/"test.lst" ) 
@@ -194,18 +164,78 @@ module FSharpTestSuite =
         db
         |> List.choose (fun (tag, d) -> if sameDir d then Some tag else None)
 
-    let setTestDataInfo (group,name) (tc: TestCaseData) =
-        let testDir = Path.Combine(__SOURCE_DIRECTORY__, group, name)
-        if not (Directory.Exists(testDir)) then failwithf "test directory '%s' does not exists" testDir
-        let categories = [ group; name ] @ (testDir |> getTestFileMetadata) @ (testDir |> getTestLstTags ``test.lst``.Value)
-        let properties = [ "DIRECTORY", testDir ] |> Map.ofList
+    let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
 
-        categories |> List.iter (fun (c: string) -> tc.Categories.Add(c) |> ignore)
-        properties |> Map.iter (fun k v -> tc.Properties.Add(k,v))
-        tc
-    
-    let setCategory s (tc: TestCaseData) =
-        tc.SetCategory(s)
+    let setProps dir (props: NUnit.Framework.Interfaces.IPropertyBag) =
+        let testDir = dir |> Commands.getfullpath fsharpSuiteDirectory
+
+        if not (Directory.Exists(testDir)) then failwithf "test directory '%s' does not exists" testDir
+
+        let categories = [ dir ] @ (testDir |> getTestFileMetadata) @ (testDir |> getTestLstTags ``test.lst``.Value)
+        categories |> List.iter (fun (c: string) -> props.Add(NUnit.Framework.Internal.PropertyNames.Category, c))
+
+        props.Set("DIRECTORY", testDir)
+
+    let testContext () =
+        let test = NUnit.Framework.TestContext.CurrentContext.Test
+        { Directory = test.Properties.Get("DIRECTORY") :?> string;
+          Config = suiteHelpers.Value }
+
+// parametrized test cases does not inherits properties of test ( see https://github.com/nunit/nunit/issues/548 )
+// and properties is where the custom context data is saved
+
+type FSharpSuiteTestAttribute(dir: string) =
+    inherit NUnitAttribute()
+    interface NUnit.Framework.Interfaces.IApplyToTest with
+        member x.ApplyToTest(test: NUnit.Framework.Internal.Test) =
+            try
+                test.Properties |> FSharpTestSuite.setProps dir
+            with ex ->
+                test.RunState <- NUnit.Framework.Interfaces.RunState.NotRunnable
+                test.Properties.Set(NUnit.Framework.Internal.PropertyNames.SkipReason, NUnit.Framework.Internal.ExceptionHelper.BuildMessage(ex))
+                test.Properties.Set(NUnit.Framework.Internal.PropertyNames.ProviderStackTrace, NUnit.Framework.Internal.ExceptionHelper.BuildStackTrace(ex))
+
+type FSharpSuiteTestCaseData =
+    inherit TestCaseData
+
+    new (dir: string, [<ParamArray>] arguments: Object array) as this = 
+        { inherit TestCaseData(arguments) }
+        then
+            this.Properties |> FSharpTestSuite.setProps dir
+            arguments
+            |> Array.choose (fun a -> match a with :? Permutation as p -> Some p | _ -> None)
+            |> Array.iter (fun p -> this.SetCategory(sprintf "%A" p) |> ignore)
+
+[<AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)>]
+type FSharpSuiteTestCaseAttribute =
+    inherit TestCaseAttribute
+
+    new (dir: string, [<ParamArray>] arguments: Object array) as this = 
+        { inherit TestCaseAttribute(arguments) }
+        then
+            this.Properties |> FSharpTestSuite.setProps dir
+
+
+type FSharpSuitePermutationsAttribute(dir: string) =
+    inherit NUnitAttribute()
+
+    let _builder = NUnit.Framework.Internal.Builders.NUnitTestCaseBuilder()
+    interface NUnit.Framework.Interfaces.ITestBuilder with
+        member x.BuildFrom(methodInfo, suite) =
+            let allPermutations = 
+                [ FSI_FILE; FSI_STDIN; FSI_STDIN_OPT; FSI_STDIN_GUI;
+                  FSC_BASIC; FSC_HW; FSC_O3;
+                  GENERATED_SIGNATURE; EMPTY_SIGNATURE; EMPTY_SIGNATURE_OPT; 
+                  FSC_OPT_MINUS_DEBUG; FSC_OPT_PLUS_DEBUG; 
+                  FRENCH; SPANISH;
+                  AS_DLL; 
+                  WRAPPER_NAMESPACE; WRAPPER_NAMESPACE_OPT 
+                ]
+                |> List.map (fun p -> (new FSharpSuiteTestCaseData (dir, p)))
+
+            allPermutations
+            |> List.map (fun tc -> _builder.BuildTestMethod(methodInfo, suite, tc))
+            |> Seq.ofList
 
 module FileGuard =
     let private remove path = if File.Exists(path) then Commands.rm (Path.GetTempPath()) path
@@ -229,11 +259,6 @@ let checkGuardExists guard = processor {
     then return! genericError (sprintf "exit code 0 but %s file doesn't exists" (guard.Path |> Path.GetFileName))
     }
 
-
-
-type TestRunContext = 
-    { Directory: string; 
-      Config: TestConfig }
 
 let check (f: Attempt<_,_>) =
     f |> Attempt.Run |> checkTestResult

@@ -8,11 +8,7 @@ open FSharpTestSuiteTypes
 open NUnitConf
 open PlatformHelpers
 
-let setTestDataInfo name = FSharpTestSuite.setTestDataInfo ("typeProviders", name)
-
-let testContext () =
-    { Directory = NUnit.Framework.TestContext.CurrentContext.Test.Properties.["DIRECTORY"] :?> string;
-      Config = suiteHelpers.Value }
+let testContext = FSharpTestSuite.testContext
 
 let requireVSUltimate cfg = processor {
     do! match cfg.INSTALL_SKU with
@@ -28,11 +24,8 @@ let requireVSUltimate cfg = processor {
 module Builtin =
 
     module EdmxFile = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("builtin"/"EdmxFile"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("typeProviders/builtin/EdmxFile")>]
         let EdmxFile p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -46,11 +39,8 @@ module Builtin =
 
 
     module ODataService = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("builtin"/"ODataService"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("typeProviders/builtin/ODataService")>]
         let oDataService p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -64,11 +54,8 @@ module Builtin =
 
 
     module SqlDataConnection = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("builtin"/"SqlDataConnection"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("typeProviders/builtin/SqlDataConnection")>]
         let sqlDataConnection p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
 
@@ -101,11 +88,8 @@ module Builtin =
             })
 
     module WsdlService = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("builtin"/"WsdlService"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("typeProviders/builtin/WsdlService")>]
         let wsdlService p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -189,9 +173,7 @@ module DiamondAssembly =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "diamondAssembly" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("typeProviders/diamondAssembly")>]
     let diamondAssembly () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -205,9 +187,7 @@ module DiamondAssembly =
 
 module GlobalNamespace = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "globalNamespace" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("typeProviders/globalNamespace")>]
     let globalNamespace () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -344,11 +324,7 @@ module HelloWorld =
 
         }
 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "helloWorld")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("typeProviders/helloWorld")>]
     let helloWorld p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -416,9 +392,7 @@ module HelloWorldCSharp =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "helloWorldCSharp" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("typeProviders/helloWorldCSharp")>]
     let helloWorldCSharp () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -476,7 +450,7 @@ module NegTests =
             "EVIL_PROVIDER_ReturnsTypeWithIncorrectNameFromApplyStaticArguments" ]
         
         (testsSimple @ testsWithDefine)
-        |> List.map (fun name -> (new TestCaseData(name)) |> setTestDataInfo "negTests" )
+        |> List.map (fun t -> FSharpSuiteTestCaseData("typeProviders/negTests", t))
 
     [<Test; TestCaseSource("testData")>]
     let negTests name = check (processor {
@@ -594,11 +568,8 @@ module NegTests =
 
 
 module SplitAssembly = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "splitAssembly")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("typeProviders/splitAssembly")>]
     let splitAssembly p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -698,9 +669,7 @@ module WedgeAssembly =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "wedgeAssembly" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("typeProviders/wedgeAssembly")>]
     let wedgeAssembly () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 

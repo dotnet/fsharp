@@ -40,10 +40,25 @@
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+    <Reference Include="mscorlib" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\src\packages\NUnit.3.0.0-beta-3\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="PlatformHelpers.fs" />
     <Compile Include="Commands.fs" />
     <Compile Include="FSharpTestSuiteTypes.fs" />
-    <Compile Include="..\windowsPlatform.fs" />
+    <Compile Include="..\windowsPlatform.fs">
+      <Link>windowsPlatform.fs</Link>
+    </Compile>
     <Compile Include="..\config.fs">
       <Link>config.fs</Link>
     </Compile>
@@ -54,9 +69,10 @@
     <Compile Include="single-test-build.fs" />
     <Compile Include="single-test-run.fs" />
     <Compile Include="single-neg-test.fs" />
-    <Compile Include="core\tests_core.fs" />
+    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="core\tests_core.fs" />
     <None Include="core\access\build.bat" />
     <None Include="core\access\run.bat" />
     <None Include="core\access\test.fsx" />
@@ -570,6 +586,8 @@
     <None Include="core\verify\build.bat" />
     <None Include="core\verify\run.bat" />
     <None Include="core\verify\xmlverify.fs" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="optimize\tests_optimize.fs" /> 
     <None Include="optimize\analyses\build.bat" />
     <None Include="optimize\analyses\effects.fs" />
@@ -1087,21 +1105,5 @@
     <None Include="typeProviders\wedgeAssembly\test2b.fsi" />
     <None Include="typeProviders\wedgeAssembly\test3.fsx" />
     <Compile Include="typeProviders\tests_typeProviders.fs" /> 
-  </ItemGroup>
-  <ItemGroup>
-    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
-        <SpecificVersion>true</SpecificVersion>
-        <Private>True</Private>
-        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
   </ItemGroup>
 </Project>

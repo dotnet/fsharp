@@ -8,19 +8,12 @@ open FSharpTestSuiteTypes
 open NUnitConf
 open PlatformHelpers
 
-let setTestDataInfo name = FSharpTestSuite.setTestDataInfo ("typecheck", name)
-
-let testContext () =
-    { Directory = NUnit.Framework.TestContext.CurrentContext.Test.Properties.["DIRECTORY"] :?> string;
-      Config = suiteHelpers.Value }
+let testContext = FSharpTestSuite.testContext
 
 
 module ``Full-rank-arrays`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "full-rank-arrays")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("typecheck/full-rank-arrays")>]
     let ``full-rank-arrays`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -37,11 +30,8 @@ module ``Full-rank-arrays`` =
 
 
 module Misc = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "misc")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("typecheck/misc")>]
     let misc p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -53,9 +43,7 @@ module Misc =
 
 module Sigs = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "sigs" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("typecheck/sigs")>]
     let sigs () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 

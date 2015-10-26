@@ -8,11 +8,7 @@ open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let setTestDataInfo name = FSharpTestSuite.setTestDataInfo ("core", name)
-
-let testContext () =
-    { Directory = NUnit.Framework.TestContext.CurrentContext.Test.Properties.["DIRECTORY"] :?> string;
-      Config = suiteHelpers.Value }
+let testContext = FSharpTestSuite.testContext
 
 let requireVSUltimate cfg = processor {
     do! match cfg.INSTALL_SKU with
@@ -26,11 +22,7 @@ let requireVSUltimate cfg = processor {
     }
 
 module Access =
-    let permutations =
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "access")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/access")>]
     let access p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -40,11 +32,7 @@ module Access =
         })
 
 module Apporder = 
-    let permutations =
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "apporder")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/apporder")>]
     let apporder p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -54,11 +42,7 @@ module Apporder =
         })
 
 module Array = 
-    let permutations =
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "array")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/array")>]
     let array p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -68,11 +52,7 @@ module Array =
         })
 
 module Attributes = 
-    let permutations =
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "attributes")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/attributes")>]
     let attributes p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -82,11 +62,7 @@ module Attributes =
         }) 
 
 module Comprehensions = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "comprehensions")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/comprehensions")>]
     let comprehensions p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -96,11 +72,7 @@ module Comprehensions =
         })
 
 module Control = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "control")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/control")>]
     let control p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -109,7 +81,7 @@ module Control =
         do! SingleTestRun.singleTestRun cfg dir p
         })
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/control")>]
     let ``control --tailcalls`` p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -119,11 +91,7 @@ module Control =
         })
 
 module ControlChamenos =
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "controlChamenos")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/controlChamenos")>]
     let controlChamenos p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -133,11 +101,7 @@ module ControlChamenos =
         })
 
 module ControlMailbox =
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "controlMailbox")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/controlMailbox")>]
     let controlMailbox p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -146,7 +110,7 @@ module ControlMailbox =
         do! SingleTestRun.singleTestRun cfg  dir p
         })
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/controlMailbox")>]
     let ``controlMailbox --tailcalls`` p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -156,11 +120,7 @@ module ControlMailbox =
         })
 
 module ControlWpf = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "controlwpf")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/controlwpf")>]
     let controlWpf p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -170,11 +130,7 @@ module ControlWpf =
         })
 
 module Csext = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "csext")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/csext")>]
     let csext p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -225,10 +181,7 @@ module Events =
         do! exec ("."/"testcs.exe") ""
         }
 
-    let testData =
-        [ (new TestCaseData ()) |> setTestDataInfo "events" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/events")>]
     let events () = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -240,13 +193,11 @@ module Events =
 
 module ``FSI-Shadowcopy`` = 
 
-    let test1Data = 
-        // "%FSI%" %fsi_flags%                          < test1.fsx
-        // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
-        [""; "--shadowcopyreferences-"] 
-        |> List.map (fun flags -> (new TestCaseData(flags)) |> setTestDataInfo "fsi-shadowcopy")
-
-    [<Test; TestCaseSource("test1Data")>]
+    [<Test>]
+    // "%FSI%" %fsi_flags%                          < test1.fsx
+    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "")>]
+    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
+    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")>]
     let ``shadowcopy disabled`` (flags: string) = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -263,13 +214,11 @@ module ``FSI-Shadowcopy`` =
         do! testOkFile |> NUnitConf.checkGuardExists
         })
 
-    let test2Data = 
-        // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
-        // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
-        ["/shadowcopyreferences+"; "--shadowcopyreferences"] 
-        |> List.map (fun flags -> (new TestCaseData(flags)) |> setTestDataInfo "fsi-shadowcopy")
-
-    [<Test; TestCaseSource("test2Data")>]
+    [<Test>]
+    // "%FSI%" %fsi_flags%  /shadowcopyreferences+  < test2.fsx
+    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "/shadowcopyreferences+")>]
+    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
+    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")>]
     let ``shadowcopy enabled`` (flags: string) = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -291,9 +240,7 @@ module ``FSI-Shadowcopy`` =
 
 module Forwarders = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "forwarders" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/forwarders")>]
     let forwarders () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -401,9 +348,7 @@ module FsFromCs =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "fsfromcs" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/fsfromcs")>]
     let fsfromcs () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -447,9 +392,7 @@ module FsFromFsViaCs =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "fsfromfsviacs" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/fsfromfsviacs")>]
     let fsfromfsviacs () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -462,9 +405,7 @@ module FsFromFsViaCs =
 
 module ``FSI-reload`` = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "fsi-reload" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/fsi-reload")>]
     let ``fsi-reload`` () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -552,9 +493,7 @@ module fsiAndModifiers =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "fsiAndModifiers" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/fsiAndModifiers")>]
     let fsiAndModifiers () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -565,11 +504,8 @@ module fsiAndModifiers =
         })
 
 module GenericMeasures = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "genericmeasures")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/genericmeasures")>]
     let genericmeasures p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -580,9 +516,7 @@ module GenericMeasures =
 
 module Hiding = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "hiding" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/hiding")>]
     let hiding () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -613,11 +547,8 @@ module Hiding =
 
 
 module Innerpoly = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "innerpoly")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/innerpoly")>]
     let innerpoly p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -628,11 +559,8 @@ module Innerpoly =
         
         
 module ``test int32`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "int32")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/int32")>]
     let int32 p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -712,9 +640,7 @@ module QueriesCustomQueryOps =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "queriesCustomQueryOps" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/queriesCustomQueryOps")>]
     let queriesCustomQueryOps () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -727,19 +653,17 @@ module QueriesCustomQueryOps =
 [<Category("fail_new")>]
 module Printing = 
 
-    let testData = 
-        // "%FSI%" %fsc_flags_errors_ok%  --nologo --use:preludePrintSize200.fsx      <test.fsx >z.raw.output.test.200.txt     2>&1 
-        // findstr /v "%CD%" z.raw.output.test.200.txt     | findstr /v -C:"--help' for options" > z.output.test.200.txt
-        // if NOT EXIST z.output.test.200.bsl     COPY z.output.test.200.txt     z.output.test.200.bsl
-        // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
-        [ "", "z.output.test.default.txt", "z.output.test.default.bsl" ;
-          "--use:preludePrintSize1000.fsx", "z.output.test.1000.txt", "z.output.test.1000.bsl" ;
-          "--use:preludePrintSize200.fsx", "z.output.test.200.txt", "z.output.test.200.bsl" ;
-          "--use:preludeShowDeclarationValuesFalse.fsx", "z.output.test.off.txt", "z.output.test.off.bsl" ;
-          "--quiet", "z.output.test.quiet.txt", "z.output.test.quiet.bsl" ]
-        |> List.map (fun (flag,diff,expected) -> (new TestCaseData(flag, diff, expected)) |> setTestDataInfo "printing" )
-
-    [<Test; TestCaseSource("testData")>]
+    // "%FSI%" %fsc_flags_errors_ok%  --nologo --use:preludePrintSize200.fsx      <test.fsx >z.raw.output.test.200.txt     2>&1 
+    // findstr /v "%CD%" z.raw.output.test.200.txt     | findstr /v -C:"--help' for options" > z.output.test.200.txt
+    // if NOT EXIST z.output.test.200.bsl     COPY z.output.test.200.txt     z.output.test.200.bsl
+    // %PRDIFF% z.output.test.200.txt     z.output.test.200.bsl     > z.output.test.200.diff
+    [<Test>]
+    [<SetCulture("en-US"); SetUICulture("en-US")>] //not enough
+    [<FSharpSuiteTestCase("core/printing", "", "z.output.test.default.txt", "z.output.test.default.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize1000.fsx", "z.output.test.1000.txt", "z.output.test.1000.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--use:preludePrintSize200.fsx", "z.output.test.200.txt", "z.output.test.200.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--use:preludeShowDeclarationValuesFalse.fsx", "z.output.test.off.txt", "z.output.test.off.bsl")>]
+    [<FSharpSuiteTestCase("core/printing", "--quiet", "z.output.test.quiet.txt", "z.output.test.quiet.bsl")>]
     let printing flag diffFile expectedFile = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -914,10 +838,7 @@ module Quotes =
 
         }
 
-
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "quotes" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/quotes")>]
     let quotes () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -929,11 +850,8 @@ module Quotes =
 
 
 module Namespaces = 
-    let permutations =
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "namespaces")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/namespaces")>]
     let attributes p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -944,9 +862,7 @@ module Namespaces =
 
 module Parsing = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "parsing" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/parsing")>]
     let parsing () = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1030,9 +946,7 @@ module Unicode =
         }
 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "unicode" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/unicode")>]
     let unicode () = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1040,11 +954,7 @@ module Unicode =
         do! run cfg dir
         }) 
 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "unicode")
-
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/unicode")>]
     let unicode2 p = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1057,9 +967,7 @@ module Unicode =
 
 module InternalsVisible =
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "internalsvisible" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/internalsvisible")>]
     let internalsvisible () = check  (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1141,9 +1049,7 @@ module Interop =
         do! exec ("."/"User.exe") ""
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "interop" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/interop")>]
     let interop () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1154,11 +1060,8 @@ module Interop =
         })
 
 module ``test lazy`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "lazy")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/lazy")>]
     let ``lazy`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1168,11 +1071,8 @@ module ``test lazy`` =
         })
 
 module letrec = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "letrec")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/letrec")>]
     let letrec p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1182,11 +1082,8 @@ module letrec =
         })
 
 module LibTest = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "libtest")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/libtest")>]
     let libtest p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1196,11 +1093,8 @@ module LibTest =
         })
 
 module Lift = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "lift")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/lift")>]
     let lift p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1380,9 +1274,7 @@ module ``Load-Script`` =
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath "out.txt") (getfullpath "out.bsl") diffs)
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "load-script" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/load-script")>]
     let ``load-script`` () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1392,11 +1284,8 @@ module ``Load-Script`` =
 
 
 module LongNames = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "longnames")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/longnames")>]
     let longnames p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1407,11 +1296,8 @@ module LongNames =
 
 
 module ``test map`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "map")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/map")>]
     let map p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1424,11 +1310,8 @@ module Math =
     //TODO math/lalgebra does not have build.bat/run.bat and #r "FSharp.Math.Providers.dll"
     
     module Numbers = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("math"/"numbers"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("core/math/numbers")>]
         let numbers p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1439,11 +1322,8 @@ module Math =
 
 
     module numbersVS2008 = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("math"/"numbersVS2008"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("core/math/numbersVS2008")>]
         let numbersVS2008 p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1455,11 +1335,8 @@ module Math =
 
 
 module Measures = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "measures")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/measures")>]
     let measures p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1498,11 +1375,8 @@ module Members =
     *)
     [<Category("fail_new"); Category("fail_reason_FSI_STDIN"); Category("ok_old"); Category("fail_commandline")>]
     module Basics = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("members"/"basics"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("core/members/basics")>]
         let Basics p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1512,11 +1386,8 @@ module Members =
             })
 
     module Ctree = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("members"/"ctree"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("core/members/ctree")>]
         let ctree p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1526,11 +1397,8 @@ module Members =
             })
 
     module Factors = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("members"/"factors"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("core/members/factors")>]
         let factors p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1540,11 +1408,8 @@ module Members =
             })
 
     module Incremental = 
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("members"/"incremental"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("core/members/incremental")>]
         let incremental p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1554,11 +1419,8 @@ module Members =
             })
 
     module Ops =
-        let permutations = 
-            FSharpTestSuite.allPermutation
-            |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo ("members"/"ops"))
 
-        [<Test; TestCaseSource("permutations")>]
+        [<Test; FSharpSuitePermutations("core/members/ops")>]
         let ops p = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1569,11 +1431,8 @@ module Members =
 
 
 module Nested = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "nested")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/nested")>]
     let nested p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1625,9 +1484,7 @@ module NetCore =
 
             }
 
-        let testData = [ (new TestCaseData()) |> setTestDataInfo ("netcore"/"netcore259") ]
-
-        [<Test; TestCaseSource("testData")>]
+        [<Test; FSharpSuiteTest("core/netcore/netcore259")>]
         let netcore259 () = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1676,9 +1533,7 @@ module NetCore =
             do! exec (".."/"ConsoleApplication1"/"bin"/"Debug"/"profile7"/"PortableTestEntry.exe") ""
             }
 
-        let testData = [ (new TestCaseData()) |> setTestDataInfo ("netcore"/"netcore7") ]
-
-        [<Test; TestCaseSource("testData")>]
+        [<Test; FSharpSuiteTest("core/netcore/netcore7")>]
         let netcore7 () = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1727,9 +1582,7 @@ module NetCore =
             do! exec (".."/"ConsoleApplication1"/"bin"/"Debug"/"profile78"/"PortableTestEntry.exe") ""
             }
 
-        let testData = [ (new TestCaseData()) |> setTestDataInfo ("netcore"/"netcore78") ]
-
-        [<Test; TestCaseSource("testData")>]
+        [<Test; FSharpSuiteTest("core/netcore/netcore78")>]
         let netcore78 () = check (processor {
             let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1741,11 +1594,8 @@ module NetCore =
 
 
 module Patterns = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "patterns")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/patterns")>]
     let patterns p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -1759,9 +1609,7 @@ module Patterns =
 [<Category("fail_new"); Category("fail_reason_ILX_CONFIG")>]
 module Pinvoke = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "pinvoke" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/testData")>]
     let pinvoke () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1820,9 +1668,7 @@ module Portable =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "portable" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/portable")>]
     let portable () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1834,9 +1680,7 @@ module Portable =
 
 
 module ``test printf`` = 
-    let permutations = 
-        [ FSC_BASIC ]
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "printf")
+    let permutations = [ FSharpSuiteTestCaseData("core/printf", FSC_BASIC) ]
 
     [<Test; TestCaseSource("permutations")>]
     let printf p = check (processor {
@@ -1911,9 +1755,7 @@ module QueriesLeafExpressionConvert =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "queriesLeafExpressionConvert" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/queriesLeafExpressionConvert")>]
     let queriesLeafExpressionConvert () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -1984,9 +1826,7 @@ module QueriesNullableOperators =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "queriesNullableOperators" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/queriesNullableOperators")>]
     let queriesNullableOperators () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2059,9 +1899,7 @@ module QueriesOverIEnumerable =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "queriesOverIEnumerable" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/queriesOverIEnumerable")>]
     let queriesOverIEnumerable () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2133,9 +1971,7 @@ module QueriesOverIQueryable =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "queriesOverIQueryable" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/queriesOverIQueryable")>]
     let queriesOverIQueryable () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2207,9 +2043,7 @@ module QueriesOverOData =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "queriesOverOData" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/queriesOverOData")>]
     let queriesOverOData () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2281,9 +2115,7 @@ module QuotesDebugInfo =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "quotesDebugInfo" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/quotesDebugInfo")>]
     let quotesDebugInfo () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2379,9 +2211,7 @@ module QuotesInMultipleModules =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "quotesInMultipleModules" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/quotesInMultipleModules")>]
     let quotesInMultipleModules () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2395,11 +2225,8 @@ module QuotesInMultipleModules =
 
 
 module Reflect = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "reflect")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/reflect")>]
     let reflect p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2466,9 +2293,7 @@ module ``test resources`` =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "resources" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/resources")>]
     let resources () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2480,11 +2305,8 @@ module ``test resources`` =
 
 
 module ``test seq`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "seq")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/seq")>]
     let seq p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2496,11 +2318,8 @@ module ``test seq`` =
 
 
 module Subtype = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "subtype")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/subtype")>]
     let subtype p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2512,11 +2331,8 @@ module Subtype =
 
 
 module Syntax = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "syntax")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/syntax")>]
     let syntax p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2528,11 +2344,8 @@ module Syntax =
 
 
 module Tlr = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "tlr")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("core/tlr")>]
     let tlr p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -2756,9 +2569,7 @@ module Topinit =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "topinit" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/topinit")>]
     let topinit () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2799,9 +2610,7 @@ module UnitsOfMeasure =
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "unitsOfMeasure" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/unitsOfMeasure")>]
     let unitsOfMeasure () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -2815,9 +2624,7 @@ module UnitsOfMeasure =
 
 module Verify = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "verify" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("core/verify")>]
     let verify () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 

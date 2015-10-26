@@ -63,3 +63,7 @@ and INSTALL_SKU =
     | DesktopExpress
     | WebExpress
     | Ultimate
+
+type TestRunContext = 
+    { Directory: string; 
+      Config: TestConfig }

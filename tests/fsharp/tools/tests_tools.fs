@@ -8,18 +8,12 @@ open FSharpTestSuiteTypes
 open NUnitConf
 open PlatformHelpers
 
-let setTestDataInfo name = FSharpTestSuite.setTestDataInfo ("tools", name)
-
-let testContext () =
-    { Directory = NUnit.Framework.TestContext.CurrentContext.Test.Properties.["DIRECTORY"] :?> string;
-      Config = suiteHelpers.Value }
+let testContext = FSharpTestSuite.testContext
 
 
 module Bundle = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "bundle" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("tools/bundle")>]
     let bundle () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -57,11 +51,8 @@ module Bundle =
 
 
 module Eval = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "eval")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("tools/eval")>]
     let eval p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         

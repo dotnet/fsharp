@@ -8,19 +8,12 @@ open FSharpTestSuiteTypes
 open NUnitConf
 open PlatformHelpers
 
-let setTestDataInfo name = FSharpTestSuite.setTestDataInfo ("regression", name)
-
-let testContext () =
-    { Directory = NUnit.Framework.TestContext.CurrentContext.Test.Properties.["DIRECTORY"] :?> string;
-      Config = suiteHelpers.Value }
+let testContext = FSharpTestSuite.testContext
 
 
 module ``26`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "26")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("regression/26")>]
     let ``26`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -31,11 +24,8 @@ module ``26`` =
 
 
 module ``321`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "321")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("regression/321")>]
     let ``321`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -82,9 +72,7 @@ module ``655`` =
         do! testOkFile |> NUnitConf.checkGuardExists
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "655" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("regression/655")>]
     let ``655`` () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -134,9 +122,7 @@ module ``656`` =
         return! NUnitConf.genericError "env var 'ILX_CONFIG' not found, using '' as default the test pass"
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "656" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("regression/656")>]
     let ``656`` () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -149,11 +135,8 @@ module ``656`` =
 
 
 module ``83`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "83")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("regression/83")>]
     let ``83`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -180,11 +163,8 @@ module ``83`` =
 
 
 module ``84`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "84")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("regression/84")>]
     let ``84`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -220,9 +200,7 @@ module ``85`` =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "85" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("regression/85")>]
     let ``85`` () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -234,11 +212,8 @@ module ``85`` =
 
 
 module ``86`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "86")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("regression/86")>]
     let ``86`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -249,11 +224,8 @@ module ``86`` =
 
 
 module ``Tuple-bug-1`` = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "tuple-bug-1")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("regression/tuple-bug-1")>]
     let ``tuple-bug-1`` p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         

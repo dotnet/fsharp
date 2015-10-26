@@ -8,12 +8,7 @@ open NUnitConf
 open PlatformHelpers
 open FSharpTestSuiteTypes
 
-let setTestDataInfo name = FSharpTestSuite.setTestDataInfo ("optimize", name)
-
-let testContext () =
-    { Directory = NUnit.Framework.TestContext.CurrentContext.Test.Properties.["DIRECTORY"] :?> string;
-      Config = suiteHelpers.Value }
-
+let testContext = FSharpTestSuite.testContext
 
 module Analyses = 
 
@@ -33,9 +28,7 @@ module Analyses =
         return out.ToArray() |> List.ofArray
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "analyses" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("optimize/analyses")>]
     let functionSizes () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -61,7 +54,7 @@ module Analyses =
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath outFile) (getfullpath expectedFile) diff)
         })
 
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("optimize/analyses")>]
     let totalSizes () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -87,7 +80,7 @@ module Analyses =
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath outFile) (getfullpath expectedFile) diff)
         })
 
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("optimize/analyses")>]
     let hasEffect () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -113,7 +106,7 @@ module Analyses =
                 NUnitConf.genericError (sprintf "'%s' and '%s' differ; %A" (getfullpath outFile) (getfullpath expectedFile) diff)
         })
 
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("optimize/analyses")>]
     let noNeedToTailcall () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -210,9 +203,7 @@ module Inline =
 
         }
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "inline" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("optimize/inline")>]
     let ``inline`` () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
@@ -224,9 +215,7 @@ module Inline =
 
 module Stats = 
 
-    let testData = [ (new TestCaseData()) |> setTestDataInfo "stats" ]
-
-    [<Test; TestCaseSource("testData")>]
+    [<Test; FSharpSuiteTest("optimize/stats")>]
     let stats () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 

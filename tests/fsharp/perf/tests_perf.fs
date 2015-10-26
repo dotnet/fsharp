@@ -8,19 +8,12 @@ open FSharpTestSuiteTypes
 open NUnitConf
 open PlatformHelpers
 
-let setTestDataInfo name = FSharpTestSuite.setTestDataInfo ("perf", name)
-
-let testContext () =
-    { Directory = NUnit.Framework.TestContext.CurrentContext.Test.Properties.["DIRECTORY"] :?> string;
-      Config = suiteHelpers.Value }
+let testContext = FSharpTestSuite.testContext
 
 
 module Graph = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "graph")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("perf/graph")>]
     let graph p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
@@ -31,11 +24,8 @@ module Graph =
 
 
 module Nbody = 
-    let permutations = 
-        FSharpTestSuite.allPermutation
-        |> List.map (fun p -> (new TestCaseData (p)).SetCategory(sprintf "%A" p) |> setTestDataInfo "nbody")
 
-    [<Test; TestCaseSource("permutations")>]
+    [<Test; FSharpSuitePermutations("perf/nbody")>]
     let nbody p = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
         
