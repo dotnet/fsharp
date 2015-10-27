@@ -136,7 +136,8 @@ module internal Params =
         (args,argsL) ||> List.zip |> List.map mkParam
 
 #if EXTENSIONTYPING
-    let (|ItemIsTypeWithStaticArguments|_|) g item =
+
+    let (|ItemIsProvidedType|_|) g item =
         match item with
         | Item.Types(_name,tys) ->
             match tys with
@@ -145,6 +146,28 @@ module internal Params =
                     Some tyconRef
                 else
                     None
+            | _ -> None
+        | _ -> None
+
+    let (|ItemIsWithStaticArguments|_|) m g item =
+        match item with
+        | Item.Types(_name,tys) ->
+            match tys with
+            | [AppTy g (tyconRef,_typeInst)] ->
+                if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
+                    let typeBeforeArguments = 
+                        match tyconRef.TypeReprInfo with 
+                        | TProvidedTypeExtensionPoint info -> info.ProvidedType
+                        | _ -> failwith "unreachable"
+                    let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
+                    let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters",m)
+                    Some staticParameters
+                else
+                    None
+            | _ -> None
+        | Item.MethodGroup(_name,[minfo]) ->
+            match minfo.ProvidedStaticParameterInfo  with 
+            | Some (_,staticParameters) -> Some staticParameters
             | _ -> None
         | _ -> None
 #endif
@@ -223,14 +246,7 @@ module internal Params =
             let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomeFSharpCode
             ParamsOfParamDatas g denv [ParamData(false, false, NotOptional, None, ReflectedArgInfo.None, fty)] delty
 #if EXTENSIONTYPING
-        | ItemIsTypeWithStaticArguments g tyconRef ->
-            // similar code to TcProvidedTypeAppToStaticConstantArgs 
-            let typeBeforeArguments = 
-                match tyconRef.TypeReprInfo with 
-                | TProvidedTypeExtensionPoint info -> info.ProvidedType
-                | _ -> failwith "unreachable"
-            let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
-            let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters",m)
+        | ItemIsWithStaticArguments m g staticParameters ->
             staticParameters 
                 |> Array.map (fun sp -> 
                     let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
@@ -306,7 +322,7 @@ type MethodOverloads( name: string, unsortedMethods: Method[] ) =
                         let pinfo = List.head pinfos 
                         if pinfo.IsIndexer then [item] else []
 #if EXTENSIONTYPING
-                    | Params.ItemIsTypeWithStaticArguments g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
+                    | Params.ItemIsWithStaticArguments m g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
 #endif
                     | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
                     | Item.TypeVar _ -> []
@@ -1195,7 +1211,7 @@ type TypeCheckInfo
               let fail defaultReason = 
                   match item with            
 #if EXTENSIONTYPING
-                  | Params.ItemIsTypeWithStaticArguments g (tcref) -> FindDeclResult.DeclNotFound (FindDeclFailureReason.ProvidedType(tcref.DisplayName))
+                  | Params.ItemIsProvidedType g (tcref) -> FindDeclResult.DeclNotFound (FindDeclFailureReason.ProvidedType(tcref.DisplayName))
                   | Item.CtorGroup(name, ProvidedMeth(_)::_)
                   | Item.MethodGroup(name, ProvidedMeth(_)::_)
                   | Item.Property(name, ProvidedProp(_)::_) -> FindDeclResult.DeclNotFound (FindDeclFailureReason.ProvidedMember(name))
