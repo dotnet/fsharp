@@ -54,3 +54,11 @@ module TestExperimentalSet =
             A.x <- 1     
 
 
+
+module TestExtensionConstructor = 
+    // See https://github.com/Microsoft/visualfsharp/issues/659
+
+    type AugmentMe() = class end
+
+    module M = 
+        type AugmentMe with new(i) = AugmentMe()
