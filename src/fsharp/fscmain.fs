@@ -2,6 +2,11 @@
 
 module internal Microsoft.FSharp.Compiler.CommandLineMain
 
+open System
+open System.Diagnostics
+open System.IO
+open System.Reflection
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.IL // runningOnMono 
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -9,25 +14,20 @@ open Microsoft.FSharp.Compiler.Driver
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Build
-open System.Runtime.CompilerServices
+open Microsoft.FSharp.Compiler.CompileOps
+
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
 #if FX_RESIDENT_COMPILER
 /// Implement the optional resident compilation service
 module FSharpResidentCompiler = 
 
-    open System
-    open System.Diagnostics
-    open System.IO
-    open System.Reflection
     open System.Runtime.Remoting.Channels
     open System.Runtime.Remoting
     open System.Runtime.Remoting.Lifetime
     open System.Text
-
-#if FX_NO_EXIT
-    let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
-#endif
 
     /// Collect the output from the stdout and stderr streams, character by character,
     /// recording the console color used along the way.
@@ -35,10 +35,10 @@ module FSharpResidentCompiler =
         let output = ResizeArray()
         let outWriter isOut = 
             { new TextWriter() with 
-                 member x.Write(c:char) = lock output (fun () -> output.Add (isOut, (try Some System.Console.ForegroundColor with _ -> None) ,c)) 
+                 member x.Write(c:char) = lock output (fun () -> output.Add (isOut, (try Some Console.ForegroundColor with _ -> None) ,c)) 
                  member x.Encoding = Encoding.UTF8 }
-        do System.Console.SetOut (outWriter true)
-        do System.Console.SetError (outWriter false)
+        do Console.SetOut (outWriter true)
+        do Console.SetError (outWriter false)
         member x.GetTextAndClear() = lock output (fun () -> let res = output.ToArray() in output.Clear(); res)
 
     /// The compilation server, which runs in the server process. Accessed by clients using .NET remoting.
@@ -71,7 +71,7 @@ module FSharpResidentCompiler =
 #endif
                 "FSCSever"
         static let mutable serverExists = true
-
+        
         let outputCollector = new OutputCollector()
 
         // This background agent ensures all compilation requests sent to the server are serialized
@@ -157,7 +157,7 @@ module FSharpResidentCompiler =
                   // Fail silently
 #endif
             server.Run()
-
+            
         static member private ConnectToServer() =
             Activator.GetObject(typeof<FSharpCompilationServer>,"ipc://" + channelName + "/" + serverName) 
             :?> FSharpCompilationServer 
@@ -249,7 +249,7 @@ module FSharpResidentCompiler =
                                      Console.ForegroundColor <- consoleColor; 
                              | None -> ()
                         with _ -> ()
-                        c |> (if isOut then System.Console.Out.Write else System.Console.Error.Write)
+                        c |> (if isOut then Console.Out.Write else Console.Error.Write)
                     Some exitCode
                 with err -> 
                    let sb = System.Text.StringBuilder()
@@ -298,7 +298,7 @@ module Driver =
             let exiter = { new Exiter with member x.Exit n = raise StopProcessing }
             FSharpResidentCompiler.FSharpCompilationServer.RunServer(exiter)        
             0
-
+        
         else
             mainCompile (argv, false, quitProcessExiter)
             0 
@@ -327,7 +327,7 @@ let main(argv) =
 #endif
 #endif
 
-    try
+    try 
         Driver.main(Array.append [| "fsc.exe" |] argv); 
     with e -> 
         errorRecovery e Microsoft.FSharp.Compiler.Range.range0; 

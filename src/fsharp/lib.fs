@@ -88,48 +88,6 @@ module NameMap =
     let domainL m = Zset.elements (domain m)
 
 
-(*
-
-//-------------------------------------------------------------------------
-// Library: Atoms
-//------------------------------------------------------------------------
-
-type AtomTable = 
-    { LookupTable : Dictionary<int32,string>
-      EncodeTable : Dictionary<string,int32> }
-    member at.Encode(name:string) = 
-        let mutable res = 0 
-        let idx = 
-            if at.EncodeTable.TryGetValue(name, &res) then 
-                res
-            else
-                let idx = at.EncodeTable.Count
-                at.LookupTable.[idx] <- name
-                at.EncodeTable.[name] <- idx
-                idx
-        Atom(res
-#if DEBUG
-             ,at
-#endif
-            )
-
-
-and Atom internal (idx:int32
-#if DEBUG
-                   ,_provider:AtomTable
-#endif
-                   ) =
-    member __.Index = idx
-    member __.Deref(provider: AtomTable) = 
-       
-#if DEBUG
-        assert (provider = _provider)
-        assert (provider.LookupTable.ContainsKey idx)
-#endif
-        provider.LookupTable.[idx]
-*)            
-
-    
 
 //---------------------------------------------------------------------------
 // Library: Pre\Post checks
@@ -481,7 +439,7 @@ let inline cacheOptRef cache f =
 // and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.COmpiler.dll'
 // One workaround for the bug is to break NGEN loading and fixups into smaller fragments. Roughly speaking, the NGEN
 // loading process works by doing delayed fixups of references in NGEN code. This happens on a per-method
-// basis. For example, one manifestation is that a "print" before calling a method like Lexfilter.create gets
+// basis. For example, one manifestation is that a "print" before calling a method like LexFilter.create gets
 // displayed but the corresponding "print" in the body of that function doesn't get displayed. In between, the NGEN
 // image loader is performing a whole bunch of fixups of the NGEN code for the body of that method, and also for
 // bodies of methods referred to by that method. That second bit is very important: the fixup causing the crash may

@@ -1743,30 +1743,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
                 if actuallyBuild then
-                    if not isInCommandLineMode // you can use devenv to build from the command-line, and if command-line mode, then we ought not pop up any UI
-                       then
-                            try
-                                // Popup type provider security dialog, if needed:
-                                let dialog (typeProviderRunTimeAssemblyFileName) =
-                                    let pubInfo = GetVerifiedPublisherInfo.GetVerifiedPublisherInfo typeProviderRunTimeAssemblyFileName
-                                    UIThread.RunSync(fun() ->
-                                        let projectName = Path.GetFileNameWithoutExtension(x.ProjectFile)
-                                        TypeProviderSecurityDialog.ShowModal(TypeProviderSecurityDialogKind.B, null, projectName, typeProviderRunTimeAssemblyFileName, pubInfo) 
-                                    )
-                                    // the 'dialog' callback is run async to the background typecheck, so after the user has interacted with the dialog, request a re-typecheck
-                                    TypeProviderSecurityGlobals.invalidationCallback()  
-                                let argv = Array.append flags sources  // flags + sources = entire command line
-                                let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler.Value
-                                Microsoft.FSharp.Compiler.Driver.runFromCommandLineToImportingAssemblies(dialog, argv, defaultFSharpBinariesDir, x.ProjectFolder, 
-                                            { new Microsoft.FSharp.Compiler.ErrorLogger.Exiter with 
-                                                member x.Exit(n) = 
-                                                    match n with
-                                                    | 0 -> raise ExitedOk
-                                                    | _ -> raise ExitedWithError } )
-                            with
-                            | ExitedOk -> ()  // we expect this
-                            | ExitedWithError -> () // this can happen if compiling fails very early in the process, e.g. 'no inputs specified' or various other errors.  it is ok to ignore this failure.
-                            | _ -> () // this can happen due to an ICE or if a user's type provider throws an exception during construction, is also safe to ignore
                     compile.Invoke(0)
                 else
                     0

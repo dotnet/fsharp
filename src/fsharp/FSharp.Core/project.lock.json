@@ -191,7 +191,7 @@
           "lib/DNXCore50/System.Diagnostics.Tools.dll": {}
         }
       },
-      "System.Diagnostics.Tracing/4.0.21-beta-23213": {
+      "System.Diagnostics.Tracing/4.0.20": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -265,7 +265,7 @@
           "lib/dotnet/System.IO.Compression.dll": {}
         }
       },
-      "System.IO.FileSystem/4.0.1-beta-23213": {
+      "System.IO.FileSystem/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.10",
@@ -1010,7 +1010,7 @@
           "lib/DNXCore50/System.Diagnostics.Tools.dll": {}
         }
       },
-      "System.Diagnostics.Tracing/4.0.21-beta-23213": {
+      "System.Diagnostics.Tracing/4.0.20": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -1090,7 +1090,7 @@
           "runtimes/win7-x86/native/clrcompression.dll": {}
         }
       },
-      "System.IO.FileSystem/4.0.1-beta-23213": {
+      "System.IO.FileSystem/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.10",
@@ -1835,7 +1835,7 @@
           "lib/DNXCore50/System.Diagnostics.Tools.dll": {}
         }
       },
-      "System.Diagnostics.Tracing/4.0.21-beta-23213": {
+      "System.Diagnostics.Tracing/4.0.20": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -1915,7 +1915,7 @@
           "runtimes/win7-x64/native/clrcompression.dll": {}
         }
       },
-      "System.IO.FileSystem/4.0.1-beta-23213": {
+      "System.IO.FileSystem/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Collections": "4.0.10",
@@ -2752,10 +2752,10 @@
         "System.Diagnostics.Tools.nuspec"
       ]
     },
-    "System.Diagnostics.Tracing/4.0.21-beta-23213": {
+    "System.Diagnostics.Tracing/4.0.20": {
       "type": "package",
       "serviceable": true,
-      "sha512": "OoEljo/8dfBHieyy3vGjsSmwlpLWRD5Amme8hrT57Bs+Hb1fa2WLddMSSut29TqhCpFSchpvPNs98ySWRvzduw==",
+      "sha512": "gn/wexGHc35Fv++5L1gYHMY5g25COfiZ0PGrL+3PfwzoJd4X2LbTAm/U8d385SI6BKQBI/z4dQfvneS9J27+Tw==",
       "files": [
         "lib/DNXCore50/System.Diagnostics.Tracing.dll",
         "lib/MonoAndroid10/_._",
@@ -2781,8 +2781,8 @@
         "ref/xamarinios10/_._",
         "ref/xamarinmac20/_._",
         "runtimes/win8-aot/lib/netcore50/System.Diagnostics.Tracing.dll",
-        "System.Diagnostics.Tracing.4.0.21-beta-23213.nupkg",
-        "System.Diagnostics.Tracing.4.0.21-beta-23213.nupkg.sha512",
+        "System.Diagnostics.Tracing.4.0.20.nupkg",
+        "System.Diagnostics.Tracing.4.0.20.nupkg.sha512",
         "System.Diagnostics.Tracing.nuspec"
       ]
     },
@@ -2928,10 +2928,10 @@
         "System.IO.Compression.clrcompression-x86.nuspec"
       ]
     },
-    "System.IO.FileSystem/4.0.1-beta-23213": {
+    "System.IO.FileSystem/4.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "auoPQtqkHfOBTSiprv0oOCCh+zhMcSG3GOEoyJcYzi5DCYlBH9ia8n0ub8AC85+gU5nBsdCx2cEYwHLLyoJh6A==",
+      "sha512": "eo05SPWfG+54UA0wxgRIYOuOslq+2QrJLXZaJDDsfLXG15OLguaItW39NYZTqUb4DeGOkU4R0wpOLOW4ynMUDQ==",
       "files": [
         "lib/DNXCore50/System.IO.FileSystem.dll",
         "lib/MonoAndroid10/_._",
@@ -2956,8 +2956,8 @@
         "ref/net46/System.IO.FileSystem.dll",
         "ref/xamarinios10/_._",
         "ref/xamarinmac20/_._",
-        "System.IO.FileSystem.4.0.1-beta-23213.nupkg",
-        "System.IO.FileSystem.4.0.1-beta-23213.nupkg.sha512",
+        "System.IO.FileSystem.4.0.0.nupkg",
+        "System.IO.FileSystem.4.0.0.nupkg.sha512",
         "System.IO.FileSystem.nuspec"
       ]
     },

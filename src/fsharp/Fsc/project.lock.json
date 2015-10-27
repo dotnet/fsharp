@@ -47,7 +47,7 @@
           "lib/DNXCore50/System.Diagnostics.Debug.dll": {}
         }
       },
-      "System.Globalization/4.0.11-beta-23213": {
+      "System.Globalization/4.0.10": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -196,7 +196,7 @@
           "lib/DNXCore50/System.Reflection.Emit.ILGeneration.dll": {}
         }
       },
-      "System.Reflection.Extensions/4.0.1-beta-23213": {
+      "System.Reflection.Extensions/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -221,7 +221,7 @@
           "lib/DNXCore50/System.Reflection.Primitives.dll": {}
         }
       },
-      "System.Reflection.TypeExtensions/4.0.1-beta-23213": {
+      "System.Reflection.TypeExtensions/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -395,7 +395,7 @@
           "lib/DNXCore50/System.Diagnostics.Debug.dll": {}
         }
       },
-      "System.Globalization/4.0.11-beta-23213": {
+      "System.Globalization/4.0.10": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -544,7 +544,7 @@
           "lib/DNXCore50/System.Reflection.Emit.ILGeneration.dll": {}
         }
       },
-      "System.Reflection.Extensions/4.0.1-beta-23213": {
+      "System.Reflection.Extensions/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -569,7 +569,7 @@
           "lib/DNXCore50/System.Reflection.Primitives.dll": {}
         }
       },
-      "System.Reflection.TypeExtensions/4.0.1-beta-23213": {
+      "System.Reflection.TypeExtensions/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -743,7 +743,7 @@
           "lib/DNXCore50/System.Diagnostics.Debug.dll": {}
         }
       },
-      "System.Globalization/4.0.11-beta-23213": {
+      "System.Globalization/4.0.10": {
         "type": "package",
         "dependencies": {
           "System.Runtime": "4.0.0"
@@ -892,7 +892,7 @@
           "lib/DNXCore50/System.Reflection.Emit.ILGeneration.dll": {}
         }
       },
-      "System.Reflection.Extensions/4.0.1-beta-23213": {
+      "System.Reflection.Extensions/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -917,7 +917,7 @@
           "lib/DNXCore50/System.Reflection.Primitives.dll": {}
         }
       },
-      "System.Reflection.TypeExtensions/4.0.1-beta-23213": {
+      "System.Reflection.TypeExtensions/4.0.0": {
         "type": "package",
         "dependencies": {
           "System.Reflection": "4.0.0",
@@ -1118,9 +1118,9 @@
         "System.Diagnostics.Debug.nuspec"
       ]
     },
-    "System.Globalization/4.0.11-beta-23213": {
+    "System.Globalization/4.0.10": {
       "type": "package",
-      "sha512": "715Cwj5nOu9dnfcQ0FZUPJ3/CQCfUAmLTtTd2AO1k1xrK4JumJqKhpsqFh8I0LFhcQCGlUiXPjg4mVaC1hwWGA==",
+      "sha512": "kzRtbbCNAxdafFBDogcM36ehA3th8c1PGiz8QRkZn8O5yMBorDHSK8/TGJPYOaCS5zdsGk0u9qXHnW91nqy7fw==",
       "files": [
         "lib/DNXCore50/System.Globalization.dll",
         "lib/MonoAndroid10/_._",
@@ -1146,8 +1146,8 @@
         "ref/xamarinios10/_._",
         "ref/xamarinmac20/_._",
         "runtimes/win8-aot/lib/netcore50/System.Globalization.dll",
-        "System.Globalization.4.0.11-beta-23213.nupkg",
-        "System.Globalization.4.0.11-beta-23213.nupkg.sha512",
+        "System.Globalization.4.0.10.nupkg",
+        "System.Globalization.4.0.10.nupkg.sha512",
         "System.Globalization.nuspec"
       ]
     },
@@ -1390,10 +1390,10 @@
         "System.Reflection.Emit.ILGeneration.nuspec"
       ]
     },
-    "System.Reflection.Extensions/4.0.1-beta-23213": {
+    "System.Reflection.Extensions/4.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "ajvm0knfxZpzwF3yuAI2/rhE4RnVN3oOpKhnQUARkKJHRJH/JeYwgRy8Yyu+02es1/rVdi68H/SjZEYmMS7YEQ==",
+      "sha512": "dbYaZWCyFAu1TGYUqR2n+Q+1casSHPR2vVW0WVNkXpZbrd2BXcZ7cpvpu9C98CTHtNmyfMWCLpCclDqly23t6A==",
       "files": [
         "lib/DNXCore50/System.Reflection.Extensions.dll",
         "lib/net45/_._",
@@ -1419,8 +1419,8 @@
         "ref/wp80/_._",
         "ref/wpa81/_._",
         "runtimes/win8-aot/lib/netcore50/System.Reflection.Extensions.dll",
-        "System.Reflection.Extensions.4.0.1-beta-23213.nupkg",
-        "System.Reflection.Extensions.4.0.1-beta-23213.nupkg.sha512",
+        "System.Reflection.Extensions.4.0.0.nupkg",
+        "System.Reflection.Extensions.4.0.0.nupkg.sha512",
         "System.Reflection.Extensions.nuspec"
       ]
     },
@@ -1458,10 +1458,10 @@
         "System.Reflection.Primitives.nuspec"
       ]
     },
-    "System.Reflection.TypeExtensions/4.0.1-beta-23213": {
+    "System.Reflection.TypeExtensions/4.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "mEX444HGFI6sxYLstdx9ckIJtjGW/8hoo+L94slAKqm5HIw+cXKv2t0UbsmxiqRvmJQ3PUHpUzNPmejzY+qkCg==",
+      "sha512": "YRM/msNAM86hdxPyXcuZSzmTO0RQFh7YMEPBLTY8cqXvFPYIx2x99bOyPkuU81wRYQem1c1HTkImQ2DjbOBfew==",
       "files": [
         "lib/DNXCore50/System.Reflection.TypeExtensions.dll",
         "lib/MonoAndroid10/_._",
@@ -1487,8 +1487,8 @@
         "ref/xamarinios10/_._",
         "ref/xamarinmac20/_._",
         "runtimes/win8-aot/lib/netcore50/System.Reflection.TypeExtensions.dll",
-        "System.Reflection.TypeExtensions.4.0.1-beta-23213.nupkg",
-        "System.Reflection.TypeExtensions.4.0.1-beta-23213.nupkg.sha512",
+        "System.Reflection.TypeExtensions.4.0.0.nupkg",
+        "System.Reflection.TypeExtensions.4.0.0.nupkg.sha512",
         "System.Reflection.TypeExtensions.nuspec"
       ]
     },

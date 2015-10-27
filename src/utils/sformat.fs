@@ -145,12 +145,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
         let aboveL  l r = mkNode l r (Broken 0)
 
-        let joinN i l r = mkNode l r (Breakable i)                                      
-        let join  = joinN 0
-        let join1 = joinN 1
-        let join2 = joinN 2
-        let join3 = joinN 3
-
         let tagAttrL tag attrs l = Attr(tag,attrs,l)
 
         let apply2 f l r = if isEmptyL l then r else
@@ -168,9 +162,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | [x]   -> x
             | x::xs ->
                 let rec process' prefixL = function
-                    []    -> prefixL
+                  | []    -> prefixL
                   | y::ys -> process' ((tagger prefixL) ++ y) ys
-                in  process' x xs
+                process' x xs
             
         let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL ",") x
         let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL ";") x
@@ -184,7 +178,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
         let optionL xL = function
-            None   -> wordL "None"
+          | None   -> wordL "None"
           | Some x -> wordL "Some" -- (xL x)
 
         let listL xL xs = leftL "[" ^^ sepListL (sepL ";") (List.map xL xs) ^^ rightL "]"

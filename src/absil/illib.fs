@@ -470,6 +470,7 @@ module Dictionary =
 
 // FUTURE CLEANUP: remove this adhoc collection
 type Hashset<'T> = Dictionary<'T,int>
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Hashset = 
     let create (n:int) = new Hashset<'T>(n, HashIdentity.Structural)
@@ -503,6 +504,28 @@ type ResultOrException<'TResult> =
     | Result of 'TResult
     | Exception of System.Exception
                      
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ResultOrException = 
+
+    let success a = Result a
+    let raze (b:exn) = Exception b
+
+    // map
+    let (|?>) res f = 
+        match res with 
+        | Result x -> Result(f x )
+        | Exception err -> Exception err
+  
+    let ForceRaise res = 
+        match res with 
+        | Result x -> x
+        | Exception err -> raise err
+
+    let otherwise f x =
+        match x with 
+        | Result x -> success x
+        | Exception _err -> f()
+
 
 //-------------------------------------------------------------------------
 // Library: extensions to flat list  (immutable arrays)
