@@ -55,10 +55,25 @@ module TestExperimentalSet =
 
 
 
-module TestExtensionConstructor = 
+module TestExtrinsicExtensionConstructor = 
     // See https://github.com/Microsoft/visualfsharp/issues/659
 
     type AugmentMe() = class end
 
     module M = 
         type AugmentMe with new(i) = AugmentMe()
+
+// don't expect an error here
+module TestIntrinsicExtensionConstructor1 = 
+    type AugmentMe = val _i : int
+    type AugmentMe with member i.I = i._i
+    type AugmentMe with new(i) = { _i = i } // don't expect an error here
+    let v = AugmentMe(42).I
+
+// don't expect an error here
+module TestIntrinsicExtensionConstructor2 = 
+    type AugmentMe() = class end
+    type AugmentMe with member i.I = 1
+    type AugmentMe with new(i) = AugmentMe()  // don't expect an error here
+    let v = AugmentMe(42).I
+
