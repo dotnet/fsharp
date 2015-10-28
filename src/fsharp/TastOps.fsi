@@ -949,10 +949,13 @@ type TypeDefMetadata =
 val metadataOfTycon : Tycon -> TypeDefMetadata
 val metadataOfTy : TcGlobals -> TType -> TypeDefMetadata
 
+val isStringTy       : TcGlobals -> TType -> bool
+val isListTy         : TcGlobals -> TType -> bool
 val isILAppTy      : TcGlobals -> TType -> bool
 val isArrayTy        : TcGlobals -> TType -> bool
 val isArray1DTy       : TcGlobals -> TType -> bool
 val destArrayTy     : TcGlobals -> TType -> TType
+val destListTy      : TcGlobals -> TType -> TType
 
 val mkArrayTy         : TcGlobals -> int -> TType -> range -> TType
 val isArrayTyconRef      : TcGlobals -> TyconRef -> bool
@@ -1373,7 +1376,9 @@ val (|SpecialComparableHeadType|_|) : TcGlobals -> TType -> TType list option
 val (|SpecialEquatableHeadType|_|) : TcGlobals -> TType -> TType list option
 val (|SpecialNotEquatableHeadType|_|) : TcGlobals -> TType -> unit option
 
-val DetectFastIntegerForLoops : TcGlobals -> Expr -> Expr
+type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpressions
+val DetectAndOptimizeForExpression : TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
+
 val TryEliminateDesugaredConstants : TcGlobals -> range -> Const -> Expr option
 
 val ValIsExplicitImpl : TcGlobals -> Val -> bool

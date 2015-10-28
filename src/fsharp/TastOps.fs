@@ -1427,6 +1427,11 @@ let destArrayTy (g:TcGlobals) ty =
     | [ty] -> ty
     | _ -> failwith "destArrayTy";
 
+let destListTy (g:TcGlobals) ty =
+    let _,tinst = destAppTy g ty
+    match tinst with
+    | [ty] -> ty
+    | _ -> failwith "destListTy";
 
 let isTypeConstructorEqualToOptional g tcOpt tc = 
     match tcOpt with
@@ -1439,6 +1444,8 @@ let isByrefLikeTyconRef g tcref =
     isTypeConstructorEqualToOptional g g.system_ArgIterator_tcref tcref ||
     isTypeConstructorEqualToOptional g g.system_RuntimeArgumentHandle_tcref tcref
 
+let isStringTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g tcref g.system_String_tcref   | _ -> false)
+let isListTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g tcref g.list_tcr_canon   | _ -> false)
 let isArrayTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isArrayTyconRef g tcref                | _ -> false) 
 let isArray1DTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g tcref g.il_arr_tcr_map.[0]  | _ -> false) 
 let isUnitTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.unit_tcr_canon tcref      | _ -> false) 
@@ -5856,6 +5863,8 @@ let mkIsInst ty e m = mkAsmExpr ([ isinst ], [ty],[e], [ ty ], m)
 
 let mspec_Object_GetHashCode     ilg = IL.mkILNonGenericInstanceMethSpecInTy(ilg.typ_Object,"GetHashCode",[],ilg.typ_int32)
 let mspec_Type_GetTypeFromHandle ilg = IL.mkILNonGenericStaticMethSpecInTy(ilg.typ_Type,"GetTypeFromHandle",[ilg.typ_RuntimeTypeHandle],ilg.typ_Type)
+let mspec_String_Length          ilg = mkILNonGenericInstanceMethSpecInTy (ilg.typ_String, "get_Length", [], ilg.typ_int32)
+
 let fspec_Missing_Value  ilg = IL.mkILFieldSpecInTy(ilg.typ_Missing.Value, "Value", ilg.typ_Missing.Value)
 
 
@@ -6001,6 +6010,14 @@ let mkCallQuoteToLinqLambdaExpression g m ty e1 =
 
 let mkLazyDelayed g m ty f = mkApps g (typedExprForIntrinsic g m g.lazy_create_info, [[ty]], [ f ],  m) 
 let mkLazyForce g m ty e = mkApps g (typedExprForIntrinsic g m g.lazy_force_info, [[ty]], [ e; mkUnit g m ],  m) 
+
+let mkGetString g m e1 e2 = mkApps g (typedExprForIntrinsic g m g.getstring_info, [], [e1;e2], m)
+let mkGetStringChar = mkGetString
+let mkGetStringLength g m e =
+    let mspec = mspec_String_Length g.ilg
+    /// ILCall(useCallvirt,isProtected,valu,newobj,valUseFlags,isProp,noTailCall,mref,actualTypeInst,actualMethInst, retTy)
+    Expr.Op(TOp.ILCall(false,false,false,false,ValUseFlag.NormalValUse,true,false,mspec.MethodRef,[],[],[g.int32_ty]),[],[e],m)
+
 
 // Quotations can't contain any IL.
 // As a result, we aim to get rid of all IL generation in the typechecker and pattern match
@@ -7723,34 +7740,92 @@ let (|RangeInt32Step|_|) g expr =
          when valRefEq g vf g.range_op_vref && typeEquiv g tyarg g.int_ty -> Some(startExpr, 1, finishExpr)
     
     // detect (RangeInt32 startExpr N finishExpr), the inlined/compiled form of 'n .. m' and 'n .. N .. m'
-    | Expr.App(Expr.Val(vf,_,_),_,[],[startExpr; Int32Expr n; finishExpr],_) 
+    | Expr.App(Expr.Val(vf,_,_),_,[],[startExpr; Int32Expr n; finishExpr],_)
          when valRefEq g vf g.range_int32_op_vref -> Some(startExpr, n, finishExpr)
 
     | _ -> None
 
-         
-// Detect the compiled or optimized form of a 'for <elemVar> in <startExpr> .. <finishExpr>  do <bodyExpr>' expression over integers
-// Detect the compiled or optimized form of a 'for <elemVar> in <startExpr> .. <step> .. <finishExpr>  do <bodyExpr>' expression over integers when step is positive
-let (|CompiledInt32ForEachExprWithKnownStep|_|) g expr = 
-    match expr with 
-    | Let (_enumerableVar, RangeInt32Step g (startExpr, step, finishExpr), _, 
-           Let (_enumeratorVar, _getEnumExpr, spBind,
-              TryFinally (WhileLoopForCompiledForEachExpr (_guardExpr, Let (elemVar,_currentExpr,_,bodyExpr), m), _cleanupExpr))) -> 
+let (|ExtractTypeOfExpr|_|) g expr = Some (tyOfExpr g expr)
 
-        let spForLoop = match spBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart) |  _ -> NoSequencePointAtForLoop 
+type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpressions
 
-        Some(spForLoop,elemVar,startExpr,step,finishExpr,bodyExpr,m)
-    | _ -> 
-        None
+let DetectAndOptimizeForExpression g option expr =
+    match expr with
+    | Let (_, enumerableExpr, _,
+           Let (_, _, enumeratorBind,
+              TryFinally (WhileLoopForCompiledForEachExpr (_, Let (elemVar,_,_,bodyExpr), _), _))) ->
 
-let DetectFastIntegerForLoops g expr = 
-    match expr with 
-    | CompiledInt32ForEachExprWithKnownStep g (spForLoop,elemVar,startExpr,step,finishExpr,bodyExpr,m) 
-         // fast for loops only allow steps 1 and -1 steps at the moment
-         when step = 1 || step = -1 -> 
+      let m = enumerableExpr.Range
+      let mBody = bodyExpr.Range
+
+      let spForLoop,mForLoop = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart),spStart  |  _ -> NoSequencePointAtForLoop,m
+      let spWhileLoop   = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtWhileLoop(spStart)|  _ -> NoSequencePointAtWhileLoop
+
+      match option,enumerableExpr with
+      | _,RangeInt32Step g (startExpr, step, finishExpr) ->
+        match step with
+        | -1 | 1  ->
             mkFastForLoop  g (spForLoop,m,elemVar,startExpr,(step = 1),finishExpr,bodyExpr)
+        | _ -> expr
+      | OptimizeAllForExpressions,ExtractTypeOfExpr g ty when isStringTy g ty ->
+        // type is string, optimize for expression as:
+        //  let $str = enumerable
+        //  for $idx in 0..(str.Length - 1) do
+        //      let elem = str.[idx]
+        //      body elem
+
+        let strVar      ,strExpr    = mkCompGenLocal m "str" ty
+        let idxVar      ,idxExpr    = mkCompGenLocal m "idx" g.int32_ty
+
+        let lengthExpr              = mkGetStringLength g m strExpr
+        let charExpr                = mkGetStringChar g m strExpr idxExpr
+
+        let startExpr               = mkZero g m
+        let finishExpr              = mkDecr g mForLoop lengthExpr
+        let loopItemExpr            = mkCoerceIfNeeded g elemVar.Type g.char_ty charExpr  // for compat reasons, loop item over string is sometimes object, not char
+        let bodyExpr                = mkCompGenLet mBody elemVar loopItemExpr bodyExpr
+        let forExpr                 = mkFastForLoop g (spForLoop,m,idxVar,startExpr,true,finishExpr,bodyExpr)
+        let expr                    = mkCompGenLet m strVar enumerableExpr forExpr
+
+        expr
+      | OptimizeAllForExpressions,ExtractTypeOfExpr g ty when isListTy g ty ->
+        // type is list, optimize for expression as:
+        //  let mutable $currentVar = listExpr
+        //  let mutable $nextVar    = $tailOrNull
+        //  while $guardExpr do
+        //    let i = $headExpr
+        //    bodyExpr ()
+        //    $current   <- $next
+        //    $next      <- $tailOrNull
+
+        let IndexHead                   = 0
+        let IndexTail                   = 1
+
+        let currentVar  ,currentExpr    = mkMutableCompGenLocal m "current" ty
+        let nextVar     ,nextExpr       = mkMutableCompGenLocal m "next" ty
+        let elemTy                      = destListTy g ty
+
+        let guardExpr                   = mkNonNullTest g m nextExpr
+        let headOrDefaultExpr           = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexHead,m)
+        let tailOrNullExpr              = mkUnionCaseFieldGetUnproven(currentExpr,g.cons_ucref,[elemTy],IndexTail,mBody)
+        let bodyExpr                    =
+            mkCompGenLet m elemVar headOrDefaultExpr
+                (mkCompGenSequential mBody
+                    bodyExpr
+                    (mkCompGenSequential mBody
+                        (mkValSet mBody (mkLocalValRef currentVar) nextExpr)
+                        (mkValSet mBody (mkLocalValRef nextVar) tailOrNullExpr)
+                    )
+                )
+        let whileExpr                   = mkWhile g (spWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, m)
+
+        let expr =
+            mkCompGenLet m currentVar enumerableExpr
+                (mkCompGenLet m nextVar tailOrNullExpr whileExpr)
+
+        expr
+      | _ -> expr
     | _ -> expr
 
-
 // Used to remove Expr.Link for inner expressions in pattern matches
-let (|InnerExprPat|) expr = stripExpr expr 
+let (|InnerExprPat|) expr = stripExpr expr

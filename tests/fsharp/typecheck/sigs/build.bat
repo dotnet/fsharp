@@ -5,6 +5,9 @@ REM Configure the sample, i.e. where to find the F# compiler and C# compiler.
 
 call %~d0%~p0..\..\..\config.bat
 
+call ..\..\single-neg-test.bat neg93
+@if ERRORLEVEL 1 goto Error
+
 "%FSC%" --noframework -r:"%FSCOREDLLPATH%" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Core.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Data.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.dll" -r:"%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\System.Numerics.dll" -a -o:pos21.dll  pos21.fs
 @if ERRORLEVEL 1 goto Error
 
