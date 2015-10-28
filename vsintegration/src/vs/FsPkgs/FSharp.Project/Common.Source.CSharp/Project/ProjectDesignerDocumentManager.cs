@@ -24,14 +24,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     internal class ProjectDesignerDocumentManager : DocumentManager
     {
-        #region ctors
         public ProjectDesignerDocumentManager(ProjectNode node)
             : base(node)
         {
         }
-        #endregion
-
-        #region overriden methods
 
         public override int Open(ref Guid logicalView, IntPtr docDataExisting, out IVsWindowFrame windowFrame, WindowFrameShowAction windowFrameAction)
         {
@@ -75,7 +71,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return VSConstants.S_OK;
         }
-        #endregion
 
     }
 }

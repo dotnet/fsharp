@@ -389,7 +389,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 #endif
 
     module internal Attributes = 
-        //[<assembly: System.Security.SecurityTransparent>]
 #if NO_ASSEM_ATTRS_YET    
         //
         // General Information about an assembly is controlled through the following 

@@ -14,38 +14,25 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
     using System.Text;
     using System.Globalization;
 
-    /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods"]/*' />
     // This class is shared between assemblies
     [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
     internal static class NativeMethods {
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.InvalidIntPtr"]/*' />
         public static IntPtr InvalidIntPtr = ((IntPtr)((int)(-1)));
 
         // IIDS
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.IID_IServiceProvider"]/*' />
         public static readonly Guid IID_IServiceProvider = typeof(Microsoft.VisualStudio.OLE.Interop.IServiceProvider).GUID;
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.IID_IObjectWithSite"]/*' />
         public static readonly Guid IID_IObjectWithSite = typeof(IObjectWithSite).GUID;
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.IID_IUnknown"]/*' />
         public static readonly Guid IID_IUnknown = new Guid("{00000000-0000-0000-C000-000000000046}");                    
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GUID_PropertyBrowserToolWindow"]/*' />
         public static readonly Guid GUID_PropertyBrowserToolWindow = new Guid(unchecked((int)0xeefa5220), unchecked((short)0xe298), (short)0x11d0, new byte[]{ 0x8f, 0x78, 0x0, 0xa0, 0xc9, 0x11, 0x0, 0x57 });
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GUID_VSStandardCommandSet97"]/*' />
         public static readonly Guid GUID_VSStandardCommandSet97 = new Guid("{5efc7975-14bc-11cf-9b2b-00aa00573819}");
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.CLSID_HtmDocData"]/*' />
         public static readonly Guid CLSID_HtmDocData = new Guid(unchecked((int)0x62C81794), unchecked((short)0xA9EC), (short)0x11D0, new byte[] {0x81, 0x98, 0x0, 0xa0, 0xc9, 0x1b, 0xbe, 0xe3});
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.CLSID_HtmedPackage"]/*' />
         public static readonly Guid CLSID_HtmedPackage = new Guid(unchecked((int)0x1B437D20), unchecked((short)0xF8FE), (short)0x11D2, new byte[] {0xA6, 0xAE, 0x00, 0x10, 0x4B, 0xCC, 0x72, 0x69});
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.CLSID_HtmlLanguageService"]/*' />
         public static readonly Guid CLSID_HtmlLanguageService = new Guid(unchecked((int)0x58E975A0), unchecked((short)0xF8FE), (short)0x11D2, new byte[] {0xA6, 0xAE, 0x00, 0x10, 0x4B, 0xCC, 0x72, 0x69});
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GUID_HtmlEditorFactory"]/*' />
         public static readonly Guid GUID_HtmlEditorFactory = new Guid("{C76D83F8-A489-11D0-8195-00A0C91BBEE3}");
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GUID_TextEditorFactory"]/*' />
         public static readonly Guid GUID_TextEditorFactory = new Guid("{8B382828-6202-11d1-8870-0000F87579D2}");
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GUID_HTMEDAllowExistingDocData"]/*' />
         public static readonly Guid GUID_HTMEDAllowExistingDocData = new Guid(unchecked((int)0x5742d216), unchecked((short)0x8071), (short)0x4779, new byte[] {0xbf, 0x5f, 0xa2, 0x4d, 0x5f, 0x31, 0x42, 0xba});
         
         /// <summary>GUID for the environment package.</summary>
@@ -80,11 +67,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <summary>GUID of the general output pane inside the output window.</summary>
         public static readonly Guid GUID_OutWindowGeneralPane = new Guid("{3c24d581-5591-4884-a571-9fe89915cd64}");
         // Guids for GetOutputPane.
-        /// <include file='doc\Package.uex' path='docs/doc[@for="Package.BuildOrder"]/*' />
         public static readonly Guid BuildOrder = new Guid("2032b126-7c8d-48ad-8026-0e0348004fc0");
-        /// <include file='doc\Package.uex' path='docs/doc[@for="Package.BuildOutput"]/*' />
         public static readonly Guid BuildOutput = new Guid("1BD8A850-02D1-11d1-BEE7-00A0C913D1F8");
-        /// <include file='doc\Package.uex' path='docs/doc[@for="Package.DebugOutput"]/*' />
         public static readonly Guid DebugOutput = new Guid("FC076020-078A-11D1-A7DF-00A0C9110051");
         
         //--------------------------------------------------------------------
@@ -171,23 +155,19 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <summary></summary>
         public static readonly Guid GUID_SolutionPage   = new Guid("{9A341D97-5A64-11d3-BFF9-00C04F990235}");
  
-       /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OleComponentUIManager"]/*' />
         [ComImport,System.Runtime.InteropServices.Guid("5EFC7974-14BC-11CF-9B2B-00AA00573819")]
         public class OleComponentUIManager {
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="VsTextBuffer"]/*' />
         [ComImport,System.Runtime.InteropServices.Guid("8E7B96A8-E33D-11D0-A6D5-00C04FB67F6A")]
         public class VsTextBuffer {
         }
 
         // HRESULTS
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.Succeeded"]/*' />
         public static bool Succeeded(int hr) {
             return(hr >= 0);
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.Failed"]/*' />
         public static bool Failed(int hr) {
             return(hr < 0);
         }
@@ -211,21 +191,17 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         // packing
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.SignedHIWORD"]/*' />
         public static int SignedHIWORD(int n) {
             return (int)(short)((n >> 16) & 0xffff);
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.SignedLOWORD"]/*' />
         public static int SignedLOWORD(int n) {
             return (int)(short)(n & 0xFFFF);
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.CLSCTX_INPROC_SERVER"]/*' />
         public const int
         CLSCTX_INPROC_SERVER  = 0x1;
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.S_FALSE"]/*' />
         public const int
         S_FALSE =   0x00000001,
         S_OK =      0x00000000,
@@ -263,7 +239,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         E_ACCESSDENIED = unchecked((int)0x80070005),
         E_PENDING = unchecked((int)0x8000000A); 
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.VS_E_UNSUPPORTEDFORMAT"]/*' />
         public const int
         VS_E_UNSUPPORTEDFORMAT = unchecked((int)0x80041FEB),
         VS_E_INCOMPATIBLEDOCDATA = unchecked((int)0x80041FEA),
@@ -293,13 +268,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             BMP_USER = -5
         };
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.OLECLOSE_SAVEIFDIRTY"]/*' />
         public const int
         OLECLOSE_SAVEIFDIRTY = 0,
         OLECLOSE_NOSAVE = 1,
         OLECLOSE_PROMPTSAVE = 2;
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.OLEIVERB_PRIMARY"]/*' />
         public const int
         OLEIVERB_PRIMARY = 0,
         OLEIVERB_SHOW = -1,
@@ -310,7 +283,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         OLEIVERB_DISCARDUNDOSTATE = -6,
         OLEIVERB_PROPERTIES = -7;                
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.OleErrors"]/*' />
         public const int 
         OLE_E_OLEVERB = unchecked((int)0x80040000),
         OLE_E_ADVF = unchecked((int)0x80040001),
@@ -332,7 +304,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         OLE_E_CANTCONVERT = unchecked((int)0x80040011),
         OLE_E_NOSTORAGE = unchecked((int)0x80040012);
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.OleDispatchErrors"]/*' />
         public const int 
         DISP_E_UNKNOWNINTERFACE = unchecked((int)0x80020001),
         DISP_E_MEMBERNOTFOUND = unchecked((int)0x80020003),
@@ -382,7 +353,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 OFN_DONTADDTORECENT =      unchecked((int)0x02000000),
                 OFN_FORCESHOWHIDDEN =      unchecked((int)0x10000000);
 
-                /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.VSITEMID_NIL"]/*' />
         public const uint
         VSITEMID_NIL               = unchecked((uint)-1),
         VSITEMID_ROOT              = unchecked((uint)-2), 
@@ -391,13 +361,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public const uint VSCOOKIE_NIL               = 0;
 
         // for ISelectionContainer flags
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.ALL"]/*' />
         public const uint
         ALL = 0x1,
         SELECTED = 0x2;
 
         // for IVsSelectionEvents flags
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.UndoManager"]/*' />
         public const uint
         UndoManager = 0x0,
         WindowFrame = 0x1,
@@ -407,29 +375,20 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         UserContext = 0x5;
 
         // for READONLYSTATUS
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.ROSTATUS_NotReadOnly"]/*' />
         public const int
         ROSTATUS_NotReadOnly = 0x0,
         ROSTATUS_ReadOnly = 0x1,
         ROSTATUS_Unknown = unchecked((int)0xFFFFFFFF);
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.IEI_DoNotLoadDocData"]/*' />
         public const int
         IEI_DoNotLoadDocData = 0x10000000;
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.LOGVIEWID_Any"]/*' />
         public static readonly Guid LOGVIEWID_Any             = new Guid(0xffffffff, 0xffff, 0xffff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff );
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.LOGVIEWID_Primary"]/*' />
         public static readonly Guid LOGVIEWID_Primary         = Guid.Empty;
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.LOGVIEWID_Debugging"]/*' />
         public static readonly Guid LOGVIEWID_Debugging       = new Guid("{7651a700-06e5-11d1-8ebd-00a0c90f26ea}");
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.LOGVIEWID_Code"]/*' />
         public static readonly Guid LOGVIEWID_Code            = new Guid("{7651a701-06e5-11d1-8ebd-00a0c90f26ea}");
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.LOGVIEWID_Designer"]/*' />
         public static readonly Guid LOGVIEWID_Designer        = new Guid("{7651a702-06e5-11d1-8ebd-00a0c90f26ea}");
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.LOGVIEWID_TextView"]/*' />
         public static readonly Guid LOGVIEWID_TextView        = new Guid("{7651a703-06e5-11d1-8ebd-00a0c90f26ea}");
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.LOGVIEWID_UserChooseView"]/*' />
         public static readonly Guid LOGVIEWID_UserChooseView  = new Guid("{7651a704-06e5-11d1-8ebd-00a0c90f26ea}");
 
         /// <summary>Command Group GUID for commands that only apply to the UIHierarchyWindow.</summary>
@@ -477,7 +436,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             SEID_LastWindowFrame    = 7
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.CB_SETDROPPEDWIDTH"]/*' />
                 public const int
                 CB_SETDROPPEDWIDTH = 0x0160,
 
@@ -753,20 +711,17 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 PSNRET_INVALID = 1,
                 PSNRET_INVALID_NOCHANGEPAGE = 2;
 
-                /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.PSN_APPLY"]/*' />
         public const int 
         PSN_APPLY = ((0-200)-2),
         PSN_KILLACTIVE = ((0-200)-1),
         PSN_RESET = ((0-200)-3),
         PSN_SETACTIVE = ((0-200)-0);
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GMEM_MOVEABLE"]/*' />
         public const int 
         GMEM_MOVEABLE = 0x0002,
         GMEM_ZEROINIT = 0x0040,
         GMEM_DDESHARE = 0x2000;
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.SWP_NOACTIVATE"]/*' />
         public const int
         SWP_NOACTIVATE = 0x0010,
         SWP_NOZORDER = 0x0004,
@@ -774,23 +729,19 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         SWP_NOMOVE = 0x0002,
         SWP_FRAMECHANGED = 0x0020;
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.TVM_SETINSERTMARK"]/*' />
         public const int
         TVM_SETINSERTMARK = (0x1100 + 26),
         TVM_GETEDITCONTROL = (0x1100 + 15);
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.FILE_ATTRIBUTE_READONLY"]/*' />
         public const int
         FILE_ATTRIBUTE_READONLY = 0x00000001;
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.CEF_CLONEFILE"]/*' />
         public const uint
         CEF_CLONEFILE   = 0x00000001,   // Mutually exclusive w/_OPENFILE
         CEF_OPENFILE    = 0x00000002,   // Mutually exclusive w/_CLONEFILE
         CEF_SILENT      = 0x00000004,   // Editor factory should create editor silently
         CEF_OPENASNEW   = 0x00000008;   // Editor factory should perform necessary fixups
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.cmdidToolsOptions"]/*' />
         public const int cmdidToolsOptions    = 264;
 
         public const int 
@@ -848,65 +799,40 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             OPAQUE = 2,
             FW_BOLD = 700;
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT"]/*' />
         [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Auto)]
         public class LOGFONT {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfHeight;"]/*' />
             public int lfHeight;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfWidth;"]/*' />
             public int lfWidth;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfEscapement;"]/*' />
             public int lfEscapement;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfOrientation;"]/*' />
             public int lfOrientation;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfWeight;"]/*' />
             public int lfWeight;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfItalic;"]/*' />
             public byte lfItalic;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfUnderline;"]/*' />
             public byte lfUnderline;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfStrikeOut;"]/*' />
             public byte lfStrikeOut;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfCharSet;"]/*' />
             public byte lfCharSet;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfOutPrecision;"]/*' />
             public byte lfOutPrecision;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfClipPrecision;"]/*' />
             public byte lfClipPrecision;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfQuality;"]/*' />
             public byte lfQuality;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfPitchAndFamily;"]/*' />
             public byte lfPitchAndFamily;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="LOGFONT.lfFaceName;"]/*' />
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst=32)]
             public string   lfFaceName;
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NMHDR"]/*' />
         [StructLayout(LayoutKind.Sequential)]
         public struct NMHDR
         {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NMHDR.hwndFrom;"]/*' />
             public IntPtr hwndFrom;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NMHDR.idFrom;"]/*' />
             public int idFrom;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NMHDR.code;"]/*' />
             public int code;
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="RECT"]/*' />
         [StructLayout(LayoutKind.Sequential)]
         public struct RECT {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="RECT.left;"]/*' />
             public int left;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="RECT.top;"]/*' />
             public int top;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="RECT.right;"]/*' />
             public int right;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="RECT.bottom;"]/*' />
             public int bottom;
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="RECT.RECT"]/*' />
             public RECT(int left, int top, int right, int bottom) {
                 this.left = left;
                 this.top = top;
@@ -914,7 +840,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 this.bottom = bottom;
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="RECT.RECT1"]/*' />
             public RECT(System.Drawing.Rectangle r)
             {
                 this.left = r.Left;
@@ -924,26 +849,20 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="POINT"]/*' />
         [StructLayout(LayoutKind.Sequential)]
         public class POINT {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="POINT.x;"]/*' />
             public int x;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="POINT.y;"]/*' />
             public int y;
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="POINT.POINT"]/*' />
             public POINT() {
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="POINT.POINT1"]/*' />
             public POINT(int x, int y) {
                 this.x = x;
                 this.y = y;
             }
         }
         
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXT"]/*' />
         /// <devdoc>
         /// Helper class for setting the text parameters to OLECMDTEXT structures.
         /// </devdoc>
@@ -952,24 +871,19 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             // Private constructor to avoid creation of objects from this class.
             private OLECMDTEXT() {}
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF"]/*' />
             /// <summary>
             /// Flags for the OLE command text
             /// </summary>
             public enum OLECMDTEXTF
             {
-                /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF.OLECMDTEXTF_NONE"]/*' />
                 /// <summary>No flag</summary>
                 OLECMDTEXTF_NONE        = 0,
-                /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF.OLECMDTEXTF_NAME"]/*' />
                 /// <summary>The name of the command is required.</summary>
                 OLECMDTEXTF_NAME = 1,
-                /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF.OLECMDTEXTF_STATUS"]/*' />
                 /// <summary>A description of the status is required.</summary>
                 OLECMDTEXTF_STATUS = 2
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF.GetFlags"]/*' />
             /// <summary>
             /// Gets the flags of the OLECMDTEXT structure
             /// </summary>
@@ -988,7 +902,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 return OLECMDTEXTF.OLECMDTEXTF_NONE;
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF.GetText"]/*' />
             /// <devdoc>
             /// Accessing the text of this structure is very cumbersome.  Instead, you may
             /// use this method to access an integer pointer of the structure.
@@ -1017,7 +930,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 return s.ToString();
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="OLECMDTEXTF.SetText"]/*' />
             /// <devdoc>
             /// Accessing the text of this structure is very cumbersome.  Instead, you may
             /// use this method to access an integer pointer of the structure.
@@ -1054,57 +966,36 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="tagOLECMDF"]/*' />
         /// <devdoc>
         /// OLECMDF enums for IOleCommandTarget
         /// </devdoc>
         public enum tagOLECMDF {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="tagOLECMDF.OLECMDF_SUPPORTED"]/*' />
             OLECMDF_SUPPORTED    = 1, 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="tagOLECMDF.OLECMDF_ENABLED"]/*' />
             OLECMDF_ENABLED      = 2, 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="tagOLECMDF.OLECMDF_LATCHED"]/*' />
             OLECMDF_LATCHED      = 4, 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="tagOLECMDF.OLECMDF_NINCHED"]/*' />
             OLECMDF_NINCHED      = 8,
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="tagOLECMDF.OLECMDF_INVISIBLE"]/*' />
             OLECMDF_INVISIBLE    = 16
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts"]/*' />
         /// <devdoc>
         /// Constants for stream usage.
         /// </devdoc>
         public sealed class StreamConsts {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.LOCK_WRITE"]/*' />
             public const   int LOCK_WRITE = 0x1;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.LOCK_EXCLUSIVE"]/*' />
             public const   int LOCK_EXCLUSIVE = 0x2;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.LOCK_ONLYONCE"]/*' />
             public const   int LOCK_ONLYONCE = 0x4;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STATFLAG_DEFAULT"]/*' />
             public const   int STATFLAG_DEFAULT = 0x0;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STATFLAG_NONAME"]/*' />
             public const   int STATFLAG_NONAME = 0x1;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STATFLAG_NOOPEN"]/*' />
             public const   int STATFLAG_NOOPEN = 0x2;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STGC_DEFAULT"]/*' />
             public const   int STGC_DEFAULT = 0x0;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STGC_OVERWRITE"]/*' />
             public const   int STGC_OVERWRITE = 0x1;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STGC_ONLYIFCURRENT"]/*' />
             public const   int STGC_ONLYIFCURRENT = 0x2;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STGC_DANGEROUSLYCOMMITMERELYTODISKCACHE"]/*' />
             public const   int STGC_DANGEROUSLYCOMMITMERELYTODISKCACHE = 0x4;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STREAM_SEEK_SET"]/*' />
             public const   int STREAM_SEEK_SET = 0x0;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STREAM_SEEK_CUR"]/*' />
             public const   int STREAM_SEEK_CUR = 0x1;
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="StreamConsts.STREAM_SEEK_END"]/*' />
             public const   int STREAM_SEEK_END = 0x2;
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream"]/*' />
         /// <devdoc>
         /// This class implements a managed Stream object on top
         /// of a COM IStream
@@ -1117,7 +1008,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             private string creatingStack;
             #endif
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.DataStreamFromComStream"]/*' />
             public DataStreamFromComStream(Microsoft.VisualStudio.OLE.Interop.IStream comStream) : base() {
                 this.comStream = comStream;
 
@@ -1126,7 +1016,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 #endif
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.Position"]/*' />
             public override long Position {
                 get {
                     return Seek(0, SeekOrigin.Current);
@@ -1137,28 +1026,24 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.CanWrite"]/*' />
             public override bool CanWrite {
                 get {
                     return true;
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.CanSeek"]/*' />
             public override bool CanSeek {
                 get {
                     return true;
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.CanRead"]/*' />
             public override bool CanRead {
                 get {
                     return true;
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.Length"]/*' />
             public override long Length {
                 get {
                     long curPos = this.Position;
@@ -1188,7 +1073,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.Flush"]/*' />
             public override void Flush() {
                 if (comStream != null) {
                     try {
@@ -1199,7 +1083,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.Read"]/*' />
             public override int Read(byte[] buffer, int index, int count) {
                 uint bytesRead;
                 byte[] b = buffer;
@@ -1218,14 +1101,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 return (int)bytesRead;
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.SetLength"]/*' />
             public override void SetLength(long value) {
                 ULARGE_INTEGER ul = new ULARGE_INTEGER();
                 ul.QuadPart = (ulong)value;
                 comStream.SetSize(ul);
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.Seek"]/*' />
             public override long Seek(long offset, SeekOrigin origin) {
                 LARGE_INTEGER l = new LARGE_INTEGER();
                 ULARGE_INTEGER[] ul = new ULARGE_INTEGER[1];
@@ -1235,7 +1116,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 return (long)ul[0].QuadPart;
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="DataStreamFromComStream.Write"]/*' />
             public override void Write(byte[] buffer, int index, int count) {
                 uint bytesWritten;
 
@@ -1259,7 +1139,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.Finalize"]/*' />
             ~DataStreamFromComStream() {
                 #if DEBUG
                 if (comStream != null) {
@@ -1271,7 +1150,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="ConnectionPointCookie"]/*' />
         /// <devdoc>
         /// Class that encapsulates a connection point cookie for COM event handling.
         /// </devdoc>
@@ -1284,7 +1162,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             private Type   eventInterface;
             #endif
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="ConnectionPointCookie.ConnectionPointCookie"]/*' />
             /// <devdoc>
             /// Creates a connection point to of the given interface type.
             /// which will call on a managed code sink that implements that interface.
@@ -1292,7 +1169,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             public ConnectionPointCookie(object source, object sink, Type eventInterface) : this(source, sink, eventInterface, true){
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.Finalize1"]/*' />
             ~ConnectionPointCookie(){
                 #if DEBUG
                 System.Diagnostics.Debug.Assert(connectionPoint == null || cookie == 0, "We should never finalize an active connection point. (Interface = " + eventInterface.FullName + "), allocating code (see stack) is responsible for unhooking the ConnectionPoint by calling Disconnect.  Hookup Stack =\r\n" +  callStack);
@@ -1326,7 +1202,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 }
             }
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="ConnectionPointCookie.ConnectionPointCookie1"]/*' />
             /// <devdoc>
             /// Creates a connection point to of the given interface type.
             /// which will call on a managed code sink that implements that interface.
@@ -1382,7 +1257,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GetAbsolutePath"]/*' />
         /// <devdoc>
         /// This method takes a file URL and converts it to an absolute path.  The trick here is that
         /// if there is a '#' in the path, everything after this is treated as a fragment.  So
@@ -1395,7 +1269,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return uri.LocalPath + uri.Fragment;
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GetLocalPath"]/*' />
         /// <devdoc>
         /// This method takes a file URL and converts it to a local path.  The trick here is that
         /// if there is a '#' in the path, everything after this is treated as a fragment.  So
@@ -1423,7 +1296,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.IsSamePath"]/*' />
         /// <devdoc>
         /// Please use this "approved" method to compare file names.
         /// </devdoc>
@@ -1439,86 +1311,64 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return file1 == file2;
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IEventHandler"]/*' />
         [ComImport(),Guid("9BDA66AE-CA28-4e22-AA27-8A7218A0E3FA"), InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
         public interface IEventHandler {
 
             // converts the underlying codefunction into an event handler for the given event
             // if the given event is NULL, then the function will handle no events
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IEventHandler.AddHandler"]/*' />
             [PreserveSig]
             int AddHandler(string bstrEventName); 
 
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IEventHandler.RemoveHandler"]/*' />
             [PreserveSig]
             int RemoveHandler(string bstrEventName);
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IEventHandler.GetHandledEvents"]/*' />
 
             IVsEnumBSTR GetHandledEvents();
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IEventHandler.HandlesEvent"]/*' />
 
             bool HandlesEvent(string bstrEventName);
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IParameterKind"]/*' />
         [ComImport(),Guid("A55CCBCC-7031-432d-B30A-A68DE7BDAD75"), InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
         public interface IParameterKind {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IParameterKind.SetParameterPassingMode"]/*' />
 
             void SetParameterPassingMode(PARAMETER_PASSING_MODE ParamPassingMode);
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IParameterKind.SetParameterArrayDimensions"]/*' />
             void SetParameterArrayDimensions(int uDimensions);
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IParameterKind.GetParameterArrayCount"]/*' />
             int GetParameterArrayCount();
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IParameterKind.GetParameterArrayDimensions"]/*' />
             int GetParameterArrayDimensions(int uIndex);
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IParameterKind.GetParameterPassingMode"]/*' />
             int GetParameterPassingMode();
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="PARAMETER_PASSING_MODE"]/*' />
         public enum PARAMETER_PASSING_MODE
         {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="PARAMETER_PASSING_MODE.cmParameterTypeIn"]/*' />
             cmParameterTypeIn = 1,
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="PARAMETER_PASSING_MODE.cmParameterTypeOut"]/*' />
             cmParameterTypeOut = 2,
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="PARAMETER_PASSING_MODE.cmParameterTypeInOut"]/*' />
             cmParameterTypeInOut = 3
         } 
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IMethodXML"]/*' />
         [
         ComImport, Guid("3E596484-D2E4-461a-A876-254C4F097EBB"),
         InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)
         ]
         public interface IMethodXML
         {
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IMethodXML.GetXML"]/*' />
             // Generate XML describing the contents of this function's body.
             void GetXML (ref string pbstrXML);
             
             // Parse the incoming XML with respect to the CodeModel XML schema and
             // use the result to regenerate the body of the function.
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IMethodXML.SetXML"]/*' />
             [PreserveSig]
             int SetXML (string pszXML);
             
             // This is really a textpoint
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IMethodXML.GetBodyPoint"]/*' />
             [PreserveSig]
             int GetBodyPoint([MarshalAs(UnmanagedType.Interface)]out object bodyPoint);
         }
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IVBFileCodeModelEvents"]/*' />
         [ComImport(),Guid("EA1A87AD-7BC5-4349-B3BE-CADC301F17A3"), InterfaceTypeAttribute(ComInterfaceType.InterfaceIsIUnknown)]
         public interface IVBFileCodeModelEvents {
             
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IVBFileCodeModelEvents.StartEdit"]/*' />
             [PreserveSig]
             int StartEdit(); 
             
-            /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="IVBFileCodeModelEvents.EndEdit"]/*' />
             [PreserveSig]
             int EndEdit();
         }
@@ -1556,14 +1406,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [DllImport("User32", CharSet=CharSet.Auto)]
         public static extern bool PostMessage(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam);
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GetNativeWndProc"]/*' />
         public static IntPtr GetNativeWndProc(System.Windows.Forms.Control control) {
             IntPtr handle = control.Handle;
             return GetWindowLong(new HandleRef(control, handle), GWL_WNDPROC);
         }
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GWL_WNDPROC"]/*' />
         public const int GWL_WNDPROC = (-4);
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GetWindowLong"]/*' />
         //GetWindowLong won't work correctly for 64-bit: we should use GetWindowLongPtr instead.  On
         //32-bit, GetWindowLongPtr is just #defined as GetWindowLong.  GetWindowLong really should 
         //take/return int instead of IntPtr/HandleRef, but since we're running this only for 32-bit
@@ -1584,11 +1431,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
         [DllImport(ExternDll.User32, CharSet = CharSet.Auto, EntryPoint = "GetWindowLongPtr")]
         public static extern IntPtr GetWindowLongPtr64(HandleRef hWnd, int nIndex);
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.SetWindowLong"]/*' />
         [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SetWindowLong")]
         public static extern int SetWindowLong(IntPtr hWnd, short nIndex, int value);
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.SetParent"]/*' />
         /// <summary>
         /// Changes the parent window of the specified child window.
         /// </summary>
@@ -1737,22 +1582,16 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [DllImport("Kernel32", ExactSpelling=true, CharSet=CharSet.Unicode)]
         public static extern int WideCharToMultiByte(int codePage, int flags, [MarshalAs(UnmanagedType.LPWStr)]string wideStr, int chars, [In,Out]byte[] pOutBytes, int bufferBytes, IntPtr defaultChar, IntPtr pDefaultUsed);
 
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.IsDialogMessageA"]/*' />
         [DllImport("user32.dll", EntryPoint = "IsDialogMessageA", SetLastError = true, CharSet = CharSet.Ansi, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         public static extern bool IsDialogMessageA(IntPtr hDlg, ref MSG msg);
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.SetFocus"]/*' />
         [DllImport("user32.dll")]
         public static extern void SetFocus(IntPtr hwnd);
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GetFocus"]/*' />
         [DllImport("user32.dll")]
         public static extern IntPtr GetFocus();
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.InvalidateRect"]/*' />
         [DllImport("user32.dll")]
         public static extern bool InvalidateRect(IntPtr hwnd, IntPtr rect, bool erase);
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.GetClientRect"]/*' />
         [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetClientRect")]
         public static extern int GetClientRect(IntPtr hWnd, ref RECT rect);
-        /// <include file='doc\NativeMethods.uex' path='docs/doc[@for="NativeMethods.SendMessage"]/*' />
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public extern static IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 

@@ -20,7 +20,6 @@ using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 using Microsoft.VisualStudio.FSharp.LanguageService; 
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
-    /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter"]/*' />
     /// <summary>
     /// ViewFilter provides a default implementation of IVsTextViewFilter providing a
     /// handling of the following VS commands:
@@ -68,7 +67,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         private readonly Guid guidInteractive = new Guid("8B9BF77B-AF94-4588-8847-2EB2BFFD29EB");
         private readonly uint cmdIDDebugSelection = 0x01;
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.SnippetBound"]/*' />
         protected bool SnippetBound {
             get { return snippetBound; }
             set { snippetBound = value; }
@@ -94,7 +92,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return this.projectSystemPackage;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.ViewFilter"]/*' />
         internal ViewFilter(CodeWindowManager mgr, IVsTextView view) {
             this.pvaChar = IntPtr.Zero;
             this.mgr = mgr;
@@ -115,7 +112,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.Finalize"]/*' />
         ~ViewFilter() {
             Dispose();
 #if LANGTRACE
@@ -123,7 +119,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 #endif
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.Dispose"]/*' />
         public virtual void Dispose() {
             this.textView = null;
             this.service = null;
@@ -137,7 +132,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             GC.SuppressFinalize(this); // REVIEW: Why this?
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.Close"]/*' />
         public virtual void Close() {
 #if LANGTRACE
             Trace.WriteLine("ViewFilter::Close");
@@ -164,33 +158,25 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
         const int SizeOfVariant = 16;
 
-        #region IVsExpansionEvents Members
-
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnAfterSnippetsKeyBindingChange"]/*' />
         public virtual int OnAfterSnippetsKeyBindingChange(uint dwCmdGuid, uint dwCmdId, int fBound) {
             this.snippetBound = fBound == 0 ? false : true;
             return VSConstants.S_OK;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnAfterSnippetsUpdate"]/*' />
         public virtual int OnAfterSnippetsUpdate() {
             return VSConstants.S_OK;
         }
 
-        #endregion
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.CodeWindowManager;"]/*' />
         /// <summary>Returnt the CodeWindowManager that created this view filter.</summary>
         public CodeWindowManager CodeWindowManager {
             get { return this.mgr; }
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.Source;"]/*' />
         /// <summary>Return the Source object encapsulating the text buffer.</summary>
         internal ISource Source {
             get { return this.source; }
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.TextTipData;"]/*' />
         /// <summary>Get or set the TextTipData object used for displaying tool tips.</summary>
         public TextTipData TextTipData {
             get {
@@ -202,13 +188,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             set { this.textTipData = value; }
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.TextView;"]/*' />
         /// <summary>Return the IVsTextView associated with this filter.</summary>
         public IVsTextView TextView {
             get { return this.textView; }
         }
 
-        /// <include file='doc\ExpansionProvider.uex' path='docs/doc[@for="ViewFilter.IsExpansionUIActive"]/*' />
         public virtual bool IsExpansionUIActive {
             get {
                 IVsTextViewEx tve = this.textView as IVsTextViewEx;
@@ -219,8 +203,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        #region IVsTextViewFilter methods
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetWordExtent"]/*' />
         /// <summary>Returns the result of Source.GetWordExtent.</summary>
         public virtual int GetWordExtent(int line, int index, uint flags, TextSpan[] span) {
             Debug.Assert(line >= 0 && index >= 0);
@@ -243,7 +225,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetDataTipText"]/*' />
         /// <summary>
         /// If Preferences.EnableQuickInfo is true then this method kicks of a parse with the 
         /// reason BackgroundRequestReason.QuickInfo to find information about the current token.  If the
@@ -299,7 +280,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetPairExtents"]/*' />
         public virtual int GetPairExtents(int line, int index, TextSpan[] span) {
             Debug.Assert(line >= 0 && index >= 0);
             // This call from VS does not support returning E_PENDING.
@@ -309,36 +289,27 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             TextSpanHelper.MakePositive(ref span[0]);
             return NativeMethods.S_OK;
         }
-        #endregion
 
-        #region IVsTextViewEvents methods
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnChangeCaretLine"]/*' />
         public virtual void OnChangeCaretLine(IVsTextView view, int line, int col) {
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnChangeScrollInfo"]/*' />
         public virtual void OnChangeScrollInfo(IVsTextView view, int iBar, int iMinUnit, int iMaxUnits, int iVisibleUnits, int iFirstVisibleUnit) {
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnKillFocus"]/*' />
         public virtual void OnKillFocus(IVsTextView view) {
             this.service.OnActiveViewLostFocus(view);
             this.mgr.OnKillFocus(view);
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnSetBuffer"]/*' />
         public virtual void OnSetBuffer(IVsTextView view, IVsTextLines buffer) {
             Debug.Assert(buffer == this.mgr.Source.GetTextLines());
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.OnSetFocus"]/*' />
         public virtual void OnSetFocus(IVsTextView view) {
             this.service.OnActiveViewChanged(view);
             if (this.mgr != null) this.mgr.OnSetFocus(view); // is null during shutdown.
         }
-        #endregion
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.QueryCommandStatus"]/*' />
         /// <summary>
         /// Override this method to intercept the IOleCommandTarget::QueryStatus call.
         /// </summary>
@@ -457,7 +428,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return (int)NativeMethods.E_FAIL; // delegate to next command target.
         }
 
-        /// <include file='doc\EditorView.uex' path='docs/doc[@for="SimpleEditorView.QueryParameterList"]/*' />
         /// <summary>
         /// The parameter list of a command is queried by calling Exec with the LOWORD
         /// of nCmdexecopt set to OLECMDEXECOPT_SHOWHELP (instead of the more usual
@@ -485,7 +455,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.HandlePreExec"]/*' />
         public virtual bool HandlePreExec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
             
             this.wasCompletionActive = this.Source.IsCompletorActive;
@@ -595,7 +564,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.HanelPostExec"]/*' />
         /// <summary>This method hooks up HandleSmartIndent and Source.OnCommand.  </summary>
         public virtual void HandlePostExec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut, bool bufferWasChanged) {
 
@@ -673,7 +641,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [DllImport("oleaut32", PreserveSig = false)]
         static extern void VariantClear(IntPtr pObject);
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.ExecCommand"]/*' />
         /// <summary>
         /// Override this method to intercept the IOleCommandTarget::Exec call.
         /// </summary>
@@ -738,7 +705,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return this.nextTarget.Exec(ref guidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
         }
 
-        /// <include file='doc\Source.uex' path='docs/doc[@for="ViewFilter.OnAutoComplete"]/*' />
         public virtual void OnAutoComplete() {
             this.autoCompletedNothing = false;
             this.autoCompleteTypeChar = false;
@@ -760,7 +726,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.autoCompleted = true;
         }
 
-        /// <include file='doc\Source.uex' path='docs/doc[@for="ViewFilter.TypeChar"]/*' />
         // Executes a VsCommands2K.TYPECHAR command on the current command chain.
         public int TypeChar(char ch) {
 
@@ -782,7 +747,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return rc;
         }
 
-        /// <include file='doc\Source.uex' path='docs/doc[@for="ViewFilter.HandleSmartIndent"]/*' />
         /// Override this method if you want to support smart indenting.
         /// This will only be called if Preferences.Indenting == IndentingStyle.Smart which is
         /// only available if you set your language service registry key ShowSmartIndent to 1.
@@ -790,8 +754,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return false;
         }
 
-        #region IOleCommandTarget methods
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.IOleCommandTarget.QueryStatus"]/*' />
         /// <internalonly/>
         int IOleCommandTarget.QueryStatus(ref Guid guidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
             for (uint i = 0; i < cCmds; i++) {
@@ -815,7 +777,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.IOleCommandTarget.Exec"]/*' />
         /// <internalonly/>
         int IOleCommandTarget.Exec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut) {
 
@@ -852,9 +813,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
         }
-        #endregion
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.HandleQuickInfo"]/*' />
         /// <summary>This method is called to handle the VsCommands2K.QUICKINFO command.</summary>
         public virtual void HandleQuickInfo(int line, int col) {
             // Get the tip text at that location. 
@@ -906,7 +865,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             textTipData.Update(fullText, iPos, iLength, this.textView);
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetFullDataTipText"]/*' />
         /// <summary>This method checks to see if the IVsDebugger is running, and if so, 
         /// calls it to get additional information about the current token and returns a combined result.
         /// You can return an HRESULT here like TipSuccesses2.TIP_S_NODEFAULTTIP.</summary>
@@ -966,7 +924,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetTextTipData"]/*' />
         /// <summary>Creates the TextTipData object and returns it</summary>
         public virtual TextTipData CreateTextTipData() {
             // create it 
@@ -974,7 +931,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.HandleGoto"]/*' />
         /// <summary>Handles VsCommands.GotoDefn, VsCommands.GotoDecl and VsCommands.GotoRef by
         /// calling OnSyncGoto on the Source object and opening the text editor on the resulting
         /// URL, then scrolling to the resulting span.</summary>
@@ -1057,12 +1013,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             NativeMethods.ThrowOnFailure(hr);
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.GetExpansionProvider"]/*' />
         public virtual ExpansionProvider GetExpansionProvider() {
             return this.source.GetExpansionProvider();
         }
 
-        /// <include file='doc\LanguageService.uex' path='docs/doc[@for="ViewFilter.ShowContextMenu"]/*' />
         public virtual void ShowContextMenu(int menuId, Guid groupGuid, IOleCommandTarget target) {
             IVsUIShell uiShell = this.service.GetService(typeof(SVsUIShell)) as IVsUIShell;
             if (uiShell != null && !this.service.IsMacroRecordingOn()) { // disable context menu while recording macros.
@@ -1078,10 +1032,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             uiShell = null;
         }
 
-        #region CommentSelection
-
         // Special View filter command handling.
-        /// <include file='doc\Source.uex' path='docs/doc[@for="ViewFilter.CommentSelection"]/*' />
         public virtual void CommentSelection() {
             if (this.service == null) return;
 
@@ -1091,7 +1042,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             NativeMethods.ThrowOnFailure(this.textView.SetSelection(span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex));
         }
 
-        /// <include file='doc\Source.uex' path='docs/doc[@for="ViewFilter.GetSelection"]/*' />
         /// <summary>Returns the current selection, adjusted to become a positive text span</summary>
         public TextSpan GetSelection() {
             //get text range
@@ -1103,7 +1053,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return aspan[0];
         }
 
-        /// <include file='doc\Source.uex' path='docs/doc[@for="ViewFilter.UncommentSelection"]/*' />
         public virtual void UncommentSelection() {
             //get text range
             TextSpan span = GetSelection();
@@ -1113,12 +1062,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             NativeMethods.ThrowOnFailure(textView.SetSelection(span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex));
 
         }
-        #endregion
 
-
-        #region Reformat
-
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.ReformatDocument;"]/*' />
         public virtual void ReformatDocument() {
             if (this.CanReformat()) {
                 Debug.Assert(this.source != null);
@@ -1132,7 +1076,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="ViewFilter.ReformatSelection;"]/*' />
         public virtual void ReformatSelection() {
             if (this.CanReformat()) {
                 Debug.Assert(this.source != null);
@@ -1152,7 +1095,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\LanguageService.uex' path='docs/doc[@for="ViewFilter.CanReformat"]/*' />
         /// <summary>This method returns true if the FormatDocument and FormatSelection commands
         /// are to be enabled.  Default returns false if debugging, otherwise it returns
         /// the result for Preferences.EnableFormatSelection.</summary>
@@ -1161,12 +1103,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             if (this.service.IsDebugging) return false;
             return this.service.Preferences.EnableFormatSelection;
         }
-
-        #endregion
-
     }
 
-    /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData"]/*' />
     /// <summary>This class provides a default implementation of IVsTextTipData for
     /// use in the IVsTextTipWindow for displaying tool tips.</summary>
     [CLSCompliant(false)]
@@ -1178,7 +1116,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         string text;
         bool isWindowUp;
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.TextTipData"]/*' />
         internal TextTipData(IServiceProvider site) {
             if (site == null)
                 throw new System.ArgumentNullException("site");
@@ -1200,7 +1137,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 NativeMethods.ThrowOnFailure(textTipWindow.SetTextTipData(this));
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.Close"]/*' />
         public void Close(IVsTextView textView) {
             if (this.textTipWindow != null) {
                 if (this.isWindowUp)
@@ -1210,10 +1146,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.IsActive"]/*' />
         public bool IsActive() { return this.isWindowUp; }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.Update"]/*' />
         public void Update(string textValue, int pos, int len, IVsTextView textView) {
             if (textView == null) return;
 
@@ -1228,7 +1162,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.isWindowUp = true;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.CheckCaretPosition"]/*' />
         public void CheckCaretPosition(IVsTextView textView)
         {
             if (textView == null) return;
@@ -1247,8 +1180,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         ////////////////////////////////////////////////////////////////////////////////
-        #region IVsTextTipData
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.GetTipText"]/*' />
         public virtual int GetTipText(string[] pbstrText, out int pfFontData) {
             pfFontData = 0; // TODO: Do whatever formatting we might want...
             if (pbstrText == null || pbstrText.Length == 0)
@@ -1259,26 +1190,21 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.GetTipFontInfo"]/*' />
         public virtual int GetTipFontInfo(int iChars, uint[] pdwFontInfo) {
             return NativeMethods.E_NOTIMPL;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.GetContextStream"]/*' />
         public virtual int GetContextStream(out int piPos, out int piLen) {
             piPos = this.pos;
             piLen = this.len;
             return NativeMethods.S_OK;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.OnDismiss"]/*' />
         public virtual void OnDismiss() {
             this.isWindowUp = false;
         }
 
-        /// <include file='doc\ViewFilter.uex' path='docs/doc[@for="TextTipData.UpdateView"]/*' />
         public virtual void UpdateView() {
         }
-        #endregion
     }
 }

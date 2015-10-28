@@ -341,53 +341,6 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
             else List.iter (trace (node.nodeData::path)) node.nodeNeighbours
         List.iter (fun node -> trace [] node) nodes 
 
-#if OLDCODE
-
-    member g.DepthFirstSearch() = 
-        let grey = ref Set.empty 
-        let time = ref 0
-        let forest = ref []
-        let backEdges = ref []
-        let discoveryTimes = ref Map.empty 
-        let finishingTimes = ref Map.empty 
-        nodes |> List.iter (fun n ->  
-            // build a dfsTree for each node in turn 
-            let treeEdges = ref []
-            let rec visit n1 = 
-                incr time;
-                grey := Set.add n1.nodeId !grey;
-                discoveryTimes := Map.add n1.nodeId !time !discoveryTimes;
-                for n2 in n1.nodeNeighbours do
-                    if not ((!grey).Contains n2.nodeId) then 
-                        treeEdges := (n1.nodeId,n2.nodeId) :: !treeEdges;
-                        visit(n2)
-                    else 
-                        backEdges := (n1.nodeId,n2.nodeId) :: !backEdges
-                incr time;
-                finishingTimes := Map.add n1.nodeId !time !finishingTimes;
-                ()
-            if not ((!grey).Contains n.nodeId) then 
-                visit(n);
-                forest := (n.nodeId,!treeEdges) :: !forest);
-
-        !forest, !backEdges,  (fun n -> (!discoveryTimes).[n]), (fun n -> (!finishingTimes).[n])
- 
-
-    // Present strongly connected components, in dependency order 
-    // Each node is assumed to have a self-edge 
-    member g.GetTopologicalSortStronglyConnectedComponents() = 
-        let forest, backEdges, discoveryTimes, finishingTimes = g.DepthFirstSearch()
-        let nodeIds = List.map (fun n -> n.nodeId) nodes
-        let nodesInDecreasingFinishingOrder = 
-          List.sortWith (fun n1 n2 -> -(compare (finishingTimes n1) (finishingTimes n2))) nodeIds
-        let gT = Graph (nodeIdentity, List.map g.GetNodeData nodesInDecreasingFinishingOrder, List.map (fun (x,y) -> (g.GetNodeData y, g.GetNodeData x)) edges)
-        let forest, backEdges, discoveryTimes, finishingTimes = gT.DepthFirstSearch()
-        let scc (root,tree) = Set.add root (List.foldBack (fun (n1,n2) acc -> Set.add n1 (Set.add n2 acc)) tree Set.empty)
-        let sccs = List.rev (List.map scc forest)
-        List.map (Set.toList >> List.map g.GetNodeData) sccs
-#endif
-
-
 //---------------------------------------------------------------------------
 // In some cases we play games where we use 'null' as a more efficient representation
 // in F#. The functions below are used to give initial values to mutable fields.

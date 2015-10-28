@@ -180,7 +180,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Debug.Assert(document <> null, "Null XmlDocument?")
             document
             
-        // #region IDisposable
         interface IDisposable with
             member x.Dispose() =
                 if rdtCookie <> 0u && rdtFlags <> _VSRDTFLAGS.RDT_NoLock then
@@ -188,7 +187,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     rdt.UnlockDocument((uint32 rdtFlags) ||| (uint32 _VSRDTFLAGS.RDT_Unlock_SaveIfDirty), rdtCookie) |> ignore
                     rdtCookie <- 0u
         
-        // #endregion
 
     // This type provides a wrapper around the app.config file and provides methods to update
     // the config file with framework moniker information.

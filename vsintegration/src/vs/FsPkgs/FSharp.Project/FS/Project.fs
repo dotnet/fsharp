@@ -354,9 +354,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 kvp.Value.Invoke()
         member this.Advise(callbackOwnerKey, callback) =
             notificationsDict.[callbackOwnerKey] <- callback
-// REVIEW: This is not currently used. Leaving it commented out in case we want to revive it.          
-//        member this.Unadvise(callbackOwnerKey) =  
-//            notificationsDict.Remove(callbackOwnerKey) |> ignore
 
     // Used to get us sorted appropriately with the other MSFT products in the splash screen and about box
     [<Guid("591E80E4-5F44-11d3-8BDC-00C04F8EC28C")>]
@@ -726,9 +723,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 #if DESIGNER                
                 this.AddCATIDMapping(typeof<OAFSharpFileItem>, typeof<OAFSharpFileItem>.GUID)
 #endif
-                // The following are not specific to F# and as such we need a separate GUID (we simply used guidgen.exe to create new guids)
-//                this.AddCATIDMapping(typeof<FolderNodeProperties>, new Guid("C5A0C252-8688-415D-9B1A-4334775CA4B3"))
-
                 // This one we use the same as F# file nodes since both refer to files
                 this.AddCATIDMapping(typeof<FileNodeProperties>, typeof<FSharpFileNodeProperties>.GUID)
                 this.AddCATIDMapping(typeof<ProjectConfigProperties>, typeof<ProjectConfigProperties>.GUID)
@@ -1073,61 +1067,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     | _ -> String.Compare(node2.Caption, node1.Caption, true, CultureInfo.CurrentCulture)
                 else
                     node2.SortPriority - node1.SortPriority
-(*
-            /// <summary>
-            /// AddChild - add a node, sorted in the right location.
-            /// </summary>
-            /// <param name="node">The node to add.</param>
-            override fshProjNode.AddChild(node : HierarchyNode) =
-                // REVIEW: fix so files added to bottom, not sorted alpha
-                let this = fshProjNode
-                if node = null then
-                    raise <| new ArgumentNullException("node")
 
-                let map = this.ProjectMgr.ItemIdMap
-
-                // make sure the node is in the map.
-                let nodeWithSameID = this.ProjectMgr.ItemIdMap.[node.ID]
-                if not (Object.ReferenceEquals(node, nodeWithSameID)) then
-                    if (nodeWithSameID = null) && (int(node.ID) <= this.ProjectMgr.ItemIdMap.Count) then
-                        // reuse our hierarchy id if possible.
-                        this.ProjectMgr.ItemIdMap.SetAt(node.ID, this)
-                    else
-                        raise <| new InvalidOperationException()
-
-                let mutable previous = null : HierarchyNode
-                let mutable n = this.FirstChild
-                while n <> null && not (this.ProjectMgr.CompareNodes(node, n) > 0) do
-                    previous <- n
-                    n <- n.NextSibling
-                // insert "node" after "previous".
-                if previous <> null then
-                    node.NextSibling <- previous.NextSibling
-                    previous.NextSibling <- node
-                    if previous = this.LastChild then
-                        this.LastChild <- node
-                else
-                    if this.LastChild = null then
-                        this.LastChild <- node
-                    node.NextSibling <- this.FirstChild
-                    this.FirstChild <- node
-                node.Parent <- this
-                this.OnItemAdded(this, node)
-                ()
-*)
-(*
-            override x.IsItemTypeFileType(typ:string) =
-                if not (base.IsItemTypeFileType(typ)) then 
-                    if (String.Compare(typ, "Page", StringComparison.OrdinalIgnoreCase) = 0
-                     || String.Compare(typ, "ApplicationDefinition", StringComparison.OrdinalIgnoreCase) = 0
-                     || String.Compare(typ, "Resource", StringComparison.OrdinalIgnoreCase) = 0) then 
-                        true
-                    else
-                        false
-                else
-                    //This is a well known item node type, so return true.
-                    true
-*)
             override x.CreatePropertiesObject() : NodeProperties = 
                 (new FSharpProjectNodeProperties(this) :> NodeProperties)
 
@@ -1272,16 +1212,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     newNode.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
 
                 (newNode :> LinkedFileNode)
-
-#if UNUSED_DEPENDENT_FILES
-            override x.CreateDependentFileNode(item:ProjectElement ) =
-                let node = base.CreateDependentFileNode(item)
-                if (null <> node) then 
-                    let includ = item.GetMetadata(ProjectFileConstants.Include)
-                    if (FSharpProjectNode.IsCompilingFSharpFile(includ)) then 
-                        node.OleServiceProvider.AddService(typeof<SVSMDCodeDomProvider>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
-                node
-#endif
 
             /// Creates the format list for the open file dialog
             /// <param name="formatlist">The formatlist to return</param>
@@ -2022,7 +1952,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                     guidEditorType <- GuidList.guidEditorFactory
                     VSConstants.S_OK
 
-            // #region IVsProjectSpecificEditorMap2 Members
             interface IVsProjectSpecificEditorMap2 with 
                 member x.GetSpecificEditorProperty(_mkDocument:string, _propid:int, result: byref<obj>) =
                     // initialize output params
@@ -2301,17 +2230,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
             with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.RootNamespace)
             and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.RootNamespace, value)
 
-//  REVIEW Temporarily dispabling these until further work can be done.    
-//        [<Browsable(false)>]
-//        member this.ApplicationIcon
-//            with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.ApplicationIcon)
-//            and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.ApplicationIcon, value)
-//            
-//        [<Browsable(false)>]
-//        member this.ApplicationManifest 
-//            with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.ApplicationManifest)
-//            and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.ApplicationManifest, value)
-//            
         [<Browsable(false)>]
         member this.Win32ResourceFile
             with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.Win32Resource)
@@ -2439,11 +2357,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
       [<CLSCompliant(false)>]
       [<Guid("9D8E1EFB-1F18-4E2F-8C67-77328A274718")>]
       public FSharpFileNodeProperties internal (node:HierarchyNode) = 
-#if SINGLE_FILE_GENERATOR
-        inherit SingleFileGeneratorNodeProperties(node)
-#else
         inherit FileNodeProperties(node)
-#endif
 
         [<Browsable(false)>]
         member x.Url = "file:///" + x.Node.Url
@@ -2574,10 +2488,6 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
 
             override x.CreatePropertiesObject() =
                 let properties = new FSharpFileNodeProperties(x)
-#if SINGLE_FILE_GENERATOR
-                properties.OnCustomToolChanged.AddHandler(EventHandler<_>(fun sender args -> x.OnCustomToolChanged(sender,args)))
-                properties.OnCustomToolNameSpaceChanged.AddHandler(EventHandler<_>(fun sender args -> x.OnCustomToolNameSpaceChanged(sender,args)))
-#endif
                 (properties :> NodeProperties)
            
             member x.DisposeSelectionListener() = 
@@ -3092,11 +3002,7 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                             hr <- hier.ParseCanonicalName((document :?> string), &itemid)
                             match projMgr.NodeFromItemId(itemid) with 
                             | :? FSharpFileNode as node -> 
-#if SINGLE_FILE_GENERATOR
-                                node.RunGenerator()
-#else
                                 ignore(node)
-#endif
                             | _ -> 
                                 ()
                 hr
