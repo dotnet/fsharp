@@ -218,10 +218,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// </summary>
         /// <param name="fileName">The name with which to save the project or project item.</param>
         /// <exception cref="InvalidOperationException">Is thrown if the save operation failes.</exception>
-        /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>
         public override void Save(string fileName)
         {
-            this.DoSave(false, fileName);
+            this.DoSave(false, fileName ?? string.Empty);
         }
 
         /// <summary>
@@ -229,6 +228,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         /// </summary>
         /// <param name="fileName">The file name with which to save the solution, project, or project item. If the file exists, it is overwritten</param>
         /// <returns>true if the rename was successful. False if Save as failes</returns>
+        /// <exception cref="ArgumentNullException">Is thrown if fileName is null.</exception>
         public override bool SaveAs(string fileName)
         {
             try

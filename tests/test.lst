@@ -35,6 +35,7 @@ Core03,coreclr		fsharp\core\innerpoly
 Core03,Smoke,coreclr		fsharp\core\int32
 Core03		fsharp\core\internalsvisible
 Core03		fsharp\core\interop
+Core03,coreclr		fsharp\core\ilread
 Core03,coreclr		fsharp\core\lazy
 Core03		fsharp\core\letrec
 Core03,Smoke		fsharp\core\libtest
