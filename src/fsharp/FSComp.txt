@@ -929,9 +929,9 @@ optsPreferredUiLang," Specify the preferred output language culture name (e.g. e
 # service.fs strings
 # -----------------------------------------------------------------------------
 typeInfoFullName,"Full name"
-typeInfoType,"type"
-typeInfoInherits,"inherits"
-typeInfoImplements,"implements"
+# typeInfoType,"type"
+# typeInfoInherits,"inherits"
+# typeInfoImplements,"implements"
 typeInfoOtherOverloads,"and %d other overloads"
 typeInfoUnionCase,"union case"
 typeInfoActivePatternResult,"active pattern result"
@@ -1090,8 +1090,8 @@ lexHashBangMustBeFirstInFile,"#! may only appear as the first line at the start 
 1189,parsNonAdjacentTypars,"Type parameters must be placed directly adjacent to the type name, e.g. \"type C<'T>\", not     type \"C   <'T>\""
 1190,parsNonAdjacentTyargs,"Type arguments must be placed directly adjacent to the type name, e.g. \"C<'T>\", not \"C  <'T>\""
 parsNonAtomicType,"The use of the type syntax 'int C' and 'C  <int>' is not permitted here. Consider adjusting this type to be written in the form 'C<int>'"
-1191,tastUndefinedTyconItemField,"The type %s did not contain the field '%s'"
-1192,tastUndefinedTyconItemUnionCase,"The type %s did not contain the union case '%s'"
+# 1191,tastUndefinedTyconItemField,"The type %s did not contain the field '%s'"
+# 1192,tastUndefinedTyconItemUnionCase,"The type %s did not contain the union case '%s'"
 1193,tastUndefinedItemRefModuleNamespace,"The module/namespace '%s' from compilation unit '%s' did not contain the module/namespace '%s'"
 1194,tastUndefinedItemRefVal,"The module/namespace '%s' from compilation unit '%s' did not contain the val '%s'"
 1195,tastUndefinedItemRefModuleNamespaceType,"The module/namespace '%s' from compilation unit '%s' did not contain the namespace, module or type '%s'"

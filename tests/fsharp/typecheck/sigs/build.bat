@@ -14,6 +14,7 @@ call ..\..\single-neg-test.bat neg93
 call ..\..\single-neg-test.bat neg92
 @if ERRORLEVEL 1 goto Error
 
+
 call ..\..\single-neg-test.bat neg91
 @if ERRORLEVEL 1 goto Error
 
@@ -525,6 +526,8 @@ call ..\..\single-neg-test.bat neg35
 
 "%FSC%" %fsc_flags% -a -o:pos05.dll  pos05.fs
 @if ERRORLEVEL 1 goto Error
+
+REM --------Exit points------------------------
 
 :Ok
 echo Built fsharp %~f0 ok.

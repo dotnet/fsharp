@@ -79,6 +79,7 @@ type ErrorStyle =
     | EmacsErrors 
     | TestErrors 
     | VSErrors    
+    | GccErrors
 
 /// Get the location associated with an error
 val GetRangeOfError : PhasedError -> range option
@@ -283,7 +284,7 @@ type TcConfigBuilder =
       mutable maxErrors : int
       mutable abortOnError : bool
       mutable baseAddress : int32 option
-#if DEBUG
+ #if DEBUG
       mutable writeGeneratedILFiles : bool (* write il files? *)  
       mutable showOptimizationData : bool
 #endif
@@ -320,6 +321,7 @@ type TcConfigBuilder =
       mutable sqmNumOfSourceFiles : int
       sqmSessionStartedTime : int64
       mutable emitDebugInfoInQuotations : bool
+      mutable exename : string option 
 #if SHADOW_COPY_REFERENCES
       mutable shadowCopyReferences : bool
 #endif

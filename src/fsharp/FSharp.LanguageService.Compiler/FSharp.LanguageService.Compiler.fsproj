@@ -155,6 +155,9 @@
     <Compile Include="..\ErrorLogger.fs">
       <Link>ErrorLogging\ErrorLogger.fs</Link>
     </Compile>
+    <Compile Include="..\ReferenceResolution.fsi">
+      <Link>ReferenceResolution\ReferenceResolution.fsi</Link>
+    </Compile>
     <Compile Include="..\ReferenceResolution.fs">
       <Link>ReferenceResolution\ReferenceResolution.fs</Link>
     </Compile>
@@ -191,18 +194,6 @@
     </Compile>
     <Compile Include="..\..\absil\ilprint.fs">
       <Link>AbsIL\ilprint.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ilmorph.fsi">
-      <Link>AbsIL\ilmorph.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ilmorph.fs">
-      <Link>AbsIL\ilmorph.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ilsupp.fsi">
-      <Link>AbsIL\ilsupp.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ilsupp.fs">
-      <Link>AbsIL\ilsupp.fs</Link>
     </Compile>
     <Compile Include="ilpars.fs">
       <Link>AbsIL\ilpars.fs</Link>
@@ -412,6 +403,9 @@
     </Compile>
     <Compile Include="..\vs\IncrementalBuild.fs">
       <Link>Driver\IncrementalBuild.fs</Link>
+    </Compile>
+    <Compile Include="..\fsc.fsi">
+      <Link>Driver\fsc.fsi</Link>
     </Compile>
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>

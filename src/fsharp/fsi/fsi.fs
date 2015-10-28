@@ -429,6 +429,9 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
 
     let executableFileName = 
         lazy 
+            match tcConfigB.exename with
+            | Some s -> s
+            | None -> 
             let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
             Path.GetFileName(currentProcess.MainModule.FileName)
 
