@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
@@ -60,6 +60,16 @@ if exist %~dp0\..\%1\net40\bin (
     xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.sigdata %~dp0\fsharpqa\testenv\bin  || goto :error
     xcopy /Y %~dp0\..\%1\net40\bin\FSharp.Core.optdata %~dp0\fsharpqa\testenv\bin  || goto :error
 )
+
+set NUNITPATH=%~dp0%..\packages\NUnit.Runners.2.6.4\tools\
+if not exist "%NUNITPATH%" (
+    pushd %~dp0..
+    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    popd
+)    
+xcopy "%NUNITPATH%*.*"  "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+xcopy "%~dp0\fsharpqa\testenv\src\nunit\*.*" "%~dp0\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+
 
 set NUNITPATH=%~dp0%..\packages\NUnit.Runners.2.6.4\tools\
 if not exist "%NUNITPATH%" (

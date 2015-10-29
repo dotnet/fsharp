@@ -14,7 +14,9 @@ Changes contributed here are packaged into the Visual F# Tools, the F# Open Edit
 
 ###Engineering status
 
-[F# 4.0 status](https://github.com/Microsoft/visualfsharp/wiki/F%23-4.0-Status)
+[F# for CoreCLR status](https://github.com/Microsoft/visualfsharp/wiki/F%23-for-CoreCLR---Status)
+
+[F# 4.0 status](https://github.com/Microsoft/visualfsharp/wiki/F%23-4.0-Status)   --- Completed, shipped.
 
 ###License
 
