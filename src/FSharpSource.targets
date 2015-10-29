@@ -109,8 +109,10 @@
 
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);OPEN_BUILD</DefineConstants>
+    <!-- Disable uwa toolchain nuget package resolve logic. -->
+    <NuGetTargets  Condition="'$(NuGetTargets)' == ''">false</NuGetTargets>
   </PropertyGroup>  
-  
+
   <PropertyGroup>
     <NUnitVersion>2.6.4</NUnitVersion>
     <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
