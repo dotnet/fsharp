@@ -281,7 +281,7 @@ module internal FSharpEnvironment =
 #if FX_ATLEAST_45
 
     // Apply the given function to the registry entry corresponding to the subkey.
-    // The reg key is dispoed at the end of the scope.
+    // The reg key is disposed at the end of the scope.
     let useKey subkey f =
         let key = Registry.LocalMachine.OpenSubKey subkey
         try f key 

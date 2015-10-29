@@ -432,7 +432,7 @@ type TokenTup =
 
 
 //----------------------------------------------------------------------------
-// Utilities for the tokenizer that are needed in other opalces
+// Utilities for the tokenizer that are needed in other places
 //--------------------------------------------------------------------------*)
 
 // Strip a bunch of leading '>' of a token, at the end of a typar application
@@ -1168,7 +1168,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             | _ -> false
 
         // The TYPE and MODULE keywords cannot be used in expressions, but the parser has a hard time recovering on incomplete-expression-code followed by
-        // a TYPE or MODULE.  So the lexfiler helps out by looking ahead for these tokens and (1) closing expression contexts and (2) inserting extra 'coming soon' tokens
+        // a TYPE or MODULE.  So the lexfilter helps out by looking ahead for these tokens and (1) closing expression contexts and (2) inserting extra 'coming soon' tokens
         // that the expression rules in the FsYacc parser can 'shift' to make progress parsing the incomplete expressions, without using the 'recover' action.
         let insertComingSoonTokens(keywordName, comingSoon, isHere) =
             // compiling the source for FSharp.Core.dll uses crazy syntax like 

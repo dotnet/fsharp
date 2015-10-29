@@ -1287,7 +1287,7 @@ namespace Microsoft.FSharp.Control
 
             // The contract: 
             //      a) cancellation signal should always propagate to task
-            //      b) CancellationTokenSource that produced a token must not be disposed until the the task.IsComplete
+            //      b) CancellationTokenSource that produced a token must not be disposed until the task.IsComplete
             // We are:
             //      1) registering for cancellation signal here so that not to miss the signal
             //      2) disposing the registration just before setting result/exception on TaskCompletionSource -
@@ -1769,7 +1769,7 @@ namespace Microsoft.FSharp.Control
                             // Call the cancellation routine
                             match cancelAction with 
                             | None -> 
-                                // Register the result. This may race with a sucessful result, but
+                                // Register the result. This may race with a successful result, but
                                 // ResultCell allows a race and throws away whichever comes last.
                                 once.Do(fun () ->
                                             let canceledResult = Canceled (OperationCanceledException())
@@ -1936,7 +1936,7 @@ namespace Microsoft.FSharp.Control
                             | None -> 
                                 // We've been cancelled without a cancel action. Stop listening to events
                                 event.RemoveHandler(del)
-                                // Register the result. This may race with a sucessful result, but
+                                // Register the result. This may race with a successful result, but
                                 // ResultCell allows a race and throws away whichever comes last.
                                 once.Do(fun () -> resultCell.RegisterResult(Canceled (OperationCanceledException()),reuseThread=true) |> unfake) 
                             | Some cancel -> 
@@ -2360,7 +2360,7 @@ namespace Microsoft.FSharp.Control
                                     // That continuation is a no-op now, but it is still a registered reader for arriving messages.
                                     // Therefore we just abandon it - a brutal way of canceling.
                                     // This ugly non-compositionality is only needed because we only support a single mailbox reader
-                                    // (i.e. the user is not allowed to run several Recieve/TryRecieve/Scan/TryScan in parallel) - otherwise 
+                                    // (i.e. the user is not allowed to run several Receive/TryReceive/Scan/TryScan in parallel) - otherwise 
                                     // we would just have an extra no-op reader in the queue.
                                     savedCont <- None)
 

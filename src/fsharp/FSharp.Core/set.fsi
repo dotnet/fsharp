@@ -245,7 +245,7 @@ namespace Microsoft.FSharp.Collections
         val union: set1:Set<'T> -> set2:Set<'T> -> Set<'T>
 
         /// <summary>Computes the union of a sequence of sets.</summary>
-        /// <param name="sets">The sequence of sets to untion.</param>
+        /// <param name="sets">The sequence of sets to union.</param>
         /// <returns>The union of the input sets.</returns>
         [<CompiledName("UnionMany")>]
         val unionMany: sets:seq<Set<'T>> -> Set<'T>

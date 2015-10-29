@@ -232,10 +232,10 @@ type
     | String of string * range 
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
     ///
-    /// Also used internally in the typechecker once an array of unit16 contants 
+    /// Also used internally in the typechecker once an array of unit16 constants 
     /// is detected, to allow more efficient processing of large arrays of uint16 constants. 
     | Bytes of byte[] * range 
-    /// Used internally in the typechecker once an array of unit16 contants 
+    /// Used internally in the typechecker once an array of unit16 constants 
     /// is detected, to allow more efficient processing of large arrays of uint16 constants. 
     | UInt16s of uint16[] 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
@@ -247,8 +247,8 @@ type
       
 and  
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
-    /// The unchecked abstract syntax tree of F# unit of measure annotaitons. 
-    /// This should probably be merged with the represenation of SynType.
+    /// The unchecked abstract syntax tree of F# unit of measure annotations. 
+    /// This should probably be merged with the representation of SynType.
     SynMeasure = 
     | Named of LongIdent * range
     | Product of SynMeasure * SynMeasure * range
@@ -314,11 +314,11 @@ type SequencePointInfoForWhileLoop =
     
 type SequencePointInfoForBinding = 
     | SequencePointAtBinding of range
-    // Indicates the ommission of a sequence point for a binding for a 'do expr' 
+    // Indicates the omission of a sequence point for a binding for a 'do expr' 
     | NoSequencePointAtDoBinding
-    // Indicates the ommission of a sequence point for a binding for a 'let e = expr' where 'expr' has immediate control flow
+    // Indicates the omission of a sequence point for a binding for a 'let e = expr' where 'expr' has immediate control flow
     | NoSequencePointAtLetBinding
-    // Indicates the ommission of a sequence point for a compiler generated binding
+    // Indicates the omission of a sequence point for a compiler generated binding
     // where we've done a local expansion of some construct into something that involves
     // a 'let'. e.g. we've inlined a function and bound its arguments using 'let'
     // The let bindings are 'sticky' in that the inversion of the inlining would involve
@@ -349,7 +349,7 @@ type RecordFieldName = LongIdentWithDots * bool
 
 type ExprAtomicFlag =
     /// Says that the expression is an atomic expression, i.e. is of a form that has no whitespace unless 
-    /// enclosed in parantheses, e.g. 1, "3", ident, ident.[expr] and (expr). If an atomic expression has
+    /// enclosed in parentheses, e.g. 1, "3", ident, ident.[expr] and (expr). If an atomic expression has
     /// type T, then the largest expression ending at the same range as the atomic expression also has type T.
     | Atomic = 0
     | NonAtomic = 1
@@ -533,7 +533,7 @@ and
     | Assert of SynExpr * range
 
     /// App(exprAtomicFlag, isInfix, funcExpr, argExpr, m)
-    ///  - exprAtomicFlag: indicates if the applciation is syntactically atomic, e.g. f.[1] is atomic, but 'f x' is not
+    ///  - exprAtomicFlag: indicates if the application is syntactically atomic, e.g. f.[1] is atomic, but 'f x' is not
     ///  - isInfix is true for the first app of an infix operator, e.g. 1+2 becomes App(App(+,1),2), where the inner node is marked isInfix 
     ///      (or more generally, for higher operator fixities, if App(x,y) is such that y comes before x in the source code, then the node is marked isInfix=true)
     ///

@@ -48,7 +48,7 @@ let newInfo ()=
     addZeros       = false;
     precision      = false}
 
-let ParseFormatString m g fmt bty cty dty = 
+let parseFormatStringInternal m g fmt bty cty = 
     let len = String.length fmt
 
     let rec parseLoop acc i = 
@@ -58,10 +58,7 @@ let ParseFormatString m g fmt bty cty dty =
                    acc |> List.map snd |> List.rev
                else  
                    failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()
-          
-           let aty = List.foldBack (-->) argtys dty
-           let ety = mkTupledTy g argtys
-           aty,ety
+           argtys
        elif System.Char.IsSurrogatePair(fmt,i) then 
           parseLoop acc (i+2)
        else 
@@ -230,3 +227,16 @@ let ParseFormatString m g fmt bty cty dty =
           | _ -> parseLoop acc (i+1) 
     parseLoop [] 0
 
+let ParseFormatString m g fmt bty cty dty = 
+    let argtys = parseFormatStringInternal m g fmt bty cty
+    let aty = List.foldBack (-->) argtys dty
+    let ety = mkTupledTy g argtys
+    aty, ety
+
+let TryCountFormatStringArguments m g fmt bty cty =
+    try
+        parseFormatStringInternal m g fmt bty cty
+        |> List.length
+        |> Some
+    with _ ->
+        None

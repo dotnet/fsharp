@@ -103,16 +103,16 @@ let mkLocalNameTypeArity compgen m name ty topValInfo =
 //         (b) it has no free tps
 //         (c) for g:freevars(repr), both
 //             (1) g is TLR with arity wg, and
-//             (2) g occurs in arity-met occurance.
+//             (2) g occurs in arity-met occurrence.
 //         (d) if N=0, then further require that body be a TLR-constant.
 //
-//   Conditions (a-c) are required if f is to have a static method/field represenation.
+//   Conditions (a-c) are required if f is to have a static method/field representation.
 //   Condition (d) chooses which constants can be lifted. (no effects, non-trivial).
 //
-//   DEFN: An arity-met occurance of g is a g application with enough args supplied,
+//   DEFN: An arity-met occurrence of g is a g application with enough args supplied,
 //         ie. (g tps args) where wg <= |args|.
 //
-//   DEFN: An arity-short occurance does not have enough args.
+//   DEFN: An arity-short occurrence does not have enough args.
 //
 //   DEFN: A TLR-constant:
 //         - can have constructors (tuples, datatype, records, exn).
@@ -257,7 +257,7 @@ module Pass1_DetermineTLRAndArities =
 // pass2: determine reqdTypars(f) and envreq(f) - notes
 //-------------------------------------------------------------------------
 
-/// What are the closing types/values for {f1,f2...} mutally defined?
+/// What are the closing types/values for {f1,f2...} mutually defined?
 ///
 //   Note: arity-met g-applications (g TLR) will translated as:
 //           [[g @ tps ` args]] -> gHAT @ reqdTypars(g) tps ` env(g) args
@@ -274,11 +274,11 @@ module Pass1_DetermineTLRAndArities =
 //   What are the closure equations?
 //
 //   reqdTypars(f1,f2..)    includes free-tps(f)
-//   reqdTypars(f1,f2..)    includes reqdTypars(g) if fBody has arity-met g-occurance (g TLR).
+//   reqdTypars(f1,f2..)    includes reqdTypars(g) if fBody has arity-met g-occurrence (g TLR).
 //
-//   reqdItems(f1,f2...) includes ReqdSubEnv(g) if fBody has arity-met   g-occurance (g TLR)
-//   reqdItems(f1,f2...) includes ReqdVal(g)    if fBody has arity-short g-occurance (g TLR)
-//   reqdItems(f1,f2...) includes ReqdVal(g)    if fBody has g-occurance (g not TLR)
+//   reqdItems(f1,f2...) includes ReqdSubEnv(g) if fBody has arity-met   g-occurrence (g TLR)
+//   reqdItems(f1,f2...) includes ReqdVal(g)    if fBody has arity-short g-occurrence (g TLR)
+//   reqdItems(f1,f2...) includes ReqdVal(g)    if fBody has g-occurrence (g not TLR)
 //
 //   and only collect requirements if g is a generator (see next notes).
 //
@@ -294,7 +294,7 @@ module Pass1_DetermineTLRAndArities =
 //     but the env(h) will be available there (by "env-availability"),
 //     since h must be bound inside the fBody since h was not a freevar for f.
 //     .
-//     [note, f and h may mutally recurse and formals of f may be in env(h),
+//     [note, f and h may mutually recurse and formals of f may be in env(h),
 //      so env(f) may be properly inside env(h),
 //      so better not have env(h) in env(f)!!!].
 
@@ -320,8 +320,8 @@ let fclassOrder = Order.orderOn (fun (b: BindingGroupSharingSameReqdItems) -> b.
 
 /// It is required to make the TLR closed wrt it's freevars (the env reqdVals0).
 /// For gv a generator,
-///   An arity-met gv occurance contributes the env required for that gv call.
-///   Other occurances contribute the value gv.
+///   An arity-met gv occurrence contributes the env required for that gv call.
+///   Other occurrences contribute the value gv.
 type ReqdItem =
     | ReqdSubEnv of Val
     | ReqdVal    of Val
@@ -400,7 +400,7 @@ module Pass2_DetermineReqdItems =
     //      freevs  = freevars   of ..
     //      initialise:
     //        reqdTypars       = freetps
-    //        reqdItems     = []      -- info collected from generator occurances in bindings
+    //        reqdItems     = []      -- info collected from generator occurrences in bindings
     //        reqdVals0 = freevs
     //  - fold bodies, collecting info for reqdVals0.
     //  - pop and save env.
@@ -423,7 +423,7 @@ module Pass2_DetermineReqdItems =
     ///
     /// When walking expr, at each mutual binding site,
     /// push a (generator,env) collector frame on stack.
-    /// If occurances in body are relevant (for a generator) then it's contribution is logged.
+    /// If occurrences in body are relevant (for a generator) then it's contribution is logged.
     ///
     /// recShortCalls to f will require a binding for f in terms of fHat within the fHatBody.
     type state =
@@ -490,8 +490,8 @@ module Pass2_DetermineReqdItems =
 
     /// Intercepts selected exprs.
     ///   "letrec f1,f2,... = fBody1,fBody2,... in rest" - 
-    ///   "val v"                                        - free occurance
-    ///   "app (f,tps,args)"                             - occurance
+    ///   "val v"                                        - free occurrence
+    ///   "app (f,tps,args)"                             - occurrence
     ///
     /// On intercepted nodes, must exprF fold to collect from subexpressions.
     let ExprEnvIntercept (tlrS,arityM) exprF z expr = 
@@ -522,7 +522,7 @@ module Pass2_DetermineReqdItems =
              // what determines env? 
              let frees        = FreeInBindings tlrBs
              let reqdTypars0  = frees.FreeTyvars.FreeTypars   |> Zset.elements      (* put in env *)
-             // occurances contribute to env 
+             // occurrences contribute to env 
              let reqdVals0 = frees.FreeLocals |> Zset.elements
              // tlrBs are not reqdVals0 for themselves 
              let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
@@ -712,7 +712,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        let vals = vals |> FlatList.filter (IsMandatoryTopLevel >> not) 
        // Remove byrefs, no need to close over these, and would be invalid to do so since their values can change.
        //
-       // Note that it is normally not OK to skip closing over values, since values given (method) TLR must have imlpementations
+       // Note that it is normally not OK to skip closing over values, since values given (method) TLR must have implementations
        // which are truly closed. However, byref values never escape into any lambdas, so are never used in anything
        // for which we will choose a method TLR. 
        // 

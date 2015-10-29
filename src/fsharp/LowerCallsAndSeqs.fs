@@ -179,7 +179,7 @@ let LowerSeqExpr g amap overallExpr =
     let rec Lower  
                  isWholeExpr 
                  isTailCall // is this sequence in tailcall position?
-                 noDisposeContinuationLabel // represents the label for the code where there is effectively nothig to do to dispose the iterator for the current state
+                 noDisposeContinuationLabel // represents the label for the code where there is effectively nothing to do to dispose the iterator for the current state
                  currentDisposeContinuationLabel // represents the label for the code we have to run to dispose the iterator given the current state
                  expr = 
 

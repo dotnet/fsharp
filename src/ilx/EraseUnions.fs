@@ -1116,7 +1116,7 @@ let rec convClassUnionDef cenv enc td cud =
           Properties=mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps);
           CustomAttrs=td.CustomAttrs;
           tdKind = ILTypeDefKind.Class; }
-       // The .cctor goes on the Cases type since that's where the constant fields for nullary cosntructors live
+       // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 
 
     baseTypeDef

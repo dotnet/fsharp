@@ -794,7 +794,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
         let formatStringInWidth (width:int) (str:string) =
             // Return a truncated version of the string, e.g.
-            //   "This is the initial text, which has been truncat"+[12 chars]
+            //   "This is the initial text, which has been truncated"+[12 chars]
             //
             // Note: The layout code forces breaks based on leaf size and possible break points.
             //       It does not force leaf size based on width.
@@ -906,7 +906,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                   let alternativeObjL = 
                                                     match alternativeObj with 
                                                         // A particular rule is that if the alternative property
-                                                        // returns a string, we turn off auto-quoting and esaping of
+                                                        // returns a string, we turn off auto-quoting and escaping of
                                                         // the string, i.e. just treat the string as display text.
                                                         // This allows simple implementations of 
                                                         // such as

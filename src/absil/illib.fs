@@ -773,7 +773,7 @@ type LazyWithContext<'T,'ctxt> =
         match x.funcOrException with 
         | null -> x.value 
         | _ -> 
-            // Enter the lock in case another thread is in the process of evaluting the result
+            // Enter the lock in case another thread is in the process of evaluating the result
             System.Threading.Monitor.Enter(x);
             try 
                 x.UnsynchronizedForce(ctxt)
