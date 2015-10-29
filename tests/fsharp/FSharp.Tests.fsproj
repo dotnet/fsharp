@@ -46,7 +46,7 @@
     </ProjectReference>
     <Reference Include="mscorlib" />
     <Reference Include="nunit.framework">
-      <HintPath>..\..\src\packages\NUnit.3.0.0-beta-3\lib\net45\nunit.framework.dll</HintPath>
+      <HintPath>..\..\packages\NUnit.3.0.0-beta-3\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -69,7 +69,6 @@
     <Compile Include="single-test-build.fs" />
     <Compile Include="single-test-run.fs" />
     <Compile Include="single-neg-test.fs" />
-    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="core\tests_core.fs" />

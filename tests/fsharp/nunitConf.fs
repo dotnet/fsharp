@@ -31,9 +31,24 @@ let envVars () =
     |> Seq.map (fun d -> d.Key :?> string, d.Value :?> string)
     |> Map.ofSeq
 
+let defaultConfigurationName =
+#if !DEBUG
+    DEBUG
+#else
+    RELEASE
+#endif
+
+let parseConfigurationName (name: string) =
+    match name.ToUpper() with
+    | "RELEASE" -> RELEASE
+    | "DEBUG" -> DEBUG
+    | s -> failwithf "invalid env var FSHARP_TEST_SUITE_CONFIGURATION '%s'" s
+    
+
 let initializeSuite () =
 
-    let configurationName = RELEASE
+    let configurationName = defaultConfigurationName
+
     let doNgen = true;
 
     let FSCBinPath = __SOURCE_DIRECTORY__/".."/".."/(sprintf "%O" configurationName)/"net40"/"bin"
@@ -41,7 +56,14 @@ let initializeSuite () =
     let mapWithDefaults defaults m =
         Seq.concat [ (Map.toSeq defaults) ; (Map.toSeq m) ] |> Map.ofSeq
 
-    let env = envVars () |> mapWithDefaults ( ["FSCBinPath", FSCBinPath] |> Map.ofList )
+    let env = 
+        envVars ()
+        |> mapWithDefaults ( [ "FSCBinPath", FSCBinPath ] |> Map.ofList )
+
+    let configurationName =
+        match env |> Map.tryFind "FSHARP_TEST_SUITE_CONFIGURATION" |> Option.map parseConfigurationName with
+        | Some confName -> confName
+        | None -> configurationName
 
     processor {
         do! updateCmd env { Configuration = configurationName; Ngen = doNgen; }
