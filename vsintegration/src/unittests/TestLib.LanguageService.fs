@@ -356,7 +356,6 @@ type LanguageServiceBaseTests() =
     /// Called per test run
     [<TestFixtureSetUp>]
     member this.TestFixtureSetUp() =
-        ApproveAllMockTypeProviders()
         match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with 
         | Some(folder) -> 
             let fscPath = Path.Combine(folder,"fsc.exe")

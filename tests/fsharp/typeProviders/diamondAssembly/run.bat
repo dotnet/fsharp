@@ -22,10 +22,11 @@ test3.exe
 
 
 if exist test.ok (del /f /q test.ok)
-%CLIX% "%FSI%" %fsi_flags% test1.fsx test2a.fsx test2b.fsx test3.fsx && (
+%CLIX% "%FSI%" %fsi_flags% test3.fsx && (
 dir test.ok > NUL 2>&1 ) || (
 @echo :FSI load failed
 set ERRORMSG=%ERRORMSG% FSI load failed;
+goto :Error
 )
 
 

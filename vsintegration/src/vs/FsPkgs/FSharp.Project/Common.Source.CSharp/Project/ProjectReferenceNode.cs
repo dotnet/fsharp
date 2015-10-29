@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
+using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
@@ -24,8 +24,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [CLSCompliant(false), ComVisible(true)]
     public class ProjectReferenceNode : ReferenceNode
     {
-        #region fieds
-
         /// <summary>
         /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
         /// i.e. project A references project B when target framework version for B is higher that for A
@@ -67,10 +65,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private bool enableCaching;
         private string cachedReferencedProjectOutputPath;
 
-        #endregion
-
-        #region properties
-
         internal bool EnableCaching
         {
             get { return enableCaching; }
@@ -108,7 +102,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public Guid ReferencedProjectGuid
+        public Guid ReferencedProjectGuid
         {
             get
             {
@@ -120,7 +114,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Possiblity to shortcut and set the dangling project reference icon.
         /// It is ussually manipulated by solution listsneres who handle reference updates.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public bool IsNodeValid
+        public bool IsNodeValid
         {
             get
             {
@@ -135,7 +129,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Controls the state whether this reference can be removed or not. Think of the project unload scenario where the project reference should not be deleted.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ public bool CanRemoveReference
+        public bool CanRemoveReference
         {
             get
             {
@@ -147,7 +141,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /*internal, but public for FSharp.Project.dll*/ public string ReferencedProjectName
+        public string ReferencedProjectName
         {
             get { return this.referencedProjectName; }
         }
@@ -255,7 +249,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the automation object for the referenced project.
         /// </summary>
-        /*internal, but public for FSharp.Project.dll*/ private EnvDTE.Project ReferencedProject
+        private EnvDTE.Project ReferencedProject
         {
             get
             {
@@ -494,7 +488,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         private Automation.OAProjectReference projectReference;
-        /*internal, but public for FSharp.Project.dll*/ public override object Object
+        public override object Object
         {
             get
             {
@@ -505,9 +499,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return projectReference;
             }
         }
-        #endregion
 
-        #region ctors
         /// <summary>
         /// Constructor for the ReferenceNode. It is called when the project is reloaded, when the project element representing the refernce exists. 
         /// </summary>
@@ -544,9 +536,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// constructor for the ProjectReferenceNode
-        /// </summary>
         internal ProjectReferenceNode(ProjectNode root, string referencedProjectName, string projectPath, string projectReference)
             : base(root)
         {
@@ -603,10 +592,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.buildDependency = new BuildDependency(this.ProjectMgr, this.referencedProjectGuid);
 
         }
-        #endregion
 
-        #region methods
-        public /*protected, but public for FSharp.Project.dll*/ override NodeProperties CreatePropertiesObject()
+        public override NodeProperties CreatePropertiesObject()
         {
             return new ProjectReferencesProperties(this);
         }
@@ -689,7 +676,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Links a reference node to the project file.
         /// </summary>
-        public /*protected, but public for FSharp.Project.dll*/ override void BindReferenceData()
+        public override void BindReferenceData()
         {
             Debug.Assert(!String.IsNullOrEmpty(this.referencedProjectName), "The referencedProjectName field has not been initialized");
             Debug.Assert(this.referencedProjectGuid != Guid.Empty, "The referencedProjectName field has not been initialized");
@@ -711,7 +698,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Defines whether this node is valid node for painting the refererence icon.
         /// </summary>
         /// <returns></returns>
-        public /*protected, but public for FSharp.Project.dll*/ override bool CanShowDefaultIcon()
+        public override bool CanShowDefaultIcon()
         {
             if (this.referencedProjectGuid == Guid.Empty || this.ProjectMgr == null || this.ProjectMgr.IsClosed || this.isNodeValid)
             {
@@ -763,14 +750,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return false;
             }
 
-            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && FSSafe.File.SafeExists(this.referencedProjectFullPath));
+            return (!String.IsNullOrEmpty(this.referencedProjectFullPath) && FSLib.Shim.FileSystem.SafeExists(this.referencedProjectFullPath));
         }
 
         /// <summary>
         /// Checks if a project reference can be added to the hierarchy. It calls base to see if the reference is not already there, then checks for circular references.
         /// </summary>
         /// <returns></returns>
-        internal /*protected, but public for FSharp.Project.dll*/ override AddReferenceCheckResult CheckIfCanAddReference()
+        internal override AddReferenceCheckResult CheckIfCanAddReference()
         {
             // When this method is called this refererence has not yet been added to the hierarchy, only instantiated.
             var checkResult = base.CheckIfCanAddReference();
@@ -820,7 +807,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return isCircular != 0;
         }
 
-        public /*protected, but public for FSharp.Project.dll*/ override Guid GetBrowseLibraryGuid()
+        public override Guid GetBrowseLibraryGuid()
         {
             if (this.Url.EndsWith(".csproj"))
             {
@@ -901,8 +888,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             return string.Format(CultureInfo.CurrentCulture, SR.GetString(SR.ProjectReferencesDifferentFramework, CultureInfo.CurrentUICulture), referencedProjectName, currentFrameworkName.Identifier, otherFrameworkName.Identifier);
         }
-
-        #endregion
 
         enum FrameworkCompatibility
         {

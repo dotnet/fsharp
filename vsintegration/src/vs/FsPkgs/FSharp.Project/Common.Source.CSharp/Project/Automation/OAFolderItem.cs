@@ -24,15 +24,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     [ComVisible(true), CLSCompliant(false)]
     public class OAFolderItem : OAProjectItem<FolderNode>
     {
-        #region ctors
         internal OAFolderItem(OAProject project, FolderNode node)
             : base(project, node)
         {
         }
 
-        #endregion
-
-        #region overridden methods
         public override ProjectItems Collection
         {
             get
@@ -51,6 +47,5 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 return this.Collection;
             }
         }
-        #endregion
     }
 }

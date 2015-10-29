@@ -71,10 +71,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        /// <summary>
-        /// Add an image to the ImageHandler.
-        /// </summary>
-        /// <param name="image">the image object to be added.</param>
         public void AddImage(Image image)
         {
             if (null == image)

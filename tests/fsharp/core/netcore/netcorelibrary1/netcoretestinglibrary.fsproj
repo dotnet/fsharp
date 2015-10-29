@@ -91,6 +91,9 @@
     <Compile Include="..\..\csext\test.fsx">
       <Link>csext-test.fsx</Link>
     </Compile>
+    <Compile Include="..\..\forexpression\test.fsx">
+      <Link>forexpression-test.fsx</Link>
+    </Compile>
     <Compile Include="..\..\innerpoly\test.fsx">
       <Link>innerpoly-test.fsx</Link>
     </Compile>

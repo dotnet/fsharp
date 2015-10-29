@@ -34,10 +34,10 @@ open Microsoft.FSharp.Compiler.AbstractIL.ILRuntimeWriter
 open Microsoft.FSharp.Compiler.Interactive.Settings
 open Microsoft.FSharp.Compiler.Interactive.RuntimeHelpers
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Fscopts
+open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.Ilxgen
+open Microsoft.FSharp.Compiler.IlxGen
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -45,16 +45,15 @@ open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Opt
-open Microsoft.FSharp.Compiler.Env
-open Microsoft.FSharp.Compiler.Build
+open Microsoft.FSharp.Compiler.Optimizer
+open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.PostTypecheckSemanticChecks
+open Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
-open Internal.Utilities.FileSystem
 
 //----------------------------------------------------------------------------
 // Hardbinding dependencies should we NGEN fsi.exe
@@ -231,13 +230,13 @@ type internal FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWrit
           Layout.wordL ""
             
     /// Display the signature of an F# value declaration, along with its actual value.
-    member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: Ilxgen.IlxAssemblyGenerator, v:Val) =
+    member valuePrinter.InvokeDeclLayout (emEnv, ilxGenerator: IlxAssemblyGenerator, v:Val) =
         // Implemented via a lookup from v to a concrete (System.Object,System.Type).
         // This (obj,objTy) pair can then be fed to the fsi value printer.
         // Note: The value may be (null:Object).
         // Note: A System.Type allows the value printer guide printing of nulls, e.g. as None or [].
         //-------
-        // Ilxgen knows what the v:Val was converted to w.r.t. AbsIL datastructures.
+        // IlxGen knows what the v:Val was converted to w.r.t. AbsIL datastructures.
         // Ilreflect knows what the AbsIL was generated to.
         // Combining these allows for obtaining the (obj,objTy) by reflection where possible.
         // This assumes the v:Val was given appropriate storage, e.g. StaticField.
@@ -367,9 +366,9 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
     
     override x.WarnSinkImpl(err) = 
         DoWithErrorColor true (fun () -> 
-            if ReportWarningAsError tcConfigB.globalWarnLevel tcConfigB.specificWarnOff tcConfigB.specificWarnOn tcConfigB.specificWarnAsError tcConfigB.specificWarnAsWarn tcConfigB.globalWarnAsError err then 
+            if ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err then 
                 x.ErrorSinkHelper err 
-            elif ReportWarning tcConfigB.globalWarnLevel tcConfigB.specificWarnOff tcConfigB.specificWarnOn err then 
+            elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then 
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputErrorOrWarningContext "  " fsiStdinSyphon.GetLine) err
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputErrorOrWarning (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,true)) err
@@ -429,6 +428,9 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
 
     let executableFileName = 
         lazy 
+            match tcConfigB.exename with
+            | Some s -> s
+            | None -> 
             let currentProcess = System.Diagnostics.Process.GetCurrentProcess()
             Path.GetFileName(currentProcess.MainModule.FileName)
 
@@ -440,7 +442,7 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
         DisplayBannerText tcConfigB;
         fprintfn fsiConsoleOutput.Out ""
         fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileName.Value))
-        printCompilerOptionBlocks blocks
+        PrintCompilerOptionBlocks blocks
         exit 0
 
     // option tags
@@ -484,8 +486,8 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
        PrivateOptions(
         [
          // Private options, related to diagnostics around console probing 
-         CompilerOption("probeconsole","", OptionSwitch (fun flag -> probeToSeeIfConsoleWorks <- flag=On), None, None); // "Probe to see if Console looks functional");
-         CompilerOption("peekahead","", OptionSwitch (fun flag -> peekAheadOnConsoleToPermitTyping <- flag=On), None, None); // "Probe to see if Console looks functional");
+         CompilerOption("probeconsole","", OptionSwitch (fun flag -> probeToSeeIfConsoleWorks <- flag=OptionSwitch.On), None, None); // "Probe to see if Console looks functional");
+         CompilerOption("peekahead","", OptionSwitch (fun flag -> peekAheadOnConsoleToPermitTyping <- flag=OptionSwitch.On), None, None); // "Probe to see if Console looks functional");
         ])
       ]
 
@@ -507,13 +509,13 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()));
-         CompilerOption("gui",                  tagNone, OptionSwitch(fun flag -> gui <- (flag = On)),None,Some (FSIstrings.SR.fsiGui()));
+         CompilerOption("gui",                  tagNone, OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),None,Some (FSIstrings.SR.fsiGui()));
          CompilerOption("quiet",                "", OptionUnit (fun () -> tcConfigB.noFeedback <- true), None,Some (FSIstrings.SR.fsiQuiet()));     
          (* Renamed --readline and --no-readline to --tabcompletion:+|- *)
-         CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = On)),           None, Some(FSIstrings.SR.fsiReadline()));
-         CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()));
+         CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()));
+         CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()));
 #if SHADOW_COPY_REFERENCES
-         CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = On),         None, Some(FSIstrings.SR.shadowCopyReferences()));
+         CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()));
 #endif
         ]);
       ]
@@ -524,12 +526,12 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
     /// Rather than start processing, just collect names, then process them. 
     let sourceFiles = 
         let collect name = 
-            let fsx = Build.IsScript name
+            let fsx = CompileOps.IsScript name
             inputFilesAcc <- inputFilesAcc @ [(name,fsx)] // O(n^2), but n small...
         try 
            let fsiCompilerOptions = fsiUsagePrefix tcConfigB @ GetCoreFsiCompilerOptions tcConfigB @ fsiUsageSuffix tcConfigB
-           let abbrevArgs = abbrevFlagSet tcConfigB false
-           ParseCompilerOptions collect fsiCompilerOptions (List.tail (PostProcessCompilerArgs abbrevArgs argv))
+           let abbrevArgs = GetAbbrevFlagSet tcConfigB false
+           ParseCompilerOptions (collect, fsiCompilerOptions, List.tail (PostProcessCompilerArgs abbrevArgs argv))
         with e ->
             stopProcessingRecovery e range0; exit 1;
         inputFilesAcc
@@ -731,11 +733,11 @@ type internal FsiConsoleInput(fsiOptions: FsiCommandLineOptions, inReader: TextR
 [<AutoSerializable(false)>]
 [<NoEquality; NoComparison>]
 type internal FsiDynamicCompilerState =
-    { optEnv    : Opt.IncrementalOptimizationEnv
+    { optEnv    : Optimizer.IncrementalOptimizationEnv
       emEnv     : ILRuntimeWriter.emEnv
-      tcGlobals : Env.TcGlobals
-      tcState   : Build.TcState 
-      ilxGenerator : Ilxgen.IlxAssemblyGenerator
+      tcGlobals : TcGlobals
+      tcState   : TcState 
+      ilxGenerator : IlxGen.IlxAssemblyGenerator
       // Why is this not in FsiOptions?
       timing    : bool
       debugBreak : bool }
@@ -787,7 +789,7 @@ type internal FsiDynamicCompiler
     /// Add attributes 
     let CreateModuleFragment (tcConfigB, assemblyName, codegenResults) =
         if !progress then fprintfn fsiConsoleOutput.Out "Creating main module...";
-        let mainModule = mkILSimpleModule assemblyName (fsharpModuleName tcConfigB.target assemblyName) (tcConfigB.target = Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
+        let mainModule = mkILSimpleModule assemblyName (GetGeneratedILModuleName tcConfigB.target assemblyName) (tcConfigB.target = Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
         { mainModule 
           with Manifest = 
                 (let man = mainModule.ManifestOfAssembly
@@ -803,7 +805,7 @@ type internal FsiDynamicCompiler
         // Typecheck. The lock stops the type checker running at the same time as the 
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let (tcState:TcState),topCustomAttrs,declaredImpls,tcEnvAtEndOfLastInput =
-            lock tcLockObject (fun _ -> TypecheckClosedInputSet(errorLogger.CheckForErrors,tcConfig,tcImports,tcGlobals, Some prefixPath,tcState,inputs))
+            lock tcLockObject (fun _ -> TypeCheckClosedInputSet(errorLogger.CheckForErrors,tcConfig,tcImports,tcGlobals, Some prefixPath,tcState,inputs))
 
 #if DEBUG
         // Logging/debugging
@@ -841,9 +843,9 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError();
             
         ReportTime tcConfig "ILX -> IL (Unions)"; 
-        let ilxMainModule = EraseIlxUnions.ConvModule ilGlobals ilxMainModule
+        let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
         ReportTime tcConfig "ILX -> IL (Funcs)"; 
-        let ilxMainModule = EraseIlxFuncs.ConvModule ilGlobals ilxMainModule 
+        let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
         errorLogger.AbortOnError();   
               
@@ -948,7 +950,7 @@ type internal FsiDynamicCompiler
         let prefix = mkFragmentPath i
         let prefixPath = pathOfLid prefix
         let impl = SynModuleOrNamespace(prefix,(* isModule: *) true,defs,PreXmlDoc.Empty,[],None,rangeStdin)
-        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, QualFileNameOfUniquePath (rangeStdin,prefixPath),[],[],[impl],true (* isLastCompiland *) ))
+        let input = ParsedInput.ImplFile(ParsedImplFileInput(filename,true, ComputeQualifiedNameOfFileFromUniquePath (rangeStdin,prefixPath),[],[],[impl],true (* isLastCompiland *) ))
         let istate,tcEnvAtEndOfLastInput = ProcessInputs (istate, [input], showTypes, true, isInteractiveItExpr, prefix)
         let tcState = istate.tcState 
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
@@ -966,7 +968,7 @@ type internal FsiDynamicCompiler
         let istate = fsiDynamicCompiler.EvalParsedDefinitions (istate, false, true, defs)
         // Snarf the type for 'it' via the binding
         match istate.tcState.TcEnvFromImpls.NameEnv.FindUnqualifiedItem itName with 
-        | Nameres.Item.Value vref -> 
+        | NameResolution.Item.Value vref -> 
              if not tcConfig.noFeedback then 
                  valuePrinter.InvokeExprPrinter (istate.tcState.TcEnvFromImpls.DisplayEnv, vref.Deref)
              
@@ -1008,7 +1010,7 @@ type internal FsiDynamicCompiler
         SynModuleDecl.DoExpr(SequencePointInfoForBinding.NoSequencePointAtDoBinding, breakStatement, m)
 
     member __.EvalRequireReference istate m path = 
-        if Path.IsInvalidPath(path) then
+        if FileSystem.IsInvalidPathShim(path) then
             error(Error(FSIstrings.SR.fsiInvalidAssembly(path),m))
         // Check the file can be resolved before calling requireDLLReference 
         let resolutions = tcImports.ResolveAssemblyReference(AssemblyReference(m,path),ResolveAssemblyReferenceMode.ReportErrors)
@@ -1037,7 +1039,7 @@ type internal FsiDynamicCompiler
                    inp 
                    (Path.GetDirectoryName sourceFile)
                    istate)
-
+      
     member fsiDynamicCompiler.EvalSourceFiles(istate, m, sourceFiles, lexResourceManager) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
         match sourceFiles with 
@@ -1045,10 +1047,10 @@ type internal FsiDynamicCompiler
         | _ -> 
           // use a set of source files as though they were command line inputs
           let sourceFiles = sourceFiles |> List.map (fun nm -> tcConfig.ResolveSourceFile(m,nm,tcConfig.implicitIncludeDir),m) 
-
+         
           // Close the #load graph on each file and gather the inputs from the scripts.
           let closure = LoadClosure.ComputeClosureOfSourceFiles(TcConfig.Create(tcConfigB,validate=false),sourceFiles,CodeContext.Evaluation,lexResourceManager=lexResourceManager,useDefaultScriptingReferences=true)
-
+          
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
           closure.Inputs  |> List.iteri (fun i (sourceFile,_) -> 
@@ -1080,21 +1082,21 @@ type internal FsiDynamicCompiler
     
     member __.GetInitialInteractiveState () =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let optEnv0 = InitialOptimizationEnv tcImports tcGlobals
+        let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
         let emEnv = ILRuntimeWriter.emEnv0
-        let tcEnv = GetInitialTypecheckerEnv None rangeStdin tcConfig tcImports tcGlobals
+        let tcEnv = GetInitialTcEnv (None, rangeStdin, tcConfig, tcImports, tcGlobals)
         let ccuName = assemblyName 
 
-        let tcState = TypecheckInitialState (rangeStdin,ccuName,tcConfig,tcGlobals,tcImports,niceNameGen,tcEnv)
+        let tcState = GetInitialTcState (rangeStdin, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv)
 
         let ilxGenerator = CreateIlxAssemblyGenerator(tcConfig,tcImports,tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu )
-        {optEnv    = optEnv0;
-         emEnv     = emEnv;
-         tcGlobals = tcGlobals;
-         tcState   = tcState;
-         ilxGenerator = ilxGenerator;
-         timing    = false;
-         debugBreak = false;
+        {optEnv    = optEnv0
+         emEnv     = emEnv
+         tcGlobals = tcGlobals
+         tcState   = tcState
+         ilxGenerator = ilxGenerator
+         timing    = false
+         debugBreak = false
         } 
 
 
@@ -1118,10 +1120,10 @@ type internal FsiIntellisenseProvider(tcGlobals, tcImports: TcImports) =
 
         let amap = tcImports.GetImportMap()
         let infoReader = new Infos.InfoReader(tcGlobals,amap)
-        let ncenv = new Nameres.NameResolver(tcGlobals,amap,infoReader,Nameres.FakeInstantiationGenerator)
+        let ncenv = new NameResolution.NameResolver(tcGlobals,amap,infoReader,NameResolution.FakeInstantiationGenerator)
         // Note: for the accessor domain we should use (AccessRightsOfEnv tcState.TcEnvFromImpls)
         let ad = Infos.AccessibleFromSomeFSharpCode
-        let nItems = Nameres.ResolvePartialLongIdent ncenv tcState.TcEnvFromImpls.NameEnv (ConstraintSolver.IsApplicableMethApprox tcGlobals amap rangeStdin) rangeStdin ad lid false
+        let nItems = NameResolution.ResolvePartialLongIdent ncenv tcState.TcEnvFromImpls.NameEnv (ConstraintSolver.IsApplicableMethApprox tcGlobals amap rangeStdin) rangeStdin ad lid false
         let names  = nItems |> List.map (fun d -> d.DisplayName tcGlobals) 
         let names  = names |> List.filter (fun (name:string) -> name.StartsWith(stem,StringComparison.Ordinal)) 
         names
@@ -1143,7 +1145,7 @@ type internal FsiIntellisenseProvider(tcGlobals, tcImports: TcImports) =
             names
         with
           e ->
-            System.Windows.Forms.MessageBox.Show("FsiGetDeclarations: throws:\n" ^ e.ToString()) |> ignore;
+            System.Windows.Forms.MessageBox.Show("FsiGetDeclarations: throws:\n" ^ e.ToString()) |> ignore
             [| |]
 
 #endif
@@ -1201,33 +1203,33 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
 
     // REVIEW: streamline all this code to use the same code on Windows and Posix.   
     member controller.InstallKillThread(threadToKill:Thread, pauseMilliseconds:int) = 
-        if !progress then fprintfn fsiConsoleOutput.Out "installing CtrlC handler";
+        if !progress then fprintfn fsiConsoleOutput.Out "installing CtrlC handler"
         // WINDOWS TECHNIQUE: .NET has more safe points, and you can do more when a safe point. 
         // Hence we actually start up the killer thread within the handler. 
         try 
             let raiseCtrlC() = 
                 SetCurrentUICultureForThread fsiOptions.FsiLCID
-                fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiInterrupt());
-                stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed;
+                fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiInterrupt())
+                stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed
                 if (interruptAllowed = InterruptCanRaiseException) then 
-                    killThreadRequest <- ThreadAbortRequest;
+                    killThreadRequest <- ThreadAbortRequest
                     let killerThread = 
                         new Thread(new ThreadStart(fun () ->
                             SetCurrentUICultureForThread fsiOptions.FsiLCID
                             // sleep long enough to allow ControlEventHandler handler on main thread to return 
                             // Also sleep to give computations a bit of time to terminate 
-                            Thread.Sleep(pauseMilliseconds);
+                            Thread.Sleep(pauseMilliseconds)
                             if (killThreadRequest = ThreadAbortRequest) then 
-                                if !progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread());  
-                                killThreadRequest <- NoRequest;
-                                threadToKill.Abort();
+                                if !progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread())  
+                                killThreadRequest <- NoRequest
+                                threadToKill.Abort()
                             ()),Name="ControlCAbortThread") 
-                    killerThread.IsBackground <- true;
+                    killerThread.IsBackground <- true
                     killerThread.Start() 
         
             let ctrlEventHandler = new NativeMethods.ControlEventHandler(fun i ->  if i = CTRL_C then (raiseCtrlC(); true) else false ) 
-            ctrlEventHandlers <- ctrlEventHandler :: ctrlEventHandlers;
-            ctrlEventActions  <- raiseCtrlC       :: ctrlEventActions;
+            ctrlEventHandlers <- ctrlEventHandler :: ctrlEventHandlers
+            ctrlEventActions  <- raiseCtrlC       :: ctrlEventActions
             let _resultOK = NativeMethods.SetConsoleCtrlHandler(ctrlEventHandler,true)
             false // don't exit via kill thread
         with e -> 
@@ -1239,32 +1241,32 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
             match (try Choice1Of2(Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))) with e -> Choice2Of2 e) with 
             | Choice1Of2(monoPosix) -> 
               try
-                if !progress then fprintfn fsiConsoleOutput.Error "loading type Mono.Unix.Native.Stdlib...";
+                if !progress then fprintfn fsiConsoleOutput.Error "loading type Mono.Unix.Native.Stdlib..."
                 let monoUnixStdlib = monoPosix.GetType("Mono.Unix.Native.Stdlib") 
-                if !progress then fprintfn fsiConsoleOutput.Error "loading type Mono.Unix.Native.SignalHandler...";
+                if !progress then fprintfn fsiConsoleOutput.Error "loading type Mono.Unix.Native.SignalHandler..."
                 let monoUnixSignalHandler = monoPosix.GetType("Mono.Unix.Native.SignalHandler") 
-                if !progress then fprintfn fsiConsoleOutput.Error "creating delegate...";
-                controller.PosixInvoke(-1);
+                if !progress then fprintfn fsiConsoleOutput.Error "creating delegate..."
+                controller.PosixInvoke(-1)
                 let monoHandler = System.Delegate.CreateDelegate(monoUnixSignalHandler,controller,"PosixInvoke") 
-                if !progress then fprintfn fsiConsoleOutput.Error "registering signal handler...";
+                if !progress then fprintfn fsiConsoleOutput.Error "registering signal handler..."
                 let monoSignalNumber = System.Enum.Parse(monoPosix.GetType("Mono.Unix.Native.Signum"),"SIGINT")
                 let register () = Utilities.callStaticMethod monoUnixStdlib "signal" [ monoSignalNumber; box monoHandler ]  |> ignore 
-                posixReinstate <- register;
-                register();
+                posixReinstate <- register
+                register()
                 let killerThread = 
                     new Thread(new ThreadStart(fun () ->
                         SetCurrentUICultureForThread fsiOptions.FsiLCID
                         while true do 
                             //fprintf fsiConsoleOutput.Error "\n- kill thread loop...\n"; errorWriter.Flush();  
-                            Thread.Sleep(pauseMilliseconds*2);
+                            Thread.Sleep(pauseMilliseconds*2)
                             match killThreadRequest with 
                             | PrintInterruptRequest -> 
-                                fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiInterrupt()); fsiConsoleOutput.Error.Flush();  
-                                killThreadRequest <- NoRequest;
+                                fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiInterrupt()); fsiConsoleOutput.Error.Flush()  
+                                killThreadRequest <- NoRequest
                             | ThreadAbortRequest -> 
-                                fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiInterrupt()); fsiConsoleOutput.Error.Flush();  
-                                if !progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread());
-                                killThreadRequest <- NoRequest;
+                                fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiInterrupt()); fsiConsoleOutput.Error.Flush()  
+                                if !progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread())
+                                killThreadRequest <- NoRequest
                                 threadToKill.Abort()
                             | ExitRequest -> 
                                 // Mono has some wierd behaviour where it blocks on exit
@@ -1275,12 +1277,12 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
                                 //
                                 // Anyway, we make "#q" work this case by setting ExitRequest and brutally calling
                                 // the process-wide 'exit'
-                                fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiExit()); fsiConsoleOutput.Error.Flush();  
+                                fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiExit()); fsiConsoleOutput.Error.Flush()  
                                 Utilities.callStaticMethod monoUnixStdlib "exit" [ box 0 ] |> ignore
                             | _ ->  ()
                         done),Name="ControlCAbortAlternativeThread") 
-                killerThread.IsBackground <- true;
-                killerThread.Start();
+                killerThread.IsBackground <- true
+                killerThread.Start()
                 true // exit via kill thread to workaround block-on-exit bugs with Mono once a CtrlC has been pressed
               with e -> 
                 fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiCouldNotInstallCtrlCHandler(e.Message))
@@ -1295,8 +1297,8 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
          // since we are not allowed to JIT a signal handler.  THis also ensures the "PosixInvoke"
          // method is not eliminated by dead-code elimination
          if n >= 0 then 
-             posixReinstate();
-             stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed;
+             posixReinstate()
+             stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed
              killThreadRequest <- if (interruptAllowed = InterruptCanRaiseException) then ThreadAbortRequest else PrintInterruptRequest
 
 
@@ -1366,7 +1368,7 @@ module internal MagicAssemblyResolution =
                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
                let fullAssemName = args.Name
                let simpleAssemName = fullAssemName.Split([| ',' |]).[0]          
-               if !progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName; // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..." 
+               if !progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..." 
                
                // Special case: Mono Windows Forms attempts to load an assembly called something like "Windows.Forms.resources"
                // We can't resolve this, so don't try.
@@ -1398,12 +1400,12 @@ module internal MagicAssemblyResolution =
                    | OkResult (warns, [r]) -> OkResult (warns, Choice1Of2 r.resolvedPath)
                    | _ -> 
 
-                   if !progress then fsiConsoleOutput.uprintfn "ATTEMPT LOAD, assemblyReferenceTextDll = %s" assemblyReferenceTextDll;
+                   if !progress then fsiConsoleOutput.uprintfn "ATTEMPT LOAD, assemblyReferenceTextDll = %s" assemblyReferenceTextDll
                    /// Take a look through the files quoted, perhaps with explicit paths
                    let searchResult = 
                        (tcConfig.referencedDLLs 
                             |> List.tryPick (fun assemblyReference -> 
-                             if !progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON FILE, referencedDLL = %s" assemblyReference.Text;
+                             if !progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON FILE, referencedDLL = %s" assemblyReference.Text
                              if System.String.Compare(Filename.fileNameOfPath assemblyReference.Text, assemblyReferenceTextDll,StringComparison.OrdinalIgnoreCase) = 0 ||
                                 System.String.Compare(Filename.fileNameOfPath assemblyReference.Text, assemblyReferenceTextExe,StringComparison.OrdinalIgnoreCase) = 0 then
                                  Some(tcImports.TryResolveAssemblyReference(assemblyReference,ResolveAssemblyReferenceMode.Speculative))
@@ -1431,14 +1433,14 @@ module internal MagicAssemblyResolution =
                    let res = CommitOperationResult overallSearchResult
                    match res with 
                    | Choice1Of2 assemblyName -> 
-                       if simpleAssemName <> "Mono.Posix" then fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo(assemblyName));
+                       if simpleAssemName <> "Mono.Posix" then fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiBindingSessionTo(assemblyName))
                        assemblyLoadFrom assemblyName
                    | Choice2Of2 assembly -> 
                        assembly
                    
            with e -> 
-               stopProcessingRecovery e range0; 
-               null));
+               stopProcessingRecovery e range0 
+               null))
 
 //----------------------------------------------------------------------------
 // Reading stdin 
@@ -1460,17 +1462,17 @@ type internal FsiStdinLexerProvider
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readf = 
         UnicodeLexing.FunctionAsLexbuf 
           (fun (buf: char[], start, len) -> 
-            //fprintf fsiConsoleOutput.Out "Calling ReadLine\n";
+            //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readf()) with :? EndOfStreamException -> None
-            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"));
+            inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
             match inputOption with 
             |  Some(null) | None -> 
-                 if !progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine";
+                 if !progress then fprintfn fsiConsoleOutput.Out "End of file from TextReader.ReadLine"
                  0
             | Some (input:string) ->
                 let input  = input + "\n" 
                 let ninput = input.Length 
-                if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong());
+                if ninput > len then fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiLineTooLong())
                 let ntrimmed = min len ninput 
                 for i = 0 to ntrimmed-1 do
                     buf.[i+start] <- input.[i]
@@ -1489,11 +1491,11 @@ type internal FsiStdinLexerProvider
 
     let CreateLexerForLexBuffer (sourceFileName, lexbuf) =
 
-        Lexhelp.resetLexbufPos sourceFileName lexbuf;
+        Lexhelp.resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer 
         let defines = "INTERACTIVE"::tcConfigB.conditionalCompilationDefines
         let lexargs = mkLexargs (sourceFileName,defines, interactiveInputLightSyntaxStatus, lexResourceManager, ref [], errorLogger) 
-        let tokenizer = Lexfilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
+        let tokenizer = LexFilter.LexFilter(interactiveInputLightSyntaxStatus, tcConfigB.compilingFslib, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
 
@@ -1509,7 +1511,7 @@ type internal FsiStdinLexerProvider
             | _ -> 
                 LexbufFromLineReader fsiStdinSyphon (fun () -> fsiConsoleInput.In.ReadLine() |> removeZeroCharsFromString)
 
-        fsiStdinSyphon.Reset();
+        fsiStdinSyphon.Reset()
         CreateLexerForLexBuffer (Lexhelp.stdinMockFilename, lexbuf)
 
     // Create a new lexer to read an "included" script file
@@ -1543,10 +1545,10 @@ type internal FsiInteractionProcessor
     let InteractiveCatch f istate = 
         try
             // reset error count 
-            errorLogger.ResetErrorCount();  
+            errorLogger.ResetErrorCount()  
             f istate
         with  e ->
-            stopProcessingRecovery e range0;
+            stopProcessingRecovery e range0
             istate,CompletedWithReportedError
 
 
@@ -1562,10 +1564,10 @@ type internal FsiInteractionProcessor
 
 
     /// Parse one interaction. Called on the parser thread.
-    let ParseInteraction (tokenizer:Lexfilter.LexFilter) =   
+    let ParseInteraction (tokenizer:LexFilter.LexFilter) =   
         let lastToken = ref Parser.ELSE // Any token besides SEMICOLON_SEMICOLON will do for initial value 
         try 
-            if !progress then fprintfn fsiConsoleOutput.Out "In ParseInteraction...";
+            if !progress then fprintfn fsiConsoleOutput.Out "In ParseInteraction..."
 
             let input = 
                 Lexhelp.reusingLexbufForParsing tokenizer.LexBuffer (fun () -> 
@@ -1585,7 +1587,7 @@ type internal FsiInteractionProcessor
                       && not tokenizer.LexBuffer.IsPastEndOfStream do
                     tok <- tokenizer.Lexer tokenizer.LexBuffer
 
-            stopProcessingRecovery e range0;    
+            stopProcessingRecovery e range0    
             None
 
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
@@ -1626,16 +1628,16 @@ type internal FsiInteractionProcessor
 
             | IHash (ParsedHashDirective("I",[path],m),_) -> 
                 tcConfigB.AddIncludePath (m,path, tcConfig.implicitIncludeDir)
-                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path));
+                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
                 istate,Completed
 
             | IHash (ParsedHashDirective("cd",[path],m),_) ->
-                ChangeDirectory path m;
+                ChangeDirectory path m
                 istate,Completed
 
             | IHash (ParsedHashDirective("silentCd",[path],m),_) ->
-                ChangeDirectory path m;
-                fsiConsolePrompt.SkipNext(); (* "silent" directive *)
+                ChangeDirectory path m
+                fsiConsolePrompt.SkipNext() (* "silent" directive *)
                 istate,Completed   
                                
             | IHash (ParsedHashDirective("dbgbreak",[],_),_) -> 
@@ -1656,20 +1658,20 @@ type internal FsiInteractionProcessor
                 {istate with timing = (v = "on")},Completed
 
             | IHash (ParsedHashDirective("nowarn",numbers,m),_) -> 
-                List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m,d)) numbers;
+                List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m,d)) numbers
                 istate,Completed
 
             | IHash (ParsedHashDirective("terms",[],_),_) -> 
-                tcConfigB.showTerms <- not tcConfig.showTerms; 
+                tcConfigB.showTerms <- not tcConfig.showTerms 
                 istate,Completed
 
             | IHash (ParsedHashDirective("types",[],_),_) -> 
-                fsiOptions.ShowTypes <- not fsiOptions.ShowTypes; 
+                fsiOptions.ShowTypes <- not fsiOptions.ShowTypes 
                 istate,Completed
 
     #if DEBUG
             | IHash (ParsedHashDirective("ilcode",[],_m),_) -> 
-                fsiOptions.ShowILCode <- not fsiOptions.ShowILCode; 
+                fsiOptions.ShowILCode <- not fsiOptions.ShowILCode 
                 istate,Completed
 
             | IHash (ParsedHashDirective("info",[],_m),_) -> 
@@ -1679,16 +1681,16 @@ type internal FsiInteractionProcessor
 
             | IHash (ParsedHashDirective(("q" | "quit"),[],_),_) -> 
                 if exitViaKillThread then 
-                    fsiInterruptController.InterruptRequest <- ExitRequest;
+                    fsiInterruptController.InterruptRequest <- ExitRequest
                     Thread.Sleep(1000)
-                exit 0;                
+                exit 0                
 
             | IHash (ParsedHashDirective("help",[],_),_) ->
-                fsiOptions.ShowHelp();
+                fsiOptions.ShowHelp()
                 istate,Completed
 
             | IHash (ParsedHashDirective(c,arg,_),_) -> 
-                fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiInvalidDirective(c, String.concat " " arg));  // REVIEW: uprintnfnn - like other directives above
+                fsiConsoleOutput.uprintfn "%s" (FSIstrings.SR.fsiInvalidDirective(c, String.concat " " arg))  // REVIEW: uprintnfnn - like other directives above
                 istate,Completed  (* REVIEW: cont = CompletedWithReportedError *)
         )
 
@@ -1780,7 +1782,7 @@ type internal FsiInteractionProcessor
     ///
     /// During processing of startup scripts, this runs on the main thread.
 
-    member __.ParseAndProcessAndEvalOneInteractionFromLexbuf (exitViaKillThread, runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:Lexfilter.LexFilter) =
+    member __.ParseAndProcessAndEvalOneInteractionFromLexbuf (exitViaKillThread, runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter) =
 
         if tokenizer.LexBuffer.IsPastEndOfStream then 
             let stepStatus = 
@@ -2143,7 +2145,8 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 
     let defaultFSharpBinariesDir = System.AppDomain.CurrentDomain.BaseDirectory
 
-    let tcConfigB = Build.TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, 
+    let tcConfigB = 
+        TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, 
                                                     true, // long running: optimizeForMemory 
                                                     Directory.GetCurrentDirectory(),isInteractive=true, 
                                                     isInvalidationSupported=false)
@@ -2156,9 +2159,9 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     do tcConfigB.useFsiAuxLib <- true
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
-    do SetOptimizeSwitch tcConfigB On
-    do SetDebugSwitch    tcConfigB (Some "pdbonly") On
-    do SetTailcallSwitch tcConfigB On    
+    do SetOptimizeSwitch tcConfigB OptionSwitch.On
+    do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
+    do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies

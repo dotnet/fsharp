@@ -119,7 +119,6 @@ type internal FsiToolWindow() as this =
 
     // Remove: after next submit (passing through SD)       
     // vsTextManager did not seem to yield current selection...
-    // let vsTextManager  = Util.CreateObjectT<VsTextManagerClass,VsTextManager> provider
 
     // The IP sample called GetService() to obtain the LanguageService.
     let fsiLangService = provider.GetService(typeof<FsiLanguageService>) |> unbox : FsiLanguageService

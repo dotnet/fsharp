@@ -6,21 +6,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem {
 #if FEATURE_PAL
 
  #if !PLATFORM_UNIX
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLPREFIX = "";
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLSUFFIX = ".dll";
+        public const String DLLPREFIX = "";
+        public const String DLLSUFFIX = ".dll";
  #else // !PLATFORM_UNIX
   #if __APPLE__
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLPREFIX = "lib";
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLSUFFIX = ".dylib";
+        public const String DLLPREFIX = "lib";
+        public const String DLLSUFFIX = ".dylib";
   #elif _AIX
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLPREFIX = "lib";
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLSUFFIX = ".a";
+        public const String DLLPREFIX = "lib";
+        public const String DLLSUFFIX = ".a";
   #elif __hppa__ || IA64
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLPREFIX = "lib";
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLSUFFIX = ".sl";
+        public const String DLLPREFIX = "lib";
+        public const String DLLSUFFIX = ".sl";
   #else
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLPREFIX = "lib";
-        /*internal, but public for FSharp.Project.dll*/ public const String DLLSUFFIX = ".so";
+        public const String DLLPREFIX = "lib";
+        public const String DLLSUFFIX = ".so";
   #endif
  #endif // !PLATFORM_UNIX
 
@@ -63,12 +63,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem {
         public const string Crypt32  = "crypt32.dll";
 
         // system.data specific
-        /*internal, but public for FSharp.Project.dll*/ public const string Odbc32    = "odbc32.dll";
-        /*internal, but public for FSharp.Project.dll*/ public const string SNI       = "System.Data.dll";
+        public const string Odbc32    = "odbc32.dll";
+        public const string SNI       = "System.Data.dll";
 
         // system.data.oracleclient specific
-        /*internal, but public for FSharp.Project.dll*/ public const string OciDll    = "oci.dll";
-        /*internal, but public for FSharp.Project.dll*/ public const string OraMtsDll = "oramts.dll";
+        public const string OciDll    = "oci.dll";
+        public const string OraMtsDll = "oramts.dll";
 #endif //!FEATURE_PAL
     }
 }

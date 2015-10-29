@@ -302,7 +302,7 @@ namespace Internal.Utilities.Collections.Tagged
             // Perf: tried bruteForce for low heights, but nothing significant 
             match t1,t2 with               
             | SetNode(k1,t11,t12,h1),SetNode(k2,t21,t22,h2) -> // (t11 < k < t12) AND (t21 < k2 < t22) 
-                // Divide and Quonquer:
+                // Divide and Conquer:
                 //   Suppose t1 is largest.
                 //   Split t2 using pivot k1 into lo and hi.
                 //   Union disjoint subproblems and then combine. 

@@ -1020,7 +1020,7 @@ type PdbDocumentWriter = { symDocWriter : ISymUnmanagedDocumentWriter }  (* poin
 type idd =
     { iddCharacteristics: int32;
       iddMajorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
-      iddMinorVersion: int32; (* acutally u16 in IMAGE_DEBUG_DIRECTORY *)
+      iddMinorVersion: int32; (* actually u16 in IMAGE_DEBUG_DIRECTORY *)
       iddType: int32;
       iddData: byte[];}
 

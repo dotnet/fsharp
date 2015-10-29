@@ -180,7 +180,7 @@ module List =
     let existsi f xs = 
        let rec loop i xs = match xs with [] -> false | h::t -> f i h || loop (i+1) t
        loop 0 xs
-
+    
     let lengthsEqAndForall2 p l1 l2 = 
         List.length l1 = List.length l2 &&
         List.forall2 p l1 l2
@@ -470,6 +470,7 @@ module Dictionary =
 
 // FUTURE CLEANUP: remove this adhoc collection
 type Hashset<'T> = Dictionary<'T,int>
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Hashset = 
     let create (n:int) = new Hashset<'T>(n, HashIdentity.Structural)
@@ -503,6 +504,28 @@ type ResultOrException<'TResult> =
     | Result of 'TResult
     | Exception of System.Exception
                      
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ResultOrException = 
+
+    let success a = Result a
+    let raze (b:exn) = Exception b
+
+    // map
+    let (|?>) res f = 
+        match res with 
+        | Result x -> Result(f x )
+        | Exception err -> Exception err
+  
+    let ForceRaise res = 
+        match res with 
+        | Result x -> x
+        | Exception err -> raise err
+
+    let otherwise f x =
+        match x with 
+        | Result x -> success x
+        | Exception _err -> f()
+
 
 //-------------------------------------------------------------------------
 // Library: extensions to flat list  (immutable arrays)
@@ -750,7 +773,7 @@ type LazyWithContext<'T,'ctxt> =
         match x.funcOrException with 
         | null -> x.value 
         | _ -> 
-            // Enter the lock in case another thread is in the process of evaluting the result
+            // Enter the lock in case another thread is in the process of evaluating the result
             System.Threading.Monitor.Enter(x);
             try 
                 x.UnsynchronizedForce(ctxt)
@@ -931,26 +954,17 @@ module Shim =
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
-    [<AbstractClass>]
-    type FileSystem() = 
+    type IFileSystem = 
         abstract ReadAllBytesShim: fileName:string -> byte[] 
-        default this.ReadAllBytesShim (fileName:string) = 
-            use stream = this.FileStreamReadShim fileName
-            let len = stream.Length
-            let buf = Array.zeroCreate<byte> (int len)
-            stream.Read(buf, 0, (int len)) |> ignore                                            
-            buf
-
         abstract FileStreamReadShim: fileName:string -> System.IO.Stream
         abstract FileStreamCreateShim: fileName:string -> System.IO.Stream
-        abstract GetFullPathShim: fileName:string -> string
+        abstract FileStreamWriteExistingShim: fileName:string -> System.IO.Stream
         /// Take in a filename with an absolute path, and return the same filename
         /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt) 
         /// and '..' portions
-        abstract SafeGetFullPath: fileName:string -> string
+        abstract GetFullPathShim: fileName:string -> string
         abstract IsPathRootedShim: path:string -> bool
-
-        abstract IsInvalidFilename: filename:string -> bool
+        abstract IsInvalidPathShim: filename:string -> bool
         abstract GetTempPathShim : unit -> string
         abstract GetLastWriteTimeShim: fileName:string -> System.DateTime
         abstract SafeExists: fileName:string -> bool
@@ -958,37 +972,44 @@ module Shim =
         abstract AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly 
         abstract AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly 
 
-        default this.AssemblyLoadFrom(fileName:string) = 
+    type DefaultFileSystem() =
+        interface IFileSystem with
+            member __.AssemblyLoadFrom(fileName:string) = 
 #if FX_ATLEAST_40_COMPILER_LOCATION
-            System.Reflection.Assembly.UnsafeLoadFrom fileName
+                System.Reflection.Assembly.UnsafeLoadFrom fileName
 #else
-            System.Reflection.Assembly.LoadFrom fileName
+                System.Reflection.Assembly.LoadFrom fileName
 #endif
-        default this.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = System.Reflection.Assembly.Load assemblyName
+            member __.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = System.Reflection.Assembly.Load assemblyName
 
-
-    let mutable FileSystem = 
-        { new FileSystem() with 
-            override __.ReadAllBytesShim (fileName:string) = File.ReadAllBytes fileName
+            member __.ReadAllBytesShim (fileName:string) = File.ReadAllBytes fileName
             member __.FileStreamReadShim (fileName:string) = new FileStream(fileName,FileMode.Open,FileAccess.Read,FileShare.ReadWrite)  :> Stream
             member __.FileStreamCreateShim (fileName:string) = new FileStream(fileName,FileMode.Create,FileAccess.Write,FileShare.Read ,0x1000,false) :> Stream
+            member __.FileStreamWriteExistingShim (fileName:string) = new FileStream(fileName,FileMode.Open,FileAccess.Write,FileShare.Read ,0x1000,false) :> Stream
             member __.GetFullPathShim (fileName:string) = System.IO.Path.GetFullPath fileName
-            member __.SafeGetFullPath (fileName:string) = 
-                //System.Diagnostics.Debug.Assert(Path.IsPathRooted(fileName), sprintf "SafeGetFullPath: '%s' is not absolute" fileName)
-                Path.GetFullPath fileName
 
             member __.IsPathRootedShim (path:string) = Path.IsPathRooted path
 
-            member __.IsInvalidFilename(filename:string) = 
-                String.IsNullOrEmpty(filename) || filename.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+            member __.IsInvalidPathShim(path:string) = 
+                let isInvalidPath(p:string) = 
+                    String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) <> -1
+
+                let isInvalidDirectory(d:string) = 
+                    d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+
+                isInvalidPath (path) || 
+                let directory = Path.GetDirectoryName(path)
+                let filename = Path.GetFileName(path)
+                isInvalidDirectory(directory) || isInvalidPath(filename)
 
             member __.GetTempPathShim() = System.IO.Path.GetTempPath()
 
             member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTime fileName
             member __.SafeExists (fileName:string) = System.IO.File.Exists fileName 
-            member __.FileDelete (fileName:string) = System.IO.File.Delete fileName }       
+            member __.FileDelete (fileName:string) = System.IO.File.Delete fileName
 
     type System.Text.Encoding with 
         static member GetEncodingShim(n:int) =             
                 System.Text.Encoding.GetEncoding(n)           
 
+    let mutable FileSystem = DefaultFileSystem() :> IFileSystem 
