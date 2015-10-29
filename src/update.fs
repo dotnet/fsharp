@@ -52,7 +52,7 @@ let updateCmd envVars args = processor {
         Process.exec { RedirectError = Some toLog.Post; RedirectOutput = Some toLog.Post; RedirectInput = None } ``~dp0`` envVars exe args
 
     // set BINDIR=%~dp0..\%1\net40\bin
-    let! binDir = env "FSCBinPath"
+    let! binDir = env "FSCBINPATH"
 
     // if /i "%PROCESSOR_ARCHITECTURE%"=="x86" set X86_PROGRAMFILES=%ProgramFiles%
     // if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86)%

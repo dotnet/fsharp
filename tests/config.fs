@@ -206,7 +206,7 @@ let config envVars =
     // FOR /F "delims=" %%i IN ('where fsc.exe') DO SET FSCBinPath=%%~dpi
     // :FSCBinPathFound
     let mutable FSCBinPath =
-        match env "FSCBinPath" with
+        match env "FSCBINPATH" with
         | Some p -> Some p
         | None -> where "fsc.exe" |> Option.map Path.GetDirectoryName
 
@@ -563,7 +563,7 @@ let logConfig (cfg: TestConfig) =
     log "csc_flags           =%s" cfg.csc_flags
     log "FSC                 =%s" cfg.FSC
     log "fsc_flags           =%s" cfg.fsc_flags
-    log "FSCBinPath          =%s" cfg.FSCBinPath
+    log "FSCBINPATH          =%s" cfg.FSCBinPath
     log "FSCOREDLL20PATH     =%s" cfg.FSCOREDLL20PATH
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
     log "FSCOREDLLPORTABLEPATH =%s" cfg.FSCOREDLLPORTABLEPATH

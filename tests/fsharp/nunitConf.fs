@@ -58,7 +58,7 @@ let initializeSuite () =
 
     let env = 
         envVars ()
-        |> mapWithDefaults ( [ "FSCBinPath", FSCBinPath ] |> Map.ofList )
+        |> mapWithDefaults ( [ "FSCBINPATH", FSCBinPath ] |> Map.ofList )
 
     let configurationName =
         match env |> Map.tryFind "FSHARP_TEST_SUITE_CONFIGURATION" |> Option.map parseConfigurationName with
@@ -83,7 +83,7 @@ let initializeSuite () =
 
         let checkfscBinPath () = processor {
 
-            let fscBinPath = cfg.EnvironmentVariables |> Map.tryFind "FSCBinPath"
+            let fscBinPath = cfg.EnvironmentVariables |> Map.tryFind "FSCBINPATH"
             return!
                 match fscBinPath with
                 | Some dir when directoryExists dir -> Success
