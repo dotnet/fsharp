@@ -1,15 +1,17 @@
 # F# Compiler, Core Library and Visual F# Tools Open Contribution Repository
 
 This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
+To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
 
-To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org).
+**Compiler Technical Documentation**
 
-To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
+The primary technical documents for the F# compiler code are
 
-The primary technical guide to the F# Compiler is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
-maintained by various contributors and hosted by the F# Software Foundation.  Please read
-and contribute to that guide.
+* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
 
+* [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
+  maintained by contributors to this repository.  Please read
+  and contribute to that guide.
 
 **License**
 > Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A copy of the license can be found in the [License.txt](License.txt) file at the root of this distribution.

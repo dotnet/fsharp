@@ -40,8 +40,22 @@ if exist "%testname%b.ml" (set sources=%sources% %testname%b.ml)
 if exist "%testname%b.fs" (set sources=%sources% %testname%b.fs)
 if exist "helloWorldProvider.dll" (set sources=%sources% -r:helloWorldProvider.dll)
 
+if exist "%testname%-pre.fs" (
+    echo set sources=%sources% -r:%testname%-pre.dll
+    set sources=%sources% -r:%testname%-pre.dll
+)
+
 REM check negative tests for bootstrapped fsc.exe due to line-ending differences
 if "%FSC:fscp=X%" == "%FSC%" ( 
+
+    if exist "%testname%-pre.fs" (
+        echo "sources=%sources%"
+	    "%FSC%" %fsc_flags% -a -o:%testname%-pre.dll  "%testname%-pre.fs" 
+        @if ERRORLEVEL 1 (
+            set ERRORMSG=%ERRORMSG% FSC failed for precursor library code for  %sources%;
+            goto SetError
+		)
+    )
 
     echo Negative typechecker testing: %testname%
     echo "%FSC%" %fsc_flags% --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources%

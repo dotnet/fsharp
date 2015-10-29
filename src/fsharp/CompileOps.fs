@@ -2012,9 +2012,6 @@ type TcConfigBuilder =
       /// pause between passes? 
       mutable pause : bool
       
-      /// use reflection and indirect calls to call methods taking multidimensional generic arrays
-      mutable indirectCallArrayMethods : bool 
-      
       /// whenever possible, emit callvirt instead of call
       mutable alwaysCallVirt : bool
 
@@ -2174,7 +2171,6 @@ type TcConfigBuilder =
           showExtensionTypeMessages = false
 #endif
           pause = false 
-          indirectCallArrayMethods = false
           alwaysCallVirt = true
           noDebugData = false
           isInteractive = isInteractive
@@ -2662,7 +2658,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.showExtensionTypeMessages  = data.showExtensionTypeMessages    
 #endif
     member x.pause  = data.pause
-    member x.indirectCallArrayMethods = data.indirectCallArrayMethods
     member x.alwaysCallVirt = data.alwaysCallVirt
     member x.noDebugData = data.noDebugData
     member x.isInteractive = data.isInteractive
@@ -4431,7 +4426,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = mkTcGlobals(tcConfig.compilingFslib,sysCcu.FSharpViewOfMetadata,ilGlobals,fslibCcu,
-                                    tcConfig.implicitIncludeDir,tcConfig.mlCompatibility,using40environment,tcConfig.indirectCallArrayMethods,
+                                    tcConfig.implicitIncludeDir,tcConfig.mlCompatibility,using40environment,
                                     tcConfig.isInteractive,getTypeCcu, tcConfig.emitDebugInfoInQuotations) 
 
 #if DEBUG

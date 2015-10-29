@@ -309,7 +309,6 @@ type TcConfigBuilder =
       mutable showExtensionTypeMessages : bool
 #endif
       mutable pause : bool 
-      mutable indirectCallArrayMethods : bool
       mutable alwaysCallVirt : bool
       mutable noDebugData : bool
 
@@ -460,7 +459,6 @@ type TcConfig =
     member showExtensionTypeMessages : bool
 #endif
     member pause : bool 
-    member indirectCallArrayMethods : bool
     member alwaysCallVirt : bool
     member noDebugData : bool
 

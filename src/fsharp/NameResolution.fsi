@@ -101,6 +101,9 @@ type FullyQualifiedFlag =
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
 
+/// Lookup patterns in name resolution environment
+val internal TryFindPatternByName : string -> NameResolutionEnv -> Item option
+
 /// Add extra items to the environment for Visual Studio, e.g. static members 
 val internal AddFakeNamedValRefToNameEnv : string -> NameResolutionEnv -> ValRef -> NameResolutionEnv
 

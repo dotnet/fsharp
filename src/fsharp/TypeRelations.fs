@@ -1438,9 +1438,11 @@ module DispatchSlotChecking =
         allImmediateMembersThatMightImplementDispatchSlots |> List.iter (fun overrideBy -> 
 
             let isFakeEventProperty = overrideBy.IsFSharpEventProperty(g)
-            if not isFakeEventProperty then 
-                
-                let overriden = 
+            let overriden = 
+                if isFakeEventProperty then 
+                    let slotsigs = overrideBy.MemberInfo.Value.ImplementedSlotSigs 
+                    slotsigs |> List.map (ReparentSlotSigToUseMethodTypars g overrideBy.Range overrideBy)
+                else
                     [ for ((reqdTy,m),(SlotImplSet(_dispatchSlots,dispatchSlotsKeyed,_,_))) in allImpls do
                           let overrideByInfo = GetTypeMemberOverrideInfo g reqdTy overrideBy
                           let overridenForThisSlotImplSet = 
@@ -1466,7 +1468,7 @@ module DispatchSlotChecking =
                           //    assert nonNil overridenForThisSlotImplSet
                           yield! overridenForThisSlotImplSet ]
                 
-                overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
+            overrideBy.MemberInfo.Value.ImplementedSlotSigs <- overriden)
 
 
 //-------------------------------------------------------------------------
