@@ -30,10 +30,10 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_ngenexe% install Proto\net40\bin\fsc-proto.exe
 @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release
+%_msbuildexe% src/fsharp-library-build.proj /p:Configuration=Release  /v:diag
 @if ERRORLEVEL 1 echo Error: library build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true  /v:diag
+%_msbuildexe% src/fsharp-library-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
 @if ERRORLEVEL 1 echo Error: library coreclr build failed && goto :failure
 
 %_msbuildexe% src/fsharp-compiler-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
