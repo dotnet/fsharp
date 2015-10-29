@@ -355,11 +355,11 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
             | None ->
                 let asmName    = convAssemblyRef asmref
                 FileSystem.AssemblyLoad(asmName)
-        let typT = assembly.GetType(qualifiedName, throwOnError=true)
+        let typT = assembly.GetType(qualifiedName)
         typT |> nonNull "convTypeRefAux" 
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
-        let typT = Type.GetType(qualifiedName, throwOnError=true) 
+        let typT = Type.GetType(qualifiedName) 
         typT |> nonNull "convTypeRefAux" 
 
 
@@ -526,7 +526,7 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec:ILTypeSpec) =
       
 and convTypeAux cenv emEnv preferCreated typ =
     match typ with
-    | ILType.Void               -> Type.GetType("System.Void",true)
+    | ILType.Void               -> Type.GetType("System.Void")
     | ILType.Array (shape,eltType) -> 
         let baseT = convTypeAux cenv emEnv preferCreated eltType |> nonNull "convType: array base"
         let nDims = shape.Rank
