@@ -3439,14 +3439,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         projectInstance.SetProperty(prop.Key, prop.Value);
                     }
                 }
-
-                IVsShell vsShell = (IVsShell)GetService(typeof(IVsShell));
-                object isInCommandLineMode = null;
-                vsShell.GetProperty((int)__VSSPROPID.VSSPROPID_IsInCommandLineMode, out isInCommandLineMode);
-                if (isInCommandLineMode is bool && !((bool)isInCommandLineMode))
-                {
-                    projectInstance.SetProperty(GlobalProperty.ValidateTypeProviders.ToString(), "true");
-                }
                 
                 projectInstance.SetProperty("UTFOutput", "true");
 

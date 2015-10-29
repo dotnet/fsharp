@@ -30,14 +30,6 @@ module internal VsOpsUtils =
     let GetOutputWindowPaneLines(vs : VisualStudio) = vs.VsOps.GetOutputWindowPaneLines(vs)
     let CloseSolution(soln : OpenSolution)             = soln.VS.VsOps.CloseSolution(soln)
 
-    let AddTypeProviderApprovedForDevelopment(assemblyFileName) = 
-        Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ReplaceApprovalStatus 
-            None 
-            (Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.TypeProviderApprovalStatus.Trusted(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.partiallyCanonicalizeFileName assemblyFileName))
-    let ClearAllTypeProviderApprovals() = 
-        if System.IO.File.Exists(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ApprovalsAbsoluteFileName) then
-            System.IO.File.Delete(Microsoft.FSharp.Compiler.ExtensionTyping.ApprovalIO.ApprovalsAbsoluteFileName)
-
     let CreateProject(solution : OpenSolution, projectname) = 
         solution.VS.VsOps.CreateProject(solution,projectname)
     let NewFile(vs : VisualStudio, filename,lines) = 

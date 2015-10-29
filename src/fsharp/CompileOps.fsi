@@ -278,7 +278,6 @@ type TcConfigBuilder =
       mutable linkResources : string list
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
-      mutable validateTypeProviders : bool
       mutable utf8output : bool
       mutable flatErrors : bool
       mutable maxErrors : int
@@ -430,7 +429,6 @@ type TcConfig =
     member linkResources : string list
     member showFullPaths : bool
     member errorStyle : ErrorStyle
-    member validateTypeProviders : bool
     member utf8output : bool
     member flatErrors : bool
 
@@ -578,11 +576,7 @@ type TcImports =
     member SystemRuntimeContainsType : string -> bool
 
     static member BuildFrameworkTcImports      : TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> TcGlobals * TcImports
-#if TYPE_PROVIDER_SECURITY
-    static member BuildNonFrameworkTcImports   : (string->unit) option * TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
-#else
     static member BuildNonFrameworkTcImports   : TcConfigProvider * TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list -> TcImports
-#endif
     static member BuildTcImports               : TcConfigProvider -> TcGlobals * TcImports
 
 //----------------------------------------------------------------------------

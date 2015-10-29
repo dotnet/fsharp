@@ -405,7 +405,6 @@ type Build() =
         tool.Platform <- "AnyCPU"
         tool.Utf8Output <- true
         tool.VisualStudioStyleErrors <- true
-        tool.ValidateTypeProviders <- true
         tool.SubsystemVersion <- "4.0"
         let cmd = tool.InternalGenerateCommandLineCommands()
         printfn "cmd=\"%s\"" cmd
@@ -417,7 +416,7 @@ type Build() =
                        "--optimize+ --pdb:out.pdb --platform:anycpu " +
                        "--resource:MyRes.resources --resource:OtherRes.resources " +
                        "--versionfile:src/version -r:ref.dll -r:\"C:\\Program Files\\SpacesPath.dll\" --lib:c:\\foo,c:\\bar --target:exe --nowarn:52,109 " +
-                       "--warn:4 --warnaserror --warnaserror:76 --vserrors --validate-type-providers --utf8output --fullpaths --flaterrors --subsystemversion:4.0 " +
+                       "--warn:4 --warnaserror --warnaserror:76 --vserrors --utf8output --fullpaths --flaterrors --subsystemversion:4.0 " +
                        "--highentropyva- --yadda:yadda --other:\"internal quote\" blah foo.fs \"C:\\Program Files\\spaces.fs\""
                        
         AssertEqual expected cmd
@@ -452,7 +451,6 @@ type Build() =
             "--warnaserror"
             "--warnaserror:76"
             "--vserrors"
-            "--validate-type-providers"
             "--utf8output"
             "--fullpaths"
             "--flaterrors"

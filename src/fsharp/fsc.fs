@@ -263,11 +263,7 @@ type DefaultLoggerProvider() =
 // This code used to be in fsc.exe.  The PS only references FSharp.LanguageService.Compiler, so this code moved from fsc.exe to FS.C.S.dll so that the PS can re-use it.
 // A great deal of the logic of this function is repeated in fsi.fs, so maybe should refactor fsi.fs to call into this as well.
 let GetTcImportsFromCommandLine
-        (
-#if TYPE_PROVIDER_SECURITY
-         displayPSTypeProviderSecurityDialogBlockingUI : (string->unit) option,
-#endif
-         argv : string[], 
+        (argv : string[], 
          defaultFSharpBinariesDir : string, 
          directoryBuildingFrom : string, 
 #if FX_LCIDFROMCODEPAGE
@@ -279,7 +275,7 @@ let GetTcImportsFromCommandLine
          exiter : Exiter,
          errorLoggerProvider : ErrorLoggerProvider,
          disposables : DisposablesTracker) =
-
+    
     let tcConfigB = TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, optimizeForMemory, directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false)
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -289,7 +285,7 @@ let GetTcImportsFromCommandLine
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
     let delayForFlagsLogger =  errorLoggerProvider.CreateDelayAndForwardLogger(exiter)
     let _unwindEL_1 = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayForFlagsLogger)          
-
+    
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = new Lexhelp.LexResourceManager()
 
@@ -308,7 +304,7 @@ let GetTcImportsFromCommandLine
                 else
                     inputFilesRef := name :: !inputFilesRef
             let abbrevArgs = GetAbbrevFlagSet tcConfigB true
-
+    
             // This is where flags are interpreted by the command line fsc.exe.
             ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
             let inputFiles = List.rev !inputFilesRef
@@ -434,11 +430,7 @@ let GetTcImportsFromCommandLine
 
             ReportTime tcConfig "Import non-system references"
             let tcGlobals,tcImports =  
-                let tcImports = TcImports.BuildNonFrameworkTcImports(
-#if TYPE_PROVIDER_SECURITY
-                                                                     displayPSTypeProviderSecurityDialogBlockingUI,
-#endif
-                                                                     tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
+                let tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
                 tcGlobals,tcImports
 
             // register tcImports to be disposed in future
@@ -1706,11 +1698,11 @@ let GetSigner (signingInfo) =
         match signer with 
         | None -> None
         | Some(s) ->
-            try 
-                if delaysign then
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
-                else
-                    Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
+        try 
+            if delaysign then
+                Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
+            else
+                Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
             with e -> 
                 // Note:: don't use errorR here since we really want to fail and not produce a binary
                 error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
@@ -1726,16 +1718,16 @@ module FileWriter =
             try 
                 ILBinaryWriter.WriteILBinary 
                  (outfile,
-                  {    ilg = ilGlobals
-                       pdbfile=pdbfile
-                       emitTailcalls = tcConfig.emitTailcalls
-                       showTimes = tcConfig.showTimes
+                  { ilg = ilGlobals
+                    pdbfile=pdbfile
+                    emitTailcalls = tcConfig.emitTailcalls
+                    showTimes = tcConfig.showTimes
 #if FX_NO_KEY_SIGNING
 #else
-                       signer = GetSigner signingInfo
+                    signer = GetSigner signingInfo
 #endif
-                       fixupOverlappingSequencePoints = false
-                       dumpDebugInfo = tcConfig.dumpDebugInfo },
+                    fixupOverlappingSequencePoints = false
+                    dumpDebugInfo = tcConfig.dumpDebugInfo },
                   ilxMainModule,
                   tcConfig.noDebugData)
             with Failure msg -> 
@@ -1762,7 +1754,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
           else
             delaysign
         | _ -> tcConfig.delaysign
-
+        
     // if signer is set via an attribute, validate that it wasn't set via an option
     let signer = 
         match signerAttrib with
@@ -1773,7 +1765,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =
             else
                 Some signer
         | None -> tcConfig.signer
-
+    
     // if container is set via an attribute, validate that it wasn't set via an option, and that they keyfile wasn't set
     // if keyfile was set, use that instead (silently)
     // REVIEW: This is C# behavior, but it seems kind of sketchy that we fail silently
@@ -1814,9 +1806,6 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
 
     let tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger = 
         GetTcImportsFromCommandLine(
-#if TYPE_PROVIDER_SECURITY
-            None, 
-#endif
             argv,defaultFSharpBinariesDir,Directory.GetCurrentDirectory(),
 #if FX_LCIDFROMCODEPAGE
              lcidFromCodePage, 

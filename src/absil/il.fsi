@@ -1797,11 +1797,9 @@ val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef l
 /// Note: not all custom attribute data can be decoded without binding types.  In particular 
 /// enums must be bound in order to discover the size of the underlying integer. 
 /// The following assumes enums have size int32. 
-/// It also does not completely decode System.Type attributes 
 val decodeILAttribData: 
     ILGlobals -> 
     ILAttribute -> 
-    ILScopeRef option ->
       ILAttribElem list *  (* fixed args *)
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 

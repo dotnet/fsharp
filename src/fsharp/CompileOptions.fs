@@ -623,7 +623,7 @@ let codeGenerationFlags (tcConfigB : TcConfigBuilder) =
 //----------------------
 
 let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
-
+      
 let mlCompatibilityFlag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("mlcompatibility", tagNone, OptionUnit   (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff(rangeCmdArgs,"62")),  None,
                            Some (FSComp.SR.optsMlcompatibility()))
@@ -755,7 +755,7 @@ let testFlag tcConfigB =
 // not shown in fsc.exe help, no warning on use, motiviation is for use from VS
 let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None);
-    CompilerOption("validate-type-providers", tagNone, OptionUnit (fun () -> tcConfigB.validateTypeProviders <- true), None, None);
+    CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None);  // preserved for compatibility's sake, no longer has any effect
 #if PREFERRED_UI_LANG
 #else
     CompilerOption("LCID", tagInt, OptionInt (fun n -> tcConfigB.lcid <- Some(n)), None, None);
