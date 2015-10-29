@@ -2472,14 +2472,14 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                   elif useICallVirt then I_callvirt (isTailCall, mspec, None) 
                   else I_call (isTailCall, mspec, None)
 
-              // ok, now we're ready to generate 
-              if isSuperInit || isSelfInit then 
-                  CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType ]) [ mkLdarg0 ] ;
-              
-              GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs;
-              
-              // Generate laterArgs (for effects) and save
-              LocalScope "callstack" cgbuf (fun scopeMarks ->
+          // ok, now we're ready to generate 
+          if isSuperInit || isSelfInit then 
+              CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType ]) [ mkLdarg0 ] ;
+
+          GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs;
+
+          // Generate laterArgs (for effects) and save
+          LocalScope "callstack" cgbuf (fun scopeMarks ->
                 let whereSaved,eenv = 
                     (eenv,laterArgs) ||> List.mapFold (fun eenv laterArg -> 
                         // Only save arguments that have effects
@@ -2502,7 +2502,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                 // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
                 // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
                 if cenv.opts.generateDebugSymbols && mustGenerateUnitAfterCall && (isTailCall = Normalcall) then 
-                CG.EmitInstrs cgbuf (pop 0) Push0  [ AI_nop ]
+                    CG.EmitInstrs cgbuf (pop 0) Push0  [ AI_nop ]
 
                 if isNil laterArgs then 
                     assert isNil whereSaved 
