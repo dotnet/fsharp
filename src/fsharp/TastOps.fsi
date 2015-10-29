@@ -1322,7 +1322,6 @@ val mkChoiceCaseRef : TcGlobals -> range -> int -> int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
     member Names : string list 
-    member IsTotal: bool
 
     member ResultType : TcGlobals -> range -> TType list -> TType
     member OverallType : TcGlobals -> range -> TType -> TType list -> TType

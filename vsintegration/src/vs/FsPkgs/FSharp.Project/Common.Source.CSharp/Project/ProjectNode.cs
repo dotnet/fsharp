@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
+using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections;
@@ -886,7 +886,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     return this.isDirty;
                 }
 
-                return (this.isDirty || !FSSafe.File.SafeExists(document));
+                return (this.isDirty || !FSLib.Shim.FileSystem.SafeExists(document));
             }
         }
 
@@ -1388,7 +1388,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             // Now check whether the original file is still there. It could have been renamed.
-            if (!FSSafe.File.SafeExists(this.Url))
+            if (!FSLib.Shim.FileSystem.SafeExists(this.Url))
             {
                 throw new InvalidOperationException(String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.FileOrFolderCannotBeFound, CultureInfo.CurrentUICulture), this.ProjectFile));
             }
@@ -2098,7 +2098,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // we also need to copy all the associated files with it.                    
                 if ((flags & (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE) == (uint)__VSCREATEPROJFLAGS.CPF_CLONEFILE)
                 {
-                    Debug.Assert(!String.IsNullOrEmpty(fileName) && FSSafe.File.SafeExists(fileName), "Invalid filename passed to load the project. A valid filename is expected");
+                    Debug.Assert(!String.IsNullOrEmpty(fileName) && FSLib.Shim.FileSystem.SafeExists(fileName), "Invalid filename passed to load the project. A valid filename is expected");
 
                     this.isNewProject = true;
 
@@ -3069,7 +3069,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 bool isFileSame = NativeMethods.IsSamePath(oldFile, newFile);
 
                 // If file already exist and is not the same file with different casing
-                if (!isFileSame && FSSafe.File.SafeExists(newFile))
+                if (!isFileSame && FSLib.Shim.FileSystem.SafeExists(newFile))
                 {
                     // Prompt the user for replace
                     string message = SR.GetString(SR.FileAlreadyExists, newFile);
@@ -5184,7 +5184,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // If the file to be added is not in the same path copy it.
                 if (NativeMethods.IsSamePath(file, newFileName) == false)
                 {
-                    if (!overwrite && FSSafe.File.SafeExists(newFileName))
+                    if (!overwrite && FSLib.Shim.FileSystem.SafeExists(newFileName))
                     {
                         string message = String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.FileAlreadyExists, CultureInfo.CurrentUICulture), newFileName);
                         string title = string.Empty;
@@ -5410,7 +5410,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     }
                     else
                     {
-                        if (FSSafe.File.SafeExists(checkFile))
+                        if (FSLib.Shim.FileSystem.SafeExists(checkFile))
                         {
                             found = false;
                             break;

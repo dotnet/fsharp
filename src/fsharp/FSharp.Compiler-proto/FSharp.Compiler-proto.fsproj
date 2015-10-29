@@ -246,12 +246,6 @@
     <Compile Include="..\..\ilx\EraseUnions.fs">
       <Link>EraseUnions.fs</Link>
     </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fsi">
-      <Link>InternalFileSystemUtils.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalFileSystemUtils.fs">
-      <Link>InternalFileSystemUtils.fs</Link>
-    </Compile>
     <Compile Include="..\UnicodeLexing.fsi">
       <Link>UnicodeLexing.fsi</Link>
     </Compile>

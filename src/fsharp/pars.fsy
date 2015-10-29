@@ -1001,7 +1001,6 @@ classMemberSpfnGetSetElements:
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired());
       MemberKind.PropertyGetSet }
 
-
 memberSpecFlags: 
   | memberFlags { $1 }  
   | ABSTRACT        { (false,AbstractMemberFlags) }

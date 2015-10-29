@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
+using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -574,7 +574,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             HierarchyNode newNode = parentNode;
             // If the file/directory exist, add a node for it
-            if (FSSafe.File.SafeExists(targetPath))
+            if (FSLib.Shim.FileSystem.SafeExists(targetPath))
             {
                 VSADDRESULT[] result = new VSADDRESULT[1];
                 ErrorHandler.ThrowOnFailure(this.AddItem(parentNode.ID, VSADDITEMOPERATION.VSADDITEMOP_OPENFILE, name, 1, new string[] { targetPath }, IntPtr.Zero, result));

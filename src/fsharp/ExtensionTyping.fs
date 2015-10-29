@@ -4,6 +4,8 @@
 
 namespace Microsoft.FSharp.Compiler
 
+#if EXTENSIONTYPING
+
 module internal ExtensionTyping =
     open System
     open System.IO
@@ -14,7 +16,6 @@ module internal ExtensionTyping =
     open Microsoft.FSharp.Compiler.AbstractIL.IL
     open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
-    open Internal.Utilities.FileSystem
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
@@ -169,13 +170,13 @@ module internal ExtensionTyping =
                 let partiallyCanonicalizedFileName = partiallyCanonicalizeFileName status.FileName
                 match status with
                 | TypeProviderApprovalStatus.NotTrusted(_) -> 
-                    if Path.IsInvalidPath(partiallyCanonicalizedFileName) then 
+                    if FileSystem.IsInvalidPathShim(partiallyCanonicalizedFileName) then 
                         assert(false)
                         false, ""
                     else
                         true, "NOT_TRUSTED "+partiallyCanonicalizedFileName
                 | TypeProviderApprovalStatus.Trusted(_) -> 
-                    if Path.IsInvalidPath(partiallyCanonicalizedFileName) then 
+                    if FileSystem.IsInvalidPathShim(partiallyCanonicalizedFileName) then 
                         assert(false)
                         false, ""
                     else
@@ -1468,3 +1469,4 @@ module internal ExtensionTyping =
     let IsGeneratedTypeDirectReference (st: Tainted<ProvidedType>, m) =
         st.PUntaint((fun st -> st.TryGetTyconRef() |> isNone), m)
 
+#endif
