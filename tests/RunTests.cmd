@@ -103,7 +103,9 @@ exit /b 1
 
 :FSHARP
 
-if not %FSHARP_TEST_SUITE_USE_NUNIT_RUNNER% == '' goto :FSHARP_NUNIT
+if not '%FSHARP_TEST_SUITE_USE_NUNIT_RUNNER%' == '' (
+	goto :FSHARP_NUNIT
+)
 
 set RESULTFILE=FSharp_Results.log
 set FAILFILE=FSharp_Failures.log
