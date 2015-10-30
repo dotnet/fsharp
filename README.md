@@ -24,10 +24,34 @@ This project is subject to the Apache Licence, Version 2.0. A copy of the licens
 
 ###Development and Testing
 
-See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing. 
-####[Click here for a list of required Frameworks and Development Tools](https://github.com/Microsoft/visualfsharp/wiki/Required-Software)
-
+See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing.
 Quickstart guides for build and test can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Build-Quickstart) and [here](https://github.com/Microsoft/visualfsharp/wiki/Test-Quickstart), respectively.
+ 
+###Required Tools for Windows Development and Testing
+
+####Development tools
+
+For F# 3.1.X development
+
+* Visual Studio 2013 + latest updates (or the free Visual Studio Community Edition)
+* Visual Studio 2013 SDK
+
+For F# 4.0 development
+
+* Visual Studio 2015
+* Visual Studio 2015 SDK
+
+####Additional frameworks
+
+* Git for windows
+* Perl (ActiveState 5.16.3 is known to be supported)
+* .NET 3.5
+* .NET 4.5
+* .NET 4.5.1
+* MSBuild 12.0
+* Windows 7 SDK
+* Windows 8 SDK
+* Windows 8.1 SDK
 
 ###Contributing
 
