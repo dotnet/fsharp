@@ -24,7 +24,8 @@ This project is subject to the Apache Licence, Version 2.0. A copy of the licens
 
 ###Development and Testing
 
-See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing. A list of required frameworks and development tools can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Required-Software).
+See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing. 
+####[Click here for a list of required Frameworks and Development Tools](https://github.com/Microsoft/visualfsharp/wiki/Required-Software)
 
 Quickstart guides for build and test can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Build-Quickstart) and [here](https://github.com/Microsoft/visualfsharp/wiki/Test-Quickstart), respectively.
 
