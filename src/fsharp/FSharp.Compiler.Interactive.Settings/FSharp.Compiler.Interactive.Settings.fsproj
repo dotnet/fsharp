@@ -15,6 +15,9 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\..\utils\reshaped_reflection.fs">
+      <Link>Reflection/reshaped_reflection.fs</Link>
+    </Compile>
     <FsSrGen Include="..\FSInteractiveSettings.txt">
       <Link>FSInteractiveSettings.txt</Link>
     </FsSrGen>
@@ -32,9 +35,14 @@
       <Link>InteractiveSettings/fsiaux.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+      <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
         <Name>FSharp.Core</Name>

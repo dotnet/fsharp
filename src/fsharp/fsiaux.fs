@@ -56,9 +56,9 @@ type internal SimpleEventLoop() =
                  setSignal exitSignal
     interface System.IDisposable with 
          member x.Dispose() =
-                     runSignal.Close();
-                     exitSignal.Close();
-                     doneSignal.Close();
+                     runSignal.Dispose();
+                     exitSignal.Dispose();
+                     doneSignal.Dispose();
                      
 
 

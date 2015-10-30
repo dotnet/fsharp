@@ -154,7 +154,7 @@ module internal ReflectionAdapters =
             this.GetProperties(bindingFlags)
             |> Array.filter (fun pi -> pi.Name = name)
             |> commit
-        member this.GetMethod(methodName, args, ?bindingFlags) =
+        member this.GetMethod(methodName, args:Type[], ?bindingFlags) =
             let bindingFlags = defaultArg bindingFlags publicFlags
             let compareSequences parms args = 
                 Seq.compareWith (fun parm arg -> if parm <> arg then 1 else 0) parms args

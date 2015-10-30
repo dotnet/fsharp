@@ -48,7 +48,10 @@
       <Link>fsi.exe.config</Link>
     </None>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+      <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -56,6 +59,8 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
       <Name>FSharp.Compiler.Interactive.Settings</Name>
       <Project>{649FA588-F02E-457C-9FCF-87E46407481E}</Project>
