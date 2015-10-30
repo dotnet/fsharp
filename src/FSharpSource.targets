@@ -143,7 +143,6 @@
     <DefineConstants>$(DefineConstants);FX_NO_CONDITIONAL_WEAK_TABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
-    <DefineConstants>$(DefineConstants);TYPE_PROVIDER_SECURITY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
   </PropertyGroup>
@@ -160,7 +159,6 @@
     <DefineConstants>$(DefineConstants);FX_ATLEAST_LINQ</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
-    <DefineConstants>$(DefineConstants);TYPE_PROVIDER_SECURITY</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESX_RESOURCE_READER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESIDENT_COMPILER</DefineConstants>

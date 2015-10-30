@@ -3881,21 +3881,12 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
                 | _ -> failwith "Unexpected representation in namespace entity referred to by a type provider"
 
-#if TYPE_PROVIDER_SECURITY
     member tcImports.ImportTypeProviderExtensions 
                (tcConfig:TcConfig, 
                 fileNameOfRuntimeAssembly, 
                 ilScopeRefOfRuntimeAssembly,
                 runtimeAssemblyAttributes:ILAttribute list, 
                 entityToInjectInto, invalidateCcu:Event<_>, m) = 
-#else
-    member tcImports.ImportTypeProviderExtensions 
-               (tcConfig:TcConfig, 
-                fileNameOfRuntimeAssembly, 
-                ilScopeRefOfRuntimeAssembly,
-                runtimeAssemblyAttributes:ILAttribute list, 
-                entityToInjectInto, invalidateCcu:Event<_>, m) = 
-#endif
 
         let startingErrorCount = CompileThreadStatic.ErrorLogger.ErrorCount
 
