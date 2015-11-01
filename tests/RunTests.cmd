@@ -18,6 +18,13 @@ if not exist "%~dp0%..\packages\NUnit.Runners.2.6.4\tools\" (
     popd
 )    
 
+set XUNITPATH=%~dp0%..\packages\xunit.runner.console.2.1.0\tools
+if not exist "%XUNITPATH%" (
+    pushd %~dp0..
+    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
+    popd
+)
+
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
 set _tmp=%3
@@ -83,13 +90,17 @@ if /I "%2" == "coreunitportable259" (
    set coreunitsuffix=portable259
    goto :COREUNIT
 )
+if /I "%2" == "coreunitcoreclr" (
+   set coreunitsuffix=coreclr
+   goto :COREUNIT
+)
 if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 :USAGE
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunit259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|coreunitcoreclr^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -221,8 +232,8 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-echo "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-     "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo "%XUNITPATH%\xunit.console.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll -nologo -noshadow -parallel none -nunit %XMLFILE%
+     "%XUNITPATH%\xunit.console.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll -nologo -noshadow -parallel none -nunit %XMLFILE%
 
 goto :EOF
 

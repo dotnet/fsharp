@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\xunit.core.2.1.0\build\portable-net45+win8+wp8+wpa81\xunit.core.props" Condition="Exists('..\packages\xunit.core.2.1.0\build\portable-net45+win8+wp8+wpa81\xunit.core.props')" />
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
     <ProjectGuid>{88e2d422-6852-46e3-a740-83e391dc7973}</ProjectGuid>
@@ -19,7 +20,7 @@
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' ">netcore</TargetProfile>
+    <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr' ">netcore</TargetProfile>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants Condition=" '$(TargetFramework)' == 'sl5' ">$(DefineConstants);SILVERLIGHT</DefineConstants>
@@ -44,26 +45,41 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'">
-      <SpecificVersion>true</SpecificVersion>
-      <Private>True</Private>
-      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
-    </Reference>
+    <!--Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
+        <SpecificVersion>true</SpecificVersion>
+        <Private>True</Private>
+        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference-->
     <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'">
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
       <HintPath Condition="'$(TargetFramework)' == 'net40'">$(FsCheckLibDir)\net45\FsCheck.dll</HintPath>
       <HintPath Condition="'$(TargetFramework)' == 'portable7'">$(FsCheckLibDir)\portable-net45+netcore45\FsCheck.dll</HintPath>
       <HintPath Condition="'$(TargetFramework)' == 'portable78'">$(FsCheckLibDir)\portable-net45+netcore45+wp8\FsCheck.dll</HintPath>
-      <HintPath Condition="'$(TargetFramework)' == 'portable259'">$(FsCheckLibDir)\portable-net45+netcore45+wpa81+wp8\FsCheck.dll</HintPath>
+      <HintPath Condition="'$(TargetFramework)' == 'portable259' OR '$(TargetFramework)' == 'coreclr'">$(FsCheckLibDir)\portable-net45+netcore45+wpa81+wp8\FsCheck.dll</HintPath>
     </Reference>
-    <Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" />
+    <!--Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" /-->
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
+    <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c">
+      <SpecificVersion>true</SpecificVersion>
+      <Private>True</Private>
+      <HintPath>..\..\..\packages\xunit.abstractions.2.0.0\lib\portable-net45+win+wpa81+wp80+monotouch+monoandroid+Xamarin.iOS\xunit.abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.assert">
+      <HintPath>..\..\..\packages\xunit.assert.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.assert.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.core">
+      <HintPath>..\..\..\packages\xunit.extensibility.core.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.core.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.execution.desktop">
+      <HintPath>..\..\..\packages\xunit.extensibility.execution.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.execution.dotnet.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
-  <ItemGroup Condition="!$(TargetFramework.Contains('portable'))">
+  <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
@@ -72,6 +88,7 @@
     <Reference Include="System.Observable" Condition="'$(TargetFramework)' == 'sl3-wp' " />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NUnitShim.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
@@ -84,7 +101,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule2.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteListFunctions.fs" />    
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteListFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
@@ -100,6 +117,7 @@
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
     <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" /> 
+    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
@@ -116,11 +134,14 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Reflection\FSharpReflection.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Quotations\FSharpQuotations.fs" />
     <Compile Include="TypeForwarding.fs" />
-    <Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" />
+    <!--Compile Include="NUnitFrameworkShims.fs" Condition="'$(TargetFramework)' == 'sl3-wp'" /-->
     <Compile Include="SurfaceArea.$(TargetFramework).fs" />
     <CustomCopyLocal Include="FSharp.Core.Unittests.dll.config">
       <TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
     </CustomCopyLocal>
-    </ItemGroup>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <None Include="project.json" />
+  </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
