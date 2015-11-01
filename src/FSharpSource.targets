@@ -185,6 +185,7 @@
     <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_GETCOMMANDLINEARG</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>

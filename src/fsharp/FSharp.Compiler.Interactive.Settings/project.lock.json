@@ -47,6 +47,18 @@
           "lib/DNXCore50/System.Diagnostics.Debug.dll": {}
         }
       },
+      "System.Diagnostics.Tools/4.0.1-beta-23225": {
+        "type": "package",
+        "dependencies": {
+          "System.Runtime": "4.0.0"
+        },
+        "compile": {
+          "ref/dotnet/System.Diagnostics.Tools.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Diagnostics.Tools.dll": {}
+        }
+      },
       "System.Globalization/4.0.10": {
         "type": "package",
         "dependencies": {
@@ -347,6 +359,18 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Threading.Tasks.dll": {}
+        }
+      },
+      "System.Threading.Thread/4.0.0-beta-23225": {
+        "type": "package",
+        "dependencies": {
+          "System.Runtime": "4.0.0"
+        },
+        "compile": {
+          "ref/dotnet/System.Threading.Thread.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Thread.dll": {}
         }
       }
     },
@@ -395,6 +419,18 @@
           "lib/DNXCore50/System.Diagnostics.Debug.dll": {}
         }
       },
+      "System.Diagnostics.Tools/4.0.1-beta-23225": {
+        "type": "package",
+        "dependencies": {
+          "System.Runtime": "4.0.0"
+        },
+        "compile": {
+          "ref/dotnet/System.Diagnostics.Tools.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Diagnostics.Tools.dll": {}
+        }
+      },
       "System.Globalization/4.0.10": {
         "type": "package",
         "dependencies": {
@@ -695,6 +731,18 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Threading.Tasks.dll": {}
+        }
+      },
+      "System.Threading.Thread/4.0.0-beta-23225": {
+        "type": "package",
+        "dependencies": {
+          "System.Runtime": "4.0.0"
+        },
+        "compile": {
+          "ref/dotnet/System.Threading.Thread.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Thread.dll": {}
         }
       }
     },
@@ -743,6 +791,18 @@
           "lib/DNXCore50/System.Diagnostics.Debug.dll": {}
         }
       },
+      "System.Diagnostics.Tools/4.0.1-beta-23225": {
+        "type": "package",
+        "dependencies": {
+          "System.Runtime": "4.0.0"
+        },
+        "compile": {
+          "ref/dotnet/System.Diagnostics.Tools.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Diagnostics.Tools.dll": {}
+        }
+      },
       "System.Globalization/4.0.10": {
         "type": "package",
         "dependencies": {
@@ -1043,6 +1103,18 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Threading.Tasks.dll": {}
+        }
+      },
+      "System.Threading.Thread/4.0.0-beta-23225": {
+        "type": "package",
+        "dependencies": {
+          "System.Runtime": "4.0.0"
+        },
+        "compile": {
+          "ref/dotnet/System.Threading.Thread.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Threading.Thread.dll": {}
         }
       }
     }
@@ -1116,6 +1188,29 @@
         "System.Diagnostics.Debug.4.0.11-beta-23225.nupkg",
         "System.Diagnostics.Debug.4.0.11-beta-23225.nupkg.sha512",
         "System.Diagnostics.Debug.nuspec"
+      ]
+    },
+    "System.Diagnostics.Tools/4.0.1-beta-23225": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "j/6iYxVLRNtCsSYZMBC5sZ4Uy9I2JhfiKt8QOmZZ3Vbh/lfcOhM4soACWpZ5rhca8MIHagkV4ExlPA6F2Ef+Ag==",
+      "files": [
+        "lib/DNXCore50/System.Diagnostics.Tools.dll",
+        "lib/net45/_._",
+        "lib/netcore50/System.Diagnostics.Tools.dll",
+        "lib/win8/_._",
+        "lib/wp80/_._",
+        "lib/wpa81/_._",
+        "ref/dotnet/System.Diagnostics.Tools.dll",
+        "ref/net45/_._",
+        "ref/netcore50/System.Diagnostics.Tools.dll",
+        "ref/win8/_._",
+        "ref/wp80/_._",
+        "ref/wpa81/_._",
+        "runtimes/win8-aot/lib/netcore50/System.Diagnostics.Tools.dll",
+        "System.Diagnostics.Tools.4.0.1-beta-23225.nupkg",
+        "System.Diagnostics.Tools.4.0.1-beta-23225.nupkg.sha512",
+        "System.Diagnostics.Tools.nuspec"
       ]
     },
     "System.Globalization/4.0.10": {
@@ -1785,6 +1880,28 @@
         "System.Threading.Tasks.4.0.10.nupkg.sha512",
         "System.Threading.Tasks.nuspec"
       ]
+    },
+    "System.Threading.Thread/4.0.0-beta-23225": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "bT6etm8UPPzO1J1Hf3PsafbG8UN8B0/ku0v8b0/q75X6EIQFnxajuKKe8CXtrjGEDQZv+hPnyZMqvp42rXo0yA==",
+      "files": [
+        "lib/DNXCore50/System.Threading.Thread.dll",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net46/System.Threading.Thread.dll",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "ref/dotnet/System.Threading.Thread.dll",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net46/System.Threading.Thread.dll",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "System.Threading.Thread.4.0.0-beta-23225.nupkg",
+        "System.Threading.Thread.4.0.0-beta-23225.nupkg.sha512",
+        "System.Threading.Thread.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -1792,10 +1909,12 @@
       "System.Collections >= 4.0.11-beta-23225",
       "System.Console >= 4.0.0-beta-23225",
       "System.Diagnostics.Debug >= 4.0.11-beta-23225",
+      "System.Diagnostics.Tools >= 4.0.1-beta-23225",
       "System.IO >= 4.0.11-beta-23225",
       "System.Linq.Expressions >= 4.0.11-beta-23225",
       "System.Runtime >= 4.0.21-beta-23225",
-      "System.Reflection >= 4.1.0-beta-23225"
+      "System.Reflection >= 4.1.0-beta-23225",
+      "System.Threading.Thread >= 4.0.0-beta-23225"
     ],
     "DNXCore,Version=v5.0": []
   }
