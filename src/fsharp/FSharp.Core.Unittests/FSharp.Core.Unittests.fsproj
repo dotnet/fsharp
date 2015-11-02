@@ -78,7 +78,11 @@
     <Reference Include="xunit.core">
       <HintPath>..\..\..\packages\xunit.extensibility.core.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.core.dll</HintPath>
     </Reference>
-    <Reference Include="xunit.execution.desktop">
+    <Reference Include="xunit.execution.desktop" Condition="'$(TargetFramework)' != 'coreclr'">
+      <HintPath>..\..\..\packages\xunit.extensibility.execution.2.1.0\lib\net45\xunit.execution.desktop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.execution.dotnet" Condition="'$(TargetFramework)' == 'coreclr'">
       <HintPath>..\..\..\packages\xunit.extensibility.execution.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.execution.dotnet.dll</HintPath>
       <Private>True</Private>
     </Reference>
