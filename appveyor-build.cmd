@@ -63,7 +63,7 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
 @if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release

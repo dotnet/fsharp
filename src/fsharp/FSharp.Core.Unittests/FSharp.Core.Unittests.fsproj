@@ -71,11 +71,23 @@
     <Reference Include="xunit.assert">
       <HintPath>..\..\..\packages\xunit.assert.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.assert.dll</HintPath>
     </Reference>
+    <Reference Include="xunit.console.netcore" Condition="'$(TargetFramework)' == 'coreclr'">
+      <HintPath>..\..\..\packages\xunit.console.netcore.1.0.2-prerelease-00115\runtimes\any\native\xunit.console.netcore.exe</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="xunit.core">
       <HintPath>..\..\..\packages\xunit.extensibility.core.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.core.dll</HintPath>
     </Reference>
     <Reference Include="xunit.execution.desktop">
       <HintPath>..\..\..\packages\xunit.extensibility.execution.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.execution.dotnet.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.runner.utility" Condition="'$(TargetFramework)' == 'coreclr'">
+      <HintPath>..\..\..\packages\xunit.runner.dependencies.netcore.1.0.1-prerelease\lib\portable-wpa80+win8+net45+aspnetcore50\xunit.runner.utility.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.runner.utility.dotnet" Condition="'$(TargetFramework)' == 'coreclr'">
+      <HintPath>..\..\..\packages\xunit.runner.utility.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.runner.utility.dotnet.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>

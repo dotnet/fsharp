@@ -92,7 +92,7 @@ if /I "%2" == "coreunitportable259" (
 )
 if /I "%2" == "coreunitcoreclr" (
    set coreunitsuffix=coreclr
-   goto :COREUNIT
+   goto :COREUNIT_CORECLR
 )
 if /I "%2" == "ideunit" (goto :IDEUNIT)
 
@@ -234,6 +234,20 @@ set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
 echo "%XUNITPATH%\xunit.console.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll -nologo -noshadow -parallel none -nunit %XMLFILE%
      "%XUNITPATH%\xunit.console.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll -nologo -noshadow -parallel none -nunit %XMLFILE%
+
+goto :EOF
+
+:COREUNIT_CORECLR
+
+set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
+set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
+set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
+
+set CORE_ROOT=%~dp0%..\packages\dnx-coreclr-win-x86.1.0.0-beta7\bin
+set CORERUNPATH=%~dp0%..\packages\runtime.win7-x86.Microsoft.NETCore.TestHost\1.0.0-beta-23321\runtimes\win7-x86\native
+
+echo "%CORERUNPATH%\corerun.exe" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\xunit.console.netcore.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll -noshadow -parallel none -xml %XMLFILE%
+     "%CORERUNPATH%\corerun.exe" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\xunit.console.netcore.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll -noshadow -parallel none -xml %XMLFILE%
 
 goto :EOF
 
