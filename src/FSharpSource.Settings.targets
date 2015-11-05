@@ -69,6 +69,7 @@ Include this BEFORE the bulk of the project file
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+    <FsBuildSuffix>-proto</FsBuildSuffix>
   </PropertyGroup>
 
   <PropertyGroup>

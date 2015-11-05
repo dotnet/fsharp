@@ -637,11 +637,9 @@ Include this AFTER the bulk of the project file.
 
   <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). The output compiler has suffix "-proto" -->
   <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' == 'true'">
-    <FsBuildSuffix>-proto</FsBuildSuffix>
     <OutputPath>$(FSharpSourcesRoot)\..\vs\$(protoCLIDir)\bin</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' != 'true'">
-    <FsBuildSuffix>-proto</FsBuildSuffix>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(protoCLIDir)\bin</OutputPath>
   </PropertyGroup>
 
