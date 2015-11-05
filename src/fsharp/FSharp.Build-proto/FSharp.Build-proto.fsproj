@@ -16,17 +16,17 @@
     <ProjectGuid>{D8BC791F-C1A9-49DC-9432-0F3090537555}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
-	  <FsSrGen Include="..\FSharp.Build\FSBuild.txt">
-		  <Link>FSBuild.txt</Link>
-	  </FsSrGen>
+    <FsSrGen Include="..\FSharp.Build\FSBuild.txt">
+      <Link>FSBuild.txt</Link>
+    </FsSrGen>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
     <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fsi">
-       <Link>CreateFSharpManifestResourceName.fsi</Link>
+      <Link>CreateFSharpManifestResourceName.fsi</Link>
     </Compile>
     <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fs" >
-       <Link>CreateFSharpManifestResourceName.fs</Link>
+      <Link>CreateFSharpManifestResourceName.fs</Link>
     </Compile>
 
     <Compile Include="..\FSharp.Build\Fsc.fsi">
