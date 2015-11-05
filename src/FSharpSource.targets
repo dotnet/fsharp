@@ -718,8 +718,11 @@ Include this AFTER the bulk of the project file.
 
   <Target Name="ValidateConfiguration">
     <Error
-            Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
+            Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, and sometimes Proto"
             Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
+    <Error
+            Text="Configuration 'Proto' is not supported for '$(MSBuildProjectFile)'"
+            Condition="'$(Configuration)'=='Proto' and '$(ProtoSupported)'!='true'"/>
     <Error
             Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
             Condition="! ('$(TargetFramework)' == 'net40' or 
