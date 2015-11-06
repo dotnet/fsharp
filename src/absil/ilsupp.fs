@@ -595,15 +595,13 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
         if firstDWord = 0 then
             // build the command line invocation string for cvtres.exe
             let corSystemDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-            // We'll use the current dir and a random file name rather than System.IO.Path.GetTempFileName
-            // to try and prevent the command line invocation string from being > MAX_PATH
             
             
             let outputFilePaths = 
                 if outputFilePath = "" then 
                     [ FileSystem.GetTempPathShim() ]
                 else
-                    [ FileSystem.GetTempPathShim() ; (outputFilePath ^ "\\") ]
+                    [ FileSystem.GetTempPathShim() ]
             
             // Get a unique random file
             let rec GetUniqueRandomFileName(path) =
@@ -635,8 +633,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
             let cmdLineArgs,tempObjFileName,tempResFileNames = 
                 let attempts = 
                     outputFilePaths |> 
-                    List.map (fun path -> createCvtresArgs path) |> 
-                    List.filter (fun ((argstring:string),(_t:string),(_f:string list)) -> (cvtres.Length + argstring.Length) < MAX_PATH)
+                    List.map (fun path -> createCvtresArgs path)
                 let invoc,tmp,files = 
                     match attempts with
                     | [] -> createCvtresArgs ".\\" // hope for the best...
@@ -644,8 +641,6 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 tempResFiles <- files
                 (invoc,tmp,files) 
                 
-            let cvtresInvocation = cvtres ^ cmdLineArgs
-            
             try
                 let mutable iFiles = 0
                 
@@ -656,14 +651,11 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                     iFiles <- iFiles + 1
                     
                 // call cvtres.exe using the full cmd line string we've generated
-                    
-                // check to see if the generated string is too long - if it is, fail with E_FAIL
-                if cvtresInvocation.Length >= MAX_PATH then 
-                    System.Runtime.InteropServices.Marshal.ThrowExceptionForHR(E_FAIL)              
 
                 // REVIEW: We really shouldn't be calling out to cvtres
                 let mutable psi = System.Diagnostics.ProcessStartInfo(cvtres)
                 psi.Arguments <- cmdLineArgs ;
+                psi.UseShellExecute <- false
                 psi.CreateNoWindow <- true ; // REVIEW: For some reason, this still creates a window unless WindowStyle is set to hidden
                 psi.WindowStyle <- System.Diagnostics.ProcessWindowStyle.Hidden ;
                 let p = System.Diagnostics.Process.Start(psi)
