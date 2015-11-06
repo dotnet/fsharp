@@ -963,6 +963,7 @@ module Shim =
 
         abstract IsInvalidFilename: filename:string -> bool
         abstract GetTempPathShim : unit -> string
+        abstract GetTempFilePathShim : unit -> string
         abstract GetLastWriteTimeShim: fileName:string -> System.DateTime
         abstract SafeExists: fileName:string -> bool
         abstract FileDelete: fileName:string -> unit
@@ -994,6 +995,7 @@ module Shim =
                 String.IsNullOrEmpty(filename) || filename.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
             member __.GetTempPathShim() = System.IO.Path.GetTempPath()
+            member __.GetTempFilePathShim() = System.IO.Path.GetTempFileName()
 
             member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTime fileName
             member __.SafeExists (fileName:string) = System.IO.File.Exists fileName 
