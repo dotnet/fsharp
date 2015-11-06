@@ -3992,7 +3992,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
                     | None -> failwith "Expected msorlib to have a version number"
 
           let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul noDebugData next
+            writeILMetadataAndCode (pdbfile, desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul noDebugData next
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
@@ -4025,7 +4025,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let entrypointCodeChunk,next = chunk 0x06 next
           let globalpointerCodeChunk,next = chunk (if isItanium then 0x8 else 0x0) next
           
-          let debugDirectoryChunk,next = chunk (if pdbfile = None then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
+          let debugDirectoryChunk,next = chunk (if pdbfile = false then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
           // The debug data is given to us by the PDB writer and appears to 
           // typically be the type of the data plus the PDB file name.  We fill 
           // this in after we've written the binary. We approximate the size to MAXPATH according 
@@ -4034,8 +4034,8 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let MAXPATH = 260
           let debugDataChunk,next = 
               chunk (align 0x4 (match pdbfile with 
-                                | None -> 0x0 
-                                | Some f -> (24 
+                                | false -> 0x0 
+                                | true -> (24 
                                             + MAXPATH
                                             + debugDataJustInCase))) next
 
@@ -4422,7 +4422,7 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
               write (Some (textV2P globalpointerCodeChunk.addr)) os " itanium global pointer"
                    [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |]
           
-          if pdbfile.IsSome then 
+          if pdbfile then 
               write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create sizeof_IMAGE_DEBUG_DIRECTORY 0x0uy)
               write (Some (textV2P debugDataChunk.addr)) os "debug data" (Array.create debugDataChunk.size 0x0uy)
           
