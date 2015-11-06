@@ -4028,14 +4028,15 @@ let writeBinaryAndReportMappings (outfile, ilg, pdbfile: string option, signer: 
           let debugDirectoryChunk,next = chunk (if pdbfile = None then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
           // The debug data is given to us by the PDB writer and appears to 
           // typically be the type of the data plus the PDB file name.  We fill 
-          // this in after we've written the binary. We approximate the size according 
+          // this in after we've written the binary. We approximate the size to MAXPATH according 
           // to what PDB writers seem to require and leave extra space just in case... 
           let debugDataJustInCase = 40
+          let MAXPATH = 260
           let debugDataChunk,next = 
               chunk (align 0x4 (match pdbfile with 
                                 | None -> 0x0 
                                 | Some f -> (24 
-                                            + System.Text.Encoding.Unicode.GetByteCount(f) // See bug 748444
+                                            + MAXPATH
                                             + debugDataJustInCase))) next
 
 
