@@ -757,6 +757,7 @@ let vsSpecificFlags (tcConfigB: TcConfigBuilder) =
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None);
     CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None);  // preserved for compatibility's sake, no longer has any effect
 #if PREFERRED_UI_LANG
+    CompilerOption("LCID", tagInt, OptionInt (fun _n -> ()), None, None);
 #else
     CompilerOption("LCID", tagInt, OptionInt (fun n -> tcConfigB.lcid <- Some(n)), None, None);
 #endif
