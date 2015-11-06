@@ -4073,7 +4073,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
                 else
                   let unlinkedResources = List.map Lazy.force resources
                   begin
-                    try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName(outfile))
+                    try linkNativeResources unlinkedResources next resourceFormat
                     with e -> failwith ("Linking a native resource failed: "+e.Message+"")
                   end
                 

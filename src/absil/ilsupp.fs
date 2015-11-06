@@ -580,7 +580,7 @@ type ResFormatNode(tid:int32, nid:int32, lid:int32, dataOffset:int32, pbLinkedRe
         !size
     
 
-let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRVA:int32) (fileType:PEFileType) (outputFilePath:string) = 
+let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRVA:int32) (fileType:PEFileType) = 
     let nPEFileType = match fileType with X86  -> 0 | X64 -> 2
     let mutable tempResFiles : string list = []
     let mutable objBytes : byte[] = [||]
@@ -598,10 +598,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
             
             
             let outputFilePaths = 
-                if outputFilePath = "" then 
-                    [ FileSystem.GetTempPathShim() ]
-                else
-                    [ FileSystem.GetTempPathShim() ]
+                [ FileSystem.GetTempPathShim() ]
             
             // Get a unique random file
             let rec GetUniqueRandomFileName(path) =

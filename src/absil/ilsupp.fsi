@@ -35,7 +35,7 @@ val getDebugFileName: string -> string
 /// required buffer is returned.
 type PEFileType = X86 | X64
 
-val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> tempFilePath:string -> byte[]
+val linkNativeResources: unlinkedResources:byte[] list ->  rva:int32 -> PEFileType -> byte[]
 val unlinkResource: int32 -> byte[] -> byte[]
 
 /// PDB reader and associated types
