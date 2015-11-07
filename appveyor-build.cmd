@@ -4,9 +4,11 @@ set APPVEYOR_CI=1
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS140COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS120COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 
