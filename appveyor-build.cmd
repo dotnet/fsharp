@@ -106,6 +106,9 @@ call RunTests.cmd release coreunit
 call RunTests.cmd release fsharp coreclr
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreclr' failed && goto :failure
 
+call RunTests.cmd release coreunitcoreclr
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
+
 popd
 
 goto :eof

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\xunit.core.2.1.0\build\portable-net45+win8+wp8+wpa81\xunit.core.props" Condition="Exists('..\packages\xunit.core.2.1.0\build\portable-net45+win8+wp8+wpa81\xunit.core.props')" />
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
     <ProjectGuid>{88e2d422-6852-46e3-a740-83e391dc7973}</ProjectGuid>
@@ -44,12 +43,6 @@
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
-    <!--Reference Include="nunit.framework, Version=$(NUnitFullVersion), Culture=neutral, PublicKeyToken=96d09a1eb7f44a77" Condition="'$(TargetFramework)' != 'sl5' AND '$(TargetFramework)' != 'sl3-wp'" >
-        <SpecificVersion>true</SpecificVersion>
-        <Private>True</Private>
-        <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
-    </Reference-->
     <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition="'$(TargetFramework)' != 'portable47' AND '$(TargetFramework)' != 'net20'">
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
@@ -58,11 +51,20 @@
       <HintPath Condition="'$(TargetFramework)' == 'portable78'">$(FsCheckLibDir)\portable-net45+netcore45+wp8\FsCheck.dll</HintPath>
       <HintPath Condition="'$(TargetFramework)' == 'portable259' OR '$(TargetFramework)' == 'coreclr'">$(FsCheckLibDir)\portable-net45+netcore45+wpa81+wp8\FsCheck.dll</HintPath>
     </Reference>
-    <!--Reference Include="NUnitFramework" Condition="'$(TargetFramework)' == 'sl5' OR '$(TargetFramework)' == 'sl3-wp'" /-->
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'portable47'">
+    <!-- need full name and SpecificVersion = true in order to convince msbuild to allow this reference when targeting portable47 -->
+    <Reference Include="xunit, Version=1.9.2.1705, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c">
+      <SpecificVersion>true</SpecificVersion>
+      <HintPath>..\..\..\packages\xunit.1.9.2\lib\net20\xunit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'portable47'">
     <Reference Include="xunit.abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8d05b1bb7a6fdb6c">
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
@@ -71,10 +73,6 @@
     <Reference Include="xunit.assert">
       <HintPath>..\..\..\packages\xunit.assert.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.assert.dll</HintPath>
     </Reference>
-    <Reference Include="xunit.console.netcore" Condition="'$(TargetFramework)' == 'coreclr'">
-      <HintPath>..\..\..\packages\xunit.console.netcore.1.0.2-prerelease-00115\runtimes\any\native\xunit.console.netcore.exe</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="xunit.core">
       <HintPath>..\..\..\packages\xunit.extensibility.core.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.core.dll</HintPath>
     </Reference>
@@ -82,18 +80,25 @@
       <HintPath>..\..\..\packages\xunit.extensibility.execution.2.1.0\lib\net45\xunit.execution.desktop.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="xunit.execution.dotnet" Condition="'$(TargetFramework)' == 'coreclr'">
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <Reference Include="xunit.console.netcore">
+      <HintPath>..\..\..\packages\xunit.console.netcore.1.0.2-prerelease-00115\runtimes\any\native\xunit.console.netcore.exe</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="xunit.execution.dotnet">
       <HintPath>..\..\..\packages\xunit.extensibility.execution.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.execution.dotnet.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="xunit.runner.utility" Condition="'$(TargetFramework)' == 'coreclr'">
+    <Reference Include="xunit.runner.utility">
       <HintPath>..\..\..\packages\xunit.runner.dependencies.netcore.1.0.1-prerelease\lib\portable-wpa80+win8+net45+aspnetcore50\xunit.runner.utility.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="xunit.runner.utility.dotnet" Condition="'$(TargetFramework)' == 'coreclr'">
+    <Reference Include="xunit.runner.utility.dotnet">
       <HintPath>..\..\..\packages\xunit.runner.utility.2.1.0\lib\portable-net45+win8+wp8+wpa81\xunit.runner.utility.dotnet.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <None Include="project.json" />
   </ItemGroup>
   <ItemGroup Condition="(!$(TargetFramework.Contains('portable'))) and '$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
@@ -155,9 +160,6 @@
     <CustomCopyLocal Include="FSharp.Core.Unittests.dll.config">
       <TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
     </CustomCopyLocal>
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
-    <None Include="project.json" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
