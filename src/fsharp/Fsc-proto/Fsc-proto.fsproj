@@ -16,8 +16,7 @@
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc-proto</AssemblyName>
-    <DefineConstants>BUILDING_PROTO;BUILDING_WITH_LKG;COMPILER;$(DefineConstants)</DefineConstants>
-    <BuildWith>LKG</BuildWith>
+    <DefineConstants>BUILDING_PROTO;COMPILER;$(DefineConstants)</DefineConstants>
     <ProjectGuid>{9D7C9060-9263-40EB-8FE3-1E4E3C6D941C}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --stackReserveSize:4096000</OtherFlags>

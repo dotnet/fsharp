@@ -12,8 +12,6 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Build-proto</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
-    <BuildWith>LKG</BuildWith>
     <ProjectGuid>{D8BC791F-C1A9-49DC-9432-0F3090537555}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>

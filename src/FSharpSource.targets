@@ -98,6 +98,8 @@ Include this AFTER the bulk of the project file.
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
+    <BuildWith>LKG</BuildWith>
   </PropertyGroup>
 
   <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
@@ -738,7 +740,7 @@ Include this AFTER the bulk of the project file.
   </Target>
 
   <!-- This build step copies files to the output folder while replacing build variables in the text of
-             those file. -->
+             those files. -->
   <Target
           Name="CustomCopyLocalFiles"
           Inputs="@(CustomCopyLocal)"
