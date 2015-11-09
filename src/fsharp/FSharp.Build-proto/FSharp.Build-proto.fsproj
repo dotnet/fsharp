@@ -20,21 +20,24 @@
     <FsSrGen Include="..\FSharp.Build\FSBuild.txt">
       <Link>FSBuild.txt</Link>
     </FsSrGen>
+    <Compile Include="..\FSharp.Build\InternalsVisibleTo.fs" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs">
+      <Link>Utilities/assemblyinfo.FSharp.Build.dll.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
-      <Link>CompilerLocationUtils.fs</Link>
+      <Link>Utilities/CompilerLocationUtils.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Build\Fsc.fsi">
+      <Link>Fsc.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Build\Fsc.fs">
+      <Link>Fsc.fs</Link>
     </Compile>
     <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fsi">
       <Link>CreateFSharpManifestResourceName.fsi</Link>
     </Compile>
     <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fs" >
       <Link>CreateFSharpManifestResourceName.fs</Link>
-    </Compile>
-
-    <Compile Include="..\FSharp.Build\Fsc.fsi">
-      <Link>Fsc.fsi</Link>
-    </Compile>
-    <Compile Include="..\FSharp.Build\Fsc.fs">
-      <Link>Fsc.fs</Link>
     </Compile>
     <CustomCopyLocal Include="..\FSharp.Build\Microsoft.FSharp.targets">
       <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
