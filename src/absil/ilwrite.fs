@@ -4029,7 +4029,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
           let entrypointCodeChunk,next = chunk 0x06 next
           let globalpointerCodeChunk,next = chunk (if isItanium then 0x8 else 0x0) next
           
-          let debugDirectoryChunk,next = chunk (if pdbfile = false then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
+          let debugDirectoryChunk,next = chunk (if not pdbfile then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
           // The debug data is given to us by the PDB writer and appears to 
           // typically be the type of the data plus the PDB file name.  We fill 
           // this in after we've written the binary. We approximate the size to MAXPATH according 
