@@ -4543,9 +4543,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
         reportTime showTimes "Finalize PDB"
 
-    let serializeToPdb = serializeToFile ".pdb"
-    let serializeToMdb = serializeToFile ".mdb"
-
     use outfileStream = new MemoryStream()
     let os =  new BinaryWriter(outfileStream)
 
@@ -4556,6 +4553,9 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
     outfileStream.Position <- 0L
 
     dumpDebugInfo |> Option.map emitOrFail |> Option.iter (writeDumpDebugInfo showTimes pdbData)
+
+    let serializeToPdb = serializeToFile ".pdb"
+    let serializeToMdb = serializeToFile ".mdb"
 
     match outfileP |> emitOrFail, pdbP |> Option.map emitOrFail, mdbP |> Option.map emitOrFail, signer with
     | EmittedStream(s), None, None, None ->
