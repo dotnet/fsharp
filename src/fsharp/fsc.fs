@@ -1700,7 +1700,7 @@ module FileWriter =
                 let toFile path = lazy(ILBinaryWriter.EmitTo.EmittedFile path |> Choice1Of2)
                 let toFileOpt = Option.map toFile
                 
-                let pdbfileOpt = if not(runningOnMono) then pdbfile |> toFileOpt else None
+                let pdbfileOpt = if not runningOnMono then pdbfile |> toFileOpt else None
                 let mdbfileOpt = if runningOnMono then pdbfile |> toFileOpt else None
 
                 let dumpDebugInfoPath = if tcConfig.dumpDebugInfo then Some(outfile + ".debuginfo") else None
