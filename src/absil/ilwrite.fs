@@ -4525,25 +4525,27 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
         // Now we have the debug data we can go back and fill in the debug directory in the image 
         let fs2 = new FileStream(outfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read, 0x1000, false)
         use os2 = new BinaryWriter(fs2)
-        try 
-            // write the IMAGE_DEBUG_DIRECTORY 
-            os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
-            writeInt32 os2 idd.iddCharacteristics // IMAGE_DEBUG_DIRECTORY.Characteristics 
-            writeInt32 os2 timestamp
-            writeInt32AsUInt16 os2 idd.iddMajorVersion
-            writeInt32AsUInt16 os2 idd.iddMinorVersion
-            writeInt32 os2 idd.iddType
-            writeInt32 os2 idd.iddData.Length  // IMAGE_DEBUG_DIRECTORY.SizeOfData 
-            writeInt32 os2 debugDataChunk.addr  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
-            writeInt32 os2 (textV2P debugDataChunk.addr)// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
-
-            // write the debug raw data as given us by the PDB writer 
-            os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
-            if debugDataChunk.size < idd.iddData.Length then 
-                failwith "Debug data area is not big enough.  Debug info may not be usable"
-            writeBytes os2 idd.iddData
-        with e -> 
-            failwith ("Error while writing debug directory entry: "+e.Message)
+        begin
+            try 
+                // write the IMAGE_DEBUG_DIRECTORY 
+                os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
+                writeInt32 os2 idd.iddCharacteristics // IMAGE_DEBUG_DIRECTORY.Characteristics 
+                writeInt32 os2 timestamp
+                writeInt32AsUInt16 os2 idd.iddMajorVersion
+                writeInt32AsUInt16 os2 idd.iddMinorVersion
+                writeInt32 os2 idd.iddType
+                writeInt32 os2 idd.iddData.Length  // IMAGE_DEBUG_DIRECTORY.SizeOfData 
+                writeInt32 os2 debugDataChunk.addr  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
+                writeInt32 os2 (textV2P debugDataChunk.addr)// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
+                
+                // write the debug raw data as given us by the PDB writer 
+                os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
+                if debugDataChunk.size < idd.iddData.Length then 
+                    failwith "Debug data area is not big enough.  Debug info may not be usable"
+                writeBytes os2 idd.iddData
+            with e -> 
+                failwith ("Error while writing debug directory entry: "+e.Message)
+        end
 
         reportTime showTimes "Finalize PDB"
 
