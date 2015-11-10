@@ -4516,11 +4516,11 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
-    let writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) outfile pdbpath =
+    let writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) outfile fpdb =
         begin
             // The ISymUnmanagedWriter2 require a file name. This is frequently used during PDB writing.
             // Ensure a name is provided here in the case we were given only a Stream value.
-            let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile pdbpath pdbData
+            let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData
             reportTime showTimes "Generate PDB Info"
             
           // Now we have the debug data we can go back and fill in the debug directory in the image 
