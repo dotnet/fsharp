@@ -3903,6 +3903,15 @@ let serializeToFile extension f emitter =
         use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
         tempFileStream.CopyTo(stream)
 
+let writeDumpDebugInfo showTimes pdbData dumpTo =
+    reportTime showTimes "Dump Debug Info"
+    match dumpTo with
+    | EmittedStream stream ->
+        DumpDebugInfo stream pdbData
+    | EmittedFile file ->
+        use stream = FileSystem.FileStreamCreateShim(file)
+        DumpDebugInfo stream pdbData
+
 let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitStreamProvider option, mdbP: EmitStreamProvider option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitStreamProvider option) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -4485,15 +4494,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
           pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
 
-    let writeDumpDebugInfo pdbData dumpTo =
-        reportTime showTimes "Dump Debug Info"
-        let dump stream = DumpDebugInfo stream pdbData
-        match dumpTo with
-        | EmittedStream stream -> dump stream
-        | EmittedFile file ->
-            use stream = FileSystem.FileStreamCreateShim(file)
-            dump stream
-
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     let writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) outfile pdbpath =
@@ -4554,7 +4554,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
     os.Flush()
     outfileStream.Position <- 0L
 
-    dumpDebugInfo |> Option.map emitOrFail |> Option.iter (writeDumpDebugInfo pdbData)
+    dumpDebugInfo |> Option.map emitOrFail |> Option.iter (writeDumpDebugInfo showTimes pdbData)
 
     match outfileP |> emitOrFail, pdbP |> Option.map emitOrFail, mdbP |> Option.map emitOrFail, signer with
     | EmittedStream(s), None, None, None ->
