@@ -3892,6 +3892,17 @@ let private trySetExecutablePermission path =
         FileSystemUtilites.setExecutablePermission path
     with _ -> ()
 
+/// apply f with the file ( if EmittedFile ) or a temp filename ( if EmittedStream )
+let serializeToFile extension f emitter =
+    match emitter with
+    | EmittedFile path ->
+        f path
+    | EmittedStream stream ->
+        let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), extension)
+        f tempFilePath
+        use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
+        tempFileStream.CopyTo(stream)
+
 let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitStreamProvider option, mdbP: EmitStreamProvider option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitStreamProvider option) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -4525,16 +4536,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
         with e -> 
             failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
         reportTime showTimes "Signed Image"
-
-    let serializeToFile extension f emitter =
-        match emitter with
-        | EmittedFile path ->
-            f path
-        | EmittedStream stream ->
-            let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), extension)
-            f tempFilePath
-            use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
-            tempFileStream.CopyTo(stream)
 
     let serializeToPdb = serializeToFile ".pdb"
     let serializeToMdb = serializeToFile ".mdb"
