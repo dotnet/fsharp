@@ -3903,6 +3903,12 @@ let serializeToFile extension f emitter =
         use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
         tempFileStream.CopyTo(stream)
 
+/// return the EmitTo or raise exception if failure
+let emitOrFail (e: EmitStreamProvider) = 
+    match e.Value with
+    | Choice1Of2 stream -> stream
+    | Choice2Of2 failure -> failwith failure
+
 let writeDumpDebugInfo showTimes pdbData dumpTo =
     reportTime showTimes "Dump Debug Info"
     match dumpTo with
@@ -4539,11 +4545,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
     let serializeToPdb = serializeToFile ".pdb"
     let serializeToMdb = serializeToFile ".mdb"
-
-    let emitOrFail (e: EmitStreamProvider) = 
-        match e.Value with
-        | Choice1Of2 stream -> stream
-        | Choice2Of2 failure -> failwith failure
 
     use outfileStream = new MemoryStream()
     let os =  new BinaryWriter(outfileStream)
