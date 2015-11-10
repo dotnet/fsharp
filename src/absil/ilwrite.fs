@@ -4035,12 +4035,12 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
           // this in after we've written the binary. We approximate the size to MAXPATH according 
           // to what PDB writers seem to require and leave extra space just in case... 
           let debugDataJustInCase = 40
-          let MAXPATH = 260
+          let MAX_PATH = 260 //windows MAX_PATH, the maximum length of a file path
           let debugDataChunk,next = 
               chunk (align 0x4 (match pdbfile with 
                                 | false -> 0x0 
                                 | true -> (24 
-                                            + MAXPATH
+                                            + MAX_PATH
                                             + debugDataJustInCase))) next
 
 
