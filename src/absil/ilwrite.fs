@@ -4517,15 +4517,16 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     let writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) outfile pdbpath =
-        reportTime showTimes "Generate PDB Info"
-        // The ISymUnmanagedWriter2 require a file name. This is frequently used during PDB writing.
-        // Ensure a name is provided here in the case we were given only a Stream value.
-        let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile pdbpath pdbData
-            
-        // Now we have the debug data we can go back and fill in the debug directory in the image 
-        let fs2 = new FileStream(outfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read, 0x1000, false)
-        use os2 = new BinaryWriter(fs2)
         begin
+            // The ISymUnmanagedWriter2 require a file name. This is frequently used during PDB writing.
+            // Ensure a name is provided here in the case we were given only a Stream value.
+            let idd = WritePdbInfo fixupOverlappingSequencePoints showTimes outfile pdbpath pdbData
+            reportTime showTimes "Generate PDB Info"
+
+            // Now we have the debug data we can go back and fill in the debug directory in the image 
+            let fs2 = new FileStream(outfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read, 0x1000, false)
+            use os2 = new BinaryWriter(fs2)
+
             try 
                 // write the IMAGE_DEBUG_DIRECTORY 
                 os2.BaseStream.Seek (int64 (textV2P debugDirectoryChunk.addr), SeekOrigin.Begin) |> ignore
