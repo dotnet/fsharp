@@ -4586,11 +4586,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
     mappings
 
 
-let private optionOfLazy (l: Lazy<'T>) =
-    if l.IsValueCreated
-    then Some(l.Value)
-    else None
-
 type options =
    { ilg: ILGlobals
      pdbfile: EmitStreamProvider option
@@ -4605,9 +4600,10 @@ let WriteILBinary (outfile, args, ilModule, noDebugData) =
     try
         ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.mdbfile, args.signer, args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) ilModule noDebugData)
     with e ->
+        // if the lazy EmitTo value is created and is a file, we need to delete it
         [Some outfile; args.pdbfile; args.mdbfile; args.dumpDebugInfo]
         |> List.choose id
-        |> List.choose optionOfLazy
+        |> List.choose (fun l -> if l.IsValueCreated then Some(l.Value) else None)
         |> List.choose (function Choice1Of2(EmittedFile(path)) -> Some path | _ -> None)
         |> List.iter tryDeleteFile
 
