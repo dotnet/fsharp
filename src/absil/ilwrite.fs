@@ -3881,15 +3881,6 @@ and EmitTo =
     | EmittedStream of Stream
 and Diagnostic = string
 
-
-// Either
-let (|Success|Failure|) = function
-    | Choice1Of2 s -> Success s
-    | Choice2Of2 f -> Failure f
-
-let private succeed x = Choice1Of2 x
-let private fail x = Choice2Of2 x
-
 let private tryDeleteFile path = 
     try
         if FileSystem.SafeExists path
@@ -4553,8 +4544,8 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
     let emitOrFail (e: EmitStreamProvider) = 
         match e.Value with
-        | Success stream -> stream
-        | Failure failure -> failwith failure
+        | Choice1Of2 stream -> stream
+        | Choice2Of2 failure -> failwith failure
 
     use outfileStream = new MemoryStream()
     let os =  new BinaryWriter(outfileStream)
@@ -4614,7 +4605,7 @@ let WriteILBinary (outfile, args, ilModule, noDebugData) =
         [Some outfile; args.pdbfile; args.mdbfile; args.dumpDebugInfo]
         |> List.choose id
         |> List.choose optionOfLazy
-        |> List.choose (function Success(EmittedFile(path)) -> Some path | _ -> None)
+        |> List.choose (function Choice1Of2(EmittedFile(path)) -> Some path | _ -> None)
         |> List.iter tryDeleteFile
 
         reraise()
