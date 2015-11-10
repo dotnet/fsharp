@@ -222,6 +222,7 @@ type PdbData =
 //---------------------------------------------------------------------
 
 let WritePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info = 
+    (try FileSystem.FileDelete fpdb with _ -> ())
     let pdbw = ref Unchecked.defaultof<PdbWriter>
     
     try
@@ -4129,6 +4130,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
               match p with 
               | None -> () 
               | Some pExpected -> 
+                  os.Flush(); 
                   let pCurrent =  int32 os.BaseStream.Position
                   if pCurrent <> pExpected then 
                     failwith ("warning: "+chunkName+" not where expected, pCurrent = "+string pCurrent+", p.addr = "+string pExpected) 
