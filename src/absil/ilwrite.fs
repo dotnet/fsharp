@@ -4506,12 +4506,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
             writeInt32 os2 debugDataChunk.addr  // IMAGE_DEBUG_DIRECTORY.AddressOfRawData 
             writeInt32 os2 (textV2P debugDataChunk.addr)// IMAGE_DEBUG_DIRECTORY.PointerToRawData 
 
-            (* dprintf "idd.iddCharacteristics = %ld\n" idd.iddCharacteristics
-            dprintf "iddMajorVersion = %ld\n" idd.iddMajorVersion
-            dprintf "iddMinorVersion = %ld\n" idd.iddMinorVersion
-            dprintf "iddType = %ld\n" idd.iddType
-            dprintf "iddData = (%A) = %s\n" idd.iddData (System.Text.Encoding.UTF8.GetString idd.iddData) *)
-                  
             // write the debug raw data as given us by the PDB writer 
             os2.BaseStream.Seek (int64 (textV2P debugDataChunk.addr), SeekOrigin.Begin) |> ignore
             if debugDataChunk.size < idd.iddData.Length then 
