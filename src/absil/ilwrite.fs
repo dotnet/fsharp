@@ -3969,7 +3969,11 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
     let timestamp = absilWriteGetTimeStamp ()
 
-    let gen os (pdbfile: bool) =
+    use outfileStream = new MemoryStream()
+    let os =  new BinaryWriter(outfileStream)
+
+    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+          let pdbfile = pdbP |> Option.isSome
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
           let alignVirt = modul.VirtualAlignment // FIXED CHOICE
           let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
@@ -4542,12 +4546,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
             failwith ("Error while writing debug directory entry: "+e.Message)
 
         reportTime showTimes "Finalize PDB"
-
-    use outfileStream = new MemoryStream()
-    let os =  new BinaryWriter(outfileStream)
-
-    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
-        gen os (pdbP |> Option.isSome)
 
     os.Flush()
     outfileStream.Position <- 0L
