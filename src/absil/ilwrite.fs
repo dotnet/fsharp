@@ -4530,11 +4530,9 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
     let serializeToFile extension f emitter =
         match emitter with
         | EmittedFile path ->
-            tryDeleteFile path
             f path
         | EmittedStream stream ->
             let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), extension)
-            tryDeleteFile tempFilePath
             f tempFilePath
             use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
             tempFileStream.CopyTo(stream)
