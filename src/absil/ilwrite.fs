@@ -3918,6 +3918,16 @@ let writeDumpDebugInfo showTimes pdbData dumpTo =
         use stream = FileSystem.FileStreamCreateShim(file)
         DumpDebugInfo stream pdbData
 
+/// Sign the binary
+let signTo showTimes filePath (s: ILStrongNameSigner) =
+    try
+        reportTime showTimes "Signing Image"
+        use closeS = { new System.IDisposable with member x.Dispose() = try s.Close() with _ -> () }
+        s.SignFile filePath
+    with e -> 
+        failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
+    reportTime showTimes "Signed Image"
+
 let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitStreamProvider option, mdbP: EmitStreamProvider option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitStreamProvider option) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -4533,16 +4543,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
         reportTime showTimes "Finalize PDB"
 
-    /// Sign the binary.  No further changes to binary allowed past this point!
-    let signTo filePath (s: ILStrongNameSigner) =
-        try
-            reportTime showTimes "Signing Image"
-            use closeS = { new System.IDisposable with member x.Dispose() = try s.Close() with _ -> () }
-            s.SignFile filePath
-        with e -> 
-            failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
-        reportTime showTimes "Signed Image"
-
     let serializeToPdb = serializeToFile ".pdb"
     let serializeToMdb = serializeToFile ".mdb"
 
@@ -4567,7 +4567,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
         pdb |> Option.iter (serializeToPdb (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
         mdb |> Option.iter (serializeToMdb (WriteMdbInfo pdbData path))
-        signer |> Option.iter (signTo path)
+        signer |> Option.iter (signTo showTimes path)
 
         use oStream  = FileSystem.FileStreamReadShim(path)
         oStream.CopyTo(s)
@@ -4577,7 +4577,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
         pdb |> Option.iter (serializeToPdb (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
         mdb |> Option.iter (serializeToMdb (WriteMdbInfo pdbData path))
-        signer |> Option.iter (signTo path)
+        signer |> Option.iter (signTo showTimes path)
 
     mappings
 
