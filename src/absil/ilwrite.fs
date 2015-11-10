@@ -4554,9 +4554,6 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
     dumpDebugInfo |> Option.map emitOrFail |> Option.iter (writeDumpDebugInfo showTimes pdbData)
 
-    let serializeToPdb = serializeToFile ".pdb"
-    let serializeToMdb = serializeToFile ".mdb"
-
     match outfileP |> emitOrFail, pdbP |> Option.map emitOrFail, mdbP |> Option.map emitOrFail, signer with
     | EmittedStream(s), None, None, None ->
         outfileStream.CopyTo(s)
@@ -4565,8 +4562,8 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
         let path = FileSystem.GetTempFilePathShim()
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
 
-        pdb |> Option.iter (serializeToPdb (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
-        mdb |> Option.iter (serializeToMdb (WriteMdbInfo pdbData path))
+        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
+        mdb |> Option.iter (serializeToFile ".mdb" (WriteMdbInfo pdbData path))
         signer |> Option.iter (signTo showTimes path)
 
         use oStream  = FileSystem.FileStreamReadShim(path)
@@ -4575,8 +4572,8 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
         path |> trySetExecutablePermission
 
-        pdb |> Option.iter (serializeToPdb (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
-        mdb |> Option.iter (serializeToMdb (WriteMdbInfo pdbData path))
+        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
+        mdb |> Option.iter (serializeToFile ".mdb" (WriteMdbInfo pdbData path))
         signer |> Option.iter (signTo showTimes path)
 
     mappings
