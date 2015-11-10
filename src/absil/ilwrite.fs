@@ -3887,6 +3887,11 @@ let private tryDeleteFile path =
         then FileSystem.FileDelete path
     with _ -> ()
 
+let private trySetExecutablePermission path =
+    try 
+        FileSystemUtilites.setExecutablePermission path
+    with _ -> ()
+
 let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitStreamProvider option, mdbP: EmitStreamProvider option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitStreamProvider option) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
@@ -4572,7 +4577,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
         oStream.CopyTo(s)
     | EmittedFile(path), pdb, mdb, signer ->
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
-        path |> FileSystemUtilites.setExecutablePermission 
+        path |> trySetExecutablePermission
 
         pdb |> Option.iter (serializeToPdb (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
         mdb |> Option.iter (serializeToMdb (WriteMdbInfo pdbData path))
