@@ -3883,8 +3883,8 @@ and Diagnostic = string
 
 let private tryDeleteFile path = 
     try
-        if FileSystem.SafeExists path
-        then FileSystem.FileDelete path
+        if FileSystem.SafeExists path then 
+            FileSystem.FileDelete path
     with _ -> ()
 
 let private trySetExecutablePermission path =
