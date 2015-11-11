@@ -384,7 +384,7 @@ let createWriter (f:string) =
 let WriteMdbInfo info f fmdb = 
     // Note, if we cant delete it code will fail later
     (try FileSystem.FileDelete fmdb with _ -> ())
-    
+
     // Try loading the MDB symbol writer from an assembly available on Mono dynamically
     // Report an error if the assembly is not available.    
     let wr = 
@@ -3961,7 +3961,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
     use outfileStream = new MemoryStream()
     let os =  new BinaryWriter(outfileStream)
 
-    let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
+    let  pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
           let alignVirt = modul.VirtualAlignment // FIXED CHOICE
           let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
@@ -4534,7 +4534,6 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
             with e -> 
                 failwith ("Error while writing debug directory entry: "+e.Message)
         end
-
         reportTime showTimes "Finalize PDB"
 
     os.Flush()
