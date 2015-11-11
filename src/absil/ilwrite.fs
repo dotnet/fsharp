@@ -3891,6 +3891,11 @@ let private trySetExecutablePermission path =
         FileSystemUtilites.setExecutablePermission path
     with _ -> ()
 
+/// Copy the content of the file at the given path to the stream
+let copyFileToStream toStream path =
+    use fileStream  = FileSystem.FileStreamReadShim(path)
+    fileStream.CopyTo(toStream)
+
 let writeDumpDebugInfo showTimes pdbData dumpTo =
     match dumpTo with
     | EmitTo.Stream stream ->
@@ -4548,8 +4553,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
         | EmitTo.Stream stream ->
             let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), ".mdb")
             tempFilePath |> WriteMdbInfo pdbData outPath
-            use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
-            tempFileStream.CopyTo(stream)
+            tempFilePath |> copyFileToStream stream
 
     let serializePdb outPath pdb =
         match pdbfile with
@@ -4561,8 +4565,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
             | EmitTo.File path ->
                 failwithf "unexpected, toFile path '%s' should be equal to '%s'" pdbPath path
             | EmitTo.Stream stream ->
-                use tempFileStream = FileSystem.FileStreamReadShim(pdbPath)
-                tempFileStream.CopyTo(stream)
+                pdbPath |> copyFileToStream stream
         | None -> failwith "unexpected, pdbfile should be set"
 
     match outfileP, pdbP, mdbP, signer with
@@ -4577,8 +4580,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
         mdb |> Option.iter (serializeMdb path)
         signer |> Option.iter (signTo showTimes path)
 
-        use oStream  = FileSystem.FileStreamReadShim(path)
-        oStream.CopyTo(s)
+        path |> copyFileToStream s
     | EmitTo.File(path), pdb, mdb, signer ->
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
         path |> trySetExecutablePermission
