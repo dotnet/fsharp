@@ -15,22 +15,21 @@ type ILStrongNameSigner =
     static member OpenKeyPairFile: string -> ILStrongNameSigner
     static member OpenKeyContainer: string -> ILStrongNameSigner
 
-type EmitStreamProvider = Lazy<Choice<EmitTo, Diagnostic>>
-and EmitTo =
-    | EmittedFile of string
-    | EmittedStream of System.IO.Stream
-and Diagnostic = string
+[<RequireQualifiedAccess>]
+type EmitTo =
+    | File of string
+    | Stream of System.IO.Stream
 
 type options =
     { ilg: ILGlobals
-      pdbfile: EmitStreamProvider option
-      mdbfile: EmitStreamProvider option
+      pdbfile: EmitTo option
+      mdbfile: EmitTo option
       signer : ILStrongNameSigner option
       fixupOverlappingSequencePoints : bool
       emitTailcalls: bool
       showTimes : bool
-      dumpDebugInfo : EmitStreamProvider option }
+      dumpDebugInfo : EmitTo option }
 
 /// Write a binary. Extra configuration parameters can also be specified. 
-val WriteILBinary: outfile: EmitStreamProvider * options:  options * input: ILModuleDef * noDebugData: bool -> unit
+val WriteILBinary: outfile: EmitTo * options:  options * input: ILModuleDef * noDebugData: bool -> unit
 

@@ -1697,15 +1697,16 @@ module FileWriter =
                                 // Note:: don't use errorR here since we really want to fail and not produce a binary
                                 error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
 
-                let toFile path = lazy(ILBinaryWriter.EmitTo.EmittedFile path |> Choice1Of2)
-                let toFileOpt = Option.map toFile
-                
-                let pdbfileOpt = if not runningOnMono then pdbfile |> toFileOpt else None
-                let mdbfileOpt = if runningOnMono then pdbfile |> toFileOpt else None
+                let pdbfileOpt = if not runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
+                let mdbfileOpt = if runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
 
-                let dumpDebugInfoPath = if tcConfig.dumpDebugInfo then Some(outfile + ".debuginfo") else None
+                let dumpDebugInfoOpt =
+                    if tcConfig.dumpDebugInfo then 
+                        Some(ILBinaryWriter.EmitTo.File(outfile + ".debuginfo")) 
+                    else 
+                        None
 
-                let outfileP = outfile |> toFile
+                let outfileP = ILBinaryWriter.EmitTo.File(outfile)
 
                 let options : ILBinaryWriter.options = 
                     { ilg = ilGlobals
@@ -1715,7 +1716,7 @@ module FileWriter =
                       showTimes = tcConfig.showTimes
                       signer = signer
                       fixupOverlappingSequencePoints = false
-                      dumpDebugInfo = dumpDebugInfoPath |> toFileOpt } 
+                      dumpDebugInfo = dumpDebugInfoOpt  } 
                 ILBinaryWriter.WriteILBinary (outfileP, options, ilxMainModule, tcConfig.noDebugData)
 
             with Failure msg -> 

@@ -3875,11 +3875,10 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-type EmitStreamProvider = Lazy<Choice<EmitTo, Diagnostic>>
-and EmitTo =
-    | EmittedFile of string
-    | EmittedStream of Stream
-and Diagnostic = string
+[<RequireQualifiedAccess>]
+type EmitTo =
+    | File of string
+    | Stream of Stream
 
 let private tryDeleteFile path = 
     try
@@ -3895,26 +3894,20 @@ let private trySetExecutablePermission path =
 /// apply f with the file ( if EmittedFile ) or a temp filename ( if EmittedStream )
 let serializeToFile extension f emitter =
     match emitter with
-    | EmittedFile path ->
+    | EmitTo.File path ->
         f path
-    | EmittedStream stream ->
+    | EmitTo.Stream stream ->
         let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), extension)
         f tempFilePath
         use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
         tempFileStream.CopyTo(stream)
 
-/// return the EmitTo or raise exception if failure
-let emitOrFail (e: EmitStreamProvider) = 
-    match e.Value with
-    | Choice1Of2 stream -> stream
-    | Choice2Of2 failure -> failwith failure
-
 let writeDumpDebugInfo showTimes pdbData dumpTo =
     reportTime showTimes "Dump Debug Info"
     match dumpTo with
-    | EmittedStream stream ->
+    | EmitTo.Stream stream ->
         DumpDebugInfo stream pdbData
-    | EmittedFile file ->
+    | EmitTo.File file ->
         use stream = FileSystem.FileStreamCreateShim(file)
         DumpDebugInfo stream pdbData
 
@@ -3928,7 +3921,7 @@ let signTo showTimes filePath (s: ILStrongNameSigner) =
         failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
     reportTime showTimes "Signed Image"
 
-let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitStreamProvider option, mdbP: EmitStreamProvider option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitStreamProvider option) modul noDebugData =
+let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, mdbP: EmitTo option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitTo option) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -4552,12 +4545,12 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
     os.Flush()
     outfileStream.Position <- 0L
 
-    dumpDebugInfo |> Option.map emitOrFail |> Option.iter (writeDumpDebugInfo showTimes pdbData)
+    dumpDebugInfo |> Option.iter (writeDumpDebugInfo showTimes pdbData)
 
-    match outfileP |> emitOrFail, pdbP |> Option.map emitOrFail, mdbP |> Option.map emitOrFail, signer with
-    | EmittedStream(s), None, None, None ->
+    match outfileP, pdbP, mdbP, signer with
+    | EmitTo.Stream(s), None, None, None ->
         outfileStream.CopyTo(s)
-    | EmittedStream(s), pdb, mdb, signer ->
+    | EmitTo.Stream(s), pdb, mdb, signer ->
         // both pdb, mdb and signer implementation require the output file, so let's create it
         let path = FileSystem.GetTempFilePathShim()
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
@@ -4568,7 +4561,7 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
         use oStream  = FileSystem.FileStreamReadShim(path)
         oStream.CopyTo(s)
-    | EmittedFile(path), pdb, mdb, signer ->
+    | EmitTo.File(path), pdb, mdb, signer ->
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
         path |> trySetExecutablePermission
 
@@ -4581,23 +4574,21 @@ let writeBinaryAndReportMappings (outfileP: EmitStreamProvider, ilg, pdbP: EmitS
 
 type options =
    { ilg: ILGlobals
-     pdbfile: EmitStreamProvider option
-     mdbfile: EmitStreamProvider option
+     pdbfile: EmitTo option
+     mdbfile: EmitTo option
      signer: ILStrongNameSigner option
      fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
      showTimes: bool
-     dumpDebugInfo: EmitStreamProvider option }
+     dumpDebugInfo: EmitTo option }
 
 let WriteILBinary (outfile, args, ilModule, noDebugData) =
     try
         ignore (writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.mdbfile, args.signer, args.fixupOverlappingSequencePoints, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) ilModule noDebugData)
     with e ->
-        // if the lazy EmitTo value is created and is a file, we need to delete it
+        // if the EmitTo value is a file, we need to delete it
         [Some outfile; args.pdbfile; args.mdbfile; args.dumpDebugInfo]
-        |> List.choose id
-        |> List.choose (fun l -> if l.IsValueCreated then Some(l.Value) else None)
-        |> List.choose (function Choice1Of2(EmittedFile(path)) -> Some path | _ -> None)
+        |> List.choose (function Some(EmitTo.File(path)) -> Some path | _ -> None)
         |> List.iter tryDeleteFile
 
         reraise()
