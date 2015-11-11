@@ -3903,23 +3903,22 @@ let serializeToFile extension f emitter =
         tempFileStream.CopyTo(stream)
 
 let writeDumpDebugInfo showTimes pdbData dumpTo =
-    reportTime showTimes "Dump Debug Info"
     match dumpTo with
     | EmitTo.Stream stream ->
         DumpDebugInfo stream pdbData
     | EmitTo.File file ->
         use stream = FileSystem.FileStreamCreateShim(file)
         DumpDebugInfo stream pdbData
+    reportTime showTimes "Dump Debug Info"
 
 /// Sign the binary
 let signTo showTimes filePath (s: ILStrongNameSigner) =
     try
-        reportTime showTimes "Signing Image"
         use closeS = { new System.IDisposable with member x.Dispose() = try s.Close() with _ -> () }
         s.SignFile filePath
     with e -> 
         failwith ("Warning: A call to StrongNameSignatureGeneration failed ("+e.Message+")")
-    reportTime showTimes "Signed Image"
+    reportTime showTimes "Signing Image"
 
 let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, mdbP: EmitTo option, signer: ILStrongNameSigner option, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo : EmitTo option) modul noDebugData =
     // Store the public key from the signer into the manifest.  This means it will be written 
@@ -4507,6 +4506,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
 
           pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings
 
+    reportTime showTimes "Writing Image"
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
     let writePdb (textV2P, debugDirectoryChunk, debugDataChunk) pdbData outfile fpdb =
