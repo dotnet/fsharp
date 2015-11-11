@@ -3891,17 +3891,6 @@ let private trySetExecutablePermission path =
         FileSystemUtilites.setExecutablePermission path
     with _ -> ()
 
-/// apply f with the file ( if EmittedFile ) or a temp filename ( if EmittedStream )
-let serializeToFile extension f emitter =
-    match emitter with
-    | EmitTo.File path ->
-        f path
-    | EmitTo.Stream stream ->
-        let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), extension)
-        f tempFilePath
-        use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
-        tempFileStream.CopyTo(stream)
-
 let writeDumpDebugInfo showTimes pdbData dumpTo =
     match dumpTo with
     | EmitTo.Stream stream ->
@@ -3961,11 +3950,18 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
 
     let timestamp = absilWriteGetTimeStamp ()
 
+    let pdbfile =
+        match pdbP with
+        | Some(EmitTo.File(p)) -> Some p
+        | Some(EmitTo.Stream(_)) ->
+            //use a temp filename, because is required by debugDataChunk
+            Some(Path.ChangeExtension(FileSystem.GetTempFilePathShim(), ".pdb"))
+        | None -> None
+
     use outfileStream = new MemoryStream()
     let os =  new BinaryWriter(outfileStream)
 
     let pdbData,debugDirectoryChunk,debugDataChunk,textV2P,mappings =
-          let pdbfile = pdbP |> Option.isSome
           let imageBaseReal = modul.ImageBase // FIXED CHOICE
           let alignVirt = modul.VirtualAlignment // FIXED CHOICE
           let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
@@ -4033,7 +4029,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
                     | None -> failwith "Expected msorlib to have a version number"
 
           let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
-            writeILMetadataAndCode (pdbfile, desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul noDebugData next
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul noDebugData next
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
@@ -4066,18 +4062,17 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
           let entrypointCodeChunk,next = chunk 0x06 next
           let globalpointerCodeChunk,next = chunk (if isItanium then 0x8 else 0x0) next
           
-          let debugDirectoryChunk,next = chunk (if not pdbfile then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
+          let debugDirectoryChunk,next = chunk (if pdbfile = None then 0x0 else sizeof_IMAGE_DEBUG_DIRECTORY) next
           // The debug data is given to us by the PDB writer and appears to 
           // typically be the type of the data plus the PDB file name.  We fill 
-          // this in after we've written the binary. We approximate the size to MAXPATH according 
+          // this in after we've written the binary. We approximate the size according 
           // to what PDB writers seem to require and leave extra space just in case... 
           let debugDataJustInCase = 40
-          let MAX_PATH = 260 //windows MAX_PATH, the maximum length of a file path
           let debugDataChunk,next = 
               chunk (align 0x4 (match pdbfile with 
-                                | false -> 0x0 
-                                | true -> (24 
-                                            + MAX_PATH
+                                | None -> 0x0 
+                                | Some f -> (24 
+                                            + System.Text.Encoding.Unicode.GetByteCount(f) // See bug 748444
                                             + debugDataJustInCase))) next
 
 
@@ -4463,7 +4458,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
               write (Some (textV2P globalpointerCodeChunk.addr)) os " itanium global pointer"
                    [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |]
           
-          if pdbfile then 
+          if pdbfile.IsSome then 
               write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create sizeof_IMAGE_DEBUG_DIRECTORY 0x0uy)
               write (Some (textV2P debugDataChunk.addr)) os "debug data" (Array.create debugDataChunk.size 0x0uy)
           
@@ -4547,6 +4542,30 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
 
     dumpDebugInfo |> Option.iter (writeDumpDebugInfo showTimes pdbData)
 
+    let serializeMdb outPath mdb =
+        match mdb with
+        | EmitTo.File path ->
+            path |> WriteMdbInfo pdbData outPath
+        | EmitTo.Stream stream ->
+            let tempFilePath = Path.ChangeExtension(FileSystem.GetTempFilePathShim(), ".mdb")
+            tempFilePath |> WriteMdbInfo pdbData outPath
+            use tempFileStream = FileSystem.FileStreamReadShim(tempFilePath)
+            tempFileStream.CopyTo(stream)
+
+    let serializePdb outPath pdb =
+        match pdbfile with
+        | Some pdbPath ->
+            pdbPath |> writePdb (textV2P, debugDirectoryChunk, debugDataChunk) pdbData outPath
+            match pdb with
+            | EmitTo.File path when path = pdbPath ->
+                () //already written to _path
+            | EmitTo.File path ->
+                failwithf "unexpected, toFile path '%s' should be equal to '%s'" pdbPath path
+            | EmitTo.Stream stream ->
+                use tempFileStream = FileSystem.FileStreamReadShim(pdbPath)
+                tempFileStream.CopyTo(stream)
+        | None -> failwith "unexpected, pdbfile should be set"
+
     match outfileP, pdbP, mdbP, signer with
     | EmitTo.Stream(s), None, None, None ->
         outfileStream.CopyTo(s)
@@ -4555,8 +4574,8 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
         let path = FileSystem.GetTempFilePathShim()
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
 
-        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (textV2P, debugDirectoryChunk, debugDataChunk) pdbData path))
-        mdb |> Option.iter (serializeToFile ".mdb" (WriteMdbInfo pdbData path))
+        pdb |> Option.iter (serializePdb path)
+        mdb |> Option.iter (serializeMdb path)
         signer |> Option.iter (signTo showTimes path)
 
         use oStream  = FileSystem.FileStreamReadShim(path)
@@ -4565,8 +4584,8 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
         path |> trySetExecutablePermission
 
-        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (textV2P, debugDirectoryChunk, debugDataChunk) pdbData path))
-        mdb |> Option.iter (serializeToFile ".mdb" (WriteMdbInfo pdbData path))
+        pdb |> Option.iter (serializePdb path)
+        mdb |> Option.iter (serializeMdb path)
         signer |> Option.iter (signTo showTimes path)
 
     mappings
