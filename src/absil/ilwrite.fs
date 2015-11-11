@@ -4509,7 +4509,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
 
 
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary. 
-    let writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) outfile fpdb =
+    let writePdb (textV2P, debugDirectoryChunk, debugDataChunk) pdbData outfile fpdb =
         begin
             // The ISymUnmanagedWriter2 require a file name. This is frequently used during PDB writing.
             // Ensure a name is provided here in the case we were given only a Stream value.
@@ -4555,7 +4555,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
         let path = FileSystem.GetTempFilePathShim()
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
 
-        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
+        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (textV2P, debugDirectoryChunk, debugDataChunk) pdbData path))
         mdb |> Option.iter (serializeToFile ".mdb" (WriteMdbInfo pdbData path))
         signer |> Option.iter (signTo showTimes path)
 
@@ -4565,7 +4565,7 @@ let writeBinaryAndReportMappings (outfileP: EmitTo, ilg, pdbP: EmitTo option, md
         using (FileSystem.FileStreamCreateShim(path)) outfileStream.CopyTo
         path |> trySetExecutablePermission
 
-        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (pdbData, textV2P, debugDirectoryChunk, debugDataChunk) path))
+        pdb |> Option.iter (serializeToFile ".pdb" (writePdb (textV2P, debugDirectoryChunk, debugDataChunk) pdbData path))
         mdb |> Option.iter (serializeToFile ".mdb" (WriteMdbInfo pdbData path))
         signer |> Option.iter (signTo showTimes path)
 
