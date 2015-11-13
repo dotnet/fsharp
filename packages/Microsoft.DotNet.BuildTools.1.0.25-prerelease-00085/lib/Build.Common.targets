@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"  InitialTargets="CheckDesignTime">
+
+  <PropertyGroup>
+    <!-- A number of the imports below depend on these default properties -->
+    <IsTestProject Condition="'$(IsTestProject)'=='' And $(MSBuildProjectName.EndsWith('.Tests'))">true</IsTestProject>
+
+    <AssemblyVersion Condition="'$(AssemblyVersion)'==''">999.999.999.999</AssemblyVersion>
+    <CLSCompliant Condition="'$(CLSCompliant)'=='' and '$(IsTestProject)'=='true'">false</CLSCompliant>
+    <CLSCompliant Condition="'$(CLSCompliant)'==''">true</CLSCompliant>
+
+    <!--
+      Check if the project has been localized by looking for the existence of the .de.xlf file.  By convention, we assume that if 
+      a project is localized in German, then it is localized in all languages.
+    -->
+    <ExcludeLocalizationImport Condition="'$(ExcludeLocalizationImport)'=='' And !Exists('$(MSBuildProjectDirectory)\MultilingualResources\$(MSBuildProjectName).de.xlf')">true</ExcludeLocalizationImport>
+  </PropertyGroup>
+  
+  <!--
+    Import the reference assembly targets
+    
+    This must be imported early because it modifies OutputPath and IntermediateOutputPath
+    used by other targets
+    
+      Depends on Properties:
+        AssemblyVersion - Needed to determine API version used in
+    
+      Sets Properties:
+        IsReferenceAssembly - Set if the project is in the ref assm path
+        APIVersion - Major.Minor assembly version for the project
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)ReferenceAssemblies.targets" Condition="'$(ExcludeReferenceAssembliesImport)'!='true'" />
+  
+  <!-- 
+    Import the default target framework targets.
+    
+    Inputs:
+      TargetFrameworkIdentifier - If not set defaults to .NETPortable
+      TargetFrameworkVersion - If not set defaults to v4.5
+      TargetFrameworkProfile - If not set defaults to Profile7
+    
+    This Imports portable.csharp/visualbasic.targets if .NETPortable is the identifier otherwise it imports csharp/visualbasic.targets  
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)FrameworkTargeting.targets" Condition="'$(ExcludeFrameworkTargetingImport)'!='true'" />
+  
+  <!-- 
+    Import the default package restore and resolve targets 
+  
+      Inputs:
+        ProjectJson - If not set defaults to $(MSBuildProjectDirectory)\project.json
+        ProjectPackagesConfigFile - If not set defaults to $(MSBuildProjectDirectory)\packages.config
+        RestorePackages - If not set defaults to the existence of the file $(ProjectPackagesConfigFile) or $(ProjectJson)
+        ResolveNuGetPackages - If not set defaults to to the existence of the file $(ProjectPackagesConfigFile) or $(ProjectJson)
+      
+      Depends on properties:
+        NugetRestoreCommand - Used to restore the project packages from packages.config
+        DnuRestoreCommand - Used to restore the project packages from project.json
+        PackagesDir - Packages are restored to and resolved from this location
+
+      Depends on properties set by csharp/visualbasic.targets so needs to be imported after.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)packageresolve.targets" Condition="'$(ExcludePackageResolveImport)'!='true'" />
+
+  <!-- 
+    Import the default SR resource generation targets 
+  
+      Inputs:
+        ResourcesSourceOutputDirectory - If not set defaults to $(MSBuildProjectDirectory)\Resources.
+        StringResourcesPath - If not set defaults to $(ResourcesSourceOutputDirectory\Strings.resx if it exists. If the file exists
+          then the targets generates the strongly typed $(ResourcesSourceOutputDirectory)\SR.cs/vb file based on resource strings.  
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)resources.targets" Condition="'$(ExcludeResourcesImport)'!='true'" />
+
+  <!-- 
+    Import the default assembly info generation targets
+    
+      Inputs:
+        GenerateAssemblyInfo - Controls whether or not to generate the assembly info file and defaults to true if not set.
+        AssemblyVersion - If not set defaults to 1.0.0.0 but it is expected to be set in csproj files.
+        CLSCompliant - If not set defaults to true and if it is true then adds the assembly level CLSCompliant(true) attribute.
+
+      File Version Inputs:
+        MajorVersion - If not set defaults to 1.
+        MinorVersion - If not set defaults to 0.
+        BuildNumberMajor - If not set defaults to 0.
+        BuildNumberMinor - If not set defaults to 0. 
+        AssemblyFileVersion - If not set defaults to $(MajorVersion).$(MinorVersion).$(BuildNumberMajor).$(BuildNumberMinor). 
+        
+      BuildNumberTarget - If this property is set it will try to import the file which allows for it to override the properties above.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)versioning.targets" Condition="'$(ExcludeVersioningImport)'!='true'" />
+
+  <!--
+    Import the localization target
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)localization.targets" Condition="'$(ExcludeLocalizationImport)'!='true'" />
+
+  <!-- 
+    Import the partial facade generation targets
+    
+      Inputs:
+        IsPartialFacadeAssembly - Determines whether the partial facade generation targets will be as a post-processing step on the
+          assembly. Also invokes special logic for determining References.
+        AssemblyName - Needed to determine which contract name to map to
+        AssemblyVersion - Needed to determine which contract version to map to
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)partialfacades.targets" Condition="'$(ExcludePartialFacadesImport)' != 'true'"/>
+
+  <!-- 
+    Import the default signing targets which will setup the authenticode properties and do OpenSourceSigning
+    
+    Inputs:
+      SkipSigning - For projects that want to opt-out of strong name signing the can set this to true.    
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)sign.targets" Condition="'$(ExcludeSigningImport)'!='true'" />
+
+  <!-- 
+    Import the tests.targets which controls the publishing and running of the tests, including code coverage options.
+      
+      Inputs:
+        RunTestsForProject - Usually set at the project level to disable the tests for a single project.
+        CoverageEnabledForProject - Usually set at the project level to disable code coverage for a single project. 
+        SkipTests - Usually set at the root level for builds that want to disable all the tests.
+        ProjectJson - If not set defaults to $(MSBuildProjectDirectory)\project.json
+        ProjectPackagesConfigFile - Test publishing depends on this to be able to copy the dependencies to the test output
+        CopyTestToTestDirectory - If not set defaults to $(IsTestProject)
+
+      Depends on Properties:
+        TestPath - Controls the root path from where the test assets are published and run from.
+        NugetRestoreCommand - Used to restore the test runtime package
+        DnuRestoreCommand - Used to restore the project packages from project.json
+        PackagesDir - Packages are restored to and resolved from this location    
+   -->
+  <Import Project="$(MSBuildThisFileDirectory)tests.targets" Condition="'$(IsTestProject)'=='true' and '$(ExcldueTestsImport)'!='true'"/>
+  
+  <!-- 
+    Import the PackageLibs.targets which exposes targets from library projects to report what
+    assets they contribute to nuget packages.
+      
+      Optional Inputs:
+        PackageSourcePath - Source path to the built output to be packaged, default is $(TargetPath)
+                            Can be overridden.
+        IsReferenceAssembly - true if this project is a reference assembly.
+        PackageTargetPath - Destination subpath in the package at which all assets from this project
+                            should be located.  Default is lib\dotnet for implementation assemblies,
+                            ref\dotnet for reference assemblies.  Can be overridden.  When overridding
+                            also override PackageTargetFramework.
+        PackageTargetFramework - Target moniker to use for harvested dependencies, default is 'dotnet'.
+                                 Can be overridden.  If PackageTargetFramework is overridden and PackageTargetPath
+                                 is not, PackageTargetPath will be constructed based on PackageTargetFramework.
+        PackageTargetRuntime - Runtime id to use for harvested dependencies, default is none.
+                               Can be overridden.  If PackageTargetRuntime is overridden and PackageTargetPath
+                               is not, PackageTargetPath will be constructed based on PackageTargetRuntime.
+        @(PackageDestination) - List of items with TargetFramework metadata that represent destination 
+                                subpaths in the package at which all assets from this project should be 
+                                located.  When specified takes precedence over PackageTargetPath & 
+                                PackageTargetFramework.
+        DocumentationFile - location of xml doc produced by this project.
+        XmlDocFileRoot - location to pre-authored localized xml doc files
+        PackageIncludeDocs - true to include the docs next to this project's ouput.  Default
+                             is true for reference assemblies, false for implementation.
+   -->
+  <Import Project="$(MSBuildThisFileDirectory)PackageLibs.targets" Condition="'$(ExclduePackageLibsImport)'!='true'"/>
+
+  <Target Name="CheckDesignTime">
+    <!--
+      Visual Studio does a number of background builds to do a variety of tasks such as resolving references and preparing for intellisense.
+      These are called "design time" builds. You can only determine this state within a target as the properties VS sets are added at build time.
+
+      To see design time logs set TRACEDESIGNTIME=true before launching Visual Studio. Logs will go to %TEMP%.
+
+      Note that the existing $(DesignTimeBuild) is not set for all background builds.
+    -->
+    <PropertyGroup>
+      <VSDesignTimeBuild Condition="'$(BuildingInsideVisualStudio)'=='true' and '$(BuildingOutOfProcess)'=='false'">true</VSDesignTimeBuild>
+    </PropertyGroup>
+  </Target>
+</Project>

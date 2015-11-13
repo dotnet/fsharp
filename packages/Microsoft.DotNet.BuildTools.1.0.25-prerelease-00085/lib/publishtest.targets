@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <UsingTask TaskName="PrereleaseResolveNuGetPackageAssets" AssemblyFile="$(ToolsDir)Microsoft.DotNet.Build.Tasks.dll"/>
+  <UsingTask TaskName="RemoveDuplicatesWithLastOneWinsPolicy" AssemblyFile="$(ToolsDir)Microsoft.DotNet.Build.Tasks.dll"/>
+  
+  <PropertyGroup>
+    <SerializeProjects Condition="'$(TestWithLocalLibraries)'=='true'">true</SerializeProjects>
+  </PropertyGroup>
+
+  <Target Name="RestoreTestRuntimePackage"
+          BeforeTargets="ResolveNuGetPackages"
+          Condition="'$(RestorePackages)'=='true' AND '$(IsTestProject)' == 'true' AND '$(TestRuntimeProjectJson)' != ''">
+    <Exec Command="$(DnuRestoreCommand) &quot;$(TestRuntimeProjectJson)&quot;" StandardOutputImportance="Low" CustomErrorRegularExpression="^Unable to locate .*" />
+  </Target>
+
+  <PropertyGroup>
+    <PrepareForRunDependsOn Condition="'$(IsTestProject)'=='true'">$(PrepareForRunDependsOn);CopyTestToTestDirectory</PrepareForRunDependsOn>
+    <TestArchitecture Condition="'$(TestArchitecture)' == ''">x64</TestArchitecture>
+    <TestNugetRuntimeId Condition="'$(TestNugetRuntimeId)' == ''">win7-$(TestArchitecture)</TestNugetRuntimeId>
+  </PropertyGroup>
+
+  <Target Name="CopyTestToTestDirectory" 
+          DependsOnTargets="DiscoverTestInputs">
+    <ItemGroup>
+      <TestNugetProjectLockFile Include="$(ProjectLockJson)" Condition="Exists($(ProjectLockJson))"/>
+      <TestNugetProjectLockFile Include="$(TestRuntimeProjectLockJson)" Condition="Exists($(TestRuntimeProjectLockJson))"/>
+    </ItemGroup>
+
+    <PrereleaseResolveNuGetPackageAssets Condition="'@(TestNugetProjectLockFile)' != ''"
+                               AllowFallbackOnTargetSelection="true"
+                               IncludeFrameworkReferences="false"
+                               NuGetPackagesDirectory="$(PackagesDir)"
+                               RuntimeIdentifier="$(TestNugetRuntimeId)"
+                               ProjectLanguage="$(Language)"
+                               ProjectLockFile="%(TestNugetProjectLockFile.FullPath)"
+                               TargetMonikers="@(TestTargetFramework)">
+      <Output TaskParameter="ResolvedCopyLocalItems" ItemName="TestCopyLocal" />
+    </PrereleaseResolveNuGetPackageAssets>
+
+     <!-- We may have an indirect package reference that we want to replace with a project reference.
+          Those are part of RunTestsForProjectInputs. The order that we append to TestCopyLocal is
+          significant, later entries override earlier entries. -->
+    <ItemGroup>
+      <TestCopyLocal Include="@(RunTestsForProjectInputs)" Exclude="@(PackagesConfigs)" />
+    </ItemGroup>
+
+    <!-- Test using locally built libraries if requested. Again, later entries override earlier
+         entries. -->
+    <PropertyGroup Condition="'$(TestWithLocalLibraries)'=='true'">
+      <BaseLocalLibrariesPath Condition="'$(BaseLocalLibrariesPath)'==''">$(BaseOutputPath)</BaseLocalLibrariesPath>
+      <LocalLibrariesPath Condition="'$(LocalLibrariesPath)'==''">$(BaseLocalLibrariesPath)$(OSPlatformConfig)</LocalLibrariesPath>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(TestWithLocalLibraries)'=='true'">
+      <!-- Replace some of the resolved libraries that came from nuget by exploring the list of files that we are going to copy
+           and replacing them with local copies that were just built -->
+      <_ReplacementCandidates Include="@(TestCopyLocal -> '$(LocalLibrariesPath)\%(filename)\%(filename).dll')" />
+      <_ReplacementCandidates Include="@(TestCopyLocal -> '$(LocalLibrariesPath)\%(filename)\%(filename).pdb')" />
+      <_ReplacementCandidates Include="@(TestCopyLocal -> '$(LocalLibrariesPath)\%(filename).CoreCLR\%(filename).dll')" />
+      <_ReplacementCandidates Include="@(TestCopyLocal -> '$(LocalLibrariesPath)\%(filename).CoreCLR\%(filename).pdb')" />
+      <_ExistingReplacementCandidate Include="@(_ReplacementCandidates)" Condition="Exists('%(_ReplacementCandidates.FullPath)')" />
+      <TestCopyLocal Include="@(_ExistingReplacementCandidate)" />
+    </ItemGroup>
+
+    <!-- Remove duplicates. Note that we musn't just copy in sequence and let 
+         the last one win that way because it will cause copies to occur on 
+         every incremental build. -->
+    <ItemGroup>
+      <_TestCopyLocalByFileName Include="@(TestCopyLocal->'%(FileName)%(Extension)')">
+        <SourcePath>%(Identity)</SourcePath>
+      </_TestCopyLocalByFileName>
+    </ItemGroup>      
+    <RemoveDuplicatesWithLastOneWinsPolicy Inputs="@(_TestCopyLocalByFileName)">
+      <Output TaskParameter="Filtered" ItemName="_TestCopyLocalByFileNameWithoutDuplicates" />
+    </RemoveDuplicatesWithLastOneWinsPolicy>
+
+    <!-- Ideally, we'd have UseHardLinksIfPossible on by default because we copy tons of the
+         same files for every single test project here, but it doesn't currently work x-plat.
+         so we only turn it on by default for Windows builds for now. -->
+    <PropertyGroup>
+      <CreateHardLinksForCopyTestToTestDirectoryIfPossible Condition="'$(CreateHardLinksForCopyTestToTestDirectoryIfPossible)'=='' and '$(OS)' == 'Windows_NT'">true</CreateHardLinksForCopyTestToTestDirectoryIfPossible>
+      <CreateHardLinksForCopyTestToTestDirectoryIfPossible Condition="'$(CreateHardLinksForCopyTestToTestDirectoryIfPossible)'==''">$(CreateHardLinksForCopyFilesToOutputDirectoryIfPossible)</CreateHardLinksForCopyTestToTestDirectoryIfPossible>
+   </PropertyGroup>
+    <Copy
+      SourceFiles="@(_TestCopyLocalByFileNameWithoutDuplicates->'%(SourcePath)')"
+      DestinationFolder="$(TestPath)%(TestTargetFramework.Folder)"
+      SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+      OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+      Retries="$(CopyRetryCount)"
+      RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+      UseHardlinksIfPossible="$(CreateHardLinksForCopyTestToTestDirectoryIfPossible)">
+      
+      <Output TaskParameter="DestinationFiles" ItemName="FileWrites" />
+    </Copy>
+  </Target>
+
+</Project>

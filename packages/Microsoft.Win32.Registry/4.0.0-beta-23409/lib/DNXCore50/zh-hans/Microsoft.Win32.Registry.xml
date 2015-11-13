@@ -1,0 +1,563 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Microsoft.Win32.Registry</name>
+  </assembly>
+  <members>
+    <member name="T:Microsoft.Win32.Registry">
+      <summary>提供表示 Windows 注册表中的根项的 <see cref="T:Microsoft.Win32.RegistryKey" /> 对象，并提供访问项/值对的 static 方法。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.ClassesRoot">
+      <summary>定义文档的类型（或类）以及与那些类型关联的属性。该字段读取 Windows 注册表基项 HKEY_CLASSES_ROOT。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentConfig">
+      <summary>包含有关非用户特定的硬件的配置信息。该字段读取 Windows 注册表基项 HKEY_CURRENT_CONFIG。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentUser">
+      <summary>包含有关当前用户首选项的信息。该字段读取 Windows 注册表基项 HKEY_CURRENT_USER</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.GetValue(System.String,System.String,System.Object)">
+      <summary>检索与指定的注册表项中的指定名称关联的值。如果在指定的项中未找到该名称，则返回您提供的默认值；或者，如果指定的项不存在，则返回 null。</summary>
+      <returns>如果由 <paramref name="keyName" /> 指定的子项不存在，则返回 null；否则，返回与 <paramref name="valueName" /> 关联的值；或者，如果未找到 <paramref name="valueName" />，则返回 <paramref name="defaultValue" />。</returns>
+      <param name="keyName">以有效注册表根（如“HKEY_CURRENT_USER”）开头的键的完整注册表路径。</param>
+      <param name="valueName">名称/值对的名称。</param>
+      <param name="defaultValue">当 <paramref name="valueName" /> 不存在时返回的值。</param>
+      <exception cref="T:System.Security.SecurityException">该用户没有读取注册表项所需的权限。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已标记为删除。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> 未以有效注册表根开头。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.LocalMachine">
+      <summary>包含本地计算机的配置数据。该字段读取 Windows 注册表基项 HKEY_LOCAL_MACHINE。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.PerformanceData">
+      <summary>包含软件组件的性能信息。该字段读取 Windows 注册表基项 HKEY_PERFORMANCE_DATA。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object)">
+      <summary>设置指定的注册表项的指定名称/值对。如果指定的项不存在，则创建该项。</summary>
+      <param name="keyName">以有效注册表根（如“HKEY_CURRENT_USER”）开头的键的完整注册表路径。</param>
+      <param name="valueName">名称/值对的名称。</param>
+      <param name="value">要存储的值。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> 未以有效注册表根开头。- 或 -<paramref name="keyName" /> 的长度超过了允许的最大长度（255 个字符）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 是只读的，因此无法对其写入；例如，它是根级节点。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有创建或修改注册表项所需的权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>通过使用指定的注册表数据类型，设置该指定的注册表项的名称/值对。如果指定的项不存在，则创建该项。</summary>
+      <param name="keyName">以有效注册表根（如“HKEY_CURRENT_USER”）开头的键的完整注册表路径。</param>
+      <param name="valueName">名称/值对的名称。</param>
+      <param name="value">要存储的值。</param>
+      <param name="valueKind">在存储数据时使用的注册表数据类型。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> 未以有效注册表根开头。- 或 -<paramref name="keyName" /> 的长度超过了允许的最大长度（255 个字符）。- 或 -<paramref name="value" /> 的类型与 <paramref name="valueKind" /> 指定的注册表数据类型不匹配，因此，未能正确转换该数据。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 是只读的，因此无法对其写入（例如，它是根级节点，或者未用写访问权限打开该项）。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有创建或修改注册表项所需的权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.Users">
+      <summary>包含有关默认用户配置的信息。该字段读取 Windows 注册表基项 HKEY_USERS。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryHive">
+      <summary>表示外部计算机上的顶级节点的可能值。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.ClassesRoot">
+      <summary>表示另一个计算机上的 HKEY_CLASSES_ROOT 基项。此值可传递给 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法，以远程打开此节点。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentConfig">
+      <summary>表示另一个计算机上的 HKEY_CURRENT_CONFIG 基项。此值可传递给 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法，以远程打开此节点。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentUser">
+      <summary>表示另一个计算机上的 HKEY_CURRENT_USER 基项。此值可传递给 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法，以远程打开此节点。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.LocalMachine">
+      <summary>表示另一个计算机上的 HKEY_LOCAL_MACHINE 基项。此值可传递给 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法，以远程打开此节点。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.PerformanceData">
+      <summary>表示另一个计算机上的 HKEY_PERFORMANCE_DATA 基项。此值可传递给 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法，以远程打开此节点。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.Users">
+      <summary>表示另一个计算机上的 HKEY_USERS 基项。此值可传递给 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法，以远程打开此节点。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryKey">
+      <summary>表示 Windows 注册表中的项级节点。此类是注册表封装。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String)">
+      <summary>创建一个新子项或打开一个现有子项以进行写访问。</summary>
+      <returns>新创建的子项，如果操作失败，则为 null。如果为 <paramref name="subkey" /> 指定了零长度字符串，则返回当前的 <see cref="T:Microsoft.Win32.RegistryKey" /> 对象。</returns>
+      <param name="subkey">要创建或打开的子项的名称或路径。此字符串不区分大小写。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 为 null。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有创建或打开该注册表项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">调用此方法时所针对的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问已关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">无法写入 <see cref="T:Microsoft.Win32.RegistryKey" />；例如，它不是作为可写入项打开的，或者用户没有必需的访问权限。</exception>
+      <exception cref="T:System.IO.IOException">嵌套级别超过 510。- 或 -发生系统错误，例如，删除了项，或者尝试在 <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 根中创建项。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean)">
+      <summary>创建一个新的子项或用指定的访问权限打开一个现有子项。从开始，提供.NET Framework 2015</summary>
+      <returns>新创建的子项，如果操作失败，则为 null。如果为 <paramref name="subkey" /> 指定了零长度字符串，则返回当前的 <see cref="T:Microsoft.Win32.RegistryKey" /> 对象。</returns>
+      <param name="subkey">要创建或打开的子项的名称或路径。此字符串不区分大小写。</param>
+      <param name="writable">true若要指示新的子项是可写 ；否则为false。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 为 null。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有创建或打开该注册表项所需的权限。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">无法写入当前 <see cref="T:Microsoft.Win32.RegistryKey" />；例如，它未作为可写入项打开，或用户不具有必要的访问权限。</exception>
+      <exception cref="T:System.IO.IOException">嵌套级别超过 510。- 或 -发生系统错误，例如，删除了项，或者尝试在 <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 根中创建项。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean,Microsoft.Win32.RegistryOptions)">
+      <summary>创建一个新的子项或用指定的访问权限打开一个现有子项。从开始，提供.NET Framework 2015</summary>
+      <returns>新创建的子项，如果操作失败，则为 null。如果为 <paramref name="subkey" /> 指定了零长度字符串，则返回当前的 <see cref="T:Microsoft.Win32.RegistryKey" /> 对象。</returns>
+      <param name="subkey">要创建或打开的子项的名称或路径。此字符串不区分大小写。</param>
+      <param name="writable">true若要指示新的子项是可写 ；否则为false。</param>
+      <param name="options">要使用的注册表选项。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 为 null。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" />未指定有效的选项</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有创建或打开该注册表项所需的权限。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">无法写入当前 <see cref="T:Microsoft.Win32.RegistryKey" />；例如，它未作为可写入项打开，或用户不具有必要的访问权限。</exception>
+      <exception cref="T:System.IO.IOException">嵌套级别超过 510。- 或 -发生系统错误，例如，删除了项，或者尝试在 <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 根中创建项。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String)">
+      <summary>删除指定子项。</summary>
+      <param name="subkey">要删除的子项的名称。此字符串不区分大小写。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> 有子级子项</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> 参数未指定有效的注册表项 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 为null</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有删除该项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String,System.Boolean)">
+      <summary>删除指定的子项，并指定在找不到该子项时是否引发异常。</summary>
+      <param name="subkey">要删除的子项的名称。此字符串不区分大小写。</param>
+      <param name="throwOnMissingSubKey">指示在找不到指定子项的情况下是否引发异常。如果该参数为 true，并且指定的子项不存在，则引发异常。如果该参数为 false，并且指定的子项不存在，则不执行任何操作。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> 有子级子项。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> 未指定有效的注册表项，并且 <paramref name="throwOnMissingSubKey" /> 为 true。 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 为 null。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有删除该项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String)">
+      <summary>递归删除子项和任何子级子项。</summary>
+      <param name="subkey">要删除的子项。此字符串不区分大小写。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentException">尝试删除根配置单元。- 或 -<paramref name="subkey" /> 未指定有效的注册表子项。</exception>
+      <exception cref="T:System.IO.IOException">出现 I/O 错误。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有删除该项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String,System.Boolean)">
+      <summary>以递归方式删除指定的子项和任何子级子项，并指定在找不到子项时是否引发异常。</summary>
+      <param name="subkey">要删除的子项的名称。此字符串不区分大小写。</param>
+      <param name="throwOnMissingSubKey">指示在找不到指定子项的情况下是否引发异常。如果该参数为 true，并且指定的子项不存在，则引发异常。如果该参数为 false，并且指定的子项不存在，则不执行任何操作。</param>
+      <exception cref="T:System.ArgumentException">尝试删除树的根配置单元。- 或 -<paramref name="subkey" /> 未指定有效的注册表子项，并且 <paramref name="throwOnMissingSubKey" /> 为 true。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 为 null。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问已关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有删除该项所需的权限。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String)">
+      <summary>从此项中删除指定值。</summary>
+      <param name="name">要删除的值的名称。 </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 不是对值的有效引用。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有删除该值所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">正在处理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 为只读。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String,System.Boolean)">
+      <summary>从此项中删除指定的值，并指定在找不到该值时是否引发异常。</summary>
+      <param name="name">要删除的值的名称。</param>
+      <param name="throwOnMissingValue">指示在找不到指定值的情况下是否引发异常。如果该参数为 true，并且指定的值不存在，则引发异常。如果该参数为 false，并且指定的值不存在，则不执行任何操作。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 不是对值的有效引用，并且 <paramref name="throwOnMissingValue" /> 为 true。- 或 - <paramref name="name" /> 为 null。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有删除该值所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">正在处理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 为只读。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Dispose">
+      <summary>释放由 <see cref="T:Microsoft.Win32.RegistryKey" /> 类的当前实例占用的所有资源。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Flush">
+      <summary>将指定的打开注册表项的全部特性写到注册表中。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle)">
+      <summary>[SECURITY CRITICAL] 根据指定的句柄创建注册表项。</summary>
+      <returns>注册表项。</returns>
+      <param name="handle">注册表项的句柄。</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle,Microsoft.Win32.RegistryView)">
+      <summary>[SECURITY CRITICAL] 利用指定的句柄和注册表视图设置创建注册表项。</summary>
+      <returns>注册表项。</returns>
+      <param name="handle">注册表项的句柄。</param>
+      <param name="view">要使用的注册表视图。</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetSubKeyNames">
+      <summary>检索包含所有子项名称的字符串数组。</summary>
+      <returns>包含当前项的子项名称的字符串数组。</returns>
+      <exception cref="T:System.Security.SecurityException">用户没有读取该项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <exception cref="T:System.IO.IOException">发生系统错误，例如，当前项已被删除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String)">
+      <summary>检索与指定名称关联的值。如果注册表中不存在名称/值对，则返回 null。</summary>
+      <returns>与 <paramref name="name" /> 关联的值；如果未找到 <paramref name="name" />，则为 null。</returns>
+      <param name="name">要检索的值的名称。此字符串不区分大小写。</param>
+      <exception cref="T:System.Security.SecurityException">该用户没有读取注册表项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已标记为删除。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object)">
+      <summary>检索与指定名称关联的值。如果未找到名称，则返回你提供的默认值。</summary>
+      <returns>与 <paramref name="name" /> 关联的值，不展开嵌入的任何环境变量；如果未找到 <paramref name="name" />，则为 <paramref name="defaultValue" />。</returns>
+      <param name="name">要检索的值的名称。此字符串不区分大小写。</param>
+      <param name="defaultValue">当 <paramref name="name" /> 不存在时返回的值。</param>
+      <exception cref="T:System.Security.SecurityException">该用户没有读取注册表项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已标记为删除。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object,Microsoft.Win32.RegistryValueOptions)">
+      <summary>检索与指定的名称和检索选项关联的值。如果未找到名称，则返回你提供的默认值。</summary>
+      <returns>与 <paramref name="name" /> 关联的值，按指定的 <paramref name="options" /> 对其进行处理；如果未找到 <paramref name="name" />，则为 <paramref name="defaultValue" />。</returns>
+      <param name="name">要检索的值的名称。此字符串不区分大小写。</param>
+      <param name="defaultValue">当 <paramref name="name" /> 不存在时返回的值。</param>
+      <param name="options">枚举值之一，它指定对所检索值的可选处理方式。</param>
+      <exception cref="T:System.Security.SecurityException">该用户没有读取注册表项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已标记为删除。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" /> 不是有效的 <see cref="T:Microsoft.Win32.RegistryValueOptions" /> 值；例如，无效值将强制转换为 <see cref="T:Microsoft.Win32.RegistryValueOptions" />。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueKind(System.String)">
+      <summary>检索与指定名称关联的值的注册表数据类型。</summary>
+      <returns>与 <paramref name="name" /> 关联的值的注册表数据类型。</returns>
+      <param name="name">要检索其注册表数据类型的值的名称。此字符串不区分大小写。</param>
+      <exception cref="T:System.Security.SecurityException">该用户没有读取注册表项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的子项不存在。- 或 -由 <paramref name="name" /> 指定的名称/值对不存在。在 Windows 95、Windows 98 或 Windows Millennium Edition 中不引发此异常。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueNames">
+      <summary>检索包含与此项关联的所有值名称的字符串数组。</summary>
+      <returns>包含当前项的值名称的字符串数组。</returns>
+      <exception cref="T:System.Security.SecurityException">该用户没有读取注册表项所需的权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <exception cref="T:System.IO.IOException">发生系统错误；例如，当前项已被删除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Handle">
+      <summary>[SECURITY CRITICAL] 获取一个 <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> 对象，该对象表示当前 <see cref="T:Microsoft.Win32.RegistryKey" /> 对象封装的注册表项。</summary>
+      <returns>注册表项的句柄。</returns>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Name">
+      <summary>检索项的名称。</summary>
+      <returns>项的绝对（限定）名称。</returns>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问已关闭的项）。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive,Microsoft.Win32.RegistryView)">
+      <summary>打开一个新的 <see cref="T:Microsoft.Win32.RegistryKey" />，它使用指定的视图在本地计算机上表示请求的项。</summary>
+      <returns>请求的注册表项。</returns>
+      <param name="hKey">要打开的 HKEY。</param>
+      <param name="view">要使用的注册表视图。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="hKey" /> 或 <paramref name="view" /> 无效。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有执行此操作所需的权限。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String)">
+      <summary>以只读方式检索子项。</summary>
+      <returns>请求的子项；如果操作失败，则为 null。</returns>
+      <param name="name">要以只读方式打开的子项的名称或路径。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 为null</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问已关闭的项）。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有读取注册表项所需的权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Boolean)">
+      <summary>检索指定的子项，并指定是否将写访问权限应用于该项。</summary>
+      <returns>请求的子项；如果操作失败，则为 null。</returns>
+      <param name="name">要打开的子项的名称或路径。</param>
+      <param name="writable">如果需要项的写访问权限，则设置为 true。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 为 null。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问已关闭的项）。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有在指定模式下访问注册表项所需的权限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Security.AccessControl.RegistryRights)">
+      <summary>检索具有指定名称的子项。从开始，提供.NET Framework 2015</summary>
+      <returns>请求的子项；如果操作失败，则为 null。</returns>
+      <param name="name">要创建或打开的子项的名称或路径。</param>
+      <param name="rights">注册表项的权限。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 为 null。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问已关闭的项）。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有在指定模式下访问注册表项所需的权限。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)">
+      <summary>设置指定的名称/值对。</summary>
+      <param name="name">要存储的值的名称。</param>
+      <param name="value">要存储的数据。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 为 null。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> 不是受支持的数据类型。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 只读，因此无法写入；例如，项不是用写访问权限打开的。- 或 -<see cref="T:Microsoft.Win32.RegistryKey" /> 对象表示根级别节点，操作系统为 Windows Millennium Edition 或 Windows 98。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有创建或修改注册表项所需的权限。</exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 对象表示根级别节点，操作系统为 Windows 2000、Windows XP 或 Windows Server 2003。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>使用指定的注册表数据类型设置注册表项中的名称/值对的值。</summary>
+      <param name="name">要存储的值的名称。</param>
+      <param name="value">要存储的数据。</param>
+      <param name="valueKind">在存储数据时要使用的注册表数据类型。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> 的类型与 <paramref name="valueKind" /> 指定的注册表数据类型不匹配，因此，未能正确转换该数据。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 只读，因此无法写入；例如，项不是用写访问权限打开的。- 或 -<see cref="T:Microsoft.Win32.RegistryKey" /> 对象表示根级别节点，操作系统为 Windows Millennium Edition 或 Windows 98。</exception>
+      <exception cref="T:System.Security.SecurityException">用户没有创建或修改注册表项所需的权限。</exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 对象表示根级别节点，操作系统为 Windows 2000、Windows XP 或 Windows Server 2003。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.SubKeyCount">
+      <summary>检索当前项的子项计数。</summary>
+      <returns>当前项的子项的数目。</returns>
+      <exception cref="T:System.Security.SecurityException">用户没有该项的读取权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <exception cref="T:System.IO.IOException">发生系统错误，例如，当前项已被删除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.ToString">
+      <summary>检索此项的字符串表示形式。</summary>
+      <returns>表示此项的字符串。如果指定的项无效（找不到），则返回 null。</returns>
+      <exception cref="T:System.ObjectDisposedException">访问的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.ValueCount">
+      <summary>检索项中值的计数。</summary>
+      <returns>项中的名称/值对的数目。</returns>
+      <exception cref="T:System.Security.SecurityException">用户没有该项的读取权限。</exception>
+      <exception cref="T:System.ObjectDisposedException">要操作的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已关闭（无法访问关闭的项）。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">用户没有必需的注册表权限。</exception>
+      <exception cref="T:System.IO.IOException">发生系统错误，例如，当前项已被删除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.View">
+      <summary>获取用于创建注册表项的视图。</summary>
+      <returns>用于创建注册表项的视图。- 或 -如果未使用视图，则为 <see cref="F:Microsoft.Win32.RegistryView.Default" />。</returns>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryOptions">
+      <summary>指定在创建注册表项时使用的选项。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.None">
+      <summary>不可变的项。这是默认设置。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.Volatile">
+      <summary>可变的键。此信息存储在内存中，并且在卸载相应的注册表配置单元时不保留此信息。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueKind">
+      <summary>指定在注册表中存储值时所用的数据类型，或标识注册表中某个值的数据类型。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Binary">
+      <summary>任意格式的二进制数据。此值与 Win32 API 注册表数据类型 REG_BINARY 等效。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.DWord">
+      <summary>一个 32 位二进制数。此值与 Win32 API 注册表数据类型 REG_DWORD 等效。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.ExpandString">
+      <summary>一个以 NULL 结尾的字符串，该字符串中包含对环境变量（如 %PATH%）的未展开的引用。当检索值时，该引用将会展开。此值与 Win32 API 注册表数据类型 REG_EXPAND_SZ 等效。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.MultiString">
+      <summary>一个以 NULL 结尾的字符串数组，以两个空字符结束。此值与 Win32 API 注册表数据类型 REG_MULTI_SZ 等效。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.None">
+      <summary>无数据类型。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.QWord">
+      <summary>一个 64 位二进制数。此值与 Win32 API 注册表数据类型 REG_QWORD 等效。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.String">
+      <summary>一个以 NULL 结尾的字符串。此值与 Win32 API 注册表数据类型 REG_SZ 等效。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Unknown">
+      <summary>一个不受支持的注册表数据类型。例如，不支持 Microsoft Win32 API 注册表数据类型 REG_RESOURCE_LIST。使用此值指定 <see cref="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)" /> 方法应在存储名称/值对时确定适当的注册表数据类型。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueOptions">
+      <summary>指定从注册表项检索名称/值对时的可选行为。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames">
+      <summary>检索类型为 <see cref="F:Microsoft.Win32.RegistryValueKind.ExpandString" /> 的值，而不扩展它的嵌入式环境变量。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.None">
+      <summary>未指定可选行为。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryView">
+      <summary>指定要在 64 位操作系统上针对的注册表视图。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Default">
+      <summary>默认视图。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry32">
+      <summary>32 位视图。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry64">
+      <summary>64 位视图。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle">
+      <summary>[SECURITY CRITICAL] 表示 Windows 注册表的安全句柄。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.SafeHandles.SafeRegistryHandle.#ctor(System.IntPtr,System.Boolean)">
+      <summary>[SECURITY CRITICAL] 初始化 <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> 类的新实例。</summary>
+      <param name="preexistingHandle">一个对象，它表示要使用的预先存在的句柄。</param>
+      <param name="ownsHandle">如果为 true，则在完成阶段可靠地释放句柄；如果为 false，则阻止可靠释放。</param>
+    </member>
+    <member name="P:Microsoft.Win32.SafeHandles.SafeRegistryHandle.IsInvalid"></member>
+    <member name="T:System.Security.AccessControl.RegistryRights">
+      <summary>指定能够应用于注册表对象的访问控制权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ChangePermissions">
+      <summary>更改与某个注册表项关联的访问规则和审核规则的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateLink">
+      <summary>保留供系统使用。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateSubKey">
+      <summary>创建某个注册表项的子项的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Delete">
+      <summary>删除某个注册表项的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.EnumerateSubKeys">
+      <summary>列出某个注册表项的子项的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ExecuteKey">
+      <summary>与 <see cref="F:System.Security.AccessControl.RegistryRights.ReadKey" /> 相同。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.FullControl">
+      <summary>对某个注册表项进行完全控制并修改其访问规则和审核规则的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Notify">
+      <summary>请求获得关于某个注册表项的更改通知的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.QueryValues">
+      <summary>查询某个注册表项中的名称/值对的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadKey">
+      <summary>查询某个注册表项中的名称/值对、请求获得更改通知、枚举其子项以及读取其访问规则和审核规则的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadPermissions">
+      <summary>打开并复制某个注册表项的访问规则和审核规则的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.SetValue">
+      <summary>创建、删除或设置某个注册表项中的名称/值对的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.TakeOwnership">
+      <summary>更改某个注册表项的所有者的权限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.WriteKey">
+      <summary>创建、删除和设置某个注册表项中的名称/值对以及创建或删除子项、请求获得更改通知、对其子项进行枚举和读取其访问规则和审核规则的权限。</summary>
+    </member>
+  </members>
+</doc>

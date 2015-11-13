@@ -1,0 +1,159 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <!-- Setup the default file version information -->
+  <PropertyGroup>
+    <MajorVersion Condition="'$(MajorVersion)' == ''">1</MajorVersion>
+    <MinorVersion Condition="'$(MinorVersion)' == ''">0</MinorVersion>
+    
+    <!-- These should be set by importing the targets below but initializing to 0 for consistency -->
+    <BuildNumberMajor Condition="'$(BuildNumberMajor)' == ''">0</BuildNumberMajor>
+    <BuildNumberMinor Condition="'$(BuildNumberMinor)' == ''">0</BuildNumberMinor>
+  </PropertyGroup>
+
+  <!-- Import a build target that includes the build numbers -->
+  <Import Project="$(BuildNumberTarget)" Condition="Exists('$(BuildNumberTarget)')" />
+
+  <!-- #################################### -->
+  <!-- Generate Assembly Info -->
+  <!-- #################################### -->
+  <PropertyGroup>
+    <AssemblyVersion Condition="'$(AssemblyVersion)'==''">1.0.0.0</AssemblyVersion>
+    <CLSCompliant Condition="'$(CLSCompliant)'==''">false</CLSCompliant>
+    <AssemblyFileVersion Condition="'$(AssemblyFileVersion)'==''">$(MajorVersion).$(MinorVersion).$(BuildNumberMajor).$(BuildNumberMinor)</AssemblyFileVersion>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <GenerateAssemblyInfo Condition="'$(GenerateAssemblyInfo)'==''">true</GenerateAssemblyInfo>
+    <BuiltByString Condition="'$(BuiltByString)'==''">%20built by: $(COMPUTERNAME)-$(USERNAME)</BuiltByString>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GenerateAssemblyInfo)'=='true'">
+    <AssemblyInfoFile Condition="'$(MSBuildProjectExtension)' == '.csproj'">$(IntermediateOutputPath)_AssemblyInfo.cs</AssemblyInfoFile>
+    <AssemblyInfoFile Condition="'$(MSBuildProjectExtension)' == '.vbproj'">$(IntermediateOutputPath)_AssemblyInfo.vb</AssemblyInfoFile>
+    <AssemblyInfoPartialFile Condition="'$(MSBuildProjectExtension)' == '.csproj'">$(MSBuildThisFileDirectory)AssemblyInfoPartial.cs</AssemblyInfoPartialFile>
+    <AssemblyInfoPartialFile Condition="'$(MSBuildProjectExtension)' == '.vbproj'">$(MSBuildThisFileDirectory)AssemblyInfoPartial.vb</AssemblyInfoPartialFile>
+    <AssemblyInfoPartialFileLink Condition="'$(MSBuildProjectExtension)' == '.csproj'">Properties\_AssemblyInfo.cs</AssemblyInfoPartialFileLink>
+    <AssemblyInfoPartialFileLink Condition="'$(MSBuildProjectExtension)' == '.vbproj'">My Project\_AssemblyInfo.vb</AssemblyInfoPartialFileLink>
+    <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateAssemblyInfo</CoreCompileDependsOn>
+  </PropertyGroup>
+
+  <Target Name="GenerateAssemblyInfo"
+      Inputs="$(MSBuildProjectFile)"
+      Outputs="$(AssemblyInfoFile)"
+      Condition="'$(GenerateAssemblyInfo)'=='true'">
+
+    <Error Condition="!Exists('$(IntermediateOutputPath)')" Text="GenerateAssemblyInfo failed because IntermediateOutputPath isn't set to a valid directory" />
+
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+      <AssemblyInfoUsings Include="using System%3B" />
+      <AssemblyInfoUsings Include="using System.Reflection%3B" />
+      <AssemblyInfoLines Include="[assembly:AssemblyTitle(&quot;$(AssemblyName)&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyDescription(&quot;$(AssemblyName)&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyDefaultAlias(&quot;$(AssemblyName)&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyCompany(&quot;Microsoft Corporation&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyProduct(&quot;Microsoft\x00ae .NET Framework&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyCopyright(&quot;\x00a9 Microsoft Corporation.  All rights reserved.&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyVersion(&quot;$(AssemblyVersion)&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyFileVersion(&quot;$(AssemblyFileVersion)&quot;)]" />
+      <AssemblyInfoLines Include="[assembly:AssemblyInformationalVersion(@&quot;$(AssemblyFileVersion)$(BuiltByString)&quot;)]" />
+      <AssemblyInfoLines Condition="'$(CLSCompliant)'=='true'" Include="[assembly:CLSCompliant(true)]" />
+      <AssemblyInfoLines Condition="'$(AssemblyComVisible)'!=''" Include="[assembly:System.Runtime.InteropServices.ComVisible($(AssemblyComVisible))]" />
+      <AssemblyInfoLines Condition="'$(SkipFrameworkAssemblyMetadata)' != 'true'" 
+        Include="[assembly:System.Reflection.AssemblyMetadata(&quot;%(AssemblyMetadata.Identity)&quot;, &quot;%(AssemblyMetadata.Value)&quot;)]" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.vbproj'">
+      <AssemblyInfoUsings Include="Imports System" />
+      <AssemblyInfoUsings Include="Imports System.Reflection" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyTitle(&quot;$(AssemblyName)&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyDescription(&quot;$(AssemblyName)&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyDefaultAlias(&quot;$(AssemblyName)&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyCompany(&quot;Microsoft Corporation&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyProduct(&quot;Microsoft\x00ae .NET Framework&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyCopyright(&quot;\x00a9 Microsoft Corporation.  All rights reserved.&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyVersion(&quot;$(AssemblyVersion)&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyFileVersion(&quot;$(AssemblyFileVersion)&quot;)&gt;" />
+      <AssemblyInfoLines Include="&lt;Assembly:AssemblyInformationalVersion(&quot;$(AssemblyFileVersion)$(BuiltByString)&quot;)&gt;" />
+      <AssemblyInfoLines Condition="'$(CLSCompliant)'=='true'" Include="&lt;Assembly:CLSCompliant(True)&gt;" />
+      <AssemblyInfoLines Condition="'$(AssemblyComVisible)'!=''" Include="&lt;Assembly:System.Runtime.InteropServices.ComVisible($(AssemblyComVisible))&gt;" />
+      <AssemblyInfoLines Condition="'$(SkipFrameworkAssemblyMetadata)' != 'true'" 
+          Include="&lt;assembly:System.Reflection.AssemblyMetadata(&quot;%(AssemblyMetadata.Identity)&quot;, &quot;%(AssemblyMetadata.Value)&quot;)&gt;" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' And '$(GenerateThisAssemblyClass)' == 'true'">
+      <AssemblyInfoLines Include="internal static class ThisAssembly" />
+      <AssemblyInfoLines Include="{" />
+      <AssemblyInfoLines Include="%20%20%20%20internal const string Title = &quot;$(AssemblyName)&quot;%3B" />
+      <AssemblyInfoLines Include="%20%20%20%20internal const string Copyright = &quot;\u00A9 Microsoft Corporation.  All rights reserved.&quot;%3B" />
+      <AssemblyInfoLines Include="%20%20%20%20internal const string Version = &quot;$(AssemblyVersion)&quot;%3B" />
+      <AssemblyInfoLines Include="%20%20%20%20internal const string InformationalVersion = &quot;$(AssemblyFileVersion)&quot;%3B" />
+      <AssemblyInfoLines Include="}" />
+    </ItemGroup>
+
+    <WriteLinesToFile
+      File="$(AssemblyInfoFile)"
+      Lines="@(AssemblyInfoUsings);@(AssemblyInfoLines)"
+      Overwrite="true" />
+
+    <ItemGroup>  
+      <Compile Include="$(AssemblyInfoFile)" />  
+      <FileWrites Include="$(AssemblyInfoFile)" />  
+    </ItemGroup>  
+
+  </Target>
+
+  <ItemGroup Condition="'$(GenerateAssemblyInfo)'=='true' AND '$(StringResourcesPath)' != ''">
+    <Compile Include="$(AssemblyInfoPartialFile)">
+      <Visible>true</Visible>
+      <Link>$(AssemblyInfoPartialFileLink)</Link>
+    </Compile>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <GenerateNativeVersionInfo Condition="'$(GenerateNativeVersionInfo)'==''">false</GenerateNativeVersionInfo>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GenerateNativeVersionInfo)'=='true'">
+    <NativeVersionHeaderFile>$(IntermediateOutputPath)_version.h</NativeVersionHeaderFile>
+    <BeforeResourceCompileTargets>$(BeforeResourceCompileTargets);GenerateVersionHeader</BeforeResourceCompileTargets>
+    <GenerateVersionHeader>true</GenerateVersionHeader>
+    <Win32Resource>$(IntermediateOutputPath)\Native.res</Win32Resource>
+    <CoreCompileDependsOn>$(CoreCompileDependsOn);NativeResourceCompile</CoreCompileDependsOn>
+  </PropertyGroup>
+
+  <Target Name="GenerateVersionHeader"
+      Inputs="$(MSBuildProjectFile)"
+      Outputs="$(NativeVersionHeaderFile)"
+      Condition="'$(NativeVersionHeaderFile)'!='' and '$(GenerateVersionHeader)'=='true'">
+      
+    <ItemGroup>
+      <NativeVersionLines Include="#define VER_COMPANYNAME_STR         &quot;Microsoft Corporation&quot;" />
+      <NativeVersionLines Include="#define VER_FILEDESCRIPTION_STR     &quot;$(AssemblyName)&quot;" />
+      <NativeVersionLines Include="#define VER_INTERNALNAME_STR        VER_FILEDESCRIPTION_STR" />
+      <NativeVersionLines Include="#define VER_ORIGINALFILENAME_STR    VER_FILEDESCRIPTION_STR" />
+      <NativeVersionLines Include="#define VER_PRODUCTNAME_STR         &quot;Microsoft\xae .NET Framework&quot;" />
+      <NativeVersionLines Include="#define VER_PRODUCTVERSION          $(MajorVersion),$(MinorVersion),$(BuildNumberMajor),$(BuildNumberMinor)" />
+      <NativeVersionLines Include="#define VER_PRODUCTVERSION_STR      &quot;$(MajorVersion).$(MinorVersion).$(BuildNumberMajor).$(BuildNumberMinor)$(BuiltByString)&quot;" />
+      <NativeVersionLines Include="#define VER_FILEVERSION             $(MajorVersion),$(MinorVersion),$(BuildNumberMajor),$(BuildNumberMinor)" />
+      <NativeVersionLines Include="#define VER_FILEVERSION_STR         &quot;$(MajorVersion).$(MinorVersion).$(BuildNumberMajor).$(BuildNumberMinor)$(BuiltByString)&quot;" />
+      <NativeVersionLines Include="#define VER_LEGALCOPYRIGHT_STR      &quot;\xa9 Microsoft Corporation.  All rights reserved.&quot;" />
+      <NativeVersionLines Condition="'$(Configuration)'=='Debug'" Include="#define VER_DEBUG                   VS_FF_DEBUG" />
+      <NativeVersionLines Condition="'$(Configuration)'!='Debug'" Include="#define VER_DEBUG                   0" />
+    </ItemGroup>
+
+    <WriteLinesToFile
+      File="$(NativeVersionHeaderFile)"
+      Lines="@(NativeVersionLines)"
+      Overwrite="true" />
+
+    <ItemGroup>
+      <FileWrites Include="$(NativeVersionHeaderFile)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="NativeResourceCompile" DependsOnTargets="$(BeforeResourceCompileTargets)" Inputs="$(MsBuildThisFileDirectory)NativeVersion.rc" Outputs="$(Win32Resource)">
+    <Error Condition="!Exists('$(RCPATH)')" Text="NativeResourceCompile failed because RCPath is set to an non-existing rc.exe path." />
+
+    <Exec Command="&quot;$(RCPath)&quot; /i $(IntermediateOutputPath) /i $(WindowsSDKPath)\inc /i $(VCSDKPath)\Include /D _UNICODE /D UNICODE /l&quot;0x0409&quot; /r /fo &quot;$(Win32Resource)&quot; &quot;$(MsBuildThisFileDirectory)NativeVersion.rc&quot;" />
+  </Target>
+</Project>

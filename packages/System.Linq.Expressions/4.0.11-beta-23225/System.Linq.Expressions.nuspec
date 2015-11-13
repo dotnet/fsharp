@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.Linq.Expressions</id>
+    <version>4.0.11-beta-23225</version>
+    <title>System.Linq.Expressions</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides classes, interfaces and enumerations that enable language-level code expressions to be represented as objects in the form of expression trees.
+
+Commonly Used Types:
+System.Linq.Expressions.Expression&lt;TDelegate&gt;
+System.Linq.Expressions.Expression
+System.Linq.Expressions.MemberExpression
+System.Linq.Expressions.ExpressionVisitor
+System.Linq.Expressions.MethodCallExpression
+System.Linq.IQueryable&lt;T&gt;
+System.Linq.IQueryable
+System.Linq.Expressions.NewExpression
+System.Linq.Expressions.ParameterExpression
+System.Linq.Expressions.ConstantExpression</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework="MonoAndroid1.0" />
+      <group targetFramework="MonoTouch1.0" />
+      <group targetFramework=".NETFramework4.6" />
+      <group targetFramework="Xamarin.iOS1.0" />
+      <group targetFramework="Xamarin.Mac2.0" />
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Runtime" version="4.0.0" />
+        <dependency id="System.Reflection" version="4.0.0" />
+      </group>
+      <group targetFramework=".NETCore5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.Resources.ResourceManager" version="4.0.0" />
+        <dependency id="System.Reflection.TypeExtensions" version="4.0.0" />
+        <dependency id="System.Linq" version="4.0.0" />
+        <dependency id="System.Reflection.Primitives" version="4.0.0" />
+        <dependency id="System.Reflection.Extensions" version="4.0.0" />
+        <dependency id="System.Collections" version="4.0.10" />
+        <dependency id="System.Diagnostics.Debug" version="4.0.10" />
+        <dependency id="System.Reflection" version="4.0.10" />
+        <dependency id="System.IO" version="4.0.10" />
+        <dependency id="System.Threading" version="4.0.10" />
+        <dependency id="System.Runtime.Extensions" version="4.0.10" />
+        <dependency id="System.Globalization" version="4.0.10" />
+      </group>
+      <group targetFramework="DNXCore5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.Resources.ResourceManager" version="4.0.0" />
+        <dependency id="System.Reflection.TypeExtensions" version="4.0.0" />
+        <dependency id="System.Reflection.Primitives" version="4.0.0" />
+        <dependency id="System.Reflection.Emit" version="4.0.0" />
+        <dependency id="System.Linq" version="4.0.0" />
+        <dependency id="System.Reflection.Extensions" version="4.0.0" />
+        <dependency id="System.Collections" version="4.0.10" />
+        <dependency id="System.Diagnostics.Debug" version="4.0.10" />
+        <dependency id="System.Reflection" version="4.0.10" />
+        <dependency id="System.IO" version="4.0.10" />
+        <dependency id="System.ObjectModel" version="4.0.10" />
+        <dependency id="System.Threading" version="4.0.10" />
+        <dependency id="System.Runtime.Extensions" version="4.0.10" />
+        <dependency id="System.Globalization" version="4.0.10" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

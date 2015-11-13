@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.TypeExtensions</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.AssemblyExtensions"></member>
+    <member name="M:System.Reflection.AssemblyExtensions.GetExportedTypes(System.Reflection.Assembly)"></member>
+    <member name="M:System.Reflection.AssemblyExtensions.GetModules(System.Reflection.Assembly)"></member>
+    <member name="M:System.Reflection.AssemblyExtensions.GetTypes(System.Reflection.Assembly)"></member>
+    <member name="T:System.Reflection.BindingFlags">
+      <summary>Spécifie des indicateurs qui contrôlent la liaison et la manière dont la recherche de membres et de types est exécutée par réflexion.</summary>
+    </member>
+    <member name="F:System.Reflection.BindingFlags.DeclaredOnly">
+      <summary>Spécifie que seuls les membres déclarés au niveau de la hiérarchie du type fourni doivent être pris en compte.Les membres hérités ne sont pas pris en compte.</summary>
+    </member>
+    <member name="F:System.Reflection.BindingFlags.FlattenHierarchy">
+      <summary>Spécifie que des membres statiques publics et protégés de la hiérarchie doivent être retournés.Les membres statiques privés dans les classes héritées ne sont pas retournés.Les membres comprennent des champs, des méthodes, des événements et des propriétés.Les types imbriqués ne sont pas retournés.</summary>
+    </member>
+    <member name="F:System.Reflection.BindingFlags.IgnoreCase">
+      <summary>Spécifie que la casse du nom du membre ne doit pas être respectée lors de la liaison.</summary>
+    </member>
+    <member name="F:System.Reflection.BindingFlags.Instance">
+      <summary>Spécifie que les membres d'instance doivent être inclus dans la recherche.</summary>
+    </member>
+    <member name="F:System.Reflection.BindingFlags.NonPublic">
+      <summary>Spécifie que les membres non publics doivent être inclus dans la recherche.</summary>
+    </member>
+    <member name="F:System.Reflection.BindingFlags.Public">
+      <summary>Spécifie que les membres publics doivent être inclus dans la recherche.</summary>
+    </member>
+    <member name="F:System.Reflection.BindingFlags.Static">
+      <summary>Spécifie que les membres statiques doivent être inclus dans la recherche.</summary>
+    </member>
+    <member name="T:System.Reflection.EventInfoExtensions"></member>
+    <member name="M:System.Reflection.EventInfoExtensions.GetAddMethod(System.Reflection.EventInfo)"></member>
+    <member name="M:System.Reflection.EventInfoExtensions.GetAddMethod(System.Reflection.EventInfo,System.Boolean)"></member>
+    <member name="M:System.Reflection.EventInfoExtensions.GetRaiseMethod(System.Reflection.EventInfo)"></member>
+    <member name="M:System.Reflection.EventInfoExtensions.GetRaiseMethod(System.Reflection.EventInfo,System.Boolean)"></member>
+    <member name="M:System.Reflection.EventInfoExtensions.GetRemoveMethod(System.Reflection.EventInfo)"></member>
+    <member name="M:System.Reflection.EventInfoExtensions.GetRemoveMethod(System.Reflection.EventInfo,System.Boolean)"></member>
+    <member name="T:System.Reflection.MethodInfoExtensions"></member>
+    <member name="M:System.Reflection.MethodInfoExtensions.GetBaseDefinition(System.Reflection.MethodInfo)"></member>
+    <member name="T:System.Reflection.PropertyInfoExtensions"></member>
+    <member name="M:System.Reflection.PropertyInfoExtensions.GetAccessors(System.Reflection.PropertyInfo)"></member>
+    <member name="M:System.Reflection.PropertyInfoExtensions.GetAccessors(System.Reflection.PropertyInfo,System.Boolean)"></member>
+    <member name="M:System.Reflection.PropertyInfoExtensions.GetGetMethod(System.Reflection.PropertyInfo)"></member>
+    <member name="M:System.Reflection.PropertyInfoExtensions.GetGetMethod(System.Reflection.PropertyInfo,System.Boolean)"></member>
+    <member name="M:System.Reflection.PropertyInfoExtensions.GetSetMethod(System.Reflection.PropertyInfo)"></member>
+    <member name="M:System.Reflection.PropertyInfoExtensions.GetSetMethod(System.Reflection.PropertyInfo,System.Boolean)"></member>
+    <member name="T:System.Reflection.TypeExtensions"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetConstructor(System.Type,System.Type[])"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetConstructors(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetConstructors(System.Type,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetDefaultMembers(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetEvent(System.Type,System.String)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetEvent(System.Type,System.String,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetEvents(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetEvents(System.Type,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetField(System.Type,System.String)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetField(System.Type,System.String,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetFields(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetFields(System.Type,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetGenericArguments(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetInterfaces(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMember(System.Type,System.String)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMember(System.Type,System.String,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMembers(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMembers(System.Type,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMethod(System.Type,System.String)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMethod(System.Type,System.String,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMethod(System.Type,System.String,System.Type[])"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMethods(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetMethods(System.Type,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetNestedType(System.Type,System.String,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetNestedTypes(System.Type,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetProperties(System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetProperties(System.Type,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetProperty(System.Type,System.String)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetProperty(System.Type,System.String,System.Reflection.BindingFlags)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetProperty(System.Type,System.String,System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.GetProperty(System.Type,System.String,System.Type,System.Type[])"></member>
+    <member name="M:System.Reflection.TypeExtensions.IsAssignableFrom(System.Type,System.Type)"></member>
+    <member name="M:System.Reflection.TypeExtensions.IsInstanceOfType(System.Type,System.Object)"></member>
+  </members>
+</doc>

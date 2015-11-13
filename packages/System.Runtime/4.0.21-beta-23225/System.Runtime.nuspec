@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.Runtime</id>
+    <version>4.0.21-beta-23225</version>
+    <title>System.Runtime</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides the fundamental primitives, classes and base classes that define commonly-used value and reference data types, events and event handlers, interfaces, attributes, and exceptions. This packages represents the core package, and provides the minimal set of types required to build a managed application.
+
+Commonly Used Types:
+System.Object
+System.Exception
+System.Int16
+System.Int32
+System.Int64
+System.Enum
+System.String
+System.Char
+System.Boolean
+System.SByte
+System.Byte
+System.DateTime
+System.DateTimeOffset
+System.Single
+System.Double
+System.UInt16
+System.UInt32
+System.UInt64
+System.IDisposable
+System.Uri</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework="MonoAndroid1.0" />
+      <group targetFramework="MonoTouch1.0" />
+      <group targetFramework=".NETFramework4.6" />
+      <group targetFramework="Xamarin.iOS1.0" />
+      <group targetFramework="Xamarin.Mac2.0" />
+      <group targetFramework="DNXCore5.0">
+        <dependency id="System.Private.Uri" version="4.0.1-beta-23225" />
+      </group>
+      <group targetFramework=".NETCore5.0">
+        <dependency id="System.Private.Uri" version="4.0.1-beta-23225" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

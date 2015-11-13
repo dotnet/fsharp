@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.IO</id>
+    <version>4.0.11-beta-23225</version>
+    <title>System.IO</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides base input and output (I/O) types, including System.IO.Stream, System.IO.StreamReader and System.IO.StreamWriter, that allow reading and writing to data streams
+
+Commonly Used Types:
+System.IO.Stream
+System.IO.IOException
+System.IO.EndOfStreamException
+System.IO.FileNotFoundException
+System.IO.MemoryStream
+System.IO.StreamReader
+System.IO.StreamWriter
+System.IO.StringWriter
+System.IO.TextWriter
+System.IO.TextReader</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework="MonoAndroid1.0" />
+      <group targetFramework="MonoTouch1.0" />
+      <group targetFramework=".NETFramework4.6" />
+      <group targetFramework="Xamarin.iOS1.0" />
+      <group targetFramework="Xamarin.Mac2.0" />
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.Text.Encoding" version="4.0.0" />
+        <dependency id="System.Threading.Tasks" version="4.0.0" />
+      </group>
+      <group targetFramework=".NETCore5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.Text.Encoding" version="4.0.10" />
+        <dependency id="System.Threading.Tasks" version="4.0.0" />
+        <dependency id="System.Threading" version="4.0.0" />
+        <dependency id="System.Text.Encoding.Extensions" version="4.0.0" />
+        <dependency id="System.Globalization" version="4.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

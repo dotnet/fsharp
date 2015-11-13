@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>클라이언트 요청에 지정할 수 있는 HTTP 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>응답에 허용되는 MIME 형식을 지정하는 Accept 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>응답에 허용되는 문자 집합을 지정하는 Accept-Charset 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>응답에 허용되는 콘텐츠 인코딩을 지정하는 Accept-Encoding 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>응답에 기본적으로 사용되는 자연 언어를 지정하는 Accept-Language 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>지원되는 HTTP 메서드 집합을 지정하는 Allow 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>클라이언트에서 인증을 위해 서버에 제공하는 자격 증명을 지정하는 Authorization 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>요청/응답 체인에서 모든 캐시 제어 메커니즘이 따라야 하는 지시문을 지정하는 Cache-Control 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>특정 연결에 필요한 옵션을 지정하는 Connection 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>해당 본문 데이터에 적용된 인코딩을 지정하는 Content-Encoding 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>해당 본문 데이터의 자연 언어를 지정하는 Content-Language 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>해당 본문 데이터의 길이를 바이트 단위로 지정하는 Content-Length 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>해당 본문을 가져올 수 있는 URI를 지정하는 Content-Location 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>종단 간 메시지 무결성 검사를 제공하기 위해 해당 본문 데이터의 MD5 다이제스트를 지정하는 Content-MD5 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>전체 본문에서 해당되는 일부 본문 데이터가 적용되어야 하는 범위를 지정하는 Content-Range 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>해당 본문 데이터의 MIME 형식을 지정하는 Content-Type 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>서버에 제공되는 쿠키 데이터를 지정하는 Cookie 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>요청이 시작된 날짜와 시간을 지정하는 Date 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>클라이언트가 필요로 하는 특정 서버 동작을 지정하는 Expect 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>해당 본문 데이터가 만료된 것으로 간주되는 날짜와 시간을 지정하는 Expires 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>요청하는 사용자 에이전트를 제어하는 사용자의 인터넷 전자 메일 주소를 지정하는 From 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>요청 중인 리소스의 호스트 이름 및 포트 번호를 지정하는 Host 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>지정된 리소스에 대한 클라이언트의 캐시된 복사본이 최신인 경우에만 요청된 작업을 수행하도록 지정하는 If-Match 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>요청된 리소스가 지정된 날짜 및 시간 이후에 수정된 경우에만 요청된 작업을 수행하도록 지정하는 If-Modified-Since 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>지정된 리소스에 대한 클라이언트의 캐시된 복사본이 모두 최신이 아닌 경우에만 요청된 작업을 수행하도록 지정하는 If-None-Match 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>클라이언트의 캐시된 복사본이 최신인 경우 요청된 리소스의 지정된 범위만 보내도록 지정하는 If-Range 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>요청된 리소스가 지정된 날짜 및 시간 이후에 수정되지 않은 경우에만 요청된 작업을 수행하도록 지정하는 If-Unmodified-Since 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>영구 연결을 유지하기 위해 사용되는 매개 변수를 지정하는 Keep-Alive 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>해당 본문 데이터가 마지막으로 수정된 날짜와 시간을 지정하는 Last-Modified 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>이 요청을 전달할 수 있는 남은 횟수를 나타내는 정수를 지정하는 Max-Forwards 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>요청/응답 체인에서 에이전트에 적용될 수 있는 구현 관련 지시문을 지정하는 Pragma 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>클라이언트에서 인증을 위해 프록시에 제공하는 자격 증명을 지정하는 Proxy-Authorization 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>전체 응답 대신 클라이언트가 요청하는 응답의 일부 범위가 반환되도록 지정하는 Range 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>요청 URI를 가져온 리소스의 URI를 지정하는 Referer 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>응답에 허용되는 전송 인코딩을 지정하는 TE 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>청크 분할된 전송 코딩을 사용하여 인코딩된 메시지의 트레일러에 포함되는 헤더 필드를 지정하는 Trailer 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>메시지 본문에 적용된 변환 형식(있는 경우)을 지정하는 Transfer-Encoding 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>WebDAV 기능과 함께 사용되는 HTTP 사양에 대한 Microsoft 확장을 지정하는 Translate 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>클라이언트가 지원하는 추가 통신 프로토콜을 지정하는 Upgrade 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>클라이언트 에이전트에 대한 정보를 지정하는 User-Agent 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>게이트웨이 및 프록시 에이전트에서 사용할 중간 프로토콜을 지정하는 Via 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>메시지에 반영되지 않을 수 있는 메시지 상태 또는 변환에 대한 추가 정보를 지정하는 Warning 헤더입니다.</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>서버 응답에 지정할 수 있는 HTTP 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>서버에서 허용하는 범위를 지정하는 Accept-Ranges 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>원래 서버에서 응답을 생성한 이후의 시간을 초 단위로 지정하는 Age 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>지원되는 HTTP 메서드 집합을 지정하는 Allow 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>요청/응답 체인에서 모든 캐싱 메커니즘이 따라야 하는 지시문을 지정하는 Cache-Control 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>특정 연결에 필요한 옵션을 지정하는 Connection 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>해당 본문 데이터에 적용된 인코딩을 지정하는 Content-Encoding 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>해당 본문 데이터의 자연 언어를 지정하는 Content-Language 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>해당 본문 데이터의 길이를 바이트 단위로 지정하는 Content-Length 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>해당 본문을 가져올 수 있는 URI를 지정하는 Content-Location 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>종단 간 메시지 무결성 검사를 제공하기 위해 해당 본문 데이터의 MD5 다이제스트를 지정하는 Content-MD5 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>전체 응답 대신 클라이언트가 요청하는 응답의 하위 범위가 반환되도록 지정하는 Range 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>해당 본문 데이터의 MIME 형식을 지정하는 Content-Type 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>응답이 시작된 날짜와 시간을 지정하는 Date 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>요청된 variant의 현재 값을 지정하는 Etag 헤더입니다. </summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>해당 본문 데이터가 만료된 것으로 간주되는 날짜와 시간을 지정하는 Expires 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>영구 연결을 유지하는 데 사용되는 매개 변수를 지정하는 Keep-Alive 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>해당 본문 데이터가 마지막으로 수정된 날짜와 시간을 지정하는 Last-Modified 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>클라이언트가 요청한 리소스를 가져오기 위해 리디렉션되는 URI를 지정하는 Location 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>요청/응답 체인에서 에이전트에 적용될 수 있는 구현 관련 지시문을 지정하는 Pragma 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>클라이언트에서 프록시에 해당 클라이언트를 직접 인증하도록 지정하는 Proxy-Authenticate 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>클라이언트가 요청을 다시 시도하기 전에 경과해야 하는 시간(초) 또는 날짜 및 시간을 지정하는 Retry-After 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>원래 서버 에이전트에 대한 정보를 지정하는 Server 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>클라이언트에 제공되는 쿠키 데이터를 지정하는 Set-Cookie 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>청크 분할된 전송 코딩을 사용하여 인코딩된 메시지의 트레일러에 지정된 헤더 필드가 포함되도록 지정하는 Trailer 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>메시지 본문에 적용된 변환 형식(있는 경우)을 지정하는 Transfer-Encoding 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>클라이언트가 지원하는 추가 통신 프로토콜을 지정하는 Upgrade 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>캐시된 응답이 최신 응답인지 여부를 확인하는 데 사용되는 요청 헤더를 지정하는 Vary 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>게이트웨이 및 프록시 에이전트에서 사용할 중간 프로토콜을 지정하는 Via 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>메시지에 반영되지 않을 수 있는 메시지 상태 또는 변환에 대한 추가 정보를 지정하는 Warning 헤더입니다.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>클라이언트에서 서버에 해당 클라이언트를 직접 인증하도록 지정하는 WWW-Authenticate 헤더입니다.</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>요청이나 응답과 관련된 프로토콜 헤더가 들어 있습니다.</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>
+        <see cref="T:System.Net.WebHeaderCollection" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>컬렉션에 포함된 모든 헤더 이름(키)을 가져옵니다.</summary>
+      <returns>웹 요청에 포함된 모든 헤더 이름이 들어 있는 <see cref="T:System.String" /> 형식의 배열입니다.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>컬렉션에 포함된 헤더의 수를 가져옵니다.</summary>
+      <returns>요청에 포함된 헤더의 수를 나타내는 <see cref="T:System.Int32" />입니다.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>지정된 요청 헤더를 가져오거나 설정합니다.</summary>
+      <returns>지정된 헤더 값을 포함하는 <see cref="T:System.String" /> 인스턴스입니다.</returns>
+      <param name="header">요청 헤더 값입니다.</param>
+      <exception cref="T:System.InvalidOperationException">이 <see cref="T:System.Net.WebHeaderCollection" /> 인스턴스에서 <see cref="T:System.Net.HttpRequestHeader" />의 인스턴스를 사용할 수 없는 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>지정된 응답 헤더를 가져오거나 설정합니다.</summary>
+      <returns>지정된 헤더를 포함하는 <see cref="T:System.String" /> 인스턴스입니다.</returns>
+      <param name="header">응답 헤더 값입니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="value" />의 길이가 65535를 넘는 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">이 <see cref="T:System.Net.WebHeaderCollection" /> 인스턴스에서 <see cref="T:System.Net.HttpResponseHeader" />의 인스턴스를 사용할 수 없는 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>지정된 응답 헤더를 가져오거나 설정합니다.</summary>
+      <returns>지정된 응답 헤더입니다.</returns>
+      <param name="name">지정된 요청 헤더의 이름입니다.</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>컬렉션에서 지정된 헤더를 제거합니다.</summary>
+      <param name="name">컬렉션에서 제거할 헤더의 이름입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> is null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />이 제한된 헤더인 경우또는 <paramref name="name" />에 잘못된 문자가 들어 있는 경우 </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Net.WebHeaderCollection" /> 인스턴스에서 반복할 수 있는 열거자를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" />를 반환합니다.<see cref="T:System.Net.WebHeaderCollection" /> 인스턴스에서 반복할 수 있는 열거자입니다.</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>이 메서드는 사용되지 않습니다.</summary>
+      <returns>컬렉션의 <see cref="T:System.String" /> 표현입니다.</returns>
+    </member>
+  </members>
+</doc>

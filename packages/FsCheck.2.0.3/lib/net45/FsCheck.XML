@@ -1,0 +1,2572 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>FsCheck</name></assembly>
+<members>
+<member name="M:FsCheck.ArbitraryExtensions.MapFilter``1(FsCheck.Arbitrary{``0},System.Func{``0,``0},System.Func{``0,System.Boolean})">
+<summary>
+ Return an Arbitrary instance that is a mapped and filtered version of an existing arbitrary instance.
+ The generator uses Gen.map with the given mapper and then Gen.suchThat with the given predicate, 
+ and the shrinks are filtered using Seq.filter with the given predicate.
+This is sometimes useful if using just a filter would reduce the chance of getting a good value
+from the generator - and you can map the value instead. E.g. PositiveInt.
+</summary>
+</member>
+<member name="M:FsCheck.ArbitraryExtensions.Filter``1(FsCheck.Arbitrary{``0},System.Func{``0,System.Boolean})">
+<summary>
+ Return an Arbitrary instance that is a filtered version of an existing arbitrary instance.
+ The generator uses Gen.suchThat, and the shrinks are filtered using Seq.filter with the given predicate.
+</summary>
+</member>
+<member name="M:FsCheck.ArbitraryExtensions.Convert``2(FsCheck.Arbitrary{``0},System.Func{``0,``1},System.Func{``1,``0})">
+<summary>
+Construct an Arbitrary instance for a type that can be mapped to and from another type (e.g. a wrapper),
+based on a Arbitrary instance for the source type and two mapping functions. 
+</summary>
+</member>
+<member name="T:FsCheck.ArbitraryExtensions">
+<summary>
+Extensons to transform Arbitrary instances into other Arbitrary instances.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="P:FsCheck.Arbitrary`1.Generator">
+<summary>
+Returns a generator for &apos;a.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arbitrary`1.Shrinker(`0)">
+<summary>
+Returns a sequence of the immediate shrinks of the given value. The immediate shrinks should not include
+doubles or the given value itself. The default implementation returns the empty sequence (i.e. no shrinking).
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Check.VerboseThrowOnFailureAll``1">
+<summary>
+ Check all public static methods on the given type that have a testable return type with the verbose configuration,
+and throws on failure or exhaustion.
+</summary>
+</member>
+<member name="M:FsCheck.Check.VerboseThrowOnFailureAll(System.Type)">
+<summary>
+ Check all public static methods on the given type that have a testable return type with vthe erbose configuration,
+and throws on failure or exhaustion.
+</summary>
+</member>
+<member name="M:FsCheck.Check.VerboseThrowOnFailure``1(``0)">
+<summary>
+Check one property with the verbose configuration, and throw an exception if it fails or is exhausted.
+</summary>
+</member>
+<member name="M:FsCheck.Check.VerboseAll``1">
+<summary>
+ Check all public static methods on the given type that have a testable return type with vthe erbose configuration
+</summary>
+</member>
+<member name="M:FsCheck.Check.VerboseAll(System.Type)">
+<summary>
+ Check all public static methods on the given type that have a testable return type with vthe erbose configuration
+</summary>
+</member>
+<member name="M:FsCheck.Check.Verbose``1(System.String,``0)">
+<summary>
+Check one property with the verbose configuration, and using the given name.
+</summary>
+</member>
+<member name="M:FsCheck.Check.Verbose``1(``0)">
+<summary>
+Check one property with the verbose configuration.
+</summary>
+</member>
+<member name="M:FsCheck.Check.QuickThrowOnFailureAll``1">
+<summary>
+Check all public static methods on the given type that have a testable return type with quick configuration
+</summary>
+</member>
+<member name="M:FsCheck.Check.QuickThrowOnFailureAll(System.Type)">
+<summary>
+Check all public static methods on the given type that have a testable return type with quick configuration, 
+and throw on failure or exhaustion.
+</summary>
+</member>
+<member name="M:FsCheck.Check.QuickThrowOnFailure``1(``0)">
+<summary>
+Check one property with the quick configuration, and throw an exception if it fails or is exhausted.
+</summary>
+</member>
+<member name="M:FsCheck.Check.QuickAll``1">
+<summary>
+Check all public static methods on the given type that have a testable return type with quick configuration
+</summary>
+</member>
+<member name="M:FsCheck.Check.QuickAll(System.Type)">
+<summary>
+Check all public static methods on the given type that have a testable return type with quick configuration
+</summary>
+</member>
+<member name="M:FsCheck.Check.Quick``1(System.String,``0)">
+<summary>
+Check one property with the quick configuration, and using the given name.
+</summary>
+</member>
+<member name="M:FsCheck.Check.Quick``1(``0)">
+<summary>
+Check one property with the quick configuration.  
+</summary>
+</member>
+<member name="M:FsCheck.Check.One``1(System.String,FsCheck.Config,``0)">
+<summary>
+Check the given property using the given config, and the given test name.
+</summary>
+</member>
+<member name="M:FsCheck.Check.One``1(FsCheck.Config,``0)">
+<summary>
+Check the given property using the given config.
+</summary>
+</member>
+<member name="M:FsCheck.Check.Method(FsCheck.Config,System.Reflection.MethodInfo,Microsoft.FSharp.Core.FSharpOption{System.Object})">
+<summary>
+Check the given property identified by the given MethodInfo.
+</summary>
+</member>
+<member name="M:FsCheck.Check.All``1(FsCheck.Config)">
+<summary>
+Check all public static methods on the given type that have a testable return type with the given configuration.
+This includes let-bound functions in a module.
+</summary>
+</member>
+<member name="M:FsCheck.Check.All(FsCheck.Config,System.Type)">
+<summary>
+Check all public static methods on the given type that have a testable return type with the given configuration.
+This includes let-bound functions in a module.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Command`2.RunModel(`1)">
+<summary>
+Executes the command on the model of the object.
+</summary>
+</member>
+<member name="M:FsCheck.Command`2.RunActual(`0)">
+<summary>
+Excecutes the command on the actual object under test.
+</summary>
+</member>
+<member name="M:FsCheck.Command`2.Pre(`1)">
+<summary>
+The default precondition is true.
+</summary>
+</member>
+<member name="M:FsCheck.Command`2.Pre(`1)">
+<summary>
+Precondition for execution of the command. When this does not hold, the test continues
+but the command will not be executed.
+</summary>
+</member>
+<member name="M:FsCheck.Command`2.Post(`0,`1)">
+<summary>
+The default postcondition is true.
+</summary>
+</member>
+<member name="M:FsCheck.Command`2.Post(`0,`1)">
+<summary>
+Postcondition that must hold after execution of the command. Compares state of model and actual
+object and fails the property if they do not match.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Command`2">
+<summary>
+A single command describes pre and post conditions and the model for a single method under test.
+The post-conditions are the invariants that will be checked; when these do not hold the test fails.
+</summary>
+</member>
+<member name="P:FsCheck.Config.Runner">
+<summary>
+A custom test runner, e.g. to integrate with a test framework like xUnit or NUnit. 
+</summary>
+</member>
+<member name="P:FsCheck.Config.Arbitrary">
+<summary>
+The Arbitrary instances on this class will be merged in back to front order, i.e. instances for the same generated type at the front
+of the list will override those at the back. The instances on Arb.Default are always known, and are at the back (so they can always be
+overridden)
+</summary>
+</member>
+<member name="P:FsCheck.Config.EveryShrink">
+<summary>
+What to print every time a counter-example is succesfully shrunk
+</summary>
+</member>
+<member name="P:FsCheck.Config.Every">
+<summary>
+What to print when new arguments args are generated in test n
+</summary>
+</member>
+<member name="P:FsCheck.Config.EndSize">
+<summary>
+The size to use for the last test, when all the tests are passing. The size increases linearly between Start- and EndSize.
+</summary>
+</member>
+<member name="P:FsCheck.Config.StartSize">
+<summary>
+The size to use for the first test.
+</summary>
+</member>
+<member name="P:FsCheck.Config.Name">
+<summary>
+Name of the test.
+</summary>
+</member>
+<member name="P:FsCheck.Config.Replay">
+<summary>
+If set, the seed to use to start testing. Allows reproduction of previous runs.
+</summary>
+</member>
+<member name="P:FsCheck.Config.MaxFail">
+<summary>
+The maximum number of tests where values are rejected, e.g. as the result of ==&gt;
+</summary>
+</member>
+<member name="P:FsCheck.Config.MaxTest">
+<summary>
+The maximum number of tests that are run.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="P:FsCheck.Config.VerboseThrowOnFailure">
+<summary>
+Like the Verbose configuration, only throws an exception with the error message if the test fails or is exhausted.
+Useful for use within other unit testing frameworks that usually adopt this methodolgy to signal failure.
+</summary>
+</member>
+<member name="P:FsCheck.Config.Verbose">
+<summary>
+The verbose configuration prints each generated argument.
+</summary>
+</member>
+<member name="P:FsCheck.Config.QuickThrowOnFailure">
+<summary>
+Like the Quick configuration, only throws an exception with the error message if the test fails or is exhausted.
+Useful for use within other unit testing frameworks that usually adopt this methodolgy to signal failure.
+</summary>
+</member>
+<member name="P:FsCheck.Config.Quick">
+<summary>
+The quick configuration only prints a summary result at the end of the test.
+</summary>
+</member>
+<member name="P:FsCheck.Config.Default">
+<summary>
+The default configuration is the quick configuration.
+</summary>
+</member>
+<member name="T:FsCheck.Config">
+<summary>
+For configuring a run.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="P:FsCheck.Configuration.StartSize(System.Int32)">
+<summary>
+The size to use for the first test.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Runner(FsCheck.IRunner)">
+<summary>
+A custom test runner, e.g. to integrate with a test framework like xUnit or NUnit. 
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Replay(FsCheck.Random.StdGen)">
+<summary>
+If set, the seed to use to start testing. Allows reproduction of previous runs.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Name(System.String)">
+<summary>
+Name of the test.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.MaxNbOfTest(System.Int32)">
+<summary>
+The maximum number of tests that are run.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.MaxNbOfFailedTests(System.Int32)">
+<summary>
+The maximum number of tests where values are rejected
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.EveryShrink(System.Func{System.Object[],System.String})">
+<summary>
+What to print every time a counter-example is succesfully shrunk
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Every(System.Func{System.Int32,System.Object[],System.String})">
+<summary>
+What to print when new arguments args are generated in test n
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.EndSize(System.Int32)">
+<summary>
+The size to use for the last test, when all the tests are passing. The size increases linearly between Start- and EndSize.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.StartSize">
+<summary>
+The size to use for the first test.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Runner">
+<summary>
+A custom test runner, e.g. to integrate with a test framework like xUnit or NUnit. 
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Replay">
+<summary>
+If set, the seed to use to start testing. Allows reproduction of previous runs.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Name">
+<summary>
+Name of the test.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.MaxNbOfTest">
+<summary>
+The maximum number of tests that are run.
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.MaxNbOfFailedTests">
+<summary>
+The maximum number of tests where values are rejected
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.EveryShrink">
+<summary>
+What to print every time a counter-example is succesfully shrunk
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.Every">
+<summary>
+What to print when new arguments args are generated in test n
+</summary>
+</member>
+<member name="P:FsCheck.Configuration.EndSize">
+<summary>
+The size to use for the last test, when all the tests are passing. The size increases linearly between Start- and EndSize.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Configuration">
+<summary>
+Configure the test run.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.DontShrink`1">
+<summary>
+Use the generator for &apos;a, but don&apos;t shrink.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.DontSize`1">
+<summary>
+Whereas most types are restricted by a size that grows
+as the test gets further, by applying this type the underlying
+type will ignore this size and always generate from the full range.
+Note that this only makes a difference for types that have a range -
+currently Int16, Int32, Int64 have DontSize Arbitrary instances.
+This is typically (and at least currently) only applicable for value types
+that are comparable, hence the type constraints.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.FixedLengthArray`1">
+<summary>
+Represents an array whose length does not change when shrinking.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Function`2">
+<summary>
+A function (F# function) that can be displayed and shrunk.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Where``1(FsCheck.Gen{``0},System.Func{``0,System.Boolean})">
+<summary>
+Generates a value that satisfies a predicate. This function keeps re-trying
+by increasing the size of the original generator ad infinitum.  Make sure there is a high chance that 
+the predicate is satisfied.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Two``1(FsCheck.Gen{``0})">
+<summary>
+Build a generator that generates a 2-tuple of the values generated by the given generator.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.ToArbitrary``1(FsCheck.Gen{``0},Microsoft.FSharp.Core.FSharpFunc{``0,System.Collections.Generic.IEnumerable{``0}})">
+<summary>
+ Construct an Arbitrary instance from a generator and a shrinker.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.ToArbitrary``1(FsCheck.Gen{``0})">
+<summary>
+ Construct an Arbitrary instance from a generator.
+ Shrink is not supported for this type.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Three``1(FsCheck.Gen{``0})">
+<summary>
+Build a generator that generates a 3-tuple of the values generated by the given generator.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.GenExtensions.Select``2(FsCheck.Gen{``0},System.Func{``0,``1})">
+<summary>
+Map the given function to the value in the generator, yielding a new generator of the result type.  
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Sample``1(FsCheck.Gen{``0},System.Int32,System.Int32)">
+<summary>
+Generates n values of the given size.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Resize``1(FsCheck.Gen{``0},System.Int32)">
+<summary>
+Override the current size of the test.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.NonEmptyListOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates a non-empty list of random length. The maximum length 
+ depends on the size parameter.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.ListOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates a list of random length. The maximum length depends on the
+ size parameter.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.ListOf``1(FsCheck.Gen{``0},System.Int32)">
+<summary>
+Generates a list of given length, containing values generated by the given generator.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Four``1(FsCheck.Gen{``0})">
+<summary>
+Build a generator that generates a 4-tuple of the values generated by the given generator.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Eval``1(FsCheck.Gen{``0},System.Int32,FsCheck.Random.StdGen)">
+<summary>
+Generates a value with maximum size n.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.ArrayOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates an array using the specified generator. 
+ The maximum length is size+1.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.ArrayOf``1(FsCheck.Gen{``0},System.Int32)">
+<summary>
+ Generates an array of a specified length.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Array2DOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates a 2D array. The square root of the size is the maximum number of rows and columns.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Array2DOf``1(FsCheck.Gen{``0},System.Int32,System.Int32)">
+<summary>
+ Generates a 2D array of the given dimensions.
+</summary>
+</member>
+<member name="M:FsCheck.GenExtensions.Apply``2(FsCheck.Gen{``0},FsCheck.Gen{System.Func{``0,``1}})">
+<summary>
+Apply the given Gen function to this generator, aka the applicative &lt;*&gt; operator.
+</summary>
+</member>
+<member name="T:FsCheck.GenExtensions">
+<summary>
+Extension methods to build generators - contains among other the Linq methods.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Gen`1.Map``2(Microsoft.FSharp.Core.FSharpFunc{`0,``1})">
+<summary>
+map the given function to the value in the generator, yielding a new generator of the result type.  
+</summary>
+</member>
+<member name="T:FsCheck.Gen`1">
+<summary>
+Generator of a random value, based on a size parameter and a randomly generated int.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="P:FsCheck.ICommandGenerator`2.InitialModel">
+<summary>
+Initial state of model object. Should correspond to initial state of actual object.
+</summary>
+</member>
+<member name="P:FsCheck.ICommandGenerator`2.InitialActual">
+<summary>
+Initial state of actual object. Should correspond to initial state of model object.
+</summary>
+</member>
+<member name="M:FsCheck.ICommandGenerator`2.Next(`1)">
+<summary>
+Generate a number of possible commands based on the current state of the model. 
+Preconditions are still checked, so even if a Command is returned, it is not chosen
+if its precondition does not hold.
+</summary>
+</member>
+<member name="T:FsCheck.ICommandGenerator`2">
+<summary>
+Defines the initial state for actual and model object, and allows to define the generator to use
+for the next state, based on the model.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.IRunner.OnStartFixture(System.Type)">
+<summary>
+Called before a group of properties on a type are checked.
+</summary>
+</member>
+<member name="M:FsCheck.IRunner.OnShrink(Microsoft.FSharp.Collections.FSharpList{System.Object},Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Object},System.String})">
+<summary>
+Called on a succesful shrink.
+</summary>
+</member>
+<member name="M:FsCheck.IRunner.OnFinished(System.String,FsCheck.TestResult)">
+<summary>
+Called whenever all tests are done, either True, False or Exhausted.
+</summary>
+</member>
+<member name="M:FsCheck.IRunner.OnArguments(System.Int32,Microsoft.FSharp.Collections.FSharpList{System.Object},Microsoft.FSharp.Core.FSharpFunc{System.Int32,Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Collections.FSharpList{System.Object},System.String}})">
+<summary>
+Called whenever arguments are generated and after the test is run.
+</summary>
+</member>
+<member name="T:FsCheck.IRunner">
+<summary>
+For implementing your own test runner.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.IntWithMinMax">
+<summary>
+Represents an int that can include int.MinValue and int.MaxValue.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Interval">
+<summary>
+Represents an integer interval.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.NonEmptyArray`1">
+<summary>
+Represents a non-empty array.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.NonEmptySet`1">
+<summary>
+Represents a non-empty Set.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.NonEmptyString">
+<summary>
+Represents a string that is not null or empty, and does not contain any null characters (&apos;\000&apos;)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.NonNegativeInt">
+<summary>
+Represents an int &gt;= 0
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.NonNull`1">
+<summary>
+Wrap a type in NonNull to prevent null being generated for the wrapped type.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.NonZeroInt">
+<summary>
+Represents an int &lt;&gt; 0
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.NormalFloat">
+<summary>
+Represents a float that is not NaN or Infinity.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="P:FsCheck.Outcome.Shrink">
+<summary>
+ determines for which Outcome the result should be shrunk, or shrinking should continue.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.PositiveInt">
+<summary>
+Represents an int &gt; 0
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Property">
+<summary>
+A Property can be checked by FsCheck.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.When(System.Func{System.Boolean},System.Boolean)">
+<summary>
+Conditional property combinator. Resulting property holds if the property holds when the condition does.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.When(System.Action,System.Boolean)">
+<summary>
+Conditional property combinator. Resulting property holds if the property holds when the condition does.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.When(System.Boolean,System.Boolean)">
+<summary>
+Conditional property combinator. Resulting property holds if the property holds when the condition does.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Trivial(FsCheck.Property,System.Boolean)">
+<summary>
+Count trivial cases. Test cases for which the condition is True are classified as trivial.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Trivial(System.Func{System.Boolean},System.Boolean)">
+<summary>
+Count trivial cases. Test cases for which the condition is True are classified as trivial.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Trivial(System.Boolean,System.Boolean)">
+<summary>
+Count trivial cases. Test cases for which the condition is True are classified as trivial.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Trivial(System.Action,System.Boolean)">
+<summary>
+Count trivial cases. Test cases for which the condition is True are classified as trivial.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.ToProperty(System.Func{System.Boolean})">
+<summary>
+ Turns a testable type into a property.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.ToProperty(System.Action)">
+<summary>
+ Turns a testable type into a property.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.ToProperty(System.Boolean)">
+<summary>
+ Turns a testable type into a property.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Or(FsCheck.Property,FsCheck.Property)">
+<summary>
+Construct a property that fails if both fail. (cfr &apos;or&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Or(FsCheck.Property,System.Func{System.Boolean})">
+<summary>
+Construct a property that fails if both fail. (cfr &apos;or&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Or(FsCheck.Property,System.Boolean)">
+<summary>
+Construct a property that fails if both fail. (cfr &apos;or&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Or(FsCheck.Property,System.Action)">
+<summary>
+Construct a property that fails if both fail. (cfr &apos;or&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Label(FsCheck.Property,System.String)">
+<summary>
+Add the given label to the property. The labels of a failing sub-property are displayed when it fails.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Label(System.Func{System.Boolean},System.String)">
+<summary>
+Add the given label to the property. The labels of a failing sub-property are displayed when it fails.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Label(System.Boolean,System.String)">
+<summary>
+Add the given label to the property. The labels of a failing sub-property are displayed when it fails.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Label(System.Action,System.String)">
+<summary>
+Add the given label to the property. The labels of a failing sub-property are displayed when it fails.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Collect``1(FsCheck.Property,``0)">
+<summary>
+Collect data values. The argument of collect is evaluated in each test case, 
+and the distribution of values is reported.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Collect``1(System.Func{System.Boolean},``0)">
+<summary>
+Collect data values. The argument of collect is evaluated in each test case, 
+and the distribution of values is reported.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Collect``1(System.Boolean,``0)">
+<summary>
+Collect data values. The argument of collect is evaluated in each test case, 
+and the distribution of values is reported.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Collect``1(System.Action,``0)">
+<summary>
+Collect data values. The argument of collect is evaluated in each test case, 
+and the distribution of values is reported.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Classify(FsCheck.Property,System.Boolean,System.String)">
+<summary>
+Classify test cases. Test cases satisfying the condition are assigned the classification given.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Classify(System.Func{System.Boolean},System.Boolean,System.String)">
+<summary>
+Classify test cases. Test cases satisfying the condition are assigned the classification given.
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.Classify(System.Boolean,System.Boolean,System.String)">
+<summary>
+Classify test cases. Test cases satisfying the condition are assigned the classification given.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.PropertyExtensions.And(FsCheck.Property,FsCheck.Property)">
+<summary>
+Construct a property that succeeds if both succeed. (cfr &apos;and&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.And(FsCheck.Property,System.Func{System.Boolean})">
+<summary>
+Construct a property that succeeds if both succeed. (cfr &apos;and&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.And(FsCheck.Property,System.Boolean)">
+<summary>
+Construct a property that succeeds if both succeed. (cfr &apos;and&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropertyExtensions.And(FsCheck.Property,System.Action)">
+<summary>
+Construct a property that succeeds if both succeed. (cfr &apos;and&apos;)
+</summary>
+</member>
+<member name="T:FsCheck.PropertyExtensions">
+<summary>
+Extensons to construct Properties.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Result.op_BitwiseAnd(FsCheck.Result,FsCheck.Result)">
+<summary>
+Returns a new result that is Succeeded if and only if both this
+and the given Result are Succeeded.
+</summary>
+</member>
+<member name="T:FsCheck.Result">
+<summary>
+The result of one execution of a property.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.StringNoNulls">
+<summary>
+Represents a string that does not contain null characters (&apos;\000&apos;)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.WeightAndValue`1">
+<summary>
+2-tuple containing a weight and a value, used in some Gen methods to indicate
+the probability of a value.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.Unit">
+<summary>
+Generates (), of the unit type.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.UInt64">
+<summary>
+Generate arbitrary uint64 that is between 0 and size.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.UInt32">
+<summary>
+Generate arbitrary uint32 that is between 0 and size.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.UInt16">
+<summary>
+Generate arbitrary uint16 that is between 0 and size.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.TimeSpan">
+<summary>
+Generates an arbitrary TimeSpan. A TimeSpan is shrunk by removing days, hours, minutes, second and milliseconds.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemFunc3``4">
+<summary>
+Generates a Func&apos;4.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemFunc2``3">
+<summary>
+Generates a Func&apos;3.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemFunc1``2">
+<summary>
+Generates a Func&apos;2.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemFunc``1">
+<summary>
+Generates a Func&apos;1.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemAction3``3">
+<summary>
+Generates an Action&apos;3
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemAction2``2">
+<summary>
+Generates an Action&apos;2
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemAction1``1">
+<summary>
+Generates an Action&apos;1
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.SystemAction">
+<summary>
+Generates an Action&apos;0
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.String">
+<summary>
+Generates arbitrary strings, which are lists of chars generated by Char.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.SByte">
+<summary>
+Generates an arbitrary signed byte.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.Option``1">
+<summary>
+Generate an option value that is &apos;None&apos; 1/8 of the time.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Object">
+<summary>
+Generate an object - a boxed char, string or boolean value.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Nullable``1">
+<summary>
+Generate a nullable value that is null 1/8 of the time.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.NormalFloat">
+<summary>
+ Generates an Float (without NaN, Infinity)
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.NonNull``1">
+<summary>
+Generate underlying values that are not null.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.List``1">
+<summary>
+ Generate a System.Collections.Generic.List of values.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.Interval">
+<summary>
+Generates an interval between two non-negative integers.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.Int64">
+<summary>
+Generate arbitrary int64 that is between -size and size.
+Note that since the size is an int32, this does not actually cover the full
+range of int64. See DontSize&lt;int64&gt; instead.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Int32">
+<summary>
+Generate arbitrary int32 that is between -size and size.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Int16">
+<summary>
+Generate arbitrary int16 that is between -size and size.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.IList``1">
+<summary>
+ Generate a System.Collections.Generic.IList of values.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.IDictionary``2">
+<summary>
+ Generate a System.Collections.Generic.IDictionary of values.
+ Shrinks by reducing the number of elements
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.ICollection``1">
+<summary>
+ Generate a System.Collections.Generic.ICollection of values.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.Function``2">
+<summary>
+Generate a Function value that can be printed and shrunk. Function values can be generated for types &apos;a-&gt;&apos;b 
+where &apos;b has an Arbitrary instance.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.FsList``1">
+<summary>
+Generate a list of values. The size of the list is between 0 and the test size + 1.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Float32">
+<summary>
+Generates arbitrary floats, NaN, NegativeInfinity, PositiveInfinity, Maxvalue, MinValue, Epsilon included fairly frequently.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Float">
+<summary>
+Generates arbitrary floats, NaN, NegativeInfinity, PositiveInfinity, Maxvalue, MinValue, Epsilon included fairly frequently.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.FixedLengthArray``1">
+<summary>
+Arrays whose length does not change when shrinking.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DontSizeUInt64">
+<summary>
+Generate arbitrary uint32 that is uniformly distributed in the whole range of uint32 values.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DontSizeUInt32">
+<summary>
+Generate arbitrary uint32 that is uniformly distributed in the whole range of uint32 values.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DontSizeUInt16">
+<summary>
+Generate arbitrary uint16 that is uniformly distributed in the whole range of uint16 values.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DontSizeInt64">
+<summary>
+Generate arbitrary int64 between Int64.MinValue and Int64.MaxValue
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DontSizeInt32">
+<summary>
+Generate arbitrary int32 that is between Int32.MinValue and Int32.MaxValue
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DontSizeInt16">
+<summary>
+Generate arbitrary int16 that is uniformly distributed in the whole range of int16 values.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DontShrink``1">
+<summary>
+Overrides the shrinker of any type to be empty, i.e. not to shrink at all.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Dictionary``2">
+<summary>
+ Generate a System.Collections.Generic.Dictionary of values.
+ Shrinks by reducing the number of elements
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Derive``1">
+<summary>
+Try to derive an arbitrary instance for the given type reflectively. 
+Generates and shrinks values for record, union, tuple and enum types.
+Also generates (but doesn&apos;t shrink) values for immutable classes 
+(i.e. single constructor, no mutable properties or fields).
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Decimal">
+<summary>
+Generate arbitrary decimal.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DateTimeOffset">
+<summary>
+Generates an arbitrary DateTimeOffset between 1900 and 2100. 
+ A DateTimeOffset is shrunk first by shrinking its offset, then by removing its second, minute and hour components.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.DateTime">
+<summary>
+Generates an arbitrary DateTime between 1900 and 2100. 
+A DateTime is shrunk by removing its second, minute and hour components.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.Default.Char">
+<summary>
+Generates arbitrary chars, between ASCII codes Char.MinValue and 127.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Byte">
+<summary>
+Generates an arbitrary byte.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Bool">
+<summary>
+Generates an arbitrary bool.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Arrow``2">
+<summary>
+Generate a function value. Function values can be generated for types &apos;a-&gt;&apos;b where &apos;b has an Arbitrary instance.
+THere is no shrinking function values.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Array2D``1">
+<summary>
+Generate a rank 2, zero based array.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Default.Array``1">
+<summary>
+Generate a rank 1 array.
+</summary>
+</member>
+<member name="T:FsCheck.Arb.Default">
+<summary>
+A collection of default generators.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.MapFilter``1(Microsoft.FSharp.Core.FSharpFunc{``0,``0},Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},FsCheck.Arbitrary{``0})">
+<summary>
+ Return an Arbitrary instance that is a mapped and filtered version of an existing arbitrary instance.
+ The generator uses Gen.map with the given mapper and then Gen.suchThat with the given predicate, 
+ and the shrinks are filtered using Seq.filter with the given predicate.
+This is sometimes useful if using just a filter would reduce the chance of getting a good value
+from the generator - and you can map the value instead. E.g. PositiveInt.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Filter``1(Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},FsCheck.Arbitrary{``0})">
+<summary>
+ Return an Arbitrary instance that is a filtered version of an existing arbitrary instance.
+ The generator uses Gen.suchThat, and the shrinks are filtered using Seq.filter with the given predicate.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Convert``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``1,``0},FsCheck.Arbitrary{``0})">
+<summary>
+Construct an Arbitrary instance for a type that can be mapped to and from another type (e.g. a wrapper),
+based on a Arbitrary instance for the source type and two mapping functions.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.From``1(FsCheck.Gen{``0},Microsoft.FSharp.Core.FSharpFunc{``0,System.Collections.Generic.IEnumerable{``0}})">
+<summary>
+ Construct an Arbitrary instance from a generator and shrinker.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.From``1(FsCheck.Gen{``0})">
+<summary>
+ Construct an Arbitrary instance from a generator.
+ Shrink is not supported for this type.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Register``1">
+<summary>
+Register the generators that are static members of the type argument.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Register(System.Type)">
+<summary>
+Register the generators that are static members of the given type.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Arb.shrinkNumber``4(``0)">
+<summary>
+A generic shrinker that should work for most number-like types.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Shrink``1(``0)">
+<summary>
+Returns the immediate shrinks for the given value based on its type.
+</summary>
+</member>
+<member name="M:FsCheck.Arb.Generate``1">
+<summary>
+Returns a Gen&lt;&apos;Value&gt;
+</summary>
+</member>
+<member name="M:FsCheck.Arb.From``1">
+<summary>
+Get the Arbitrary instance for the given type.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Arb">
+
+</member>
+<member name="M:FsCheck.Command.toProperty``2(FsCheck.ICommandGenerator{``0,``1})">
+<summary>
+Turn a specification into a property.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Command">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Common.memoize``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1})">
+<summary>
+Memoize the given function.
+</summary>
+</member>
+<member name="M:FsCheck.Common.memoizeWith``2(System.Collections.Generic.IDictionary{``0,``1},Microsoft.FSharp.Core.FSharpFunc{``0,``1},``0)">
+<summary>
+Memoize the given function using the given dictionary
+</summary>
+</member>
+<member name="T:FsCheck.Common">
+
+</member>
+<member name="M:FsCheck.Gen.variant``2(``0,FsCheck.Gen{``1})">
+<summary>
+Basic co-arbitrary generator transformer, which is dependent on an int.
+Only used for generating arbitrary functions.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.promote``2(Microsoft.FSharp.Core.FSharpFunc{``0,FsCheck.Gen{``1}})">
+<summary>
+Promote the given function f to a function generator. Only used for generating arbitrary functions.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Apply``2(FsCheck.Gen{Microsoft.FSharp.Core.FSharpFunc{``0,``1}},FsCheck.Gen{``0})">
+<summary>
+Apply the given Gen function to the given generator, aka the applicative &lt;*&gt; operator.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Fresh``1(System.Func{``0})">
+<summary>
+Generate a fresh instance every time the generatoris called. Useful for mutable objects.
+See also constant.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Fresh``1(Microsoft.FSharp.Core.FSharpFunc{Microsoft.FSharp.Core.Unit,``0})">
+<summary>
+Generate a fresh instance every time the generatoris called. Useful for mutable objects.
+See also constant.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Constant``1(``0)">
+<summary>
+Always generate the same instance v. See also fresh.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Array2DOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates a 2D array. The square root of the size is the maximum number of rows and columns.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Array2DOf``1(System.Int32,System.Int32,FsCheck.Gen{``0})">
+<summary>
+ Generates a 2D array of the given dimensions.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.ArrayOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates an array using the specified generator. The maximum length is the size+1.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.ArrayOf``1(System.Int32,FsCheck.Gen{``0})">
+<summary>
+ Generates an array of a specified length.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.SubListOf``1(``0[])">
+<summary>
+ Generates sublists of the given arguments.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.SubListOf``1(System.Collections.Generic.IEnumerable{``0})">
+<summary>
+ Generates sublists of the given IEnumerable.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.SubListOfToList``1(System.Collections.Generic.IEnumerable{``0})">
+<summary>
+ Generates sublists of the given sequence.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.NonEmptyListOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates a non-empty list of random length. The maximum length 
+ depends on the size parameter.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.ListOf``1(FsCheck.Gen{``0})">
+<summary>
+ Generates a list of random length. The maximum length depends on the
+ size parameter.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.SuchThat``1(Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},FsCheck.Gen{``0})">
+<summary>
+Generates a value that satisfies a predicate. Contrary to suchThatOption, this function keeps re-trying
+by increasing the size of the original generator ad infinitum.  Make sure there is a high chance that 
+the predicate is satisfied.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.SuchThatOption``1(Microsoft.FSharp.Core.FSharpFunc{``0,System.Boolean},FsCheck.Gen{``0})">
+<summary>
+Tries to generate a value that satisfies a predicate. This function &apos;gives up&apos; by generating None
+if the given original generator did not generate any values that satisfied the predicate, after trying to
+get values from by increasing its size.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.ListOf``1(System.Int32,FsCheck.Gen{``0})">
+<summary>
+Generates a list of given length, containing values generated by the given generator.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Sequence``1(FsCheck.Gen{``0}[])">
+<summary>
+Sequence the given list of generators into a generator of a list.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Sequence``1(System.Collections.Generic.IEnumerable{FsCheck.Gen{``0}})">
+<summary>
+Sequence the given list of generators into a generator of a list.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.SequenceToList``1(System.Collections.Generic.IEnumerable{FsCheck.Gen{``0}})">
+<summary>
+Sequence the given seq of generators into a generator of a list.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Map6``7(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Core.FSharpFunc{``3,Microsoft.FSharp.Core.FSharpFunc{``4,Microsoft.FSharp.Core.FSharpFunc{``5,``6}}}}}},FsCheck.Gen{``0},FsCheck.Gen{``1},FsCheck.Gen{``2},FsCheck.Gen{``3},FsCheck.Gen{``4},FsCheck.Gen{``5})">
+<summary>
+Map the given function over values to a function over generators of those values.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Map5``6(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Core.FSharpFunc{``3,Microsoft.FSharp.Core.FSharpFunc{``4,``5}}}}},FsCheck.Gen{``0},FsCheck.Gen{``1},FsCheck.Gen{``2},FsCheck.Gen{``3},FsCheck.Gen{``4})">
+<summary>
+Map the given function over values to a function over generators of those values.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Four``1(FsCheck.Gen{``0})">
+<summary>
+Build a generator that generates a 4-tuple of the values generated by the given generator.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Map4``5(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,Microsoft.FSharp.Core.FSharpFunc{``3,``4}}}},FsCheck.Gen{``0},FsCheck.Gen{``1},FsCheck.Gen{``2},FsCheck.Gen{``3})">
+<summary>
+Map the given function over values to a function over generators of those values.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Three``1(FsCheck.Gen{``0})">
+<summary>
+Build a generator that generates a 3-tuple of the values generated by the given generator.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Map3``4(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,Microsoft.FSharp.Core.FSharpFunc{``2,``3}}},FsCheck.Gen{``0},FsCheck.Gen{``1},FsCheck.Gen{``2})">
+<summary>
+Map the given function over values to a function over generators of those values.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Two``1(FsCheck.Gen{``0})">
+<summary>
+Build a generator that generates a 2-tuple of the values generated by the given generator.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Map2``3(Microsoft.FSharp.Core.FSharpFunc{``0,Microsoft.FSharp.Core.FSharpFunc{``1,``2}},FsCheck.Gen{``0},FsCheck.Gen{``1})">
+<summary>
+Map the given function over values to a function over generators of those values.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Frequency``1(System.Tuple{System.Int32,FsCheck.Gen{``0}}[])">
+<summary>
+Build a generator that generates a value from one of the generators in the given non-empty seq, with
+given probabilities. The sum of the probabilities must be larger than zero.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Frequency``1(FsCheck.WeightAndValue{FsCheck.Gen{``0}}[])">
+<summary>
+Build a generator that generates a value from one of the generators in the given non-empty seq, with
+given probabilities. The sum of the probabilities must be larger than zero.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Frequency``1(System.Collections.Generic.IEnumerable{FsCheck.WeightAndValue{FsCheck.Gen{``0}}})">
+<summary>
+Build a generator that generates a value from one of the generators in the given non-empty seq, with
+given probabilities. The sum of the probabilities must be larger than zero.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Gen.Frequency``1(System.Collections.Generic.IEnumerable{System.Tuple{System.Int32,FsCheck.Gen{``0}}})">
+<summary>
+Build a generator that generates a value from one of the generators in the given non-empty seq, with
+given probabilities. The sum of the probabilities must be larger than zero.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.OneOf``1(FsCheck.Gen{``0}[])">
+<summary>
+Build a generator that generates a value from one of the given generators, with
+equal probability.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.OneOf``1(System.Collections.Generic.IEnumerable{FsCheck.Gen{``0}})">
+<summary>
+Build a generator that generates a value from one of the generators in the given non-empty seq, with
+equal probability.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Elements``1(``0[])">
+<summary>
+Build a generator that randomly generates one of the values in the given non-empty seq.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Elements``1(System.Collections.Generic.IEnumerable{``0})">
+<summary>
+Build a generator that randomly generates one of the values in the given non-empty seq.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Choose(System.Int32,System.Int32)">
+<summary>
+Generates an integer between l and h, inclusive.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Sample``1(System.Int32,System.Int32,FsCheck.Gen{``0})">
+<summary>
+Generates n values of the given size.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Eval``1(System.Int32,FsCheck.Random.StdGen,FsCheck.Gen{``0})">
+<summary>
+Generates a value with maximum size n.
+</summary>
+</member>
+<member name="P:FsCheck.Gen.rand">
+<summary>
+Generates a random number generator. Useful for starting off the process
+of generating a random value.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Resize``1(System.Int32,FsCheck.Gen{``0})">
+<summary>
+Override the current size of the test. resize n g invokes generator g with size parameter n.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Sized``1(System.Func{System.Int32,FsCheck.Gen{``0}})">
+<summary>
+Obtain the current size. sized g calls g, passing it the current size as a parameter.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Sized``1(Microsoft.FSharp.Core.FSharpFunc{System.Int32,FsCheck.Gen{``0}})">
+<summary>
+Obtain the current size. sized g calls g, passing it the current size as a parameter.
+</summary>
+</member>
+<member name="M:FsCheck.Gen.Map``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},FsCheck.Gen{``0})">
+<summary>
+Apply the function f to the value in the generator, yielding a new generator.
+</summary>
+</member>
+<member name="T:FsCheck.Gen">
+<summary>
+Combinators to build custom random generators for any type.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.GenBuilder.GenBuilder">
+<summary>
+The workflow type for generators.
+</summary>
+</member>
+<member name="P:FsCheck.GenBuilder.gen">
+<summary>
+The workflow function for generators, e.g. gen { ... }
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.GenBuilder">
+<summary>
+Computation expression builder for Gen.
+</summary>
+</member>
+<member name="M:FsCheck.GenOperators.op_LessBangGreater``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},FsCheck.Gen{``0})">
+<summary>
+ Like &lt;*&gt;, but puts f in a Gen first.
+</summary>
+</member>
+<member name="M:FsCheck.GenOperators.op_LessMultiplyGreater``2(FsCheck.Gen{Microsoft.FSharp.Core.FSharpFunc{``0,``1}},FsCheck.Gen{``0})">
+<summary>
+ Lifted function application = apply f to a, all in the Gen applicative functor.
+</summary>
+</member>
+<member name="T:FsCheck.GenOperators">
+<summary>
+Operators for Gen.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Prop.ofTestable``1(``0)">
+<summary>
+ Turns a testable type into a property. Testables are unit, boolean, Lazy testables, Gen testables, functions
+ from a type for which a generator is know to a testable, tuples up to 6 tuple containing testables, and lists
+ containing testables.
+</summary>
+</member>
+<member name="M:FsCheck.Prop.within``1(System.Int32,System.Lazy{``0})">
+<summary>
+Fails the property if it does not complete within t milliseconds. Note that the called property gets a
+cancel signal, but whether it responds to that is up to the property; the execution may not actually stop.
+</summary>
+</member>
+<member name="M:FsCheck.Prop.label``1(System.String)">
+<summary>
+Add the given label to the property. The labels of a failing sub-property are displayed when it fails.
+</summary>
+</member>
+<member name="M:FsCheck.Prop.collect``2(``0)">
+<summary>
+Collect data values. The argument of collect is evaluated in each test case, 
+and the distribution of values is reported, using sprintf &quot;%A&quot;.
+</summary>
+</member>
+<member name="M:FsCheck.Prop.trivial``1(System.Boolean)">
+<summary>
+Count trivial cases. Test cases for which the condition is True are classified as trivial.
+</summary>
+</member>
+<member name="M:FsCheck.Prop.classify``1(System.Boolean,System.String)">
+<summary>
+Classify test cases. Test cases satisfying the condition are assigned the classification given.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Prop.throws``2(System.Lazy{``1})">
+<summary>
+Expect exception &apos;t when executing p. So, results in success if an exception of the given type is thrown, 
+and a failure otherwise.
+</summary>
+</member>
+<member name="M:FsCheck.Prop.given``2(System.Boolean,``0,``1)">
+<summary>
+Depending on the condition, return the first testable if true and the second if false.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Prop.forAll``2(FsCheck.Arbitrary{``0},Microsoft.FSharp.Core.FSharpFunc{``0,``1})">
+<summary>
+Quantified property combinator. Provide a custom test data generator to a property.
+</summary>
+</member>
+<member name="T:FsCheck.Prop">
+<summary>
+Combinators to build properties, which define the property to be tested, with some
+convenience methods to investigate the generated arguments and any found counter-examples.
+</summary>
+</member>
+<member name="M:FsCheck.PropOperators.op_DotBarDot``2(``0,``1)">
+<summary>
+Construct a property that fails if both fail. (cfr &apos;or&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropOperators.op_DotAmpDot``2(``0,``1)">
+<summary>
+Construct a property that succeeds if both succeed. (cfr &apos;and&apos;)
+</summary>
+</member>
+<member name="M:FsCheck.PropOperators.op_PercentGreater``1">
+<summary>
+Add the given label to the property. Property on the left hand side, label on the right.
+</summary>
+</member>
+<member name="M:FsCheck.PropOperators.op_AtBar``1">
+<summary>
+Add the given label to the property. label on the left hand side, property on the right.
+</summary>
+</member>
+<member name="M:FsCheck.PropOperators.op_BarAt``1(``0,System.String)">
+<summary>
+Add the given label to the property. Property on the left hand side, label on the right.
+</summary>
+</member>
+<member name="M:FsCheck.PropOperators.op_EqualsEqualsGreater``1(System.Boolean,``0)">
+<summary>
+Conditional property combinator. Resulting property holds if the property after ==&gt; holds whenever the condition does.
+</summary>
+</member>
+<member name="T:FsCheck.PropOperators">
+<summary>
+Operators for Prop.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Random">
+<summary>
+Generate random numbers based on splitting seeds. Based Hugs&apos; Random implementation.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Reflect.getUnionTagReader(System.Type)">
+<summary>
+ Get reader for union case name (aka tag)
+</summary>
+</member>
+<member name="M:FsCheck.Reflect.getUnionCases(System.Type)">
+<summary>
+ Returns the case name, type, and functions that will construct a constructor and a reader of a union type respectively
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Reflect.getRecordReader(System.Type)">
+<summary>
+ Get reader for record type
+</summary>
+</member>
+<member name="M:FsCheck.Reflect.getRecordConstructor(System.Type)">
+<summary>
+ Get constructor for record type
+</summary>
+</member>
+<member name="M:FsCheck.Reflect.getRecordFields(System.Type)">
+<summary>
+ Get information on the fields of a record type
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Reflect">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.ReflectArbitrary.reflectGen``1(Microsoft.FSharp.Core.FSharpFunc{System.Type,FsCheck.Gen{System.Object}})">
+<summary>
+Builds a generator for the given type based on reflection. Currently works for record and union types.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.ReflectArbitrary.enumOfType(System.Type)">
+<summary>
+ Generate a random enum of the type specified by the System.Type
+</summary>
+</member>
+<member name="T:FsCheck.ReflectArbitrary">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Res">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Rose">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="P:FsCheck.Runner.init">
+<summary>
+Force this value to do the necessary initializations of typeclasses. Normally this initialization happens automatically. 
+In any case, it can be forced any number of times without problem.
+</summary>
+</member>
+<member name="P:FsCheck.Runner.consoleRunner">
+<summary>
+A runner that prints results to the standard output.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.Runner.onFinishedToString(System.String,FsCheck.TestResult)">
+<summary>
+A function that returns the default string that is printed as a result of the test.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Runner">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.Testable.Prop">
+
+</member>
+<member name="T:FsCheck.Testable">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="M:FsCheck.TypeClass.TypeClass`1.Merge(FsCheck.TypeClass.TypeClass{`0})">
+<summary>
+Merge the instances defined by the given instances type with the ones already defined in this TypeClass.
+Instances defined in the given type override the instances in this TypeClass instance.
+</summary>
+</member>
+<member name="M:FsCheck.TypeClass.TypeClass`1.InstanceFor``2">
+<summary>
+Get the instance registered on this TypeClass for the given type parameter &apos;T. The result will be cast
+to TypeClassT, which should be &apos;TypeClass&lt;&apos;T&gt; but that&apos;s impossible to express in .NET&apos;s type system.
+</summary>
+</member>
+<member name="M:FsCheck.TypeClass.TypeClass`1.GetInstance(System.Type)">
+<summary>
+Get the instance registered on this TypeClass for the given type and optionally the given arguments. 
+The result is of type &apos;TypeClass&lt;&apos;T&gt;, dynamically.
+</summary>
+</member>
+<member name="M:FsCheck.TypeClass.TypeClass`1.DiscoverAndMerge(System.Boolean,System.Type)">
+<summary>
+Discover instances for this TypeClass on the given type. Merge the result with this TypeClass,
+with the newly discovered instances overriding the instances on this TypeClass.
+</summary>
+</member>
+<member name="M:FsCheck.TypeClass.TypeClass`1.Discover(System.Boolean,System.Type)">
+<summary>
+Make a new TypeClass with only the instances registered on the given type.
+Note that the instances of this TypeClass will not be registered on the new TypeClass. 
+Use Merge in addition to achieve that, or use DiscoverAndMerge to do both.
+</summary>
+</member>
+<member name="M:FsCheck.TypeClass.TypeClass`1.Compare(FsCheck.TypeClass.TypeClass{`0})">
+<summary>
+Compares this TypeClass with the given TypeClass. Returns, respectively, the new instances, overridden instances,
+new array instances, overridden array instances, new catch all or overridden catchall introduced by the other TypeClass.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="">
+
+</member>
+<member name="T:FsCheck.TypeClass">
+<summary>
+Haskell typeclass concept simulation. For internal use.
+</summary>
+</member>
+<member name="">
+
+</member>
+<member name="T:System.AssemblyVersionInformation">
+
+</member>
+</members>
+</doc>

@@ -1,0 +1,528 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.ILGeneration</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.CustomAttributeBuilder">
+      <summary>사용자 지정 특성을 지정할 수 있도록 합니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[])">
+      <summary>사용자 지정 특성의 생성자와 이 생성자에 대한 인수가 제공되면 CustomAttributeBuilder 클래스의 인스턴스를 초기화합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="constructorArgs">사용자 지정 특성의 생성자에 대한 인수입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" />이 정적 또는 전용인 경우또는 제공된 인수의 개수가 생성자의 호출 규칙에서 요구하는 매개 변수 개수와 일치하지 않는 경우또는 제공된 인수의 형식이 생성자에 선언된 매개 변수의 형식과 일치하지 않는 경우 또는제공된 인수가 <see cref="T:System.String" /> 또는 <see cref="T:System.Type" /> 이외의 다른 참조 형식인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="constructorArgs" />이 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>사용자 지정 특성의 생성자, 이 생성자에 대한 인수 및 명명된 필드/값 쌍 집합이 제공되면 CustomAttributeBuilder 클래스의 인스턴스를 초기화합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="constructorArgs">사용자 지정 특성의 생성자에 대한 인수입니다. </param>
+      <param name="namedFields">사용자 지정 특성의 명명된 필드입니다. </param>
+      <param name="fieldValues">사용자 지정 특성의 명명된 필드 값입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedFields" /> 및 <paramref name="fieldValues" /> 배열의 길이가 다른 경우또는 <paramref name="con" />이 정적 또는 전용인 경우또는 제공된 인수의 개수가 생성자의 호출 규칙에서 요구하는 매개 변수 개수와 일치하지 않는 경우또는 제공된 인수의 형식이 생성자에 선언된 매개 변수의 형식과 일치하지 않는 경우또는 필드 값 형식이 명명된 필드 형식과 일치하지 않는 경우또는 필드가 생성자와 같은 클래스 또는 기본 클래스에 속하지 않는 경우 또는제공된 인수 또는 명명된 필드가 <see cref="T:System.String" /> 또는 <see cref="T:System.Type" /> 이외의 참조 형식인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">매개 변수 중 하나가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[])">
+      <summary>사용자 지정 특성의 생성자, 이 생성자에 대한 인수 및 명명된 속성 또는 값 쌍 집합이 제공되면 CustomAttributeBuilder 클래스의 인스턴스를 초기화합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="constructorArgs">사용자 지정 특성의 생성자에 대한 인수입니다. </param>
+      <param name="namedProperties">사용자 지정 특성의 명명된 속성입니다. </param>
+      <param name="propertyValues">사용자 지정 특성의 명명된 속성 값입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedProperties" /> 및 <paramref name="propertyValues" /> 배열의 길이가 다른 경우또는 <paramref name="con" />이 정적 또는 전용인 경우또는 제공된 인수의 개수가 생성자의 호출 규칙에서 요구하는 매개 변수 개수와 일치하지 않는 경우또는 제공된 인수의 형식이 생성자에 선언된 매개 변수의 형식과 일치하지 않는 경우또는 속성 값 형식이 명명된 속성 형식과 일치하지 않는 경우또는 속성에 setter 메서드가 없는 경우또는 속성이 생성자와 같은 클래스 또는 기본 클래스에 속하지 않는 경우 또는제공된 인수 또는 명명된 속성이 <see cref="T:System.String" /> 또는 <see cref="T:System.Type" /> 이외의 참조 형식인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">매개 변수 중 하나가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>사용자 지정 특성의 생성자, 이 생성자에 대한 인수, 명명된 속성/값 쌍 집합 또는 명명된 필드/값 쌍 집합이 제공되면 CustomAttributeBuilder 클래스의 인스턴스를 초기화합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="constructorArgs">사용자 지정 특성의 생성자에 대한 인수입니다. </param>
+      <param name="namedProperties">사용자 지정 특성의 명명된 속성입니다. </param>
+      <param name="propertyValues">사용자 지정 특성의 명명된 속성 값입니다. </param>
+      <param name="namedFields">사용자 지정 특성의 명명된 필드입니다. </param>
+      <param name="fieldValues">사용자 지정 특성의 명명된 필드 값입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedProperties" /> 및 <paramref name="propertyValues" /> 배열의 길이가 다른 경우또는 <paramref name="namedFields" /> 및 <paramref name="fieldValues" /> 배열의 길이가 다른 경우또는 <paramref name="con" />이 정적 또는 전용인 경우또는 제공된 인수의 개수가 생성자의 호출 규칙에서 요구하는 매개 변수 개수와 일치하지 않는 경우또는 제공된 인수의 형식이 생성자에 선언된 매개 변수의 형식과 일치하지 않는 경우또는 속성 값 형식이 명명된 속성 형식과 일치하지 않는 경우또는 필드 값 형식이 해당 필드 형식의 형식과 일치하지 않는 경우또는 속성에 setter가 없는 경우또는 속성 또는 필드가 생성자와 같은 클래스 또는 기본 클래스에 속하지 않는 경우 또는제공된 인수, 명명된 속성 또는 명명된 필드가 <see cref="T:System.String" /> 또는 <see cref="T:System.Type" /> 이외의 참조 형식인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">매개 변수 중 하나가 null인 경우 </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.ILGenerator">
+      <summary>MSIL(Microsoft Intermediate Language) 명령을 생성합니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginCatchBlock(System.Type)">
+      <summary>catch 블록을 시작합니다.</summary>
+      <param name="exceptionType">예외를 나타내는 <see cref="T:System.Type" /> 개체입니다. </param>
+      <exception cref="T:System.ArgumentException">catch 블록이 필터링된 예외 내에 있는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="exceptionType" />이 null이고, 해당 catch 블록을 찾을 때까지 finally 블록을 실행해야 한다는 것을 나타내는 값을 예외 필터 블록에서 반환하지 않은 경우 </exception>
+      <exception cref="T:System.NotSupportedException">생성되는 MSIL(Microsoft Intermediate Language)이 현재 예외 블록에 들어 있지 않은 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptFilterBlock">
+      <summary>필터링된 예외에 대한 예외 블록을 시작합니다.</summary>
+      <exception cref="T:System.NotSupportedException">생성되는 MSIL(Microsoft Intermediate Language)이 현재 예외 블록에 들어 있지 않은 경우 또는이 <see cref="T:System.Reflection.Emit.ILGenerator" />가 <see cref="T:System.Reflection.Emit.DynamicMethod" />에 속해 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptionBlock">
+      <summary>필터링되지 않은 예외에 대한 예외 블록을 시작합니다.</summary>
+      <returns>블록의 끝에 대한 레이블입니다.사용자는 이 레이블을 통해 올바른 위치에서 finally 블록을 실행하거나 try를 종료할 수 있습니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFaultBlock">
+      <summary>MSIL(Microsoft Intermediate Language) 스트림의 예외 오류 블록을 시작합니다.</summary>
+      <exception cref="T:System.NotSupportedException">생성 중인 MSIL이 현재 예외 블록에 없는 경우 또는이 <see cref="T:System.Reflection.Emit.ILGenerator" />가 <see cref="T:System.Reflection.Emit.DynamicMethod" />에 속해 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFinallyBlock">
+      <summary>MSIL(Microsoft Intermediate Language) 명령 스트림의 finally 블록을 시작합니다.</summary>
+      <exception cref="T:System.NotSupportedException">생성 중인 MSIL이 현재 예외 블록에 없는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginScope">
+      <summary>어휘 범위를 시작합니다.</summary>
+      <exception cref="T:System.NotSupportedException">이 <see cref="T:System.Reflection.Emit.ILGenerator" />가 <see cref="T:System.Reflection.Emit.DynamicMethod" />에 속해 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type)">
+      <summary>지정한 형식의 지역 변수를 선언합니다.</summary>
+      <returns>선언된 지역 변수입니다.</returns>
+      <param name="localType">지역 변수의 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 메서드에 의해 만들어진 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type,System.Boolean)">
+      <summary>지정한 형식의 지역 변수를 선언하고, 선택적으로 해당 변수가 참조하는 개체를 고정합니다.</summary>
+      <returns>지역 변수를 나타내는 <see cref="T:System.Reflection.Emit.LocalBuilder" /> 개체입니다.</returns>
+      <param name="localType">지역 변수의 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</param>
+      <param name="pinned">메모리에 개체를 고정하면 true이고, 그렇지 않으면 false입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 메서드에 의해 만들어진 경우또는바깥쪽 메서드의 메서드 본문이 <see cref="M:System.Reflection.Emit.MethodBuilder.CreateMethodBody(System.Byte[],System.Int32)" /> 메서드에 의해 만들어진 경우 </exception>
+      <exception cref="T:System.NotSupportedException">이 <see cref="T:System.Reflection.Emit.ILGenerator" />가 연결되어 있는 메서드가 <see cref="T:System.Reflection.Emit.MethodBuilder" />에 표시되지 않을 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DefineLabel">
+      <summary>새 레이블을 선언합니다.</summary>
+      <returns>분기에 대한 토큰으로 사용할 수 있는 새 레이블을 반환합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode)">
+      <summary>명령 스트림에 지정된 명령을 배치합니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL(Microsoft Intermediate Language) 명령입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Byte)">
+      <summary>지정된 명령 및 문자 인수를 MSIL(Microsoft Intermediate Language) 명령 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL 명령입니다. </param>
+      <param name="arg">명령 바로 다음에 스트림으로 푸시되는 문자 인수입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Double)">
+      <summary>지정된 명령 및 숫자 인수를 MSIL(Microsoft Intermediate Language) 명령 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL 명령입니다.OpCodes 열거형에 정의됩니다.</param>
+      <param name="arg">명령 바로 다음에 스트림으로 푸시되는 숫자 인수입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int16)">
+      <summary>지정된 명령 및 숫자 인수를 MSIL(Microsoft Intermediate Language) 명령 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="arg">명령 바로 다음에 스트림으로 푸시되는 Int 인수입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int32)">
+      <summary>지정된 명령 및 숫자 인수를 MSIL(Microsoft Intermediate Language) 명령 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL 명령입니다. </param>
+      <param name="arg">명령 바로 다음에 스트림으로 푸시되는 숫자 인수입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int64)">
+      <summary>지정된 명령 및 숫자 인수를 MSIL(Microsoft Intermediate Language) 명령 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL 명령입니다. </param>
+      <param name="arg">명령 바로 다음에 스트림으로 푸시되는 숫자 인수입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.ConstructorInfo)">
+      <summary>MSIL(Microsoft Intermediate Language) 명령 스트림에 지정된 명령 및 지정된 생성자에 대한 메타데이터 토큰을 배치합니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="con">생성자를 나타내는 ConstructorInfo입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다..NET Framework 4의 새 예외입니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label)">
+      <summary>지정된 명령을 MSIL(Microsoft Intermediate Language) 스트림에 배치하고 고정이 완료되면 레이블을 포함할 공간을 남겨 둡니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="label">이 위치에서 분기될 레이블입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label[])">
+      <summary>지정된 명령을 MSIL(Microsoft Intermediate Language) 스트림에 배치하고 고정이 완료되면 레이블을 포함할 공간을 남겨 둡니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="labels">이 위치에서 분기될 레이블 개체 배열입니다.모든 레이블을 사용합니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다..NET Framework 4의 새 예외입니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.LocalBuilder)">
+      <summary>MSIL(Microsoft Intermediate Language) 스트림에 지정된 명령을 배치합니다. 해당 스트림 다음에는 지정된 지역 변수에 대한 메타데이터 인덱스가 옵니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="local">지역 변수입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="local" /> 매개 변수의 부모 메서드가 해당 <see cref="T:System.Reflection.Emit.ILGenerator" />에 연결된 메서드와 일치하지 않는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="local" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="opcode" />가 싱글바이트 명령이며 <paramref name="local" />이 Byte.MaxValue보다 큰 인덱스의 지역 변수를 나타내는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.SignatureHelper)">
+      <summary>MSIL(Microsoft Intermediate Language) 명령 스트림에 지정된 명령 및 시그니처 토큰을 배치합니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="signature">시그니처 토큰을 생성하는 도우미입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="signature" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.FieldInfo)">
+      <summary>MSIL(Microsoft Intermediate Language) 명령 스트림에 지정된 명령 및 지정된 필드에 대한 메타데이터 토큰을 배치합니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="field">필드를 나타내는 FieldInfo입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo)">
+      <summary>지정된 명령을 MSIL(Microsoft Intermediate Language) 스트림에 배치합니다. 해당 스트림 다음에는 지정한 메서드에 대한 메타데이터 토큰이 옵니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="meth">메서드를 나타내는 MethodInfo입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="meth" />가 null입니다. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="meth" />가 <see cref="P:System.Reflection.MethodInfo.IsGenericMethodDefinition" /> 속성이 false인 제네릭 메서드인 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.SByte)">
+      <summary>지정된 명령 및 문자 인수를 MSIL(Microsoft Intermediate Language) 명령 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL 명령입니다. </param>
+      <param name="arg">명령 바로 다음에 스트림으로 푸시되는 문자 인수입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Single)">
+      <summary>지정된 명령 및 숫자 인수를 MSIL(Microsoft Intermediate Language) 명령 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL 명령입니다. </param>
+      <param name="arg">명령 바로 다음에 스트림으로 푸시되는 Single 인수입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.String)">
+      <summary>지정된 명령을 MSIL(Microsoft Intermediate Language) 스트림에 배치합니다. 해당 스트림 다음에는 지정한 문자열에 대한 메타데이터 토큰이 옵니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다. </param>
+      <param name="str">내보낼 String입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Type)">
+      <summary>지정된 명령을 MSIL(Microsoft Intermediate Language) 스트림에 배치합니다. 해당 스트림 다음에는 지정한 형식에 대한 메타데이터 토큰이 옵니다.</summary>
+      <param name="opcode">스트림에 배치될 MSIL 명령입니다. </param>
+      <param name="cls">Type</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="cls" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCall(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo,System.Type[])">
+      <summary>MSIL(Microsoft Intermediate Language) 스트림에 call 또는 callvirt 명령을 배치하여 varargs 메서드를 호출합니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다.<see cref="F:System.Reflection.Emit.OpCodes.Call" />, <see cref="F:System.Reflection.Emit.OpCodes.Callvirt" /> 또는 <see cref="F:System.Reflection.Emit.OpCodes.Newobj" />여야 합니다.</param>
+      <param name="methodInfo">호출될 varargs 메서드입니다. </param>
+      <param name="optionalParameterTypes">메서드가 varargs 메서드인 경우 선택적 인수의 형식이고, 그렇지 않으면 null입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="opcode" />가 메서드 호출을 지정하지 않은 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfo" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">메서드 호출 규칙이 varargs가 아닌데도 선택적 매개 변수 형식이 제공된 경우.이 예외는 .NET Framework 버전 1.0 및 1.1에서 throw됩니다. 후속 버전에서는 예외가 throw되지 않습니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCalli(System.Reflection.Emit.OpCode,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[])">
+      <summary>간접 호출에 대해 관리되는 호출을 지정하여 <see cref="F:System.Reflection.Emit.OpCodes.Calli" /> 명령을 MSIL(Microsoft Intermediate Language) 스트림에 배치합니다.</summary>
+      <param name="opcode">스트림에 내보낼 MSIL 명령입니다.<see cref="F:System.Reflection.Emit.OpCodes.Calli" />여야 합니다.</param>
+      <param name="callingConvention">사용될 관리되는 호출 규칙입니다. </param>
+      <param name="returnType">결과의 <see cref="T:System.Type" />입니다. </param>
+      <param name="parameterTypes">명령에 사용되는 필수 인수의 형식입니다. </param>
+      <param name="optionalParameterTypes">varargs 호출에 사용되는 선택적 인수의 형식입니다. </param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="optionalParameterTypes" />가 null이 아니지만 <paramref name="callingConvention" />에 <see cref="F:System.Reflection.CallingConventions.VarArgs" /> 플래그가 포함되어 있지 않은 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.Emit.LocalBuilder)">
+      <summary>지정한 지역 변수로 <see cref="Overload:System.Console.WriteLine" />을 호출하는 데 필요한 MSIL(Microsoft Intermediate Language)을 내보냅니다.</summary>
+      <param name="localBuilder">해당 값을 콘솔에 기록할 지역 변수입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="localBuilder" />의 형식이 지원되지 않는 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 또는 <see cref="T:System.Reflection.Emit.EnumBuilder" />인 경우 또는<paramref name="localBuilder" />가 형식을 받아들이는 <see cref="Overload:System.Console.WriteLine" />의 오버로드가 없는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localBuilder" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.FieldInfo)">
+      <summary>지정한 필드로 <see cref="Overload:System.Console.WriteLine" />을 호출하는 데 필요한 MSIL(Microsoft Intermediate Language)을 내보냅니다.</summary>
+      <param name="fld">해당 값을 콘솔에 기록할 필드입니다. </param>
+      <exception cref="T:System.ArgumentException">지정한 필드의 형식을 받아들이는 <see cref="Overload:System.Console.WriteLine" /> 메서드의 오버로드가 없는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fld" />가 null입니다. </exception>
+      <exception cref="T:System.NotSupportedException">필드의 형식이 지원되지 않는 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 또는 <see cref="T:System.Reflection.Emit.EnumBuilder" />인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.String)">
+      <summary>문자열로 <see cref="Overload:System.Console.WriteLine" />을 호출하는 MSIL(Microsoft Intermediate Language)을 내보냅니다.</summary>
+      <param name="value">인쇄할 문자열입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndExceptionBlock">
+      <summary>예외 블록을 끝냅니다.</summary>
+      <exception cref="T:System.InvalidOperationException">코드 스트림의 예기치 않은 위치에서 end 예외 블록이 발생하는 경우 </exception>
+      <exception cref="T:System.NotSupportedException">생성되는 MSIL(Microsoft Intermediate Language)이 현재 예외 블록에 들어 있지 않은 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndScope">
+      <summary>어휘 범위를 종료합니다.</summary>
+      <exception cref="T:System.NotSupportedException">이 <see cref="T:System.Reflection.Emit.ILGenerator" />가 <see cref="T:System.Reflection.Emit.DynamicMethod" />에 속해 있는 경우</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ILGenerator.ILOffset">
+      <summary>
+        <see cref="T:System.Reflection.Emit.ILGenerator" />에서 내보내는 MSIL(Microsoft Intermediate Language) 스트림의 현재 오프셋을 바이트 단위로 가져옵니다.</summary>
+      <returns>MSIL 스트림에서 다음 명령을 내보낼 오프셋입니다. </returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.MarkLabel(System.Reflection.Emit.Label)">
+      <summary>지정된 레이블로 MSIL(Microsoft Intermediate Language) 스트림의 현재 위치를 표시합니다.</summary>
+      <param name="loc">인덱스를 설정할 레이블입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="loc" />가 레이블 배열의 잘못된 인덱스를 나타내는 경우또는 <paramref name="loc" />에 대한 인덱스가 이미 정의되어 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.ThrowException(System.Type)">
+      <summary>예외를 throw하는 명령을 내보냅니다.</summary>
+      <param name="excType">throw할 예외 형식의 클래스입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="excType" />이 <see cref="T:System.Exception" /> 클래스가 아니거나 <see cref="T:System.Exception" />의 파생 클래스가 아닌 경우또는 해당 형식에 기본 생성자가 없는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="excType" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.UsingNamespace(System.String)">
+      <summary>지역 변수를 계산하는 데 사용되는 네임스페이스를 지정하고 현재 활성화된 어휘의 범위를 조사합니다.</summary>
+      <param name="usingNamespace">지역 변수를 계산하는 데 사용되는 네임스페이스를 지정하고 현재 활성화된 어휘의 범위를 조사합니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="usingNamespace" />의 길이가 0인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="usingNamespace" />가 null입니다. </exception>
+      <exception cref="T:System.NotSupportedException">이 <see cref="T:System.Reflection.Emit.ILGenerator" />가 <see cref="T:System.Reflection.Emit.DynamicMethod" />에 속해 있는 경우</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.Label">
+      <summary>명령 스트림의 레이블을 나타냅니다.Label은 <see cref="T:System.Reflection.Emit.ILGenerator" /> 클래스와 함께 사용됩니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Object)">
+      <summary>지정된 개체가 Label의 인스턴스이며 해당 인스턴스와 같은지 검사합니다.</summary>
+      <returns>
+        <paramref name="obj" />가 Label의 인스턴스이고 해당 개체와 같으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">이 Label 인스턴스와 비교할 개체입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Reflection.Emit.Label)">
+      <summary>현재 인스턴스와 지정된 <see cref="T:System.Reflection.Emit.Label" />이 같은지 여부를 나타냅니다.</summary>
+      <returns>
+        <paramref name="obj" />의 값이 현재 인스턴스의 값과 같으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">현재 인스턴스와 비교할 <see cref="T:System.Reflection.Emit.Label" />입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.GetHashCode">
+      <summary>이 인스턴스의 해시 코드를 생성합니다.</summary>
+      <returns>이 인스턴스의 해시 코드를 반환합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Equality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>두 개의 <see cref="T:System.Reflection.Emit.Label" /> 구조체가 같은지 여부를 나타냅니다.</summary>
+      <returns>
+        <paramref name="a" />가 <paramref name="b" />와 같으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="a">
+        <paramref name="b" />와 비교할 <see cref="T:System.Reflection.Emit.Label" />입니다.</param>
+      <param name="b">
+        <paramref name="a" />와 비교할 <see cref="T:System.Reflection.Emit.Label" />입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Inequality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>두 개의 <see cref="T:System.Reflection.Emit.Label" /> 구조체가 같지 않은지 여부를 나타냅니다.</summary>
+      <returns>
+        <paramref name="a" />가 <paramref name="b" />와 다르면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="a">
+        <paramref name="b" />와 비교할 <see cref="T:System.Reflection.Emit.Label" />입니다.</param>
+      <param name="b">
+        <paramref name="a" />와 비교할 <see cref="T:System.Reflection.Emit.Label" />입니다.</param>
+    </member>
+    <member name="T:System.Reflection.Emit.LocalBuilder">
+      <summary>메서드 또는 생성자 내의 지역 변수를 나타냅니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.IsPinned">
+      <summary>지역 변수에서 참조하는 개체가 메모리에 고정되어 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>지역 변수에서 참조하는 개체가 메모리에 고정되어 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalIndex">
+      <summary>메서드 본문 내에 있는 지역 변수의 인덱스(0부터 시작)를 가져옵니다.</summary>
+      <returns>메서드 본문 내에서 지역 변수의 선언 순서를 나타내는 정수 값입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalType">
+      <summary>지역 변수의 형식을 가져옵니다.</summary>
+      <returns>지역 변수의 <see cref="T:System.Type" />입니다.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ParameterBuilder">
+      <summary>매개 변수 정보를 만들거나 연결합니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Attributes">
+      <summary>이 매개 변수에 대한 특성을 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 매개 변수에 대한 특성을 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsIn">
+      <summary>입력 매개 변수인지 여부를 검색합니다.</summary>
+      <returns>읽기 전용입니다.입력 매개 변수인지 여부를 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOptional">
+      <summary>이 매개 변수가 선택적인지의 여부를 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 매개 변수가 선택적인지의 여부를 지정합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOut">
+      <summary>이 매개 변수가 출력 매개 변수인지 여부를 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 매개 변수가 출력 매개 변수인지 여부를 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Name">
+      <summary>이 매개 변수의 이름을 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 매개 변수의 이름을 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Position">
+      <summary>이 매개 변수에 대한 시그니처 위치를 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 매개 변수에 대한 시그니처 위치를 검색합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetConstant(System.Object)">
+      <summary>해당 매개 변수의 기본값을 설정합니다.</summary>
+      <param name="defaultValue">이 매개 변수의 기본값입니다. </param>
+      <exception cref="T:System.ArgumentException">매개 변수가 지원되는 형식 중 하나가 아닌 경우또는<paramref name="defaultValue" />의 형식이 매개 변수의 형식과 일치하지 않는 경우또는매개 변수가 <see cref="T:System.Object" /> 형식 또는 다른 참조 형식이고, <paramref name="defaultValue" />가 null이 아니고, 값을 참조 형식에 할당할 수 없는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 BLOB를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.SignatureHelper">
+      <summary>시그니처를 빌드하는 메서드를 제공합니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type)">
+      <summary>시그니처에 인수를 추가합니다.</summary>
+      <param name="clsArgument">인수의 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">시그니처가 이미 종료된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="clsArgument" />가 null입니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Boolean)">
+      <summary>인수가 고정되는지 여부를 지정하여 지정된 형식의 인수를 시그니처에 추가합니다.</summary>
+      <param name="argument">인수 형식입니다.</param>
+      <param name="pinned">인수가 고정되면 true이고, 그렇지 않으면 false입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" />가 null입니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Type[],System.Type[])">
+      <summary>시그니처에 지정된 사용자 지정 한정자가 있는 인수를 추가합니다.</summary>
+      <param name="argument">인수 형식입니다.</param>
+      <param name="requiredCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 인수에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.인수에 필수적 사용자 지정 한정자가 없는 경우 null을 지정합니다.</param>
+      <param name="optionalCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 인수에 대한 선택적 사용자 지정 한정자를 나타내는 형식의 배열입니다.인수에 선택적 사용자 지정 한정자가 없는 경우 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" />가 null입니다. 또는<paramref name="requiredCustomModifiers" /> 또는 <paramref name="optionalCustomModifiers" />의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentException">시그니처가 이미 종료된 경우 또는지정된 사용자 지정 한정자 중 하나가 배열 형식인 경우또는지정된 사용자 지정 한정자 중 하나가 개방형 제네릭 형식인 경우.즉, <see cref="P:System.Type.ContainsGenericParameters" /> 속성이 사용자 지정 한정자에 대해 true인 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArguments(System.Type[],System.Type[][],System.Type[][])">
+      <summary>시그니처에 지정된 사용자 지정 한정자가 있는 인수의 집합을 추가합니다.</summary>
+      <param name="arguments">추가할 인수의 형식입니다.</param>
+      <param name="requiredCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 해당 인수에 대한 필수적 사용자 지정 한정자를 나타냅니다.특정 인수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 인수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="optionalCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 해당 인수에 대한 선택적 사용자 지정 한정자를 나타냅니다.특정 인수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 인수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="arguments" />의 요소가 null인 경우 또는지정된 사용자 지정 한정자 중 하나가 null인 경우. 그러나 인수의 사용자 지정 한정자 배열에 대해서는 null을 지정할 수 있습니다.</exception>
+      <exception cref="T:System.ArgumentException">시그니처가 이미 종료된 경우 또는지정된 사용자 지정 한정자 중 하나가 배열 형식인 경우또는지정된 사용자 지정 한정자 중 하나가 개방형 제네릭 형식인 경우.즉, <see cref="P:System.Type.ContainsGenericParameters" /> 속성이 사용자 지정 한정자에 대해 true인 경우또는<paramref name="requiredCustomModifiers" /> 또는 <paramref name="optionalCustomModifiers" />의 크기가 <paramref name="arguments" />의 크기와 같지 않은 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddSentinel">
+      <summary>vararg 고정 부분의 끝을 표시합니다.이것은 호출자가 vararg 시그니처 호출 사이트를 만드는 경우에만 사용됩니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.Equals(System.Object)">
+      <summary>이 인스턴스가 지정된 개체와 같은지 확인합니다.</summary>
+      <returns>지정된 개체가 SignatureHelper이고 같은 시그니처를 나타내면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">이 인스턴스와 비교되어야 하는 개체입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetFieldSigHelper(System.Reflection.Module)">
+      <summary>필드에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>필드에 대한 SignatureHelper 개체입니다.</returns>
+      <param name="mod">SignatureHelper를 요청할 필드가 들어 있는 동적 모듈입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetHashCode">
+      <summary>이 인스턴스의 해시 코드를 생성하고 반환합니다.</summary>
+      <returns>이름에 따라 해시 코드를 반환합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper">
+      <summary>지역 변수에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>지역 변수에 대한 <see cref="T:System.Reflection.Emit.SignatureHelper" />입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper(System.Reflection.Module)">
+      <summary>지역 변수에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>지역 변수에 대한 SignatureHelper 개체입니다.</returns>
+      <param name="mod">SignatureHelper를 요청할 지역 변수가 들어 있는 동적 모듈입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.CallingConventions,System.Type)">
+      <summary>메서드의 호출 규칙 및 반환 형식을 매개 변수로 받아 메서드에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>메서드에 대한 SignatureHelper 개체입니다.</returns>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <param name="returnType">메서드의 반환 형식이거나, void 반환 형식(Visual Basic의 경우 Sub 프로시저)에 대해 null입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type)">
+      <summary>지정된 메서드의 모듈, 호출 규칙 및 반환 형식으로 메서드에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>메서드에 대한 SignatureHelper 개체입니다.</returns>
+      <param name="mod">SignatureHelper를 요청할 메서드가 들어 있는 <see cref="T:System.Reflection.Emit.ModuleBuilder" />입니다. </param>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <param name="returnType">메서드의 반환 형식이거나, void 반환 형식(Visual Basic의 경우 Sub 프로시저)에 대해 null입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" />가 null입니다.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" />가 <see cref="T:System.Reflection.Emit.ModuleBuilder" />가 아닌 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>메서드의 모듈, 반환 형식 및 인수 형식을 매개 변수로 받아 표준 호출 규칙으로 해당 메서드에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>메서드에 대한 SignatureHelper 개체입니다.</returns>
+      <param name="mod">SignatureHelper를 요청할 메서드가 들어 있는 <see cref="T:System.Reflection.Emit.ModuleBuilder" />입니다. </param>
+      <param name="returnType">메서드의 반환 형식이거나, void 반환 형식(Visual Basic의 경우 Sub 프로시저)에 대해 null입니다. </param>
+      <param name="parameterTypes">메서드의 인수 형식이거나, 메서드에 인수가 없는 경우 null입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" />가 null입니다.또는<paramref name="parameterTypes" />의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" />가 <see cref="T:System.Reflection.Emit.ModuleBuilder" />가 아닌 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>속성이 들어 있는 동적 모듈, 호출 규칙, 속성 형식, 속성 인수, 반환 형식 및 인수에 대한 사용자 지정 한정자를 매개 변수로 받아 속성에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>속성에 대한 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 개체입니다.</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.SignatureHelper" />를 요청할 속성이 들어 있는 <see cref="T:System.Reflection.Emit.ModuleBuilder" />입니다.</param>
+      <param name="callingConvention">속성 접근자의 호출 규칙입니다.</param>
+      <param name="returnType">속성 형식</param>
+      <param name="requiredReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 반환 형식에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 필수적 사용자 지정 한정자가 없으면 null을 지정합니다.</param>
+      <param name="optionalReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 반환 형식에 대한 선택적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 선택적 사용자 지정 한정자가 없는 경우에는 null을 지정합니다.</param>
+      <param name="parameterTypes">속성의 인수 형식이거나, 속성에 인수가 없는 경우 null입니다.</param>
+      <param name="requiredParameterTypeCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당 속성 인수에 대한 필수적 사용자 지정 한정자를 나타냅니다.특정 인수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.속성에 인수가 없거나 모든 인수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="optionalParameterTypeCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당 속성 인수에 대한 선택적 사용자 지정 한정자를 나타냅니다.특정 인수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.속성에 인수가 없거나 모든 인수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" />가 null입니다.또는<paramref name="parameterTypes" />의 요소가 null인 경우 또는지정된 사용자 지정 한정자 중 하나가 null인 경우. 그러나 인수의 사용자 지정 한정자 배열에 대해서는 null을 지정할 수 있습니다.</exception>
+      <exception cref="T:System.ArgumentException">시그니처가 이미 종료된 경우 또는<paramref name="mod" />가 <see cref="T:System.Reflection.Emit.ModuleBuilder" />가 아닌 경우또는지정된 사용자 지정 한정자 중 하나가 배열 형식인 경우또는지정된 사용자 지정 한정자 중 하나가 개방형 제네릭 형식인 경우.즉, <see cref="P:System.Type.ContainsGenericParameters" /> 속성이 사용자 지정 한정자에 대해 true인 경우또는<paramref name="requiredParameterTypeCustomModifiers" /> 또는 <paramref name="optionalParameterTypeCustomModifiers" />의 크기가 <paramref name="parameterTypes" />의 크기와 같지 않은 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>속성이 들어 있는 동적 모듈, 속성 형식 및 속성 인수를 매개 변수로 받아 속성에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>속성에 대한 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 개체입니다.</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.SignatureHelper" />를 요청할 속성이 들어 있는 <see cref="T:System.Reflection.Emit.ModuleBuilder" />입니다.</param>
+      <param name="returnType">속성 형식</param>
+      <param name="parameterTypes">인수 형식이거나, 속성에 인수가 없는 경우 null입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" />가 null입니다.또는<paramref name="parameterTypes" />의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" />가 <see cref="T:System.Reflection.Emit.ModuleBuilder" />가 아닌 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>속성이 들어 있는 동적 모듈, 속성 형식, 속성 인수, 그리고 반환 형식 및 인수에 대한 사용자 지정 한정자를 매개 변수로 받아 속성에 대한 시그니처 도우미를 반환합니다.</summary>
+      <returns>속성에 대한 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 개체입니다.</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.SignatureHelper" />를 요청할 속성이 들어 있는 <see cref="T:System.Reflection.Emit.ModuleBuilder" />입니다.</param>
+      <param name="returnType">속성 형식</param>
+      <param name="requiredReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 반환 형식에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 필수적 사용자 지정 한정자가 없으면 null을 지정합니다.</param>
+      <param name="optionalReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 반환 형식에 대한 선택적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 선택적 사용자 지정 한정자가 없는 경우에는 null을 지정합니다.</param>
+      <param name="parameterTypes">속성의 인수 형식이거나, 속성에 인수가 없는 경우 null입니다.</param>
+      <param name="requiredParameterTypeCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당 속성 인수에 대한 필수적 사용자 지정 한정자를 나타냅니다.특정 인수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.속성에 인수가 없거나 모든 인수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="optionalParameterTypeCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당 속성 인수에 대한 선택적 사용자 지정 한정자를 나타냅니다.특정 인수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.속성에 인수가 없거나 모든 인수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" />가 null입니다.또는<paramref name="parameterTypes" />의 요소가 null인 경우 또는지정된 사용자 지정 한정자 중 하나가 null인 경우. 그러나 인수의 사용자 지정 한정자 배열에 대해서는 null을 지정할 수 있습니다.</exception>
+      <exception cref="T:System.ArgumentException">시그니처가 이미 종료된 경우 또는<paramref name="mod" />가 <see cref="T:System.Reflection.Emit.ModuleBuilder" />가 아닌 경우또는지정된 사용자 지정 한정자 중 하나가 배열 형식인 경우또는지정된 사용자 지정 한정자 중 하나가 개방형 제네릭 형식인 경우.즉, <see cref="P:System.Type.ContainsGenericParameters" /> 속성이 사용자 지정 한정자에 대해 true인 경우또는<paramref name="requiredParameterTypeCustomModifiers" /> 또는 <paramref name="optionalParameterTypeCustomModifiers" />의 크기가 <paramref name="parameterTypes" />의 크기와 같지 않은 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetSignature">
+      <summary>시그니처에 더 이상 토큰이 추가되지 않도록 시그니처에 종료 토큰을 추가하여 시그니처가 완료된 것으로 표시합니다.</summary>
+      <returns>전체 시그니처로 구성된 바이트 배열을 반환합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.ToString">
+      <summary>시그니처 인수를 나타내는 문자열을 반환합니다.</summary>
+      <returns>이 시그니처의 인수를 나타내는 문자열을 반환합니다.</returns>
+    </member>
+  </members>
+</doc>

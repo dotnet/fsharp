@@ -1,0 +1,519 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.ILGeneration</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.CustomAttributeBuilder">
+      <summary>協助建立自訂屬性 (Attribute)。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[])">
+      <summary>初始化 CustomAttributeBuilder 類別的執行個體，該類別指定了自訂屬性的建構函式和建構函式的引數。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="constructorArgs">自訂屬性建構函式的引數。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> 為靜態或私用。-或-所提供引數數目不符合由建構函式呼叫慣例所要求的建構函式參數數目。-或-所提供引數型別不符合建構函式中所宣告的參數型別。-或-提供的引數是 <see cref="T:System.String" /> 或 <see cref="T:System.Type" /> 以外的參考型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />或<paramref name="constructorArgs" /> 是 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>初始化 CustomAttributeBuilder 類別的執行個體，該類別指定了自訂屬性的建構函式、建構函式的引數，以及一組命名的欄位/值配對。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="constructorArgs">自訂屬性建構函式的引數。</param>
+      <param name="namedFields">自訂屬性的具名欄位。</param>
+      <param name="fieldValues">自訂屬性的具名欄位值。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedFields" /> 和 <paramref name="fieldValues" /> 陣列的長度不同。-或-<paramref name="con" /> 為靜態或私用。-或-所提供引數數目不符合由建構函式呼叫慣例所要求的建構函式參數數目。-或-所提供引數型別不符合建構函式中所宣告的參數型別。-或-欄位值型別不符合具名欄位型別。-或-欄位不屬於做為建構函式的相同類別或基底類別。-或-提供的引數或具名欄位是 <see cref="T:System.String" /> 或 <see cref="T:System.Type" /> 以外的參考型別。</exception>
+      <exception cref="T:System.ArgumentNullException">其中一個參數為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[])">
+      <summary>初始化 CustomAttributeBuilder 類別的執行個體，該類別指定了自訂屬性的建構函式、建構函式的引數，以及一組命名的屬性或值配對。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="constructorArgs">自訂屬性建構函式的引數。</param>
+      <param name="namedProperties">自訂屬性 (Attribute) 的具名屬性 (Property)。</param>
+      <param name="propertyValues">自訂屬性 (Attribute) 的具名屬性 (Property) 值。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedProperties" /> 和 <paramref name="propertyValues" /> 陣列的長度不同。-或-<paramref name="con" /> 為靜態或私用。-或-所提供引數數目不符合由建構函式呼叫慣例所要求的建構函式參數數目。-或-所提供引數型別不符合建構函式中所宣告的參數型別。-或-屬性值型別不符合具名屬性型別。-或-屬性不具有 Setter 方法。-或-屬性不屬於做為建構函式的相同類別或基底類別。-或-提供的引數或具名屬性是 <see cref="T:System.String" /> 或 <see cref="T:System.Type" /> 以外的參考型別。</exception>
+      <exception cref="T:System.ArgumentNullException">其中一個參數為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>初始化 CustomAttributeBuilder 類別的執行個體，該類別指定了自訂屬性的建構函式、建構函式的引數、一組命名的屬性或值配對，以及一組命名的欄位或值配對。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="constructorArgs">自訂屬性建構函式的引數。</param>
+      <param name="namedProperties">自訂屬性 (Attribute) 的具名屬性 (Property)。</param>
+      <param name="propertyValues">自訂屬性 (Attribute) 的具名屬性 (Property) 值。</param>
+      <param name="namedFields">自訂屬性的具名欄位。</param>
+      <param name="fieldValues">自訂屬性的具名欄位值。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedProperties" /> 和 <paramref name="propertyValues" /> 陣列的長度不同。-或-<paramref name="namedFields" /> 和 <paramref name="fieldValues" /> 陣列的長度不同。-或-<paramref name="con" /> 為靜態或私用。-或-所提供引數數目不符合由建構函式呼叫慣例所要求的建構函式參數數目。-或-所提供引數型別不符合建構函式中所宣告的參數型別。-或-屬性值型別不符合具名屬性型別。-或-欄位值型別不符合對應欄位型別的型別。-或-屬性不具有 Setter。-或-屬性或欄位不屬於做為建構函式的相同類別或基底類別。-或-提供的引數、具名屬性或具名欄位是 <see cref="T:System.String" /> 或 <see cref="T:System.Type" /> 以外的參考型別。</exception>
+      <exception cref="T:System.ArgumentNullException">其中一個參數為 null。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.ILGenerator">
+      <summary>產生 Microsoft Intermediate Language (MSIL) 指令。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginCatchBlock(System.Type)">
+      <summary>開始 Catch 區塊。</summary>
+      <param name="exceptionType">
+        <see cref="T:System.Type" /> 物件，代表例外狀況。</param>
+      <exception cref="T:System.ArgumentException">Catch 區塊在經過篩選的例外狀況內。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="exceptionType" /> 為 null，而例外狀況篩選器區塊還未傳回數值，以表示 finally 區塊應該執行，直到找到這個 catch 區塊為止。</exception>
+      <exception cref="T:System.NotSupportedException">產生的 Microsoft Intermediate Language (MSIL) 目前並不在例外狀況區塊中。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptFilterBlock">
+      <summary>為篩選的例外狀況開始例外狀況區塊。</summary>
+      <exception cref="T:System.NotSupportedException">產生的 Microsoft Intermediate Language (MSIL) 目前並不在例外狀況區塊中。-或-這個 <see cref="T:System.Reflection.Emit.ILGenerator" /> 屬於 <see cref="T:System.Reflection.Emit.DynamicMethod" />。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptionBlock">
+      <summary>為非篩選的例外狀況開始例外狀況區塊。</summary>
+      <returns>區塊結尾的標記 (Label)。這樣可以讓您留在正確的地方執行 Finally 區塊，或者完成試驗動作。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFaultBlock">
+      <summary>在 Microsoft Intermediate Language (MSIL) 資料流上開始例外狀況錯誤區塊。</summary>
+      <exception cref="T:System.NotSupportedException">產生的 MSIL 目前並不在例外狀況區塊中。-或-這個 <see cref="T:System.Reflection.Emit.ILGenerator" /> 屬於 <see cref="T:System.Reflection.Emit.DynamicMethod" />。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFinallyBlock">
+      <summary>在 Microsoft Intermediate Language (MSIL) 指令資料流中開始 finally 區塊。</summary>
+      <exception cref="T:System.NotSupportedException">產生的 MSIL 目前並不在例外狀況區塊中。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginScope">
+      <summary>開始語彙範圍 (Lexical Scope)。</summary>
+      <exception cref="T:System.NotSupportedException">這個 <see cref="T:System.Reflection.Emit.ILGenerator" /> 屬於 <see cref="T:System.Reflection.Emit.DynamicMethod" />。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type)">
+      <summary>宣告指定型別的區域變數。</summary>
+      <returns>宣告的區域變數。</returns>
+      <param name="localType">
+        <see cref="T:System.Type" /> 物件，表示區域變數的型別。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">包含型別已由 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 方法建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type,System.Boolean)">
+      <summary>宣告指定型別的區域變數，選擇性固定 (Pin) 變數所參考的物件。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.LocalBuilder" /> 物件，代表區域變數。</returns>
+      <param name="localType">
+        <see cref="T:System.Type" /> 物件，表示區域變數的型別。</param>
+      <param name="pinned">若要將物件固定 (Pin) 在記憶體中，則為 true，否則為 false。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">包含型別已由 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 方法建立。-或-封入方法的方法主體已由 <see cref="M:System.Reflection.Emit.MethodBuilder.CreateMethodBody(System.Byte[],System.Int32)" /> 方法建立。</exception>
+      <exception cref="T:System.NotSupportedException">與這個 <see cref="T:System.Reflection.Emit.ILGenerator" /> 關聯的方法不是由 <see cref="T:System.Reflection.Emit.MethodBuilder" /> 代表。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DefineLabel">
+      <summary>宣告新的標記。</summary>
+      <returns>傳回新標記，可以用作分支的語彙基元 (Token)。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode)">
+      <summary>放置指定的指令到指令資料流中。</summary>
+      <param name="opcode">Microsoft Intermediate Language (MSIL) 指令，要放置到資料流中。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Byte)">
+      <summary>放置指定的指令和字元引數到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要放置到資料流中。</param>
+      <param name="arg">字元引數，緊接指令之後立即被推入資料流。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Double)">
+      <summary>放置指定的指令和數值引數到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要放置到資料流中。已定義於 OpCodes 列舉型別中。</param>
+      <param name="arg">數字引數，緊接指令之後立即被推入資料流。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int16)">
+      <summary>放置指定的指令和數值引數到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="arg">Int 引數，緊接指令之後立即被推入資料流。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int32)">
+      <summary>放置指定的指令和數值引數到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要放置到資料流中。</param>
+      <param name="arg">數字引數，緊接指令之後立即被推入資料流。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int64)">
+      <summary>放置指定的指令和數值引數到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要放置到資料流中。</param>
+      <param name="arg">數字引數，緊接指令之後立即被推入資料流。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.ConstructorInfo)">
+      <summary>放置指定建構函式的指定指令和中繼資料 (Metadata) 語彙基元到指令的 Microsoft Intermediate Language (MSIL) 資料流中。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="con">ConstructorInfo，表示建構函式。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。這個例外狀況在 .NET Framework 4 中是新的。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label)">
+      <summary>放置指定的指令到 Microsoft Intermediate Language (MSIL) 資料流中，並留下空間，以便在完成修復時加入標記。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="label">標記，要從這個位置分支至的。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label[])">
+      <summary>放置指定的指令到 Microsoft Intermediate Language (MSIL) 資料流中，並留下空間，以便在完成修復時加入標記。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="labels">標記物件陣列，要從這個位置分支至的。會用到所有的標記。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。這個例外狀況在 .NET Framework 4 中是新的。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.LocalBuilder)">
+      <summary>放置指定的指令到 Microsoft Intermediate Language (MSIL) 資料流，然後放置指定區域變數的索引。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="local">區域變數。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="local" /> 參數的父方法與這個 <see cref="T:System.Reflection.Emit.ILGenerator" /> 的相關聯方法不相符。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="local" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="opcode" /> 是單一位元組的指令，而 <paramref name="local" /> 表示索引大於 Byte.MaxValue 的區域變數。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.SignatureHelper)">
+      <summary>放置指定的指令和簽章語彙基元到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="signature">Helper，用來建構簽章語彙基元。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="signature" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.FieldInfo)">
+      <summary>放置指定欄位的指定指令和中繼資料語彙基元到指令的 Microsoft Intermediate Language (MSIL) 資料流中。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="field">FieldInfo，表示欄位。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo)">
+      <summary>放置指定的指令到 Microsoft Intermediate Language (MSIL) 資料流，然後放置指定方法的中繼資料語彙基元。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="meth">MethodInfo，表示方法。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="meth" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="meth" /> 是泛型方法，其 <see cref="P:System.Reflection.MethodInfo.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.SByte)">
+      <summary>放置指定的指令和字元引數到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要放置到資料流中。</param>
+      <param name="arg">字元引數，緊接指令之後立即被推入資料流。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Single)">
+      <summary>放置指定的指令和數值引數到指令的 Microsoft Intermediate Language (MSIL) 資料流。</summary>
+      <param name="opcode">MSIL 指令，要放置到資料流中。</param>
+      <param name="arg">Single 引數，緊接指令之後立即被推入資料流。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.String)">
+      <summary>放置指定的指令到 Microsoft Intermediate Language (MSIL) 資料流，然後放置指定字串的中繼資料語彙基元。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。</param>
+      <param name="str">要發出的 String。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Type)">
+      <summary>放置指定的指令到 Microsoft Intermediate Language (MSIL) 資料流，然後放置指定型別的中繼資料語彙基元。</summary>
+      <param name="opcode">MSIL 指令，要放置到資料流中。</param>
+      <param name="cls">Type。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="cls" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCall(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo,System.Type[])">
+      <summary>將 call 或 callvirt 指令放入 Microsoft Intermediate Language (MSIL) 資料流，以呼叫 varargs 方法。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。必須是 <see cref="F:System.Reflection.Emit.OpCodes.Call" />、<see cref="F:System.Reflection.Emit.OpCodes.Callvirt" /> 或 <see cref="F:System.Reflection.Emit.OpCodes.Newobj" />。</param>
+      <param name="methodInfo">要呼叫的 varargs 方法。</param>
+      <param name="optionalParameterTypes">選擇性引數的型別，如果方法是 varargs 方法，否則為 null。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="opcode" /> 沒有指定方法呼叫。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfo" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">方法的呼叫慣例不是 varargs，但是有提供選擇性的參數型別。在 .NET Framework 1.0 和 1.1 版中會擲回這個例外狀況；在後續版本中則不會擲回任何例外狀況。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCalli(System.Reflection.Emit.OpCode,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[])">
+      <summary>指定間接呼叫的 Managed 呼叫慣例，將 <see cref="F:System.Reflection.Emit.OpCodes.Calli" /> 指令放置到 Microsoft Intermediate Language (MSIL) 資料流中。</summary>
+      <param name="opcode">MSIL 指令，要發出到資料流中。必須是 <see cref="F:System.Reflection.Emit.OpCodes.Calli" />。</param>
+      <param name="callingConvention">要使用的 Managed 呼叫慣例。</param>
+      <param name="returnType">結果的 <see cref="T:System.Type" />。</param>
+      <param name="parameterTypes">指令需要的參數型別。</param>
+      <param name="optionalParameterTypes">varargs 呼叫的選擇性參數型別。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="optionalParameterTypes" /> 不是 null，但是 <paramref name="callingConvention" /> 沒有包含 <see cref="F:System.Reflection.CallingConventions.VarArgs" /> 旗標。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.Emit.LocalBuilder)">
+      <summary>發出以指定的區域變數呼叫 <see cref="Overload:System.Console.WriteLine" /> 所需的 Microsoft Intermediate Language (MSIL)。</summary>
+      <param name="localBuilder">區域變數，其值要寫入主控台。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="localBuilder" /> 的型別是 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 或 <see cref="T:System.Reflection.Emit.EnumBuilder" />，不支援這些型別。-或-<see cref="Overload:System.Console.WriteLine" /> 沒有任何多載可以接受 <paramref name="localBuilder" /> 的型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localBuilder" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.FieldInfo)">
+      <summary>發出以指定欄位呼叫 <see cref="Overload:System.Console.WriteLine" /> 所需的 Microsoft Intermediate Language (MSIL)。</summary>
+      <param name="fld">欄位，其值要寫入主控台 (Console)。</param>
+      <exception cref="T:System.ArgumentException">沒有 <see cref="Overload:System.Console.WriteLine" /> 方法的多載，這個方法接受指定欄位的型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fld" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">欄位的型別為 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 或 <see cref="T:System.Reflection.Emit.EnumBuilder" />，不支援這些型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.String)">
+      <summary>發出 Microsoft Intermediate Language (MSIL)，以字串呼叫 <see cref="Overload:System.Console.WriteLine" />。</summary>
+      <param name="value">要列印的字串。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndExceptionBlock">
+      <summary>結束例外狀況區塊。</summary>
+      <exception cref="T:System.InvalidOperationException">結束例外狀況區塊發生於程式碼資料流中未預期的地方。</exception>
+      <exception cref="T:System.NotSupportedException">產生的 Microsoft Intermediate Language (MSIL) 目前並不在例外狀況區塊中。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndScope">
+      <summary>結束語彙範圍。</summary>
+      <exception cref="T:System.NotSupportedException">這個 <see cref="T:System.Reflection.Emit.ILGenerator" /> 屬於 <see cref="T:System.Reflection.Emit.DynamicMethod" />。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ILGenerator.ILOffset">
+      <summary>在由 <see cref="T:System.Reflection.Emit.ILGenerator" /> 發出的 Microsoft intermediate language (MSIL) 資料流中，取得目前位移 (以位元組為單位)。</summary>
+      <returns>MSIL 資料流的位移，下一個指令將在此位置發出。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.MarkLabel(System.Reflection.Emit.Label)">
+      <summary>以指定標記來標示 Microsoft Intermediate Language (MSIL) 資料流的目前位置。</summary>
+      <param name="loc">標記，要為其設定索引。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="loc" />，表示標記陣列中的無效索引。-或-<paramref name="loc" /> 的索引已經定義。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.ThrowException(System.Type)">
+      <summary>發出擲回例外狀況的指令。</summary>
+      <param name="excType">要擲回的例外狀況型別的類別。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="excType" /> 不是 <see cref="T:System.Exception" /> 類別或 <see cref="T:System.Exception" /> 的衍生類別。-或-型別沒有預設的建構函式。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="excType" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.UsingNamespace(System.String)">
+      <summary>指定要用來評估區域變數的命名空間 (Namespace)，並注意目前作用的語彙範圍。</summary>
+      <param name="usingNamespace">用來評估區域變數的命名空間，並注意目前作用的語彙範圍</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="usingNamespace" /> 的長度為零。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="usingNamespace" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">這個 <see cref="T:System.Reflection.Emit.ILGenerator" /> 屬於 <see cref="T:System.Reflection.Emit.DynamicMethod" />。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.Label">
+      <summary>表示指令資料流中的標記 (Label)。Label 會與 <see cref="T:System.Reflection.Emit.ILGenerator" /> 類別結合使用。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Object)">
+      <summary>檢查指定物件是否為 Label 的執行個體，並且與這個執行個體相等。</summary>
+      <returns>如果 <paramref name="obj" /> 為 Label 的執行個體，並等於這個物件，則傳回 true；否則傳回 false。</returns>
+      <param name="obj">物件，要與這個 Label 執行個體比較。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Reflection.Emit.Label)">
+      <summary>指出目前的執行個體和指定的 <see cref="T:System.Reflection.Emit.Label" /> 是否相等。</summary>
+      <returns>如果 <paramref name="obj" /> 的值和目前執行個體的值相等則為 true，否則為 false。</returns>
+      <param name="obj">要與目前執行個體相比較的 <see cref="T:System.Reflection.Emit.Label" />。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.GetHashCode">
+      <summary>產生這個執行個體的雜湊碼。</summary>
+      <returns>傳回這個執行個體的雜湊碼。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Equality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>指出兩個 <see cref="T:System.Reflection.Emit.Label" /> 結構是否相等。</summary>
+      <returns>如果 <paramref name="a" /> 等於 <paramref name="b" />，則為 true，否則為 false。</returns>
+      <param name="a">要和 <paramref name="b" /> 比較的 <see cref="T:System.Reflection.Emit.Label" />。</param>
+      <param name="b">要和 <paramref name="a" /> 比較的 <see cref="T:System.Reflection.Emit.Label" />。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Inequality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>指出兩個 <see cref="T:System.Reflection.Emit.Label" /> 結構是否不相等。</summary>
+      <returns>如果 <paramref name="a" /> 不等於 <paramref name="b" /> 則為 true，否則為 false。</returns>
+      <param name="a">要和 <paramref name="b" /> 比較的 <see cref="T:System.Reflection.Emit.Label" />。</param>
+      <param name="b">要和 <paramref name="a" /> 比較的 <see cref="T:System.Reflection.Emit.Label" />。</param>
+    </member>
+    <member name="T:System.Reflection.Emit.LocalBuilder">
+      <summary>表示方法或建構函式 (Constructor) 中的區域變數。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.IsPinned">
+      <summary>取得值，指出是否在記憶體中 Pin 區域變數參考的物件。</summary>
+      <returns>如果在記憶體中 Pin 區域變數參考的物件，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalIndex">
+      <summary>取得方法主體內區域變數之以零起始的索引。</summary>
+      <returns>整數值，表示方法主體內區域變數的宣告順序。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalType">
+      <summary>取得區域變數的型別。</summary>
+      <returns>區域變數的 <see cref="T:System.Type" />。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ParameterBuilder">
+      <summary>建立或關聯參數資訊。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Attributes">
+      <summary>擷取這個參數的屬性。</summary>
+      <returns>唯讀。擷取這個參數的屬性。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsIn">
+      <summary>擷取這是否為輸入參數。</summary>
+      <returns>唯讀。擷取這是否為輸入參數。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOptional">
+      <summary>擷取這個參數是否為選擇性項目。</summary>
+      <returns>唯讀。指定這個參數是否為選擇性項目。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOut">
+      <summary>擷取這個參數是否為輸出參數。</summary>
+      <returns>唯讀。擷取這個參數是否為輸出參數。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Name">
+      <summary>擷取這個參數的名稱。</summary>
+      <returns>唯讀。擷取這個參數的名稱。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Position">
+      <summary>擷取這個參數的簽章位置。</summary>
+      <returns>唯讀。擷取這個參數的簽章位置。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetConstant(System.Object)">
+      <summary>設定參數的預設值。</summary>
+      <param name="defaultValue">這個參數的預設值。</param>
+      <exception cref="T:System.ArgumentException">參數不是其中一個支援的型別。-或-<paramref name="defaultValue" /> 的型別不符合參數的型別。-或-參數的型別是 <see cref="T:System.Object" /> 或其他參考型別、<paramref name="defaultValue" /> 不是 null，而且無法將此值指派給參考型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 BLOB (二進位大型物件) 來設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器來設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.SignatureHelper">
+      <summary>提供建置簽章的方法。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type)">
+      <summary>加入引數至簽章。</summary>
+      <param name="clsArgument">引數型別。</param>
+      <exception cref="T:System.ArgumentException">簽章已經完成。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="clsArgument" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Boolean)">
+      <summary>將指定之型別的引數加入簽章，指定該引數是否為固定 (Pin) 。</summary>
+      <param name="argument">引數型別。</param>
+      <param name="pinned">如果引數為固定 (Pin)，則為 true，否則為 false。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Type[],System.Type[])">
+      <summary>使用指定的自訂修飾詞，將引數加入簽章。</summary>
+      <param name="argument">引數型別。</param>
+      <param name="requiredCustomModifiers">型別的陣列，表示引數的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果引數沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="optionalCustomModifiers">型別的陣列，表示引數的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果引數沒有選擇性自訂修飾詞，請指定 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" /> 為 null。-或-<paramref name="requiredCustomModifiers" /> 或 <paramref name="optionalCustomModifiers" /> 的項目為 null。</exception>
+      <exception cref="T:System.ArgumentException">簽章已經完成。-或-其中一個指定的自訂修飾詞為陣列型別。-或-其中一個指定的自訂修飾詞為開放泛型型別。也就是說，自訂修飾詞的 <see cref="P:System.Type.ContainsGenericParameters" /> 屬性為 true。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArguments(System.Type[],System.Type[][],System.Type[][])">
+      <summary>使用指定的自訂修飾詞，將引數集合加入簽章。</summary>
+      <param name="arguments">要加入的引數型別。</param>
+      <param name="requiredCustomModifiers">型別陣列的陣列。每一個型別陣列都表示對應引數的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果特定引數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何引數具有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="optionalCustomModifiers">型別陣列的陣列。每一個型別陣列都表示對應引數的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果特定引數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何引數具有選擇性自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="arguments" /> 的元素是 null。-或-其中一個指定的自訂修飾詞為 null(不過，您可以為任何引數的自訂修飾詞陣列指定 null)。</exception>
+      <exception cref="T:System.ArgumentException">簽章已經完成。-或-其中一個指定的自訂修飾詞為陣列型別。-或-其中一個指定的自訂修飾詞為開放泛型型別。也就是說，自訂修飾詞的 <see cref="P:System.Type.ContainsGenericParameters" /> 屬性為 true。-或-<paramref name="requiredCustomModifiers" /> 或 <paramref name="optionalCustomModifiers" /> 的大小不等於 <paramref name="arguments" /> 的大小。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddSentinel">
+      <summary>標記 vararg 固定部分的結尾。只有在呼叫端正在建立 vararg 簽章呼叫站台時，這才會使用。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.Equals(System.Object)">
+      <summary>檢查這個執行個體 (Instance) 是否等於指定物件。</summary>
+      <returns>如果指定物件為 SignatureHelper，並且表示相同簽章，則為 true，否則為 false。</returns>
+      <param name="obj">應該與這個執行個體比較的物件。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetFieldSigHelper(System.Reflection.Module)">
+      <summary>傳回欄位的簽章 Helper。</summary>
+      <returns>欄位的 SignatureHelper 物件。</returns>
+      <param name="mod">動態模組，包含要求 SignatureHelper 的欄位。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetHashCode">
+      <summary>建立並傳回這個執行個體的雜湊碼。</summary>
+      <returns>根據名稱傳回雜湊碼。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper">
+      <summary>傳回區域變數的簽章 Helper。</summary>
+      <returns>區域變數的 <see cref="T:System.Reflection.Emit.SignatureHelper" />。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper(System.Reflection.Module)">
+      <summary>傳回區域變數的簽章 Helper。</summary>
+      <returns>區域變數的 SignatureHelper 物件。</returns>
+      <param name="mod">動態模組，包含要求 SignatureHelper 的區域變數。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.CallingConventions,System.Type)">
+      <summary>傳回方法的簽章 Helper，其會指定方法的呼叫慣例和傳回型別。</summary>
+      <returns>方法的 SignatureHelper 物件。</returns>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <param name="returnType">方法的傳回型別，如果是 Void 傳回型別，則為 null (Visual Basic 中的 Sub 程序)。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type)">
+      <summary>傳回方法的簽章 Helper，其指定方法模組、呼叫慣例和傳回型別。</summary>
+      <returns>方法的 SignatureHelper 物件。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.ModuleBuilder" />，包含要求 SignatureHelper 的方法。</param>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <param name="returnType">方法的傳回型別，如果是 Void 傳回型別，則為 null (Visual Basic 中的 Sub 程序)。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> 不是 <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>傳回方法的簽章 Helper，該方法具有標準的呼叫慣例、指定的方法模組、傳回型別和引數型別。</summary>
+      <returns>方法的 SignatureHelper 物件。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.ModuleBuilder" />，包含要求 SignatureHelper 的方法。</param>
+      <param name="returnType">方法的傳回型別，如果是 Void 傳回型別，則為 null (Visual Basic 中的 Sub 程序)。</param>
+      <param name="parameterTypes">方法的引數型別，如果方法沒有引數則為 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> 為 null。-或-<paramref name="parameterTypes" /> 的元素是 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> 不是 <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>以指定的動態模組 (其中包含屬性、呼叫慣例、屬性型別、屬性引數以及傳回型別與引數的自訂修飾詞)，傳回屬性的簽章 Helper。</summary>
+      <returns>屬性的 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 物件。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.ModuleBuilder" />，包含要求 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 的屬性。</param>
+      <param name="callingConvention">屬性存取子的呼叫慣例。</param>
+      <param name="returnType">屬性型別。</param>
+      <param name="requiredReturnTypeCustomModifiers">型別的陣列，表示傳回型別的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果傳回型別沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="optionalReturnTypeCustomModifiers">型別的陣列，表示傳回型別的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果傳回型別沒有選擇性自訂修飾詞，請指定 null。</param>
+      <param name="parameterTypes">屬性的引數型別，如果屬性沒有引數則為 null。</param>
+      <param name="requiredParameterTypeCustomModifiers">型別陣列的陣列。每一個型別陣列都表示屬性之對應引數的必要自訂修飾詞。如果特定引數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果屬性沒有引數，或者沒有任何引數具有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="optionalParameterTypeCustomModifiers">型別陣列的陣列。每一個型別陣列都表示屬性之對應引數的選擇性自訂修飾詞。如果特定引數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果屬性沒有引數，或者沒有任何引數具有選擇性自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> 為 null。-或-<paramref name="parameterTypes" /> 的元素是 null。-或-其中一個指定的自訂修飾詞為 null(不過，您可以為任何引數的自訂修飾詞陣列指定 null)。</exception>
+      <exception cref="T:System.ArgumentException">簽章已經完成。-或-<paramref name="mod" /> 不是 <see cref="T:System.Reflection.Emit.ModuleBuilder" />。-或-其中一個指定的自訂修飾詞為陣列型別。-或-其中一個指定的自訂修飾詞為開放泛型型別。也就是說，自訂修飾詞的 <see cref="P:System.Type.ContainsGenericParameters" /> 屬性為 true。-或-<paramref name="requiredParameterTypeCustomModifiers" /> 或 <paramref name="optionalParameterTypeCustomModifiers" /> 的大小不等於 <paramref name="parameterTypes" /> 的大小。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>指定包含屬性、屬性型別和屬性引數的動態模組後，傳回屬性的簽章 Helper。</summary>
+      <returns>屬性的 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 物件。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.ModuleBuilder" />，包含要求 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 的屬性。</param>
+      <param name="returnType">屬性型別。</param>
+      <param name="parameterTypes">引數型別，如果屬性沒有引數則為 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> 為 null。-或-<paramref name="parameterTypes" /> 的元素是 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> 不是 <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>指定包含屬性、屬性型別、屬性引數和傳回型別與引數之自訂修飾詞的動態模組後，傳回屬性的簽章 Helper。</summary>
+      <returns>屬性的 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 物件。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.ModuleBuilder" />，包含要求 <see cref="T:System.Reflection.Emit.SignatureHelper" /> 的屬性。</param>
+      <param name="returnType">屬性型別。</param>
+      <param name="requiredReturnTypeCustomModifiers">型別的陣列，表示傳回型別的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果傳回型別沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="optionalReturnTypeCustomModifiers">型別的陣列，表示傳回型別的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果傳回型別沒有選擇性自訂修飾詞，請指定 null。</param>
+      <param name="parameterTypes">屬性的引數型別，如果屬性沒有引數則為 null。</param>
+      <param name="requiredParameterTypeCustomModifiers">型別陣列的陣列。每一個型別陣列都表示屬性之對應引數的必要自訂修飾詞。如果特定引數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果屬性沒有引數，或者沒有任何引數具有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="optionalParameterTypeCustomModifiers">型別陣列的陣列。每一個型別陣列都表示屬性之對應引數的選擇性自訂修飾詞。如果特定引數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果屬性沒有引數，或者沒有任何引數具有選擇性自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> 為 null。-或-<paramref name="parameterTypes" /> 的元素是 null。-或-其中一個指定的自訂修飾詞為 null(不過，您可以為任何引數的自訂修飾詞陣列指定 null)。</exception>
+      <exception cref="T:System.ArgumentException">簽章已經完成。-或-<paramref name="mod" /> 不是 <see cref="T:System.Reflection.Emit.ModuleBuilder" />。-或-其中一個指定的自訂修飾詞為陣列型別。-或-其中一個指定的自訂修飾詞為開放泛型型別。也就是說，自訂修飾詞的 <see cref="P:System.Type.ContainsGenericParameters" /> 屬性為 true。-或-<paramref name="requiredParameterTypeCustomModifiers" /> 或 <paramref name="optionalParameterTypeCustomModifiers" /> 的大小不等於 <paramref name="parameterTypes" /> 的大小。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetSignature">
+      <summary>加入結尾語彙基元 (Token) 至簽章，並將簽章標記為已完成，如此其他語彙基元便無法再加入。</summary>
+      <returns>傳回構成完整簽章的位元組陣列。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.ToString">
+      <summary>傳回表示簽章引數的字串。</summary>
+      <returns>傳回表示這個簽章之引數的字串。</returns>
+    </member>
+  </members>
+</doc>

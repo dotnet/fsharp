@@ -1,0 +1,1526 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.AssemblyBuilder">
+      <summary>동적 어셈블리를 정의하고 나타냅니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.DefinedTypes"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess)">
+      <summary>지정한 이름 및 액세스 권한을 사용하여 동적 어셈블리를 정의합니다.</summary>
+      <returns>새 어셈블리를 나타내는 개체입니다.</returns>
+      <param name="name">어셈블리의 이름입니다.</param>
+      <param name="access">어셈블리의 액세스 권한입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess,System.Collections.Generic.IEnumerable{System.Reflection.Emit.CustomAttributeBuilder})">
+      <summary>지정한 이름, 액세스 권한 및 특성이 있는 새 어셈블리를 정의합니다.</summary>
+      <returns>새 어셈블리를 나타내는 개체입니다.</returns>
+      <param name="name">어셈블리의 이름입니다.</param>
+      <param name="access">어셈블리의 액세스 권한입니다.</param>
+      <param name="assemblyAttributes">어셈블리의 특성을 포함하는 컬렉션입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicModule(System.String)">
+      <summary>해당 어셈블리에서 명명된 동적 모듈을 정의합니다.</summary>
+      <returns>정의된 동적 모듈을 나타내는 <see cref="T:System.Reflection.Emit.ModuleBuilder" />입니다.</returns>
+      <param name="name">동적 모듈의 이름입니다.길이는 260자 미만이어야 합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />이 공백으로 시작되는 경우또는 <paramref name="name" />의 길이가 0인 경우또는 <paramref name="name" />의 길이가 260보다 크거나 같은 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.Security.SecurityException">호출자에게 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ExecutionEngineException">기본 기호 작성기의 어셈블리를 로드할 수 없는 경우또는 기본 기호 작성기 인터페이스를 구현하는 형식을 찾을 수 없는 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*" />
+        <IPermission class="System.Security.Permissions.ReflectionPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="MemberAccess" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.Equals(System.Object)">
+      <summary>이 인스턴스가 지정된 개체와 같은지 여부를 나타내는 값을 반환합니다.</summary>
+      <returns>
+        <paramref name="obj" />가 이 인스턴스의 형식 및 값과 같으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">이 인스턴스와 비교할 개체 또는 null입니다.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.FullName">
+      <summary>현재 동적 어셈블리의 표시 이름을 가져옵니다. </summary>
+      <returns>동적 어셈블리의 표시 이름입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetDynamicModule(System.String)">
+      <summary>지정된 이름의 동적 모듈을 반환합니다.</summary>
+      <returns>요청된 동적 모듈을 나타내는 ModuleBuilder 개체입니다.</returns>
+      <param name="name">요청된 동적 모듈의 이름입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우 </exception>
+      <exception cref="T:System.Security.SecurityException">호출자에게 필요한 권한이 없는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetHashCode">
+      <summary>이 인스턴스의 해시 코드를 반환합니다.</summary>
+      <returns>32비트 부호 있는 정수 해시 코드입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceInfo(System.String)">
+      <summary>지정된 리소스가 지속되는 방법에 대한 정보를 반환합니다.</summary>
+      <returns>리소스의 토폴로지에 대한 정보로 채워진 <see cref="T:System.Reflection.ManifestResourceInfo" /> 또는 리소스를 찾을 수 없는 경우에는 null입니다.</returns>
+      <param name="resourceName">리소스의 이름입니다. </param>
+      <exception cref="T:System.NotSupportedException">이 메서드는 현재 지원되지 않습니다. </exception>
+      <exception cref="T:System.Security.SecurityException">호출자에게 필요한 권한이 없는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceNames">
+      <summary>지정된 매니페스트 리소스를 이 어셈블리에서 로드합니다.</summary>
+      <returns>모든 리소스의 이름이 들어 있는 String 형식의 배열입니다.</returns>
+      <exception cref="T:System.NotSupportedException">이 메서드가 동적 어셈블리에서 지원되지 않는 경우.매니페스트 리소스 이름을 가져오려면 <see cref="M:System.Reflection.Assembly.GetManifestResourceNames" />를 사용하십시오.</exception>
+      <exception cref="T:System.Security.SecurityException">호출자에게 필요한 권한이 없는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceStream(System.String)">
+      <summary>지정된 매니페스트 리소스를 이 어셈블리에서 로드합니다.</summary>
+      <returns>이 매니페스트 리소스를 나타내는 <see cref="T:System.IO.Stream" />입니다.</returns>
+      <param name="name">요청된 매니페스트 리소스의 이름입니다. </param>
+      <exception cref="T:System.NotSupportedException">이 메서드는 현재 지원되지 않습니다. </exception>
+      <exception cref="T:System.Security.SecurityException">호출자에게 필요한 권한이 없는 경우 </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.IsDynamic">
+      <summary>현재 어셈블리가 동적 어셈블리임을 나타내는 값을 가져옵니다.</summary>
+      <returns>항상 true입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.ManifestModule">
+      <summary>어셈블리 매니페스트가 들어 있는 현재 <see cref="T:System.Reflection.Emit.AssemblyBuilder" />의 모듈을 가져옵니다.</summary>
+      <returns>매니페스트 모듈입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.Modules"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 BLOB를 사용하여 해당 어셈블리에 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+      <exception cref="T:System.Security.SecurityException">호출자에게 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" />가 RuntimeConstructorInfo가 아닙니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 해당 어셈블리에 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다. </exception>
+      <exception cref="T:System.Security.SecurityException">호출자에게 필요한 권한이 없는 경우 </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.AssemblyBuilderAccess">
+      <summary>동적 어셈블리의 액세스 모드를 정의합니다. </summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.Run">
+      <summary>동적 어셈블리를 실행할 수는 있지만 저장할 수는 없습니다.</summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.RunAndCollect">
+      <summary>동적 형식 생성을 위해 수집 가능한 어셈블리에 설명된 제한 사항에 따라 동적 어셈블리를 언로드하고 해당 메모리를 회수할 수 있습니다.</summary>
+    </member>
+    <member name="T:System.Reflection.Emit.ConstructorBuilder">
+      <summary>동적 클래스의 생성자를 정의하고 나타냅니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Attributes">
+      <summary>해당 생성자에 대한 특성을 검색합니다.</summary>
+      <returns>해당 생성자에 대한 특성을 반환합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.CallingConvention">
+      <summary>선언 형식이 제네릭 형식인지 여부에 따라 달라지는 <see cref="T:System.Reflection.CallingConventions" /> 값을 가져옵니다.</summary>
+      <returns>선언 형식이 제네릭 형식이면 <see cref="F:System.Reflection.CallingConventions.HasThis" />이고, 그렇지 않으면 <see cref="F:System.Reflection.CallingConventions.Standard" />입니다. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.DeclaringType">
+      <summary>해당 멤버를 선언하는 형식의 <see cref="T:System.Type" /> 개체에 대한 참조를 검색합니다.</summary>
+      <returns>해당 멤버를 선언하는 형식에 대한 <see cref="T:System.Type" /> 개체를 반환합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>해당 생성자의 매개 변수를 정의합니다.</summary>
+      <returns>해당 생성자의 새 매개 변수를 나타내는 ParameterBuilder 개체를 반환합니다.</returns>
+      <param name="iSequence">매개 변수 목록에서 매개 변수의 위치입니다.매개 변수는 첫 번째 매개 변수가 숫자 1부터 시작하여 인덱싱됩니다.</param>
+      <param name="attributes">매개 변수의 특성입니다. </param>
+      <param name="strParamName">매개 변수의 이름입니다.이름은 null 문자열일 수 있습니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="iSequence" />가 0(영) 미만이거나 생성자의 매개 변수 수보다 큽니다. </exception>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식을 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 만든 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator">
+      <summary>해당 생성자에 대한 <see cref="T:System.Reflection.Emit.ILGenerator" />를 가져옵니다.</summary>
+      <returns>해당 생성자에 대한 <see cref="T:System.Reflection.Emit.ILGenerator" /> 개체를 반환합니다.</returns>
+      <exception cref="T:System.InvalidOperationException">생성자가 기본 생성자인 경우또는메서드 본문이 없어야 함을 나타내는 <see cref="T:System.Reflection.MethodAttributes" /> 또는 <see cref="T:System.Reflection.MethodImplAttributes" /> 플래그가 생성자에 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator(System.Int32)">
+      <summary>지정된 MSIL 스트림 크기를 사용하여 이 생성자의 메서드 본문을 만드는 데 사용할 수 있는 <see cref="T:System.Reflection.Emit.ILGenerator" /> 개체를 가져옵니다.</summary>
+      <returns>이 생성자에 대한 <see cref="T:System.Reflection.Emit.ILGenerator" />입니다.</returns>
+      <param name="streamSize">MSIL 스트림의 크기(바이트)입니다.</param>
+      <exception cref="T:System.InvalidOperationException">생성자가 기본 생성자인 경우또는메서드 본문이 없어야 함을 나타내는 <see cref="T:System.Reflection.MethodAttributes" /> 또는 <see cref="T:System.Reflection.MethodImplAttributes" /> 플래그가 생성자에 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetParameters">
+      <summary>해당 생성자의 매개 변수를 반환합니다.</summary>
+      <returns>해당 생성자의 매개 변수를 나타내는 <see cref="T:System.Reflection.ParameterInfo" /> 개체 배열을 반환합니다.</returns>
+      <exception cref="T:System.InvalidOperationException">.NET Framework versions 1.0 및 1.1에서 이 생성자의 형식에 대해 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />이 호출되지 않은 경우 </exception>
+      <exception cref="T:System.NotSupportedException">.NET Framework 버전 2.0에서 이 생성자의 형식에 대해 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />이 호출되지 않은 경우 </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.InitLocals">
+      <summary>해당 생성자에서 지역 변수가 0으로 초기화되어야 하는지 여부를 나타내는 값을 가져오거나 설정합니다.</summary>
+      <returns>읽기/쓰기입니다.해당 생성자에서 지역 변수가 0으로 초기화되어야 하는지 여부를 나타내는 값을 가져오거나 설정합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Name">
+      <summary>해당 생성자의 이름을 검색합니다.</summary>
+      <returns>해당 생성자의 이름을 반환합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 BLOB를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>해당 생성자에 대한 메서드 구현 플래그를 설정합니다.</summary>
+      <param name="attributes">메서드 구현 플래그입니다. </param>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식을 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 만든 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.ToString">
+      <summary>해당 <see cref="T:System.Reflection.Emit.ConstructorBuilder" /> 인스턴스를 <see cref="T:System.String" />으로 반환합니다.</summary>
+      <returns>해당 생성자의 이름, 특성 및 예외가 들어 있는 <see cref="T:System.String" />을 반환하며, 다음에는 MSIL(Microsoft intermediate language) 스트림이 옵니다.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EnumBuilder">
+      <summary>열거형을 설명하고 나타냅니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Assembly">
+      <summary>해당 열거형 정의가 들어 있는 동적 어셈블리를 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 열거형 정의가 들어 있는 동적 어셈블리입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.AssemblyQualifiedName">
+      <summary>부모 어셈블리의 표시 이름으로 정규화된 이 열거형의 전체 경로를 반환합니다.</summary>
+      <returns>읽기 전용입니다.부모 어셈블리의 표시 이름으로 정규화된 이 열거형의 전체 경로입니다.</returns>
+      <exception cref="T:System.NotSupportedException">이전에 <see cref="M:System.Reflection.Emit.EnumBuilder.CreateType" />을 호출하지 않은 경우 </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.BaseType">
+      <summary>항상 <see cref="T:System.Enum" /> 형식인 해당 형식의 부모 <see cref="T:System.Type" />을 반환합니다.</summary>
+      <returns>읽기 전용입니다.해당 형식의 부모 <see cref="T:System.Type" />입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.CreateTypeInfo">
+      <summary>이 열거형을 나타내는 <see cref="T:System.Reflection.TypeInfo" /> 개체를 가져옵니다.</summary>
+      <returns>이 열거형을 나타내는 개체입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringMethod"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringType">
+      <summary>이 <see cref="T:System.Reflection.Emit.EnumBuilder" />를 선언한 형식을 반환합니다.</summary>
+      <returns>읽기 전용입니다.이 <see cref="T:System.Reflection.Emit.EnumBuilder" />를 선언한 형식입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.DefineLiteral(System.String,System.Object)">
+      <summary>지정된 상수 값으로 열거형에서 명명된 정적 필드를 정의합니다.</summary>
+      <returns>정의된 필드입니다.</returns>
+      <param name="literalName">정적 필드의 이름입니다. </param>
+      <param name="literalValue">리터럴의 상수 값입니다. </param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.FullName">
+      <summary>해당 열거형의 전체 경로를 반환합니다.</summary>
+      <returns>읽기 전용입니다.해당 열거형의 전체 경로입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterPosition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetElementType">
+      <summary>이 메서드를 호출하면 <see cref="T:System.NotSupportedException" />이 항상 throw됩니다.</summary>
+      <returns>이 메서드는 지원되지 않습니다.값이 반환되지 않습니다.</returns>
+      <exception cref="T:System.NotSupportedException">이 메서드는 현재 지원되지 않습니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GUID">
+      <summary>해당 열거형의 GUID를 반환합니다.</summary>
+      <returns>읽기 전용입니다.해당 열거형의 GUID입니다.</returns>
+      <exception cref="T:System.NotSupportedException">현재 이 메서드가 완성되지 않은 형식에서 지원되지 않는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>
+        <see cref="T:System.Reflection.TypeInfo" /> 개체를 이 개체에 할당할 수 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <paramref name="typeInfo" />를 이 개체에 할당할 수 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="typeInfo">테스트할 개체입니다.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericParameter"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType(System.Int32)">
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" />가 1보다 작은 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeByRefType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeGenericType(System.Type[])"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakePointerType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Module">
+      <summary>이 <see cref="T:System.Reflection.Emit.EnumBuilder" /> 정의가 들어 있는 동적 모듈을 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 <see cref="T:System.Reflection.Emit.EnumBuilder" /> 정의를 포함하는 동적 모듈입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Name">
+      <summary>해당 열거형의 이름을 반환합니다.</summary>
+      <returns>읽기 전용입니다.해당 열거형의 이름입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Namespace">
+      <summary>해당 열거형의 네임스페이스를 반환합니다.</summary>
+      <returns>읽기 전용입니다.해당 열거형의 네임스페이스입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 blob을 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.UnderlyingField">
+      <summary>해당 열거형에 대한 내부 필드를 반환합니다.</summary>
+      <returns>읽기 전용입니다.해당 열거형에 대한 내부 필드입니다.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EventBuilder">
+      <summary>클래스에 대한 이벤트를 정의합니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>이 이벤트와 관련된 "다른" 메서드 중 하나를 추가합니다. "다른" 메서드는 이벤트와 관련된 "on" 및 "raise" 메서드 이외의 메서드입니다.이 함수를 여러 번 호출하여 "다른" 메서드를 원하는 만큼 추가할 수 있습니다.</summary>
+      <param name="mdBuilder">다른 메서드를 나타내는 MethodBuilder 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetAddOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>이 이벤트를 등록하는 데 사용될 메서드를 설정합니다.</summary>
+      <param name="mdBuilder">이 이벤트를 등록하는 데 사용될 메서드를 나타내는 MethodBuilder 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 BLOB를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 설명하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRaiseMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>이 이벤트에 발생시키는 데 사용될 메서드를 설정합니다.</summary>
+      <param name="mdBuilder">이 이벤트를 발생시키는 데 사용될 메서드를 나타내는 MethodBuilder 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRemoveOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>이 이벤트를 등록 취소하는 데 사용될 메서드를 설정합니다.</summary>
+      <param name="mdBuilder">이 이벤트를 등록 취소하는 데 사용될 메서드를 나타내는 MethodBuilder 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.FieldBuilder">
+      <summary>필드를 정의하고 나타냅니다.이 클래스는 상속될 수 없습니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Attributes">
+      <summary>해당 필드의 특성을 나타냅니다.이 속성은 읽기 전용입니다.</summary>
+      <returns>해당 필드의 특성입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.DeclaringType">
+      <summary>해당 필드를 선언하는 형식의 <see cref="T:System.Type" /> 개체에 대한 참조를 나타냅니다.이 속성은 읽기 전용입니다.</summary>
+      <returns>해당 필드를 선언하는 형식의 <see cref="T:System.Type" /> 개체에 대한 참조입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.FieldType">
+      <summary>해당 필드의 형식을 나타내는 <see cref="T:System.Type" /> 개체를 나타냅니다.이 속성은 읽기 전용입니다.</summary>
+      <returns>해당 필드의 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.GetValue(System.Object)">
+      <summary>지정된 개체에서 지원하는 필드 값을 검색합니다.</summary>
+      <returns>해당 인스턴스에서 리플렉션된 필드 값이 들어 있는 <see cref="T:System.Object" />입니다.</returns>
+      <param name="obj">필드에 액세스할 개체입니다. </param>
+      <exception cref="T:System.NotSupportedException">이 메서드는 지원되지 않습니다. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Name">
+      <summary>해당 필드의 이름을 나타냅니다.이 속성은 읽기 전용입니다.</summary>
+      <returns>해당 필드의 이름이 들어 있는 <see cref="T:System.String" />입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetConstant(System.Object)">
+      <summary>해당 필드의 기본값을 설정합니다.</summary>
+      <param name="defaultValue">해당 필드에 대한 기본값입니다. </param>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식을 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 만든 경우 </exception>
+      <exception cref="T:System.ArgumentException">필드가 지원되는 형식 중 하나가 아닌 경우또는<paramref name="defaultValue" />의 형식이 필드의 형식과 일치하지 않는 경우또는필드가 <see cref="T:System.Object" /> 형식 또는 다른 참조 형식이고, <paramref name="defaultValue" />가 null이 아니고, 값을 참조 형식에 할당할 수 없는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 blob을 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">해당 필드의 부모 형식이 완성된 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 필드의 부모 형식이 완성된 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetOffset(System.Int32)">
+      <summary>필드 레이아웃을 지정합니다.</summary>
+      <param name="iOffset">해당 필드가 들어 있는 형식 내의 필드 오프셋입니다. </param>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식을 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 만든 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="iOffset" />가 0보다 작은 경우</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.GenericTypeParameterBuilder">
+      <summary>동적으로 정의된 제네릭 형식 및 메서드에 대한 제네릭 형식 매개 변수를 정의하고 만듭니다.이 클래스는 상속될 수 없습니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Assembly">
+      <summary>현재 형식 매개 변수가 속하는 제네릭 형식 정의가 포함된 동적 어셈블리를 나타내는 <see cref="T:System.Reflection.Assembly" /> 개체를 가져옵니다.</summary>
+      <returns>현재 형식 매개 변수가 속하는 제네릭 형식 정의가 포함된 동적 어셈블리를 나타내는 <see cref="T:System.Reflection.Assembly" /> 개체입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.AssemblyQualifiedName">
+      <summary>모든 경우에 null을 가져옵니다.</summary>
+      <returns>모든 경우에 null 참조(Visual Basic의 경우 Nothing)입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.BaseType">
+      <summary>현재 제네릭 형식 매개 변수의 기본 형식 제약 조건을 가져옵니다.</summary>
+      <returns>제네릭 형식 매개 변수의 기본 형식 제약 조건을 나타내는 <see cref="T:System.Type" /> 개체이거나, 형식 매개 변수에 기본 형식 제약 조건이 없는 경우 null입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.ContainsGenericParameters">
+      <summary>항상 true를 가져옵니다.</summary>
+      <returns>모든 경우에 true를 반환합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringMethod">
+      <summary>현재 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />가 제네릭 메서드의 형식 매개 변수를 나타내는 경우 선언 메서드를 나타내는 <see cref="T:System.Reflection.MethodInfo" />를 가져옵니다.</summary>
+      <returns>현재 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />가 제네릭 메서드의 형식 매개 변수를 나타내는 경우 선언 메서드를 나타내는 <see cref="T:System.Reflection.MethodInfo" />이고, 그렇지 않으면 null입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringType">
+      <summary>제네릭 형식 매개 변수가 속하는 제네릭 형식 정의 또는 제네릭 메서드 정의를 가져옵니다.</summary>
+      <returns>형식 매개 변수가 제네릭 형식에 속하는 경우 해당 제네릭 형식을 나타내는 <see cref="T:System.Type" /> 개체이고, 형식 매개 변수가 제네릭 메서드에 속하는 경우 해당 제네릭 메서드가 선언된 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.Equals(System.Object)">
+      <summary>지정된 개체가 EventToken의 인스턴스이며 현재 인스턴스와 같은지 테스트합니다.</summary>
+      <returns>
+        <paramref name="o" />가 EventToken의 인스턴스이고 현재 인스턴스와 같으면 true를 반환하고, 그렇지 않으면 false를 반환합니다.</returns>
+      <param name="o">현재 인스턴스와 비교할 개체입니다.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.FullName">
+      <summary>모든 경우에 null을 가져옵니다.</summary>
+      <returns>모든 경우에 null 참조(Visual Basic의 경우 Nothing)입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterPosition">
+      <summary>형식 매개 변수가 선언된 제네릭 형식 또는 메서드의 형식 매개 변수 목록에서 해당 형식 매개 변수가 있는 위치를 가져옵니다.</summary>
+      <returns>형식 매개 변수가 선언된 제네릭 형식 또는 메서드의 형식 매개 변수 목록에서 해당 형식 매개 변수가 있는 위치입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetElementType">
+      <summary>모든 경우에 <see cref="T:System.NotSupportedException" />을 throw합니다. </summary>
+      <returns>현재 배열 형식, 포인터 형식 또는 ByRef 형식에서 참조하는 형식이거나, 현재 형식이 배열 또는 포인터 형식이 아니며 참조로 전달되지 않는 경우에는 null입니다.</returns>
+      <exception cref="T:System.NotSupportedException">모든 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericTypeDefinition">
+      <summary>제네릭 형식 매개 변수에는 유효하지 않습니다.</summary>
+      <returns>제네릭 형식 매개 변수에는 유효하지 않습니다.</returns>
+      <exception cref="T:System.InvalidOperationException">모든 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetHashCode">
+      <summary>현재 인스턴스에 대한 32비트 정수 해시 코드를 반환합니다.</summary>
+      <returns>32비트 정수 해시 코드입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GUID">
+      <summary>완전하지 않은 제네릭 형식 매개 변수에는 지원되지 않습니다.</summary>
+      <returns>완전하지 않은 제네릭 형식 매개 변수에는 지원되지 않습니다.</returns>
+      <exception cref="T:System.NotSupportedException">모든 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>모든 경우에 <see cref="T:System.NotSupportedException" /> 예외를 throw합니다.</summary>
+      <returns>모든 경우에 <see cref="T:System.NotSupportedException" /> 예외를 throw합니다.</returns>
+      <param name="typeInfo">테스트할 개체입니다.</param>
+      <exception cref="T:System.NotSupportedException">모든 경우</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericParameter">
+      <summary>항상 true를 가져옵니다.</summary>
+      <returns>모든 경우에 true를 반환합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericType">
+      <summary>모든 경우에 false를 반환합니다.</summary>
+      <returns>모든 경우에 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericTypeDefinition">
+      <summary>항상 false를 가져옵니다.</summary>
+      <returns>모든 경우에 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsSubclassOf(System.Type)">
+      <summary>완전하지 않은 제네릭 형식 매개 변수에는 지원되지 않습니다.</summary>
+      <returns>완전하지 않은 제네릭 형식 매개 변수에는 지원되지 않습니다.</returns>
+      <param name="c">지원되지 않습니다.</param>
+      <exception cref="T:System.NotSupportedException">모든 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType">
+      <summary>요소 형식이 제네릭 형식 매개 변수인 1차원 배열의 형식을 반환합니다.</summary>
+      <returns>요소 형식이 제네릭 형식 매개 변수인 1차원 배열의 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType(System.Int32)">
+      <summary>요소 형식이 제네릭 형식 매개 변수이고 지정된 차수를 갖는 배열의 형식을 반환합니다.</summary>
+      <returns>요소 형식이 제네릭 형식 매개 변수이고 지정된 차수를 갖는 배열의 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+      <param name="rank">배열의 차수입니다.</param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" />가 유효한 차수가 아닌 경우.예를 들어, 값이 1보다 작은 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeByRefType">
+      <summary>참조 매개 변수로 전달될 때 현재 제네릭 형식 매개 변수를 나타내는 <see cref="T:System.Type" /> 개체를 반환합니다.</summary>
+      <returns>참조 매개 변수로 전달될 때 현재 제네릭 형식 매개 변수를 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeGenericType(System.Type[])">
+      <summary>완성되지 않은 제네릭 형식 매개 변수에는 유효하지 않습니다.</summary>
+      <returns>이 메서드는 완성되지 않은 제네릭 형식 매개 변수에는 유효하지 않습니다.</returns>
+      <param name="typeArguments">형식 인수의 배열입니다.</param>
+      <exception cref="T:System.InvalidOperationException">모든 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakePointerType">
+      <summary>현재 제네릭 형식 매개 변수에 대한 포인터를 나타내는 <see cref="T:System.Type" /> 개체를 반환합니다.</summary>
+      <returns>현재 제네릭 형식 매개 변수에 대한 포인터를 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Module">
+      <summary>제네릭 형식 매개 변수가 들어 있는 동적 모듈을 가져옵니다.</summary>
+      <returns>제네릭 형식 매개 변수가 들어 있는 동적 모듈을 나타내는 <see cref="T:System.Reflection.Module" /> 개체입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Name">
+      <summary>제네릭 형식 매개 변수의 이름을 가져옵니다.</summary>
+      <returns>제네릭 형식 매개 변수의 이름입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Namespace">
+      <summary>모든 경우에 null을 가져옵니다.</summary>
+      <returns>모든 경우에 null 참조(Visual Basic의 경우 Nothing)입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetBaseTypeConstraint(System.Type)">
+      <summary>형식 매개 변수를 대체하기 위해 형식이 상속해야 하는 기본 형식을 설정합니다.</summary>
+      <param name="baseTypeConstraint">형식 매개 변수를 대체할 모든 형식이 상속해야 하는 <see cref="T:System.Type" />입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 blob을 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다.</param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" />가 null입니다.또는<paramref name="binaryAttribute" />가 null 참조인 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" />가 null입니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetGenericParameterAttributes(System.Reflection.GenericParameterAttributes)">
+      <summary>매개 변수 없는 생성자 제약 조건과 같은 제네릭 매개 변수의 가변성 특성 및 특수 제약 조건을 설정합니다.</summary>
+      <param name="genericParameterAttributes">제네릭 형식 매개 변수의 가변성 특성 및 특수 제약 조건을 나타내는 <see cref="T:System.Reflection.GenericParameterAttributes" /> 값의 비트 조합입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetInterfaceConstraints(System.Type[])">
+      <summary>형식 매개 변수를 대체하기 위해 형식이 구현해야 하는 인터페이스를 설정합니다. </summary>
+      <param name="interfaceConstraints">형식 매개 변수를 대체하기 위해 형식이 구현해야 하는 인터페이스를 나타내는 <see cref="T:System.Type" /> 개체의 배열입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.ToString">
+      <summary>현재 제네릭 형식 매개 변수의 문자열 표현을 반환합니다.</summary>
+      <returns>제네릭 형식 매개 변수의 이름이 포함된 문자열입니다.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.MethodBuilder">
+      <summary>동적 클래스의 메서드(또는 생성자)를 정의하고 나타냅니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Attributes">
+      <summary>이 메서드에 대한 특성을 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 메서드에 대한 MethodAttributes를 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.CallingConvention">
+      <summary>메서드 호출 규칙을 반환합니다.</summary>
+      <returns>읽기 전용입니다.메서드의 호출 규칙입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ContainsGenericParameters">
+      <summary>이 형식에는 지원되지 않습니다.</summary>
+      <returns>지원되지 않습니다.</returns>
+      <exception cref="T:System.NotSupportedException">호출된 메서드가 기본 클래스에서 지원되지 않는 경우</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.DeclaringType">
+      <summary>이 메서드를 선언한 형식을 반환합니다.</summary>
+      <returns>읽기 전용입니다.이 메서드를 선언한 형식입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineGenericParameters(System.String[])">
+      <summary>현재 메서드의 제네릭 형식 매개 변수 개수와 매개 변수 이름을 설정하고, 매개 변수의 제약 조건을 정의하는 데 사용할 수 있는 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 개체의 배열을 반환합니다.</summary>
+      <returns>제네릭 메서드의 형식 매개 변수를 나타내는 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 개체의 배열입니다.</returns>
+      <param name="names">제네릭 형식 매개 변수의 이름을 나타내는 문자열의 배열입니다.</param>
+      <exception cref="T:System.InvalidOperationException">이 메서드에 대해 제네릭 형식 매개 변수가 이미 정의되어 있는 경우또는메서드가 이미 완료된 경우또는현재 메서드에 대해 <see cref="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)" /> 메서드가 호출된 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" />가 null입니다.또는<paramref name="names" />의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" />가 빈 배열인 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>매개 변수 특성과 이 메서드 매개 변수의 이름 또는 이 메서드 반환 값의 이름을 설정합니다.사용자 지정 특성을 적용하는 데 사용할 수 있는 ParameterBuilder를 반환합니다.</summary>
+      <returns>이 메서드의 매개 변수 또는 반환 값을 나타내는 ParameterBuilder 개체를 반환합니다.</returns>
+      <param name="position">매개 변수 목록에서 매개 변수의 위치입니다.매개 변수는 첫 번째 매개 변수에 대해 숫자 1부터 시작하여 인덱싱되고 숫자 0은 메서드의 반환 값을 나타냅니다.</param>
+      <param name="attributes">매개 변수의 매개 변수 특성입니다. </param>
+      <param name="strParamName">매개 변수의 이름입니다.이름은 null 문자열일 수 있습니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">메서드에 매개 변수가 없습니다.또는 <paramref name="position" />이 0보다 작은 경우또는 <paramref name="position" />이 메서드의 매개 변수 개수보다 큰 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 메서드의 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true이지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false인 경우. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.Equals(System.Object)">
+      <summary>지정된 개체가 이 인스턴스와 같은지 여부를 결정합니다.</summary>
+      <returns>
+        <paramref name="obj" />가 MethodBuilder의 인스턴스이고 이 개체와 같으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">이 MethodBuilder 인스턴스와 비교할 개체입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericArguments">
+      <summary>제네릭 메서드인 경우 메서드의 형식 매개 변수를 나타내는 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 개체의 배열을 반환합니다.</summary>
+      <returns>제네릭 메서드인 경우 형식 매개 변수를 나타내는 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 개체의 배열이고, 제네릭 메서드가 아닌 경우에는 null입니다. </returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericMethodDefinition">
+      <summary>이 메서드를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" />의 현재 인스턴스입니다. </returns>
+      <exception cref="T:System.InvalidOperationException">현재 메서드가 제네릭 메서드가 아닌 경우.즉, <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 false를 반환합니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetHashCode">
+      <summary>이 메서드의 해시 코드를 가져옵니다.</summary>
+      <returns>이 메서드의 해시 코드입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator">
+      <summary>기본 MSIL(Microsoft Intermediate Language) 스트림 크기인 64바이트로 이 메서드에 대한 ILGenerator를 반환합니다.</summary>
+      <returns>이 메서드에 대한 ILGenerator 개체를 반환합니다.</returns>
+      <exception cref="T:System.InvalidOperationException">메서드의 <see cref="T:System.Reflection.MethodAttributes" /> 또는 <see cref="T:System.Reflection.MethodImplAttributes" /> 플래그 때문에 메서드에 본문이 없어야 하는 경우(예: 메서드에 <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" /> 플래그가 있는 경우) 또는메서드가 제네릭 메서드이지만 제네릭 메서드 정의가 아닌 경우.즉, <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true로 설정되어 있지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false로 설정되어 있습니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator(System.Int32)">
+      <summary>지정된 MSIL(Microsoft Intermediate Language) 스트림 크기로 이 메서드에 대한 ILGenerator를 반환합니다.</summary>
+      <returns>이 메서드에 대한 ILGenerator 개체를 반환합니다.</returns>
+      <param name="size">MSIL 스트림의 크기(바이트)입니다. </param>
+      <exception cref="T:System.InvalidOperationException">메서드의 <see cref="T:System.Reflection.MethodAttributes" /> 또는 <see cref="T:System.Reflection.MethodImplAttributes" /> 플래그 때문에 메서드에 본문이 없어야 하는 경우(예: 메서드에 <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" /> 플래그가 있는 경우) 또는메서드가 제네릭 메서드이지만 제네릭 메서드 정의가 아닌 경우.즉, <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true로 설정되어 있지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false로 설정되어 있습니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetParameters">
+      <summary>이 메서드의 매개 변수를 반환합니다.</summary>
+      <returns>메서드의 매개 변수를 나타내는 ParameterInfo 개체 배열입니다.</returns>
+      <exception cref="T:System.NotSupportedException">이 메서드는 현재 지원되지 않습니다.<see cref="M:System.Type.GetMethod(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])" />를 사용하여 메서드를 검색하고 반환된 <see cref="T:System.Reflection.MethodInfo" />에서 GetParameters를 호출할 수 있습니다.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.InitLocals">
+      <summary>이 메서드의 지역 변수를 0으로 초기화하는지 여부를 지정하는 부울 값을 가져오거나 설정합니다.이 속성의 기본값은 true입니다.</summary>
+      <returns>이 메서드의 지역 변수를 0으로 초기화하면 true이고, 그렇지 않으면 false입니다.</returns>
+      <exception cref="T:System.InvalidOperationException">현재 메서드의 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true이지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false인 경우. 가져오기 또는 설정에 모두 해당합니다.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod">
+      <summary>메서드가 제네릭 메서드인지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>메서드가 제네릭이면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition">
+      <summary>현재 <see cref="T:System.Reflection.Emit.MethodBuilder" /> 개체가 제네릭 메서드 정의를 나타내는지 여부를 표시하는 값을 가져옵니다.</summary>
+      <returns>현재 <see cref="T:System.Reflection.Emit.MethodBuilder" /> 개체가 제네릭 메서드 정의를 나타내면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.MakeGenericMethod(System.Type[])">
+      <summary>지정된 제네릭 형식 인수를 사용하여 현재 제네릭 메서드 정의로 생성된 제네릭 메서드를 반환합니다.</summary>
+      <returns>지정된 제네릭 형식 인수를 사용하여 현재 제네릭 메서드 정의로 생성된 제네릭 메서드를 나타내는 <see cref="T:System.Reflection.MethodInfo" />입니다.</returns>
+      <param name="typeArguments">제네릭 메서드의 형식 인수를 나타내는 <see cref="T:System.Type" /> 개체의 배열입니다.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Name">
+      <summary>이 메서드의 이름을 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 메서드의 단순한 이름이 포함된 문자열을 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnParameter">
+      <summary>메서드의 반환 형식에 대한 정보(예: 반환 형식에 사용자 지정 한정자가 포함되는지 여부)가 포함된 <see cref="T:System.Reflection.ParameterInfo" /> 개체를 가져옵니다. </summary>
+      <returns>반환 형식에 대한 정보가 포함된 <see cref="T:System.Reflection.ParameterInfo" /> 개체입니다.</returns>
+      <exception cref="T:System.InvalidOperationException">선언하는 형식이 만들어지지 않은 경우</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnType">
+      <summary>이 <see cref="T:System.Reflection.Emit.MethodBuilder" />가 나타내는 메서드의 반환 형식을 가져옵니다.</summary>
+      <returns>메서드의 반환 형식입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 blob을 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">현재 메서드의 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true이지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false인 경우.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 설명하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">현재 메서드의 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true이지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false인 경우.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>이 메서드에 대한 구현 플래그를 설정합니다.</summary>
+      <param name="attributes">설정할 구현 플래그입니다. </param>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 메서드의 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true이지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false인 경우. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetParameters(System.Type[])">
+      <summary>메서드의 매개 변수 개수와 형식을 설정합니다. </summary>
+      <param name="parameterTypes">매개 변수 형식을 나타내는 <see cref="T:System.Type" /> 개체의 배열입니다.</param>
+      <exception cref="T:System.InvalidOperationException">현재 메서드가 제네릭 메서드이지만 제네릭 메서드 정의가 아닌 경우.즉, <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true로 설정되어 있지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false로 설정되어 있습니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetReturnType(System.Type)">
+      <summary>메서드의 반환 형식을 설정합니다.</summary>
+      <param name="returnType">메서드의 반환 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</param>
+      <exception cref="T:System.InvalidOperationException">현재 메서드가 제네릭 메서드이지만 제네릭 메서드 정의가 아닌 경우.즉, <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true로 설정되어 있지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false로 설정되어 있습니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetSignature(System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>반환 형식, 매개 변수 형식, 반환 형식과 매개 변수 형식의 필수적 및 선택적 사용자 지정 한정자가 포함된 메서드 시그니처를 설정합니다.</summary>
+      <param name="returnType">메서드의 반환 형식입니다.</param>
+      <param name="returnTypeRequiredCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" />와 같이 메서드의 반환 형식에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 필수적 사용자 지정 한정자가 없으면 null을 지정합니다.</param>
+      <param name="returnTypeOptionalCustomModifiers">메서드의 반환 형식에 대한 선택적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타내는 형식의 배열입니다.반환 형식에 선택적 사용자 지정 한정자가 없는 경우에는 null을 지정합니다.</param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다.</param>
+      <param name="parameterTypeRequiredCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 필수적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="parameterTypeOptionalCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 선택적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.InvalidOperationException">현재 메서드가 제네릭 메서드이지만 제네릭 메서드 정의가 아닌 경우.즉, <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 속성이 true로 설정되어 있지만 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 속성은 false로 설정되어 있습니다.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.ToString">
+      <summary>이 MethodBuilder 인스턴스를 문자열로 반환합니다.</summary>
+      <returns>현재 MSIL(Microsoft intermediate language) 스트림이 다음에 오도록 이 메서드의 이름, 특성, 메서드 시그니처, 예외 및 지역 시그니처를 포함하는 문자열을 반환합니다.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ModuleBuilder">
+      <summary>동적 어셈블리의 모듈을 정의하고 나타냅니다.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Assembly">
+      <summary>이 <see cref="T:System.Reflection.Emit.ModuleBuilder" /> 인스턴스를 정의한 동적 어셈블리를 가져옵니다.</summary>
+      <returns>현재 동적 모듈을 정의한 동적 어셈블리입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions">
+      <summary>이 동적 모듈에 대한 전역 함수 정의 및 전역 데이터 정의를 완성합니다.</summary>
+      <exception cref="T:System.InvalidOperationException">이 메서드가 이미 호출된 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineEnum(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>지정된 형식의 단일 비정적 필드인 <paramref name="value__" />가 들어 있는 값 형식으로 열거형 형식을 정의합니다.</summary>
+      <returns>정의된 열거형입니다.</returns>
+      <param name="name">열거형 형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="visibility">열거형에 대한 형식 특성이며<see cref="F:System.Reflection.TypeAttributes.VisibilityMask" />에 의해 정의되는 비트는 모두 특성입니다.</param>
+      <param name="underlyingType">열거형에 대한 내부 형식입니다.기본 제공 정수 형식이어야 합니다.</param>
+      <exception cref="T:System.ArgumentException">표시 여부 특성이 아닌 다른 특성이 제공된 경우또는 이 모듈의 부모 어셈블리에 지정된 이름의 열거형이 이미 있는 경우또는 표시 특성이 열거형의 범위와 일치하지 않는 경우.예를 들어 <paramref name="visibility" />가 <see cref="F:System.Reflection.TypeAttributes.NestedPublic" />으로 지정되었지만 열거형이 중첩 형식이 아닌 경우가 여기에 해당합니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>이름, 특성, 호출 규칙, 반환 형식 및 매개 변수 형식을 지정하여 전역 메서드를 정의합니다.</summary>
+      <returns>정의된 전역 메서드입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다.<paramref name="attributes" />에는 <see cref="F:System.Reflection.MethodAttributes.Static" />이 포함되어야 합니다.</param>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <param name="returnType">메서드의 반환 형식입니다. </param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">정적 메서드가 아닌 경우,즉 <paramref name="attributes" />에 <see cref="F:System.Reflection.MethodAttributes.Static" />이 포함되어 있지 않은 경우또는<see cref="T:System.Type" /> 배열의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" />를 이미 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>이름, 특성, 호출 규칙, 반환 형식, 반환 형식에 대한 사용자 지정 한정자, 매개 변수 형식 및 매개 변수 형식에 대한 사용자 지정 한정자를 지정하여 전역 메서드를 정의합니다.</summary>
+      <returns>정의된 전역 메서드입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null 문자를 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다.<paramref name="attributes" />에는 <see cref="F:System.Reflection.MethodAttributes.Static" />이 포함되어야 합니다.</param>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <param name="returnType">메서드의 반환 형식입니다. </param>
+      <param name="requiredReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 반환 형식에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 필수적 사용자 지정 한정자가 없으면 null을 지정합니다.</param>
+      <param name="optionalReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> 또는 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />와 같이 반환 형식에 대한 선택적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 선택적 사용자 지정 한정자가 없는 경우에는 null을 지정합니다.</param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다. </param>
+      <param name="requiredParameterTypeCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 전역 메서드의 해당 매개 변수에 대한 필수적 사용자 지정 한정자를 나타냅니다.특정 인수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.전역 메서드에 인수가 없거나 모든 인수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="optionalParameterTypeCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당 매개 변수에 대한 선택적 사용자 지정 한정자를 나타냅니다.특정 인수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.전역 메서드에 인수가 없거나 모든 인수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">정적 메서드가 아닌 경우,즉 <paramref name="attributes" />에 <see cref="F:System.Reflection.MethodAttributes.Static" />이 포함되어 있지 않은 경우또는<see cref="T:System.Type" /> 배열의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> 메서드가 이미 호출된 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>이름, 특성, 반환 형식 및 매개 변수 형식을 지정하여 전역 메서드를 정의합니다.</summary>
+      <returns>정의된 전역 메서드입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다.<paramref name="attributes" />에는 <see cref="F:System.Reflection.MethodAttributes.Static" />이 포함되어야 합니다.</param>
+      <param name="returnType">메서드의 반환 형식입니다. </param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">정적 메서드가 아닌 경우,즉 <paramref name="attributes" />에 <see cref="F:System.Reflection.MethodAttributes.Static" />이 포함되어 있지 않은 경우또는 <paramref name="name" />의 길이가 0인 경우 또는<see cref="T:System.Type" /> 배열의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" />를 이미 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>PE 파일(이식 가능한 실행 파일)의 .sdata 섹션에서 초기화된 데이터 필드를 정의합니다.</summary>
+      <returns>데이터를 참조하는 필드입니다.</returns>
+      <param name="name">데이터를 참조하는 데 사용되는 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="data">데이터의 BLOB(Binary Large Object)입니다. </param>
+      <param name="attributes">필드의 특성입니다.기본값은 Static입니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 <paramref name="data" />의 크기가 0보다 작거나 같은 경우이거나, 0x3f0000보다 크거나 같은 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 또는 <paramref name="data" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" />를 이미 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String)">
+      <summary>이 모듈에서 지정된 이름을 사용하는 전용 형식에 대해 TypeBuilder를 생성합니다. </summary>
+      <returns>지정된 이름을 사용하는 전용 형식입니다.</returns>
+      <param name="name">네임스페이스를 포함한 형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <exception cref="T:System.ArgumentException">이 모듈의 부모 어셈블리에 지정된 이름의 형식이 이미 있는 경우또는 중첩되지 않은 형식에 대해 중첩된 형식 특성이 설정된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes)">
+      <summary>지정된 형식 이름 및 형식 특성으로 TypeBuilder를 생성합니다.</summary>
+      <returns>요청된 특성을 모두 사용하여 만든 TypeBuilder입니다.</returns>
+      <param name="name">형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">정의된 형식의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">이 모듈의 부모 어셈블리에 지정된 이름의 형식이 이미 있는 경우또는 중첩되지 않은 형식에 대해 중첩된 형식 특성이 설정된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>형식 이름, 형식 특성 및 정의된 형식이 확장하는 형식으로 TypeBuilder를 생성합니다.</summary>
+      <returns>요청된 특성을 모두 사용하여 만든 TypeBuilder입니다.</returns>
+      <param name="name">형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">해당 형식과 연결될 특성입니다. </param>
+      <param name="parent">정의된 형식이 확장하는 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">이 모듈의 부모 어셈블리에 지정된 이름의 형식이 이미 있는 경우또는 중첩되지 않은 형식에 대해 중첩된 형식 특성이 설정된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>형식 이름, 특성, 정의된 형식이 확장하는 형식 및 해당 형식의 전체 크기를 지정하여 TypeBuilder를 생성합니다.</summary>
+      <returns>TypeBuilder 개체</returns>
+      <param name="name">형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">정의된 형식의 특성입니다. </param>
+      <param name="parent">정의된 형식이 확장하는 형식입니다. </param>
+      <param name="typesize">형식의 전체 크기입니다. </param>
+      <exception cref="T:System.ArgumentException">이 모듈의 부모 어셈블리에 지정된 이름의 형식이 이미 있는 경우또는 중첩되지 않은 형식에 대해 중첩된 형식 특성이 설정된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>형식 이름, 특성, 정의된 형식이 확장하는 형식 및 해당 형식의 압축 크기를 지정하여 TypeBuilder를 생성합니다.</summary>
+      <returns>TypeBuilder 개체</returns>
+      <param name="name">형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">정의된 형식의 특성입니다. </param>
+      <param name="parent">정의된 형식이 확장하는 형식입니다. </param>
+      <param name="packsize">형식의 압축 크기입니다. </param>
+      <exception cref="T:System.ArgumentException">이 모듈의 부모 어셈블리에 지정된 이름의 형식이 이미 있는 경우또는 중첩되지 않은 형식에 대해 중첩된 형식 특성이 설정된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>형식 이름, 특성, 정의된 형식이 확장하는 형식, 정의된 형식의 압축 크기 및 전체 크기를 지정하여 TypeBuilder를 생성합니다.</summary>
+      <returns>요청된 특성을 모두 사용하여 만든 TypeBuilder입니다.</returns>
+      <param name="name">형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">정의된 형식의 특성입니다. </param>
+      <param name="parent">정의된 형식이 확장하는 형식입니다. </param>
+      <param name="packingSize">형식의 압축 크기입니다. </param>
+      <param name="typesize">형식의 전체 크기입니다. </param>
+      <exception cref="T:System.ArgumentException">이 모듈의 부모 어셈블리에 지정된 이름의 형식이 이미 있는 경우또는 중첩되지 않은 형식에 대해 중첩된 형식 특성이 설정된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>형식 이름, 특성, 정의된 형식이 확장하는 형식 및 정의된 형식이 구현하는 인터페이스를 지정하여 TypeBuilder를 생성합니다.</summary>
+      <returns>요청된 특성을 모두 사용하여 만든 TypeBuilder입니다.</returns>
+      <param name="name">형식의 전체 경로입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">해당 형식과 연결될 특성입니다. </param>
+      <param name="parent">정의된 형식이 확장하는 형식입니다. </param>
+      <param name="interfaces">해당 형식이 구현하는 인터페이스의 목록입니다. </param>
+      <exception cref="T:System.ArgumentException">이 모듈의 부모 어셈블리에 지정된 이름의 형식이 이미 있는 경우또는 중첩되지 않은 형식에 대해 중첩된 형식 특성이 설정된 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>PE 파일(이식 가능한 실행 파일)의 .sdata 섹션에서 초기화되지 않은 데이터 필드를 정의합니다.</summary>
+      <returns>데이터를 참조하는 필드입니다.</returns>
+      <param name="name">데이터를 참조하는 데 사용되는 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="size">데이터 필드의 크기입니다. </param>
+      <param name="attributes">필드의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 <paramref name="size" />가 0보다 작거나 같은 경우이거나, 0x003f0000보다 크거나 같은 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" />를 이미 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.Equals(System.Object)">
+      <summary>이 인스턴스가 지정된 개체와 같은지 여부를 나타내는 값을 반환합니다.</summary>
+      <returns>
+        <paramref name="obj" />가 이 인스턴스의 형식 및 값과 같으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">이 인스턴스와 비교할 개체 또는 null입니다.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.FullyQualifiedName">
+      <summary>이 모듈의 정규화된 이름과 모듈의 경로를 나타내는 String을 가져옵니다.</summary>
+      <returns>정규화된 모듈 이름입니다.</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetArrayMethod(System.Type,System.String,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>배열 클래스의 명명된 메서드를 반환합니다.</summary>
+      <returns>배열 클래스의 명명된 메서드입니다.</returns>
+      <param name="arrayClass">배열 클래스입니다. </param>
+      <param name="methodName">배열 클래스의 메서드 이름입니다. </param>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <param name="returnType">메서드의 반환 형식입니다. </param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="arrayClass" />가 배열이 아닌 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="arrayClass" /> 또는 <paramref name="methodName" />이 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetHashCode">
+      <summary>이 인스턴스의 해시 코드를 반환합니다.</summary>
+      <returns>32비트 부호 있는 정수 해시 코드입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Name">
+      <summary>메모리 내 모듈임을 나타내는 문자열입니다.</summary>
+      <returns>메모리 내 모듈임을 나타내는 텍스트입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>특성을 나타내는 지정된 BLOB(Binary Large Object)를 사용하여 이 모듈에 사용자 지정 특성을 적용합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 BLOB입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 이 모듈에 사용자 지정 특성을 적용합니다.</summary>
+      <param name="customBuilder">적용할 사용자 지정 특성을 지정하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" />가 null입니다. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.PropertyBuilder">
+      <summary>형식에 대한 속성을 정의합니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>이 속성에 연결된 다른 메서드 중 하나를 추가합니다.</summary>
+      <param name="mdBuilder">다른 메서드를 나타내는 MethodBuilder 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Attributes">
+      <summary>이 속성의 특성을 가져옵니다.</summary>
+      <returns>이 속성의 특성입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanRead">
+      <summary>속성을 읽을 수 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>이 속성을 읽을 수 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanWrite">
+      <summary>속성에 쓸 수 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>이 속성에 쓸 수 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.DeclaringType">
+      <summary>이 멤버를 선언하는 클래스를 가져옵니다.</summary>
+      <returns>이 멤버를 선언하는 클래스에 대한 Type 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetIndexParameters">
+      <summary>해당 속성에 대한 인덱스 매개 변수의 배열을 모두 반환합니다.</summary>
+      <returns>인덱스에 대한 매개 변수가 들어 있는 ParameterInfo 형식의 배열입니다.</returns>
+      <exception cref="T:System.NotSupportedException">이 메서드는 지원되지 않습니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetValue(System.Object,System.Object[])">
+      <summary>속성의 getter 메서드를 호출하여 인덱싱된 속성의 값을 가져옵니다.</summary>
+      <returns>지정된 인덱싱된 속성의 값입니다.</returns>
+      <param name="obj">속성 값이 반환될 개체입니다. </param>
+      <param name="index">인덱싱된 속성에 대한 선택적 인덱스 값입니다.인덱싱되지 않은 속성에 대해서는 이 값이 null이어야 합니다.</param>
+      <exception cref="T:System.NotSupportedException">이 메서드는 지원되지 않습니다. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Name">
+      <summary>이 멤버의 이름을 가져옵니다.</summary>
+      <returns>이 멤버의 이름이 포함된 <see cref="T:System.String" />입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.PropertyType">
+      <summary>이 속성의 필드 형식을 가져옵니다.</summary>
+      <returns>이 속성의 형식입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetConstant(System.Object)">
+      <summary>이 속성의 기본값을 설정합니다.</summary>
+      <param name="defaultValue">이 속성의 기본값입니다. </param>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+      <exception cref="T:System.ArgumentException">속성이 지원되는 형식 중 하나가 아닌 경우또는<paramref name="defaultValue" />의 형식이 속성의 형식과 일치하지 않는 경우또는속성이 <see cref="T:System.Object" /> 형식 또는 다른 참조 형식이고, <paramref name="defaultValue" />가 null이 아니고, 값을 참조 형식에 할당할 수 없는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 BLOB를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetGetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>속성 값을 가져오는 메서드를 설정합니다.</summary>
+      <param name="mdBuilder">속성 값을 가져오는 메서드를 나타내는 MethodBuilder 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetSetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>속성 값을 설정하는 메서드를 설정합니다.</summary>
+      <param name="mdBuilder">속성 값을 설정하는 메서드를 나타내는 MethodBuilder 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">바깥쪽 형식에서 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetValue(System.Object,System.Object,System.Object[])">
+      <summary>인덱스 속성에 대한 선택적 인덱스 값을 사용하여 속성 값을 설정합니다.</summary>
+      <param name="obj">속성 값이 설정될 개체입니다. </param>
+      <param name="value">이 속성의 새 값입니다. </param>
+      <param name="index">인덱싱된 속성에 대한 선택적 인덱스 값입니다.인덱싱되지 않은 속성에 대해서는 이 값이 null이어야 합니다.</param>
+      <exception cref="T:System.NotSupportedException">이 메서드는 지원되지 않습니다. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.TypeBuilder">
+      <summary>런타임에 클래스의 새 인스턴스를 정의하고 만듭니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.AddInterfaceImplementation(System.Type)">
+      <summary>이 형식이 구현하는 인터페이스를 추가합니다.</summary>
+      <param name="interfaceType">이 형식이 구현하는 인터페이스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="interfaceType" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Assembly">
+      <summary>이 형식 정의를 포함하는 동적 어셈블리를 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 형식 정의를 포함하는 동적 어셈블리를 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.AssemblyQualifiedName">
+      <summary>어셈블리의 표시 이름으로 정규화된 이 형식의 전체 이름을 반환합니다.</summary>
+      <returns>읽기 전용입니다.어셈블리의 표시 이름으로 정규화된 이 형식의 전체 이름입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.BaseType">
+      <summary>해당 형식의 기본 형식을 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 형식의 기본 형식을 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.CreateTypeInfo">
+      <summary>이 형식을 나타내는 <see cref="T:System.Reflection.TypeInfo" /> 개체를 가져옵니다.</summary>
+      <returns>이 형식을 나타내는 개체입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringMethod">
+      <summary>현재 제네릭 형식 매개 변수를 선언한 메서드를 가져옵니다.</summary>
+      <returns>현재 형식이 제네릭 형식 매개 변수이면 현재 형식을 선언한 메서드를 나타내는 <see cref="T:System.Reflection.MethodBase" />이고, 그렇지 않으면 null입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringType">
+      <summary>해당 형식을 선언한 형식을 반환합니다.</summary>
+      <returns>읽기 전용입니다.해당 형식을 선언한 형식입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[])">
+      <summary>지정된 특성 및 시그니처를 사용하여 형식에 새 생성자를 추가합니다.</summary>
+      <returns>정의된 생성자입니다.</returns>
+      <param name="attributes">생성자의 특성입니다. </param>
+      <param name="callingConvention">생성자의 호출 규칙입니다. </param>
+      <param name="parameterTypes">생성자의 매개 변수 형식입니다. </param>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[],System.Type[][],System.Type[][])">
+      <summary>지정된 특성, 시그니처 및 사용자 지정 한정자를 사용하여 형식에 새 생성자를 추가합니다.</summary>
+      <returns>정의된 생성자입니다.</returns>
+      <param name="attributes">생성자의 특성입니다. </param>
+      <param name="callingConvention">생성자의 호출 규칙입니다. </param>
+      <param name="parameterTypes">생성자의 매개 변수 형식입니다. </param>
+      <param name="requiredCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 필수적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="optionalCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 선택적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="requiredCustomModifiers" /> 또는 <paramref name="optionalCustomModifiers" />의 크기가 <paramref name="parameterTypes" />의 크기와 같지 않은 경우</exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineDefaultConstructor(System.Reflection.MethodAttributes)">
+      <summary>기본 생성자를 정의합니다.여기서 정의된 생성자는 부모의 기본 생성자를 호출하기만 합니다.</summary>
+      <returns>생성자를 반환합니다.</returns>
+      <param name="attributes">생성자에 적용될 특성을 나타내는 MethodAttributes 개체입니다. </param>
+      <exception cref="T:System.NotSupportedException">부모 형식(기본 형식)에 기본 생성자가 없는 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineEvent(System.String,System.Reflection.EventAttributes,System.Type)">
+      <summary>지정된 이름, 특성 및 이벤트 형식을 사용하여 형식에 새 이벤트를 추가합니다.</summary>
+      <returns>정의된 이벤트입니다.</returns>
+      <param name="name">이벤트의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">이벤트의 특성입니다. </param>
+      <param name="eventtype">이벤트의 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다.또는 <paramref name="eventtype" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Reflection.FieldAttributes)">
+      <summary>지정된 이름, 특성 및 필드 형식을 사용하여 형식에 새 필드를 추가합니다.</summary>
+      <returns>정의된 필드입니다.</returns>
+      <param name="fieldName">필드 이름입니다.<paramref name="fieldName" />은 null을 포함할 수 없습니다.</param>
+      <param name="type">필드의 형식입니다. </param>
+      <param name="attributes">필드의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="fieldName" />의 길이가 0인 경우또는 <paramref name="type" />이 System.Void인 경우또는 이 필드의 부모 클래스에 전체 크기가 지정되어 있는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Type[],System.Type[],System.Reflection.FieldAttributes)">
+      <summary>지정된 이름, 특성, 필드 형식 및 사용자 지정 한정자를 사용하여 형식에 새 필드를 추가합니다.</summary>
+      <returns>정의된 필드입니다.</returns>
+      <param name="fieldName">필드 이름입니다.<paramref name="fieldName" />은 null을 포함할 수 없습니다.</param>
+      <param name="type">필드의 형식입니다. </param>
+      <param name="requiredCustomModifiers">
+        <see cref="T:Microsoft.VisualC.IsConstModifier" />와 같이 필드에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.</param>
+      <param name="optionalCustomModifiers">
+        <see cref="T:Microsoft.VisualC.IsConstModifier" />와 같이 필드에 대한 선택적 사용자 지정 한정자를 나타내는 형식의 배열입니다.</param>
+      <param name="attributes">필드의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="fieldName" />의 길이가 0인 경우또는 <paramref name="type" />이 System.Void인 경우또는 이 필드의 부모 클래스에 전체 크기가 지정되어 있는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineGenericParameters(System.String[])">
+      <summary>현재 형식에 대한 제네릭 형식 매개 변수를 번호와 이름을 지정하여 정의하고, 제약 조건을 설정하는 데 사용할 수 있는 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 개체의 배열을 반환합니다.</summary>
+      <returns>현재 형식에 대한 제네릭 형식 매개 변수의 제약 조건을 정의하는 데 사용할 수 있는 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 개체의 배열입니다.</returns>
+      <param name="names">제네릭 형식 매개 변수의 이름으로 구성된 배열입니다.</param>
+      <exception cref="T:System.InvalidOperationException">이 형식에 대해 제네릭 형식 매개 변수가 이미 정의된 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" />가 null입니다.또는<paramref name="names" />의 요소가 null인 경우</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" />가 빈 배열인 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>이식 가능한 실행 파일(PE)의 .sdata 섹션에서 초기화된 데이터 필드를 정의합니다.</summary>
+      <returns>데이터를 참조하는 필드입니다.</returns>
+      <param name="name">데이터를 참조하는 데 사용되는 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="data">데이터의 BLOB입니다. </param>
+      <param name="attributes">필드의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 데이터의 크기가 0보다 작거나 같은 경우이거나, 0x3f0000보다 크거나 같은 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 또는 <paramref name="data" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />를 이미 호출한 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes)">
+      <summary>지정된 이름 및 메서드 특성을 사용하여 형식에 새 메서드를 추가합니다.</summary>
+      <returns>새로 정의된 메서드를 나타내는 <see cref="T:System.Reflection.Emit.MethodBuilder" />입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 이 메서드의 부모 형식이 인터페이스이고 이 메서드가 virtual(Visual Basic의 경우 Overridable)이 아닌 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions)">
+      <summary>지정된 이름, 메서드 특성 및 호출 규칙을 사용하여 형식에 새 메서드를 추가합니다.</summary>
+      <returns>새로 정의된 메서드를 나타내는 <see cref="T:System.Reflection.Emit.MethodBuilder" />입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다. </param>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 이 메서드의 부모 형식이 인터페이스이고 이 메서드가 virtual(Visual Basic의 경우 Overridable)이 아닌 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>지정된 이름, 메서드 특성, 호출 규칙 및 메서드 시그니처를 사용하여 형식에 새 메서드를 추가합니다.</summary>
+      <returns>새로 정의된 메서드를 나타내는 <see cref="T:System.Reflection.Emit.MethodBuilder" />입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다. </param>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <param name="returnType">메서드의 반환 형식입니다. </param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 이 메서드의 부모 형식이 인터페이스이고 이 메서드가 virtual(Visual Basic의 경우 Overridable)이 아닌 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>지정된 이름, 메서드 특성, 호출 규칙, 메서드 시그니처 및 사용자 지정 한정자를 사용하여 형식에 새 메서드를 추가합니다.</summary>
+      <returns>새로 추가된 메서드를 나타내는 <see cref="T:System.Reflection.Emit.MethodBuilder" /> 개체입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다. </param>
+      <param name="callingConvention">메서드의 호출 규칙입니다. </param>
+      <param name="returnType">메서드의 반환 형식입니다. </param>
+      <param name="returnTypeRequiredCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" />와 같이 메서드의 반환 형식에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 필수적 사용자 지정 한정자가 없으면 null을 지정합니다.</param>
+      <param name="returnTypeOptionalCustomModifiers">메서드의 반환 형식에 대한 선택적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타내는 형식의 배열입니다.반환 형식에 선택적 사용자 지정 한정자가 없는 경우에는 null을 지정합니다.</param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다.</param>
+      <param name="parameterTypeRequiredCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 필수적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="parameterTypeOptionalCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 선택적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 이 메서드의 부모 형식이 인터페이스이고 이 메서드가 virtual(Visual Basic의 경우 Overridable)이 아닌 경우 또는<paramref name="parameterTypeRequiredCustomModifiers" /> 또는 <paramref name="parameterTypeOptionalCustomModifiers" />의 크기가 <paramref name="parameterTypes" />의 크기와 같지 않은 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>지정된 이름, 메서드 특성 및 메서드 시그니처를 사용하여 형식에 새 메서드를 추가합니다.</summary>
+      <returns>정의된 메서드입니다.</returns>
+      <param name="name">메서드의 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">메서드의 특성입니다. </param>
+      <param name="returnType">메서드의 반환 형식입니다. </param>
+      <param name="parameterTypes">메서드의 매개 변수 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 이 메서드의 부모 형식이 인터페이스이고 이 메서드가 virtual(Visual Basic의 경우 Overridable)이 아닌 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethodOverride(System.Reflection.MethodInfo,System.Reflection.MethodInfo)">
+      <summary>지정된 메서드 선언을 잠재적으로 다른 이름을 사용하여 구현하는 지정된 메서드 본문을 지정합니다.</summary>
+      <param name="methodInfoBody">사용될 메서드 본문입니다.이것은 MethodBuilder 개체여야 합니다.</param>
+      <param name="methodInfoDeclaration">선언이 사용될 메서드입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="methodInfoBody" />가 이 클래스에 속하지 않는 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfoBody" /> 또는 <paramref name="methodInfoDeclaration" />이 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는 <paramref name="methodInfoBody" />의 선언 형식이 이 <see cref="T:System.Reflection.Emit.TypeBuilder" />가 나타내는 형식이 아닌 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String)">
+      <summary>지정된 이름으로 중첩 형식을 정의합니다.</summary>
+      <returns>정의된 중첩 형식입니다.</returns>
+      <param name="name">형식의 약식 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이는 0이거나 1023보다 큽니다. 또는이 작업에서는 현재 어셈블리의 중복 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" />으로 형식을 만듭니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes)">
+      <summary>지정된 이름 및 특성으로 중첩 형식을 정의합니다.</summary>
+      <returns>정의된 중첩 형식입니다.</returns>
+      <param name="name">형식의 약식 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">형식의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">중첩 특성이 지정되지 않은 경우또는 이 형식이 봉인되어 있는 경우또는 이 형식이 배열인 경우또는 이 형식은 인터페이스이지만 중첩 형식은 인터페이스가 아닌 경우또는 <paramref name="name" />의 길이가 이 0이거나 1023보다 긴 경우 또는이 작업에서는 현재 어셈블리의 중복 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" />으로 형식을 만듭니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>지정된 이름, 특성 및 해당 형식이 확장하는 형식으로 중첩 형식을 정의합니다.</summary>
+      <returns>정의된 중첩 형식입니다.</returns>
+      <param name="name">형식의 약식 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">형식의 특성입니다. </param>
+      <param name="parent">중첩 형식이 확장하는 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">중첩 특성이 지정되지 않은 경우또는 이 형식이 봉인되어 있는 경우또는 이 형식이 배열인 경우또는 이 형식은 인터페이스이지만 중첩 형식은 인터페이스가 아닌 경우또는 <paramref name="name" />의 길이가 이 0이거나 1023보다 긴 경우 또는이 작업에서는 현재 어셈블리의 중복 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" />으로 형식을 만듭니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>지정된 이름, 특성, 형식의 전체 크기 및 해당 형식이 확장하는 형식으로 중첩 형식을 정의합니다.</summary>
+      <returns>정의된 중첩 형식입니다.</returns>
+      <param name="name">형식의 약식 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">형식의 특성입니다. </param>
+      <param name="parent">중첩 형식이 확장하는 형식입니다. </param>
+      <param name="typeSize">형식의 전체 크기입니다. </param>
+      <exception cref="T:System.ArgumentException">중첩 특성이 지정되지 않은 경우또는 이 형식이 봉인되어 있는 경우또는 이 형식이 배열인 경우또는 이 형식은 인터페이스이지만 중첩 형식은 인터페이스가 아닌 경우또는 <paramref name="name" />의 길이가 이 0이거나 1023보다 긴 경우 또는이 작업에서는 현재 어셈블리의 중복 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" />으로 형식을 만듭니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>지정된 이름, 특성, 해당 형식이 확장하는 형식 및 압축 크기로 중첩 형식을 정의합니다.</summary>
+      <returns>정의된 중첩 형식입니다.</returns>
+      <param name="name">형식의 약식 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">형식의 특성입니다. </param>
+      <param name="parent">중첩 형식이 확장하는 형식입니다. </param>
+      <param name="packSize">형식의 압축 크기입니다. </param>
+      <exception cref="T:System.ArgumentException">중첩 특성이 지정되지 않은 경우또는 이 형식이 봉인되어 있는 경우또는 이 형식이 배열인 경우또는 이 형식은 인터페이스이지만 중첩 형식은 인터페이스가 아닌 경우또는 <paramref name="name" />의 길이가 이 0이거나 1023보다 긴 경우 또는이 작업에서는 현재 어셈블리의 중복 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" />으로 형식을 만듭니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>지정된 이름, 특성, 크기 및 해당 형식이 확장하는 형식으로 중첩 형식을 정의합니다.</summary>
+      <returns>정의된 중첩 형식입니다.</returns>
+      <param name="name">형식의 약식 이름입니다.<paramref name="name" />은 null 값을 포함할 수 없습니다.</param>
+      <param name="attr">형식의 특성입니다.</param>
+      <param name="parent">중첩 형식이 확장하는 형식입니다.</param>
+      <param name="packSize">형식의 압축 크기입니다.</param>
+      <param name="typeSize">형식의 전체 크기입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>지정된 이름, 특성, 해당 형식이 확장하는 형식 및 구현하는 인터페이스로 중첩 형식을 정의합니다.</summary>
+      <returns>정의된 중첩 형식입니다.</returns>
+      <param name="name">형식의 약식 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attr">형식의 특성입니다. </param>
+      <param name="parent">중첩 형식이 확장하는 형식입니다. </param>
+      <param name="interfaces">중첩 형식이 구현하는 인터페이스입니다. </param>
+      <exception cref="T:System.ArgumentException">중첩 특성이 지정되지 않은 경우또는 이 형식이 봉인되어 있는 경우또는 이 형식이 배열인 경우또는 이 형식은 인터페이스이지만 중첩 형식은 인터페이스가 아닌 경우또는 <paramref name="name" />의 길이가 이 0이거나 1023보다 긴 경우 또는이 작업에서는 현재 어셈블리의 중복 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" />으로 형식을 만듭니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다.또는<paramref name="interfaces" /> 배열의 요소가 null인 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>지정된 이름, 특성, 호출 규칙 및 속성 시그니처를 사용하여 형식에 새 속성을 추가합니다.</summary>
+      <returns>정의된 속성입니다.</returns>
+      <param name="name">속성 이름<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">속성의 특성입니다. </param>
+      <param name="callingConvention">속성 접근자의 호출 규칙입니다. </param>
+      <param name="returnType">속성의 반환 형식입니다. </param>
+      <param name="parameterTypes">속성의 매개 변수 형식입니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는 <paramref name="parameterTypes" /> 배열에 null인 요소가 있는 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>지정된 이름, 호출 규칙, 속성 시그니처 및 사용자 지정 한정자를 사용하여 형식에 새 속성을 추가합니다.</summary>
+      <returns>정의된 속성입니다.</returns>
+      <param name="name">속성 이름<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">속성의 특성입니다. </param>
+      <param name="callingConvention">속성 접근자의 호출 규칙입니다. </param>
+      <param name="returnType">속성의 반환 형식입니다. </param>
+      <param name="returnTypeRequiredCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" />와 같이 속성의 반환 형식에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 필수적 사용자 지정 한정자가 없으면 null을 지정합니다.</param>
+      <param name="returnTypeOptionalCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" />와 같이 속성의 반환 형식에 대한 선택적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 선택적 사용자 지정 한정자가 없는 경우에는 null을 지정합니다.</param>
+      <param name="parameterTypes">속성의 매개 변수 형식입니다. </param>
+      <param name="parameterTypeRequiredCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 필수적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="parameterTypeOptionalCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 선택적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는 <paramref name="parameterTypes" /> 배열에 null인 요소가 있는 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[])">
+      <summary>지정된 이름 및 속성 시그니처를 사용하여 형식에 새 속성을 추가합니다.</summary>
+      <returns>정의된 속성입니다.</returns>
+      <param name="name">속성 이름<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">속성의 특성입니다. </param>
+      <param name="returnType">속성의 반환 형식입니다. </param>
+      <param name="parameterTypes">속성의 매개 변수 형식입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는 <paramref name="parameterTypes" /> 배열에 null인 요소가 있는 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>지정된 이름, 속성 시그니처 및 사용자 지정 한정자를 사용하여 형식에 새 속성을 추가합니다.</summary>
+      <returns>정의된 속성입니다.</returns>
+      <param name="name">속성 이름<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="attributes">속성의 특성입니다. </param>
+      <param name="returnType">속성의 반환 형식입니다. </param>
+      <param name="returnTypeRequiredCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" />와 같이 속성의 반환 형식에 대한 필수적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 필수적 사용자 지정 한정자가 없으면 null을 지정합니다.</param>
+      <param name="returnTypeOptionalCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" />와 같이 속성의 반환 형식에 대한 선택적 사용자 지정 한정자를 나타내는 형식의 배열입니다.반환 형식에 선택적 사용자 지정 한정자가 없는 경우에는 null을 지정합니다.</param>
+      <param name="parameterTypes">속성의 매개 변수 형식입니다. </param>
+      <param name="parameterTypeRequiredCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 필수적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 필수적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <param name="parameterTypeOptionalCustomModifiers">형식 배열로 이루어진 배열입니다.각 형식 배열은 해당되는 매개 변수의 선택적 사용자 지정 한정자(예: <see cref="T:System.Runtime.CompilerServices.IsConst" />)를 나타냅니다.특정 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 형식 배열 대신 null을 지정합니다.모든 매개 변수에 선택적 사용자 지정 한정자가 없는 경우에는 배열로 이루어진 배열 대신 null을 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />이 null인 경우또는 <paramref name="parameterTypes" /> 배열에 null인 요소가 있는 경우</exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineTypeInitializer">
+      <summary>이 형식에 대한 이니셜라이저를 정의합니다.</summary>
+      <returns>형식 이니셜라이저를 반환합니다.</returns>
+      <exception cref="T:System.InvalidOperationException">포함하는 형식이 이전에 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어진 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>PE 파일(이식 가능한 실행 파일)의 .sdata 섹션에서 초기화되지 않은 데이터 필드를 정의합니다.</summary>
+      <returns>데이터를 참조하는 필드입니다.</returns>
+      <param name="name">데이터를 참조하는 데 사용되는 이름입니다.<paramref name="name" />은 null을 포함할 수 없습니다.</param>
+      <param name="size">데이터 필드의 크기입니다. </param>
+      <param name="attributes">필드의 특성입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />의 길이가 0인 경우또는 <paramref name="size" />가 0보다 작거나 같은 경우이거나, 0x003f0000보다 크거나 같은 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우 </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.FullName">
+      <summary>해당 형식의 전체 경로를 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 형식의 전체 경로를 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterAttributes">
+      <summary>현재 제네릭 형식 매개 변수의 공 분산 및 특수 제약 조건을 나타내는 값을 가져옵니다. </summary>
+      <returns>현재 제네릭 형식 매개 변수의 공 분산 및 특수 제약 조건을 설명하는 <see cref="T:System.Reflection.GenericParameterAttributes" /> 값의 비트 조합입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterPosition">
+      <summary>형식 매개 변수가 선언된 제네릭 형식의 형식 매개 변수 목록에서 해당 형식 매개 변수가 있는 위치를 가져옵니다.</summary>
+      <returns>현재 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 개체가 제네릭 형식 매개 변수를 나타내면 해당 형식 매개 변수가 선언된 제네릭 형식의 형식 매개 변수 목록에서 해당 매개 변수가 있는 위치를 반환하고, 그렇지 않은 경우의 반환 값은 정의되어 있지 않습니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetConstructor(System.Type,System.Reflection.ConstructorInfo)">
+      <summary>제네릭 형식 정의의 지정된 생성자에 해당하는 생성된 특정 제네릭 형식의 생성자를 반환합니다. </summary>
+      <returns>
+        <paramref name="constructor" />에 해당하는 <paramref name="type" />의 생성자를 나타내는 <see cref="T:System.Reflection.ConstructorInfo" /> 개체로, <paramref name="type" />의 제네릭 형식 정의에 속하는 생성자를 지정합니다.</returns>
+      <param name="type">생성자를 반환할 생성된 제네릭 형식입니다.</param>
+      <param name="constructor">
+        <paramref name="type" />의 제네릭 형식 정의에 있는 생성자로, 반환할 <paramref name="type" />의 생성자를 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" />이 제네릭 형식을 나타내지 않는 경우 또는<paramref name="type" />이 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 형식이 아닌 경우또는<paramref name="constructor" />의 선언 형식이 제네릭 형식 정의가 아닌 경우 또는<paramref name="constructor" />의 선언 형식이 <paramref name="type" />의 제네릭 형식 정의가 아닌 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetElementType">
+      <summary>이 메서드를 호출하면 <see cref="T:System.NotSupportedException" />이 항상 throw됩니다.</summary>
+      <returns>이 메서드는 지원되지 않습니다.값이 반환되지 않습니다.</returns>
+      <exception cref="T:System.NotSupportedException">이 메서드는 지원되지 않습니다. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetField(System.Type,System.Reflection.FieldInfo)">
+      <summary>제네릭 형식 정의의 지정된 필드에 해당하는 생성된 특정 제네릭 형식의 필드를 반환합니다. </summary>
+      <returns>
+        <paramref name="field" />에 해당하는 <paramref name="type" />의 필드를 나타내는 <see cref="T:System.Reflection.FieldInfo" /> 개체로, <paramref name="type" />의 제네릭 형식 정의에 속하는 필드를 지정합니다.</returns>
+      <param name="type">필드를 반환할 생성된 제네릭 형식입니다.</param>
+      <param name="field">
+        <paramref name="type" />의 제네릭 형식 정의에 있는 필드로, 반환할 <paramref name="type" />의 필드를 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" />이 제네릭 형식을 나타내지 않는 경우 또는<paramref name="type" />이 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 형식이 아닌 경우또는<paramref name="field" />의 선언 형식이 제네릭 형식 정의가 아닌 경우 또는<paramref name="field" />의 선언 형식이 <paramref name="type" />의 제네릭 형식 정의가 아닌 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericTypeDefinition">
+      <summary>현재 형식을 얻는 데 사용할 수 있는 제네릭 형식 정의를 나타내는 <see cref="T:System.Type" /> 개체를 반환합니다.</summary>
+      <returns>현재 형식을 생성하는 데 사용할 수 있는 제네릭 형식 정의를 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+      <exception cref="T:System.InvalidOperationException">현재 형식이 제네릭 형식이 아닌 경우.즉, <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" />이 false를 반환하는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetMethod(System.Type,System.Reflection.MethodInfo)">
+      <summary>제네릭 형식 정의의 지정된 메서드에 해당하는 생성된 특정 제네릭 형식의 메서드를 반환합니다. </summary>
+      <returns>
+        <paramref name="method" />에 해당하는 <paramref name="type" />의 메서드를 나타내는 <see cref="T:System.Reflection.MethodInfo" /> 개체로, <paramref name="type" />의 제네릭 형식 정의에 속하는 메서드를 지정합니다.</returns>
+      <param name="type">메서드를 반환할 생성된 제네릭 형식입니다.</param>
+      <param name="method">
+        <paramref name="type" />의 제네릭 형식 정의에 있는 메서드로, 반환할 <paramref name="type" />의 메서드를 지정합니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="method" />가 제네릭 메서드 정의가 아닌 제네릭 메서드인 경우또는<paramref name="type" />이 제네릭 형식을 나타내지 않는 경우또는<paramref name="type" />이 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 형식이 아닌 경우또는<paramref name="method" />의 선언 형식이 제네릭 형식 정의가 아닌 경우 또는<paramref name="method" />의 선언 형식이 <paramref name="type" />의 제네릭 형식 정의가 아닌 경우</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GUID">
+      <summary>해당 형식의 GUID를 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 형식의 GUID를 검색합니다.</returns>
+      <exception cref="T:System.NotSupportedException">현재 이 메서드가 완전하지 않은 형식에 대해 지원되지 않는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>
+        <see cref="T:System.Reflection.TypeInfo" /> 개체를 이 개체에 할당할 수 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <paramref name="typeInfo" />를 이 개체에 할당할 수 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="typeInfo">테스트할 개체입니다.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsCreated">
+      <summary>현재 동적 형식이 만들어진 형식인지 여부를 나타내는 값을 반환합니다.</summary>
+      <returns>
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 메서드가 호출되었으면 true이고, 그렇지 않으면 false입니다. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericParameter">
+      <summary>현재 형식이 제네릭 형식 매개 변수인지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>현재 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 개체가 제네릭 형식 매개 변수를 나타내면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericType">
+      <summary>현재 형식이 제네릭 형식인지 여부를 나타내는 값을 가져옵니다. </summary>
+      <returns>현재 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 개체가 나타내는 형식이 제네릭 형식이면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition">
+      <summary>현재 <see cref="T:System.Reflection.Emit.TypeBuilder" />가 다른 제네릭 형식을 생성하는 데 사용될 수 있는 제네릭 형식 정의를 나타내는지 여부를 가리키는 값을 가져옵니다.</summary>
+      <returns>이 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 개체가 제네릭 형식 정의를 나타내면 true이고, 그렇지 않으면 false입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType">
+      <summary>하한이 0인 현재 형식의 1차원 배열을 나타내는 <see cref="T:System.Type" /> 개체를 반환합니다.</summary>
+      <returns>요소 형식이 현재 형식이고 하한이 0인 1차원 배열을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType(System.Int32)">
+      <summary>지정된 차수를 갖는 현재 형식의 배열을 나타내는 <see cref="T:System.Type" /> 개체를 반환합니다.</summary>
+      <returns>현재 형식의 1차원 배열을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+      <param name="rank">배열의 차수입니다. </param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" />가 잘못된 배열 차원인 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeByRefType">
+      <summary>ref 매개 변수(Visual Basic의 경우 ByRef)로 전달될 때 현재 형식을 나타내는 <see cref="T:System.Type" /> 개체를 반환합니다.</summary>
+      <returns>ref 매개 변수(Visual Basic의 경우 ByRef)로 전달될 때 현재 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeGenericType(System.Type[])">
+      <summary>현재 제네릭 형식 정의의 형식 매개 변수를 형식 배열의 요소로 대체하고 결과로 생성된 형식을 반환됩니다.</summary>
+      <returns>
+        <paramref name="typeArguments" />의 요소를 현재 제네릭 형식의 형식 매개 변수로 대체하여 생성된 형식을 나타내는 <see cref="T:System.Type" />입니다. </returns>
+      <param name="typeArguments">현재 제네릭 형식 정의의 형식 매개 변수를 대체할 형식의 배열입니다.</param>
+      <exception cref="T:System.InvalidOperationException">현재 형식이 제네릭 형식의 정의를 나타내지 않는 경우.즉, <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" />이 false를 반환하는 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="typeArguments" />가 null입니다.또는 <paramref name="typeArguments" />의 요소가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="typeArguments" />의 요소가 현재 제네릭 형식의 해당 형식 매개 변수에 지정된 제약 조건을 충족하지 않는 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakePointerType">
+      <summary>현재 형식에 대한 관리되지 않는 포인터의 형식을 나타내는 <see cref="T:System.Type" /> 개체를 반환합니다.</summary>
+      <returns>현재 형식에 대한 관리되지 않는 포인터의 형식을 나타내는 <see cref="T:System.Type" /> 개체입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Module">
+      <summary>이 형식 정의를 포함하는 동적 모듈을 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 형식 정의를 포함하는 동적 모듈을 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Name">
+      <summary>해당 형식의 이름을 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 형식의 <see cref="T:System.String" /> 이름을 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Namespace">
+      <summary>해당 TypeBuilder가 정의되어 있는 네임스페이스를 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 TypeBuilder가 정의되어 있는 네임스페이스를 검색합니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.PackingSize">
+      <summary>해당 형식의 압축 크기를 검색합니다.</summary>
+      <returns>읽기 전용입니다.해당 형식의 압축 크기를 검색합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>지정된 사용자 지정 특성 blob을 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="con">사용자 지정 특성에 대한 생성자입니다. </param>
+      <param name="binaryAttribute">특성을 나타내는 바이트 blob입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 또는 <paramref name="binaryAttribute" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>사용자 지정 특성 작성기를 사용하여 사용자 지정 특성을 설정합니다.</summary>
+      <param name="customBuilder">사용자 지정 특성을 정의하는 도우미 클래스의 인스턴스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" />가 null입니다. </exception>
+      <exception cref="T:System.InvalidOperationException">현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetParent(System.Type)">
+      <summary>현재 생성 중인 형식의 기본 형식을 설정합니다.</summary>
+      <param name="parent">새 기본 형식입니다. </param>
+      <exception cref="T:System.InvalidOperationException">해당 형식이 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />을 사용하여 이미 만들어져 있는 경우또는<paramref name="parent" />가 null이고 현재 인스턴스가 나타내는 인터페이스의 특성에 <see cref="F:System.Reflection.TypeAttributes.Abstract" />가 포함되지 않은 경우또는현재 동적 형식에 대해 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 속성이 true로 설정되어 있는데 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 속성은 false로 설정되어 있는 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parent" />가 인터페이스인 경우이 예외 조건은 .NET Framework 버전 2.0에서 새로 도입되었습니다.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Size">
+      <summary>형식의 전체 크기를 검색합니다.</summary>
+      <returns>읽기 전용입니다.이 형식의 전체 크기를 검색합니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.ToString">
+      <summary>네임스페이스가 제외된 형식의 이름을 반환합니다.</summary>
+      <returns>읽기 전용입니다.네임스페이스가 제외된 형식의 이름입니다.</returns>
+    </member>
+    <member name="F:System.Reflection.Emit.TypeBuilder.UnspecifiedTypeSize">
+      <summary>지정되지 않은 형식의 전체 크기를 나타냅니다.</summary>
+    </member>
+  </members>
+</doc>

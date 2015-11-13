@@ -1,0 +1,185 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.Lightweight</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.DynamicMethod">
+      <summary>컴파일, 실행, 삭제 가능한 동적 메서드를 정의하고 나타냅니다.삭제한 메서드는 가비지 수집 대상이 될 수 있습니다.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>메서드 이름, 특성, 호출 규칙, 반환 형식, 매개 변수 형식 및 모듈을 지정하고 동적 메서드의 MSIL(Microsoft Intermediate Language)을 통해 액세스하는 형식과 멤버에 대해 JIT(Just-In-Time) 가시성 검사를 생략할지 여부를 지정하여 모듈에 대해 전역인 동적 메서드를 만듭니다.</summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="attributes">동적 메서드의 특성을 지정하는 <see cref="T:System.Reflection.MethodAttributes" /> 값의 비트 조합입니다.<see cref="F:System.Reflection.MethodAttributes.Public" /> 및 <see cref="F:System.Reflection.MethodAttributes.Static" /> 조합만 허용됩니다.</param>
+      <param name="callingConvention">동적 메서드의 호출 규칙입니다.<see cref="F:System.Reflection.CallingConventions.Standard" />여야 합니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <param name="m">동적 메서드가 논리적으로 연결될 모듈을 나타내는 <see cref="T:System.Reflection.Module" />입니다. </param>
+      <param name="skipVisibility">동적 메서드의 MSIL에서 액세스하는 형식과 멤버에 대해 JIT 가시성 검사를 생략하려면 true이고, 그렇지 않으면 false입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우또는<paramref name="m" />이 동적 메서드에 대한 익명 호스팅을 제공하는 모듈인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는<paramref name="m" />가 null입니다.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" />가 <see cref="F:System.Reflection.MethodAttributes.Public" /> 및 <see cref="F:System.Reflection.MethodAttributes.Static" /> 이외의 플래그 조합인 경우또는<paramref name="callingConvention" />가 <see cref="F:System.Reflection.CallingConventions.Standard" />가 아닌 경우또는<paramref name="returnType" />이 <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>메서드 이름, 특성, 호출 규칙, 반환 형식, 매개 변수 형식, 동적 메서드를 논리적으로 연결할 형식을 지정하고 동적 메서드의 MSIL(Microsoft Intermediate Language)을 통해 액세스하는 형식과 멤버에 대해 JIT(Just-In-Time) 가시성 검사를 생략할지 여부를 지정하여 동적 메서드를 만듭니다.</summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="attributes">동적 메서드의 특성을 지정하는 <see cref="T:System.Reflection.MethodAttributes" /> 값의 비트 조합입니다.<see cref="F:System.Reflection.MethodAttributes.Public" /> 및 <see cref="F:System.Reflection.MethodAttributes.Static" /> 조합만 허용됩니다.</param>
+      <param name="callingConvention">동적 메서드의 호출 규칙입니다.<see cref="F:System.Reflection.CallingConventions.Standard" />여야 합니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <param name="owner">동적 메서드가 논리적으로 연결될 <see cref="T:System.Type" />입니다.동적 메서드는 해당 형식의 모든 멤버에 액세스할 수 있습니다.</param>
+      <param name="skipVisibility">동적 메서드의 MSIL에서 액세스하는 형식과 멤버에 대해 JIT 가시성 검사를 생략하려면 true이고, 그렇지 않으면 false입니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우 또는<paramref name="owner" />가 인터페이스, 배열, 개방형 제네릭 형식, 또는 제네릭 형식이나 메서드의 형식 매개 변수인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는<paramref name="owner" />가 null입니다.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" />가 <see cref="F:System.Reflection.MethodAttributes.Public" /> 및 <see cref="F:System.Reflection.MethodAttributes.Static" /> 이외의 플래그 조합인 경우또는<paramref name="callingConvention" />가 <see cref="F:System.Reflection.CallingConventions.Standard" />가 아닌 경우또는<paramref name="returnType" />이 <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[])">
+      <summary>메서드 이름, 반환 형식 및 매개 변수 형식을 지정하여 익명으로 호스팅된 동적 메서드를 초기화합니다. </summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" />이 <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Boolean)">
+      <summary>메서드 이름, 반환 형식 및 매개 변수 형식을 지정하고 동적 메서드의 MSIL(Microsoft Intermediate Language)을 통해 액세스하는 형식과 멤버에 대해 JIT(Just-In-Time) 가시성 검사를 생략할지 여부를 지정하여 익명으로 호스팅된 동적 메서드를 초기화합니다. </summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <param name="restrictedSkipVisibility">동적 메서드의 MSIL에서 액세스하는 형식과 멤버를 포함하는 어셈블리의 신뢰 수준이 동적 메서드를 내보내는 호출 스택의 신뢰 수준과 같거나 그보다 낮은 경우에 한해 해당 형식과 멤버에 대한 JIT 가시성 검사를 생략하려면 true이고, 그렇지 않으면 false입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" />이 <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module)">
+      <summary>메서드 이름, 반환 값, 매개 변수 형식 및 모듈을 지정하여 모듈에 대해 전역 메서드인 동적 메서드를 만듭니다.</summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <param name="m">동적 메서드가 논리적으로 연결될 모듈을 나타내는 <see cref="T:System.Reflection.Module" />입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우 또는<paramref name="m" />이 동적 메서드에 대한 익명 호스팅을 제공하는 모듈인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는<paramref name="m" />가 null입니다.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" />이 <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>메서드 이름, 반환 형식, 매개 변수 형식 및 모듈을 지정하고 동적 메서드의 MSIL(Microsoft Intermediate Language)을 통해 액세스하는 형식과 멤버에 대해 JIT(Just-In-Time) 가시성 검사를 생략할지 여부를 지정하여 모듈에 대해 전역인 동적 메서드를 만듭니다.</summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <param name="m">동적 메서드가 논리적으로 연결될 모듈을 나타내는 <see cref="T:System.Reflection.Module" />입니다. </param>
+      <param name="skipVisibility">동적 메서드의 MSIL에서 액세스하는 형식과 멤버에 대해 JIT 가시성 검사를 생략하려면 true입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우 또는<paramref name="m" />이 동적 메서드에 대한 익명 호스팅을 제공하는 모듈인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는<paramref name="m" />가 null입니다.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" />이 <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type)">
+      <summary>메서드 이름, 반환 형식, 매개 변수 형식 및 동적 메서드가 논리적으로 연결될 형식을 지정하여 동적 메서드를 만듭니다.</summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <param name="owner">동적 메서드가 논리적으로 연결될 <see cref="T:System.Type" />입니다.동적 메서드는 해당 형식의 모든 멤버에 액세스할 수 있습니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우또는 <paramref name="owner" />가 인터페이스, 배열, 개방형 제네릭 형식, 또는 제네릭 형식이나 메서드의 형식 매개 변수인 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는<paramref name="owner" />가 null입니다.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" />이 null이거나, <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>메서드 이름, 반환 형식, 매개 변수 형식, 동적 메서드를 논리적으로 연결할 형식을 지정하고 동적 메서드의 MSIL(Microsoft Intermediate Language)을 통해 액세스하는 형식과 멤버에 대해 JIT(Just-In-Time) 가시성 검사를 생략할지 여부를 지정하여 동적 메서드를 만듭니다.</summary>
+      <param name="name">동적 메서드의 이름입니다.이 이름은 길이가 0인 문자열이 될 수 있지만 null은 될 수 없습니다.</param>
+      <param name="returnType">동적 메서드의 반환 형식을 지정하는 <see cref="T:System.Type" /> 개체이거나, 메서드에 반환 형식이 없는 경우에는 null입니다. </param>
+      <param name="parameterTypes">동적 메서드의 매개 변수 형식을 지정하는 <see cref="T:System.Type" /> 개체로 이루어진 배열이거나, 메서드에 매개 변수가 없는 경우에는 null입니다. </param>
+      <param name="owner">동적 메서드가 논리적으로 연결될 <see cref="T:System.Type" />입니다.동적 메서드는 해당 형식의 모든 멤버에 액세스할 수 있습니다.</param>
+      <param name="skipVisibility">동적 메서드의 MSIL에서 액세스하는 형식과 멤버에 대해 JIT 가시성 검사를 생략하려면 true이고, 그렇지 않으면 false입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" />의 요소가 null이거나 <see cref="T:System.Void" />인 경우또는 <paramref name="owner" />가 인터페이스, 배열, 개방형 제네릭 형식, 또는 제네릭 형식이나 메서드의 형식 매개 변수인 경우</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null입니다. 또는<paramref name="owner" />가 null입니다.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" />이 null이거나, <see cref="P:System.Type.IsByRef" />가 true를 반환하는 형식인 경우 </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Attributes">
+      <summary>동적 메서드를 만들 때 지정된 특성을 가져옵니다.</summary>
+      <returns>메서드의 특성을 나타내는 <see cref="T:System.Reflection.MethodAttributes" /> 값의 비트 조합입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.CallingConvention">
+      <summary>동적 메서드를 만들 때 지정된 호출 규칙을 가져옵니다.</summary>
+      <returns>메서드의 호출 규칙을 나타내는 <see cref="T:System.Reflection.CallingConventions" /> 값 중 하나입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type)">
+      <summary>동적 메서드를 완성하고 이 메서드를 실행하는 데 사용할 수 있는 대리자를 만듭니다.</summary>
+      <returns>동적 메서드를 실행하는 데 사용할 수 있는 지정된 형식의 대리자입니다.</returns>
+      <param name="delegateType">동적 메서드의 시그니처와 일치하는 시그니처를 갖는 대리자 형식입니다. </param>
+      <exception cref="T:System.InvalidOperationException">동적 메서드에 메서드 본문이 없는 경우</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="delegateType" />에 잘못된 수의 매개 변수나 잘못된 매개 변수 형식이 있는 경우</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type,System.Object)">
+      <summary>동적 메서드를 완성하고, 대리자 형식과 대리자가 바인딩될 개체를 지정하여 이 메서드를 실행하는 데 사용할 수 있는 대리자를 만듭니다.</summary>
+      <returns>지정된 대상 개체와 함께 동적 메서드를 실행하는 데 사용할 수 있는 지정된 형식의 대리자입니다.</returns>
+      <param name="delegateType">동적 메서드의 시그니처와 일치하는 시그니처를 갖고 첫 번째 매개 변수는 없는 대리자 형식입니다.</param>
+      <param name="target">대리자가 바인딩될 개체입니다.동적 메서드의 첫 번째 매개 변수와 동일한 형식이어야 합니다.</param>
+      <exception cref="T:System.InvalidOperationException">동적 메서드에 메서드 본문이 없는 경우</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="target" />이 동적 메서드의 첫 번째 매개 변수 형식과 동일하지 않고 이 형식에 할당할 수 없는 경우또는<paramref name="delegateType" />에 잘못된 수의 매개 변수나 잘못된 매개 변수 형식이 있는 경우</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.DeclaringType">
+      <summary>메서드를 선언하는 형식을 가져옵니다. 동적 메서드의 경우에는 항상 null입니다.</summary>
+      <returns>항상 null입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator">
+      <summary>기본 MSIL(Microsoft Intermediate Language) 스트림 크기인 64바이트로 메서드에 대한 MSIL 생성기를 반환합니다.</summary>
+      <returns>메서드에 대한 <see cref="T:System.Reflection.Emit.ILGenerator" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator(System.Int32)">
+      <summary>지정된 MSIL(Microsoft Intermediate Language) 스트림 크기로 메서드에 대한 MSIL 생성기를 반환합니다.</summary>
+      <returns>메서드에 대해 MSIL 스트림이 지정된 크기인 <see cref="T:System.Reflection.Emit.ILGenerator" /> 개체입니다.</returns>
+      <param name="streamSize">MSIL 스트림의 크기(바이트)입니다. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetParameters">
+      <summary>동적 메서드의 매개 변수를 반환합니다.</summary>
+      <returns>동적 메서드의 매개 변수를 나타내는 <see cref="T:System.Reflection.ParameterInfo" /> 개체의 배열입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.InitLocals">
+      <summary>메서드의 지역 변수가 0으로 초기화되는지 여부를 나타내는 값을 가져오거나 설정합니다. </summary>
+      <returns>메서드의 지역 변수가 0으로 초기화되면 true이고, 그렇지 않으면 false입니다.기본값은 true입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Name">
+      <summary>동적 메서드의 이름을 가져옵니다.</summary>
+      <returns>메서드의 단순한 이름입니다.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnParameter">
+      <summary>동적 메서드의 반환 매개 변수를 가져옵니다.</summary>
+      <returns>항상 null입니다. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnType">
+      <summary>동적 메서드의 반환 값 형식을 가져옵니다.</summary>
+      <returns>현재 메서드의 반환 값 형식을 나타내는 <see cref="T:System.Type" />이거나, 메서드에 반환 형식이 없는 경우 <see cref="T:System.Void" />입니다.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.ToString">
+      <summary>문자열로 표현된 메서드 시그니처를 반환합니다.</summary>
+      <returns>메서드 시그니처를 나타내는 문자열입니다.</returns>
+    </member>
+  </members>
+</doc>

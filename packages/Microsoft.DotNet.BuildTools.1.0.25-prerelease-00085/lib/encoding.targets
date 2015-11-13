@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask TaskName="GenerateEncodingTable" AssemblyFile="$(ToolsDir)Microsoft.DotNet.Build.Tasks.dll" />
+
+  <!-- Include the following in the .csproj of a project which needs to generate an encoding data-table, uncomment as appropriate:
+
+       <PropertyGroup>
+         This Task can be re-run with /t:GenerateEncodingSource
+         An IANA Mapping file contains rows of two elements: a valid IANA encoding identifier, and the equivalent code page.
+         There may be many IANA ids (aliases) mapped to a single code page.
+         <IANAMappingPath>nameOfMappingFile</IANAMappingPath>
+         The preferred name file contains rows of three elements: a code page, the 'canonical' IANA identifier,
+         and an "English" or descriptive name.  There is one row per code page.
+         <PreferredIANANamesPath>nameOfPreferredNameFile</PreferredIANANamesPath>
+         <OutputDataTablePath>nameOfOutputFile</OutputDataTablePath>
+       </PropertyGroup>
+       <Import Project="$(ToolsDir)encoding.targets" Condition="Exists('$(ToolsDir)encoding.targets')" />
+  -->
+
+  <Target Name="GenerateEncodingSource"
+          Condition="'$(OutputDataTablePath)'!='' And '$(IANAMappingPath)'!='' And Exists('$(IANAMappingPath)') And '$(PreferredIANANamesPath)'!='' And Exists('$(PreferredIANANamesPath)')"
+          Inputs="$(IANAMappingPath);$(PreferredIANANamesPath)"
+          Outputs="$(OutputDataTablePath)">
+
+    <GenerateEncodingTable
+        IANAMappings="$(IANAMappingPath)"
+        PreferedIANANames="$(PreferredIANANamesPath)"
+        OutputDataTable="$(OutputDataTablePath)"
+        BuildProjectDirectory="$(MSBuildProjectDirectory)\"
+        Namespace="$(Namespace)"
+        ClassName="$(Classname)" />
+  </Target>
+</Project>

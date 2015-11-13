@@ -1,0 +1,19 @@
+{
+  "runtimes": {
+    "win7-x86": {
+      "System.IO.Compression": {
+        "System.IO.Compression.clrcompression-x86": "4.0.0"
+      }
+    },
+    "win7-x64": {
+      "System.IO.Compression": {
+        "System.IO.Compression.clrcompression-x64": "4.0.0"
+      }
+    },
+    "win8-arm": {
+      "System.IO.Compression": {
+        "System.IO.Compression.clrcompression-arm": "4.0.0"
+      }
+    }
+  }
+}

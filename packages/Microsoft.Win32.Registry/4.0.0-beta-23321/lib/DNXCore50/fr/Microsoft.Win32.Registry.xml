@@ -1,0 +1,564 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Microsoft.Win32.Registry</name>
+  </assembly>
+  <members>
+    <member name="T:Microsoft.Win32.Registry">
+      <summary>Fournit des objets <see cref="T:Microsoft.Win32.RegistryKey" /> qui représentent les clés racine du Registre Windows et des méthodes static permettant d'accéder à des paires clé/valeur.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.ClassesRoot">
+      <summary>Définit les types (ou classes) de documents ainsi que les propriétés associées à ces types.Ce champ lit la clé de base HKEY_CLASSES_ROOT du Registre Windows.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentConfig">
+      <summary>Contient des informations de configuration concernant le matériel qui ne sont pas spécifiques à l'utilisateur.Ce champ lit la clé de base HKEY_CURRENT_CONFIG du Registre Windows.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentUser">
+      <summary>Contient les informations relatives aux préférences de l'utilisateur en cours.Ce champ lit la clé de base HKEY_CURRENT_USER du Registre Windows.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.GetValue(System.String,System.String,System.Object)">
+      <summary>Récupère la valeur associée au nom spécifié, dans la clé de Registre spécifiée.Si le nom est introuvable dans la clé spécifiée, retourne une valeur par défaut que vous fournissez ou la valeur null si la clé spécifiée n'existe pas.</summary>
+      <returns>null si la sous-clé spécifiée par <paramref name="keyName" /> n'existe pas ; autrement, la valeur associée à <paramref name="valueName" /> ou <paramref name="defaultValue" /> si <paramref name="valueName" /> est introuvable.</returns>
+      <param name="keyName">Chemin de Registre complet de la clé, commençant avec une racine de Registre valide, comme « HKEY_CURRENT_USER ».</param>
+      <param name="valueName">Nom de la paire nom/valeur.</param>
+      <param name="defaultValue">Valeur à retourner si <paramref name="valueName" /> n'existe pas.</param>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire dans la clé de Registre. </exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée a été marqué pour suppression. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> ne commence pas par une racine de Registre valide. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.LocalMachine">
+      <summary>Contient les informations de configuration pour l'ordinateur local.Ce champ lit la clé de base HKEY_LOCAL_MACHINE du Registre Windows.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.PerformanceData">
+      <summary>Contient des informations sur les performances des composants logiciels.Ce champ lit la clé de base HKEY_PERFORMANCE_DATA du Registre Windows.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object)">
+      <summary>Définit la paire nom/valeur spécifiée sur la clé de Registre spécifiée.Si la clé spécifiée n'existe pas, elle est créée.</summary>
+      <param name="keyName">Chemin de Registre complet de la clé, commençant avec une racine de Registre valide, comme « HKEY_CURRENT_USER ».</param>
+      <param name="valueName">Nom de la paire nom/valeur.</param>
+      <param name="value">Valeur à stocker.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> a la valeur null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> ne commence pas par une racine de Registre valide. ouLa longueur de <paramref name="keyName" /> est supérieure à la longueur maximale autorisée (255 caractères).</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> étant en lecture seule, elle n'est pas accessible en écriture ; il s'agit par exemple d'un nœud de niveau racine. </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour créer ou modifier des clés de Registre. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>Définit la paire nom/valeur sur la clé de Registre spécifiée, à l'aide du type de données de Registre spécifié.Si la clé spécifiée n'existe pas, elle est créée.</summary>
+      <param name="keyName">Chemin de Registre complet de la clé, commençant avec une racine de Registre valide, comme « HKEY_CURRENT_USER ».</param>
+      <param name="valueName">Nom de la paire nom/valeur.</param>
+      <param name="value">Valeur à stocker.</param>
+      <param name="valueKind">Type de données de Registre à utiliser lors du stockage des données.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> a la valeur null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> ne commence pas par une racine de Registre valide.ouLa longueur de <paramref name="keyName" /> est supérieure à la longueur maximale autorisée (255 caractères).ou Le type de <paramref name="value" /> ne correspondait pas au type de données de Registre spécifié par <paramref name="valueKind" />, par conséquent les données n'ont pas pu être converties correctement. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> étant en lecture seule, elle n'est pas accessible en écriture ; il s'agit par exemple d'un nœud de niveau racine ou bien la clé n'a pas été ouverte avec un accès en écriture. </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour créer ou modifier des clés de Registre. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.Users">
+      <summary>Contient les informations relatives à la configuration utilisateur par défaut.Ce champ lit la clé de base HKEY_USERS du Registre Windows.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryHive">
+      <summary>Représente les valeurs possibles pour un nœud de niveau supérieur sur un ordinateur étranger.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.ClassesRoot">
+      <summary>Représente la clé de base HKEY_CLASSES_ROOT sur un autre ordinateur.Cette valeur peut être passée à la méthode <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> afin d'ouvrir ce nœud à distance.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentConfig">
+      <summary>Représente la clé de base HKEY_CURRENT_CONFIG sur un autre ordinateur.Cette valeur peut être passée à la méthode <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> afin d'ouvrir ce nœud à distance.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentUser">
+      <summary>Représente la clé de base HKEY_CURRENT_USER sur un autre ordinateur.Cette valeur peut être passée à la méthode <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> afin d'ouvrir ce nœud à distance.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.LocalMachine">
+      <summary>Représente la clé de base HKEY_LOCAL_MACHINE sur un autre ordinateur.Cette valeur peut être passée à la méthode <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> afin d'ouvrir ce nœud à distance.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.PerformanceData">
+      <summary>Représente la clé de base HKEY_PERFORMANCE_DATA sur un autre ordinateur.Cette valeur peut être passée à la méthode <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> afin d'ouvrir ce nœud à distance.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.Users">
+      <summary>Représente la clé de base HKEY_USERS sur un autre ordinateur.Cette valeur peut être passée à la méthode <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> afin d'ouvrir ce nœud à distance.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryKey">
+      <summary>Représente un nœud de niveau clé dans le Registre Windows.Cette classe est une encapsulation du Registre.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String)">
+      <summary>Crée une sous-clé ou en ouvre une existante pour l'accès en écriture.  </summary>
+      <returns>Sous-clé nouvellement créée ou null si l'opération a échoué.Si une chaîne de longueur nulle est spécifiée pour <paramref name="subkey" />, l'objet <see cref="T:Microsoft.Win32.RegistryKey" /> en cours est retourné.</returns>
+      <param name="subkey">Nom ou chemin d'accès de la sous-clé à créer ou ouvrir.Cette chaîne n'est pas sensible à la casse.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> a la valeur null. </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour créer ou ouvrir la clé de Registre. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> sur lequel cette méthode est appelée est fermé (les clés fermées sont inaccessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> n'est pas accessible en écriture ; par exemple, il n'a pas été ouvert en tant que clé accessible en écriture ou l'utilisateur ne dispose pas des droits d'accès nécessaires. </exception>
+      <exception cref="T:System.IO.IOException">Le niveau d'imbrication dépasse 510.ouUne erreur système s'est produite, telle que la suppression de la clé ou une tentative de création d'une clé à la racine de <see cref="F:Microsoft.Win32.Registry.LocalMachine" />.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean)">
+      <summary>Crée une nouvelle sous-clé ou ouvre une existante avec l'accès spécifié. Disponible à partir.NET Framework 2015</summary>
+      <returns>Sous-clé nouvellement créée ou null si l'opération a échoué.Si une chaîne de longueur nulle est spécifiée pour <paramref name="subkey" />, l'objet <see cref="T:Microsoft.Win32.RegistryKey" /> en cours est retourné.</returns>
+      <param name="subkey">Nom ou chemin d'accès de la sous-clé à créer ou ouvrir.Cette chaîne n'est pas sensible à la casse.</param>
+      <param name="writable">truepour indiquer que la nouvelle sous-clé est accessible en écriture ; Sinon, false.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> a la valeur null. </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour créer ou ouvrir la clé de Registre. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> actuel n'est pas accessible en écriture ; par exemple, il n'a pas été ouvert en tant que clé accessible en écriture ou l'utilisateur ne dispose pas des droits d'accès nécessaires.</exception>
+      <exception cref="T:System.IO.IOException">Le niveau d'imbrication dépasse 510.ouUne erreur système s'est produite, telle que la suppression de la clé ou une tentative de création d'une clé à la racine de <see cref="F:Microsoft.Win32.Registry.LocalMachine" />.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean,Microsoft.Win32.RegistryOptions)">
+      <summary>Crée une nouvelle sous-clé ou ouvre une existante avec l'accès spécifié. Disponible à partir.NET Framework 2015</summary>
+      <returns>Sous-clé nouvellement créée ou null si l'opération a échoué.Si une chaîne de longueur nulle est spécifiée pour <paramref name="subkey" />, l'objet <see cref="T:Microsoft.Win32.RegistryKey" /> en cours est retourné.</returns>
+      <param name="subkey">Nom ou chemin d'accès de la sous-clé à créer ou ouvrir.Cette chaîne n'est pas sensible à la casse.</param>
+      <param name="writable">truepour indiquer que la nouvelle sous-clé est accessible en écriture ; Sinon, false.</param>
+      <param name="options">Option de Registre à utiliser.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> a la valeur null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" />ne spécifie pas une Option valide</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour créer ou ouvrir la clé de Registre. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> actuel n'est pas accessible en écriture ; par exemple, il n'a pas été ouvert en tant que clé accessible en écriture ou l'utilisateur ne dispose pas des droits d'accès nécessaires.</exception>
+      <exception cref="T:System.IO.IOException">Le niveau d'imbrication dépasse 510.ouUne erreur système s'est produite, telle que la suppression de la clé ou une tentative de création d'une clé à la racine de <see cref="F:Microsoft.Win32.Registry.LocalMachine" />.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String)">
+      <summary>Supprime la sous-clé spécifiée. </summary>
+      <param name="subkey">Nom de la sous-clé à supprimer.Cette chaîne n'est pas sensible à la casse.</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> possède des sous-clés enfants. </exception>
+      <exception cref="T:System.ArgumentException">Le paramètre <paramref name="subkey" /> ne spécifie pas une clé de Registre valide. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> est null</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour supprimer la clé. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String,System.Boolean)">
+      <summary>Supprime la sous-clé spécifiée et spécifie si une exception est levée lorsque la sous-clé est introuvable. </summary>
+      <param name="subkey">Nom de la sous-clé à supprimer.Cette chaîne n'est pas sensible à la casse.</param>
+      <param name="throwOnMissingSubKey">Indique si une exception doit être déclenchée lorsque la sous-clé spécifiée est introuvable.Si cet argument a la valeur true et que la sous-clé spécifiée n'existe pas, une exception est levée.Si cet argument a la valeur false et que la sous-clé spécifiée n'existe pas, aucune action n'est entreprise.</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> possède des sous-clés enfants. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> ne spécifie pas une clé de Registre valide et <paramref name="throwOnMissingSubKey" /> a la valeur true. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> a la valeur null.</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour supprimer la clé. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String)">
+      <summary>Supprime récursivement une sous-clé et toutes les sous-clés enfants. </summary>
+      <param name="subkey">Sous-clé à supprimer.Cette chaîne n'est pas sensible à la casse.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> a la valeur null. </exception>
+      <exception cref="T:System.ArgumentException">Une tentative de suppression d'une ruche racine est effectuée.ou<paramref name="subkey" /> ne spécifie pas une sous-clé de Registre valide. </exception>
+      <exception cref="T:System.IO.IOException">Une erreur d'E/S s'est produite.</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour supprimer la clé. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String,System.Boolean)">
+      <summary>Supprime de manière récursive la sous-clé spécifiée et toutes les sous-clés enfants, et spécifie si une exception est levée si la sous-clé est introuvable. </summary>
+      <param name="subkey">Nom de la sous-clé à supprimer.Cette chaîne n'est pas sensible à la casse.</param>
+      <param name="throwOnMissingSubKey">Indique si une exception doit être déclenchée lorsque la sous-clé spécifiée est introuvable.Si cet argument a la valeur true et que la sous-clé spécifiée n'existe pas, une exception est levée.Si cet argument a la valeur false et que la sous-clé spécifiée n'existe pas, aucune action n'est entreprise.</param>
+      <exception cref="T:System.ArgumentException">Une tentative a été faite pour supprimer la ruche racine de l'arborescence.ou<paramref name="subkey" /> ne spécifie pas une sous-clé de Registre valide et <paramref name="throwOnMissingSubKey" /> a la valeur true.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> a la valeur null.</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> est fermé (les clés fermées ne sont pas accessibles).</exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour supprimer la clé.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String)">
+      <summary>Supprime la valeur spécifiée de cette clé.</summary>
+      <param name="name">Nom de la valeur à supprimer. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> n'est pas une référence valide à une valeur. </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour supprimer la valeur. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est en lecture seule. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String,System.Boolean)">
+      <summary>Supprime la valeur spécifiée de cette clé et spécifie si une exception est levée lorsque la valeur est introuvable.</summary>
+      <param name="name">Nom de la valeur à supprimer. </param>
+      <param name="throwOnMissingValue">Indique si une exception doit être déclenchée lorsque la valeur spécifiée est introuvable.Si cet argument a la valeur true et que la valeur spécifiée n'existe pas, une exception est levée.Si cet argument a la valeur false et que la valeur spécifiée n'existe pas, aucune action n'est entreprise.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> n'est pas une référence valide à une valeur et <paramref name="throwOnMissingValue" /> est true. ou <paramref name="name" /> a la valeur null.</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour supprimer la valeur. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est en lecture seule. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Dispose">
+      <summary>Libère toutes les ressources utilisées par l'instance actuelle de la classe <see cref="T:Microsoft.Win32.RegistryKey" />.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Flush">
+      <summary>Écrit tous les attributs de la clé de Registre ouverte spécifiée dans le Registre.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle)">
+      <summary>[ESSENTIEL POUR LA SÉCURITÉ] Crée une clé de Registre à partir d'un handle spécifié.</summary>
+      <returns>Clé de Registre.</returns>
+      <param name="handle">Handle de la clé de Registre.</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle,Microsoft.Win32.RegistryView)">
+      <summary>[ESSENTIEL POUR LA SÉCURITÉ] Crée une clé de Registre à partir d'un handle spécifié et de la configuration d'affichage du Registre. </summary>
+      <returns>Clé de Registre.</returns>
+      <param name="handle">Handle de la clé de Registre.</param>
+      <param name="view">Affichage du Registre à utiliser.</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetSubKeyNames">
+      <summary>Récupère un tableau de chaînes qui contient tous les noms de sous-clés.</summary>
+      <returns>Tableau de chaînes qui contient les noms des sous-clés pour la clé active.</returns>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire dans la clé. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <exception cref="T:System.IO.IOException">Une erreur système s'est produite, telle que la suppression de la clé actuelle.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String)">
+      <summary>Récupère la valeur associée au nom spécifié.Retourne null si la paire nom/valeur n'existe pas dans le Registre.</summary>
+      <returns>La valeur associée à <paramref name="name" />, ou null si <paramref name="name" /> est introuvable.</returns>
+      <param name="name">Nom de la valeur à récupérer.Cette chaîne n'est pas sensible à la casse.</param>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire dans la clé de Registre. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée a été marqué pour suppression. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object)">
+      <summary>Récupère la valeur associée au nom spécifié.Si le nom est introuvable, la valeur par défaut que vous fournissez est retournée.</summary>
+      <returns>La valeur associée à <paramref name="name" />, avec toutes les variables d'environnement incorporées non développées, ou <paramref name="defaultValue" /> si <paramref name="name" /> est introuvable.</returns>
+      <param name="name">Nom de la valeur à récupérer.Cette chaîne n'est pas sensible à la casse.</param>
+      <param name="defaultValue">Valeur à retourner si <paramref name="name" /> n'existe pas. </param>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire dans la clé de Registre. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée a été marqué pour suppression. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object,Microsoft.Win32.RegistryValueOptions)">
+      <summary>Récupère la valeur associée au nom spécifié et aux options de récupération.Si le nom est introuvable, la valeur par défaut que vous fournissez est retournée.</summary>
+      <returns>Valeur associée à <paramref name="name" />, traitée conformément aux <paramref name="options" /> spécifiées, ou <paramref name="defaultValue" /> si <paramref name="name" /> est introuvable.</returns>
+      <param name="name">Nom de la valeur à récupérer.Cette chaîne n'est pas sensible à la casse.</param>
+      <param name="defaultValue">Valeur à retourner si <paramref name="name" /> n'existe pas. </param>
+      <param name="options">Une des valeurs d'énumération qui spécifie le traitement facultatif de la valeur récupérée.</param>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire dans la clé de Registre. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée a été marqué pour suppression. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" /> n'est pas une valeur <see cref="T:Microsoft.Win32.RegistryValueOptions" /> valide ; par exemple, une valeur non valide est castée en <see cref="T:Microsoft.Win32.RegistryValueOptions" />.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueKind(System.String)">
+      <summary>Récupère le type de données de Registre de la valeur associée au nom spécifié.</summary>
+      <returns>Type de données de Registre de la valeur associée à <paramref name="name" />.</returns>
+      <param name="name">Nom de la valeur dont le type de données de Registre doit être récupéré.Cette chaîne n'est pas sensible à la casse.</param>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire dans la clé de Registre. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.IO.IOException">La sous-clé qui contient la valeur spécifiée n'existe pas.ouLa paire nom/valeur spécifiée par <paramref name="name" /> n'existe pas.Cette exception n'est pas levée dans Windows 95, Windows 98 ou Windows Millennium Edition.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueNames">
+      <summary>Récupère un tableau de chaînes qui contient tous les noms de valeurs associés à cette clé.</summary>
+      <returns>Tableau de chaînes qui contient les noms de valeurs pour la clé active.</returns>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire dans la clé de Registre. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <exception cref="T:System.IO.IOException">Une erreur système s'est produite, telle que la suppression de la clé actuelle.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Handle">
+      <summary>[ESSENTIEL POUR LA SÉCURITÉ] Obtient un objet <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> qui représente la clé de Registre que l'objet <see cref="T:Microsoft.Win32.RegistryKey" /> actuel encapsule.</summary>
+      <returns>Handle de la clé de Registre.</returns>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Name">
+      <summary>Récupère le nom de la clé.</summary>
+      <returns>Nom absolu (complet) de la clé.</returns>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> est fermé (les clés fermées ne sont pas accessibles). </exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive,Microsoft.Win32.RegistryView)">
+      <summary>Ouvre une nouvelle <see cref="T:Microsoft.Win32.RegistryKey" /> qui représente la clé demandée sur l'ordinateur local avec la vue spécifiée.</summary>
+      <returns>Clé de Registre demandée.</returns>
+      <param name="hKey">Clé HKEY à ouvrir.</param>
+      <param name="view">Affichage du Registre à utiliser.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="hKey" /> ou <paramref name="view" /> n'est pas valide.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour exécuter cette action.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String)">
+      <summary>Récupère une sous-clé en lecture seule.</summary>
+      <returns>Sous-clé demandée ou null en cas d'échec de l'opération.</returns>
+      <param name="name">Nom ou chemin d'accès de la sous-clé à ouvrir en lecture seule. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> est null</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour lire la clé de Registre. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Boolean)">
+      <summary>Extrait une sous-clé spécifiée et spécifie si l'accès en écriture doit s'appliquer à la clé. </summary>
+      <returns>Sous-clé demandée ou null en cas d'échec de l'opération.</returns>
+      <param name="name">Nom ou chemin d'accès de la sous-clé à ouvrir. </param>
+      <param name="writable">A la valeur true si vous avez besoin d'accéder à la clé en écriture. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> a la valeur null. </exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour accéder à la clé de Registre dans le mode spécifié. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Security.AccessControl.RegistryRights)">
+      <summary>Récupère une sous-clé portant le nom spécifié.Disponible à partir.NET Framework 2015</summary>
+      <returns>Sous-clé demandée ou null en cas d'échec de l'opération.</returns>
+      <param name="name">Nom ou chemin d'accès de la sous-clé à créer ou ouvrir.</param>
+      <param name="rights">Droits pour la clé de Registre.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> a la valeur null. </exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour accéder à la clé de Registre dans le mode spécifié. </exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)">
+      <summary>Définit la paire nom/valeur spécifiée.</summary>
+      <param name="name">Nom de la valeur à stocker. </param>
+      <param name="value">Données à stocker. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> a la valeur null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> est un type de données non pris en charge. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> est en lecture seule et n'est pas accessible en écriture ; par exemple, la clé n'a pas été ouverte avec un accès en écriture. ouL'objet <see cref="T:Microsoft.Win32.RegistryKey" /> représente un nœud de niveau racine, et le système d'exploitation est Windows Millennium Edition ou Windows 98.</exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour créer ou modifier des clés de Registre. </exception>
+      <exception cref="T:System.IO.IOException">L'objet <see cref="T:Microsoft.Win32.RegistryKey" /> représente un nœud de niveau racine, et le système d'exploitation est Windows 2000, Windows XP ou Windows Server 2003.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>Définit la valeur d'une paire nom/valeur dans la clé de Registre à l'aide du type de données de Registre spécifié.</summary>
+      <param name="name">Nom de la valeur à stocker. </param>
+      <param name="value">Données à stocker. </param>
+      <param name="valueKind">Type de données de Registre à utiliser lors du stockage des données. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> a la valeur null. </exception>
+      <exception cref="T:System.ArgumentException">Le type de <paramref name="value" /> ne correspondait pas au type de données de Registre spécifié par <paramref name="valueKind" />, par conséquent les données n'ont pas pu être converties correctement. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> qui contient la valeur spécifiée est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> est en lecture seule et n'est pas accessible en écriture ; par exemple, la clé n'a pas été ouverte avec un accès en écriture.ouL'objet <see cref="T:Microsoft.Win32.RegistryKey" /> représente un nœud de niveau racine, et le système d'exploitation est Windows Millennium Edition ou Windows 98. </exception>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas les autorisations requises pour créer ou modifier des clés de Registre. </exception>
+      <exception cref="T:System.IO.IOException">L'objet <see cref="T:Microsoft.Win32.RegistryKey" /> représente un nœud de niveau racine, et le système d'exploitation est Windows 2000, Windows XP ou Windows Server 2003.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.SubKeyCount">
+      <summary>Récupère le nombre de sous-clés de la clé actuelle.</summary>
+      <returns>Nombre de sous-clés de la clé actuelle.</returns>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas d'autorisation en lecture pour la clé. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <exception cref="T:System.IO.IOException">Une erreur système s'est produite, telle que la suppression de la clé actuelle.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.ToString">
+      <summary>Récupère une représentation de type chaîne de cette clé.</summary>
+      <returns>Chaîne représentant la clé.Si la clé spécifiée n'est pas valide (introuvable), null est retourné.</returns>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> qui fait l'objet d'un accès est fermé (les clés fermées ne sont pas accessibles). </exception>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.ValueCount">
+      <summary>Récupère le nombre de valeurs dans la clé.</summary>
+      <returns>Nombre de paires nom/valeur dans la clé.</returns>
+      <exception cref="T:System.Security.SecurityException">L'utilisateur n'a pas d'autorisation en lecture pour la clé. </exception>
+      <exception cref="T:System.ObjectDisposedException">Le <see cref="T:Microsoft.Win32.RegistryKey" /> en cours de manipulation est fermé (les clés fermées ne sont pas accessibles). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">L'utilisateur ne dispose pas des droits d'accès à la base de registres appropriés.</exception>
+      <exception cref="T:System.IO.IOException">Une erreur système s'est produite, telle que la suppression de la clé actuelle.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.View">
+      <summary>Obtient la vue utilisée pour créer la clé de Registre. </summary>
+      <returns>Vue utilisée pour créer la clé de Registre.ou<see cref="F:Microsoft.Win32.RegistryView.Default" />, si aucune vue n'a été utilisée.</returns>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryOptions">
+      <summary>Spécifie les options à utiliser lors de la création d'une clé de Registre.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.None">
+      <summary>Clé non volatile.Il s'agit de la valeur par défaut.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.Volatile">
+      <summary>Clé volatile.Les informations sont stockées en mémoire et ne sont pas conservées lorsque la ruche de Registre correspondante est déchargée.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueKind">
+      <summary>Spécifie les types de données à utiliser lors du stockage des valeurs dans le Registre ou identifie le type de données d'une valeur dans le Registre.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Binary">
+      <summary>Données binaires dans tout formulaire.Cette valeur est équivalente au type de données de Registre REG_BINARY de l'API Win32.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.DWord">
+      <summary>Nombre binaire 32 bits.Cette valeur est équivalente au type de données de Registre REG_DWORD de l'API Win32.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.ExpandString">
+      <summary>Chaîne terminée par le caractère NULL qui contient des références non étendues aux variables d'environnement, telles que %PATH%, qui sont étendues lorsque la valeur est récupérée.Cette valeur est équivalente au type de données de Registre REG_EXPAND_SZ de l'API Win32.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.MultiString">
+      <summary>Tableau de chaînes terminées par deux caractères nuls.Cette valeur est équivalente au type de données de Registre REG_MULTI_SZ de l'API Win32.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.None">
+      <summary>Aucun type de données.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.QWord">
+      <summary>Nombre binaire 64 bits.Cette valeur est équivalente au type de données de Registre REG_QWORD de l'API Win32.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.String">
+      <summary>Chaîne terminée par le caractère NULL.Cette valeur est équivalente au type de données de Registre REG_SZ de l'API Win32.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Unknown">
+      <summary>Type de données de Registre non pris en charge.Par exemple, le type de données de Registre REG_RESOURCE_LIST de Microsoft API Win32 n'est pas pris en charge.Utilisez cette valeur pour spécifier que la méthode <see cref="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)" /> doit déterminer le type de données de Registre approprié lors du stockage d'une paire nom/valeur.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueOptions">
+      <summary>Spécifie le comportement facultatif lors de la récupération de paires nom/valeur d'une clé de Registre.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames">
+      <summary>Une valeur de type <see cref="F:Microsoft.Win32.RegistryValueKind.ExpandString" /> est récupérée sans développer ses variables d'environnement incorporées. </summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.None">
+      <summary>Aucun comportement facultatif n'est spécifié.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryView">
+      <summary>Spécifie quel affichage de Registre cibler sur un système d'exploitation 64 bits.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Default">
+      <summary>Affichage par défaut.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry32">
+      <summary>Affichage 32 bits.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry64">
+      <summary>Affichage 64 bits.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle">
+      <summary>[ESSENTIEL POUR LA SÉCURITÉ] Représente un handle sécurisé pour le Registre Windows.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.SafeHandles.SafeRegistryHandle.#ctor(System.IntPtr,System.Boolean)">
+      <summary>[ESSENTIEL POUR LA SÉCURITÉ] Initialise une nouvelle instance de la classe <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" />. </summary>
+      <param name="preexistingHandle">Objet qui représente le handle préexistant à utiliser.</param>
+      <param name="ownsHandle">true pour libérer de manière fiable le handle pendant la phase de finalisation ; false pour empêcher la libération fiable.</param>
+    </member>
+    <member name="P:Microsoft.Win32.SafeHandles.SafeRegistryHandle.IsInvalid"></member>
+    <member name="T:System.Security.AccessControl.RegistryRights">
+      <summary>Spécifie les droits de contrôle d'accès qui peuvent s'appliquer aux objets de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ChangePermissions">
+      <summary>Droit de modifier les règles d'accès et d'audit associées à une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateLink">
+      <summary>Réservé au système.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateSubKey">
+      <summary>Droit de créer des sous-clés d'une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Delete">
+      <summary>Droit de supprimer une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.EnumerateSubKeys">
+      <summary>Droit de répertorier les sous-clés d'une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ExecuteKey">
+      <summary>Identique à <see cref="F:System.Security.AccessControl.RegistryRights.ReadKey" />.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.FullControl">
+      <summary>Droit d'exercer un contrôle total sur une clé de Registre et d'en modifier les règles d'accès et d'audit.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Notify">
+      <summary>Droit de demander la notification des modifications apportées à une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.QueryValues">
+      <summary>Droit d'interroger les paires nom/valeur d'une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadKey">
+      <summary>Droit d'interroger les paires nom/valeur d'une clé de Registre, de demander la notification des modifications, d'énumérer les sous-clés et de lire les règles d'accès et d'audit.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadPermissions">
+      <summary>Droit d'ouvrir et de copier les règles d'accès et d'audit d'une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.SetValue">
+      <summary>Droit de créer, supprimer ou définir des paires nom/valeur d'une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.TakeOwnership">
+      <summary>Droit de modifier le propriétaire d'une clé de Registre.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.WriteKey">
+      <summary>Droit de créer, supprimer et définir les paires nom/valeur d'une clé de Registre, de créer ou de supprimer des sous-clés, de demander notification des modifications, d'énumérer les sous-clés et de lire les règles d'accès et d'audit.</summary>
+    </member>
+  </members>
+</doc>

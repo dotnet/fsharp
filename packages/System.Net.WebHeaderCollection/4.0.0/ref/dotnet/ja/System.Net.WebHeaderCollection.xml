@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>クライアント要求で指定される可能性のある HTTP ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>応答で受け入れることができる MIME タイプを指定する Accept ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>応答で受け入れることができる文字セットを指定する Accept-Charset ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>応答で受け入れることができるコンテンツ エンコーディングを指定する Accept-Encoding ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>応答で推奨される自然言語を指定する Accept-Langauge ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>サポートされる HTTP メソッドのセットを指定する Allow ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>サーバーに対してクライアントを認証するために提供される資格情報を指定する Authorization ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>要求と応答のチェーンにおいて、すべてのキャッシュ コントロール機構が従う必要のあるディレクティブを指定する Cache-Control ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>特定の接続で必要なオプションを指定する Connection ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>付随する本文データに適用されているエンコーディングを指定する Content-Encoding ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>付随する本文データの 1 つ以上の自然言語を指定する Content-Langauge ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>付随する本文データの長さ (バイト単位) を指定する Content-Length ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>付随する本文を取得することができる URI を指定する Content-Location ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>付随する本文データの MD5 ダイジェストを指定する Content-MD5 ヘッダー。これはエンド ツー エンドのメッセージの整合性チェックを提供する目的で使用します。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>付随する本文データのうち適用される必要がある部分の、本文全体の中の位置を指定する Content-Range ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>付随する本文データの MIME タイプを指定する Content-Type ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>サーバーに提供される Cookie データを指定する Cookie ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>要求が最初に作成された日付と時刻を指定する Date ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>クライアントで必要とされる特定のサーバー動作を指定する Expect ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>付随する本文データが無効と見なされるようになる日付と時刻を指定する Expires ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>要求元のユーザー エージェントを制御しているユーザーのインターネット電子メール アドレスを指定する From ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>要求されているリソースのホスト名とポート番号を指定する Host ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>クライアントのキャッシュされたコピーが、示されたリソースの現在のリソースである場合にだけ、要求された操作が実行される必要があることを指定する If-Match ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>要求されたリソースが、示された日付と時刻以降に変更されている場合にだけ、要求された操作が実行される必要があることを指定する If-Modified-Since ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>クライアントのキャッシュされたどのコピーも、示されたリソースの現在のリソースではない場合にだけ、要求された操作が実行される必要があることを指定する If-None-Match ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>クライアントのキャッシュされたコピーが現在のリソースである場合に、要求されたリソースの指定した範囲だけが送信される必要があることを指定する If-Range ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>要求されたリソースが、示された日付と時刻以降に変更されていない場合にだけ、要求された操作が実行される必要があることを指定する If-Unmodified-Since ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>永続的な接続を維持するために使用するパラメーターを指定する Keep-Alive ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>付随する本文データが最後に変更された日付と時刻を指定する Last-Modified ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>この要求を転送できる残りの回数を示す整数を指定する Max-Forwards ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>要求と応答のチェーンにおいて、エージェントに適用できる実装固有のディレクティブを指定する Pragma ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>プロキシに対してクライアントを認証するために提供される資格情報を指定する Proxy-Authorization ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>クライアントが応答全体の代わりに返却を要求する応答の 1 つ以上のサブ範囲を指定する Range ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>要求 URI の取得元のリソースの URI を指定する Referer ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>応答で受け入れることができる転送のエンコーディングを指定する TE ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>チャンク転送コーディングでエンコードされたメッセージのトレーラーにあるヘッダー フィールドを指定する Trailer ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>メッセージ本文に変換が適用されている場合に、変換の種類を指定する Transfer-Encoding ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>WebDAV 機能と共に使用する、HTTP 仕様に対する Microsoft 拡張機能である Translate ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>クライアントがサポートする追加の通信プロトコルを指定する Upgrade ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>クライアント エージェントに関する情報を指定する User-Agent ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>ゲートウェイとプロキシ エージェントで使用される中間プロトコルを指定する Via ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>メッセージに反映されない場合がある、メッセージの状態や変換に関する追加情報を指定する Warning ヘッダー。</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>サーバー応答で指定される可能性のある HTTP ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>サーバーが受け入れる範囲を指定する Accept-Ranges ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>サーバーで応答が最初に作成されてからの時間 (秒単位) を指定する Age ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>サポートされる HTTP メソッドのセットを指定する Allow ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>要求と応答のチェーンにおいて、すべてのキャッシュ機構が従う必要のあるキャッシュ ディレクティブを指定する Cache-Control ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>特定の接続で必要なオプションを指定する Connection ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>付随する本文データに適用されているエンコーディングを指定する Content-Encoding ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>付随する本文データの自然言語を指定する Content-Langauge ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>付随する本文データの長さ (バイト単位) を指定する Content-Length ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>付随する本文を取得するための URI を指定する Content-Location ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>付随する本文データの MD5 ダイジェストを指定する Content-MD5 ヘッダー。これはエンド ツー エンドのメッセージの整合性チェックを提供する目的で使用します。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>クライアントが応答全体の代わりに返されることを要求する応答のサブ範囲を指定する Range ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>付随する本文データの MIME タイプを指定する Content-Type ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>応答が最初に作成された日付と時刻を指定する Date ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>要求されたバリアントの現在の値を指定する Etag ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>付随する本文データが無効と見なされるようになる日付と時刻を指定する Expires ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>永続的な接続を維持するために使用するパラメーターを指定する Keep-Alive ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>付随する本文データが最後に変更された日付と時刻を指定する Last-Modified ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>クライアントが要求されたリソースを取得するためのリダイレクト先の URI を指定する Location ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>要求と応答のチェーンにおいて、エージェントに適用できる実装固有のディレクティブを指定する Pragma ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>クライアントがそれ自体をプロキシに対して認証する必要があることを指定する Proxy-Authenticate ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>クライアントが要求を再試行できるまでの時間 (秒単位) または日付と時刻を指定する Retry-After ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>送信元のサーバー エージェントに関する情報を指定する Server ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>クライアントに提供されるクッキー データを示す Set-Cookie ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>示されたヘッダー フィールドがチャンク転送コーディングでエンコードされたメッセージのトレーラーにあることを指定する Trailer ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>メッセージ本文に変換が適用されている場合に、変換の種類を指定する Transfer-Encoding ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>クライアントがサポートする追加の通信プロトコルを指定する Upgrade ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>キャッシュされた応答が最新かどうかを確認するために使用する要求ヘッダーを指定する Vary ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>ゲートウェイとプロキシ エージェントで使用される中間プロトコルを指定する Via ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>メッセージに反映されない場合がある、メッセージの状態や変換に関する追加情報を指定する Warning ヘッダー。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>クライアントがそれ自体をサーバーに対して認証する必要があることを指定する WWW-Authenticate ヘッダー。</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>要求または応答に関連付けられたプロトコル ヘッダーを格納します。</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>
+        <see cref="T:System.Net.WebHeaderCollection" /> クラスの新しいインスタンスを初期化します。</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>コレクション内のすべてのヘッダー名 (キー) を取得します。</summary>
+      <returns>Web 要求に含まれるすべてのヘッダー名を格納している <see cref="T:System.String" /> 型の配列。</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>コレクション内のヘッダーの数を取得します。</summary>
+      <returns>要求に含まれるヘッダーの数を示す <see cref="T:System.Int32" />。</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>指定した要求ヘッダーを取得または設定します。</summary>
+      <returns>指定したヘッダー値を格納している <see cref="T:System.String" /> インスタンス。</returns>
+      <param name="header">要求ヘッダーの値。</param>
+      <exception cref="T:System.InvalidOperationException">この <see cref="T:System.Net.WebHeaderCollection" /> インスタンスは、<see cref="T:System.Net.HttpRequestHeader" /> のインスタンスを許可しません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>指定した応答ヘッダーを取得または設定します。</summary>
+      <returns>指定したヘッダーを格納している <see cref="T:System.String" /> インスタンス。</returns>
+      <param name="header">応答ヘッダーの値。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="value" /> の長さが 65535 を超えています。</exception>
+      <exception cref="T:System.InvalidOperationException">この <see cref="T:System.Net.WebHeaderCollection" /> インスタンスは、<see cref="T:System.Net.HttpResponseHeader" /> のインスタンスを許可しません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>指定した応答ヘッダーを取得または設定します。</summary>
+      <returns>指定した応答ヘッダー。</returns>
+      <param name="name">指定した要求ヘッダーの名前。</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>指定したヘッダーをコレクションから削除します。</summary>
+      <param name="name">コレクションから削除するヘッダーの名前。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> is null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> が制限付きヘッダーです。または <paramref name="name" /> に無効な値が含まれています。 </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Net.WebHeaderCollection" /> インスタンスを反復処理できる列挙子を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" /> を返します。<see cref="T:System.Net.WebHeaderCollection" /> インスタンスを反復処理できる列挙子。</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>このメソッドは、互換性のために残されています。</summary>
+      <returns>コレクションの <see cref="T:System.String" /> 表現。</returns>
+    </member>
+  </members>
+</doc>

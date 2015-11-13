@@ -1,0 +1,475 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.ILGeneration</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.CustomAttributeBuilder">
+      <summary>Помогает при построения пользовательских атрибутов.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[])">
+      <summary>Инициализирует экземпляр класса CustomAttributeBuilder с передачей конструктора для пользовательских атрибутов, а также аргументов этого конструктора.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="constructorArgs">Аргументы конструктора пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> является статическим или закрытым.– или – Число переданных аргументов не соответствует числу параметров конструктора, что противоречит соглашению о вызовах конструктора.– или – Тип переданного аргумента не соответствует типу параметра, объявленного в конструкторе. – или –Предоставленный аргумент имеет ссылочный тип, отличный от <see cref="T:System.String" /> или <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="constructorArgs" /> — null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>Инициализирует экземпляр класса CustomAttributeBuilder с передачей конструктора для пользовательских атрибутов, аргументов этого конструктора, а также набора пар поля и значения.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="constructorArgs">Аргументы конструктора пользовательского атрибута. </param>
+      <param name="namedFields">Указанные поля пользовательского атрибута. </param>
+      <param name="fieldValues">Значения указанных полей пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentException">Длины массивов <paramref name="namedFields" /> и <paramref name="fieldValues" /> различны.– или – <paramref name="con" /> является статическим или закрытым.– или – Число переданных аргументов не соответствует числу параметров конструктора, что противоречит соглашению о вызовах конструктора.– или – Тип переданного аргумента не соответствует типу параметра, объявленного в конструкторе.– или – Типы значений полей не соответствуют типам указанных полей.– или – Поле не принадлежит к тому же классу или базовому классу, что и конструктор. – или –Предоставленный аргумент или именованное поле имеет ссылочный тип, отличный от <see cref="T:System.String" /> или <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Один из параметров имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[])">
+      <summary>Инициализирует экземпляр класса CustomAttributeBuilder с передачей конструктора для пользовательских атрибутов, аргументов этого конструктора, а также набора поименованных пар значений или свойств.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="constructorArgs">Аргументы конструктора пользовательского атрибута. </param>
+      <param name="namedProperties">Указанные свойства пользовательского атрибута. </param>
+      <param name="propertyValues">Значения указанных свойств пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentException">Длины массивов <paramref name="namedProperties" /> и <paramref name="propertyValues" /> различны.– или – <paramref name="con" /> является статическим или закрытым.– или – Число переданных аргументов не соответствует числу параметров конструктора, что противоречит соглашению о вызовах конструктора.– или – Тип переданного аргумента не соответствует типу параметра, объявленного в конструкторе.– или – Типы значений свойств не соответствуют типам указанных свойств.– или – Свойство не имеет установочного метода.– или – Свойство не принадлежит к тому же классу или базовому классу, что и конструктор. – или –Предоставленный аргумент или именованное свойство имеет ссылочный тип, отличный от <see cref="T:System.String" /> или <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Один из параметров имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>Инициализирует экземпляр класса CustomAttributeBuilder с передачей конструктора для пользовательских атрибутов, аргументов этого конструктора, набора поименованных пар значений или свойств, а также набора поименованных пар значений или полей.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="constructorArgs">Аргументы конструктора пользовательского атрибута. </param>
+      <param name="namedProperties">Указанные свойства пользовательского атрибута. </param>
+      <param name="propertyValues">Значения указанных свойств пользовательского атрибута. </param>
+      <param name="namedFields">Указанные поля пользовательского атрибута. </param>
+      <param name="fieldValues">Значения указанных полей пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentException">Длины массивов <paramref name="namedProperties" /> и <paramref name="propertyValues" /> различны.– или – Длины массивов <paramref name="namedFields" /> и <paramref name="fieldValues" /> различны.– или – <paramref name="con" /> является статическим или закрытым.– или – Число переданных аргументов не соответствует числу параметров конструктора, что противоречит соглашению о вызовах конструктора.– или – Тип переданного аргумента не соответствует типу параметра, объявленного в конструкторе.– или – Типы значений свойств не соответствуют типам указанных свойств.– или – Типы значений полей не согласуются с типами соответствующих типов полей.– или – Свойство не имеет установочного метода.– или – Свойство или поле не принадлежит к тому же классу или базовому классу, что и конструктор. – или –Предоставленный аргумент, именованное поле или именованное свойство имеет ссылочный тип, отличный от <see cref="T:System.String" /> или <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Один из параметров имеет значение null. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.ILGenerator">
+      <summary>Создает инструкции языка MSIL.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginCatchBlock(System.Type)">
+      <summary>Задает начало блока catch.</summary>
+      <param name="exceptionType">Объект <see cref="T:System.Type" />, представляющая исключение. </param>
+      <exception cref="T:System.ArgumentException">Блок catch находится внутри фильтруемого исключения. </exception>
+      <exception cref="T:System.ArgumentNullException">Значением <paramref name="exceptionType" /> является null, а блок фильтра исключений не вернул значение, указывающее, что финальные блоки должны выполняться, пока размещен данный блок catch. </exception>
+      <exception cref="T:System.NotSupportedException">Создаваемые инструкции языка MSIL в данный момент не находятся в блоке исключения. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptFilterBlock">
+      <summary>Задает начало блока исключения для фильтруемого исключения.</summary>
+      <exception cref="T:System.NotSupportedException">Создаваемые инструкции языка MSIL в данный момент не находятся в блоке исключения. – или –Этот объект <see cref="T:System.Reflection.Emit.ILGenerator" /> принадлежит <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptionBlock">
+      <summary>Задает начало блока исключения для нефильтруемого исключения.</summary>
+      <returns>Метка конца блока.Она обеспечит переход в нужное место для выполнения финальных блоков или прекращения данной попытки.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFaultBlock">
+      <summary>Задает начало блока ошибки исключения в потоке инструкций языка MSIL.</summary>
+      <exception cref="T:System.NotSupportedException">Созданные инструкции MSIL в настоящее время не находятся в блоке исключения. – или –Этот объект <see cref="T:System.Reflection.Emit.ILGenerator" /> принадлежит <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFinallyBlock">
+      <summary>Задает начало финального блока в потоке инструкций языка MSIL.</summary>
+      <exception cref="T:System.NotSupportedException">Созданные инструкции MSIL в настоящее время не находятся в блоке исключения. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginScope">
+      <summary>Задает начало лексической области действия.</summary>
+      <exception cref="T:System.NotSupportedException">Этот объект <see cref="T:System.Reflection.Emit.ILGenerator" /> принадлежит <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type)">
+      <summary>Объявляет локальную переменную определенного типа.</summary>
+      <returns>Объявленная локальная переменная.</returns>
+      <param name="localType">Объект <see cref="T:System.Type" />, который представляет тип локальной переменной. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="localType" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Включающий тип был создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type,System.Boolean)">
+      <summary>Объявляет локальную переменную определенного типа; дополнительно может закрепить объект, на который ссылается переменная.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.LocalBuilder" />, который представляет локальную переменную.</returns>
+      <param name="localType">Объект <see cref="T:System.Type" />, который представляет тип локальной переменной.</param>
+      <param name="pinned">Значение true для закрепления объекта в памяти; в противном случае — значение false.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="localType" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Включающий тип был создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Основной текст включающего метода был создан с помощью метода <see cref="M:System.Reflection.Emit.MethodBuilder.CreateMethodBody(System.Byte[],System.Int32)" />. </exception>
+      <exception cref="T:System.NotSupportedException">Метод, с которым связан этот объект <see cref="T:System.Reflection.Emit.ILGenerator" />, не представлен <see cref="T:System.Reflection.Emit.MethodBuilder" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DefineLabel">
+      <summary>Объявляет новую метку.</summary>
+      <returns>Возвращает новую метку, которую можно использовать как токен при переходах.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode)">
+      <summary>Помещает указанную инструкцию в поток инструкций.</summary>
+      <param name="opcode">Инструкция языка MSIL, помещаемая в поток. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Byte)">
+      <summary>Помещает заданную инструкцию и символьный аргумент в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, помещаемая в поток. </param>
+      <param name="arg">Аргумент типа character, помещаемый в поток сразу после инструкции. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Double)">
+      <summary>Помещает заданную инструкцию и числовой аргумент в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, помещаемая в поток.Определена в перечислении OpCodes.</param>
+      <param name="arg">Числовой аргумент, помещаемый в поток сразу после инструкции. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int16)">
+      <summary>Помещает заданную инструкцию и числовой аргумент в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="arg">Аргумент типа Int, помещаемый в поток сразу после инструкции. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int32)">
+      <summary>Помещает заданную инструкцию и числовой аргумент в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, помещаемая в поток. </param>
+      <param name="arg">Числовой аргумент, помещаемый в поток сразу после инструкции. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int64)">
+      <summary>Помещает заданную инструкцию и числовой аргумент в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, помещаемая в поток. </param>
+      <param name="arg">Числовой аргумент, помещаемый в поток сразу после инструкции. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.ConstructorInfo)">
+      <summary>Помещает заданную инструкцию и маркер метаданных указанного конструктора в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="con">Объект ConstructorInfo, представляющий конструктор. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null.Это исключение появилось только в .NET Framework 4.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label)">
+      <summary>Помещает указанную инструкцию в поток инструкций языка MSIL и оставляет место, чтобы после того, как будут произведены необходимые настройки, можно было включить метку.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="label">Метка, на которую следует осуществить переход из данного места. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label[])">
+      <summary>Помещает указанную инструкцию в поток инструкций языка MSIL и оставляет место, чтобы после того, как будут произведены необходимые настройки, можно было включить метку.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="labels">Массив объектов меток, на которые следует осуществлять переход из данного места.Задействуются все метки.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null.Это исключение появилось только в .NET Framework 4.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.LocalBuilder)">
+      <summary>Помещает в поток инструкций языка MSIL заданную инструкцию, за которой следует индекс заданной локальной переменной.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="local">Локальная переменная. </param>
+      <exception cref="T:System.ArgumentException">Родительский метод параметра <paramref name="local" /> не соответствует методу, связанному с объектом <see cref="T:System.Reflection.Emit.ILGenerator" />. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="local" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="opcode" /> представляет собой 1-байтную инструкцию, а <paramref name="local" /> представляет локальную переменную с индексом большим, чем значение Byte.MaxValue. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.SignatureHelper)">
+      <summary>Помещает заданную инструкцию и токен подписи в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="signature">Вспомогательный класс для конструирования токена подписи. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="signature" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.FieldInfo)">
+      <summary>Помещает заданную инструкцию и маркер метаданных указанного поля в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="field">Объект FieldInfo, представляющий поле. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo)">
+      <summary>Помещает в поток инструкций языка MSIL заданную инструкцию, за которой следует маркер метаданных указанного метода.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="meth">Объект MethodInfo, предоставляющий метод. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="meth" /> имеет значение null. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="meth" /> является универсальным методом, для которого значение свойства <see cref="P:System.Reflection.MethodInfo.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.SByte)">
+      <summary>Помещает заданную инструкцию и символьный аргумент в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, помещаемая в поток. </param>
+      <param name="arg">Аргумент типа character, помещаемый в поток сразу после инструкции. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Single)">
+      <summary>Помещает заданную инструкцию и числовой аргумент в поток инструкций языка MSIL.</summary>
+      <param name="opcode">Инструкция MSIL, помещаемая в поток. </param>
+      <param name="arg">Аргумент типа Single, помещаемый в поток сразу после инструкции. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.String)">
+      <summary>Помещает в поток инструкций языка MSIL заданную инструкцию, за которой следует маркер метаданных указанной строки.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток. </param>
+      <param name="str">Объект String, который подлежит выпуску. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Type)">
+      <summary>Помещает в поток инструкций языка MSIL заданную инструкцию, за которой следует маркер метаданных для указанного типа.</summary>
+      <param name="opcode">Инструкция MSIL, помещаемая в поток. </param>
+      <param name="cls">Объект Type. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="cls" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCall(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo,System.Type[])">
+      <summary>Помещает инструкцию call или callvirt в поток языка MSIL для вызова метода varargs.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток.Должно быть <see cref="F:System.Reflection.Emit.OpCodes.Call" />, <see cref="F:System.Reflection.Emit.OpCodes.Callvirt" /> или <see cref="F:System.Reflection.Emit.OpCodes.Newobj" />.</param>
+      <param name="methodInfo">Метод varargs, который следует вызвать. </param>
+      <param name="optionalParameterTypes">Типы необязательных аргументов, если метод является методом varargs; в противном случае — null. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="opcode" /> не указывает вызов метода.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="methodInfo" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Соглашение о вызове данного метода не относится к типу varargs, но при этом передаются типы необязательных параметров.Это исключение создается в платформе .NET Framework версии 1.0 и 1.1. В последующих версиях исключений не создается.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCalli(System.Reflection.Emit.OpCode,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[])">
+      <summary>Помещает инструкцию <see cref="F:System.Reflection.Emit.OpCodes.Calli" /> в поток инструкций языка MSIL с указанием соглашений по управляемым вызовам для косвенного вызова.</summary>
+      <param name="opcode">Инструкция MSIL, включаемая в поток.Значением должно быть <see cref="F:System.Reflection.Emit.OpCodes.Calli" />.</param>
+      <param name="callingConvention">Соглашение по управляемым вызовам, которое следует использовать. </param>
+      <param name="returnType">Тип (<see cref="T:System.Type" />) результата. </param>
+      <param name="parameterTypes">Типы обязательных аргументов инструкции. </param>
+      <param name="optionalParameterTypes">Типы необязательных аргументов для вызовов varargs. </param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="optionalParameterTypes" /> не является null, однако <paramref name="callingConvention" /> не содержит флаг <see cref="F:System.Reflection.CallingConventions.VarArgs" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.Emit.LocalBuilder)">
+      <summary>Выдает инструкции языка MSIL, необходимые для вызова метода <see cref="Overload:System.Console.WriteLine" /> с заданной локальной переменной.</summary>
+      <param name="localBuilder">Локальная переменная, значение которой следует записать в консоль. </param>
+      <exception cref="T:System.ArgumentException">Типом параметра <paramref name="localBuilder" /> является <see cref="T:System.Reflection.Emit.TypeBuilder" /> или <see cref="T:System.Reflection.Emit.EnumBuilder" />, которые не поддерживаются. – или –Отсутствует перегрузка метода <see cref="Overload:System.Console.WriteLine" />, которая принимает тип <paramref name="localBuilder" />. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="localBuilder" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.FieldInfo)">
+      <summary>Выдает инструкции языка MSIL, необходимые для вызова метода <see cref="Overload:System.Console.WriteLine" /> с заданным полем.</summary>
+      <param name="fld">Поле, значение которого следует записать в консоль. </param>
+      <exception cref="T:System.ArgumentException">Отсутствует перегрузка метода <see cref="Overload:System.Console.WriteLine" />, принимающего тип указанного поля. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="fld" /> имеет значение null. </exception>
+      <exception cref="T:System.NotSupportedException">Типом поля является <see cref="T:System.Reflection.Emit.TypeBuilder" /> или <see cref="T:System.Reflection.Emit.EnumBuilder" />, которые не поддерживаются. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.String)">
+      <summary>Выдает инструкции языка MSIL для вызова метода <see cref="Overload:System.Console.WriteLine" /> со строкой.</summary>
+      <param name="value">Строка, которую следует напечатать. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndExceptionBlock">
+      <summary>Задает конец блока исключения.</summary>
+      <exception cref="T:System.InvalidOperationException">Конец блока исключения находится в неподходящем месте в потоке кода. </exception>
+      <exception cref="T:System.NotSupportedException">Создаваемые инструкции языка MSIL в данный момент не находятся в блоке исключения. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndScope">
+      <summary>Задает конец лексической области действия.</summary>
+      <exception cref="T:System.NotSupportedException">Этот объект <see cref="T:System.Reflection.Emit.ILGenerator" /> принадлежит <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ILGenerator.ILOffset">
+      <summary>Получает текущее смещение (в байтах) в потоке языка MSIL, выпущенном <see cref="T:System.Reflection.Emit.ILGenerator" />.</summary>
+      <returns>Смещение в потоке языка MSIL, в котором будет выпущена следующая инструкция. </returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.MarkLabel(System.Reflection.Emit.Label)">
+      <summary>Отмечает текущую позицию в потоке инструкций языка MSIL указанной меткой.</summary>
+      <param name="loc">Метка, для которой следует установить индекс. </param>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="loc" /> содержит неправильный индекс массива меток.– или – Индекс для <paramref name="loc" /> уже был определен. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.ThrowException(System.Type)">
+      <summary>Создает инструкцию вызова исключения.</summary>
+      <param name="excType">Класс типа исключения, которое требуется создать. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="excType" /> не является классом <see cref="T:System.Exception" /> или производным от класса <see cref="T:System.Exception" />.– или – Данный тип не имеет конструктора, заданного по умолчанию. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="excType" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.UsingNamespace(System.String)">
+      <summary>Задает пространство имен, которое следует использовать для определения значений локальных переменных и отслеживаемых величин для текущей активной лексической ограниченной области действия.</summary>
+      <param name="usingNamespace">Пространство имен, которое следует использовать для определения значений локальных переменных и отслеживаемых величин для текущей активной лексической ограниченной области действия. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="usingNamespace" /> равна нулю. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="usingNamespace" /> имеет значение null. </exception>
+      <exception cref="T:System.NotSupportedException">Этот объект <see cref="T:System.Reflection.Emit.ILGenerator" /> принадлежит <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.Label">
+      <summary>Представляет метку в потоке инструкций.Label используется совместно с классом <see cref="T:System.Reflection.Emit.ILGenerator" />.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Object)">
+      <summary>Проверяет, является ли данный объект экземпляром Label и равен ли он этому экземпляру.</summary>
+      <returns>true, если <paramref name="obj" /> является экземпляром Label и равен этому объекту, в противном случае — false.</returns>
+      <param name="obj">Объект, который следует сравнить с этим экземпляром Label. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Reflection.Emit.Label)">
+      <summary>Определяет равенство текущего экземпляра и указанного объекта <see cref="T:System.Reflection.Emit.Label" />.</summary>
+      <returns>Значение true, если значение параметра <paramref name="obj" /> равно значению текущего экземпляра; в противном случае — false.</returns>
+      <param name="obj">
+        <see cref="T:System.Reflection.Emit.Label" /> для сравнения с текущим экземпляром.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.GetHashCode">
+      <summary>Создает хэш-код для данного экземпляра.</summary>
+      <returns>Возвращает хэш-код для данного экземпляра.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Equality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>Определяет равенство двух структур <see cref="T:System.Reflection.Emit.Label" />.</summary>
+      <returns>Значение true, если параметр <paramref name="a" /> равен <paramref name="b" />; в противном случае — значение false.</returns>
+      <param name="a">Объект <see cref="T:System.Reflection.Emit.Label" />, используемый для сравнения с <paramref name="b" />.</param>
+      <param name="b">Объект <see cref="T:System.Reflection.Emit.Label" />, используемый для сравнения с <paramref name="a" />.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Inequality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>Указывает, действительно ли не равны две структуры <see cref="T:System.Reflection.Emit.Label" />.</summary>
+      <returns>true, если значения <paramref name="a" /> и <paramref name="b" /> не равны; в противном случае — false.</returns>
+      <param name="a">Объект <see cref="T:System.Reflection.Emit.Label" />, используемый для сравнения с <paramref name="b" />.</param>
+      <param name="b">Объект <see cref="T:System.Reflection.Emit.Label" />, используемый для сравнения с <paramref name="a" />.</param>
+    </member>
+    <member name="T:System.Reflection.Emit.LocalBuilder">
+      <summary>Представляет локальную переменную внутри метода или конструктора.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.IsPinned">
+      <summary>Возвращает значение, указывающее, закреплен ли в памяти объект, на который ссылается локальная переменная.</summary>
+      <returns>Значение true, если объект, на который ссылается локальная переменная, закреплен в памяти; в противном случае — false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalIndex">
+      <summary>Возвращает начинающийся с нуля индекс локальной переменной в основном тексте метода.</summary>
+      <returns>Целочисленное значение, которое представляет последовательность объявления локальной переменной в основном тексте метода.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalType">
+      <summary>Возвращает тип локальной переменной.</summary>
+      <returns>Объект <see cref="T:System.Type" /> данной локальной переменной.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ParameterBuilder">
+      <summary>Создает или связывает сведения о параметрах.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Attributes">
+      <summary>Извлекает атрибуты данного параметра.</summary>
+      <returns>Только для чтения.Извлекает атрибуты данного параметра.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsIn">
+      <summary>Сообщает, является ли данный параметр входным.</summary>
+      <returns>Только для чтения.Сообщает, является ли данный параметр входным.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOptional">
+      <summary>Сообщает, является ли данный параметр необязательным.</summary>
+      <returns>Только для чтения.Указывает, является ли данный параметр необязательным.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOut">
+      <summary>Сообщает, является ли данный параметр выходным.</summary>
+      <returns>Только для чтения.Сообщает, является ли данный параметр выходным.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Name">
+      <summary>Извлекает имя данного параметра.</summary>
+      <returns>Только для чтения.Извлекает имя данного параметра.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Position">
+      <summary>Извлекает позицию подписи для данного параметра.</summary>
+      <returns>Только для чтения.Извлекает позицию подписи для данного параметра.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetConstant(System.Object)">
+      <summary>Устанавливает значение, присваиваемое параметру по умолчанию.</summary>
+      <param name="defaultValue">Значение, принимаемое данным параметром по умолчанию. </param>
+      <exception cref="T:System.ArgumentException">Тип параметра не является поддерживаемым.– или –Тип параметра <paramref name="defaultValue" /> не совпадает с типом параметра.– или –Параметр имеет тип <see cref="T:System.Object" /> или другой ссылочный тип, значение параметра <paramref name="defaultValue" /> не равно null, и значение не может быть присвоено ссылочному типу. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с помощью большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Задание пользовательского атрибута с помощью средства построения пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.SignatureHelper">
+      <summary>Предоставляет методы построения сигнатур.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type)">
+      <summary>Добавляет аргумент к сигнатуре.</summary>
+      <param name="clsArgument">Тип аргумента. </param>
+      <exception cref="T:System.ArgumentException">Подпись уже была закончена. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="clsArgument" /> имеет значение null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Boolean)">
+      <summary>Добавляет аргумент указанного типа к сигнатуре, определяя, должен ли этот аргумент быть закреплен.</summary>
+      <param name="argument">Тип аргумента.</param>
+      <param name="pinned">Значение true, если аргумент закреплен; в противном случае — false.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="argument" /> имеет значение null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Type[],System.Type[])">
+      <summary>Добавляет аргумент к сигнатуре с указанными пользовательскими модификаторами.</summary>
+      <param name="argument">Тип аргумента.</param>
+      <param name="requiredCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для аргумента, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если аргумент не имеет требуемых пользовательских модификаторов, укажите значение null.</param>
+      <param name="optionalCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для аргумента, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если аргумент не имеет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="argument" /> имеет значение null. – или –Элемент <paramref name="requiredCustomModifiers" /> равен <paramref name="optionalCustomModifiers" /> или null.</exception>
+      <exception cref="T:System.ArgumentException">Подпись уже была закончена. – или –Один из указанных пользовательских модификаторов имеет тип массива.– или –Один из указанных пользовательских модификаторов является открытым универсальным типом.То есть значение свойства <see cref="P:System.Type.ContainsGenericParameters" /> для пользовательского модификатора равно true.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArguments(System.Type[],System.Type[][],System.Type[][])">
+      <summary>Добавляет набор аргументов к сигнатуре с указанными пользовательскими модификаторами.</summary>
+      <param name="arguments">Типы добавляемых аргументов.</param>
+      <param name="requiredCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего аргумента, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если определенный аргумент не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если ни один из аргументов не содержит требуемые пользовательские модификаторы, вместо массива массивов укажите null.</param>
+      <param name="optionalCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего аргумента, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если определенный аргумент не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если ни один из аргументов не содержит необязательные пользовательские модификаторы, вместо массива массивов укажите null.</param>
+      <exception cref="T:System.ArgumentNullException">Элемент параметра <paramref name="arguments" /> имеет значение null. – или –Один из указанных пользовательских модификаторов имеет значение null. (Однако значение null может быть указано для массива пользовательских модификаторов для любого аргумента).</exception>
+      <exception cref="T:System.ArgumentException">Подпись уже была закончена. – или –Один из указанных пользовательских модификаторов имеет тип массива.– или –Один из указанных пользовательских модификаторов является открытым универсальным типом.То есть значение свойства <see cref="P:System.Type.ContainsGenericParameters" /> для пользовательского модификатора равно true.– или –Размер <paramref name="requiredCustomModifiers" /> или <paramref name="optionalCustomModifiers" /> не равен размеру <paramref name="arguments" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddSentinel">
+      <summary>Помечает конец фиксированной части функции с переменным количеством аргументов.Используется только в том случае, если вызывающий оператор создает место вызова сигнатуры функции с переменным количеством аргументов.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.Equals(System.Object)">
+      <summary>Проверяет, равен ли этот экземпляр данному объекту.</summary>
+      <returns>Значение true, если данный объект является объектом SignatureHelper и предоставляет ту же самую сигнатуру; в противном случае — значение false.</returns>
+      <param name="obj">Объект, с которым нужно сравнить данный экземпляр. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetFieldSigHelper(System.Reflection.Module)">
+      <summary>Возвращает вспомогательный объект сигнатуры для поля.</summary>
+      <returns>Объект SignatureHelper для поля.</returns>
+      <param name="mod">Динамический модуль, который содержит поле, для которого запрашивается SignatureHelper. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetHashCode">
+      <summary>Создает и возвращает хэш-код для этого экземпляра.</summary>
+      <returns>Возвращает хэш-код на основе имени.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper">
+      <summary>Возвращает вспомогательный объект сигнатуры для локальной переменной.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.SignatureHelper" /> для локальной переменной.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper(System.Reflection.Module)">
+      <summary>Возвращает вспомогательный объект сигнатуры для локальной переменной.</summary>
+      <returns>Объект SignatureHelper для локальной переменной.</returns>
+      <param name="mod">Динамический модуль, который содержит локальную переменную, для которой запрашивается SignatureHelper. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.CallingConventions,System.Type)">
+      <summary>Возвращает вспомогательный объект сигнатуры для метода, получая на вход соглашение о вызове и тип возвращаемого значения.</summary>
+      <returns>Объект SignatureHelper для метода.</returns>
+      <param name="callingConvention">Соглашение о вызове метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода или значение null для типа возвращаемого значения void (процедура Sub в Visual Basic). </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type)">
+      <summary>Возвращает вспомогательный объект сигнатуры для метода, получая на вход модуль метода, соглашение о вызове и возвращаемый тип.</summary>
+      <returns>Объект SignatureHelper для метода.</returns>
+      <param name="mod">Модуль <see cref="T:System.Reflection.Emit.ModuleBuilder" />, содержащий метод, для которого запрашивается SignatureHelper. </param>
+      <param name="callingConvention">Соглашение о вызове метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода или значение null для типа возвращаемого значения void (процедура Sub в Visual Basic). </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mod" /> имеет значение null.</exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="mod" /> не является объектом <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>Возвращает вспомогательный объект сигнатуры для метода со стандартным соглашением о вызове, имея в наличии модуль метода, тип возвращаемого значения и типы аргументов.</summary>
+      <returns>Объект SignatureHelper для метода.</returns>
+      <param name="mod">Модуль <see cref="T:System.Reflection.Emit.ModuleBuilder" />, содержащий метод, для которого запрашивается SignatureHelper. </param>
+      <param name="returnType">Тип возвращаемого значения метода или значение null для типа возвращаемого значения void (процедура Sub в Visual Basic). </param>
+      <param name="parameterTypes">Типы аргументов метода или значение null, если метод не содержит аргументов. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mod" /> имеет значение null.– или –Элемент параметра <paramref name="parameterTypes" /> имеет значение null.</exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="mod" /> не является объектом <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Возвращает вспомогательный объект подписи для свойства, получая на вход динамический модуль, содержащий свойство, соглашение о вызове, тип свойства, аргументы свойства и пользовательские модификаторы для типа возвращаемого значения и аргументов.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.SignatureHelper" /> для свойства.</returns>
+      <param name="mod">Модуль <see cref="T:System.Reflection.Emit.ModuleBuilder" />, содержащий свойство, для которого запрашивается <see cref="T:System.Reflection.Emit.SignatureHelper" />.</param>
+      <param name="callingConvention">Соглашение о вызовах методов доступа к свойству.</param>
+      <param name="returnType">тип свойства;</param>
+      <param name="requiredReturnTypeCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для возвращаемого типа, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если у типа возвращаемого значения нет обязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="optionalReturnTypeCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для возвращаемого типа, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если у типа возвращаемого значения нет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="parameterTypes">Типы аргументов свойств или null, если свойство не содержит аргументов.</param>
+      <param name="requiredParameterTypeCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего свойства.Если определенный аргумент не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если свойство не содержит аргументов или если аргументы не содержат пользовательские модификаторы, укажите значение null вместо массива массивов.</param>
+      <param name="optionalParameterTypeCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего свойства.Если определенный аргумент не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если свойство не содержит аргументов или если аргументы не содержат необязательные пользовательские модификаторы, укажите значение null вместо массива массивов.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mod" /> имеет значение null.– или –Элемент параметра <paramref name="parameterTypes" /> имеет значение null. – или –Один из указанных пользовательских модификаторов имеет значение null. (Однако значение null может быть указано для массива пользовательских модификаторов для любого аргумента).</exception>
+      <exception cref="T:System.ArgumentException">Подпись уже была закончена. – или –Параметр <paramref name="mod" /> не является объектом <see cref="T:System.Reflection.Emit.ModuleBuilder" />.– или –Один из указанных пользовательских модификаторов имеет тип массива.– или –Один из указанных пользовательских модификаторов является открытым универсальным типом.То есть значение свойства <see cref="P:System.Type.ContainsGenericParameters" /> для пользовательского модификатора равно true.– или –Размер <paramref name="requiredParameterTypeCustomModifiers" /> или <paramref name="optionalParameterTypeCustomModifiers" /> не равен размеру <paramref name="parameterTypes" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>Возвращает вспомогательный объект сигнатуры для свойства, получая на вход модуль, содержащий свойство, тип свойства и аргументы свойства.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.SignatureHelper" /> для свойства.</returns>
+      <param name="mod">Модуль <see cref="T:System.Reflection.Emit.ModuleBuilder" />, содержащий свойство, для которого запрашивается <see cref="T:System.Reflection.Emit.SignatureHelper" />.</param>
+      <param name="returnType">тип свойства;</param>
+      <param name="parameterTypes">Типы аргументов или значение null, если в свойстве отсутствуют аргументы.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mod" /> имеет значение null.– или –Элемент параметра <paramref name="parameterTypes" /> имеет значение null.</exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="mod" /> не является объектом <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Возвращает вспомогательный объект сигнатуры для свойства, получая на вход динамический модуль, содержащий свойство, тип свойства, аргументы свойства и пользовательские модификаторы для типа возвращаемого значения и аргументов.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.SignatureHelper" /> для свойства.</returns>
+      <param name="mod">Модуль <see cref="T:System.Reflection.Emit.ModuleBuilder" />, содержащий свойство, для которого запрашивается <see cref="T:System.Reflection.Emit.SignatureHelper" />.</param>
+      <param name="returnType">тип свойства;</param>
+      <param name="requiredReturnTypeCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для возвращаемого типа, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если у типа возвращаемого значения нет обязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="optionalReturnTypeCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для возвращаемого типа, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если у типа возвращаемого значения нет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="parameterTypes">Типы аргументов свойств или null, если свойство не содержит аргументов.</param>
+      <param name="requiredParameterTypeCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего свойства.Если определенный аргумент не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если свойство не содержит аргументов или если аргументы не содержат пользовательские модификаторы, укажите значение null вместо массива массивов.</param>
+      <param name="optionalParameterTypeCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего свойства.Если определенный аргумент не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если свойство не содержит аргументов или если аргументы не содержат необязательные пользовательские модификаторы, укажите значение null вместо массива массивов.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mod" /> имеет значение null.– или –Элемент параметра <paramref name="parameterTypes" /> имеет значение null. – или –Один из указанных пользовательских модификаторов имеет значение null. (Однако значение null может быть указано для массива пользовательских модификаторов для любого аргумента).</exception>
+      <exception cref="T:System.ArgumentException">Подпись уже была закончена. – или –Параметр <paramref name="mod" /> не является объектом <see cref="T:System.Reflection.Emit.ModuleBuilder" />.– или –Один из указанных пользовательских модификаторов имеет тип массива.– или –Один из указанных пользовательских модификаторов является открытым универсальным типом.То есть значение свойства <see cref="P:System.Type.ContainsGenericParameters" /> для пользовательского модификатора равно true.– или –Размер <paramref name="requiredParameterTypeCustomModifiers" /> или <paramref name="optionalParameterTypeCustomModifiers" /> не равен размеру <paramref name="parameterTypes" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetSignature">
+      <summary>Добавляет к сигнатуре конечный токен и помечает сигнатуру как законченную, поэтому больше никакие токены не могут быть добавлены.</summary>
+      <returns>Возвращает массив байтов, содержащий сигнатуру целиком.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.ToString">
+      <summary>Возвращает строку, представляющую аргументы сигнатуры.</summary>
+      <returns>Возвращает строку, представляющую аргументы этой сигнатуры.</returns>
+    </member>
+  </members>
+</doc>

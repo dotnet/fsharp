@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Returns the set of files to be included in the nuget package
+       with appropriate metadata.-->
+  <Target Name="GetFilesToPackage"
+          Returns="@(FilesToPackage)">
+    <PropertyGroup>
+      <PackagePath Condition="'$(PackagePath)' == ''">$(TargetPath)</PackagePath>
+      <PackageIncludeDocs Condition="'$(PackageIncludeDocs)' == '' AND '$(IsReferenceAssembly)' == 'true'">true</PackageIncludeDocs>
+    </PropertyGroup>
+
+    <!-- XmlDocFileRoot should be defined externally since these are currently not
+         part of the corefx repo. -->
+    <!-- This isn't a straight mapping to an algorithm using CultureInfo.
+         There are special cases for en-US and zh-* so we manually list
+         the mapping.-->
+    <ItemGroup>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1028\$(TargetName).xml">
+        <SubFolder>/zh-hant</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1031\$(TargetName).xml">
+        <SubFolder>/de</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1033\$(TargetName).xml">
+        <SubFolder />
+        <!-- en docs go in root as neutral fall back -->
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1036\$(TargetName).xml">
+        <SubFolder>/fr</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1040\$(TargetName).xml">
+        <SubFolder>/it</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1041\$(TargetName).xml">
+        <SubFolder>/ja</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1042\$(TargetName).xml">
+        <SubFolder>/ko</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\1049\$(TargetName).xml">
+        <SubFolder>/ru</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\2052\$(TargetName).xml">
+        <SubFolder>/zh-hans</SubFolder>
+      </XmlDocFile>
+      <XmlDocFile Include="$(XmlDocFileRoot)\3082\$(TargetName).xml">
+        <SubFolder>/es</SubFolder>
+      </XmlDocFile>
+    </ItemGroup>
+
+    <!-- currently behind a flag to avoid noise in the build -->
+    <Warning Condition="'$(ValidateDocs)' == 'true' AND '$(PackageIncludeDocs)' == 'true' AND !Exists('%(XmlDocFile.Identity)')"
+             Text="Documentation file %(XmlDocFile.Identity) was not found." />
+
+    <!-- remove any missing docs-->
+    <ItemGroup>
+      <XmlDocFile Remove="@(XmlDocFile)" Condition="!Exists('%(XmlDocFile.Identity)')"/>
+    </ItemGroup>
+
+    <Error Condition="'$(IsReferenceAssembly)' == 'true' AND '$(PackageTargetRuntime)' != ''"
+           Text="Reference assemblies should not specify the PackageTargetRuntime property since runtimes cannot effect compile time assets."/>
+
+    <!-- *** determine destination path for assets *** -->
+    <PropertyGroup>
+      <_packageTargetRefLib>lib</_packageTargetRefLib>
+      <_packageTargetRefLib Condition="'$(IsReferenceAssembly)' == 'true'">ref</_packageTargetRefLib>
+      
+      <!-- no path or runtime, but framework: lib/{txm}-->
+      <PackageTargetPath Condition="'$(PackageTargetPath)' == ''AND '$(PackageTargetRuntime)' == '' AND '$(PackageTargetFramework)' != ''">$(_packageTargetRefLib)/$(PackageTargetFramework)</PackageTargetPath>
+
+      <!-- no path but runtime and framework: runtimes/{rid}/lib/{txm}-->
+      <PackageTargetPath Condition="'$(PackageTargetPath)' == '' AND '$(PackageTargetFramework)' != '' AND '$(PackageTargetRuntime)' != ''">runtimes/$(PackageTargetRuntime)/lib/$(PackageTargetFramework)</PackageTargetPath>
+    </PropertyGroup>
+    
+    <!-- specifying $(PackageTargetPath) overrides defaults and project specific items -->
+    <ItemGroup Condition="'$(PackageTargetPath)' != ''">
+      <!-- remove anything specified by the project-->
+      <PackageDestination Remove="@(PackageDestination)" />
+      
+      <!-- only use $(PackageTargetPath) -->
+      <PackageDestination Include="$(PackageTargetPath)">
+        <TargetFramework Condition="'$(PackageTargetFramework)' != ''">$(PackageTargetFramework)</TargetFramework>
+      </PackageDestination>
+    </ItemGroup>
+
+    <!-- default to dotnet if not specified by the project  -->
+    <ItemGroup Condition="'@(PackageDestination)' == ''">
+      <PackageDestination Include="$(_packageTargetRefLib)/dotnet">
+        <TargetFramework>dotnet</TargetFramework>
+      </PackageDestination>
+    </ItemGroup>
+    
+    
+    <!-- *** include assets *** -->
+    <ItemGroup>
+      <!-- Include primary output -->
+      <FilesToPackage Include="$(PackagePath)">
+        <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
+        <TargetFramework>%(PackageDestination.TargetFramework)</TargetFramework>
+        <TargetPath>%(PackageDestination.Identity)</TargetPath>
+      </FilesToPackage>
+
+      <!-- Include doc output -->
+      <FilesToPackage Include="$(DocumentationFile)" Condition="'$(DocumentationFile)' != '' AND '$(PackageIncludeDocs)' == 'true'">
+        <TargetPath>%(PackageDestination.Identity)</TargetPath>
+        <!-- intentionally omit TargetFramework: no dependencies for docs -->
+      </FilesToPackage>
+
+      <!-- Include pre-authored docs if available and required -->
+      <FilesToPackage Include="@(XmlDocFile)" Condition="'$(PackageIncludeDocs)' == 'true'">
+        <TargetPath>%(PackageDestination.Identity)</TargetPath>
+        <!-- intentionally omit TargetFramework: no dependencies for docs -->
+      </FilesToPackage>
+      <FilesToPackage Condition="'%(FilesToPackage.SubFolder)' != ''">
+        <TargetPath>%(TargetPath)%(FilesToPackage.SubFolder)</TargetPath>
+      </FilesToPackage>     
+    </ItemGroup>    
+  </Target>
+</Project>

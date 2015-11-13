@@ -1,0 +1,1481 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.AssemblyBuilder">
+      <summary>Definisce e rappresenta un assembly dinamico.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.DefinedTypes"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess)">
+      <summary>Definisce un assembly dinamico con il nome e i diritti di accesso specificati.</summary>
+      <returns>Oggetto che rappresenta il nuovo assembly.</returns>
+      <param name="name">Nome dell'assembly.</param>
+      <param name="access">I diritti di accesso dell'assembly.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess,System.Collections.Generic.IEnumerable{System.Reflection.Emit.CustomAttributeBuilder})">
+      <summary>Definisce un nuovo assembly con il nome, i diritti di accesso e gli attributi specificati.</summary>
+      <returns>Oggetto che rappresenta il nuovo assembly.</returns>
+      <param name="name">Nome dell'assembly.</param>
+      <param name="access">I diritti di accesso dell'assembly.</param>
+      <param name="assemblyAttributes">Raccolta che contiene gli attributi dell'assembly.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicModule(System.String)">
+      <summary>Definisce un modulo dinamico temporaneo denominato nell'assembly.</summary>
+      <returns>Oggetto <see cref="T:System.Reflection.Emit.ModuleBuilder" /> che rappresenta il modulo dinamico definito.</returns>
+      <param name="name">Nome del modulo dinamico.La sua lunghezza deve essere inferiore a 260 caratteri.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> inizia con uno spazio vuoto.- oppure - La lunghezza di <paramref name="name" /> è zero.- oppure - La lunghezza di <paramref name="name" /> è maggiore di o uguale a 260. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.Security.SecurityException">Il chiamante non dispone dell'autorizzazione richiesta. </exception>
+      <exception cref="T:System.ExecutionEngineException">Non è possibile caricare l'assembly per un writer di simboli predefinito.- oppure - Non è possibile trovare il tipo che implementa l'interfaccia del writer di simboli predefinito. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*" />
+        <IPermission class="System.Security.Permissions.ReflectionPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="MemberAccess" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.Equals(System.Object)">
+      <summary>Restituisce un valore che indica se questa istanza è uguale all'oggetto specificato.</summary>
+      <returns>true se <paramref name="obj" /> è uguale al tipo e al valore di questa istanza. In caso contrario, false.</returns>
+      <param name="obj">Oggetto da confrontare con questa istanza o null.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.FullName">
+      <summary>Ottiene il nome visualizzato dell'assembly dinamico corrente. </summary>
+      <returns>Nome visualizzato dell'assembly dinamico.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetDynamicModule(System.String)">
+      <summary>Restituisce il modulo dinamico con il nome specificato.</summary>
+      <returns>Oggetto ModuleBuilder che rappresenta il modulo dinamico richiesto.</returns>
+      <param name="name">Nome del modulo dinamico richiesto. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero. </exception>
+      <exception cref="T:System.Security.SecurityException">Il chiamante non dispone dell'autorizzazione richiesta. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetHashCode">
+      <summary>Restituisce il codice hash per l'istanza.</summary>
+      <returns>Codice hash integer con segno a 32 bit.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceInfo(System.String)">
+      <summary>Restituisce informazioni sul modo in cui la risorsa data è stata resa persistente.</summary>
+      <returns>Oggetto <see cref="T:System.Reflection.ManifestResourceInfo" /> compilato con informazioni relative alla topologia della risorsa oppure null se la risorsa non è stata trovata.</returns>
+      <param name="resourceName">Il nome della risorsa. </param>
+      <exception cref="T:System.NotSupportedException">Il metodo non è attualmente supportato. </exception>
+      <exception cref="T:System.Security.SecurityException">Il chiamante non dispone dell'autorizzazione richiesta. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceNames">
+      <summary>Carica la risorsa del manifesto specificata da questo assembly.</summary>
+      <returns>Matrice di tipo String che contiene i nomi di tutte le risorse.</returns>
+      <exception cref="T:System.NotSupportedException">Il metodo non è supportato su un assembly dinamico.Per ottenere i nomi della risorsa del manifesto, utilizzare il metodo <see cref="M:System.Reflection.Assembly.GetManifestResourceNames" />.</exception>
+      <exception cref="T:System.Security.SecurityException">Il chiamante non dispone dell'autorizzazione richiesta. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceStream(System.String)">
+      <summary>Carica la risorsa del manifesto specificata da questo assembly.</summary>
+      <returns>Oggetto <see cref="T:System.IO.Stream" /> che rappresenta la risorsa del manifesto.</returns>
+      <param name="name">Nome della risorsa del manifesto richiesta. </param>
+      <exception cref="T:System.NotSupportedException">Il metodo non è attualmente supportato. </exception>
+      <exception cref="T:System.Security.SecurityException">Il chiamante non dispone dell'autorizzazione richiesta. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.IsDynamic">
+      <summary>Ottiene un valore che indica che l'assembly corrente è un assembly dinamico.</summary>
+      <returns>Sempre true.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.ManifestModule">
+      <summary>Ottiene il modulo nell'oggetto <see cref="T:System.Reflection.Emit.AssemblyBuilder" /> corrente che contiene il manifesto dell'assembly.</summary>
+      <returns>Modulo manifesto.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.Modules"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Impostare un attributo personalizzato sull'assembly utilizzando un blob di attributi personalizzati specificato.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+      <exception cref="T:System.Security.SecurityException">Il chiamante non dispone dell'autorizzazione richiesta. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> non è RuntimeConstructorInfo.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Impostare un attributo personalizzato sull'assembly utilizzando un generatore di attributi personalizzati.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto utilizzata per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> è null. </exception>
+      <exception cref="T:System.Security.SecurityException">Il chiamante non dispone dell'autorizzazione richiesta. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.AssemblyBuilderAccess">
+      <summary>Definisce le modalità di accesso per un assembly dinamico. </summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.Run">
+      <summary>L'assembly dinamico può essere eseguito ma non salvato.</summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.RunAndCollect">
+      <summary>L'assembly dinamico può essere scaricato e la memoria recuperata, soggetto alle restrizioni descritte in Assembly ritirabili per la generazione di tipi dinamici.</summary>
+    </member>
+    <member name="T:System.Reflection.Emit.ConstructorBuilder">
+      <summary>Definisce e rappresenta un costruttore di una classe dinamica.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Attributes">
+      <summary>Recupera gli attributi per il costruttore.</summary>
+      <returns>Restituisce gli attributi per il costruttore.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.CallingConvention">
+      <summary>Ottiene un valore <see cref="T:System.Reflection.CallingConventions" /> che dipende dal fatto che il tipo dichiarante sia generico o non generico.</summary>
+      <returns>
+        <see cref="F:System.Reflection.CallingConventions.HasThis" /> se il tipo dichiarante è generico. In caso contrario, <see cref="F:System.Reflection.CallingConventions.Standard" />. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.DeclaringType">
+      <summary>Recupera un riferimento all'oggetto <see cref="T:System.Type" /> per il tipo che dichiara il membro.</summary>
+      <returns>Restituisce l'oggetto <see cref="T:System.Type" /> per il tipo che dichiara il membro.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>Definisce un parametro del costruttore.</summary>
+      <returns>Restituisce un oggetto ParameterBuilder che rappresenta il nuovo parametro del costruttore.</returns>
+      <param name="iSequence">Posizione del parametro nell'elenco dei parametri.I parametri sono indicizzati iniziando da 1 per il primo parametro.</param>
+      <param name="attributes">Attributi del parametro. </param>
+      <param name="strParamName">Nome del parametro.Il nome può essere rappresentato dalla stringa null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="iSequence" /> è minore di 0 (zero) oppure maggiore del numero di parametri del costruttore. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo che lo contiene è stato creato utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator">
+      <summary>Ottiene un oggetto <see cref="T:System.Reflection.Emit.ILGenerator" /> per il costruttore.</summary>
+      <returns>Restituisce un oggetto <see cref="T:System.Reflection.Emit.ILGenerator" /> per il costruttore.</returns>
+      <exception cref="T:System.InvalidOperationException">Il costruttore è un costruttore predefinito.- oppure -Il costruttore dispone di un flag <see cref="T:System.Reflection.MethodAttributes" /> o di un flag <see cref="T:System.Reflection.MethodImplAttributes" /> che indica che non deve essere presente il corpo di un metodo.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator(System.Int32)">
+      <summary>Ottiene una classe <see cref="T:System.Reflection.Emit.ILGenerator" />, con la dimensione di flusso MSIL specificata, che può essere utilizzata per compilare un corpo del metodo per questo costruttore.</summary>
+      <returns>Classe <see cref="T:System.Reflection.Emit.ILGenerator" /> per questo costruttore.</returns>
+      <param name="streamSize">Dimensione del flusso MSIL in byte.</param>
+      <exception cref="T:System.InvalidOperationException">Il costruttore è un costruttore predefinito.- oppure -Il costruttore dispone di un flag <see cref="T:System.Reflection.MethodAttributes" /> o di un flag <see cref="T:System.Reflection.MethodImplAttributes" /> che indica che non deve essere presente il corpo di un metodo. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetParameters">
+      <summary>Restituisce i parametri del costruttore.</summary>
+      <returns>Restituisce una matrice di oggetti <see cref="T:System.Reflection.ParameterInfo" /> che rappresentano i parametri del costruttore.</returns>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> non è stato chiamato sul tipo di questo costruttore in .NET Framework versioni 1.0 e 1.1. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> non è stato chiamato sul tipo di questo costruttore in .NET Framework versione 2.0. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.InitLocals">
+      <summary>Ottiene o imposta un valore che indica se le variabili locali nel costruttore devono essere inizializzate a zero.</summary>
+      <returns>Lettura/scrittura.Ottiene o imposta un valore che indica se le variabili locali nel costruttore devono essere inizializzate a zero.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Name">
+      <summary>Recupera il nome del costruttore.</summary>
+      <returns>Restituisce il nome del costruttore.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Impostare un attributo personalizzato utilizzando un blob di attributi personalizzati specificato.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Impostare un attributo personalizzato utilizzando un generatore di attributi personalizzati.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto utilizzata per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>Imposta i flag di implementazione dei metodi per il costruttore.</summary>
+      <param name="attributes">Flag di implementazione dei metodi. </param>
+      <exception cref="T:System.InvalidOperationException">Il tipo che lo contiene è stato creato utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.ToString">
+      <summary>Restituisce l'istanza dell'oggetto <see cref="T:System.Reflection.Emit.ConstructorBuilder" /> come un oggetto <see cref="T:System.String" />.</summary>
+      <returns>Restituisce un oggetto <see cref="T:System.String" /> contenente il nome, gli attributi e le eccezioni del costruttore, seguiti dal flusso MSIL (Microsoft Intermediate Language) corrente.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EnumBuilder">
+      <summary>Descrive e rappresenta un tipo di enumerazione.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Assembly">
+      <summary>Recupera l'assembly dinamico che contiene la definizione dell'enum.</summary>
+      <returns>Solo lettura.Assembly dinamico che contiene la definizione dell'enum.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.AssemblyQualifiedName">
+      <summary>Restituisce il percorso completo dell'enum qualificato dal nome visualizzato dell'assembly padre.</summary>
+      <returns>Solo lettura.Percorso completo dell'enum qualificato dal nome visualizzato dell'assembly padre.</returns>
+      <exception cref="T:System.NotSupportedException">Non è stato ancora stato chiamato il metodo <see cref="M:System.Reflection.Emit.EnumBuilder.CreateType" />. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.BaseType">
+      <summary>Restituisce il tipo <see cref="T:System.Type" /> padre del tipo, il quale è sempre <see cref="T:System.Enum" />.</summary>
+      <returns>Solo lettura.Tipo <see cref="T:System.Type" /> padre del tipo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.CreateTypeInfo">
+      <summary>Ottiene un oggetto <see cref="T:System.Reflection.TypeInfo" /> che rappresenta l'enumerazione.</summary>
+      <returns>Oggetto che rappresenta l'enumerazione.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringMethod"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringType">
+      <summary>Restituisce il tipo con cui è stato dichiarato l'oggetto <see cref="T:System.Reflection.Emit.EnumBuilder" />.</summary>
+      <returns>Solo lettura.Tipo con cui è stato dichiarato l'oggetto <see cref="T:System.Reflection.Emit.EnumBuilder" />.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.DefineLiteral(System.String,System.Object)">
+      <summary>Definisce un campo statico denominato in un tipo di enumerazione con il valore di costante specificato.</summary>
+      <returns>Campo definito.</returns>
+      <param name="literalName">Nome del campo statico. </param>
+      <param name="literalValue">Valore costante del valore letterale. </param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.FullName">
+      <summary>Restituisce il percorso completo dell'enum.</summary>
+      <returns>Solo lettura.Percorso completo dell'enum.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterPosition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetElementType">
+      <summary>La chiamata di questo metodo genera sempre un'eccezione <see cref="T:System.NotSupportedException" />.</summary>
+      <returns>Metodo non supportato.Non vengono restituiti valori.</returns>
+      <exception cref="T:System.NotSupportedException">Il metodo non è attualmente supportato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GUID">
+      <summary>Restituisce il GUID dell'enum.</summary>
+      <returns>Solo lettura.GUID dell'enum.</returns>
+      <exception cref="T:System.NotSupportedException">Il metodo non è attualmente supportato nei tipi non completi. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>Ottiene un valore che indica se è possibile assegnare un oggetto <see cref="T:System.Reflection.TypeInfo" /> specificato a questo oggetto.</summary>
+      <returns>true se <paramref name="typeInfo" /> può essere assegnato a questo oggetto, in caso contrario, false.</returns>
+      <param name="typeInfo">Oggetto da verificare.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericParameter"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType(System.Int32)">
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> è minore di 1.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeByRefType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeGenericType(System.Type[])"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakePointerType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Module">
+      <summary>Recupera il modulo dinamico che contiene la definizione di <see cref="T:System.Reflection.Emit.EnumBuilder" />.</summary>
+      <returns>Solo lettura.Modulo dinamico che contiene la definizione di <see cref="T:System.Reflection.Emit.EnumBuilder" />.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Name">
+      <summary>Restituisce il nome dell'enum.</summary>
+      <returns>Solo lettura.Nome dell'enum.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Namespace">
+      <summary>Restituisce lo spazio dei nomi dell'enum.</summary>
+      <returns>Solo lettura.Spazio dei nomi dell'enum.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Imposta un attributo personalizzato utilizzando un blob specificato di attributi personalizzati.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Imposta un attributo personalizzato utilizzando un generatore di attributi personalizzato.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto utilizzata per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> è null. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.UnderlyingField">
+      <summary>Restituisce il campo sottostante per l'enum.</summary>
+      <returns>Solo lettura.Campo sottostante per l'enum.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EventBuilder">
+      <summary>Definisce gli eventi per una classe.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Aggiunge uno degli altri metodi associati all'evento, ovvero un metodo diverso dai metodi "on" e "raise" associati a un evento.È possibile chiamare questa funzione più volte per aggiungere un numero qualsiasi di altri metodi.</summary>
+      <param name="mdBuilder">Oggetto MethodBuilder che rappresenta l'altro metodo. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetAddOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Imposta il metodo utilizzato per la sottoscrizione dell'evento.</summary>
+      <param name="mdBuilder">Oggetto MethodBuilder che rappresenta il metodo utilizzato per la sottoscrizione dell'evento. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Impostare un attributo personalizzato utilizzando un blob di attributi personalizzati specificato.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Imposta un attributo personalizzato utilizzando un generatore di attributi personalizzato.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRaiseMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Imposta il metodo utilizzato per generare l'evento.</summary>
+      <param name="mdBuilder">Oggetto MethodBuilder che rappresenta il metodo utilizzato per generare l'evento. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRemoveOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Imposta il metodo utilizzato per annullare la sottoscrizione dell'evento.</summary>
+      <param name="mdBuilder">Oggetto MethodBuilder che rappresenta il metodo utilizzato per annullare la sottoscrizione dell'evento. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.FieldBuilder">
+      <summary>Definisce e rappresenta un campo.La classe non può essere ereditata.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Attributes">
+      <summary>Indica gli attributi del campo.Questa proprietà è in sola lettura.</summary>
+      <returns>Attributi del campo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.DeclaringType">
+      <summary>Indica un riferimento all'oggetto <see cref="T:System.Type" /> per il tipo che dichiara il campo.Questa proprietà è in sola lettura.</summary>
+      <returns>Riferimento all'oggetto <see cref="T:System.Type" /> per il tipo che dichiara il campo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.FieldType">
+      <summary>Indica l'oggetto <see cref="T:System.Type" /> che rappresenta il tipo del campo.Questa proprietà è in sola lettura.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta il tipo del campo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.GetValue(System.Object)">
+      <summary>Recupera il valore del campo supportato dall'oggetto indicato.</summary>
+      <returns>Oggetto <see cref="T:System.Object" /> contenente il valore del campo ottenuto mediante reflection dall'istanza.</returns>
+      <param name="obj">Oggetto da utilizzare per accedere al campo. </param>
+      <exception cref="T:System.NotSupportedException">Metodo non supportato. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Name">
+      <summary>Indica il nome del campo.Questa proprietà è in sola lettura.</summary>
+      <returns>Oggetto <see cref="T:System.String" /> contenente il nome del campo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetConstant(System.Object)">
+      <summary>Imposta il valore predefinito del campo.</summary>
+      <param name="defaultValue">Nuovo valore predefinito per il campo. </param>
+      <exception cref="T:System.InvalidOperationException">Il tipo che lo contiene è stato creato utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+      <exception cref="T:System.ArgumentException">Il campo non è tra i tipi supportati.- oppure -Il tipo di <paramref name="defaultValue" /> e il tipo del campo non corrispondono.- oppure -Il tipo del campo è <see cref="T:System.Object" /> o un altro tipo di riferimento, <paramref name="defaultValue" /> non è null e il valore non può essere assegnato al tipo di riferimento.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Imposta un attributo personalizzato utilizzando un blob specificato di attributi personalizzati.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo padre del campo è completo. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Imposta un attributo personalizzato utilizzando un generatore di attributi personalizzato.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto utilizzata per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo padre del campo è completo. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetOffset(System.Int32)">
+      <summary>Specifica il layout dei campi.</summary>
+      <param name="iOffset">Offset del campo all'interno del tipo contenente il campo. </param>
+      <exception cref="T:System.InvalidOperationException">Il tipo che lo contiene è stato creato utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="iOffset" /> è minore di zero.</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.GenericTypeParameterBuilder">
+      <summary>Definisce e crea parametri di tipo generico per tipi e metodi generici definiti dinamicamente.La classe non può essere ereditata.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Assembly">
+      <summary>Ottiene un oggetto <see cref="T:System.Reflection.Assembly" /> che rappresenta l'assembly dinamico che contiene la definizione di tipo generico a cui appartiene il parametro di tipo corrente.</summary>
+      <returns>Classe <see cref="T:System.Reflection.Assembly" /> che rappresenta l'assembly dinamico che contiene la definizione di tipo generico a cui appartiene il parametro di tipo corrente.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.AssemblyQualifiedName">
+      <summary>Ottiene null in tutti i casi.</summary>
+      <returns>Riferimento null (Nothing in Visual Basic) in tutti i casi.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.BaseType">
+      <summary>Ottiene il vincolo del tipo di base per il parametro di tipo generico corrente.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta il vincolo di tipo di base del parametro di tipo generico oppure null se il parametro di tipo non dispone di vincoli di tipo di base.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.ContainsGenericParameters">
+      <summary>Ottiene true in tutti i casi.</summary>
+      <returns>true in tutti i casi.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringMethod">
+      <summary>Ottiene una classe <see cref="T:System.Reflection.MethodInfo" /> che rappresenta il metodo dichiarante se la classe <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> corrente rappresenta un parametro di tipo di un metodo generico.</summary>
+      <returns>Classe <see cref="T:System.Reflection.MethodInfo" /> che rappresenta il metodo dichiarante se l'oggetto <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> corrente rappresenta un parametro di tipo di un metodo generico. In caso contrario, null.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringType">
+      <summary>Ottiene la definizione di tipo generico o la definizione di metodo generico a cui il parametro di tipo generico appartiene.</summary>
+      <returns>Se il parametro di tipo appartiene a un tipo generico, un oggetto <see cref="T:System.Type" /> che rappresenta tale tipo generico; se il parametro di tipo appartiene a un metodo generico, un oggetto <see cref="T:System.Type" /> che rappresenta il tipo in cui è stato dichiarato il metodo generico.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.Equals(System.Object)">
+      <summary>Verifica se l'oggetto dato è un'istanza di EventToken ed è uguale all'istanza corrente.</summary>
+      <returns>Restituisce true se <paramref name="o" /> è un'istanza di EventToken ed è uguale all'istanza corrente; in caso contrario false.</returns>
+      <param name="o">Oggetto da confrontare con l'istanza corrente.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.FullName">
+      <summary>Ottiene null in tutti i casi.</summary>
+      <returns>Riferimento null (Nothing in Visual Basic) in tutti i casi.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterPosition">
+      <summary>Ottiene la posizione del parametro di tipo nell'elenco dei parametri di tipo del tipo generico o del metodo generico in cui il parametro è dichiarato.</summary>
+      <returns>Posizione del parametro di tipo nell'elenco dei parametri di tipo del tipo o del metodo generico in cui il parametro è dichiarato.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetElementType">
+      <summary>Genera un'eccezione <see cref="T:System.NotSupportedException" /> in tutti i casi. </summary>
+      <returns>Il tipo a cui fa riferimento il tipo di matrice corrente, il tipo di puntatore o il tipo ByRef oppure null se il tipo corrente non è un tipo di matrice o di puntatore e se non viene passato dal riferimento.</returns>
+      <exception cref="T:System.NotSupportedException">In tutti i casi.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericTypeDefinition">
+      <summary>Non valido per i parametri di tipo generico.</summary>
+      <returns>Non valido per i parametri di tipo generico.</returns>
+      <exception cref="T:System.InvalidOperationException">In tutti i casi.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetHashCode">
+      <summary>Restituisce un codice hash di valori interi a 32 bit per l'istanza corrente.</summary>
+      <returns>Codice hash di valori interi a 32 bit.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GUID">
+      <summary>Non supportato per i parametri di tipo generico incompleti.</summary>
+      <returns>Non supportato per i parametri di tipo generico incompleti.</returns>
+      <exception cref="T:System.NotSupportedException">In tutti i casi. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>Genera un'eccezione <see cref="T:System.NotSupportedException" /> in tutti i casi.</summary>
+      <returns>Genera un'eccezione <see cref="T:System.NotSupportedException" /> in tutti i casi.</returns>
+      <param name="typeInfo">Oggetto da verificare.</param>
+      <exception cref="T:System.NotSupportedException">In tutti i casi.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericParameter">
+      <summary>Ottiene true in tutti i casi.</summary>
+      <returns>true in tutti i casi.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericType">
+      <summary>Restituisce false in tutti i casi.</summary>
+      <returns>false in tutti i casi.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericTypeDefinition">
+      <summary>Ottiene false in tutti i casi.</summary>
+      <returns>false in tutti i casi.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsSubclassOf(System.Type)">
+      <summary>Non supportato per i parametri di tipo generico incompleti.</summary>
+      <returns>Non supportato per i parametri di tipo generico incompleti.</returns>
+      <param name="c">Non supportato.</param>
+      <exception cref="T:System.NotSupportedException">In tutti i casi.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType">
+      <summary>Restituisce il tipo di una matrice unidimensionale il cui tipo di elemento è il parametro di tipo generico.</summary>
+      <returns>Classe <see cref="T:System.Type" /> che rappresenta il tipo di una matrice unidimensionale il cui tipo di elemento è il parametro di tipo generico.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType(System.Int32)">
+      <summary>Restituisce il tipo di una matrice il cui tipo di elemento è il parametro di tipo generico, con il numero specificato di dimensioni.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta il tipo di una matrice il cui tipo di elemento è il parametro di tipo generico, con il numero specificato di dimensioni.</returns>
+      <param name="rank">Numero di dimensioni della matrice.</param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> non è un numero di dimensioni valido.Ad esempio, il suo valore è minore di 1.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeByRefType">
+      <summary>Restituisce un oggetto <see cref="T:System.Type" /> che rappresenta il parametro di tipo generico corrente quando è passato come parametro di riferimento.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta il parametro di tipo generico corrente quando è passato come parametro di riferimento.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeGenericType(System.Type[])">
+      <summary>Non valido per i parametri di tipo generico incompleti.</summary>
+      <returns>Questo metodo non è valido per parametri di tipo generico incompleti.</returns>
+      <param name="typeArguments">Matrice di argomenti di tipo.</param>
+      <exception cref="T:System.InvalidOperationException">In tutti i casi.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakePointerType">
+      <summary>Restituisce un oggetto <see cref="T:System.Type" /> che rappresenta un puntatore al parametro di tipo generico corrente.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta un puntatore al parametro di tipo generico corrente.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Module">
+      <summary>Ottiene il modulo dinamico che contiene il parametro di tipo generico.</summary>
+      <returns>Oggetto <see cref="T:System.Reflection.Module" /> che rappresenta il modulo dinamico che contiene il parametro di tipo generico.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Name">
+      <summary>Ottiene il nome del parametro di tipo generico.</summary>
+      <returns>Nome del parametro di tipo generico.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Namespace">
+      <summary>Ottiene null in tutti i casi.</summary>
+      <returns>Riferimento null (Nothing in Visual Basic) in tutti i casi.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetBaseTypeConstraint(System.Type)">
+      <summary>Imposta il tipo di base che un tipo deve ereditare per essere sostituito dal parametro di tipo.</summary>
+      <param name="baseTypeConstraint">Classe <see cref="T:System.Type" /> che deve essere ereditata da qualsiasi tipo per cui sia richiesta la sostituzione con il parametro di tipo.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Imposta un attributo personalizzato utilizzando un blob specificato di attributi personalizzati.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato.</param>
+      <param name="binaryAttribute">Blob di byte che rappresenta l'attributo.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> è null.- oppure -<paramref name="binaryAttribute" /> è un riferimento null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Impostare un attributo personalizzato utilizzando un generatore di attributi personalizzati.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto che consente di definire l'attributo personalizzato.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> è null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetGenericParameterAttributes(System.Reflection.GenericParameterAttributes)">
+      <summary>Imposta le caratteristiche di varianza e i vincoli speciali del parametro generico, ad esempio il vincolo del costruttore senza parametri.</summary>
+      <param name="genericParameterAttributes">Combinazione bit per bit di valori <see cref="T:System.Reflection.GenericParameterAttributes" /> che rappresentano le caratteristiche di varianza e i vincoli speciali del parametro di tipo generico.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetInterfaceConstraints(System.Type[])">
+      <summary>Imposta le interfacce da implementare per un tipo, per consentirne la sostituzione con il parametro di tipo. </summary>
+      <param name="interfaceConstraints">Matrice di oggetti <see cref="T:System.Type" /> che rappresentano le interfacce da implementare per un tipo, per consentirne la sostituzione con il parametro di tipo.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.ToString">
+      <summary>Restituisce una rappresentazione di stringa del parametro di tipo generico corrente.</summary>
+      <returns>Stringa contenente il nome del parametro di tipo generico.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.MethodBuilder">
+      <summary>Definisce e rappresenta un metodo (o costruttore) su una classe dinamica.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Attributes">
+      <summary>Recupera gli attributi per il metodo.</summary>
+      <returns>Solo lettura.Recupera l'oggetto MethodAttributes per il metodo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.CallingConvention">
+      <summary>Restituisce la convenzione di chiamata del metodo.</summary>
+      <returns>Solo lettura.Convenzione di chiamata del metodo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ContainsGenericParameters">
+      <summary>Non supportata per questo tipo.</summary>
+      <returns>Non supportato.</returns>
+      <exception cref="T:System.NotSupportedException">Il metodo richiamato non è supportato nella classe base.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.DeclaringType">
+      <summary>Restituisce il tipo che dichiara il metodo.</summary>
+      <returns>Solo lettura.Tipo che dichiara il metodo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineGenericParameters(System.String[])">
+      <summary>Imposta il numero di parametri di tipo generico per il metodo corrente, con l'indicazione dei relativi nomi, e restituisce una matrice di oggetti <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> che possono essere utilizzati per impostare i vincoli.</summary>
+      <returns>Matrice di oggetti <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> che rappresentano i parametri di tipo del metodo generico.</returns>
+      <param name="names">Matrice di stringhe che rappresentano i nomi dei parametri di tipo generico.</param>
+      <exception cref="T:System.InvalidOperationException">I parametri di tipo generico sono già stati definiti per questo metodo.- oppure -Il metodo è stato già completato.- oppure -Il metodo <see cref="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)" /> è stato chiamato per il metodo corrente.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" /> è null.- oppure -Un elemento di <paramref name="names" /> è null.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> è una matrice vuota.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>Imposta gli attributi del parametro e il nome di un parametro di questo metodo oppure del valore restituito di questo metodo.Restituisce un oggetto ParameterBuilder che può essere utilizzato per applicare attributi personalizzati.</summary>
+      <returns>Restituisce un oggetto ParameterBuilder che rappresenta un parametro di questo metodo oppure il valore restituito di questo metodo.</returns>
+      <param name="position">Posizione del parametro nell'elenco dei parametri.I parametri vengono indicizzati a partire dal numero 1 per il primo parametro. Il numero 0 rappresenta il valore restituito del metodo.</param>
+      <param name="attributes">Attributi del parametro. </param>
+      <param name="strParamName">Nome del parametro.Il nome può essere rappresentato dalla stringa null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Il metodo non ha parametri.- oppure - <paramref name="position" /> è minore di 0.- oppure - <paramref name="position" /> è maggiore del numero dei parametri del metodo. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo che lo contiene è stato creato in precedenza utilizzando il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il metodo corrente, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.Equals(System.Object)">
+      <summary>Determina se l'oggetto indicato è uguale all'istanza.</summary>
+      <returns>true se <paramref name="obj" /> è un'istanza di MethodBuilder ed è uguale all'oggetto, in caso contrario false.</returns>
+      <param name="obj">Oggetto da confrontare con l'istanza di MethodBuilder. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericArguments">
+      <summary>Restituisce una matrice di oggetti <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> che rappresentano i parametri di tipo del metodo, se il metodo è generico.</summary>
+      <returns>Matrice di oggetti <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> che rappresentano i parametri di tipo, se il metodo è generico, o null se il metodo non è generico. </returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericMethodDefinition">
+      <summary>Restituisce il metodo.</summary>
+      <returns>Istanza corrente della classe <see cref="T:System.Reflection.Emit.MethodBuilder" />. </returns>
+      <exception cref="T:System.InvalidOperationException">Il metodo corrente non è generico,ovvero la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> restituisce false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetHashCode">
+      <summary>Ottiene il codice hash per il metodo.</summary>
+      <returns>Codice hash per il metodo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator">
+      <summary>Restituisce un oggetto ILGenerator per il metodo con una dimensione di flusso MSIL (Microsoft Intermediate Language) predefinita di 64 byte.</summary>
+      <returns>Restituisce un oggetto ILGenerator per il metodo.</returns>
+      <exception cref="T:System.InvalidOperationException">Questo metodo non ha un corpo a causa dei flag <see cref="T:System.Reflection.MethodAttributes" /> o <see cref="T:System.Reflection.MethodImplAttributes" />, ad esempio perché contiene il flag <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" />. - oppure -Il metodo è un metodo generico ma non una definizione di metodo generica.In altre parole, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator(System.Int32)">
+      <summary>Restituisce un oggetto ILGenerator per il metodo con la dimensione di flusso MSIL specificata.</summary>
+      <returns>Restituisce un oggetto ILGenerator per il metodo.</returns>
+      <param name="size">Dimensione del flusso MSIL in byte. </param>
+      <exception cref="T:System.InvalidOperationException">Questo metodo non ha un corpo a causa dei flag <see cref="T:System.Reflection.MethodAttributes" /> o <see cref="T:System.Reflection.MethodImplAttributes" />, ad esempio perché contiene il flag <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" />. - oppure -Il metodo è un metodo generico ma non una definizione di metodo generica.In altre parole, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetParameters">
+      <summary>Restituisce i parametri del metodo.</summary>
+      <returns>Matrice di oggetti ParameterInfo che rappresenta i parametri del metodo.</returns>
+      <exception cref="T:System.NotSupportedException">Il metodo non è attualmente supportato.Recuperare il metodo utilizzando il metodo <see cref="M:System.Type.GetMethod(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])" /> e chiamare il metodo GetParameters sull'oggetto <see cref="T:System.Reflection.MethodInfo" /> restituito.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.InitLocals">
+      <summary>Ottiene o imposta un valore booleano che indica se le variabili locali all'interno del metodo sono inizializzate su zero.Il valore predefinito di questa proprietà è true.</summary>
+      <returns>true se le variabili locali all'interno del metodo sono inizializzate su zero; in caso contrario, false.</returns>
+      <exception cref="T:System.InvalidOperationException">Per il metodo corrente, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false. (ottenuta o impostata).</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod">
+      <summary>Ottiene un valore che indica se il metodo è un metodo generico.</summary>
+      <returns>true se il metodo è generico; in caso contrario, false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition">
+      <summary>Ottiene un valore che indica se l'oggetto <see cref="T:System.Reflection.Emit.MethodBuilder" /> corrente rappresenta la definizione di un metodo generico.</summary>
+      <returns>true se l'oggetto <see cref="T:System.Reflection.Emit.MethodBuilder" /> corrente rappresenta la definizione di un metodo generico; in caso contrario false.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.MakeGenericMethod(System.Type[])">
+      <summary>Restituisce un metodo generico costruito dalla definizione di metodo generica corrente tramite gli argomenti di tipo generico specificati.</summary>
+      <returns>Classe <see cref="T:System.Reflection.MethodInfo" /> che rappresenta il metodo generico costruito dalla definizione di metodo generica corrente tramite gli argomenti di tipo generico specificati.</returns>
+      <param name="typeArguments">Matrice di oggetti <see cref="T:System.Type" /> che rappresentano gli argomenti di tipo del metodo generico.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Name">
+      <summary>Recupera il nome del metodo.</summary>
+      <returns>Solo lettura.Recupera una stringa contenente il nome semplice del metodo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnParameter">
+      <summary>Ottiene un oggetto <see cref="T:System.Reflection.ParameterInfo" /> contenente informazioni sul tipo restituito dal metodo, ad esempio se il tipo restituito contiene modificatori personalizzati. </summary>
+      <returns>Oggetto <see cref="T:System.Reflection.ParameterInfo" /> contenente informazioni relative al tipo restituito.</returns>
+      <exception cref="T:System.InvalidOperationException">Il tipo di dichiarazione non è stato creato.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnType">
+      <summary>Ottiene il tipo restituito dal metodo rappresentato da questo oggetto <see cref="T:System.Reflection.Emit.MethodBuilder" />.</summary>
+      <returns>Tipo restituito del metodo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Imposta un attributo personalizzato utilizzando un blob specificato di attributi personalizzati.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Per il metodo corrente, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Imposta un attributo personalizzato utilizzando un generatore di attributi personalizzato.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Per il metodo corrente, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>Imposta i flag di implementazione per il metodo.</summary>
+      <param name="attributes">Flag di implementazione da impostare. </param>
+      <exception cref="T:System.InvalidOperationException">Il tipo che lo contiene è stato creato in precedenza utilizzando il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il metodo corrente, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetParameters(System.Type[])">
+      <summary>Imposta il numero e i tipi di parametri di un metodo. </summary>
+      <param name="parameterTypes">Matrice di oggetti <see cref="T:System.Type" /> che rappresentano i tipi di parametro.</param>
+      <exception cref="T:System.InvalidOperationException">Il metodo corrente è un metodo generico ma non una definizione di metodo generica.In altre parole, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetReturnType(System.Type)">
+      <summary>Imposta il tipo restituito del metodo.</summary>
+      <param name="returnType">Oggetto <see cref="T:System.Type" /> che rappresenta il tipo restituito del metodo.</param>
+      <exception cref="T:System.InvalidOperationException">Il metodo corrente è un metodo generico ma non una definizione di metodo generica.In altre parole, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetSignature(System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Imposta la firma del metodo, incluso il tipo restituito, i tipi di parametro e i modificatori personalizzati obbligatori e facoltativi del tipo restituito e dei tipi di parametro.</summary>
+      <param name="returnType">Tipo restituito del metodo.</param>
+      <param name="returnTypeRequiredCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati obbligatori, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito del metodo.Se il tipo restituito non dispone di modificatori personalizzati obbligatori, specificare null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati facoltativi, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito del metodo.Se il tipo restituito non dispone di modificatori personalizzati opzionali, specificare null.</param>
+      <param name="parameterTypes">Tipi dei parametri del metodo.</param>
+      <param name="parameterTypeRequiredCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati obbligatori per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di matrici.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati facoltativi per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di matrici.</param>
+      <exception cref="T:System.InvalidOperationException">Il metodo corrente è un metodo generico ma non una definizione di metodo generica.In altre parole, la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.ToString">
+      <summary>Restituisce l'istanza dell'oggetto MethodBuilder in forma di stringa.</summary>
+      <returns>Restituisce una stringa contenente il nome, gli attributi, la firma, le eccezioni e la firma locale del metodo, seguiti dal flusso MSIL (Microsoft Intermediate Language) corrente.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ModuleBuilder">
+      <summary>Definisce e rappresenta un modulo in un assembly dinamico.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Assembly">
+      <summary>Ottiene l'assembly dinamico che ha definito questa istanza di <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</summary>
+      <returns>Assembly dinamico che ha definito il modulo dinamico corrente.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions">
+      <summary>Completa le definizioni delle funzioni globali e quelle dei dati globali per il modulo dinamico.</summary>
+      <exception cref="T:System.InvalidOperationException">Il metodo è stato chiamato in precedenza. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineEnum(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>Definisce un tipo di enumerazione, ovvero un tipo di valore con un solo campo non statico denominato <paramref name="value__" /> del tipo specificato.</summary>
+      <returns>Enumerazione definita.</returns>
+      <param name="name">Percorso completo del tipo di enumerazione.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="visibility">Attributi del tipo per l'enumerazione.Gli attributi sono definiti per singolo bit dal campo <see cref="F:System.Reflection.TypeAttributes.VisibilityMask" />.</param>
+      <param name="underlyingType">Tipo sottostante per l'enumerazione.Deve essere un tipo Integer incorporato.</param>
+      <exception cref="T:System.ArgumentException">Sono forniti gli attributi che non siano di visibilità.- oppure - Nell'assembly padre del modulo è presente un'enumerazione con il nome indicato.- oppure - Gli attributi di visibilità non corrispondono all'ambito dell'enumerazione.Ad esempio, <see cref="F:System.Reflection.TypeAttributes.NestedPublic" /> viene specificato per <paramref name="visibility" />, ma l'enumerazione non è un tipo annidato.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Definisce un metodo globale con il nome, gli attributi, la convenzione di chiamata, il tipo restituito e i tipi di parametri specificati.</summary>
+      <returns>Metodo globale definito.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi del metodo.Il parametro <paramref name="attributes" /> deve includere il campo <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="callingConvention">Convenzione di chiamata per il metodo. </param>
+      <param name="returnType">Tipo restituito del metodo. </param>
+      <param name="parameterTypes">Tipi dei parametri del metodo. </param>
+      <exception cref="T:System.ArgumentException">Il metodo non è static.In altre parole, <paramref name="attributes" /> non include <see cref="F:System.Reflection.MethodAttributes.Static" />.- oppure -Un elemento nella matrice <see cref="T:System.Type" /> è null.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> è già stato chiamato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Definisce un metodo globale con il nome, gli attributi, la convenzione di chiamata, il tipo restituito, i modificatori personalizzati per il tipo restituito, i tipi di parametri e i modificatori personalizzati per i tipi di parametri specificati.</summary>
+      <returns>Metodo globale definito.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere caratteri null incorporati.</param>
+      <param name="attributes">Attributi del metodo.Il parametro <paramref name="attributes" /> deve includere il campo <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="callingConvention">Convenzione di chiamata per il metodo. </param>
+      <param name="returnType">Tipo restituito del metodo. </param>
+      <param name="requiredReturnTypeCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati obbligatori per il tipo restituito, come <see cref="T:System.Runtime.CompilerServices.IsConst" /> o <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Se il tipo restituito non dispone di modificatori personalizzati obbligatori, specificare null.</param>
+      <param name="optionalReturnTypeCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati opzionali per il tipo restituito, come <see cref="T:System.Runtime.CompilerServices.IsConst" /> o <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Se il tipo restituito non dispone di modificatori personalizzati opzionali, specificare null.</param>
+      <param name="parameterTypes">Tipi dei parametri del metodo. </param>
+      <param name="requiredParameterTypeCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati obbligatori per il parametro corrispondente del metodo globale.Se un determinato argomento non dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di tipi.Se il metodo globale non dispone di argomenti oppure se nessun argomento dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di matrici.</param>
+      <param name="optionalParameterTypeCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati opzionali per il parametro corrispondente.Se un determinato argomento non dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di tipi.Se il metodo globale non dispone di argomenti oppure se nessun argomento dispone di modificatori personalizzati opzionali, specificare null invece di una matrice di matrici.</param>
+      <exception cref="T:System.ArgumentException">Il metodo non è static.In altre parole, <paramref name="attributes" /> non include <see cref="F:System.Reflection.MethodAttributes.Static" />.- oppure -Un elemento nella matrice <see cref="T:System.Type" /> è null.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> è già stato chiamato in precedenza. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>Definisce un metodo globale con il nome, gli attributi, il tipo restituito e i tipi di parametri specificati.</summary>
+      <returns>Metodo globale definito.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi del metodo.Il parametro <paramref name="attributes" /> deve includere il campo <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="returnType">Tipo restituito del metodo. </param>
+      <param name="parameterTypes">Tipi dei parametri del metodo. </param>
+      <exception cref="T:System.ArgumentException">Il metodo non è static.In altre parole, <paramref name="attributes" /> non include <see cref="F:System.Reflection.MethodAttributes.Static" />.- oppure - La lunghezza di <paramref name="name" /> è zero. - oppure -Un elemento nella matrice <see cref="T:System.Type" /> è null.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> è già stato chiamato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>Definisce un campo di dati inizializzati nella sezione .sdata del file PE (Portable Executable).</summary>
+      <returns>Campo di riferimento dei dati.</returns>
+      <param name="name">Nome utilizzato per fare riferimento ai dati.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="data">Oggetto binario di grandi dimensioni (BLOB) di dati. </param>
+      <param name="attributes">Attributi del campo.Il valore predefinito è Static.</param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - Le dimensioni dei <paramref name="data" /> sono minori di o uguali a zero oppure maggiori di o uguali a 0x3f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> o <paramref name="data" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> è già stato chiamato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String)">
+      <summary>Costruisce un oggetto TypeBuilder per un tipo privato con il nome specificato in questo modulo. </summary>
+      <returns>Tipo privato con il nome specificato.</returns>
+      <param name="name">Percorso completo del tipo, incluso lo spazio dei nomi.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <exception cref="T:System.ArgumentException">Nell'assembly padre del modulo esiste un tipo con il nome indicato.- oppure - Gli attributi di tipi annidati sono impostati su un tipo non annidato. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes)">
+      <summary>Costruisce un oggetto TypeBuilder, dati il nome e gli attributi del tipo.</summary>
+      <returns>TypeBuilder creato con tutti gli attributi richiesti.</returns>
+      <param name="name">Percorso completo del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo definito. </param>
+      <exception cref="T:System.ArgumentException">Nell'assembly padre del modulo esiste un tipo con il nome indicato.- oppure - Gli attributi di tipi annidati sono impostati su un tipo non annidato. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>Costruisce un oggetto TypeBuilder, dati il nome del tipo, i relativi attributi e il tipo esteso dal tipo definito.</summary>
+      <returns>TypeBuilder creato con tutti gli attributi richiesti.</returns>
+      <param name="name">Percorso completo del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributo da associare al tipo. </param>
+      <param name="parent">Tipo esteso dal tipo definito. </param>
+      <exception cref="T:System.ArgumentException">Nell'assembly padre del modulo esiste un tipo con il nome indicato.- oppure - Gli attributi di tipi annidati sono impostati su un tipo non annidato. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>Costruisce un oggetto TypeBuilder, dati il nome del tipo, gli attributi, il tipo esteso dal tipo definito e la dimensione totale del tipo.</summary>
+      <returns>Oggetto TypeBuilder.</returns>
+      <param name="name">Percorso completo del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo definito. </param>
+      <param name="parent">Tipo esteso dal tipo definito. </param>
+      <param name="typesize">Dimensione totale del tipo. </param>
+      <exception cref="T:System.ArgumentException">Nell'assembly padre del modulo esiste un tipo con il nome indicato.- oppure - Gli attributi di tipi annidati sono impostati su un tipo non annidato. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>Costruisce un oggetto TypeBuilder, dati il nome del tipo, gli attributi, il tipo esteso dal tipo definito e la dimensione del tipo compresso.</summary>
+      <returns>Oggetto TypeBuilder.</returns>
+      <param name="name">Percorso completo del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo definito. </param>
+      <param name="parent">Tipo esteso dal tipo definito. </param>
+      <param name="packsize">Dimensione di compressione del tipo. </param>
+      <exception cref="T:System.ArgumentException">Nell'assembly padre del modulo esiste un tipo con il nome indicato.- oppure - Gli attributi di tipi annidati sono impostati su un tipo non annidato. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>Costruisce un oggetto TypeBuilder, dati il nome del tipo, gli attributi, il tipo esteso dal tipo definito e la relativa dimensione compressa e totale.</summary>
+      <returns>TypeBuilder creato con tutti gli attributi richiesti.</returns>
+      <param name="name">Percorso completo del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo definito. </param>
+      <param name="parent">Tipo esteso dal tipo definito. </param>
+      <param name="packingSize">Dimensione di compressione del tipo. </param>
+      <param name="typesize">Dimensione totale del tipo. </param>
+      <exception cref="T:System.ArgumentException">Nell'assembly padre del modulo esiste un tipo con il nome indicato.- oppure - Gli attributi di tipi annidati sono impostati su un tipo non annidato. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>Costruisce un oggetto TypeBuilder, dati il nome del tipo, gli attributi, il tipo esteso dal tipo definito e le interfacce da esso implementate.</summary>
+      <returns>TypeBuilder creato con tutti gli attributi richiesti.</returns>
+      <param name="name">Percorso completo del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi da associare al tipo. </param>
+      <param name="parent">Tipo esteso dal tipo definito. </param>
+      <param name="interfaces">Elenco delle interfacce implementate dal tipo. </param>
+      <exception cref="T:System.ArgumentException">Nell'assembly padre del modulo esiste un tipo con il nome indicato.- oppure - Gli attributi di tipi annidati sono impostati su un tipo non annidato. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>Definisce un campo di dati non inizializzati nella sezione .sdata del file PE (Portable Executable).</summary>
+      <returns>Campo di riferimento dei dati.</returns>
+      <param name="name">Nome utilizzato per fare riferimento ai dati.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="size">Dimensione del campo di dati. </param>
+      <param name="attributes">Attributi del campo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - <paramref name="size" /> è minore di o uguale a zero oppure maggiore di o uguale a 0x003f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> è già stato chiamato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.Equals(System.Object)">
+      <summary>Restituisce un valore che indica se questa istanza è uguale all'oggetto specificato.</summary>
+      <returns>true se <paramref name="obj" /> è uguale al tipo e al valore di questa istanza. In caso contrario, false.</returns>
+      <param name="obj">Oggetto da confrontare con questa istanza o null.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.FullyQualifiedName">
+      <summary>Ottiene un oggetto String che rappresenta il nome e il percorso completi del modulo.</summary>
+      <returns>Nome completo del modulo.</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetArrayMethod(System.Type,System.String,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Restituisce il metodo denominato su una classe di matrici.</summary>
+      <returns>Metodo denominato su una classe di matrici.</returns>
+      <param name="arrayClass">Classe di matrici. </param>
+      <param name="methodName">Nome di un metodo sulla classe di matrici. </param>
+      <param name="callingConvention">Convenzione di chiamata del metodo. </param>
+      <param name="returnType">Tipo restituito del metodo. </param>
+      <param name="parameterTypes">Tipi dei parametri del metodo. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="arrayClass" /> non è una matrice. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="arrayClass" /> o <paramref name="methodName" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetHashCode">
+      <summary>Restituisce il codice hash per l'istanza.</summary>
+      <returns>Codice hash integer con segno a 32 bit.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Name">
+      <summary>Stringa che indica che questo è un modulo in memoria.</summary>
+      <returns>Testo che indica che questo è un modulo in memoria.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Applica un attributo personalizzato al modulo tramite un oggetto binario di grandi dimensioni (BLOB) specificato che rappresenta l'attributo.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">BLOB di byte che rappresenta l'attributo. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Applica un attributo personalizzato al modulo utilizzando un generatore di attributi personalizzati.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto che consente di specificare l'attributo personalizzato da applicare. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> è null. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.PropertyBuilder">
+      <summary>Definisce le proprietà per un tipo.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Aggiunge uno degli altri metodi associati a questa proprietà.</summary>
+      <param name="mdBuilder">Oggetto MethodBuilder che rappresenta l'altro metodo. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Attributes">
+      <summary>Ottiene gli attributi per questa proprietà.</summary>
+      <returns>Attributi di questa proprietà.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanRead">
+      <summary>Ottiene un valore che indica se è possibile leggere la proprietà.</summary>
+      <returns>true se questa proprietà può essere letta; in caso contrario, false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanWrite">
+      <summary>Ottiene un valore che indica se la proprietà è modificabile.</summary>
+      <returns>true se è possibile scrivere nella proprietà; in caso contrario, false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.DeclaringType">
+      <summary>Ottiene la classe che dichiara questo membro.</summary>
+      <returns>Oggetto Type per la classe che dichiara questo membro.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetIndexParameters">
+      <summary>Restituisce una matrice di tutti i parametri degli indici per la proprietà.</summary>
+      <returns>Matrice di tipo ParameterInfo contenente i parametri per gli indici.</returns>
+      <exception cref="T:System.NotSupportedException">Metodo non supportato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetValue(System.Object,System.Object[])">
+      <summary>Ottiene il valore della proprietà indicizzata chiamando il metodo per il richiamo della proprietà.</summary>
+      <returns>Valore della proprietà indicizzata specificata.</returns>
+      <param name="obj">Oggetto il cui valore di proprietà sarà restituito. </param>
+      <param name="index">Valori di indice facoltativi per le proprietà indicizzate.Il valore deve essere null per le proprietà non indicizzate.</param>
+      <exception cref="T:System.NotSupportedException">Metodo non supportato. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Name">
+      <summary>Ottiene il nome di questo membro.</summary>
+      <returns>
+        <see cref="T:System.String" /> che contiene il nome di questo membro.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.PropertyType">
+      <summary>Ottiene il tipo del campo di questa proprietà.</summary>
+      <returns>Tipo della proprietà.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetConstant(System.Object)">
+      <summary>Imposta il valore predefinito di questa proprietà.</summary>
+      <param name="defaultValue">Valore predefinito della proprietà. </param>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+      <exception cref="T:System.ArgumentException">La proprietà non è tra i tipi supportati.- oppure -Il tipo dell'oggetto <paramref name="defaultValue" /> non corrisponde al tipo della proprietà.- oppure -Il tipo della proprietà è <see cref="T:System.Object" /> o un altro tipo di riferimento, <paramref name="defaultValue" /> non è null e il valore non può essere assegnato al tipo di riferimento. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Impostare un attributo personalizzato utilizzando un blob di attributi personalizzati specificato.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Impostare un attributo personalizzato utilizzando un generatore di attributi personalizzati.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto utilizzata per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">se <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetGetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Imposta il metodo che ottiene il valore della proprietà.</summary>
+      <param name="mdBuilder">Oggetto MethodBuilder che rappresenta il metodo che ottiene il valore della proprietà. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetSetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Imposta il metodo che imposta il valore della proprietà.</summary>
+      <param name="mdBuilder">Oggetto MethodBuilder che rappresenta il metodo che imposta il valore della proprietà. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato chiamato sul tipo di inclusione. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetValue(System.Object,System.Object,System.Object[])">
+      <summary>Imposta il valore della proprietà con valori di indice facoltativi per le proprietà dell'indice.</summary>
+      <param name="obj">Oggetto il cui valore di proprietà deve essere impostato. </param>
+      <param name="value">Nuovo valore della proprietà. </param>
+      <param name="index">Valori di indice facoltativi per le proprietà indicizzate.Il valore deve essere null per le proprietà non indicizzate.</param>
+      <exception cref="T:System.NotSupportedException">Metodo non supportato. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.TypeBuilder">
+      <summary>Definisce e crea nuove istanze delle classi in fase di esecuzione.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.AddInterfaceImplementation(System.Type)">
+      <summary>Aggiunge un'interfaccia implementata da questo tipo.</summary>
+      <param name="interfaceType">Interfaccia implementata da questo tipo. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="interfaceType" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Assembly">
+      <summary>Recupera l'assembly dinamico che contiene la definizione del tipo.</summary>
+      <returns>Solo lettura.Recupera l'assembly dinamico che contiene la definizione del tipo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.AssemblyQualifiedName">
+      <summary>Restituisce il nome completo di questo tipo qualificato dal nome visualizzato dell'assembly.</summary>
+      <returns>Solo lettura.Nome completo di questo tipo qualificato dal nome visualizzato dell'assembly.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.BaseType">
+      <summary>Recupera il tipo di base di questo tipo.</summary>
+      <returns>Solo lettura.Recupera il tipo di base di questo tipo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.CreateTypeInfo">
+      <summary>Ottiene un oggetto <see cref="T:System.Reflection.TypeInfo" /> che rappresenta il tipo.</summary>
+      <returns>Oggetto che rappresenta il tipo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringMethod">
+      <summary>Ottiene il metodo nel quale è stato dichiarato il parametro del tipo generico corrente.</summary>
+      <returns>Classe <see cref="T:System.Reflection.MethodBase" /> che rappresenta il metodo in cui è dichiarato il tipo corrente, se tale tipo rappresenta un parametro di tipo generico. In caso contrario, null.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringType">
+      <summary>Restituisce il tipo che ha dichiarato questo tipo.</summary>
+      <returns>Solo lettura.Tipo che ha dichiarato questo tipo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[])">
+      <summary>Aggiunge un nuovo costruttore al tipo, con gli attributi e la firma specificati.</summary>
+      <returns>Costruttore definito.</returns>
+      <param name="attributes">Attributi del costruttore. </param>
+      <param name="callingConvention">Convenzione di chiamata del costruttore. </param>
+      <param name="parameterTypes">Tipi di parametri del costruttore. </param>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[],System.Type[][],System.Type[][])">
+      <summary>Aggiunge un nuovo costruttore al tipo, con gli attributi, la firma e i modificatori personalizzati specificati.</summary>
+      <returns>Costruttore definito.</returns>
+      <param name="attributes">Attributi del costruttore. </param>
+      <param name="callingConvention">Convenzione di chiamata del costruttore. </param>
+      <param name="parameterTypes">Tipi di parametri del costruttore. </param>
+      <param name="requiredCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati obbligatori per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di matrici.</param>
+      <param name="optionalCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati facoltativi per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di matrici.</param>
+      <exception cref="T:System.ArgumentException">Le dimensioni di <paramref name="requiredCustomModifiers" /> o <paramref name="optionalCustomModifiers" /> non sono uguali alle dimensioni di <paramref name="parameterTypes" />.</exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineDefaultConstructor(System.Reflection.MethodAttributes)">
+      <summary>Definisce il costruttore predefinito.Il costruttore definito chiamerà semplicemente il costruttore predefinito del padre.</summary>
+      <returns>Restituisce il costruttore.</returns>
+      <param name="attributes">Oggetto MethodAttributes che rappresenta gli attributi da applicare al costruttore. </param>
+      <exception cref="T:System.NotSupportedException">Il tipo padre (tipo di base) non dispone di un costruttore predefinito. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineEvent(System.String,System.Reflection.EventAttributes,System.Type)">
+      <summary>Aggiunge un nuovo evento al tipo, con il nome, gli attributi e il tipo di evento specificati.</summary>
+      <returns>Evento definito.</returns>
+      <param name="name">Il nome dell'evento.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi dell'evento. </param>
+      <param name="eventtype">Tipo dell'evento. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null.- oppure - <paramref name="eventtype" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Reflection.FieldAttributes)">
+      <summary>Aggiunge un nuovo campo al tipo, con il nome, gli attributi e il tipo di campo specificati.</summary>
+      <returns>Campo definito.</returns>
+      <param name="fieldName">Nome del campo.<paramref name="fieldName" /> non può contenere valori null incorporati.</param>
+      <param name="type">Tipo del campo. </param>
+      <param name="attributes">Attributi del campo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="fieldName" /> è zero.- oppure - <paramref name="type" /> è System.Void.- oppure - Una dimensione totale è stata specificata per la classe padre di questo campo. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Type[],System.Type[],System.Reflection.FieldAttributes)">
+      <summary>Aggiunge un nuovo campo al tipo, con il nome, gli attributi, il tipo di campo e i modificatori personalizzati specificati.</summary>
+      <returns>Campo definito.</returns>
+      <param name="fieldName">Nome del campo.<paramref name="fieldName" /> non può contenere valori null incorporati.</param>
+      <param name="type">Tipo del campo. </param>
+      <param name="requiredCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati obbligatori per il campo, come <see cref="T:Microsoft.VisualC.IsConstModifier" />.</param>
+      <param name="optionalCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati facoltativi per il campo, come <see cref="T:Microsoft.VisualC.IsConstModifier" />.</param>
+      <param name="attributes">Attributi del campo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="fieldName" /> è zero.- oppure - <paramref name="type" /> è System.Void.- oppure - Una dimensione totale è stata specificata per la classe padre di questo campo. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineGenericParameters(System.String[])">
+      <summary>Definisce i parametri di tipo generico per il tipo corrente, con l'indicazione dei relativi numeri e nomi, e restituisce una matrice di oggetti <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> che possono essere utilizzati per impostare i vincoli.</summary>
+      <returns>Matrice di oggetti <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> che possono essere utilizzati per definire i vincoli dei parametri di tipo generico relativi al tipo corrente.</returns>
+      <param name="names">Matrice di nomi per i parametri di tipo generico.</param>
+      <exception cref="T:System.InvalidOperationException">I parametri di tipo generico sono già stati definiti per questo tipo.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" /> è null.- oppure -Un elemento di <paramref name="names" /> è null.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> è una matrice vuota.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>Definisce il campo di dati inizializzati nella sezione .sdata del file PE.</summary>
+      <returns>Campo di riferimento dei dati.</returns>
+      <param name="name">Nome utilizzato per fare riferimento ai dati.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="data">Blob di dati. </param>
+      <param name="attributes">Attributi del campo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - Le dimensioni dei dati sono minori di o uguali a zero oppure maggiori di o uguali a 0x3f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> o <paramref name="data" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è già stato chiamato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes)">
+      <summary>Aggiunge un nuovo metodo al tipo, con il nome e gli attributi del metodo specificati.</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> che rappresenta il metodo appena definito.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi del metodo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - Il tipo dell'elemento padre di questo metodo è un'interfaccia e il metodo non è virtuale (Overridable in Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions)">
+      <summary>Aggiunge un nuovo metodo al tipo, con il nome, gli attributi del metodo e la convenzione di chiamata specificati.</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> che rappresenta il metodo appena definito.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi del metodo. </param>
+      <param name="callingConvention">Convenzione di chiamata del metodo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - Il tipo dell'elemento padre di questo metodo è un'interfaccia e il metodo non è virtuale (Overridable in Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Aggiunge un nuovo metodo al tipo, con il nome, gli attributi del metodo, la convenzione di chiamata e la firma del metodo specificati.</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> che rappresenta il metodo appena definito.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi del metodo. </param>
+      <param name="callingConvention">Convenzione di chiamata del metodo. </param>
+      <param name="returnType">Tipo restituito del metodo. </param>
+      <param name="parameterTypes">Tipi dei parametri del metodo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - Il tipo dell'elemento padre di questo metodo è un'interfaccia e il metodo non è virtuale (Overridable in Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Aggiunge un nuovo metodo al tipo, con il nome, gli attributi del metodo, la convenzione di chiamata, la firma del metodo e i modificatori personalizzati specificati.</summary>
+      <returns>Oggetto <see cref="T:System.Reflection.Emit.MethodBuilder" /> che rappresenta il metodo appena aggiunto.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi del metodo. </param>
+      <param name="callingConvention">Convenzione di chiamata del metodo. </param>
+      <param name="returnType">Tipo restituito del metodo. </param>
+      <param name="returnTypeRequiredCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati obbligatori, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito del metodo.Se il tipo restituito non dispone di modificatori personalizzati obbligatori, specificare null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati facoltativi, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito del metodo.Se il tipo restituito non dispone di modificatori personalizzati opzionali, specificare null.</param>
+      <param name="parameterTypes">Tipi dei parametri del metodo.</param>
+      <param name="parameterTypeRequiredCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati obbligatori per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di matrici.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati facoltativi per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di matrici.</param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - Il tipo dell'elemento padre di questo metodo è un'interfaccia e il metodo non è virtuale (Overridable in Visual Basic). - oppure -Le dimensioni di <paramref name="parameterTypeRequiredCustomModifiers" /> o <paramref name="parameterTypeOptionalCustomModifiers" /> non sono uguali alle dimensioni di <paramref name="parameterTypes" />.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>Aggiunge un nuovo metodo al tipo, con il nome, gli attributi del metodo e la firma del metodo specificati.</summary>
+      <returns>Metodo definito.</returns>
+      <param name="name">Nome del metodo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi del metodo. </param>
+      <param name="returnType">Tipo restituito del metodo. </param>
+      <param name="parameterTypes">Tipi dei parametri del metodo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - Il tipo dell'elemento padre di questo metodo è un'interfaccia e il metodo non è virtuale (Overridable in Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethodOverride(System.Reflection.MethodInfo,System.Reflection.MethodInfo)">
+      <summary>Specifica un corpo del metodo che implementa una data dichiarazione di metodo, potenzialmente con un nome diverso.</summary>
+      <param name="methodInfoBody">Corpo del metodo da utilizzare.Deve essere un oggetto MethodBuilder.</param>
+      <param name="methodInfoDeclaration">Metodo la cui dichiarazione è da utilizzare. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="methodInfoBody" /> non appartiene a questa classe. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfoBody" /> o <paramref name="methodInfoDeclaration" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure - Il tipo dichiarante di <paramref name="methodInfoBody" /> non corrisponde al tipo rappresentato da questo oggetto <see cref="T:System.Reflection.Emit.TypeBuilder" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String)">
+      <summary>Definisce un tipo annidato a partire dal nome.</summary>
+      <returns>Tipo annidato definito.</returns>
+      <param name="name">Nome breve del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero o maggiore di 1023. - oppure -Questa operazione creerebbe un tipo con un duplicato <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> nell'assembly corrente.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes)">
+      <summary>Definisce un tipo annidato a partire dal nome e dagli attributi.</summary>
+      <returns>Tipo annidato definito.</returns>
+      <param name="name">Nome breve del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo. </param>
+      <exception cref="T:System.ArgumentException">L'attributo annidato non è specificato.- oppure - Il tipo è sealed.- oppure - Il tipo è una matrice.- oppure - Il tipo è un'interfaccia, a differenza del tipo annidato.- oppure - La lunghezza di <paramref name="name" /> è zero o maggiore di 1023. - oppure -Questa operazione creerebbe un tipo con un duplicato <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> nell'assembly corrente.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>Definisce un tipo annidato a partire dal nome, dagli attributi e dal tipo che questo estende.</summary>
+      <returns>Tipo annidato definito.</returns>
+      <param name="name">Nome breve del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo. </param>
+      <param name="parent">Tipo esteso dal tipo annidato. </param>
+      <exception cref="T:System.ArgumentException">L'attributo annidato non è specificato.- oppure - Il tipo è sealed.- oppure - Il tipo è una matrice.- oppure - Il tipo è un'interfaccia, a differenza del tipo annidato.- oppure - La lunghezza di <paramref name="name" /> è zero o maggiore di 1023. - oppure -Questa operazione creerebbe un tipo con un duplicato <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> nell'assembly corrente.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>Definisce un tipo annidato a partire dal nome, dagli attributi, dalla dimensione totale del tipo e dal tipo che questo estende.</summary>
+      <returns>Tipo annidato definito.</returns>
+      <param name="name">Nome breve del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo. </param>
+      <param name="parent">Tipo esteso dal tipo annidato. </param>
+      <param name="typeSize">Dimensione totale del tipo. </param>
+      <exception cref="T:System.ArgumentException">L'attributo annidato non è specificato.- oppure - Il tipo è sealed.- oppure - Il tipo è una matrice.- oppure - Il tipo è un'interfaccia, a differenza del tipo annidato.- oppure - La lunghezza di <paramref name="name" /> è zero o maggiore di 1023. - oppure -Questa operazione creerebbe un tipo con un duplicato <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> nell'assembly corrente.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>Definisce un tipo annidato a partire dal nome, dagli attributi, dal tipo che questo estende e dalla dimensione di compressione.</summary>
+      <returns>Tipo annidato definito.</returns>
+      <param name="name">Nome breve del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo. </param>
+      <param name="parent">Tipo esteso dal tipo annidato. </param>
+      <param name="packSize">Dimensione di compressione del tipo. </param>
+      <exception cref="T:System.ArgumentException">L'attributo annidato non è specificato.- oppure - Il tipo è sealed.- oppure - Il tipo è una matrice.- oppure - Il tipo è un'interfaccia, a differenza del tipo annidato.- oppure - La lunghezza di <paramref name="name" /> è zero o maggiore di 1023. - oppure -Questa operazione creerebbe un tipo con un duplicato <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> nell'assembly corrente.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>Definisce un tipo annidato a partire dal nome, dagli attributi, dalle dimensioni e dal tipo che questo estende.</summary>
+      <returns>Tipo annidato definito.</returns>
+      <param name="name">Nome breve del tipo.<paramref name="name" /> non può contenere caratteri null incorporati.</param>
+      <param name="attr">Attributi del tipo.</param>
+      <param name="parent">Tipo esteso dal tipo annidato.</param>
+      <param name="packSize">Dimensione di compressione del tipo.</param>
+      <param name="typeSize">Dimensione totale del tipo.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>Definisce un tipo annidato a partire dal nome, dagli attributi, dal tipo che questo estende e dall'interfaccia che implementa.</summary>
+      <returns>Tipo annidato definito.</returns>
+      <param name="name">Nome breve del tipo.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attr">Attributi del tipo. </param>
+      <param name="parent">Tipo esteso dal tipo annidato. </param>
+      <param name="interfaces">Interfacce implementate dal tipo annidato. </param>
+      <exception cref="T:System.ArgumentException">L'attributo annidato non è specificato.- oppure - Il tipo è sealed.- oppure - Il tipo è una matrice.- oppure - Il tipo è un'interfaccia, a differenza del tipo annidato.- oppure - La lunghezza di <paramref name="name" /> è zero o maggiore di 1023. - oppure -Questa operazione creerebbe un tipo con un duplicato <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> nell'assembly corrente.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null.- oppure -Un elemento della matrice <paramref name="interfaces" /> è null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Aggiunge una nuova proprietà al tipo, con il nome, gli attributi, la convenzione di chiamata e la firma specificati.</summary>
+      <returns>Proprietà definita.</returns>
+      <param name="name">Nome della proprietà.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi della proprietà. </param>
+      <param name="callingConvention">Convenzione di chiamata delle funzioni di accesso alle proprietà. </param>
+      <param name="returnType">Tipo restituito della proprietà. </param>
+      <param name="parameterTypes">Tipi dei parametri della proprietà.</param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. - oppure - Uno degli elementi della matrice <paramref name="parameterTypes" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Aggiunge una nuova proprietà al tipo, con il nome, la convenzione di chiamata, la firma e i modificatori personalizzati specificati.</summary>
+      <returns>Proprietà definita.</returns>
+      <param name="name">Nome della proprietà.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi della proprietà. </param>
+      <param name="callingConvention">Convenzione di chiamata delle funzioni di accesso alle proprietà. </param>
+      <param name="returnType">Tipo restituito della proprietà. </param>
+      <param name="returnTypeRequiredCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati obbligatori, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito della proprietà.Se il tipo restituito non dispone di modificatori personalizzati obbligatori, specificare null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati facoltativi, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito della proprietà.Se il tipo restituito non dispone di modificatori personalizzati opzionali, specificare null.</param>
+      <param name="parameterTypes">Tipi dei parametri della proprietà. </param>
+      <param name="parameterTypeRequiredCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati obbligatori per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di matrici.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati facoltativi per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di matrici.</param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. - oppure - Uno degli elementi della matrice <paramref name="parameterTypes" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[])">
+      <summary>Aggiunge una nuova proprietà al tipo, con il nome e la firma di proprietà specificati.</summary>
+      <returns>Proprietà definita.</returns>
+      <param name="name">Nome della proprietà.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi della proprietà. </param>
+      <param name="returnType">Tipo restituito della proprietà. </param>
+      <param name="parameterTypes">Tipi dei parametri della proprietà. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. - oppure - Uno degli elementi della matrice <paramref name="parameterTypes" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Aggiunge una nuova proprietà al tipo, con il nome, la firma e i modificatori personalizzati specificati.</summary>
+      <returns>Proprietà definita.</returns>
+      <param name="name">Nome della proprietà.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="attributes">Attributi della proprietà. </param>
+      <param name="returnType">Tipo restituito della proprietà. </param>
+      <param name="returnTypeRequiredCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati obbligatori, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito della proprietà.Se il tipo restituito non dispone di modificatori personalizzati obbligatori, specificare null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Matrice di tipi che rappresentano i modificatori personalizzati facoltativi, come <see cref="T:System.Runtime.CompilerServices.IsConst" />, per il tipo restituito della proprietà.Se il tipo restituito non dispone di modificatori personalizzati opzionali, specificare null.</param>
+      <param name="parameterTypes">Tipi dei parametri della proprietà. </param>
+      <param name="parameterTypeRequiredCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati obbligatori per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati obbligatori, specificare null invece di una matrice di matrici.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Matrice di matrici di tipi.Ciascuna matrice di tipi rappresenta i modificatori personalizzati facoltativi per il parametro corrispondente, come <see cref="T:System.Runtime.CompilerServices.IsConst" />.Se un parametro particolare non dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di tipi.Se nessun parametro dispone di modificatori personalizzati facoltativi, specificare null invece di una matrice di matrici.</param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null.- oppure - Uno degli elementi della matrice <paramref name="parameterTypes" /> è null.</exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineTypeInitializer">
+      <summary>Definisce l'inizializzatore per questo tipo.</summary>
+      <returns>Restituisce l'inizializzatore di un tipo.</returns>
+      <exception cref="T:System.InvalidOperationException">Il tipo contenitore è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>Definisce un campo di dati non inizializzati nella sezione .sdata del file eseguibile di tipo PE.</summary>
+      <returns>Campo di riferimento dei dati.</returns>
+      <param name="name">Nome utilizzato per fare riferimento ai dati.<paramref name="name" /> non può contenere valori null incorporati.</param>
+      <param name="size">Dimensione del campo di dati. </param>
+      <param name="attributes">Attributi del campo. </param>
+      <exception cref="T:System.ArgumentException">La lunghezza di <paramref name="name" /> è zero.- oppure - <paramref name="size" /> è minore di o uguale a zero oppure maggiore di o uguale a 0x003f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.FullName">
+      <summary>Recupera il percorso completo di questo tipo.</summary>
+      <returns>Solo lettura.Recupera il percorso completo di questo tipo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterAttributes">
+      <summary>Ottiene un valore che indica la covariante e i vincoli speciali del parametro di tipo generico corrente. </summary>
+      <returns>Combinazione bit per bit di valori <see cref="T:System.Reflection.GenericParameterAttributes" /> che descrive la covariante e i vincoli speciali del parametro di tipo generico corrente.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterPosition">
+      <summary>Ottiene la posizione di un parametro di tipo nell'elenco dei parametri del tipo in cui il parametro è dichiarato.</summary>
+      <returns>Se l'oggetto <see cref="T:System.Reflection.Emit.TypeBuilder" /> corrente rappresenta un parametro di tipo generico, la posizione del parametro di tipo all'interno dell'elenco dei parametri di tipo generico in cui è dichiarato il parametro; in caso contrario, la posizione rimane indefinita.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetConstructor(System.Type,System.Reflection.ConstructorInfo)">
+      <summary>Restituisce il costruttore del tipo generico specificato che corrisponde al costruttore specificato della definizione di tipo generico. </summary>
+      <returns>Oggetto <see cref="T:System.Reflection.ConstructorInfo" /> che rappresenta il costruttore di <paramref name="type" /> corrispondente a <paramref name="constructor" />, che specifica un costruttore appartenente alla definizione di tipo generico di <paramref name="type" />.</returns>
+      <param name="type">Tipo generico creato di cui viene restituito il costruttore.</param>
+      <param name="constructor">Costruttore della definizione di tipo generico di <paramref name="type" />, che specifica il costruttore di <paramref name="type" /> da restituire.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> non rappresenta un tipo generico. - oppure -<paramref name="type" /> non è di tipo <see cref="T:System.Reflection.Emit.TypeBuilder" />.- oppure -Il tipo dichiarante di <paramref name="constructor" /> non è una definizione di tipo generico. - oppure -Il tipo dichiarante di <paramref name="constructor" /> non è la definizione di tipo generico di <paramref name="type" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetElementType">
+      <summary>La chiamata di questo metodo genera sempre un'eccezione <see cref="T:System.NotSupportedException" />.</summary>
+      <returns>Metodo non supportato.Non vengono restituiti valori.</returns>
+      <exception cref="T:System.NotSupportedException">Metodo non supportato. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetField(System.Type,System.Reflection.FieldInfo)">
+      <summary>Restituisce il campo del tipo generico specificato che corrisponde al campo specificato della definizione di tipo generico. </summary>
+      <returns>Oggetto <see cref="T:System.Reflection.FieldInfo" /> che rappresenta il campo di <paramref name="type" /> corrispondente a <paramref name="field" />, che specifica un campo appartenente alla definizione di tipo generico di <paramref name="type" />.</returns>
+      <param name="type">Il tipo generico creato il cui campo viene restituito.</param>
+      <param name="field">Campo della definizione di tipo generico di <paramref name="type" />, che specifica il campo di <paramref name="type" /> da restituire.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> non rappresenta un tipo generico. - oppure -<paramref name="type" /> non è di tipo <see cref="T:System.Reflection.Emit.TypeBuilder" />.- oppure -Il tipo dichiarante di <paramref name="field" /> non è una definizione di tipo generico. - oppure -Il tipo dichiarante di <paramref name="field" /> non è la definizione di tipo generico di <paramref name="type" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericTypeDefinition">
+      <summary>Restituisce un oggetto <see cref="T:System.Type" /> che rappresenta una definizione di tipo generico da cui è possibile ottenere il tipo corrente.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta una definizione di tipo generico da cui è possibile ottenere il tipo corrente.</returns>
+      <exception cref="T:System.InvalidOperationException">Il tipo corrente non è generico,ovvero la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> restituisce false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetMethod(System.Type,System.Reflection.MethodInfo)">
+      <summary>Restituisce il metodo del tipo generico specificato che corrisponde al metodo specificato della definizione di tipo generico. </summary>
+      <returns>Oggetto <see cref="T:System.Reflection.MethodInfo" /> che rappresenta il metodo di <paramref name="type" /> corrispondente a <paramref name="method" />, che specifica un metodo appartenente alla definizione di tipo generico di <paramref name="type" />.</returns>
+      <param name="type">Tipo generico creato di cui viene restituito il metodo.</param>
+      <param name="method">Metodo della definizione di tipo generico di <paramref name="type" />, che specifica il metodo di <paramref name="type" /> da restituire.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="method" /> è un metodo generico che non rappresenta una definizione di metodo generico.- oppure -<paramref name="type" /> non rappresenta un tipo generico.- oppure -<paramref name="type" /> non è di tipo <see cref="T:System.Reflection.Emit.TypeBuilder" />.- oppure -Il tipo dichiarante di <paramref name="method" /> non è una definizione di tipo generico. - oppure -Il tipo dichiarante di <paramref name="method" /> non è la definizione di tipo generico di <paramref name="type" />.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GUID">
+      <summary>Recupera il GUID di questo tipo.</summary>
+      <returns>Solo lettura.Recupera il GUID di questo tipo.</returns>
+      <exception cref="T:System.NotSupportedException">Il metodo non è attualmente supportato per i tipi non completi. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>Ottiene un valore che indica se è possibile assegnare un oggetto <see cref="T:System.Reflection.TypeInfo" /> specificato a questo oggetto.</summary>
+      <returns>true se <paramref name="typeInfo" /> può essere assegnato a questo oggetto, in caso contrario, false.</returns>
+      <param name="typeInfo">Oggetto da verificare.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsCreated">
+      <summary>Restituisce un valore che indica se il tipo dinamico corrente è stato creato.</summary>
+      <returns>true se il metodo <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> è stato creato. In caso contrario, false. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericParameter">
+      <summary>Ottiene un valore che indica se il tipo corrente è un parametro di tipo generico.</summary>
+      <returns>true se l'oggetto <see cref="T:System.Reflection.Emit.TypeBuilder" /> rappresenta un parametro di tipo generico. In caso contrario, false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericType">
+      <summary>Ottiene un valore che indica se il tipo corrente è un tipo generico. </summary>
+      <returns>true se il tipo rappresentato dalla classe <see cref="T:System.Reflection.Emit.TypeBuilder" /> corrente è generico. In caso contrario, false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition">
+      <summary>Ottiene un valore che indica se la classe <see cref="T:System.Reflection.Emit.TypeBuilder" /> corrente rappresenta una definizione di tipo generico, da cui è possibile creare altri tipi generici.</summary>
+      <returns>true se l'oggetto <see cref="T:System.Reflection.Emit.TypeBuilder" /> rappresenta una definizione di tipo generico. In caso contrario, false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType">
+      <summary>Restituisce un oggetto <see cref="T:System.Type" /> che rappresenta una matrice unidimensionale del tipo corrente, con limite inferiore zero.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta una matrice unidimensionale il cui tipo di elemento è il tipo corrente, con limite inferiore zero.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType(System.Int32)">
+      <summary>Restituisce un oggetto <see cref="T:System.Type" /> che rappresenta una matrice del tipo corrente, con il numero specificato di dimensioni.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta una matrice unidimensionale del tipo corrente.</returns>
+      <param name="rank">Numero di dimensioni della matrice. </param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> non è una dimensione di matrice valida.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeByRefType">
+      <summary>Restituisce un oggetto <see cref="T:System.Type" /> che rappresenta il tipo corrente quando viene passato come parametro ref (ByRef in Visual Basic).</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta il tipo corrente quando viene passato come parametro ref (ByRef in Visual Basic).</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeGenericType(System.Type[])">
+      <summary>Sostituisce con gli elementi di una matrice di tipi i parametri di tipo della definizione di tipo generico corrente e restituisce il tipo costruito risultante.</summary>
+      <returns>
+        <see cref="T:System.Type" /> che rappresenta il tipo costruito ottenuto sostituendo i parametri di tipo del tipo generico corrente con gli elementi di <paramref name="typeArguments" />. </returns>
+      <param name="typeArguments">Matrice di tipi con cui sostituire i parametri di tipo della definizione di tipo generico corrente.</param>
+      <exception cref="T:System.InvalidOperationException">Il tipo corrente non rappresenta la definizione di un tipo generico,ovvero la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> restituisce false.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="typeArguments" /> è null.- oppure - Qualsiasi elemento di <paramref name="typeArguments" /> è null. </exception>
+      <exception cref="T:System.ArgumentException">Nessun elemento di <paramref name="typeArguments" /> soddisfa i vincoli specificati per il parametro di tipo corrispondente del tipo generico corrente. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakePointerType">
+      <summary>Restituisce un oggetto <see cref="T:System.Type" /> che rappresenta il tipo di un puntatore non gestito al tipo corrente.</summary>
+      <returns>Oggetto <see cref="T:System.Type" /> che rappresenta il tipo di un puntatore non gestito al tipo corrente.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Module">
+      <summary>Recupera il modulo dinamico che contiene la definizione del tipo.</summary>
+      <returns>Solo lettura.Recupera il modulo dinamico che contiene la definizione del tipo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Name">
+      <summary>Recupera il nome di questo tipo.</summary>
+      <returns>Solo lettura.Recupera il nome <see cref="T:System.String" /> di questo tipo.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Namespace">
+      <summary>Recupera lo spazio dei nomi in cui è definito questo TypeBuilder.</summary>
+      <returns>Solo lettura.Recupera lo spazio dei nomi in cui è definito questo TypeBuilder.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.PackingSize">
+      <summary>Recupera le dimensioni di compressione di questo tipo.</summary>
+      <returns>Solo lettura.Recupera le dimensioni di compressione di questo tipo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Imposta un attributo personalizzato utilizzando un blob specificato di attributi personalizzati.</summary>
+      <param name="con">Costruttore per l'attributo personalizzato. </param>
+      <param name="binaryAttribute">Blob di byte che rappresenta gli attributi. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> o <paramref name="binaryAttribute" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Impostare un attributo personalizzato utilizzando un generatore di attributi personalizzati.</summary>
+      <param name="customBuilder">Istanza di una classe di supporto utilizzata per definire l'attributo personalizzato. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> è null. </exception>
+      <exception cref="T:System.InvalidOperationException">Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetParent(System.Type)">
+      <summary>Imposta il tipo di base del tipo che si sta creando.</summary>
+      <param name="parent">Nuovo tipo di base. </param>
+      <exception cref="T:System.InvalidOperationException">Il tipo è stato creato in precedenza utilizzando <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.- oppure -<paramref name="parent" /> è null e l'istanza corrente rappresenta un'interfaccia i cui attributi non includono <see cref="F:System.Reflection.TypeAttributes.Abstract" />.- oppure -Per il tipo dinamico corrente, la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> è true, ma la proprietà <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> è false. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parent" /> è un'interfaccia.La condizione di eccezione è nuova in .NET Framework versione 2.0.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Size">
+      <summary>Recupera le dimensioni totali di un tipo.</summary>
+      <returns>Solo lettura.Recupera le dimensioni totali del tipo.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.ToString">
+      <summary>Restituisce il nome del tipo escluso lo spazio dei nomi.</summary>
+      <returns>Solo lettura.Nome del tipo escluso lo spazio dei nomi.</returns>
+    </member>
+    <member name="F:System.Reflection.Emit.TypeBuilder.UnspecifiedTypeSize">
+      <summary>Indica che le dimensioni totali per il tipo non sono specificate.</summary>
+    </member>
+  </members>
+</doc>

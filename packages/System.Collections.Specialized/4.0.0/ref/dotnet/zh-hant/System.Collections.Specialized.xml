@@ -1,0 +1,1102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Collections.Specialized</name>
+  </assembly>
+  <members>
+    <member name="T:System.Collections.Specialized.BitVector32">
+      <summary>提供在 32 位元記憶體中儲存布林值 (Boolean) 和小整數的簡單結構。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Collections.Specialized.BitVector32)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.BitVector32" /> 結構的新執行個體，該結構包含現有 <see cref="T:System.Collections.Specialized.BitVector32" /> 結構中所表示的資料。</summary>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.BitVector32" /> 結構，包含要複製的資料。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.BitVector32" /> 結構的新執行個體，該結構包含整數所表示的資料。</summary>
+      <param name="data">表示新 <see cref="T:System.Collections.Specialized.BitVector32" /> 之資料的整數。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask">
+      <summary>建立一系列遮罩中的第一個遮罩，可以用於擷取設定為位元旗標之 <see cref="T:System.Collections.Specialized.BitVector32" /> 中的個別位元。</summary>
+      <returns>遮罩，隔離 <see cref="T:System.Collections.Specialized.BitVector32" /> 中的第一個位元旗標。</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask(System.Int32)">
+      <summary>在一系列遮罩中的指定遮罩之後建立額外的遮罩，可以用於擷取設定為位元旗標之 <see cref="T:System.Collections.Specialized.BitVector32" /> 中的個別位元。</summary>
+      <returns>遮罩，隔離 <see cref="T:System.Collections.Specialized.BitVector32" /> 中 <paramref name="previous" /> 所指向之位元旗標之後的位元旗標。</returns>
+      <param name="previous">遮罩，表示前一個的位元旗標。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> indicates the last bit flag in the <see cref="T:System.Collections.Specialized.BitVector32" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16)">
+      <summary>建立包含小整數之一系列區段中的第一個 <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" />，可以存放零到 <paramref name="maxValue" /> 的數字。</returns>
+      <param name="maxValue">16 位元帶正負號的整數，會指定新 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 的最大值。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16,System.Collections.Specialized.BitVector32.Section)">
+      <summary>在包含小整數的一系列區段中，建立新 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 於指定的 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 之後。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" />，可以存放零到 <paramref name="maxValue" /> 的數字。</returns>
+      <param name="maxValue">16 位元帶正負號的整數，會指定新 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 的最大值。</param>
+      <param name="previous">
+        <see cref="T:System.Collections.Specialized.BitVector32" /> 中的前一個 <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> includes the final bit in the <see cref="T:System.Collections.Specialized.BitVector32" />.-or- <paramref name="maxValue" /> is greater than the highest value that can be represented by the number of bits after <paramref name="previous" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Data">
+      <summary>取得 <see cref="T:System.Collections.Specialized.BitVector32" /> 的值做為整數。</summary>
+      <returns>做為整數的 <see cref="T:System.Collections.Specialized.BitVector32" /> 的值。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Equals(System.Object)">
+      <summary>判斷指定的物件和 <see cref="T:System.Collections.Specialized.BitVector32" /> 是否相等。</summary>
+      <returns>如果指定的物件和 <see cref="T:System.Collections.Specialized.BitVector32" /> 相等，則為 true，否則為 false。</returns>
+      <param name="o">要與目前 <see cref="T:System.Collections.Specialized.BitVector32" /> 比較的物件。 </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.GetHashCode">
+      <summary>做為 <see cref="T:System.Collections.Specialized.BitVector32" /> 的雜湊函式。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> 的雜湊程式碼。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Collections.Specialized.BitVector32.Section)">
+      <summary>取得或設定儲存於指定 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 中的值。</summary>
+      <returns>儲存於指定 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 中的值。</returns>
+      <param name="section">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" />，包含要取得或設定的值。</param>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Int32)">
+      <summary>取得或設定由指定遮罩所指示的位元旗標狀態。</summary>
+      <returns>如果指定的位元旗標為開啟 (1)，則為 true，否則為 false。</returns>
+      <param name="bit">遮罩，表示要取得或設定的位元。 </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString">
+      <summary>傳回字串，表示目前的 <see cref="T:System.Collections.Specialized.BitVector32" />。</summary>
+      <returns>字串，表示目前 <see cref="T:System.Collections.Specialized.BitVector32" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString(System.Collections.Specialized.BitVector32)">
+      <summary>傳回表示指定的 <see cref="T:System.Collections.Specialized.BitVector32" /> 的字串。</summary>
+      <returns>字串，表示指定的 <see cref="T:System.Collections.Specialized.BitVector32" />。</returns>
+      <param name="value">要表示的 <see cref="T:System.Collections.Specialized.BitVector32" />。</param>
+    </member>
+    <member name="T:System.Collections.Specialized.BitVector32.Section">
+      <summary>表示可以含有整數數字的向量區段。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Collections.Specialized.BitVector32.Section)">
+      <summary>判斷指定 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件與目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件是否相同。</summary>
+      <returns>如果 <paramref name="obj" /> 參數與目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件相同則為 true，否則為 false。</returns>
+      <param name="obj">要與目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件比較的 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Object)">
+      <summary>判斷指定物件與目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件是否相同。</summary>
+      <returns>如果指定物件與目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件相同則為 true，否則為 false。</returns>
+      <param name="o">要與目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 比較的物件。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.GetHashCode">
+      <summary>做為目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 的雜湊函式，適合於雜湊演算法和資料結構 (如雜湊資料表)。</summary>
+      <returns>目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 的雜湊程式碼。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Mask">
+      <summary>取得在 <see cref="T:System.Collections.Specialized.BitVector32" /> 中隔離這個區段的遮罩。</summary>
+      <returns>在 <see cref="T:System.Collections.Specialized.BitVector32" /> 中隔離這個區段的遮罩。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Offset">
+      <summary>取得這個區段從 <see cref="T:System.Collections.Specialized.BitVector32" /> 開頭的位移 (Offset)。</summary>
+      <returns>這個區段從 <see cref="T:System.Collections.Specialized.BitVector32" /> 開頭的位移。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Equality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>判斷兩個指定的 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件是否相等。</summary>
+      <returns>如果 <paramref name="a" /> 和 <paramref name="b" /> 參數表示同一 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件，則為 true，否則為 false。</returns>
+      <param name="a">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件。</param>
+      <param name="b">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Inequality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>判斷兩個 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件是否具有不同的值。</summary>
+      <returns>如果 <paramref name="a" /> 和 <paramref name="b" /> 參數表示不同的 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件，則為 true，否則為 false。</returns>
+      <param name="a">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件。</param>
+      <param name="b">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 物件。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString">
+      <summary>傳回字串，表示目前的 <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</summary>
+      <returns>字串，表示目前 <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString(System.Collections.Specialized.BitVector32.Section)">
+      <summary>傳回字串，表示指定的 <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</summary>
+      <returns>表示指定之 <see cref="T:System.Collections.Specialized.BitVector32.Section" /> 的字串。</returns>
+      <param name="value">要表示的 <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</param>
+    </member>
+    <member name="T:System.Collections.Specialized.HybridDictionary">
+      <summary>若為小型集合，則使用 <see cref="T:System.Collections.Specialized.ListDictionary" /> 實作 IDictionary，在它成為大型集合時，切換為 <see cref="T:System.Collections.Hashtable" />。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor">
+      <summary>建立空的、區分大小寫的 <see cref="T:System.Collections.Specialized.HybridDictionary" />。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Boolean)">
+      <summary>建立具有指定大小寫區分的空 <see cref="T:System.Collections.Specialized.HybridDictionary" />。</summary>
+      <param name="caseInsensitive">布林值，表示 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 是否不區分大小寫。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32)">
+      <summary>建立具有指定初始大小的大小寫區分之 <see cref="T:System.Collections.Specialized.HybridDictionary" />。</summary>
+      <param name="initialSize">
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> 可初始包含項目的大約數目。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32,System.Boolean)">
+      <summary>建立具有指定初始大小和大小寫區分的 <see cref="T:System.Collections.Specialized.HybridDictionary" />。</summary>
+      <param name="initialSize">
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> 可初始包含項目的大約數目。</param>
+      <param name="caseInsensitive">布林值，表示 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 是否不區分大小寫。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Add(System.Object,System.Object)">
+      <summary>將有指定索引鍵和數值的項目加入 <see cref="T:System.Collections.Specialized.HybridDictionary" />。</summary>
+      <param name="key">要加入的項目索引鍵。</param>
+      <param name="value">要加入的項目值。此值可以是 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">具有相同索引鍵的項目已經存在 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 中。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Clear">
+      <summary>移除 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 的所有項目。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Contains(System.Object)">
+      <summary>判斷 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 是否包含特定索引鍵。</summary>
+      <returns>true if the <see cref="T:System.Collections.Specialized.HybridDictionary" /> contains an entry with the specified key; otherwise, false.</returns>
+      <param name="key">要在 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 中尋找的索引鍵。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>將 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 項目複製到一維 <see cref="T:System.Array" /> 執行個體的指定索引處。</summary>
+      <param name="array">The one-dimensional <see cref="T:System.Array" /> that is the destination of the <see cref="T:System.Collections.DictionaryEntry" /> objects copied from <see cref="T:System.Collections.Specialized.HybridDictionary" />.<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中以零起始的索引，是複製開始的位置。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 為 null。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 為多維。-或-來源 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 項目的數量大於從 <paramref name="arrayIndex" /> 到目的 <paramref name="array" /> 結尾的可用空間。</exception>
+      <exception cref="T:System.InvalidCastException">來源 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 的型別無法自動轉換為目的 <paramref name="array" /> 的型別。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Count">
+      <summary>取得 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 中所包含的索引鍵/值組數目。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> 中所包含的索引鍵/值組數目。擷取這個屬性的值是一種 O(1) 運算。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.GetEnumerator">
+      <summary>Returns an <see cref="T:System.Collections.IDictionaryEnumerator" /> that iterates through the <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> 的 <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsFixedSize">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 是否有固定的大小。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsReadOnly">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 是否唯讀。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsSynchronized">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 是否為同步 (安全執行緒)。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Item(System.Object)">
+      <summary>取得或設定與指定之索引鍵相關聯的值。</summary>
+      <returns>與指定之索引鍵關聯的值。如果找不到指定的索引鍵，嘗試取得它將傳回 null，而嘗試設定它將以指定的索引鍵建立新的項目。</returns>
+      <param name="key">索引鍵，要讀取或設定其值。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Keys">
+      <summary>Gets an <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>An <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Remove(System.Object)">
+      <summary>將有指定索引鍵的項目從 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 移除。</summary>
+      <param name="key">要移除的項目的索引鍵。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.SyncRoot">
+      <summary>取得可用來同步存取 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 的物件。</summary>
+      <returns>可用來同步存取 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 的物件。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>傳回透過 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 重複的 <see cref="T:System.Collections.IEnumerator" />。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Values">
+      <summary>取得 <see cref="T:System.Collections.ICollection" />，包含 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 中的值。</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" />，包含 <see cref="T:System.Collections.Specialized.HybridDictionary" /> 中的值。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.IOrderedDictionary">
+      <summary>表示索引鍵/值組的索引集合。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.GetEnumerator">
+      <summary>傳回逐一查看 <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> 集合的列舉程式。</summary>
+      <returns>整個 <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> 集合的 <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>將索引鍵/值組插入集合的指定索引處。</summary>
+      <param name="index">以零起始的索引，應該在該索引處插入索引鍵/值組。</param>
+      <param name="key">做為要加入項目之索引鍵的物件。</param>
+      <param name="value">做為要加入項目之值的物件。此值可以是 null。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於 0。-或-<paramref name="index" /> 大於 <see cref="P:System.Collections.ICollection.Count" />。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> 集合中已存在具有相同索引鍵的項目。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> 集合是唯讀的。-或-<see cref="T:System.Collections.Specialized.IOrderedDictionary" /> 集合具有固定大小。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.IOrderedDictionary.Item(System.Int32)">
+      <summary>在指定的索引位置上取得或設定項目。</summary>
+      <returns>在指定索引上的項目。</returns>
+      <param name="index">要取得或設定之以零為起始的項目索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於 0。-或- <paramref name="index" /> 等於或大於 <see cref="P:System.Collections.ICollection.Count" />。 </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.RemoveAt(System.Int32)">
+      <summary>移除指定索引中的項目。</summary>
+      <param name="index">移除項目之以零為起始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於 0。-或- <paramref name="index" /> 等於或大於 <see cref="P:System.Collections.ICollection.Count" />。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> 集合是唯讀的。-或-<see cref="T:System.Collections.Specialized.IOrderedDictionary" /> 集合具有固定大小。</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.ListDictionary">
+      <summary>使用單向連結串列 (Singly-Linked List) 實作 IDictionary。建議用於通常少於 10 個項目的集合。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor">
+      <summary>使用預設比較子 (Comparer) 來建立空的 <see cref="T:System.Collections.Specialized.ListDictionary" />。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor(System.Collections.IComparer)">
+      <summary>使用指定的比較子來建立空的 <see cref="T:System.Collections.Specialized.ListDictionary" />。</summary>
+      <param name="comparer">要用來決定兩個索引鍵是否相等的 <see cref="T:System.Collections.IComparer" />。-或- null to use the default comparer, which is each key's implementation of <see cref="M:System.Object.Equals(System.Object)" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Add(System.Object,System.Object)">
+      <summary>將有指定索引鍵和數值的項目加入 <see cref="T:System.Collections.Specialized.ListDictionary" />。</summary>
+      <param name="key">要加入的項目索引鍵。</param>
+      <param name="value">要加入的項目值。此值可以是 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">具有相同索引鍵的項目已經存在 <see cref="T:System.Collections.Specialized.ListDictionary" /> 中。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Clear">
+      <summary>移除 <see cref="T:System.Collections.Specialized.ListDictionary" /> 的所有項目。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Contains(System.Object)">
+      <summary>判斷 <see cref="T:System.Collections.Specialized.ListDictionary" /> 是否包含特定索引鍵。</summary>
+      <returns>true if the <see cref="T:System.Collections.Specialized.ListDictionary" /> contains an entry with the specified key; otherwise, false.</returns>
+      <param name="key">要在 <see cref="T:System.Collections.Specialized.ListDictionary" /> 中尋找的索引鍵。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>將 <see cref="T:System.Collections.Specialized.ListDictionary" /> 項目複製到一維 <see cref="T:System.Array" /> 執行個體的指定索引處。</summary>
+      <param name="array">一維 <see cref="T:System.Array" />，是從 <see cref="T:System.Collections.Specialized.ListDictionary" /> 複製過來的 <see cref="T:System.Collections.DictionaryEntry" /> 物件之目的端。<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中以零起始的索引，是複製開始的位置。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 為 null。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 為多維。-或-來源 <see cref="T:System.Collections.Specialized.ListDictionary" /> 項目的數量大於從 <paramref name="index" /> 到目的 <paramref name="array" /> 結尾的可用空間。</exception>
+      <exception cref="T:System.InvalidCastException">來源 <see cref="T:System.Collections.Specialized.ListDictionary" /> 的型別無法自動轉換為目的 <paramref name="array" /> 的型別。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Count">
+      <summary>取得 <see cref="T:System.Collections.Specialized.ListDictionary" /> 中所包含的索引鍵/值組數目。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> 中所包含的索引鍵/值組數目。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.GetEnumerator">
+      <summary>傳回透過 <see cref="T:System.Collections.Specialized.ListDictionary" /> 重複的 <see cref="T:System.Collections.IDictionaryEnumerator" />。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> 的 <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsFixedSize">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.ListDictionary" /> 是否有固定的大小。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsReadOnly">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.ListDictionary" /> 是否唯讀。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsSynchronized">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.ListDictionary" /> 是否為同步 (安全執行緒)。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Item(System.Object)">
+      <summary>取得或設定與指定之索引鍵相關聯的值。</summary>
+      <returns>與指定之索引鍵關聯的值。如果找不到指定的索引鍵，嘗試取得它將傳回 null，而嘗試設定它將以指定的索引鍵建立新的項目。</returns>
+      <param name="key">索引鍵，要讀取或設定其值。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Keys">
+      <summary>取得含有 <see cref="T:System.Collections.Specialized.ListDictionary" /> 中的索引鍵的 <see cref="T:System.Collections.ICollection" />。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" />，含有 <see cref="T:System.Collections.ICollection" /> 中的索引鍵。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Remove(System.Object)">
+      <summary>將有指定索引鍵的項目從 <see cref="T:System.Collections.Specialized.ListDictionary" /> 移除。</summary>
+      <param name="key">要移除的項目的索引鍵。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.SyncRoot">
+      <summary>取得可用來同步存取 <see cref="T:System.Collections.Specialized.ListDictionary" /> 的物件。</summary>
+      <returns>可用來同步存取 <see cref="T:System.Collections.Specialized.ListDictionary" /> 的物件。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>傳回透過 <see cref="T:System.Collections.Specialized.ListDictionary" /> 重複的 <see cref="T:System.Collections.IEnumerator" />。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Values">
+      <summary>取得 <see cref="T:System.Collections.ICollection" />，包含 <see cref="T:System.Collections.Specialized.ListDictionary" /> 中的值。</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" />，包含 <see cref="T:System.Collections.Specialized.ListDictionary" /> 中的值。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase">
+      <summary>提供 abstract 基底類別給可以用索引鍵或索引來存取之相關聯的 <see cref="T:System.String" /> 索引鍵和 <see cref="T:System.Object" /> 值集合。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 類別的新執行個體，這個執行個體是空白的。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Collections.IEqualityComparer)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 類別的新執行個體，這個執行個體是空白的、具有預設的初始容量，並使用指定的 <see cref="T:System.Collections.IEqualityComparer" /> 物件。</summary>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 物件，可用來判斷兩個索引鍵是否相等，以及為集合中的索引鍵產生雜湊碼。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 類別的新執行個體，這個執行個體是空白的、具有指定的初始容量，並使用預設雜湊碼提供者和預設比較子。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體一開始可包含的大約項目數。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小於零。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 類別的新執行個體，這個執行個體是空白的、具有指定的初始容量，並使用指定的 <see cref="T:System.Collections.IEqualityComparer" /> 物件。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 物件一開始可包含的大約項目數。</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 物件，可用來判斷兩個索引鍵是否相等，以及為集合中的索引鍵產生雜湊碼。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小於零。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseAdd(System.String,System.Object)">
+      <summary>將具有指定索引鍵和值的項目加入 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體。</summary>
+      <param name="name">要加入之項目的 <see cref="T:System.String" /> 索引鍵。這個索引鍵可以是 null。</param>
+      <param name="value">要加入之項目的 <see cref="T:System.Object" /> 值。這個值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseClear">
+      <summary>將所有項目從 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中移除。</summary>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.Int32)">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體指定索引處之項目的值。</summary>
+      <returns>
+        <see cref="T:System.Object" />，代表指定索引處之項目的值。</returns>
+      <param name="index">要取得的值的以零為起始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.String)">
+      <summary>從 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體取得具有指定索引鍵之第一個項目的值。</summary>
+      <returns>
+        <see cref="T:System.Object" />，代表具有指定索引鍵之第一個項目的值 (如果有找到)，否則為 null。</returns>
+      <param name="name">要取得之項目的 <see cref="T:System.String" /> 索引鍵。這個索引鍵可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllKeys">
+      <summary>傳回 <see cref="T:System.String" /> 陣列，其中包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有索引鍵。</summary>
+      <returns>
+        <see cref="T:System.String" /> 陣列，包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有索引鍵。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues">
+      <summary>傳回 <see cref="T:System.Object" /> 陣列，其中包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有值。</summary>
+      <returns>
+        <see cref="T:System.Object" /> 陣列，包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有值。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues(System.Type)">
+      <summary>傳回指定類型的陣列，其中包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有值。</summary>
+      <returns>指定類型的陣列，包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有值。</returns>
+      <param name="type">
+        <see cref="T:System.Type" />，代表要傳回的陣列類型。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="type" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> 不是有效的 <see cref="T:System.Type" />。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetKey(System.Int32)">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體指定索引處之項目的索引鍵。</summary>
+      <returns>
+        <see cref="T:System.String" />，代表指定索引處之項目的索引鍵。</returns>
+      <param name="index">要取得的索引鍵之以零為起始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseHasKeys">
+      <summary>取得值，表示 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體是否包含其索引鍵不是 null 的項目。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體包含其索引鍵不是 null 的項目，則為 true，否則為 false。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemove(System.String)">
+      <summary>將具有指定索引鍵的項目從 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中移除。</summary>
+      <param name="name">要移除之項目的 <see cref="T:System.String" /> 索引鍵。這個索引鍵可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemoveAt(System.Int32)">
+      <summary>移除 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體指定索引處的項目。</summary>
+      <param name="index">要移除的項目之以零起始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.Int32,System.Object)">
+      <summary>設定 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體指定索引處之項目的值。</summary>
+      <param name="index">要設定的項目之以零為起始的索引。</param>
+      <param name="value">
+        <see cref="T:System.Object" />，代表要設定之項目的新值。這個值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.String,System.Object)">
+      <summary>設定 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中具有指定索引鍵之第一個項目的值 (如果有找到)，否則將具有指定索引鍵和值的項目加入 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體。</summary>
+      <param name="name">要設定之項目的 <see cref="T:System.String" /> 索引鍵。這個索引鍵可以是 null。</param>
+      <param name="value">
+        <see cref="T:System.Object" />，代表要設定之項目的新值。這個值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Count">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中包含的索引鍵/值組數目。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中包含的索引鍵/值組數目。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.GetEnumerator">
+      <summary>傳回在 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 中逐一查看的列舉值。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.IsReadOnly">
+      <summary>取得或設定值，表示 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體是否為唯讀。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體是唯讀，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Keys">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 執行個體，其中包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有索引鍵。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 執行個體，包含 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中的所有索引鍵。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>從目標陣列的指定索引開始，將整個 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 複製到相容的一維 <see cref="T:System.Array" />。</summary>
+      <param name="array">一維 <see cref="T:System.Array" />，是從 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 複製過來之項目的目的端。<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中以零起始的索引，即開始複製的位置。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 是多維的。-或-來源 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 項目的數量大於從 <paramref name="index" /> 到目的 <paramref name="array" /> 結尾的可用空間。</exception>
+      <exception cref="T:System.InvalidCastException">來源 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 的型別無法自動轉換為目的 <paramref name="array" /> 的型別。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>取得值，表示是否要同步處理 (執行緒安全) 對 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 物件的存取。</summary>
+      <returns>如果要同步處理 (執行緒安全) 對 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 物件的存取，則為 true，否則為 false。預設為 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>取得可用來同步處理對 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 物件之存取的物件。</summary>
+      <returns>可用來同步處理對 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 物件之存取的物件。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection">
+      <summary>表示集合索引鍵 <see cref="T:System.String" /> 的集合。</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Count">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 中的索引鍵數目。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 中的索引鍵數目。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Get(System.Int32)">
+      <summary>取得在集合的指定索引處的索引鍵。</summary>
+      <returns>
+        <see cref="T:System.String" />，含有在集合指定索引處的索引鍵。</returns>
+      <param name="index">從集合取得的以零起始的索引鍵索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.GetEnumerator">
+      <summary>傳回在 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 中逐一查看的列舉值。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Item(System.Int32)">
+      <summary>取得在集合的指定索引處的項目。</summary>
+      <returns>在集合指定索引處的項目 <see cref="T:System.String" /> 索引鍵。</returns>
+      <param name="index">集合中以零起始的項目索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>從目標陣列的指定索引開始，複製整個 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 至相容的一維 <see cref="T:System.Array" />。</summary>
+      <param name="array">一維 <see cref="T:System.Array" />，是從 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 複製過來之項目的目的端。<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中以零起始的索引，是複製開始的位置。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 為多維。-或-來源 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 元素的數量大於從 <paramref name="index" /> 到目的 <paramref name="array" /> 結尾的可用空間。</exception>
+      <exception cref="T:System.InvalidCastException">來源 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 的型別無法自動轉換為目的 <paramref name="array" /> 的型別。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#IsSynchronized">
+      <summary>取得值，這個值表示對 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 的存取是否同步 (安全執行緒)。</summary>
+      <returns>如果對 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 的存取為同步 (安全執行緒)，則為 true，否則為 false。預設為 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#SyncRoot">
+      <summary>取得可用來同步存取 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 的物件。</summary>
+      <returns>可用來同步存取 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 的物件。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameValueCollection">
+      <summary>代表相關聯之 <see cref="T:System.String" /> 索引鍵和 <see cref="T:System.String" /> 值的集合，可使用索引鍵或索引來存取。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 類別的新執行個體，這個執行個體是空白的、具有預設的初始容量，並使用預設不區分大小寫的雜湊碼提供者和預設不區分大小寫的比較子。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.IEqualityComparer)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 類別的新執行個體，這個執行個體是空白的、具有預設的初始容量，並使用指定的 <see cref="T:System.Collections.IEqualityComparer" /> 物件。</summary>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 物件，可用來判斷兩個索引鍵是否相等，以及為集合中的索引鍵產生雜湊碼。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.Specialized.NameValueCollection)">
+      <summary>從指定的 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 複製項目至新的 <see cref="T:System.Collections.Specialized.NameValueCollection" />，使其具有與複製的項目數相同的初始容量，並使用與來源集合相同的雜湊碼提供者和相同的比較子。</summary>
+      <param name="col">要複製到新的 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 執行個體的 <see cref="T:System.Collections.Specialized.NameValueCollection" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 類別的新執行個體，這個執行個體是空白的、具有指定的初始容量，並使用預設不區分大小寫的雜湊碼提供者和預設不區分大小寫的比較子。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 可包含的初始項目數。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小於零。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 類別的新執行個體，這個執行個體是空白的、具有指定的初始容量，並使用指定的 <see cref="T:System.Collections.IEqualityComparer" /> 物件。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 物件可包含的初始項目數。</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 物件，可用來判斷兩個索引鍵是否相等，以及為集合中的索引鍵產生雜湊碼。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小於零。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.Specialized.NameValueCollection)">
+      <summary>從指定的 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 複製項目至新的 <see cref="T:System.Collections.Specialized.NameValueCollection" />，使其具有指定的初始容量，或是與複製的項目數相同的初始容量 (取較大者)，並使用預設不區分大小寫的雜湊碼提供者和預設不區分大小寫的比較子。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 可包含的初始項目數。</param>
+      <param name="col">要複製到新的 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 執行個體的 <see cref="T:System.Collections.Specialized.NameValueCollection" />。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小於零。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.Collections.Specialized.NameValueCollection)">
+      <summary>將指定 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中的項目複製到目前的 <see cref="T:System.Collections.Specialized.NameValueCollection" />。</summary>
+      <param name="c">要複製到目前 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 的 <see cref="T:System.Collections.Specialized.NameValueCollection" />。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.String,System.String)">
+      <summary>將具有指定名稱和數值的項目加入 <see cref="T:System.Collections.Specialized.NameValueCollection" />。</summary>
+      <param name="name">要加入之項目的 <see cref="T:System.String" /> 索引鍵。這個索引鍵可以是 null。</param>
+      <param name="value">要加入之項目的 <see cref="T:System.String" /> 值。這個值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.AllKeys">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中的所有索引鍵。</summary>
+      <returns>
+        <see cref="T:System.String" /> 陣列，包含 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中的所有索引鍵。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Clear">
+      <summary>使快取陣列失效，並移除 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中的所有項目。</summary>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.CopyTo(System.Array,System.Int32)">
+      <summary>從目標陣列的指定索引開始，將整個 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 複製到相容的一維 <see cref="T:System.Array" />。</summary>
+      <param name="dest">一維 <see cref="T:System.Array" />，是從 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 複製過來之項目的目的端。<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="dest" /> 中以零起始的索引，即開始複製的位置。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="dest" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="dest" /> 是多維的。-或- 來源 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 項目的數量大於從 <paramref name="index" /> 到目的 <paramref name="dest" /> 結尾的可用空間。</exception>
+      <exception cref="T:System.InvalidCastException">來源 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 的型別無法自動轉換為目的 <paramref name="dest" /> 的型別。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.Int32)">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 之指定索引處的值，這些值會結合成為一個逗號分隔清單。</summary>
+      <returns>
+        <see cref="T:System.String" />，包含 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 指定索引處之值的逗號分隔清單 (如果找到的話)，否則為 null。</returns>
+      <param name="index">以零為基底的項目索引，包含從集合取得的值。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.String)">
+      <summary>取得與 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中指定索引鍵相關聯的值，這些值會結合成為一個逗號分隔清單。</summary>
+      <returns>
+        <see cref="T:System.String" />，包含與 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中指定索引鍵相關聯之值的逗號分隔清單 (如果找到的話)，否則為 null。</returns>
+      <param name="name">項目的 <see cref="T:System.String" /> 索引鍵，包含要取得的值。這個索引鍵可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetKey(System.Int32)">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 之指定索引處的索引鍵。</summary>
+      <returns>
+        <see cref="T:System.String" />，包含 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 之指定索引處的索引鍵 (如果找到的話)，否則為 null。</returns>
+      <param name="index">從集合取得的以零起始的索引鍵索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.Int32)">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 之指定索引處的值。</summary>
+      <returns>
+        <see cref="T:System.String" /> 陣列，包含 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 之指定索引處的值 (如果找到的話)，否則為 null。</returns>
+      <param name="index">以零為基底的項目索引，包含從集合取得的值。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.String)">
+      <summary>取得與 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中指定索引鍵相關聯的值。</summary>
+      <returns>
+        <see cref="T:System.String" /> 陣列，包含與 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中指定索引鍵相關聯的值 (如果找到的話)，否則為 null。</returns>
+      <param name="name">項目的 <see cref="T:System.String" /> 索引鍵，包含要取得的值。這個索引鍵可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.HasKeys">
+      <summary>取得值，表示 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 是否包含非 null 的索引鍵。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 包含非 null 的索引鍵，則為 true，否則為 false。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.InvalidateCachedArrays">
+      <summary>將集合的快取陣列重設為 null。</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.Int32)">
+      <summary>取得 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 之指定索引處的項目。</summary>
+      <returns>
+        <see cref="T:System.String" />，包含集合指定索引處之值的逗號分隔清單。</returns>
+      <param name="index">集合中以零為基底的項目索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 是在集合的有效索引範圍之外。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.String)">
+      <summary>取得或設定具有 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中指定索引鍵的項目。</summary>
+      <returns>
+        <see cref="T:System.String" />，包含與指定索引鍵相關聯之值的逗號分隔清單 (如果找到的話)，否則為 null。</returns>
+      <param name="name">要找出的項目的 <see cref="T:System.String" /> 索引鍵。索引鍵可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">該集合是唯讀的，並且作業會嘗試修改集合。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Remove(System.String)">
+      <summary>將具有指定索引鍵的項目從 <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 執行個體中移除。</summary>
+      <param name="name">要移除之項目的 <see cref="T:System.String" /> 索引鍵。這個索引鍵可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Set(System.String,System.String)">
+      <summary>設定 <see cref="T:System.Collections.Specialized.NameValueCollection" /> 中項目的值。</summary>
+      <param name="name">要加入新值之項目的 <see cref="T:System.String" /> 索引鍵。這個索引鍵可以是 null。</param>
+      <param name="value">
+        <see cref="T:System.Object" />，代表要加入指定項目的新值。這個值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">集合是唯讀的。</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.OrderedDictionary">
+      <summary>表示可依索引鍵或索引存取的索引鍵/值組集合。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 類別的新執行個體。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Collections.IEqualityComparer)">
+      <summary>使用指定之比較子來初始化 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 類別的新執行個體。</summary>
+      <param name="comparer">要用來決定兩個索引鍵是否相等的 <see cref="T:System.Collections.IComparer" />。-或- null to use the default comparer, which is each key's implementation of <see cref="M:System.Object.Equals(System.Object)" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32)">
+      <summary>使用指定之初始容量來初始化 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 類別的新執行個體。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合可以包含之元素的初始數目。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>使用指定的初始容量和比較子，初始化 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 類別的新執行個體。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合可以包含之元素的初始數目。</param>
+      <param name="comparer">要用來決定兩個索引鍵是否相等的 <see cref="T:System.Collections.IComparer" />。-或- null to use the default comparer, which is each key's implementation of <see cref="M:System.Object.Equals(System.Object)" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Add(System.Object,System.Object)">
+      <summary>將具有指定之索引鍵和值的元素加入至含有最低可用索引的 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中。</summary>
+      <param name="key">要加入的項目索引鍵。</param>
+      <param name="value">要加入的項目值。這個值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是唯讀的。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.AsReadOnly">
+      <summary>傳回目前 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合的唯讀複本。</summary>
+      <returns>目前之 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合的唯讀複本。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Clear">
+      <summary>從 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合移除所有元素。</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是唯讀的。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Contains(System.Object)">
+      <summary>判斷 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是否包含特定索引鍵。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合包含具有指定之索引鍵的元素，則為  true，否則為 false。</returns>
+      <param name="key">要在 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中尋找的索引鍵。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>將 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 元素複製到指定之索引處的一維 <see cref="T:System.Array" /> 物件。</summary>
+      <param name="array">一維 <see cref="T:System.Array" /> 物件，是從 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合複製過來之 <see cref="T:System.Collections.DictionaryEntry" /> 物件的目的端。<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中以零起始的索引，是複製開始的位置。</param>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Count">
+      <summary>取得包含在 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中的索引鍵/值組數目。</summary>
+      <returns>包含在 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中的索引鍵/值組數目。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.GetEnumerator">
+      <summary>傳回在 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中逐一查看的 <see cref="T:System.Collections.IDictionaryEnumerator" /> 物件。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合的 <see cref="T:System.Collections.IDictionaryEnumerator" /> 物件。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>使用指定的索引鍵和值，將新元素插入 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中指定的索引處。</summary>
+      <param name="index">應在該處插入元素之以零起始的索引。</param>
+      <param name="key">要加入的項目索引鍵。</param>
+      <param name="value">要加入的項目值。此值可以是 null。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 超出範圍。</exception>
+      <exception cref="T:System.NotSupportedException">這是一個唯讀集合。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.IsReadOnly">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是否為唯讀。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是唯讀則為 true，否則為 false。預設值為 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Int32)">
+      <summary>取得或設定指定之索引處的值。</summary>
+      <returns>指定之索引處的項目值。</returns>
+      <param name="index">要取得或設定的值之以零為起始的索引。</param>
+      <exception cref="T:System.NotSupportedException">正在設定屬性，且 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是唯讀的。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。-或-<paramref name="index" /> 等於或大於 <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" />。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Object)">
+      <summary>取得或設定具有指定之索引鍵的值。</summary>
+      <returns>與指定之索引鍵關聯的值。如果找不到指定的索引鍵，嘗試取得將傳回 null，並且嘗試設定會使用指定的索引鍵建立新的元素。</returns>
+      <param name="key">要取得或設定之值的索引鍵。</param>
+      <exception cref="T:System.NotSupportedException">正在設定屬性，且 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是唯讀的。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Keys">
+      <summary>取得 <see cref="T:System.Collections.ICollection" /> 物件，其中包含 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中的索引鍵。</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" /> 物件，其中包含 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中的索引鍵。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Remove(System.Object)">
+      <summary>從 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合移除具有指定之索引鍵的元素。</summary>
+      <param name="key">要移除的項目的索引鍵。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是唯讀的。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.RemoveAt(System.Int32)">
+      <summary>從 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合移除指定之索引處的元素。</summary>
+      <param name="index">要移除的項目之以零起始的索引。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合是唯讀的。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。-或-<paramref name="index" /> 等於或大於 <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" />。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#IsSynchronized">
+      <summary>取得值，指出對 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 物件的存取是否已同步處理 (安全執行緒)。</summary>
+      <returns>這個方法永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#SyncRoot">
+      <summary>取得物件，可以用來同步處理對 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 物件的存取。</summary>
+      <returns>可用來同步處理對 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 物件之存取的物件。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#IDictionary#IsFixedSize">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 是否有固定的大小。</summary>
+      <returns>true if the <see cref="T:System.Collections.Specialized.OrderedDictionary" /> has a fixed size; otherwise, false.預設值為 false。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>傳回在 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中逐一查看的 <see cref="T:System.Collections.IDictionaryEnumerator" /> 物件。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合的 <see cref="T:System.Collections.IDictionaryEnumerator" /> 物件。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Values">
+      <summary>取得 <see cref="T:System.Collections.ICollection" /> 物件，其中包含 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中的值。</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" /> 物件，其中包含 <see cref="T:System.Collections.Specialized.OrderedDictionary" /> 集合中的值。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringCollection">
+      <summary>表示字串的集合。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.StringCollection" /> 類別的新執行個體。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Add(System.String)">
+      <summary>將字串加入 <see cref="T:System.Collections.Specialized.StringCollection" /> 的結尾。</summary>
+      <returns>要插入新元素處的以零起始的索引。</returns>
+      <param name="value">加入至 <see cref="T:System.Collections.Specialized.StringCollection" /> 結尾的字串。此值可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.AddRange(System.String[])">
+      <summary>將字串陣列的元素複製到 <see cref="T:System.Collections.Specialized.StringCollection" /> 的結尾。</summary>
+      <param name="value">要加入至 <see cref="T:System.Collections.Specialized.StringCollection" /> 結尾的字串陣列。陣列本身不能是 null，但它可以包含為 null 的元素。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Clear">
+      <summary>將所有字串從 <see cref="T:System.Collections.Specialized.StringCollection" /> 移除。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Contains(System.String)">
+      <summary>判斷指定的字串是否在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中。</summary>
+      <returns>如果在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中找到 <paramref name="value" />，則為 true，否則為 false。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中尋找的字串。此值可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.CopyTo(System.String[],System.Int32)">
+      <summary>複製整個 <see cref="T:System.Collections.Specialized.StringCollection" /> 值至字串的一維陣列，由目標陣列的指定索引開始。</summary>
+      <param name="array">字串的一維陣列，是從 <see cref="T:System.Collections.Specialized.StringCollection" /> 複製的元素之目的端。<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中以零起始的索引，是複製開始的位置。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 為多維。-或-來源 <see cref="T:System.Collections.Specialized.StringCollection" /> 元素的數量大於從 <paramref name="index" /> 到目的 <paramref name="array" /> 結尾的可用空間。</exception>
+      <exception cref="T:System.InvalidCastException">來源 <see cref="T:System.Collections.Specialized.StringCollection" /> 的型別無法自動轉換為目的 <paramref name="array" /> 的型別。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Count">
+      <summary>取得在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中所包含的字串數目。</summary>
+      <returns>在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中所包含的字串數目。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.GetEnumerator">
+      <summary>傳回逐一查看 <see cref="T:System.Collections.Specialized.StringCollection" /> 的 <see cref="T:System.Collections.Specialized.StringEnumerator" />。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 的 <see cref="T:System.Collections.Specialized.StringEnumerator" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.IndexOf(System.String)">
+      <summary>搜尋指定的字串，並傳回在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中第一個符合項目之以零起始的索引。</summary>
+      <returns>如果在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中找到的話，則為 <paramref name="value" /> 的第一個符合項目之以零起始的索引，否則為 -1。</returns>
+      <param name="value">要尋找的字串。此值可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Insert(System.Int32,System.String)">
+      <summary>將字串插入至指定索引位置的 <see cref="T:System.Collections.Specialized.StringCollection" />。</summary>
+      <param name="index">要插入 <paramref name="value" /> 處之以零起始的索引。</param>
+      <param name="value">要插入的字串。此值可以是 null。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。-或-<paramref name="index" /> 大於 <see cref="P:System.Collections.Specialized.StringCollection.Count" />。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsReadOnly">
+      <summary>取得值，指出 <see cref="T:System.Collections.Specialized.StringCollection" /> 是否唯讀。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsSynchronized">
+      <summary>取得值，這個值表示對 <see cref="T:System.Collections.Specialized.StringCollection" /> 的存取是否同步 (安全執行緒)。</summary>
+      <returns>這個屬性永遠傳回 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Item(System.Int32)">
+      <summary>取得或設定指定之索引處的項目。</summary>
+      <returns>在指定之索引處的項目。</returns>
+      <param name="index">要取得或設定的項目之以零起始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。-或-<paramref name="index" /> 等於或大於 <see cref="P:System.Collections.Specialized.StringCollection.Count" />。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Remove(System.String)">
+      <summary>從 <see cref="T:System.Collections.Specialized.StringCollection" /> 移除特定字串的第一個符合項目。</summary>
+      <param name="value">要從 <see cref="T:System.Collections.Specialized.StringCollection" /> 移除的字串。此值可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.RemoveAt(System.Int32)">
+      <summary>移除 <see cref="T:System.Collections.Specialized.StringCollection" /> 的指定索引處的字串。</summary>
+      <param name="index">要移除的字串之以零起始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。-或-<paramref name="index" /> 等於或大於 <see cref="P:System.Collections.Specialized.StringCollection.Count" />。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.SyncRoot">
+      <summary>取得可用來同步存取 <see cref="T:System.Collections.Specialized.StringCollection" /> 的物件。</summary>
+      <returns>可用來同步存取 <see cref="T:System.Collections.Specialized.StringCollection" /> 的物件。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>從目標陣列的指定索引開始，複製整個 <see cref="T:System.Collections.Specialized.StringCollection" /> 至相容的一維 <see cref="T:System.Array" />。</summary>
+      <param name="array">一維 <see cref="T:System.Array" />，是從 <see cref="T:System.Collections.Specialized.StringCollection" /> 複製過來之項目的目的端。<see cref="T:System.Array" /> 必須有以零起始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中以零起始的索引，是複製開始的位置。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 為多維。-或-來源 <see cref="T:System.Collections.Specialized.StringCollection" /> 元素的數量大於從 <paramref name="index" /> 到目的 <paramref name="array" /> 結尾的可用空間。</exception>
+      <exception cref="T:System.InvalidCastException">來源 <see cref="T:System.Collections.Specialized.StringCollection" /> 的型別無法自動轉換為目的 <paramref name="array" /> 的型別。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>傳回逐一查看 <see cref="T:System.Collections.Specialized.StringCollection" /> 的 <see cref="T:System.Collections.IEnumerator" />。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Add(System.Object)">
+      <summary>將物件加入至 <see cref="T:System.Collections.Specialized.StringCollection" /> 的結尾。</summary>
+      <returns>已加入 <paramref name="value" /> 的 <see cref="T:System.Collections.Specialized.StringCollection" /> 索引。</returns>
+      <param name="value">加入至 <see cref="T:System.Collections.Specialized.StringCollection" /> 結尾的 <see cref="T:System.Object" />。此值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 是唯讀的。-或-<see cref="T:System.Collections.Specialized.StringCollection" /> 具有固定的大小。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Contains(System.Object)">
+      <summary>判斷某元素是否在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中。</summary>
+      <returns>如果在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中找到 <paramref name="value" />，則為 true，否則為 false。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中尋找的 <see cref="T:System.Object" />。此值可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#IndexOf(System.Object)">
+      <summary>搜尋指定的 <see cref="T:System.Object" />，並傳回在整個 <see cref="T:System.Collections.Specialized.StringCollection" /> 中第一個符合元素之以零起始的索引。</summary>
+      <returns>整個 <see cref="T:System.Collections.Specialized.StringCollection" /> 中 <paramref name="value" /> 第一次出現之以零起始的索引 (如果找得到的話)，否則為 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.Specialized.StringCollection" /> 中尋找的 <see cref="T:System.Object" />。此值可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Insert(System.Int32,System.Object)">
+      <summary>將項目插入 <see cref="T:System.Collections.Specialized.StringCollection" /> 中指定的索引處。</summary>
+      <param name="index">應該插入 <paramref name="value" /> 之以零起始的索引。</param>
+      <param name="value">要插入的 <see cref="T:System.Object" />。此值可以是 null。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。-或-<paramref name="index" /> 大於 <see cref="P:System.Collections.Specialized.StringCollection.Count" />。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 是唯讀的。-或-<see cref="T:System.Collections.Specialized.StringCollection" /> 具有固定的大小。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsFixedSize">
+      <summary>取得代表 <see cref="T:System.Collections.Specialized.StringCollection" /> 物件是否具有固定大小的值。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.StringCollection" /> 物件有固定大小，則為 true，否則為 false。預設為 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsReadOnly">
+      <summary>取得值，這個值表示 <see cref="T:System.Collections.Specialized.StringCollection" /> 物件是否唯讀。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.StringCollection" /> 物件是唯讀，則為 true，否則為 false。預設為 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#Item(System.Int32)">
+      <summary>取得或設定指定之索引處的項目。</summary>
+      <returns>在指定之索引處的項目。</returns>
+      <param name="index">要取得或設定之以零起始的項目索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小於零。-或-<paramref name="index" /> 等於或大於 <see cref="P:System.Collections.Specialized.StringCollection.Count" />。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Remove(System.Object)">
+      <summary>從 <see cref="T:System.Collections.Specialized.StringCollection" /> 移除特定物件的第一個相符項目。</summary>
+      <param name="value">要從 <see cref="T:System.Collections.Specialized.StringCollection" /> 移除的 <see cref="T:System.Object" />。此值可以是 null。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 是唯讀的。-或-<see cref="T:System.Collections.Specialized.StringCollection" /> 具有固定的大小。</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.StringDictionary">
+      <summary>使用強類型索引鍵和值，將雜湊資料表實作為字串，而非物件。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.StringDictionary" /> 類別的新執行個體。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Add(System.String,System.String)">
+      <summary>將有指定索引鍵和數值的項目加入 <see cref="T:System.Collections.Specialized.StringDictionary" />。</summary>
+      <param name="key">要加入的項目索引鍵。</param>
+      <param name="value">要加入的項目值。此值可以是 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null. </exception>
+      <exception cref="T:System.ArgumentException">An entry with the same key already exists in the <see cref="T:System.Collections.Specialized.StringDictionary" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Clear">
+      <summary>從 <see cref="T:System.Collections.Specialized.StringDictionary" /> 移除所有項目。</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsKey(System.String)">
+      <summary>判斷 <see cref="T:System.Collections.Specialized.StringDictionary" /> 是否包含特定索引鍵。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.StringDictionary" /> 包含的項目具有指定索引鍵，則為 true，否則為 false。</returns>
+      <param name="key">要在 <see cref="T:System.Collections.Specialized.StringDictionary" /> 中尋找的索引鍵。 </param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsValue(System.String)">
+      <summary>判斷 <see cref="T:System.Collections.Specialized.StringDictionary" /> 是否包含特定值。</summary>
+      <returns>如果 <see cref="T:System.Collections.Specialized.StringDictionary" /> 包含具有指定值的項目，則為 true，否則為 false。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.Specialized.StringDictionary" /> 中尋找的值。此值可以是 null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>將字串字典值複製至在指定索引處的一維 <see cref="T:System.Array" /> 執行個體。</summary>
+      <param name="array">為值 (從 <see cref="T:System.Collections.Specialized.StringDictionary" /> 複製) 之目的端的一維 <see cref="T:System.Array" />。</param>
+      <param name="index">在複製開始的所在陣列中的索引。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the <see cref="T:System.Collections.Specialized.StringDictionary" /> is greater than the available space from <paramref name="index" /> to the end of <paramref name="array" />. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than the lower bound of <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Count">
+      <summary>取得 <see cref="T:System.Collections.Specialized.StringDictionary" /> 中的索引鍵/值組配對的數目。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> 中的索引鍵/值組配對的數目。擷取這個屬性的值是一種 O(1) 運算。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.GetEnumerator">
+      <summary>傳回可對字串字典內容逐一查看的列舉程式。</summary>
+      <returns>可逐一查看字串字典內容的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.IsSynchronized">
+      <summary>取得值，這個值表示對 <see cref="T:System.Collections.Specialized.StringDictionary" /> 的存取是否同步 (安全執行緒)。</summary>
+      <returns>如果對 <see cref="T:System.Collections.Specialized.StringDictionary" /> 的存取已進行同步化 (安全執行緒)，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Item(System.String)">
+      <summary>取得或設定與指定之索引鍵相關聯的值。</summary>
+      <returns>與指定之索引鍵關聯的值。如果找不到指定的索引鍵，則 Get 會傳回 null，而 Set 會使用指定的索引鍵建立新的項目。</returns>
+      <param name="key">索引鍵，要讀取或設定其值。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Keys">
+      <summary>取得 <see cref="T:System.Collections.Specialized.StringDictionary" /> 中的索引鍵集合。</summary>
+      <returns>在 <see cref="T:System.Collections.Specialized.StringDictionary" /> 中提供索引鍵的 <see cref="T:System.Collections.ICollection" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Remove(System.String)">
+      <summary>將具有指定索引鍵的項目從字串字典移除。</summary>
+      <param name="key">要移除的項目的索引鍵。</param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.SyncRoot">
+      <summary>取得可用以同步存取 <see cref="T:System.Collections.Specialized.StringDictionary" /> 的物件。</summary>
+      <returns>
+        <see cref="T:System.Object" />，可用來對 <see cref="T:System.Collections.Specialized.StringDictionary" /> 進行同步存取。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Values">
+      <summary>取得 <see cref="T:System.Collections.Specialized.StringDictionary" /> 中的值集合。</summary>
+      <returns>在 <see cref="T:System.Collections.Specialized.StringDictionary" /> 中提供值的 <see cref="T:System.Collections.ICollection" />。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringEnumerator">
+      <summary>支援在 <see cref="T:System.Collections.Specialized.StringCollection" /> 上的簡易反覆運算。</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.StringEnumerator.Current">
+      <summary>取得集合中目前的項目。</summary>
+      <returns>集合中目前的項目。</returns>
+      <exception cref="T:System.InvalidOperationException">列舉值位於集合的第一個項目之前，或最後一個項目之後。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.MoveNext">
+      <summary>將列舉值往前推至下集合中的下一個項目。</summary>
+      <returns>如果列舉值成功地前移至下一個項目，則為 true，如果列舉值已超過集合的結尾，則為 false。</returns>
+      <exception cref="T:System.InvalidOperationException">在建立列舉值之後，會修改集合。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.Reset">
+      <summary>設定列舉值至它的初始位置，這是在集合中第一個元素之前。</summary>
+      <exception cref="T:System.InvalidOperationException">在建立列舉值之後，會修改集合。</exception>
+    </member>
+  </members>
+</doc>

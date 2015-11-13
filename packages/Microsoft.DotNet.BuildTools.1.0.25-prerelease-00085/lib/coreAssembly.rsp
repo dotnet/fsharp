@@ -1,0 +1,2 @@
+﻿# CSC requires the runtimemetadataversion flag when building a core assembly (containing System.Object)
+/runtimemetadataversion:v4.0.30319

@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.Lightweight</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.DynamicMethod">
+      <summary>Definiert und stellt eine dynamische Methode dar, die kompiliert ausgeführt und verworfen werden kann.Verworfene Methoden sind für die Garbage Collection verfügbar.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>Erstellt eine dynamische Methode, die in einem Modul global ist, unter Angabe von Methodenname, Attributen, Aufrufkonvention, Rückgabetyp, Parametertypen und Modul sowie, ob Just-In-Time (JIT)-Sichtbarkeitsprüfungen für Typen und Member übersprungen werden sollen, auf die von der Microsoft intermediate language (MSIL) der dynamischen Methode zugegriffen wird.</summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="attributes">Eine bitweise Kombination von <see cref="T:System.Reflection.MethodAttributes" />-Werten, die die Attribute der dynamischen Methode angibt.Die einzige zulässige Kombination ist <see cref="F:System.Reflection.MethodAttributes.Public" /> und <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="callingConvention">Die Aufrufkonvention für die dynamische Methode.Dieser Wert muss <see cref="F:System.Reflection.CallingConventions.Standard" /> sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <param name="m">Ein <see cref="T:System.Reflection.Module" />, das das Modul darstellt, dem die dynamische Methode logisch zugeordnet ist. </param>
+      <param name="skipVisibility">true, wenn bei Zugriffen durch die MSIL der dynamischen Methode JIT-Sichtbarkeitsprüfungen für Typen und Member übersprungen werden, andernfalls false. </param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />.- oder -<paramref name="m" /> ist ein Modul, das anonymes Hosting für dynamische Methoden bereitstellt.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. - oder -<paramref name="m" /> ist null.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" /> ist eine Kombination aus anderen Flags als <see cref="F:System.Reflection.MethodAttributes.Public" /> und <see cref="F:System.Reflection.MethodAttributes.Static" />.- oder -<paramref name="callingConvention" /> ist nicht <see cref="F:System.Reflection.CallingConventions.Standard" />.- oder -<paramref name="returnType" /> ist ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>Erstellt eine dynamische Methode unter Angabe von Methodenname, Attributen, Aufrufkonvention, Rückgabetyp, Parametertypen, dem Typ, dem die dynamische Methode logisch zugeordnet ist, sowie, ob Just-In-Time (JIT)-Sichtbarkeitsprüfungen für Typen und Member bei Zugriffen durch die Microsoft Intermediate Language (MSIL) der dynamischen Methode übersprungen werden.</summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="attributes">Eine bitweise Kombination von <see cref="T:System.Reflection.MethodAttributes" />-Werten, die die Attribute der dynamischen Methode angibt.Die einzige zulässige Kombination ist <see cref="F:System.Reflection.MethodAttributes.Public" /> und <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="callingConvention">Die Aufrufkonvention für die dynamische Methode.Dieser Wert muss <see cref="F:System.Reflection.CallingConventions.Standard" /> sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <param name="owner">Ein <see cref="T:System.Type" />, dem die dynamische Methode logisch zugeordnet ist.Die dynamische Methode hat Zugriff auf alle Member des Typs.</param>
+      <param name="skipVisibility">true, wenn bei Zugriffen durch die MSIL der dynamischen Methode JIT-Sichtbarkeitsprüfungen für Typen und Member übersprungen werden, andernfalls false.</param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />. - oder -<paramref name="owner" /> ist eine Schnittstelle, ein Array, ein offener generischer Typ oder ein Typparameter eines generischen Typs oder einer generischen Methode.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. - oder -<paramref name="owner" /> ist null.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" /> ist eine Kombination aus anderen Flags als <see cref="F:System.Reflection.MethodAttributes.Public" /> und <see cref="F:System.Reflection.MethodAttributes.Static" />.- oder -<paramref name="callingConvention" /> ist nicht <see cref="F:System.Reflection.CallingConventions.Standard" />.- oder -<paramref name="returnType" /> ist ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[])">
+      <summary>Initialisiert eine anonym gehostete dynamische Methode und gibt den Methodennamen, Rückgabetyp und Parametertypen an. </summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> ist ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Boolean)">
+      <summary>Initialisiert eine anonym gehostete dynamische Methode unter Angabe von Methodenname, Rückgabetyp und Parametertypen sowie, ob Just-In-Time (JIT)-Sichtbarkeitsprüfungen für Typen und Member übersprungen werden sollen, auf die von der Microsoft intermediate language (MSIL) der dynamischen Methode zugegriffen wird. </summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <param name="restrictedSkipVisibility">true, wenn JIT-Sichtbarkeitsprüfungen für Typen und Member bei Zugriffen durch die MSIL der dynamischen Methode übersprungen werden sollen, mit folgender Einschränkung: die Vertrauensebene der Assemblys, die diese Typen und Member enthalten, muss identisch sein mit oder kleiner sein als die Vertrauensebene der Aufrufliste, die die dynamische Methode ausgibt, andernfalls false. </param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> ist ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module)">
+      <summary>Erstellt eine dynamische Methode, die zu einem Modul global ist, unter Angabe von Methodenname, Rückgabetyp, Parametertypen und Modul.</summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <param name="m">Ein <see cref="T:System.Reflection.Module" />, das das Modul darstellt, dem die dynamische Methode logisch zugeordnet ist. </param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />. - oder -<paramref name="m" /> ist ein Modul, das anonymes Hosting für dynamische Methoden bereitstellt.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. - oder -<paramref name="m" /> ist null.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> ist ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>Erstellt eine dynamische Methode, die in einem Modul global ist, unter Angabe von Methodenname, Rückgabetyp, Parametertypen und Modul sowie, ob Just-In-Time (JIT)-Sichtbarkeitsprüfungen für Typen und Member übersprungen werden sollen, auf die von der Microsoft intermediate language (MSIL) der dynamischen Methode zugegriffen wird.</summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <param name="m">Ein <see cref="T:System.Reflection.Module" />, das das Modul darstellt, dem die dynamische Methode logisch zugeordnet ist. </param>
+      <param name="skipVisibility">true, wenn bei Zugriffen durch die MSIL der dynamischen Methode JIT-Sichtbarkeitsprüfungen für Typen und Member übersprungen werden </param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />. - oder -<paramref name="m" /> ist ein Modul, das anonymes Hosting für dynamische Methoden bereitstellt.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. - oder -<paramref name="m" /> ist null.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> ist ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type)">
+      <summary>Erstellt eine dynamische Methode unter Angabe von Methodenname, Rückgabetyp, Parametertypen und dem Typ, dem die dynamische Methode logisch zugeordnet ist.</summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <param name="owner">Ein <see cref="T:System.Type" />, dem die dynamische Methode logisch zugeordnet ist.Die dynamische Methode hat Zugriff auf alle Member des Typs.</param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />.- oder - <paramref name="owner" /> ist eine Schnittstelle, ein Array, ein offener generischer Typ oder ein Typparameter eines generischen Typs oder einer generischen Methode. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. - oder -<paramref name="owner" /> ist null.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> ist null oder ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>Erstellt eine dynamische Methode unter Angabe von Methodenname, Rückgabetyp, Parametertypen, dem Typ, dem die dynamische Methode logisch zugeordnet ist, sowie, ob Just-In-Time (JIT)-Sichtbarkeitsprüfungen für Typen und Member bei Zugriffen durch die Microsoft Intermediate Language (MSIL) der dynamischen Methode übersprungen werden.</summary>
+      <param name="name">Der Name der dynamischen Methode.Die Zeichenfolge kann die Länge 0 (null) haben, darf aber nicht null sein.</param>
+      <param name="returnType">Ein <see cref="T:System.Type" />-Objekt, das den Rückgabetyp der dynamischen Methode angibt, oder null, wenn die Methode über keinen Rückgabetyp verfügt. </param>
+      <param name="parameterTypes">Ein Array von <see cref="T:System.Type" />-Objekten, die die Parametertypen der dynamischen Methode angeben, oder null, wenn die Methode über keine Parameter verfügt. </param>
+      <param name="owner">Ein <see cref="T:System.Type" />, dem die dynamische Methode logisch zugeordnet ist.Die dynamische Methode hat Zugriff auf alle Member des Typs.</param>
+      <param name="skipVisibility">true, wenn bei Zugriffen durch die MSIL der dynamischen Methode JIT-Sichtbarkeitsprüfungen für Typen und Member übersprungen werden, andernfalls false. </param>
+      <exception cref="T:System.ArgumentException">Ein Element von <paramref name="parameterTypes" /> ist null oder <see cref="T:System.Void" />.- oder - <paramref name="owner" /> ist eine Schnittstelle, ein Array, ein offener generischer Typ oder ein Typparameter eines generischen Typs oder einer generischen Methode.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> ist null. - oder -<paramref name="owner" /> ist null.</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> ist null oder ein Typ, für den <see cref="P:System.Type.IsByRef" />true zurückgibt. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Attributes">
+      <summary>Ruft die beim Erstellen der dynamischen Methode angegebenen Attribute ab.</summary>
+      <returns>Eine bitweise Kombination der <see cref="T:System.Reflection.MethodAttributes" />-Werte, die die Attribute für die Methode darstellen.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.CallingConvention">
+      <summary>Ruft die beim Erstellen der dynamischen Methode angegebene Aufrufkonvention ab.</summary>
+      <returns>Einer der <see cref="T:System.Reflection.CallingConventions" />-Werte, der die Aufrufkonvention der Methode angibt.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type)">
+      <summary>Vervollständigt die dynamische Methode und erstellt einen Delegaten, mit der sie ausgeführt werden kann.</summary>
+      <returns>Ein Delegat des angegebenen Typs, mit dem die dynamische Methode ausgeführt werden kann.</returns>
+      <param name="delegateType">Ein Delegattyp, dessen Signatur der der dynamischen Methode entspricht. </param>
+      <exception cref="T:System.InvalidOperationException">Die dynamische Methode verfügt über keinen Methodentext.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="delegateType" /> hat die falsche Anzahl von Parametern oder die falschen Parametertypen.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type,System.Object)">
+      <summary>Vervollständigt die dynamische Methode und erstellt einen Delegaten, mit dem diese ausgeführt werden kann, unter Angabe des Delegattyps und eines Objekts, an das der Delegat gebunden ist.</summary>
+      <returns>Ein Delegat des angegebenen Typs, mit dem die dynamische Methode für das angegebene Zielobjekt ausgeführt werden kann.</returns>
+      <param name="delegateType">Ein Delegattyp, dessen Signatur der der dynamischen Methode ohne den ersten Parameter entspricht.</param>
+      <param name="target">Ein Objekt, an das der Delegat gebunden ist.Dieses muss von demselben Typ wie der erste Parameter der dynamischen Methode sein.</param>
+      <exception cref="T:System.InvalidOperationException">Die dynamische Methode verfügt über keinen Methodentext.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="target" /> ist nicht von demselben Typ wie der erste Parameter der dynamischen Methode und kann diesem Typ nicht zugeordnet werden.- oder -<paramref name="delegateType" /> hat die falsche Anzahl von Parametern oder die falschen Parametertypen.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.DeclaringType">
+      <summary>Ruft den Typ ab, der die Methode deklariert, die für dynamische Methoden immer null ist.</summary>
+      <returns>Immer null.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator">
+      <summary>Gibt einen MSIL-Generator (Microsoft Intermediate Language) für die Methode mit einer MSIL-Standardstreamgröße von 64 Bytes zurück.</summary>
+      <returns>Ein <see cref="T:System.Reflection.Emit.ILGenerator" />-Objekt für die Methode.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator(System.Int32)">
+      <summary>Gibt einen MSIL-Generator (Microsoft Intermediate Language) für die Methode mit der angegebenen MSIL-Streamgröße zurück.</summary>
+      <returns>Ein <see cref="T:System.Reflection.Emit.ILGenerator" />-Objekt für die Methode mit der angegebenen MSIL-Streamgröße.</returns>
+      <param name="streamSize">Die Größe des MSIL-Streams in Bytes. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetParameters">
+      <summary>Gibt die Parameter der dynamischen Methode zurück.</summary>
+      <returns>Ein Array von <see cref="T:System.Reflection.ParameterInfo" />-Objekten, die die Parameter der dynamischen Methode darstellen.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.InitLocals">
+      <summary>Ruft einen Wert ab, der angibt, ob die lokalen Variablen in der Methode mit 0 (null) initialisiert werden, oder legt diesen fest. </summary>
+      <returns>true, wenn die lokalen Variablen in der Methode mit 0 (null) initialisiert werden, andernfalls false.Die Standardeinstellung ist true.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Name">
+      <summary>Ruft den Namen der dynamischen Methode ab.</summary>
+      <returns>Der einfache Name der Methode.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnParameter">
+      <summary>Ruft den Rückgabeparameter der dynamischen Methode ab.</summary>
+      <returns>Immer null. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnType">
+      <summary>Ruft den Typ des Rückgabewerts für die dynamische Methode ab.</summary>
+      <returns>Ein <see cref="T:System.Type" />, der den Typ des Rückgabewerts der aktuellen Methode darstellt, <see cref="T:System.Void" />, wenn die Methode über keinen Rückgabetyp verfügt.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.ToString">
+      <summary>Gibt die Signatur der Methode als Zeichenfolge zurück.</summary>
+      <returns>Eine Zeichenfolge, die die Methodensignatur darstellt.</returns>
+    </member>
+  </members>
+</doc>

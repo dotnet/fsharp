@@ -1,0 +1,192 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.Lightweight</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.DynamicMethod">
+      <summary>定義及表示可以編譯、執行和捨棄的動態方法。捨棄的方法可被記憶體回收。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>為模組建立全域的動態方法，指定方法名稱、屬性、呼叫慣例、傳回型別、參數型別、模組，以及是否應當略過動態方法的 Microsoft intermediate language (MSIL) 所存取型別與成員的 Just-In-Time (JIT) 可視性檢查。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="attributes">
+        <see cref="T:System.Reflection.MethodAttributes" /> 值的位元組合，指定動態方法的屬性。允許的唯一組合是 <see cref="F:System.Reflection.MethodAttributes.Public" /> 和 <see cref="F:System.Reflection.MethodAttributes.Static" />。</param>
+      <param name="callingConvention">動態方法的呼叫慣例。必須是 <see cref="F:System.Reflection.CallingConventions.Standard" />。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <param name="m">
+        <see cref="T:System.Reflection.Module" />，表示動態方法在邏輯上與其相關聯的模組。</param>
+      <param name="skipVisibility">若為 true，則略過動態方法的 MSIL 所存取型別和成員的 JIT 可視性檢查，否則為 false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。-或-<paramref name="m" /> 為模組，會提供動態方法的匿名裝載。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="m" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" /> 為 <see cref="F:System.Reflection.MethodAttributes.Public" /> 和 <see cref="F:System.Reflection.MethodAttributes.Static" /> 之外的旗標組合。-或-<paramref name="callingConvention" /> 不是 <see cref="F:System.Reflection.CallingConventions.Standard" />。-或-<paramref name="returnType" /> 是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>建立動態方法，指定方法名稱、屬性、呼叫慣例、傳回型別、參數型別、與動態方法在邏輯上相關聯的型別，以及是否應略過動態方法的 Microsoft intermediate language (MSIL) 所存取型別和成員的 Just-In-Time (JIT) 可視性檢查。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="attributes">
+        <see cref="T:System.Reflection.MethodAttributes" /> 值的位元組合，指定動態方法的屬性。允許的唯一組合是 <see cref="F:System.Reflection.MethodAttributes.Public" /> 和 <see cref="F:System.Reflection.MethodAttributes.Static" />。</param>
+      <param name="callingConvention">動態方法的呼叫慣例。必須是 <see cref="F:System.Reflection.CallingConventions.Standard" />。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <param name="owner">動態方法在邏輯上與其相關聯的 <see cref="T:System.Type" />。動態方法可以存取型別的所有成員。</param>
+      <param name="skipVisibility">若為 true，則略過動態方法的 MSIL 所存取型別和成員的 JIT 可視性檢查，否則為 false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。-或-<paramref name="owner" /> 為介面、陣列、開放泛型型別，或泛型型別或方法的型別參數。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="owner" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" /> 為 <see cref="F:System.Reflection.MethodAttributes.Public" /> 和 <see cref="F:System.Reflection.MethodAttributes.Static" /> 之外的旗標組合。-或-<paramref name="callingConvention" /> 不是 <see cref="F:System.Reflection.CallingConventions.Standard" />。-或-<paramref name="returnType" /> 是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[])">
+      <summary>初始化匿名裝載動態方法，指定方法名稱、傳回型別及參數型別。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> 是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Boolean)">
+      <summary>初始化匿名裝載動態方法，指定方法名稱、傳回型別、參數型別，以及是否應當略過動態方法的 Microsoft intermediate language (MSIL) 所存取型別與成員的 Just-In-Time (JIT) 可視性檢查。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <param name="restrictedSkipVisibility">若為 true，則略過動態方法的 MSIL 所存取型別和成員的 JIT 可視性檢查，但有這項限制：包含這些型別和成員的組件信任層級，必須等於或低於發出動態方法之呼叫堆疊的信任層級，否則為 false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> 是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module)">
+      <summary>為模組建立全域的動態方法，指定方法名稱、傳回型別、參數型別和模組。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <param name="m">
+        <see cref="T:System.Reflection.Module" />，表示動態方法在邏輯上與其相關聯的模組。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。-或-<paramref name="m" /> 為模組，會提供動態方法的匿名裝載。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="m" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> 是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>為模組建立全域的動態方法，指定方法名稱、傳回型別、參數型別、模組，以及是否應當略過動態方法的 Microsoft intermediate language (MSIL) 所存取型別與成員的 Just-In-Time (JIT) 可視性檢查。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <param name="m">
+        <see cref="T:System.Reflection.Module" />，表示動態方法在邏輯上與其相關聯的模組。</param>
+      <param name="skipVisibility">若為 true，則略過動態方法的 MSIL 所存取型別和成員的 JIT 可視性檢查。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。-或-<paramref name="m" /> 為模組，會提供動態方法的匿名裝載。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="m" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> 是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type)">
+      <summary>建立動態方法，指定方法名稱、傳回型別、參數型別和動態方法在邏輯上與其相關聯的型別。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <param name="owner">動態方法在邏輯上與其相關聯的 <see cref="T:System.Type" />。動態方法可以存取型別的所有成員。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。-或-<paramref name="owner" /> 為介面、陣列、開放泛型型別，或泛型型別或方法的型別參數。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="owner" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> 是 null，或是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>建立動態方法，指定方法名稱、傳回型別、參數型別、與動態方法以邏輯方式相關聯的型別，以及是否應略過動態方法的 Microsoft intermediate language (MSIL) 所存取型別和成員的 Just-In-Time (JIT) 可視性檢查。</summary>
+      <param name="name">動態方法的名稱。這個名稱可以是零長度的字串，但不能是 null。</param>
+      <param name="returnType">指定動態方法之傳回型別的 <see cref="T:System.Type" /> 物件，如果方法沒有任何傳回型別則為 null。</param>
+      <param name="parameterTypes">指定動態方法之參數型別的 <see cref="T:System.Type" /> 物件陣列，如果方法沒有任何參數則為 null。</param>
+      <param name="owner">動態方法在邏輯上與其相關聯的 <see cref="T:System.Type" />。動態方法可以存取型別的所有成員。</param>
+      <param name="skipVisibility">若為 true，則略過動態方法的 MSIL 所存取型別和成員的 JIT 可視性檢查，否則為 false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> 的一個項目是 null 或 <see cref="T:System.Void" />。-或-<paramref name="owner" /> 為介面、陣列、開放泛型型別，或泛型型別或方法的型別參數。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="owner" /> 為 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> 是 null，或是 <see cref="P:System.Type.IsByRef" /> 傳回 true 的型別。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Attributes">
+      <summary>取得建立動態方法時指定的屬性。</summary>
+      <returns>
+        <see cref="T:System.Reflection.MethodAttributes" /> 值的位元組合，表示方法的屬性。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.CallingConvention">
+      <summary>取得建立動態方法時指定的呼叫慣例。</summary>
+      <returns>其中一個 <see cref="T:System.Reflection.CallingConventions" /> 值，表示方法的呼叫慣例。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type)">
+      <summary>完成動態方法，並建立可用於執行該動態方法的委派。</summary>
+      <returns>指定型別的委派，可用於執行動態方法。</returns>
+      <param name="delegateType">簽章與動態方法相符的委派型別。</param>
+      <exception cref="T:System.InvalidOperationException">動態方法沒有方法主體。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="delegateType" /> 的參數數目錯誤或參數型別錯誤。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type,System.Object)">
+      <summary>完成動態方法，並建立可用於執行該動態方法的委派，同時指定委派型別和委派繫結至的物件。</summary>
+      <returns>指定型別的委派，可用於執行具有指定目標物件的動態方法。</returns>
+      <param name="delegateType">簽章與動態方法相符的委派型別，不包含第一個參數。</param>
+      <param name="target">委派繫結至的物件。必須與動態方法的第一個參數型別相同。</param>
+      <exception cref="T:System.InvalidOperationException">動態方法沒有方法主體。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="target" /> 與動態方法的第一個參數型別不同，無法指派給該型別。-或-<paramref name="delegateType" /> 的參數數目錯誤或參數型別錯誤。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.DeclaringType">
+      <summary>取得宣告方法的型別，對於動態方法而言一定是 null。</summary>
+      <returns>一定是 null。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator">
+      <summary>傳回這個方法的 Microsoft intermediate language (MSIL) 產生器，且預設 MSIL 資料流大小為 64 個位元組。</summary>
+      <returns>方法的 <see cref="T:System.Reflection.Emit.ILGenerator" /> 物件。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator(System.Int32)">
+      <summary>傳回這個方法的 Microsoft intermediate language (MSIL) 產生器，且使用指定的 MSIL 資料流大小。</summary>
+      <returns>方法的 <see cref="T:System.Reflection.Emit.ILGenerator" /> 物件，具有指定的 MSIL 資料流大小。</returns>
+      <param name="streamSize">MSIL 緩衝區的大小，以位元組為單位。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetParameters">
+      <summary>傳回動態方法的參數。</summary>
+      <returns>
+        <see cref="T:System.Reflection.ParameterInfo" /> 物件的陣列，表示動態方法的參數。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.InitLocals">
+      <summary>取得或設定值，指出方法中的區域變數是否以零起始。</summary>
+      <returns>如果方法中的區域變數以零起始則為 true，否則為 false。預設為 true。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Name">
+      <summary>取得動態方法的名稱。</summary>
+      <returns>方法的簡單名稱。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnParameter">
+      <summary>取得動態方法的傳回參數。</summary>
+      <returns>一定是 null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnType">
+      <summary>取得動態方法之傳回值的型別。</summary>
+      <returns>表示目前方法之傳回值型別的 <see cref="T:System.Type" />，如果方法沒有任何傳回型別則為 <see cref="T:System.Void" />。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.ToString">
+      <summary>傳回方法的簽章，以字串表示。</summary>
+      <returns>表示方法簽章的字串。</returns>
+    </member>
+  </members>
+</doc>

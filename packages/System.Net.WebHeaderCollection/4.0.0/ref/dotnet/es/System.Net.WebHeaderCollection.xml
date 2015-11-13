@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>Los encabezados HTTP que se pueden especificar en una solicitud de cliente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>El encabezado Accept, que especifica los tipos MIME que son aceptables para la respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>El encabezado Accept-Charset, que especifica los juegos de caracteres que son aceptables para la respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>El encabezado Accept-Encoding, que especifica las codificaciones de contenido que son aceptables para la respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>El encabezado Accept-Language, que especifica los idiomas naturales preferidos para la respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>El encabezado Allow, que especifica el conjunto de métodos HTTP admitido.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>El encabezado Authorization, que especifica las credenciales que presenta el cliente para autenticarse en el servidor.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>El encabezado Cache-Control, que especifica las directivas que deben obedecer todos los mecanismos de control de caché de la cadena de solicitud/respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>El encabezado Connection, que especifica las opciones deseadas para una conexión determinada.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>El encabezado Content-Encoding, que especifica las codificaciones aplicadas a los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>El encabezado Content-Language, que especifica el idioma o idiomas naturales de los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>El encabezado Content-Length, que especifica la longitud, en bytes, de los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>El encabezado Content-Location, que especifica un identificador URI del que puede obtenerse el cuerpo adjunto.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>El encabezado Content-MD5, que especifica la síntesis MD5 de los datos de cuerpo adjuntos con el propósito de proporcionar una comprobación de integridad de mensaje de un extremo a otro.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>El encabezado Content-Range, que especifica en qué parte del cuerpo completo deben aplicarse los datos de cuerpo parciales adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>El encabezado Content-Type, que especifica el tipo MIME de los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>El encabezado Cookie, que especifica los datos de cookies presentados al servidor.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>El encabezado Date, que especifica la fecha y hora en que se originó la solicitud.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>El encabezado Expect, que especifica comportamientos de servidor determinados que requiere el cliente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>El encabezado Expires, que especifica la fecha y hora después de las que los datos de cuerpo adjuntos deben considerarse obsoletos.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>El encabezado From, que especifica una dirección de correo electrónico de Internet para el usuario humano que controla al agente del usuario que realiza la solicitud.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>El encabezado Host, que especifica el nombre de host y número de puerto del recurso que se solicita.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>El encabezado If-Match, que especifica que sólo se debe realizar la operación solicitada si la copia almacenada en caché del cliente del recurso indicado es actual.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>El encabezado If-Modified-Since, que especifica que sólo se debe realizar la operación solicitada si el recurso solicitado ha sido modificado después de la fecha y hora indicadas.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>El encabezado If-None-Match, que especifica que sólo se debe realizar la operación solicitada si ninguna de las copias almacenadas en caché del cliente de los recursos indicados es actual.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>El encabezado If-Range, que especifica que sólo debe enviarse el intervalo especificado del recurso solicitado, si la copia almacenada en memoria caché del cliente es actual.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>El encabezado If-Unmodified-Since, que especifica que sólo se debe realizar la operación solicitada si el recurso solicitado no ha sido modificado después de la fecha y hora indicadas.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>El encabezado Keep-Alive, que especifica un parámetro utilizado para mantener una conexión persistente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>El encabezado Last-Modified, que especifica la fecha y hora en que los datos de cuerpo adjuntos fueron modificados por última vez.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>El encabezado Max-Forwards, que especifica un entero que indica el número restante de veces que se puede reenviar esta solicitud.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>El encabezado Pragma, que especifica directivas específicas de la implementación que podrían aplicarse a cualquier agente de la cadena de solicitud/respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>El encabezado Proxy-Authorization, que especifica las credenciales que presenta el cliente para autenticarse en un servidor proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>El encabezado Range, que especifica el o los sub-intervalos de la respuesta que el cliente solicita que se devuelvan en lugar de la respuesta completa.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>El encabezado Referer, que especifica el identificador URI del recurso del que se obtuvo el identificador URI de la solicitud.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>El encabezado TE, que especifica las codificaciones de transferencia que son aceptables para la respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>El encabezado Trailer, que especifica los campos de encabezado presentes en el finalizador de un mensaje codificado con codificación de transferencia por fragmentos.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>El encabezado Transfer-Encoding, que especifica qué tipo (en caso de que haya alguno) de transformación se aplicó al cuerpo del mensaje.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>El encabezado Translate, una extensión de Microsoft a la especificación HTTP utilizada junto con la funcionalidad WebDAV.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>El encabezado Upgrade, que especifica los protocolos de comunicaciones adicionales que admite el cliente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>El encabezado User-Agent, que especifica información sobre el agente del cliente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>El encabezado Via, que especifica los protocolos intermedios que deben utilizar los agentes de puerta de enlace y servidor proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>El encabezado Warning, que especifica información adicional sobre el estado o la transformación de un mensaje que podría no estar reflejada en el mensaje.</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>Los encabezados HTTP que se pueden especificar en una respuesta del servidor.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>El encabezado Accept-Ranges, que especifica el intervalo aceptado por el servidor.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>El encabezado Age, que especifica el tiempo, en segundos, transcurrido desde que el servidor de origen generó la respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>El encabezado Allow, que especifica el conjunto de métodos HTTP admitidos.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>El encabezado Cache-Control, que especifica las directivas de memoria caché que deben obedecer todos los mecanismos de control de caché de la cadena de solicitud/respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>El encabezado Connection, que especifica las opciones deseadas para una conexión determinada.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>El encabezado Content-Encoding, que especifica las codificaciones aplicadas a los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>El encabezado Content-Language, que especifica el idioma o idiomas naturales de los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>El encabezado Content-Length, que especifica la longitud, en bytes, de los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>El encabezado Content-Location, que especifica un identificador URI del que puede obtenerse el cuerpo adjunto.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>El encabezado Content-MD5, que especifica la síntesis MD5 de los datos de cuerpo adjuntos con el propósito de proporcionar una comprobación de integridad de mensaje de un extremo a otro.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>El encabezado Range, que especifica el o los sub-intervalos de la respuesta que el cliente solicita que se devuelvan en lugar de la respuesta completa.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>El encabezado Content-Type, que especifica el tipo MIME de los datos de cuerpo adjuntos.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>El encabezado Date, que especifica la fecha y hora en que se originó la respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>Encabezado Etag, que especifica el valor actual de la variante solicitada. </summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>El encabezado Expires, que especifica la fecha y hora después de las que los datos de cuerpo adjuntos deben considerarse obsoletos.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>El encabezado Keep-Alive, que especifica un parámetro utilizado para mantener una conexión persistente.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>El encabezado Last-Modified, que especifica la fecha y hora en que los datos de cuerpo adjuntos fueron modificados por última vez.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>El encabezado Location, que especifica un identificador URI al que se redirige el cliente para obtener el recurso solicitado.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>El encabezado Pragma, que especifica directivas específicas de la implementación que podrían aplicarse a cualquier agente de la cadena de solicitud/respuesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>El encabezado Proxy-Authenticate, que especifica que el cliente se debe autenticar en un servidor proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>El encabezado Retry-After, que especifica un tiempo (en segundos) o una fecha y hora después de las que el cliente puede reintentar su solicitud.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>El encabezado Server, que especifica información sobre el agente del servidor de origen.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>El encabezado Set-Cookie, que especifica los datos de cookies presentados al cliente.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>El encabezado Trailer, que especifica que los campos de encabezado indicados están presentes en el finalizador de un mensaje codificado con codificación de transferencia por fragmentos.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>El encabezado Transfer-Encoding, que especifica qué tipo (en caso de que haya alguno) de transformación se aplicó al cuerpo del mensaje.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>El encabezado Upgrade, que especifica los protocolos de comunicaciones adicionales que admite el cliente.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>El encabezado Vary, que especifica los encabezados de la solicitud utilizada para determinar si una respuesta almacenada en memoria caché es nueva.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>El encabezado Via, que especifica los protocolos intermedios que deben utilizar los agentes de puerta de enlace y servidor proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>El encabezado Warning, que especifica información adicional sobre el estado o la transformación de un mensaje que podría no estar reflejada en el mensaje.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>El encabezado WWW-Authenticate, que especifica que el cliente se debe autenticar en el servidor.</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>Contiene los encabezados de protocolo asociados a una solicitud o respuesta.</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>Obtiene todos los nombres de encabezado (claves) de la colección.</summary>
+      <returns>Matriz de tipo <see cref="T:System.String" /> que contiene todos los nombres de encabezado de una solicitud web.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>Obtiene el número de encabezados de la colección.</summary>
+      <returns>
+        <see cref="T:System.Int32" /> que indica el número de encabezados en una solicitud.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>Obtiene o establece el encabezado de solicitud especificado.</summary>
+      <returns>Instancia de <see cref="T:System.String" /> que contiene el valor de encabezado especificado.</returns>
+      <param name="header">Valor del encabezado de solicitud.</param>
+      <exception cref="T:System.InvalidOperationException">Esta instancia de <see cref="T:System.Net.WebHeaderCollection" /> no permite instancias de <see cref="T:System.Net.HttpRequestHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>Obtiene o establece el encabezado de respuesta especificado.</summary>
+      <returns>Instancia de <see cref="T:System.String" /> que contiene el encabezado especificado.</returns>
+      <param name="header">Valor del encabezado de respuesta.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">La longitud de <paramref name="value" /> es mayor que 65535. </exception>
+      <exception cref="T:System.InvalidOperationException">Esta instancia de <see cref="T:System.Net.WebHeaderCollection" /> no permite instancias de <see cref="T:System.Net.HttpResponseHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>Obtiene o establece el encabezado de respuesta especificado.</summary>
+      <returns>Encabezado de respuesta especificado.</returns>
+      <param name="name">Nombre del encabezado de la solicitud especificado.</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>Quita el encabezado especificado de la colección.</summary>
+      <param name="name">Nombre del encabezado que se quitará de la colección. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> es null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> es un encabezado restringido.o bien <paramref name="name" /> contiene caracteres no válidos. </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Devuelve un enumerador que puede iterar a través de la instancia de <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+      <returns>Devuelve <see cref="T:System.Collections.IEnumerator" />.Enumerador que puede iterar por la instancia de <see cref="T:System.Net.WebHeaderCollection" />.</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>Este método está obsoleto.</summary>
+      <returns>Representación <see cref="T:System.String" /> de la colección.</returns>
+    </member>
+  </members>
+</doc>

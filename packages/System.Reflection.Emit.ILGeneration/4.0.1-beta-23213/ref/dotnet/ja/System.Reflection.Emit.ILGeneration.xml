@@ -1,0 +1,528 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.ILGeneration</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.CustomAttributeBuilder">
+      <summary>カスタム属性の構築を支援します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[])">
+      <summary>カスタム属性のコンストラクター、およびそのコンストラクターの引数を指定して、CustomAttributeBuilder クラスのインスタンスを初期化します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="constructorArgs">カスタム属性のコンストラクターに渡す引数。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> が静的またはプライベートです。または指定された引数の数が、コンストラクターの呼び出し規約で必要とされる、コンストラクターのパラメーターの数と一致しません。または指定された引数の型が、コンストラクター内で宣言されたパラメーターの型と一致しません。または指定された引数が <see cref="T:System.String" /> または <see cref="T:System.Type" /> 以外の参照型です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="constructorArgs" /> が null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>カスタム属性のコンストラクター、そのコンストラクターの引数、および名前付きフィールドと値のペアのセットを指定して、CustomAttributeBuilder クラスのインスタンスを初期化します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="constructorArgs">カスタム属性のコンストラクターに渡す引数。</param>
+      <param name="namedFields">カスタム属性の名前付きフィールド。</param>
+      <param name="fieldValues">カスタム属性の名前付きフィールドの値。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedFields" /> 配列と <paramref name="fieldValues" /> 配列の長さが違います。または<paramref name="con" /> が静的またはプライベートです。または指定された引数の数が、コンストラクターの呼び出し規約で必要とされる、コンストラクターのパラメーターの数と一致しません。または指定された引数の型が、コンストラクター内で宣言されたパラメーターの型と一致しません。またはフィールド値の型が名前付きフィールドの型と一致しません。またはフィールドが、コンストラクターと同じクラスまたは基本クラスに属していません。または指定された引数または名前付きフィールドが <see cref="T:System.String" /> または <see cref="T:System.Type" /> 以外の参照型です。</exception>
+      <exception cref="T:System.ArgumentNullException">パラメーターの 1 つが null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[])">
+      <summary>カスタム属性のコンストラクター、そのコンストラクターの引数、および名前付きプロパティまたは値のペアのセットを指定して、CustomAttributeBuilder クラスのインスタンスを初期化します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="constructorArgs">カスタム属性のコンストラクターに渡す引数。</param>
+      <param name="namedProperties">カスタム属性の名前付きプロパティ。</param>
+      <param name="propertyValues">カスタム属性の名前付きプロパティの値。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedProperties" /> 配列と <paramref name="propertyValues" /> 配列の長さが違います。または<paramref name="con" /> が静的またはプライベートです。または指定された引数の数が、コンストラクターの呼び出し規約で必要とされる、コンストラクターのパラメーターの数と一致しません。または指定された引数の型が、コンストラクター内で宣言されたパラメーターの型と一致しません。またはプロパティ値の型が名前付きプロパティの型と一致しません。またはプロパティに設定側メソッドがありません。またはプロパティが、コンストラクターと同じクラスまたは基本クラスに属していません。または指定された引数または名前付きプロパティが <see cref="T:System.String" /> または <see cref="T:System.Type" /> 以外の参照型です。</exception>
+      <exception cref="T:System.ArgumentNullException">パラメーターの 1 つが null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>カスタム属性のコンストラクター、そのコンストラクターの引数、名前付きプロパティまたは値のペアのセット、および名前付きフィールドまたは値のペアのセットを指定して、CustomAttributeBuilder クラスのインスタンスを初期化します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="constructorArgs">カスタム属性のコンストラクターに渡す引数。</param>
+      <param name="namedProperties">カスタム属性の名前付きプロパティ。</param>
+      <param name="propertyValues">カスタム属性の名前付きプロパティの値。</param>
+      <param name="namedFields">カスタム属性の名前付きフィールド。</param>
+      <param name="fieldValues">カスタム属性の名前付きフィールドの値。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="namedProperties" /> 配列と <paramref name="propertyValues" /> 配列の長さが違います。または<paramref name="namedFields" /> 配列と <paramref name="fieldValues" /> 配列の長さが違います。または<paramref name="con" /> が静的またはプライベートです。または指定された引数の数が、コンストラクターの呼び出し規約で必要とされる、コンストラクターのパラメーターの数と一致しません。または指定された引数の型が、コンストラクター内で宣言されたパラメーターの型と一致しません。またはプロパティ値の型が名前付きプロパティの型と一致しません。またはフィールド値の型が対応するフィールド型の型と一致しません。またはプロパティに設定側メソッドがありません。またはプロパティまたはフィールドが、コンストラクターと同じクラスまたは基本クラスに属していません。または指定された引数、名前付きプロパティ、または名前付きフィールドが <see cref="T:System.String" /> または <see cref="T:System.Type" /> 以外の参照型です。</exception>
+      <exception cref="T:System.ArgumentNullException">パラメーターの 1 つが null です。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.ILGenerator">
+      <summary>MSIL (Microsoft Intermediate Language) 命令を生成します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginCatchBlock(System.Type)">
+      <summary>catch ブロックを開始します。</summary>
+      <param name="exceptionType">例外を表す <see cref="T:System.Type" /> オブジェクト。</param>
+      <exception cref="T:System.ArgumentException">catch ブロックが、フィルター処理された例外の内側にあります。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="exceptionType" /> が null で、この catch ブロックが出現するまで、finally ブロックを実行することを示す値を例外フィルター ブロックが返していません。</exception>
+      <exception cref="T:System.NotSupportedException">生成されている MSIL (Microsoft intermediate language) は、現在例外ブロックに含まれていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptFilterBlock">
+      <summary>フィルター処理された例外の例外ブロックを開始します。</summary>
+      <exception cref="T:System.NotSupportedException">生成されている MSIL (Microsoft intermediate language) は、現在例外ブロックに含まれていません。またはこの <see cref="T:System.Reflection.Emit.ILGenerator" /> は <see cref="T:System.Reflection.Emit.DynamicMethod" /> に属しています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptionBlock">
+      <summary>フィルター処理されない例外の例外ブロックを開始します。</summary>
+      <returns>ブロックの終了のラベル。finally ブロックを実行する正しい位置、または試行を終了する正しい位置です。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFaultBlock">
+      <summary>MSIL (Microsoft Intermediate Language) ストリームで例外フォールト ブロックを開始します。</summary>
+      <exception cref="T:System.NotSupportedException">生成されている MSIL (Microsoft Intermediate Language) は、現在例外ブロックに含まれていません。またはこの <see cref="T:System.Reflection.Emit.ILGenerator" /> は <see cref="T:System.Reflection.Emit.DynamicMethod" /> に属しています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFinallyBlock">
+      <summary>MSIL (Microsoft Intermediate Language) 命令ストリームで finally ブロックを開始します。</summary>
+      <exception cref="T:System.NotSupportedException">生成されている MSIL (Microsoft Intermediate Language) は、現在例外ブロックに含まれていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginScope">
+      <summary>構文のスコープを開始します。</summary>
+      <exception cref="T:System.NotSupportedException">この <see cref="T:System.Reflection.Emit.ILGenerator" /> は <see cref="T:System.Reflection.Emit.DynamicMethod" /> に属しています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type)">
+      <summary>指定した型のローカル変数を宣言します。</summary>
+      <returns>宣言されたローカル変数。</returns>
+      <param name="localType">ローカル変数の型を表す <see cref="T:System.Type" /> オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> メソッドで作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type,System.Boolean)">
+      <summary>指定した型のローカル変数を宣言し、オプションでその変数が参照するオブジェクトを固定します。</summary>
+      <returns>ローカル変数を表す <see cref="T:System.Reflection.Emit.LocalBuilder" /> オブジェクト。</returns>
+      <param name="localType">ローカル変数の型を表す <see cref="T:System.Type" /> オブジェクト。</param>
+      <param name="pinned">メモリ内でオブジェクトを固定する場合は true。それ以外の場合は false。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> メソッドで作成されています。または外側のメソッドのメソッド本体が <see cref="M:System.Reflection.Emit.MethodBuilder.CreateMethodBody(System.Byte[],System.Int32)" /> メソッドによって作成されています。</exception>
+      <exception cref="T:System.NotSupportedException">この <see cref="T:System.Reflection.Emit.ILGenerator" /> が関連付けられているメソッドが、<see cref="T:System.Reflection.Emit.MethodBuilder" /> で表されていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DefineLabel">
+      <summary>新しいラベルを宣言します。</summary>
+      <returns>分岐のトークンとして使用できる新しいラベルを返します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode)">
+      <summary>指定された命令を命令のストリームに書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL (Microsoft Intermediate Language) 命令。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Byte)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令と文字引数を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="arg">命令の直後にストリームに書き込む文字引数。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Double)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令と数値引数を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。OpCodes 列挙体で定義されます。</param>
+      <param name="arg">命令の直後のストリームに書き込まれる数値引数。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int16)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令と数値引数を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="arg">命令の直後にストリームに格納する Int 引数。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int32)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令と数値引数を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="arg">命令の直後のストリームに書き込まれる数値引数。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int64)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令と数値引数を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="arg">命令の直後のストリームに書き込まれる数値引数。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.ConstructorInfo)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定したコンストラクターの指定した命令とメタデータ トークンを書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="con">コンストラクターを表す ConstructorInfo。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、この例外は、.NET Framework 4 の新しい例外です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label)">
+      <summary>指定された命令を MSIL (Microsoft Intermediate Language) ストリームに書き込み、位置を確定した後でラベルを格納する領域を残します。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="label">この位置から分岐するラベル。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label[])">
+      <summary>指定された命令を MSIL (Microsoft Intermediate Language) ストリームに書き込み、位置を確定した後でラベルを格納する領域を残します。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="labels">この位置から分岐するラベル オブジェクトの配列。すべてのラベルが使用されます。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、この例外は、.NET Framework 4 の新しい例外です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.LocalBuilder)">
+      <summary>指定された命令を MSIL (Microsoft Intermediate Language) ストリームに書き込み、その後ろに指定されたローカル変数のインデックスを書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="local">ローカル変数。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="local" /> パラメーターの親メソッドが、この <see cref="T:System.Reflection.Emit.ILGenerator" /> に関連付けられたメソッドと一致しません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="local" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="opcode" /> は 1 バイトの命令で、<paramref name="local" /> は Byte.MaxValue を超えるインデックスのローカル変数を表します。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.SignatureHelper)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令とシグネチャ トークンを書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="signature">シグネチャ トークンを構築するヘルパー。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="signature" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.FieldInfo)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定したフィールドの指定した命令とメタデータ トークンを書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="field">フィールドを表す FieldInfo。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo)">
+      <summary>指定された命令を MSIL ストリームに書き込み、その後ろに指定されたメソッドのメタデータ トークンを書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="meth">メソッドを表す MethodInfo。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="meth" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="meth" /> は、<see cref="P:System.Reflection.MethodInfo.IsGenericMethodDefinition" /> プロパティが false のジェネリック メソッドです。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.SByte)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令と文字引数を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="arg">命令の直後にストリームに書き込む文字引数。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Single)">
+      <summary>命令の MSIL (Microsoft Intermediate Language) ストリームに、指定した命令と数値引数を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="arg">命令の直後にストリームに格納する Single 引数。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.String)">
+      <summary>指定された命令を MSIL ストリームに書き込み、その後ろに指定された文字列のメタデータ トークンを書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="str">生成する文字列。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Type)">
+      <summary>指定された命令を MSIL ストリームに書き込み、その後ろに指定された型のメタデータ トークンを書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。</param>
+      <param name="cls">Type</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="cls" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCall(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo,System.Type[])">
+      <summary>MSIL (Microsoft Intermediate Language) ストリームに call 命令または callvirt 命令を書き込んで、varargs メソッドを呼び出します。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。<see cref="F:System.Reflection.Emit.OpCodes.Call" />、<see cref="F:System.Reflection.Emit.OpCodes.Callvirt" />、または <see cref="F:System.Reflection.Emit.OpCodes.Newobj" /> にする必要があります。</param>
+      <param name="methodInfo">呼び出される varargs メソッド。</param>
+      <param name="optionalParameterTypes">メソッドが varargs メソッドの場合は、省略可能な引数の型。それ以外の場合は null。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="opcode" /> はメソッド呼び出しを指定していません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfo" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">メソッドの呼び出し規約が varargs ではなく、省略可能なパラメーター型が使用されています。この例外は、.NET Framework Version 1.0 および 1.1 の場合にスローされます。以降のバージョンでは、例外はスローされません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCalli(System.Reflection.Emit.OpCode,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[])">
+      <summary>間接的な呼び出しに対してマネージ呼び出し規約を指定して、MSIL (Microsoft Intermediate Language) ストリームに <see cref="F:System.Reflection.Emit.OpCodes.Calli" /> 命令を書き込みます。</summary>
+      <param name="opcode">ストリームに書き込む MSIL 命令。<see cref="F:System.Reflection.Emit.OpCodes.Calli" /> にする必要があります。</param>
+      <param name="callingConvention">使用するマネージ呼び出し規約。</param>
+      <param name="returnType">結果の <see cref="T:System.Type" />。</param>
+      <param name="parameterTypes">命令に必要な引数の型。</param>
+      <param name="optionalParameterTypes">varargs 呼び出しの省略可能な引数の型。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="optionalParameterTypes" /> が null でないにもかかわらず、<paramref name="callingConvention" /> に <see cref="F:System.Reflection.CallingConventions.VarArgs" /> フラグが含まれていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.Emit.LocalBuilder)">
+      <summary>指定したローカル変数を使用して <see cref="Overload:System.Console.WriteLine" /> を呼び出すために必要な MSIL を生成します。</summary>
+      <param name="localBuilder">値がコンソールに書き込まれるローカル変数。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="localBuilder" /> の型が、サポートされていない <see cref="T:System.Reflection.Emit.TypeBuilder" /> または <see cref="T:System.Reflection.Emit.EnumBuilder" /> です。または<paramref name="localBuilder" /> の型を受け取る <see cref="Overload:System.Console.WriteLine" /> のオーバーロードがありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localBuilder" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.FieldInfo)">
+      <summary>指定したフィールドを使用して <see cref="Overload:System.Console.WriteLine" /> を呼び出すために必要な MSIL を生成します。</summary>
+      <param name="fld">値がコンソールに書き込まれるフィールド。</param>
+      <exception cref="T:System.ArgumentException">指定されたフィールドの型を受け取る <see cref="Overload:System.Console.WriteLine" /> メソッドのオーバーロードがありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fld" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">フィールドの型が、サポートされていない <see cref="T:System.Reflection.Emit.TypeBuilder" /> または <see cref="T:System.Reflection.Emit.EnumBuilder" /> です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.String)">
+      <summary>文字列を使用して <see cref="Overload:System.Console.WriteLine" /> を呼び出す MSIL を生成します。</summary>
+      <param name="value">出力する文字列。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndExceptionBlock">
+      <summary>例外ブロックを終了します。</summary>
+      <exception cref="T:System.InvalidOperationException">コード ストリームの予測されない場所で例外ブロックの終了が発生しました。</exception>
+      <exception cref="T:System.NotSupportedException">生成されている MSIL (Microsoft intermediate language) は、現在例外ブロックに含まれていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndScope">
+      <summary>構文のスコープを終了します。</summary>
+      <exception cref="T:System.NotSupportedException">この <see cref="T:System.Reflection.Emit.ILGenerator" /> は <see cref="T:System.Reflection.Emit.DynamicMethod" /> に属しています。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ILGenerator.ILOffset">
+      <summary>
+        <see cref="T:System.Reflection.Emit.ILGenerator" /> によって出力されている MSIL (Microsoft Intermediate Language) ストリーム内の現在のオフセットをバイト単位で取得します。</summary>
+      <returns>次の命令が出力される MSIL ストリーム内のオフセット。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.MarkLabel(System.Reflection.Emit.Label)">
+      <summary>指定したラベルを使用して、MSIL (Microsoft Intermediate Language) ストリームの現在の位置をマークします。</summary>
+      <param name="loc">インデックスを設定するラベル。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="loc" /> がラベル配列の無効なインデックスを表しています。または<paramref name="loc" /> のインデックスが既に定義されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.ThrowException(System.Type)">
+      <summary>例外をスローする命令を作成します。</summary>
+      <param name="excType">スローする例外の型のクラス。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="excType" /> が <see cref="T:System.Exception" /> クラスまたは <see cref="T:System.Exception" /> の派生クラスではありません。またはこの型には既定のコンストラクターがありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="excType" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.UsingNamespace(System.String)">
+      <summary>現在のアクティブな構文のスコープに対するローカルとウォッチの評価に使用する名前空間を指定します。</summary>
+      <param name="usingNamespace">現在のアクティブな構文のスコープに対するローカルとウォッチの評価に使用する名前空間。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="usingNamespace" /> の長さが 0 です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="usingNamespace" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">この <see cref="T:System.Reflection.Emit.ILGenerator" /> は <see cref="T:System.Reflection.Emit.DynamicMethod" /> に属しています。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.Label">
+      <summary>命令ストリームのラベルを表します。Label インターフェイスは、<see cref="T:System.Reflection.Emit.ILGenerator" /> クラスと組み合わせて使用します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Object)">
+      <summary>指定されたオブジェクトが Label のインスタンスで、このインスタンスと等しいかどうかを確認します。</summary>
+      <returns>
+        <paramref name="obj" /> が Label のインスタンスで、このオブジェクトと等しい場合は true を返します。それ以外の場合は false を返します。</returns>
+      <param name="obj">この Label インスタンスと比較するオブジェクト。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Reflection.Emit.Label)">
+      <summary>現在のインスタンスが指定した <see cref="T:System.Reflection.Emit.Label" /> と等しいかどうかを示します。</summary>
+      <returns>
+        <paramref name="obj" /> の値が現在のインスタンスの値に等しい場合は true。それ以外の場合は false。</returns>
+      <param name="obj">現在のインスタンスと比較する <see cref="T:System.Reflection.Emit.Label" />。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.GetHashCode">
+      <summary>このインスタンスのハッシュ コードを生成します。</summary>
+      <returns>このインスタンスのハッシュ コードを返します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Equality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>2 つの <see cref="T:System.Reflection.Emit.Label" /> 構造体が等しいかどうかを示します。</summary>
+      <returns>
+        <paramref name="a" /> が <paramref name="b" /> に等しい場合は true。それ以外の場合は false。</returns>
+      <param name="a">
+        <paramref name="b" /> と比較する <see cref="T:System.Reflection.Emit.Label" />。</param>
+      <param name="b">
+        <paramref name="a" /> と比較する <see cref="T:System.Reflection.Emit.Label" />。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Inequality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>2 つの <see cref="T:System.Reflection.Emit.Label" /> 構造体が等しくないかどうかを示します。</summary>
+      <returns>
+        <paramref name="a" /> が <paramref name="b" /> と等しくない場合は true。それ以外の場合は false。</returns>
+      <param name="a">
+        <paramref name="b" /> と比較する <see cref="T:System.Reflection.Emit.Label" />。</param>
+      <param name="b">
+        <paramref name="a" /> と比較する <see cref="T:System.Reflection.Emit.Label" />。</param>
+    </member>
+    <member name="T:System.Reflection.Emit.LocalBuilder">
+      <summary>メソッドまたはコンストラクターのローカル変数を表します。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.IsPinned">
+      <summary>ローカル変数によって参照されるオブジェクトがメモリに固定されているかどうかを示す値を取得します。</summary>
+      <returns>ローカル変数によって参照されるオブジェクトがメモリに固定されている場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalIndex">
+      <summary>メソッド本体内のローカル変数の、0 から始まるインデックスを取得します。</summary>
+      <returns>メソッド本体内のローカル変数の宣言順序を表す整数値。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalType">
+      <summary>ローカル変数の型を取得します。</summary>
+      <returns>ローカル変数の <see cref="T:System.Type" />。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ParameterBuilder">
+      <summary>パラメーター情報の作成または関連付けを行います。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Attributes">
+      <summary>このパラメーターの属性を取得します。</summary>
+      <returns>読み取り専用。このパラメーターの属性を取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsIn">
+      <summary>入力パラメーターかどうかを取得します。</summary>
+      <returns>読み取り専用。入力パラメーターかどうかを取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOptional">
+      <summary>パラメーターが省略可能かどうかを取得します。</summary>
+      <returns>読み取り専用。パラメーターが省略可能かどうかを指定します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOut">
+      <summary>このパラメーターが出力パラメーターかどうかを取得します。</summary>
+      <returns>読み取り専用。このパラメーターが出力パラメーターかどうかを取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Name">
+      <summary>このパラメーターの名前を取得します。</summary>
+      <returns>読み取り専用。このパラメーターの名前を取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Position">
+      <summary>このパラメーターのシグネチャ位置を取得します。</summary>
+      <returns>読み取り専用。このパラメーターのシグネチャ位置を取得します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetConstant(System.Object)">
+      <summary>パラメーターの既定値を設定します。</summary>
+      <param name="defaultValue">このパラメーターの既定値。</param>
+      <exception cref="T:System.ArgumentException">パラメーターが、サポートされている型のいずれでもありません。または<paramref name="defaultValue" /> の型がパラメーターの型と一致しません。またはパラメーターが <see cref="T:System.Object" /> 型または他の参照型であり、<paramref name="defaultValue" /> が null ではなく、値を参照型に割り当てることができません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.SignatureHelper">
+      <summary>シグネチャを構築するメソッドを提供します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type)">
+      <summary>シグネチャに引数を追加します。</summary>
+      <param name="clsArgument">引数の型。</param>
+      <exception cref="T:System.ArgumentException">シグネチャが既に完了しています。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="clsArgument" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Boolean)">
+      <summary>シグネチャに指定した型の引数を追加して、引数が固定されるかどうかを指定します。</summary>
+      <param name="argument">引数の型。</param>
+      <param name="pinned">引数が固定される場合は true。それ以外の場合は false。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Type[],System.Type[])">
+      <summary>指定したカスタム修飾子を使用して、シグネチャに引数を追加します。</summary>
+      <param name="argument">引数の型。</param>
+      <param name="requiredCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、引数の必須のカスタム修飾子を表す型の配列。引数に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="optionalCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、引数のオプションのカスタム修飾子を表す型の配列。引数にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" /> は null なので、または<paramref name="requiredCustomModifiers" /> または <paramref name="optionalCustomModifiers" />の要素が null です。</exception>
+      <exception cref="T:System.ArgumentException">シグネチャが既に完了しています。または指定したカスタム修飾子の 1 つが配列型です。または指定したカスタム修飾子の 1 つがオープン ジェネリック型です。つまり、そのカスタム修飾子に対する <see cref="P:System.Type.ContainsGenericParameters" /> プロパティが true です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArguments(System.Type[],System.Type[][],System.Type[][])">
+      <summary>指定したカスタム修飾子を使用して、シグネチャに引数のセットを追加します。</summary>
+      <param name="arguments">追加する引数の型。</param>
+      <param name="requiredCustomModifiers">型の配列の配列。型の各配列は、<see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、対応する引数の必須のカスタム修飾子を表します。特定の引数に必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。どの引数にも必須のカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="optionalCustomModifiers">型の配列の配列。型の各配列は、<see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、対応する引数のオプションのカスタム修飾子を表します。特定の引数にオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。どの引数にもオプションのカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="arguments" /> の要素が null です。または指定したカスタム修飾子の 1 つが null です。ただし、null は、どの引数のカスタム修飾子の配列に対しても指定できます。</exception>
+      <exception cref="T:System.ArgumentException">シグネチャが既に完了しています。または指定したカスタム修飾子の 1 つが配列型です。または指定したカスタム修飾子の 1 つがオープン ジェネリック型です。つまり、そのカスタム修飾子に対する <see cref="P:System.Type.ContainsGenericParameters" /> プロパティが true です。または<paramref name="requiredCustomModifiers" /> または <paramref name="optionalCustomModifiers" /> のサイズが <paramref name="arguments" /> のサイズと等しくありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddSentinel">
+      <summary>vararg の固定部分の終わりをマークします。呼び出し元が vararg シグネチャ呼び出しサイトを作成する場合にだけ使用します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.Equals(System.Object)">
+      <summary>このインスタンスが、指定したオブジェクトと同一かどうかを確認します。</summary>
+      <returns>指定したオブジェクトが SignatureHelper で、同じシグネチャを表す場合は true。それ以外の場合は false。</returns>
+      <param name="obj">このインスタンスと比較するオブジェクト。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetFieldSigHelper(System.Reflection.Module)">
+      <summary>フィールドのシグネチャ ヘルパーを返します。</summary>
+      <returns>フィールドの SignatureHelper オブジェクト。</returns>
+      <param name="mod">SignatureHelper を要求するフィールドが格納されている動的モジュール。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetHashCode">
+      <summary>このインスタンスのハッシュ コードを作成し、返します。</summary>
+      <returns>名前に基づいてハッシュ コードを返します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper">
+      <summary>ローカル変数のシグネチャ ヘルパーを返します。</summary>
+      <returns>ローカル変数の <see cref="T:System.Reflection.Emit.SignatureHelper" />。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper(System.Reflection.Module)">
+      <summary>ローカル変数のシグネチャ ヘルパーを返します。</summary>
+      <returns>ローカル変数の SignatureHelper オブジェクト。</returns>
+      <param name="mod">SignatureHelper を要求するローカル変数が格納されている動的モジュール。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.CallingConventions,System.Type)">
+      <summary>メソッドの呼び出し規約、および戻り値の型を指定して、メソッドのシグネチャ ヘルパーを返します。</summary>
+      <returns>メソッドの SignatureHelper オブジェクト。</returns>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <param name="returnType">メソッドの戻り値の型。戻り値の型が void (Visual Basic では Sub プロシージャ) である場合は null。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type)">
+      <summary>メソッドのモジュール、呼び出し規約、および戻り値の型を指定して、メソッドのシグネチャ ヘルパーを返します。</summary>
+      <returns>メソッドの SignatureHelper オブジェクト。</returns>
+      <param name="mod">SignatureHelper を要求するメソッドが格納されている <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</param>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <param name="returnType">メソッドの戻り値の型。戻り値の型が void (Visual Basic では Sub プロシージャ) である場合は null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> は null なので、</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> が <see cref="T:System.Reflection.Emit.ModuleBuilder" /> ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>標準の呼び出し規約を使用し、メソッドのモジュール、戻り値の型、および引数型を指定して、メソッドのシグネチャ ヘルパーを返します。</summary>
+      <returns>メソッドの SignatureHelper オブジェクト。</returns>
+      <param name="mod">SignatureHelper を要求するメソッドが格納されている <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</param>
+      <param name="returnType">メソッドの戻り値の型。戻り値の型が void (Visual Basic では Sub プロシージャ) である場合は null。</param>
+      <param name="parameterTypes">メソッドの引数の型。メソッドに引数がない場合は null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> は null なので、または<paramref name="parameterTypes" /> の要素が null です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> が <see cref="T:System.Reflection.Emit.ModuleBuilder" /> ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>プロパティを格納している動的モジュール、呼び出し規約、プロパティの型、プロパティの引数、および戻り値の型と引数のカスタム修飾子を指定して、プロパティのシグネチャ ヘルパーを返します。</summary>
+      <returns>プロパティの <see cref="T:System.Reflection.Emit.SignatureHelper" /> オブジェクト。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.SignatureHelper" /> を要求するプロパティが格納されている <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</param>
+      <param name="callingConvention">プロパティ アクセサーの呼び出し規約。</param>
+      <param name="returnType">プロパティの型</param>
+      <param name="requiredReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、戻り値の型の必須のカスタム修飾子を表す型の配列。戻り値の型に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="optionalReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、戻り値の型のオプションのカスタム修飾子を表す型の配列。戻り値の型にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="parameterTypes">プロパティの引数の型。プロパティに引数がない場合は null。</param>
+      <param name="requiredParameterTypeCustomModifiers">型の配列の配列。型の各配列は、プロパティの対応する引数の必須のカスタム修飾子を表します。特定の引数に必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。プロパティに引数がない場合、またはどの引数にも必須のカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="optionalParameterTypeCustomModifiers">型の配列の配列。型の各配列は、プロパティの対応する引数のオプションのカスタム修飾子を表します。特定の引数にオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。プロパティに引数がない場合、またはどの引数にもオプションのカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> は null なので、または<paramref name="parameterTypes" /> の要素が null です。または指定したカスタム修飾子の 1 つが null です。ただし、null は、どの引数のカスタム修飾子の配列に対しても指定できます。</exception>
+      <exception cref="T:System.ArgumentException">シグネチャが既に完了しています。または<paramref name="mod" /> が <see cref="T:System.Reflection.Emit.ModuleBuilder" /> ではありません。または指定したカスタム修飾子の 1 つが配列型です。または指定したカスタム修飾子の 1 つがオープン ジェネリック型です。つまり、そのカスタム修飾子に対する <see cref="P:System.Type.ContainsGenericParameters" /> プロパティが true です。または<paramref name="requiredParameterTypeCustomModifiers" /> または <paramref name="optionalParameterTypeCustomModifiers" /> のサイズが <paramref name="parameterTypes" /> のサイズと等しくありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>プロパティを格納している動的モジュール、プロパティの型、およびプロパティの引数を指定して、プロパティのシグネチャ ヘルパーを返します。</summary>
+      <returns>プロパティの <see cref="T:System.Reflection.Emit.SignatureHelper" /> オブジェクト。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.SignatureHelper" /> を要求するプロパティが格納されている <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</param>
+      <param name="returnType">プロパティの型</param>
+      <param name="parameterTypes">引数型。プロパティに引数がない場合は null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> は null なので、または<paramref name="parameterTypes" /> の要素が null です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> が <see cref="T:System.Reflection.Emit.ModuleBuilder" /> ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>プロパティを格納している動的モジュール、プロパティの型、プロパティの引数、および戻り値の型と引数のカスタム修飾子を指定して、プロパティのシグネチャ ヘルパーを返します。</summary>
+      <returns>プロパティの <see cref="T:System.Reflection.Emit.SignatureHelper" /> オブジェクト。</returns>
+      <param name="mod">
+        <see cref="T:System.Reflection.Emit.SignatureHelper" /> を要求するプロパティが格納されている <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</param>
+      <param name="returnType">プロパティの型</param>
+      <param name="requiredReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、戻り値の型の必須のカスタム修飾子を表す型の配列。戻り値の型に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="optionalReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、戻り値の型のオプションのカスタム修飾子を表す型の配列。戻り値の型にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="parameterTypes">プロパティの引数の型。プロパティに引数がない場合は null。</param>
+      <param name="requiredParameterTypeCustomModifiers">型の配列の配列。型の各配列は、プロパティの対応する引数の必須のカスタム修飾子を表します。特定の引数に必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。プロパティに引数がない場合、またはどの引数にも必須のカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="optionalParameterTypeCustomModifiers">型の配列の配列。型の各配列は、プロパティの対応する引数のオプションのカスタム修飾子を表します。特定の引数にオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。プロパティに引数がない場合、またはどの引数にもオプションのカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> は null なので、または<paramref name="parameterTypes" /> の要素が null です。または指定したカスタム修飾子の 1 つが null です。ただし、null は、どの引数のカスタム修飾子の配列に対しても指定できます。</exception>
+      <exception cref="T:System.ArgumentException">シグネチャが既に完了しています。または<paramref name="mod" /> が <see cref="T:System.Reflection.Emit.ModuleBuilder" /> ではありません。または指定したカスタム修飾子の 1 つが配列型です。または指定したカスタム修飾子の 1 つがオープン ジェネリック型です。つまり、そのカスタム修飾子に対する <see cref="P:System.Type.ContainsGenericParameters" /> プロパティが true です。または<paramref name="requiredParameterTypeCustomModifiers" /> または <paramref name="optionalParameterTypeCustomModifiers" /> のサイズが <paramref name="parameterTypes" /> のサイズと等しくありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetSignature">
+      <summary>シグネチャに終了トークンを追加し、シグネチャが完成したことを示します。これ以降、トークンは追加できません。</summary>
+      <returns>完全なシグネチャで構成されるバイト配列を返します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.ToString">
+      <summary>シグネチャの引数を表す文字列を返します。</summary>
+      <returns>このシグネチャの引数を表す文字列を返します。</returns>
+    </member>
+  </members>
+</doc>

@@ -1,0 +1,1626 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Collections.NonGeneric</name>
+  </assembly>
+  <members>
+    <member name="T:System.Collections.ArrayList">
+      <summary>使用大小会根据需要动态增加的数组来实现 <see cref="T:System.Collections.IList" /> 接口。若要浏览此类型的 .NET Framework 源代码，请参阅引用源。</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.ArrayList" /> 类的新实例，该实例为空并且具有默认初始容量。</summary>
+    </member>
+    <member name="M:System.Collections.ArrayList.#ctor(System.Collections.ICollection)">
+      <summary>初始化 <see cref="T:System.Collections.ArrayList" /> 类的新实例，该实例包含从指定集合复制的元素，具有与复制的元素数相同的初始容量。</summary>
+      <param name="c">
+        <see cref="T:System.Collections.ICollection" />，它的元素已复制到新列表。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+    </member>
+    <member name="M:System.Collections.ArrayList.#ctor(System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.ArrayList" /> 类的新实例，该实例为空并且具有指定的初始容量。</summary>
+      <param name="capacity">新列表最初可以存储的元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> is less than zero. </exception>
+    </member>
+    <member name="M:System.Collections.ArrayList.Adapter(System.Collections.IList)">
+      <summary>为一个特定 <see cref="T:System.Collections.IList" /> 创建一个 <see cref="T:System.Collections.ArrayList" /> 包装。</summary>
+      <returns>在 <see cref="T:System.Collections.IList" /> 周围的 <see cref="T:System.Collections.ArrayList" /> 包装。</returns>
+      <param name="list">要包装的 <see cref="T:System.Collections.IList" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null.</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Add(System.Object)">
+      <summary>将对象添加到 <see cref="T:System.Collections.ArrayList" /> 的结尾处。</summary>
+      <returns>
+        <paramref name="value" /> 已添加的 <see cref="T:System.Collections.ArrayList" /> 索引。</returns>
+      <param name="value">要添加到 <see cref="T:System.Collections.ArrayList" /> 末尾的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.AddRange(System.Collections.ICollection)">
+      <summary>添加 <see cref="T:System.Collections.ICollection" /> 的元素到 <see cref="T:System.Collections.ArrayList" /> 的末尾。</summary>
+      <param name="c">
+        <see cref="T:System.Collections.ICollection" />，其元素应添加到 <see cref="T:System.Collections.ArrayList" /> 的末尾。集合本身不能为 null，但它可以包含为 null 的元素。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.BinarySearch(System.Int32,System.Int32,System.Object,System.Collections.IComparer)">
+      <summary>使用指定的比较器在已排序 <see cref="T:System.Collections.ArrayList" /> 的某个元素范围中搜索元素，并返回该元素从零开始的索引。</summary>
+      <returns>如果找到 <paramref name="value" />，则为已排序的 <see cref="T:System.Collections.ArrayList" /> 中从零开始的 <paramref name="value" /> 索引；否则为一个负数，它是大于 <paramref name="value" /> 的下一个元素索引的按位求补，如果没有更大的元素，则为 <see cref="P:System.Collections.ArrayList.Count" /> 的按位求补。</returns>
+      <param name="index">要搜索范围的从零开始的起始索引。</param>
+      <param name="count">要搜索的范围的长度。</param>
+      <param name="value">要定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <param name="comparer">比较元素时要使用的 <see cref="T:System.Collections.IComparer" /> 实现。- 或 - null 使用默认比较器，该比较器是每一个元素的 <see cref="T:System.IComparable" /> 实现。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range in the <see cref="T:System.Collections.ArrayList" />.-or- <paramref name="comparer" /> is null and neither <paramref name="value" /> nor the elements of <see cref="T:System.Collections.ArrayList" /> implement the <see cref="T:System.IComparable" /> interface. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="comparer" /> is null and <paramref name="value" /> is not of the same type as the elements of the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.BinarySearch(System.Object)">
+      <summary>使用默认的比较器在整个已排序的 <see cref="T:System.Collections.ArrayList" /> 中搜索元素，并返回该元素从零开始的索引。</summary>
+      <returns>如果找到 <paramref name="value" />，则为已排序的 <see cref="T:System.Collections.ArrayList" /> 中从零开始的 <paramref name="value" /> 索引；否则为一个负数，它是大于 <paramref name="value" /> 的下一个元素索引的按位求补，如果没有更大的元素，则为 <see cref="P:System.Collections.ArrayList.Count" /> 的按位求补。</returns>
+      <param name="value">要定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <exception cref="T:System.ArgumentException">Neither <paramref name="value" /> nor the elements of <see cref="T:System.Collections.ArrayList" /> implement the <see cref="T:System.IComparable" /> interface. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="value" /> is not of the same type as the elements of the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.BinarySearch(System.Object,System.Collections.IComparer)">
+      <summary>使用指定的比较器在整个已排序的 <see cref="T:System.Collections.ArrayList" /> 中搜索元素，并返回该元素从零开始的索引。</summary>
+      <returns>如果找到 <paramref name="value" />，则为已排序的 <see cref="T:System.Collections.ArrayList" /> 中从零开始的 <paramref name="value" /> 索引；否则为一个负数，它是大于 <paramref name="value" /> 的下一个元素索引的按位求补，如果没有更大的元素，则为 <see cref="P:System.Collections.ArrayList.Count" /> 的按位求补。</returns>
+      <param name="value">要定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <param name="comparer">比较元素时要使用的 <see cref="T:System.Collections.IComparer" /> 实现。- 或 - null 使用默认比较器，该比较器是每一个元素的 <see cref="T:System.IComparable" /> 实现。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="comparer" /> is null and neither <paramref name="value" /> nor the elements of <see cref="T:System.Collections.ArrayList" /> implement the <see cref="T:System.IComparable" /> interface. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="comparer" /> is null and <paramref name="value" /> is not of the same type as the elements of the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.Capacity">
+      <summary>获取或设置 <see cref="T:System.Collections.ArrayList" /> 可包含的元素数。</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" /> 可包含的元素数目。</returns>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <see cref="P:System.Collections.ArrayList.Capacity" /> is set to a value that is less than <see cref="P:System.Collections.ArrayList.Count" />.</exception>
+      <exception cref="T:System.OutOfMemoryException">There is not enough memory available on the system.</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Clear">
+      <summary>从 <see cref="T:System.Collections.ArrayList" /> 中移除所有元素。</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Clone">
+      <summary>创建 <see cref="T:System.Collections.ArrayList" /> 的浅表副本。</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" /> 的浅表副本。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Contains(System.Object)">
+      <summary>确定某元素是否在 <see cref="T:System.Collections.ArrayList" /> 中。</summary>
+      <returns>如果在 <see cref="T:System.Collections.ArrayList" /> 中找到了 <paramref name="item" />，则为 true；否则为 false。</returns>
+      <param name="item">要在 <see cref="T:System.Collections.ArrayList" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.CopyTo(System.Array)">
+      <summary>从目标数组的开头开始，将整个 <see cref="T:System.Collections.ArrayList" /> 复制到一维兼容 <see cref="T:System.Array" />。</summary>
+      <param name="array">一维 <see cref="T:System.Array" />，它是从 <see cref="T:System.Collections.ArrayList" /> 复制的元素的目标。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the source <see cref="T:System.Collections.ArrayList" /> is greater than the number of elements that the destination <paramref name="array" /> can contain. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.CopyTo(System.Array,System.Int32)">
+      <summary>从目标数组的指定索引处开始将整个 <see cref="T:System.Collections.ArrayList" /> 复制到兼容的一维 <see cref="T:System.Array" />。</summary>
+      <param name="array">一维 <see cref="T:System.Array" />，它是从 <see cref="T:System.Collections.ArrayList" /> 复制的元素的目标。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="arrayIndex">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="arrayIndex" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the source <see cref="T:System.Collections.ArrayList" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.CopyTo(System.Int32,System.Array,System.Int32,System.Int32)">
+      <summary>从目标数组的指定索引处开始，将元素的范围从 <see cref="T:System.Collections.ArrayList" /> 复制到一维兼容 <see cref="T:System.Array" />。</summary>
+      <param name="index">复制即从源 <see cref="T:System.Collections.ArrayList" /> 中从零开始的索引开始。</param>
+      <param name="array">一维 <see cref="T:System.Array" />，它是从 <see cref="T:System.Collections.ArrayList" /> 复制的元素的目标。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="arrayIndex">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。</param>
+      <param name="count">要复制的元素数。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="arrayIndex" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- <paramref name="index" /> is equal to or greater than the <see cref="P:System.Collections.ArrayList.Count" /> of the source <see cref="T:System.Collections.ArrayList" />.-or- The number of elements from <paramref name="index" /> to the end of the source <see cref="T:System.Collections.ArrayList" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.Count">
+      <summary>获取 <see cref="T:System.Collections.ArrayList" /> 中实际包含的元素数。</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" /> 中实际包含的元素数。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.FixedSize(System.Collections.ArrayList)">
+      <summary>返回具有固定大小的 <see cref="T:System.Collections.ArrayList" /> 包装。</summary>
+      <returns>具有固定大小的 <see cref="T:System.Collections.ArrayList" /> 包装。</returns>
+      <param name="list">要包装的 <see cref="T:System.Collections.ArrayList" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.FixedSize(System.Collections.IList)">
+      <summary>返回具有固定大小的 <see cref="T:System.Collections.IList" /> 包装。</summary>
+      <returns>具有固定大小的 <see cref="T:System.Collections.IList" /> 包装。</returns>
+      <param name="list">要包装的 <see cref="T:System.Collections.IList" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.GetEnumerator">
+      <summary>返回用于整个 <see cref="T:System.Collections.ArrayList" /> 的枚举数。</summary>
+      <returns>用于整个 <see cref="T:System.Collections.ArrayList" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.GetEnumerator(System.Int32,System.Int32)">
+      <summary>返回用于 <see cref="T:System.Collections.ArrayList" /> 中元素的范围的枚举数。</summary>
+      <returns>一个 <see cref="T:System.Collections.IEnumerator" />，用于 <see cref="T:System.Collections.ArrayList" /> 中指定的元素范围。</returns>
+      <param name="index">枚举数应引用的 <see cref="T:System.Collections.ArrayList" /> 部分从零开始的起始索引。</param>
+      <param name="count">枚举数应引用的 <see cref="T:System.Collections.ArrayList" /> 部分中的元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not specify a valid range in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.GetRange(System.Int32,System.Int32)">
+      <summary>返回一个 <see cref="T:System.Collections.ArrayList" />，它代表源 <see cref="T:System.Collections.ArrayList" /> 中的元素子集。</summary>
+      <returns>一个 <see cref="T:System.Collections.ArrayList" />，它代表源 <see cref="T:System.Collections.ArrayList" /> 中的元素子集。</returns>
+      <param name="index">范围开始处的从零开始的 <see cref="T:System.Collections.ArrayList" /> 索引。</param>
+      <param name="count">范围中的元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range of elements in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.IndexOf(System.Object)">
+      <summary>搜索指定的 <see cref="T:System.Object" />，并返回整个 <see cref="T:System.Collections.ArrayList" /> 中第一个匹配项的从零开始索引。</summary>
+      <returns>如果在整个 <see cref="T:System.Collections.ArrayList" /> 中找到 <paramref name="value" /> 的第一个匹配项，则为该项的从零开始的索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.ArrayList" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.IndexOf(System.Object,System.Int32)">
+      <summary>搜索指定的 <see cref="T:System.Object" />，并返回 <see cref="T:System.Collections.ArrayList" /> 中从指定索引到最后一个元素这部分元素中第一个匹配项的从零开始索引。</summary>
+      <returns>如果在 <see cref="T:System.Collections.ArrayList" /> 中从 <paramref name="startIndex" /> 到最后一个元素的元素范围内找到 <paramref name="value" /> 的第一个匹配项，则为该项的从零开始的索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.ArrayList" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <param name="startIndex">从零开始的搜索的起始索引。空列表中 0（零）为有效值。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.IndexOf(System.Object,System.Int32,System.Int32)">
+      <summary>搜索指定的 <see cref="T:System.Object" />，并返回 <see cref="T:System.Collections.ArrayList" /> 中从指定索引开始并包含指定元素数的这部分元素中第一个匹配项的从零开始索引。</summary>
+      <returns>如果在 <see cref="T:System.Collections.ArrayList" /> 中从 <paramref name="startIndex" /> 开始并包含 <paramref name="count" /> 个元素的元素范围内找到 <paramref name="value" /> 的第一个匹配项，则为该项的从零开始的索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.ArrayList" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <param name="startIndex">从零开始的搜索的起始索引。空列表中 0（零）为有效值。</param>
+      <param name="count">要搜索的部分中的元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />.-or- <paramref name="count" /> is less than zero.-or- <paramref name="startIndex" /> and <paramref name="count" /> do not specify a valid section in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Insert(System.Int32,System.Object)">
+      <summary>将元素插入 <see cref="T:System.Collections.ArrayList" /> 的指定索引处。</summary>
+      <param name="index">从零开始的索引，应在该位置插入 <paramref name="value" />。</param>
+      <param name="value">要插入的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.InsertRange(System.Int32,System.Collections.ICollection)">
+      <summary>将集合中的某个元素插入 <see cref="T:System.Collections.ArrayList" /> 的指定索引处。</summary>
+      <param name="index">应在此处插入新元素的从零开始的索引。</param>
+      <param name="c">
+        <see cref="T:System.Collections.ICollection" />，应将其元素插入到 <see cref="T:System.Collections.ArrayList" /> 中。集合本身不能为 null，但它可以包含为 null 的元素。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.IsFixedSize">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.ArrayList" /> 是否具有固定大小。</summary>
+      <returns>如果 <see cref="T:System.Collections.ArrayList" /> 具有固定大小，则为 true；否则为 false。默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.IsReadOnly">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.ArrayList" /> 是否为只读。</summary>
+      <returns>如果 <see cref="T:System.Collections.ArrayList" /> 为只读，则为 true；否则为 false。默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.IsSynchronized">
+      <summary>获取一个值，该值指示是否同步对 <see cref="T:System.Collections.ArrayList" /> 的访问（线程安全）。</summary>
+      <returns>如果对 <see cref="T:System.Collections.ArrayList" /> 的访问是同步的（线程安全），则为 true；否则为 false。默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.Item(System.Int32)">
+      <summary>获取或设置指定索引处的元素。</summary>
+      <returns>指定索引处的元素。</returns>
+      <param name="index">要获取或设置的元素的从零开始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is equal to or greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.LastIndexOf(System.Object)">
+      <summary>搜索指定的 <see cref="T:System.Object" />，并返回整个 <see cref="T:System.Collections.ArrayList" /> 中最后一个匹配项的从零开始索引。</summary>
+      <returns>如果在整个 <see cref="T:System.Collections.ArrayList" /> 中找到 <paramref name="value" /> 的最后一个匹配项，则为该项的从零开始的索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.ArrayList" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.LastIndexOf(System.Object,System.Int32)">
+      <summary>搜索指定的 <see cref="T:System.Object" />，并返回 <see cref="T:System.Collections.ArrayList" /> 中从第一个元素到指定索引这部分元素中最后一个匹配项的从零开始索引。</summary>
+      <returns>如果在 <see cref="T:System.Collections.ArrayList" /> 中从第一个元素到 <paramref name="startIndex" /> 的元素范围内找到 <paramref name="value" /> 的最后一个匹配项，则为该项的从零开始的索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.ArrayList" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <param name="startIndex">向后搜索的从零开始的起始索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.LastIndexOf(System.Object,System.Int32,System.Int32)">
+      <summary>搜索指定的 <see cref="T:System.Object" />，并返回 <see cref="T:System.Collections.ArrayList" /> 中到指定索引为止包含指定元素数的这部分元素中最后一个匹配项的从零开始索引。</summary>
+      <returns>如果找到包含 <paramref name="count" /> 元素数和到 <paramref name="startIndex" /> 为止的索引，则为 <see cref="T:System.Collections.ArrayList" /> 中元素范围内 <paramref name="value" /> 最后一个匹配项的从零开始索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.ArrayList" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <param name="startIndex">向后搜索的从零开始的起始索引。</param>
+      <param name="count">要搜索的部分中的元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />.-or- <paramref name="count" /> is less than zero.-or- <paramref name="startIndex" /> and <paramref name="count" /> do not specify a valid section in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ReadOnly(System.Collections.ArrayList)">
+      <summary>返回只读的 <see cref="T:System.Collections.ArrayList" /> 包装。</summary>
+      <returns>一个围绕 <paramref name="list" /> 的只读 <see cref="T:System.Collections.ArrayList" /> 包装。</returns>
+      <param name="list">要包装的 <see cref="T:System.Collections.ArrayList" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ReadOnly(System.Collections.IList)">
+      <summary>返回只读的 <see cref="T:System.Collections.IList" /> 包装。</summary>
+      <returns>一个围绕 <paramref name="list" /> 的只读 <see cref="T:System.Collections.IList" /> 包装。</returns>
+      <param name="list">要包装的 <see cref="T:System.Collections.IList" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Remove(System.Object)">
+      <summary>从 <see cref="T:System.Collections.ArrayList" /> 中移除特定对象的第一个匹配项。</summary>
+      <param name="obj">要从 <see cref="T:System.Collections.ArrayList" /> 中移除的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.RemoveAt(System.Int32)">
+      <summary>移除 <see cref="T:System.Collections.ArrayList" /> 的指定索引处的元素。</summary>
+      <param name="index">要移除的元素的从零开始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is equal to or greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.RemoveRange(System.Int32,System.Int32)">
+      <summary>从 <see cref="T:System.Collections.ArrayList" /> 中移除一定范围的元素。</summary>
+      <param name="index">要移除的元素范围的从零开始的起始索引。</param>
+      <param name="count">要移除的元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range of elements in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Repeat(System.Object,System.Int32)">
+      <summary>返回一个 <see cref="T:System.Collections.ArrayList" />，它的元素是指定值的副本。</summary>
+      <returns>一个带 <paramref name="count" /> 元素数的 <see cref="T:System.Collections.ArrayList" />，所有这些都是 <paramref name="value" /> 的副本。</returns>
+      <param name="value">要在新 <see cref="T:System.Collections.ArrayList" /> 中对其进行多次复制的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <param name="count">
+        <paramref name="value" /> 应复制的次数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="count" /> is less than zero. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Reverse">
+      <summary>将整个 <see cref="T:System.Collections.ArrayList" /> 中元素的顺序反转。</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Reverse(System.Int32,System.Int32)">
+      <summary>将指定范围中元素的顺序反转。</summary>
+      <param name="index">要反转的范围的从零开始的起始索引。</param>
+      <param name="count">要反转的范围内的元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range of elements in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.SetRange(System.Int32,System.Collections.ICollection)">
+      <summary>在 <see cref="T:System.Collections.ArrayList" /> 中的元素范围内复制集合的元素。</summary>
+      <param name="index">从零开始的 <see cref="T:System.Collections.ArrayList" /> 索引，从此开始复制 <paramref name="c" /> 的元素。</param>
+      <param name="c">
+        <see cref="T:System.Collections.ICollection" />，它的元素要复制到 <see cref="T:System.Collections.ArrayList" />。集合本身不能为 null，但它可以包含为 null 的元素。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> plus the number of elements in <paramref name="c" /> is greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Sort">
+      <summary>对整个 <see cref="T:System.Collections.ArrayList" /> 中的元素进行排序。</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Sort(System.Collections.IComparer)">
+      <summary>使用指定的比较器对整个 <see cref="T:System.Collections.ArrayList" /> 中的元素进行排序。</summary>
+      <param name="comparer">比较元素时要使用的 <see cref="T:System.Collections.IComparer" /> 实现。- 或 -一个空引用（在 Visual Basic 中为 Nothing），将使用每个元素的 <see cref="T:System.IComparable" /> 实现。</param>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <exception cref="T:System.InvalidOperationException">An error occurred while comparing two elements.</exception>
+      <exception cref="T:System.ArgumentException">null is passed for <paramref name="comparer" />, and the elements in the list do not implement <see cref="T:System.IComparable" />.</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Sort(System.Int32,System.Int32,System.Collections.IComparer)">
+      <summary>使用指定的比较器对 <see cref="T:System.Collections.ArrayList" /> 中某个范围内的元素进行排序。</summary>
+      <param name="index">要排序范围的从零开始的起始索引。</param>
+      <param name="count">要排序的范围的长度。</param>
+      <param name="comparer">比较元素时要使用的 <see cref="T:System.Collections.IComparer" /> 实现。- 或 -一个空引用（在 Visual Basic 中为 Nothing），将使用每个元素的 <see cref="T:System.IComparable" /> 实现。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not specify a valid range in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <exception cref="T:System.InvalidOperationException">An error occurred while comparing two elements.</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Synchronized(System.Collections.ArrayList)">
+      <summary>返回同步的（线程安全）<see cref="T:System.Collections.ArrayList" /> 包装。</summary>
+      <returns>同步的（线程安全）<see cref="T:System.Collections.ArrayList" /> 包装。</returns>
+      <param name="list">要同步的 <see cref="T:System.Collections.ArrayList" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Synchronized(System.Collections.IList)">
+      <summary>返回同步的（线程安全）<see cref="T:System.Collections.IList" /> 包装。</summary>
+      <returns>同步的（线程安全）<see cref="T:System.Collections.IList" /> 包装。</returns>
+      <param name="list">要同步的 <see cref="T:System.Collections.IList" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.SyncRoot">
+      <summary>获取可用于同步对 <see cref="T:System.Collections.ArrayList" /> 的访问的对象。</summary>
+      <returns>可用于同步对 <see cref="T:System.Collections.ArrayList" /> 的访问的对象。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ToArray">
+      <summary>将 <see cref="T:System.Collections.ArrayList" /> 的元素复制到一个新的 <see cref="T:System.Object" /> 数组。</summary>
+      <returns>一个 <see cref="T:System.Object" /> 数组，包含 <see cref="T:System.Collections.ArrayList" /> 的元素的副本。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ToArray(System.Type)">
+      <summary>将 <see cref="T:System.Collections.ArrayList" /> 的元素复制到一个指定元素类型的新数组。</summary>
+      <returns>特定元素类型的数组包含 <see cref="T:System.Collections.ArrayList" /> 的元素的副本。</returns>
+      <param name="type">要创建和复制元素的目标数组的元素 <see cref="T:System.Type" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="type" /> is null. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the specified type. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.TrimToSize">
+      <summary>将容量设置为 <see cref="T:System.Collections.ArrayList" /> 中元素的实际数目。</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="T:System.Collections.CaseInsensitiveComparer">
+      <summary>比较两个对象是否相等，比较时忽略字符串的大小写。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CaseInsensitiveComparer.#ctor">
+      <summary>使用当前线程的 <see cref="P:System.Threading.Thread.CurrentCulture" /> 初始化 <see cref="T:System.Collections.CaseInsensitiveComparer" /> 类的新实例。</summary>
+    </member>
+    <member name="M:System.Collections.CaseInsensitiveComparer.#ctor(System.Globalization.CultureInfo)">
+      <summary>使用指定 <see cref="T:System.Globalization.CultureInfo" /> 初始化 <see cref="T:System.Collections.CaseInsensitiveComparer" /> 类的新实例。</summary>
+      <param name="culture">要用于新 <see cref="T:System.Collections.CaseInsensitiveComparer" /> 的 <see cref="T:System.Globalization.CultureInfo" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="culture" /> 为 null。</exception>
+    </member>
+    <member name="M:System.Collections.CaseInsensitiveComparer.Compare(System.Object,System.Object)">
+      <summary>对同一类型的两个对象执行不区分大小写的比较，并返回一个值，指示其中一个对象是小于、等于还是大于另一个对象。</summary>
+      <returns>一个有符号整数，指示 <paramref name="a" /> 与 <paramref name="b" /> 的相对值，如下表所示。值含义小于零在忽略大小写的情况下，<paramref name="a" /> 小于 <paramref name="b" />。零在忽略大小写的情况下，<paramref name="a" /> 等于 <paramref name="b" />。大于零在忽略大小写的情况下，<paramref name="a" /> 大于 <paramref name="b" />。</returns>
+      <param name="a">要比较的第一个对象。</param>
+      <param name="b">要比较的第二个对象。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="a" /> 和 <paramref name="b" /> 都不实现 <see cref="T:System.IComparable" /> 接口。- 或 -<paramref name="a" /> 和 <paramref name="b" /> 的类型不同。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.CaseInsensitiveComparer.Default">
+      <summary>获取 <see cref="T:System.Collections.CaseInsensitiveComparer" /> 的一个实例，该实例与当前线程的 <see cref="P:System.Threading.Thread.CurrentCulture" /> 关联并且始终可用。</summary>
+      <returns>
+        <see cref="T:System.Collections.CaseInsensitiveComparer" /> 的实例，它与当前线程的 <see cref="P:System.Threading.Thread.CurrentCulture" /> 关联。</returns>
+      <filterpriority>1</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Collections.CaseInsensitiveComparer.DefaultInvariant">
+      <summary>获取 <see cref="T:System.Collections.CaseInsensitiveComparer" /> 的一个实例，该实例与 <see cref="P:System.Globalization.CultureInfo.InvariantCulture" /> 关联并且始终可用。</summary>
+      <returns>
+        <see cref="T:System.Collections.CaseInsensitiveComparer" /> 的实例，它与 <see cref="P:System.Globalization.CultureInfo.InvariantCulture" /> 关联。</returns>
+      <filterpriority>1</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="T:System.Collections.CollectionBase">
+      <summary>为强类型集合提供 abstract 基类。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.#ctor">
+      <summary>使用默认初始容量初始化 <see cref="T:System.Collections.CollectionBase" /> 类的新实例。</summary>
+    </member>
+    <member name="M:System.Collections.CollectionBase.#ctor(System.Int32)">
+      <summary>使用指定的容量初始化 <see cref="T:System.Collections.CollectionBase" /> 类的新实例。</summary>
+      <param name="capacity">新列表最初可以存储的元素数。</param>
+    </member>
+    <member name="P:System.Collections.CollectionBase.Capacity">
+      <summary>获取或设置 <see cref="T:System.Collections.CollectionBase" /> 可包含的元素数。</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" /> 可包含的元素数。</returns>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <see cref="P:System.Collections.CollectionBase.Capacity" /> 设置为小于 <see cref="P:System.Collections.CollectionBase.Count" /> 的值。</exception>
+      <exception cref="T:System.OutOfMemoryException">系统中没有足够的可用内存。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.Clear">
+      <summary>从 <see cref="T:System.Collections.CollectionBase" /> 实例移除所有对象。不能重写此方法。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.CollectionBase.Count">
+      <summary>获取包含在 <see cref="T:System.Collections.CollectionBase" /> 实例中的元素数。不能重写此属性。</summary>
+      <returns>包含在 <see cref="T:System.Collections.CollectionBase" /> 实例中的元素数。检索此属性的值的运算复杂度为 O(1)。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.GetEnumerator">
+      <summary>返回循环访问 <see cref="T:System.Collections.CollectionBase" /> 实例的枚举器。</summary>
+      <returns>用于 <see cref="T:System.Collections.CollectionBase" /> 实例的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.CollectionBase.InnerList">
+      <summary>获取一个 <see cref="T:System.Collections.ArrayList" />，它包含 <see cref="T:System.Collections.CollectionBase" /> 实例中元素的列表。</summary>
+      <returns>表示 <see cref="T:System.Collections.CollectionBase" /> 实例本身的 <see cref="T:System.Collections.ArrayList" />。检索此属性的值的运算复杂度为 O(1)。</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.List">
+      <summary>获取一个 <see cref="T:System.Collections.IList" />，它包含 <see cref="T:System.Collections.CollectionBase" /> 实例中元素的列表。</summary>
+      <returns>表示 <see cref="T:System.Collections.CollectionBase" /> 实例本身的 <see cref="T:System.Collections.IList" />。</returns>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnClear">
+      <summary>当清除 <see cref="T:System.Collections.CollectionBase" /> 实例的内容时执行其他自定义进程。</summary>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnClearComplete">
+      <summary>在清除 <see cref="T:System.Collections.CollectionBase" /> 实例的内容之后执行其他自定义进程。</summary>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnInsert(System.Int32,System.Object)">
+      <summary>在向 <see cref="T:System.Collections.CollectionBase" /> 实例中插入新元素之前执行其他自定义进程。</summary>
+      <param name="index">从零开始的索引，在该处插入 <paramref name="value" />。</param>
+      <param name="value">
+        <paramref name="index" /> 处的元素的新值。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnInsertComplete(System.Int32,System.Object)">
+      <summary>在向 <see cref="T:System.Collections.CollectionBase" /> 实例中插入新元素之后执行其他自定义进程。</summary>
+      <param name="index">从零开始的索引，在该处插入 <paramref name="value" />。</param>
+      <param name="value">
+        <paramref name="index" /> 处的元素的新值。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnRemove(System.Int32,System.Object)">
+      <summary>当从 <see cref="T:System.Collections.CollectionBase" /> 实例移除元素时执行其他自定义进程。</summary>
+      <param name="index">从零开始的索引，可在该位置找到 <paramref name="value" />。</param>
+      <param name="value">要从 <paramref name="index" /> 移除的元素的值。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnRemoveComplete(System.Int32,System.Object)">
+      <summary>在从 <see cref="T:System.Collections.CollectionBase" /> 实例中移除元素之后执行其他自定义进程。</summary>
+      <param name="index">从零开始的索引，可在该位置找到 <paramref name="value" />。</param>
+      <param name="value">要从 <paramref name="index" /> 移除的元素的值。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnSet(System.Int32,System.Object,System.Object)">
+      <summary>当在 <see cref="T:System.Collections.CollectionBase" /> 实例中设置值之前执行其他自定义进程。</summary>
+      <param name="index">从零开始的索引，可在该位置找到 <paramref name="oldValue" />。</param>
+      <param name="oldValue">要用 <paramref name="newValue" /> 替换的值。</param>
+      <param name="newValue">
+        <paramref name="index" /> 处的元素的新值。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnSetComplete(System.Int32,System.Object,System.Object)">
+      <summary>当在 <see cref="T:System.Collections.CollectionBase" /> 实例中设置值后执行其他自定义进程。</summary>
+      <param name="index">从零开始的索引，可在该位置找到 <paramref name="oldValue" />。</param>
+      <param name="oldValue">要用 <paramref name="newValue" /> 替换的值。</param>
+      <param name="newValue">
+        <paramref name="index" /> 处的元素的新值。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnValidate(System.Object)">
+      <summary>当验证值时执行其他自定义进程。</summary>
+      <param name="value">要验证的对象。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 为 null。</exception>
+    </member>
+    <member name="M:System.Collections.CollectionBase.RemoveAt(System.Int32)">
+      <summary>移除 <see cref="T:System.Collections.CollectionBase" /> 实例的指定索引处的元素。此方法不可重写。</summary>
+      <param name="index">要移除的元素的从零开始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小于零。- 或 -<paramref name="index" /> 等于或大于 <see cref="P:System.Collections.CollectionBase.Count" />。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>从目标数组的指定索引处开始将整个 <see cref="T:System.Collections.CollectionBase" /> 复制到兼容的一维 <see cref="T:System.Array" />。</summary>
+      <param name="array">作为从 <see cref="T:System.Collections.CollectionBase" /> 复制的元素的目标的一维 <see cref="T:System.Array" />。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小于零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 是多维的。- 或 -源 <see cref="T:System.Collections.CollectionBase" /> 中的元素数目大于从 <paramref name="index" /> 到目标 <paramref name="array" /> 末尾之间的可用空间。</exception>
+      <exception cref="T:System.InvalidCastException">源 <see cref="T:System.Collections.CollectionBase" /> 的类型无法自动转换为目标 <paramref name="array" /> 的类型。</exception>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>获取一个值，该值指示是否同步对 <see cref="T:System.Collections.CollectionBase" /> 的访问（线程安全）。</summary>
+      <returns>如果对 <see cref="T:System.Collections.CollectionBase" /> 的访问是同步的（线程安全），则为 true；否则为 false。默认值为 false。</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>获取可用于同步对 <see cref="T:System.Collections.CollectionBase" /> 的访问的对象。</summary>
+      <returns>可用于同步对 <see cref="T:System.Collections.CollectionBase" /> 的访问的对象。</returns>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Add(System.Object)">
+      <summary>将对象添加到 <see cref="T:System.Collections.CollectionBase" /> 的结尾处。</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" /> 索引，已在此处添加了 <paramref name="value" />。</returns>
+      <param name="value">要添加到 <see cref="T:System.Collections.CollectionBase" /> 的末尾处的 <see cref="T:System.Object" />。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.CollectionBase" /> 为只读。- 或 -<see cref="T:System.Collections.CollectionBase" /> 具有固定大小。</exception>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Contains(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.CollectionBase" /> 是否包含特定元素。</summary>
+      <returns>如果 <see cref="T:System.Collections.CollectionBase" /> 包含指定的 <paramref name="value" />，则为 true；否则为 false。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.CollectionBase" /> 中查找的 <see cref="T:System.Object" />。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#IndexOf(System.Object)">
+      <summary>搜索指定的 <see cref="T:System.Object" />，并返回整个 <see cref="T:System.Collections.CollectionBase" /> 中第一个匹配项的从零开始的索引。</summary>
+      <returns>如果在整个 <see cref="T:System.Collections.CollectionBase" /> 中找到 <paramref name="value" /> 的第一个匹配项，则为该项的从零开始的索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.CollectionBase" /> 中查找的 <see cref="T:System.Object" />。</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Insert(System.Int32,System.Object)">
+      <summary>将元素插入 <see cref="T:System.Collections.CollectionBase" /> 的指定索引处。</summary>
+      <param name="index">从零开始的索引，应在该位置插入 <paramref name="value" />。</param>
+      <param name="value">要插入的 <see cref="T:System.Object" />。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小于零。- 或 -<paramref name="index" /> 大于 <see cref="P:System.Collections.CollectionBase.Count" />。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.CollectionBase" /> 为只读。- 或 -<see cref="T:System.Collections.CollectionBase" /> 具有固定大小。</exception>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#IList#IsFixedSize">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.CollectionBase" /> 是否具有固定大小。</summary>
+      <returns>如果 <see cref="T:System.Collections.CollectionBase" /> 具有固定大小，则为 true；否则为 false。默认值为 false。</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#IList#IsReadOnly">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.CollectionBase" /> 是否为只读。</summary>
+      <returns>如果 <see cref="T:System.Collections.CollectionBase" /> 为只读，则为 true；否则为 false。默认值为 false。</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#IList#Item(System.Int32)">
+      <summary>获取或设置位于指定索引处的元素。</summary>
+      <returns>位于指定索引处的元素。</returns>
+      <param name="index">要获得或设置的元素从零开始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小于零。- 或 -<paramref name="index" /> 等于或大于 <see cref="P:System.Collections.CollectionBase.Count" />。</exception>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Remove(System.Object)">
+      <summary>从 <see cref="T:System.Collections.CollectionBase" /> 中移除特定对象的第一个匹配项。</summary>
+      <param name="value">要从 <see cref="T:System.Collections.CollectionBase" /> 移除的 <see cref="T:System.Object" />。</param>
+      <exception cref="T:System.ArgumentException">未在 <see cref="T:System.Collections.CollectionBase" /> 对象中找到 <paramref name="value" /> 参数。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.CollectionBase" /> 为只读。- 或 -<see cref="T:System.Collections.CollectionBase" /> 具有固定大小。</exception>
+    </member>
+    <member name="T:System.Collections.Comparer">
+      <summary>比较两个对象是否相等，其中字符串比较是区分大小写的。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Comparer.#ctor(System.Globalization.CultureInfo)">
+      <summary>使用指定 <see cref="T:System.Globalization.CultureInfo" /> 初始化 <see cref="T:System.Collections.Comparer" /> 类的新实例。</summary>
+      <param name="culture">要用于新 <see cref="T:System.Collections.Comparer" /> 的 <see cref="T:System.Globalization.CultureInfo" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="culture" /> 为 null。</exception>
+    </member>
+    <member name="M:System.Collections.Comparer.Compare(System.Object,System.Object)">
+      <summary>对同一类型的两个对象执行区分大小写的比较，并返回一个值，指示其中一个对象小于、等于还是大于另一个对象。</summary>
+      <returns>一个有符号整数，指示 <paramref name="a" /> 与 <paramref name="b" /> 的相对值，如下表所示。值含义小于零<paramref name="a" /> 小于 <paramref name="b" />。零<paramref name="a" /> 等于 <paramref name="b" />。大于零<paramref name="a" /> 大于 <paramref name="b" />。</returns>
+      <param name="a">要比较的第一个对象。</param>
+      <param name="b">要比较的第二个对象。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="a" /> 和 <paramref name="b" /> 都不实现 <see cref="T:System.IComparable" /> 接口。- 或 -<paramref name="a" /> 和 <paramref name="b" /> 的类型不同，它们都无法处理与另一个进行的比较。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="F:System.Collections.Comparer.Default">
+      <summary>表示 <see cref="T:System.Collections.Comparer" /> 的实例，它与当前线程的 <see cref="P:System.Threading.Thread.CurrentCulture" /> 关联。此字段为只读。</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="F:System.Collections.Comparer.DefaultInvariant">
+      <summary>表示 <see cref="T:System.Collections.Comparer" /> 的实例，它与 <see cref="P:System.Globalization.CultureInfo.InvariantCulture" /> 关联。此字段为只读。</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="T:System.Collections.DictionaryBase">
+      <summary>为键/值对的强类型集合提供 abstract 基类。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.DictionaryBase" /> 类的新实例。</summary>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.Clear">
+      <summary>清除 <see cref="T:System.Collections.DictionaryBase" /> 实例的内容。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.CopyTo(System.Array,System.Int32)">
+      <summary>将 <see cref="T:System.Collections.DictionaryBase" /> 元素复制到位于指定索引处的一维 <see cref="T:System.Array" /> 中。</summary>
+      <param name="array">一维 <see cref="T:System.Array" />，为从 <see cref="T:System.Collections.DictionaryBase" /> 实例复制的 <see cref="T:System.Collections.DictionaryEntry" /> 对象的目标位置。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 为 null。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小于零。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 是多维的。- 或 -源 <see cref="T:System.Collections.DictionaryBase" /> 中的元素数目大于从 <paramref name="index" /> 到目标 <paramref name="array" /> 末尾之间的可用空间。</exception>
+      <exception cref="T:System.InvalidCastException">源 <see cref="T:System.Collections.DictionaryBase" /> 的类型无法自动转换为目标 <paramref name="array" /> 的类型。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.Count">
+      <summary>获取包含在 <see cref="T:System.Collections.DictionaryBase" /> 实例中的元素数。</summary>
+      <returns>包含在 <see cref="T:System.Collections.DictionaryBase" /> 实例中的元素数。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.Dictionary">
+      <summary>获取包含在 <see cref="T:System.Collections.DictionaryBase" /> 实例中的元素的列表。</summary>
+      <returns>表示 <see cref="T:System.Collections.DictionaryBase" /> 实例本身的 <see cref="T:System.Collections.IDictionary" />。</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.GetEnumerator">
+      <summary>返回循环访问 <see cref="T:System.Collections.DictionaryBase" /> 实例的 <see cref="T:System.Collections.IDictionaryEnumerator" />。</summary>
+      <returns>用于 <see cref="T:System.Collections.DictionaryBase" /> 实例的 <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.InnerHashtable">
+      <summary>获取包含在 <see cref="T:System.Collections.DictionaryBase" /> 实例中的元素的列表。</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />，表示 <see cref="T:System.Collections.DictionaryBase" /> 实例本身。</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnClear">
+      <summary>在清除 <see cref="T:System.Collections.DictionaryBase" /> 实例的内容之前执行其他自定义进程。</summary>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnClearComplete">
+      <summary>在清除 <see cref="T:System.Collections.DictionaryBase" /> 实例的内容之后执行其他自定义进程。</summary>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnGet(System.Object,System.Object)">
+      <summary>获取 <see cref="T:System.Collections.DictionaryBase" /> 实例中带有指定键和值的元素。</summary>
+      <returns>包含带有指定键和值的元素的 <see cref="T:System.Object" />。</returns>
+      <param name="key">要获取的元素的键。</param>
+      <param name="currentValue">与 <paramref name="key" /> 相关联的元素的当前值。</param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnInsert(System.Object,System.Object)">
+      <summary>在向 <see cref="T:System.Collections.DictionaryBase" /> 实例中插入新元素之前执行其他自定义进程。</summary>
+      <param name="key">要插入的元素的键。</param>
+      <param name="value">要插入的元素的值。</param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnInsertComplete(System.Object,System.Object)">
+      <summary>在向 <see cref="T:System.Collections.DictionaryBase" /> 实例中插入新元素之后执行其他自定义进程。</summary>
+      <param name="key">要插入的元素的键。</param>
+      <param name="value">要插入的元素的值。</param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnRemove(System.Object,System.Object)">
+      <summary>当从 <see cref="T:System.Collections.DictionaryBase" /> 实例移除元素时执行其他自定义进程。</summary>
+      <param name="key">要移除的元素的键。</param>
+      <param name="value">要移除的元素的值。</param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnRemoveComplete(System.Object,System.Object)">
+      <summary>在从 <see cref="T:System.Collections.DictionaryBase" /> 实例中移除元素之后执行其他自定义进程。</summary>
+      <param name="key">要移除的元素的键。</param>
+      <param name="value">要移除的元素的值。</param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnSet(System.Object,System.Object,System.Object)">
+      <summary>当在 <see cref="T:System.Collections.DictionaryBase" /> 实例中设置值之前执行其他自定义进程。</summary>
+      <param name="key">要定位的元素的键。</param>
+      <param name="oldValue">与 <paramref name="key" /> 相关联的元素的旧值。</param>
+      <param name="newValue">与 <paramref name="key" /> 相关联的元素的新值。</param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnSetComplete(System.Object,System.Object,System.Object)">
+      <summary>当在 <see cref="T:System.Collections.DictionaryBase" /> 实例中设置值后执行其他自定义进程。</summary>
+      <param name="key">要定位的元素的键。</param>
+      <param name="oldValue">与 <paramref name="key" /> 相关联的元素的旧值。</param>
+      <param name="newValue">与 <paramref name="key" /> 相关联的元素的新值。</param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnValidate(System.Object,System.Object)">
+      <summary>在验证具有指定键和值的元素时执行其他自定义进程。</summary>
+      <param name="key">要验证的元素的键。</param>
+      <param name="value">要验证的元素的值。</param>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#ICollection#IsSynchronized">
+      <summary>获取一个值，该值指示对 <see cref="T:System.Collections.DictionaryBase" /> 对象的访问是否同步（线程安全）。</summary>
+      <returns>true if access to the <see cref="T:System.Collections.DictionaryBase" /> object is synchronized (thread safe); otherwise, false.默认值为 false。</returns>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#ICollection#SyncRoot">
+      <summary>获取一个对象，该对象可用于同步对 <see cref="T:System.Collections.DictionaryBase" /> 对象的访问。</summary>
+      <returns>一个对象，该对象可用于同步对 <see cref="T:System.Collections.DictionaryBase" /> 对象的访问。</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IDictionary#Add(System.Object,System.Object)">
+      <summary>将带有指定键和值的元素添加到 <see cref="T:System.Collections.DictionaryBase" /> 中。</summary>
+      <param name="key">要添加的元素的键。</param>
+      <param name="value">要添加的元素的值。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <see cref="T:System.Collections.DictionaryBase" /> 中已存在具有相同键的元素。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.DictionaryBase" /> 为只读。- 或 -<see cref="T:System.Collections.DictionaryBase" /> 具有固定大小。</exception>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IDictionary#Contains(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.DictionaryBase" /> 是否包含特定键。</summary>
+      <returns>true if the <see cref="T:System.Collections.DictionaryBase" /> contains an element with the specified key; otherwise, false.</returns>
+      <param name="key">要在 <see cref="T:System.Collections.DictionaryBase" /> 中定位的键。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#IsFixedSize">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.DictionaryBase" /> 对象是否具有固定大小。</summary>
+      <returns>true if the <see cref="T:System.Collections.DictionaryBase" /> object has a fixed size; otherwise, false.默认值为 false。</returns>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#IsReadOnly">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.DictionaryBase" /> 对象是否为只读。</summary>
+      <returns>true if the <see cref="T:System.Collections.DictionaryBase" /> object is read-only; otherwise, false.默认值为 false。</returns>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#Item(System.Object)">
+      <summary>获取或设置与指定的键关联的值。</summary>
+      <returns>与指定的键相关联的值。如果未找到指定的键，尝试获取它将返回 null，尝试设置它将使用指定的键创建新元素。</returns>
+      <param name="key">要获取或设置其值的键。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.NotSupportedException">设置该属性，而且 <see cref="T:System.Collections.DictionaryBase" /> 为只读。- 或 -设置该属性，集合中不存在 <paramref name="key" />，而且 <see cref="T:System.Collections.DictionaryBase" /> 具有固定大小。</exception>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#Keys">
+      <summary>获取包含 <see cref="T:System.Collections.DictionaryBase" /> 对象中的键的 <see cref="T:System.Collections.ICollection" /> 对象。</summary>
+      <returns>包含 <see cref="T:System.Collections.DictionaryBase" /> 对象中的键的 <see cref="T:System.Collections.ICollection" /> 对象。</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IDictionary#Remove(System.Object)">
+      <summary>从 <see cref="T:System.Collections.DictionaryBase" /> 中移除带有指定键的元素。</summary>
+      <param name="key">要移除的元素的键。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.DictionaryBase" /> 为只读。- 或 -<see cref="T:System.Collections.DictionaryBase" /> 具有固定大小。</exception>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#Values">
+      <summary>获取 <see cref="T:System.Collections.ICollection" /> 对象，它包含 <see cref="T:System.Collections.DictionaryBase" /> 对象中的值。</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" /> 对象，它包含 <see cref="T:System.Collections.DictionaryBase" /> 对象中的值。</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IEnumerable#GetEnumerator">
+      <summary>返回循环访问 <see cref="T:System.Collections.DictionaryBase" /> 的 <see cref="T:System.Collections.IEnumerator" />。</summary>
+      <returns>用于 <see cref="T:System.Collections.DictionaryBase" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="T:System.Collections.Hashtable">
+      <summary>表示根据键的哈希代码进行组织的键/值对的集合。若要浏览此类型的.NET Framework 源代码，请参阅参考源。</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor">
+      <summary>使用默认的初始容量、加载因子、哈希代码提供程序和比较器来初始化 <see cref="T:System.Collections.Hashtable" /> 类的新的空实例。</summary>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary)">
+      <summary>通过将指定字典中的元素复制到新的 <see cref="T:System.Collections.Hashtable" /> 对象中，初始化 <see cref="T:System.Collections.Hashtable" /> 类的一个新实例。新 <see cref="T:System.Collections.Hashtable" /> 对象的初始容量等于复制的元素数，并且使用默认的加载因子、哈希代码提供程序和比较器。</summary>
+      <param name="d">要复制到新 <see cref="T:System.Collections.Hashtable" /> 对象的 <see cref="T:System.Collections.IDictionary" /> 对象。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" /> 为 null。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary,System.Collections.IEqualityComparer)">
+      <summary>通过将指定字典中的元素复制到新的 <see cref="T:System.Collections.Hashtable" /> 对象中，初始化 <see cref="T:System.Collections.Hashtable" /> 类的一个新实例。新 <see cref="T:System.Collections.Hashtable" /> 对象的初始容量等于复制的元素数，并且使用默认加载因子和指定的 <see cref="T:System.Collections.IEqualityComparer" /> 对象。</summary>
+      <param name="d">要复制到新 <see cref="T:System.Collections.Hashtable" /> 对象的 <see cref="T:System.Collections.IDictionary" /> 对象。</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 对象，用于定义要用来处理 <see cref="T:System.Collections.Hashtable" /> 的哈希代码提供程序和比较器。- 或 - null，则使用默认哈希代码提供程序和默认比较器。默认哈希代码提供程序是各个键的 <see cref="M:System.Object.GetHashCode" /> 实现，而默认比较器是各个键的 <see cref="M:System.Object.Equals(System.Object)" /> 实现。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" /> 为 null。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary,System.Single)">
+      <summary>通过将指定字典中的元素复制到新的 <see cref="T:System.Collections.Hashtable" /> 对象中，初始化 <see cref="T:System.Collections.Hashtable" /> 类的一个新实例。新 <see cref="T:System.Collections.Hashtable" /> 对象的初始容量等于复制的元素数，并且使用指定的加载因子、默认哈希代码提供程序和默认比较器。</summary>
+      <param name="d">要复制到新 <see cref="T:System.Collections.Hashtable" /> 对象的 <see cref="T:System.Collections.IDictionary" /> 对象。</param>
+      <param name="loadFactor">0.1 到 1.0 范围内的数字，再乘以提供最佳性能的默认值。结果是元素与存储桶的最大比率。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" /> 为 null。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="loadFactor" /> 小于 0.1。- 或 - <paramref name="loadFactor" /> 大于 1.0。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary,System.Single,System.Collections.IEqualityComparer)">
+      <summary>通过将指定字典中的元素复制到新的 <see cref="T:System.Collections.Hashtable" /> 对象中，初始化 <see cref="T:System.Collections.Hashtable" /> 类的一个新实例。新 <see cref="T:System.Collections.Hashtable" /> 对象的初始容量等于复制的元素数，并且使用指定的加载因子和 <see cref="T:System.Collections.IEqualityComparer" /> 对象。</summary>
+      <param name="d">要复制到新 <see cref="T:System.Collections.Hashtable" /> 对象的 <see cref="T:System.Collections.IDictionary" /> 对象。</param>
+      <param name="loadFactor">0.1 到 1.0 范围内的数字，再乘以提供最佳性能的默认值。结果是元素与存储桶的最大比率。</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 对象，用于定义要用来处理 <see cref="T:System.Collections.Hashtable" /> 的哈希代码提供程序和比较器。- 或 - null，则使用默认哈希代码提供程序和默认比较器。默认哈希代码提供程序是各个键的 <see cref="M:System.Object.GetHashCode" /> 实现，而默认比较器是各个键的 <see cref="M:System.Object.Equals(System.Object)" /> 实现。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" /> 为 null。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="loadFactor" /> 小于 0.1。- 或 - <paramref name="loadFactor" /> 大于 1.0。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IEqualityComparer)">
+      <summary>使用默认的初始容量、默认加载因子和指定的 <see cref="T:System.Collections.IEqualityComparer" /> 对象来初始化 <see cref="T:System.Collections.Hashtable" /> 类的新的空实例。</summary>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 对象，用于定义要与 <see cref="T:System.Collections.Hashtable" /> 对象一起使用的哈希代码提供程序和比较器。- 或 - null，则使用默认哈希代码提供程序和默认比较器。默认哈希代码提供程序是各个键的 <see cref="M:System.Object.GetHashCode" /> 实现，而默认比较器是各个键的 <see cref="M:System.Object.Equals(System.Object)" /> 实现。</param>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32)">
+      <summary>使用指定的初始容量、默认加载因子、默认哈希代码提供程序和默认比较器来初始化 <see cref="T:System.Collections.Hashtable" /> 类的新的空实例。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 对象最初可包含的元素的近似数目。 </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小于零。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>使用指定的初始容量和 <see cref="T:System.Collections.IEqualityComparer" /> 以及默认的加载因子来初始化 <see cref="T:System.Collections.Hashtable" /> 类的新的空实例。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 对象最初可包含的元素的近似数目。</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 对象，用于定义要用来处理 <see cref="T:System.Collections.Hashtable" /> 的哈希代码提供程序和比较器。- 或 - null，则使用默认哈希代码提供程序和默认比较器。默认哈希代码提供程序是各个键的 <see cref="M:System.Object.GetHashCode" /> 实现，而默认比较器是各个键的 <see cref="M:System.Object.Equals(System.Object)" /> 实现。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小于零。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32,System.Single)">
+      <summary>使用指定的初始容量、指定的加载因子、默认的哈希代码提供程序和默认比较器来初始化 <see cref="T:System.Collections.Hashtable" /> 类的新的空实例。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 对象最初可包含的元素的近似数目。</param>
+      <param name="loadFactor">0.1 到 1.0 范围内的数字，再乘以提供最佳性能的默认值。结果是元素与存储桶的最大比率。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小于零。- 或 - <paramref name="loadFactor" /> 小于 0.1。- 或 - <paramref name="loadFactor" /> 大于 1.0。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="capacity" /> 导致溢出。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32,System.Single,System.Collections.IEqualityComparer)">
+      <summary>使用指定的初始容量、加载因子和 <see cref="T:System.Collections.IEqualityComparer" /> 对象来初始化 <see cref="T:System.Collections.Hashtable" /> 类的新的空实例。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 对象最初可包含的元素的近似数目。</param>
+      <param name="loadFactor">0.1 到 1.0 范围内的数字，再乘以提供最佳性能的默认值。结果是元素与存储桶的最大比率。</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.IEqualityComparer" /> 对象，用于定义要用来处理 <see cref="T:System.Collections.Hashtable" /> 的哈希代码提供程序和比较器。- 或 - null，则使用默认哈希代码提供程序和默认比较器。默认哈希代码提供程序是各个键的 <see cref="M:System.Object.GetHashCode" /> 实现，而默认比较器是各个键的 <see cref="M:System.Object.Equals(System.Object)" /> 实现。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小于零。- 或 - <paramref name="loadFactor" /> 小于 0.1。- 或 - <paramref name="loadFactor" /> 大于 1.0。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.Add(System.Object,System.Object)">
+      <summary>将带有指定键和值的元素添加到 <see cref="T:System.Collections.Hashtable" /> 中。</summary>
+      <param name="key">要添加的元素的键。</param>
+      <param name="value">要添加的元素的值。该值可以为 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <see cref="T:System.Collections.Hashtable" /> 中已存在具有相同键的元素。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Hashtable" /> 为只读。- 或 -<see cref="T:System.Collections.Hashtable" /> 具有固定大小。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Clear">
+      <summary>从 <see cref="T:System.Collections.Hashtable" /> 中移除所有元素。</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Hashtable" /> 为只读。 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Clone">
+      <summary>创建 <see cref="T:System.Collections.Hashtable" /> 的浅表副本。</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" /> 的浅表副本。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Contains(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.Hashtable" /> 是否包含特定键。</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> contains an element with the specified key; otherwise, false.</returns>
+      <param name="key">要在 <see cref="T:System.Collections.Hashtable" /> 中定位的键。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.ContainsKey(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.Hashtable" /> 是否包含特定键。</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> contains an element with the specified key; otherwise, false.</returns>
+      <param name="key">要在 <see cref="T:System.Collections.Hashtable" /> 中定位的键。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.ContainsValue(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.Hashtable" /> 是否包含特定值。</summary>
+      <returns>如果 <see cref="T:System.Collections.Hashtable" /> 包含带有指定的 <paramref name="value" /> 的元素，则为 true；否则为 false。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.Hashtable" /> 中定位的值。该值可以为 null。</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.CopyTo(System.Array,System.Int32)">
+      <summary>将 <see cref="T:System.Collections.Hashtable" /> 元素复制到一维 <see cref="T:System.Array" /> 实例中的指定索引位置。</summary>
+      <param name="array">The one-dimensional <see cref="T:System.Array" /> that is the destination of the <see cref="T:System.Collections.DictionaryEntry" /> objects copied from <see cref="T:System.Collections.Hashtable" />.<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="arrayIndex">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 为 null。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="arrayIndex" /> 小于零。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 是多维的。- 或 -源 <see cref="T:System.Collections.Hashtable" /> 中的元素数目大于从 <paramref name="arrayIndex" /> 到目标 <paramref name="array" /> 末尾之间的可用空间。</exception>
+      <exception cref="T:System.InvalidCastException">源 <see cref="T:System.Collections.Hashtable" /> 的类型无法自动转换为目标 <paramref name="array" /> 的类型。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.Count">
+      <summary>获取包含在 <see cref="T:System.Collections.Hashtable" /> 中的键/值对的数目。</summary>
+      <returns>包含在 <see cref="T:System.Collections.Hashtable" /> 中的键/值对的数目。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.EqualityComparer">
+      <summary>获取要用于 <see cref="T:System.Collections.Hashtable" /> 的 <see cref="T:System.Collections.IEqualityComparer" />。</summary>
+      <returns>要用于 <see cref="T:System.Collections.Hashtable" /> 的 <see cref="T:System.Collections.IEqualityComparer" />。</returns>
+      <exception cref="T:System.ArgumentException">该属性被设置为某个值，但哈希表是使用 <see cref="T:System.Collections.IHashCodeProvider" /> 和 <see cref="T:System.Collections.IComparer" /> 创建的。</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.GetEnumerator">
+      <summary>Returns an <see cref="T:System.Collections.IDictionaryEnumerator" /> that iterates through the <see cref="T:System.Collections.Hashtable" />.</summary>
+      <returns>用于 <see cref="T:System.Collections.Hashtable" /> 的 <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.GetHash(System.Object)">
+      <summary>返回指定键的哈希代码。</summary>
+      <returns>
+        <paramref name="key" /> 的哈希代码。</returns>
+      <param name="key">
+        <see cref="T:System.Object" />，将为其返回哈希代码。</param>
+      <exception cref="T:System.NullReferenceException">
+        <paramref name="key" /> 为 null。</exception>
+    </member>
+    <member name="P:System.Collections.Hashtable.IsFixedSize">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.Hashtable" /> 是否具有固定大小。</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> has a fixed size; otherwise, false.默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.IsReadOnly">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.Hashtable" /> 是否为只读。</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> is read-only; otherwise, false.默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.IsSynchronized">
+      <summary>获取一个值，该值指示是否同步对 <see cref="T:System.Collections.Hashtable" /> 的访问（线程安全）。</summary>
+      <returns>true if access to the <see cref="T:System.Collections.Hashtable" /> is synchronized (thread safe); otherwise, false.默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.Item(System.Object)">
+      <summary>获取或设置与指定的键关联的值。</summary>
+      <returns>与指定的键相关联的值。如果未找到指定的键，尝试获取它将返回 null，尝试设置它将使用指定的键创建新元素。</returns>
+      <param name="key">要获取或设置其值的键。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.NotSupportedException">设置该属性，而且 <see cref="T:System.Collections.Hashtable" /> 为只读。- 或 -设置该属性，集合中不存在 <paramref name="key" />，而且 <see cref="T:System.Collections.Hashtable" /> 具有固定大小。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.KeyEquals(System.Object,System.Object)">
+      <summary>将特定 <see cref="T:System.Object" /> 与 <see cref="T:System.Collections.Hashtable" /> 中的特定键进行比较。</summary>
+      <returns>如果 <paramref name="item" /> 和 <paramref name="key" /> 相等，则为 true；否则为 false。</returns>
+      <param name="item">要与 <paramref name="key" /> 进行比较的 <see cref="T:System.Object" />。</param>
+      <param name="key">要与 <paramref name="item" /> 进行比较的 <see cref="T:System.Collections.Hashtable" /> 中的键。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="item" /> 为 null。- 或 - <paramref name="key" /> 为 null。</exception>
+    </member>
+    <member name="P:System.Collections.Hashtable.Keys">
+      <summary>Gets an <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Hashtable" />.</summary>
+      <returns>An <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Hashtable" />.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Remove(System.Object)">
+      <summary>从 <see cref="T:System.Collections.Hashtable" /> 中移除带有指定键的元素。</summary>
+      <param name="key">要移除的元素的键。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Hashtable" /> 为只读。- 或 -<see cref="T:System.Collections.Hashtable" /> 具有固定大小。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Synchronized(System.Collections.Hashtable)">
+      <summary>返回 <see cref="T:System.Collections.Hashtable" /> 的同步（线程安全）包装。</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" /> 的同步（线程安全）包装。</returns>
+      <param name="table">要同步的 <see cref="T:System.Collections.Hashtable" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="table" /> 为 null。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.SyncRoot">
+      <summary>获取可用于同步对 <see cref="T:System.Collections.Hashtable" /> 的访问的对象。</summary>
+      <returns>可用于同步对 <see cref="T:System.Collections.Hashtable" /> 的访问的对象。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.System#Collections#IEnumerable#GetEnumerator">
+      <summary>返回循环访问集合的枚举数。</summary>
+      <returns>可用于循环访问集合的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Hashtable.Values">
+      <summary>获取包含 <see cref="T:System.Collections.Hashtable" /> 中的值的 <see cref="T:System.Collections.ICollection" />。</summary>
+      <returns>一个 <see cref="T:System.Collections.ICollection" />，它包含 <see cref="T:System.Collections.Hashtable" /> 中的值。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="T:System.Collections.Queue">
+      <summary>表示对象的先进先出集合。</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Queue" /> 类的新实例，该实例为空，具有默认的初始容量并使用默认的增长因子。</summary>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor(System.Collections.ICollection)">
+      <summary>初始化 <see cref="T:System.Collections.Queue" /> 类的新实例，该实例包含从指定集合复制的元素，具有与复制的元素数相同的初始容量并使用默认的增长因子。</summary>
+      <param name="col">要从中复制元素的 <see cref="T:System.Collections.ICollection" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" /> is null. </exception>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor(System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.Queue" /> 类的新实例，该实例为空，具有指定的初始容量并使用默认的增长因子。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Queue" /> 可包含的初始元素数目。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> is less than zero. </exception>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor(System.Int32,System.Single)">
+      <summary>初始化 <see cref="T:System.Collections.Queue" /> 类的新实例，该实例为空，具有指定的初始容量并使用指定的增长因子。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Queue" /> 可包含的初始元素数目。</param>
+      <param name="growFactor">扩展 <see cref="T:System.Collections.Queue" /> 容量要使用的因子。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> is less than zero.-or- <paramref name="growFactor" /> is less than 1.0 or greater than 10.0. </exception>
+    </member>
+    <member name="M:System.Collections.Queue.Clear">
+      <summary>从 <see cref="T:System.Collections.Queue" /> 中移除所有对象。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Clone">
+      <summary>创建 <see cref="T:System.Collections.Queue" /> 的浅表副本。</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" /> 的浅表复制。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Contains(System.Object)">
+      <summary>确定某元素是否在 <see cref="T:System.Collections.Queue" /> 中。</summary>
+      <returns>如果在 <see cref="T:System.Collections.Queue" /> 中找到了 <paramref name="obj" />，则为 true；否则为 false。</returns>
+      <param name="obj">要在 <see cref="T:System.Collections.Queue" /> 中定位的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.CopyTo(System.Array,System.Int32)">
+      <summary>从指定数组索引开始将 <see cref="T:System.Collections.Queue" /> 元素复制到现有一维 <see cref="T:System.Array" /> 中。</summary>
+      <param name="array">一维 <see cref="T:System.Array" />，它是从 <see cref="T:System.Collections.Queue" /> 复制的元素的目标。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the source <see cref="T:System.Collections.Queue" /> is greater than the available space from <paramref name="index" /> to the end of the destination <paramref name="array" />. </exception>
+      <exception cref="T:System.ArrayTypeMismatchException">The type of the source <see cref="T:System.Collections.Queue" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Queue.Count">
+      <summary>获取 <see cref="T:System.Collections.Queue" /> 中包含的元素数。</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" /> 中包含的元素数。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Dequeue">
+      <summary>移除并返回位于 <see cref="T:System.Collections.Queue" /> 开始处的对象。</summary>
+      <returns>从 <see cref="T:System.Collections.Queue" /> 的开头移除的对象。</returns>
+      <exception cref="T:System.InvalidOperationException">The <see cref="T:System.Collections.Queue" /> is empty. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Enqueue(System.Object)">
+      <summary>将对象添加到 <see cref="T:System.Collections.Queue" /> 的结尾处。</summary>
+      <param name="obj">要添加到 <see cref="T:System.Collections.Queue" /> 的对象。该值可以为 null。</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.GetEnumerator">
+      <summary>返回循环访问 <see cref="T:System.Collections.Queue" /> 的枚举数。</summary>
+      <returns>用于 <see cref="T:System.Collections.Queue" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Queue.IsSynchronized">
+      <summary>获取一个值，该值指示是否同步对 <see cref="T:System.Collections.Queue" /> 的访问（线程安全）。</summary>
+      <returns>如果对 <see cref="T:System.Collections.Queue" /> 的访问是同步的（线程安全），则为 true；否则为 false。默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Peek">
+      <summary>返回位于 <see cref="T:System.Collections.Queue" /> 开始处的对象但不将其移除。</summary>
+      <returns>位于 <see cref="T:System.Collections.Queue" /> 的开头的对象。</returns>
+      <exception cref="T:System.InvalidOperationException">The <see cref="T:System.Collections.Queue" /> is empty. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Synchronized(System.Collections.Queue)">
+      <summary>返回一个新的 <see cref="T:System.Collections.Queue" />，它将包装原始队列，并且是线程安全的。</summary>
+      <returns>一个同步（线程安全）的 <see cref="T:System.Collections.Queue" /> 包装。</returns>
+      <param name="queue">要同步的 <see cref="T:System.Collections.Queue" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="queue" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Queue.SyncRoot">
+      <summary>获取可用于同步对 <see cref="T:System.Collections.Queue" /> 的访问的对象。</summary>
+      <returns>可用于同步对 <see cref="T:System.Collections.Queue" /> 的访问的对象。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.ToArray">
+      <summary>将 <see cref="T:System.Collections.Queue" /> 元素复制到新数组。</summary>
+      <returns>包含从 <see cref="T:System.Collections.Queue" /> 复制的元素的新数组。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.TrimToSize">
+      <summary>将容量设置为 <see cref="T:System.Collections.Queue" /> 中元素的实际数目。</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Queue" /> is read-only.</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="T:System.Collections.ReadOnlyCollectionBase">
+      <summary>为强类型非泛型只读集合提供 abstract 基类。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ReadOnlyCollectionBase.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 类的新实例。</summary>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.Count">
+      <summary>获取包含在 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 实例中的元素数。</summary>
+      <returns>包含在 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 实例中的元素数。检索此属性的值的运算复杂度为 O(1)。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ReadOnlyCollectionBase.GetEnumerator">
+      <summary>返回循环访问 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 实例的枚举器。</summary>
+      <returns>用于 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 实例的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.InnerList">
+      <summary>获取包含在 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 实例中的元素的列表。</summary>
+      <returns>表示 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 实例本身的 <see cref="T:System.Collections.ArrayList" />。</returns>
+    </member>
+    <member name="M:System.Collections.ReadOnlyCollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>从目标数组的指定索引处开始将整个 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 复制到兼容的一维 <see cref="T:System.Array" />。</summary>
+      <param name="array">作为从 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 复制的元素的目标的一维 <see cref="T:System.Array" />。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小于零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 是多维的。- 或 -源 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 中的元素数目大于从 <paramref name="index" /> 到目标 <paramref name="array" /> 末尾之间的可用空间。</exception>
+      <exception cref="T:System.InvalidCastException">源 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 的类型无法自动转换为目标 <paramref name="array" /> 的类型。</exception>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>获取一个值，该值指示对 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 对象的访问是否同步（线程安全）。</summary>
+      <returns>如果对 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 对象的访问是同步的（线程安全），则为 true；否则为 false。默认值为 false。</returns>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>获取一个对象，该对象可用于同步对 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 对象的访问。</summary>
+      <returns>一个对象，该对象可用于同步对 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 对象的访问。</returns>
+    </member>
+    <member name="T:System.Collections.SortedList">
+      <summary>表示键/值对的集合，这些键值对按键排序并可按照键和索引访问。</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例为空、具有默认初始容量并根据 <see cref="T:System.IComparable" /> 接口（此接口由添加到 <see cref="T:System.Collections.SortedList" /> 对象中的每个键实现）进行排序。</summary>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IComparer)">
+      <summary>初始化 <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例为空、具有默认初始容量并根据指定的 <see cref="T:System.Collections.IComparer" /> 接口进行排序。</summary>
+      <param name="comparer">在比较键时要使用的 <see cref="T:System.Collections.IComparer" /> 实现。- 或 - null，使用每个键的 <see cref="T:System.IComparable" /> 实现。</param>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IComparer,System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例为空、具有指定的初始容量并根据指定的 <see cref="T:System.Collections.IComparer" /> 接口排序。</summary>
+      <param name="comparer">在比较键时要使用的 <see cref="T:System.Collections.IComparer" /> 实现。- 或 - null，使用每个键的 <see cref="T:System.IComparable" /> 实现。</param>
+      <param name="capacity">
+        <see cref="T:System.Collections.SortedList" /> 对象可包含的初始元素数。 </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小于零。</exception>
+      <exception cref="T:System.OutOfMemoryException">没有足够的可用内存来创建具有指定 <paramref name="capacity" /> 的 <see cref="T:System.Collections.SortedList" /> 对象。</exception>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IDictionary)">
+      <summary>初始化 <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例包含从指定字典复制的元素、具有与所复制的元素数相同的初始容量并根据由每个键实现的 <see cref="T:System.IComparable" /> 接口排序。</summary>
+      <param name="d">要复制到新 <see cref="T:System.Collections.SortedList" /> 对象的 <see cref="T:System.Collections.IDictionary" /> 实现。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" /> 为 null。</exception>
+      <exception cref="T:System.InvalidCastException">
+        <paramref name="d" /> 中的一个或多个元素未实现 <see cref="T:System.IComparable" /> 接口。</exception>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IDictionary,System.Collections.IComparer)">
+      <summary>初始化 <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例包含从指定字典复制的元素、具有与所复制的元素数相同的初始容量并根据指定的 <see cref="T:System.Collections.IComparer" /> 接口排序。</summary>
+      <param name="d">要复制到新 <see cref="T:System.Collections.SortedList" /> 对象的 <see cref="T:System.Collections.IDictionary" /> 实现。</param>
+      <param name="comparer">在比较键时要使用的 <see cref="T:System.Collections.IComparer" /> 实现。- 或 - null，使用每个键的 <see cref="T:System.IComparable" /> 实现。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" /> 为 null。 </exception>
+      <exception cref="T:System.InvalidCastException">
+        <paramref name="comparer" /> 为 null，<paramref name="d" /> 中的一个或多个元素不实现 <see cref="T:System.IComparable" /> 接口。</exception>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例为空、具有指定的初始容量并且根据 <see cref="T:System.IComparable" /> 接口（此接口由添加到 <see cref="T:System.Collections.SortedList" /> 对象的每个键实现）进行排序。</summary>
+      <param name="initialCapacity">
+        <see cref="T:System.Collections.SortedList" /> 对象可包含的初始元素数。 </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="initialCapacity" /> 小于零。 </exception>
+      <exception cref="T:System.OutOfMemoryException">There is not enough available memory to create a <see cref="T:System.Collections.SortedList" /> object with the specified <paramref name="initialCapacity" />.</exception>
+    </member>
+    <member name="M:System.Collections.SortedList.Add(System.Object,System.Object)">
+      <summary>将带有指定键和值的元素添加到 <see cref="T:System.Collections.SortedList" /> 对象。</summary>
+      <param name="key">要添加的元素的键。</param>
+      <param name="value">要添加的元素的值。该值可以为 null。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentException">带有指定 <paramref name="key" /> 的元素已经存在于 <see cref="T:System.Collections.SortedList" /> 对象中。- 或 -<see cref="T:System.Collections.SortedList" /> 设置为使用 <see cref="T:System.IComparable" /> 接口，并且 <paramref name="key" /> 不实现 <see cref="T:System.IComparable" /> 接口。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 为只读。- 或 -<see cref="T:System.Collections.SortedList" /> 具有固定大小。</exception>
+      <exception cref="T:System.OutOfMemoryException">没有足够的可用内存来将元素添加到 <see cref="T:System.Collections.SortedList" />。</exception>
+      <exception cref="T:System.InvalidOperationException">比较器引发异常。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Capacity">
+      <summary>获取或设置 <see cref="T:System.Collections.SortedList" /> 对象的容量。</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 对象可包含的元素数。</returns>
+      <exception cref="T:System.ArgumentOutOfRangeException">分配的值小于 <see cref="T:System.Collections.SortedList" /> 对象中的当前元素数。</exception>
+      <exception cref="T:System.OutOfMemoryException">系统中没有足够的可用内存。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Clear">
+      <summary>从 <see cref="T:System.Collections.SortedList" /> 对象中移除所有元素。</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 对象是只读的。- 或 -<see cref="T:System.Collections.SortedList" /> 具有固定大小。 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Clone">
+      <summary>创建 <see cref="T:System.Collections.SortedList" /> 对象的浅表副本。</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 对象的浅表副本。</returns>
+      <filterpriority>2</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.SortedList.Contains(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.SortedList" /> 对象是否包含特定键。</summary>
+      <returns>如果 <see cref="T:System.Collections.SortedList" /> 对象包含带有指定 <paramref name="key" /> 的元素，则为 true；否则为 false。</returns>
+      <param name="key">要在 <see cref="T:System.Collections.SortedList" /> 对象中定位的键。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.InvalidOperationException">比较器引发异常。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.ContainsKey(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.SortedList" /> 对象是否包含特定键。</summary>
+      <returns>如果 <see cref="T:System.Collections.SortedList" /> 对象包含带有指定 <paramref name="key" /> 的元素，则为 true；否则为 false。</returns>
+      <param name="key">要在 <see cref="T:System.Collections.SortedList" /> 对象中定位的键。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.InvalidOperationException">比较器引发异常。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.ContainsValue(System.Object)">
+      <summary>确定 <see cref="T:System.Collections.SortedList" /> 对象是否包含特定值。</summary>
+      <returns>true if the <see cref="T:System.Collections.SortedList" /> object contains an element with the specified <paramref name="value" />; otherwise, false.</returns>
+      <param name="value">要在 <see cref="T:System.Collections.SortedList" /> 对象中定位的值。该值可以为 null。</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.CopyTo(System.Array,System.Int32)">
+      <summary>从指定数组索引开始将 <see cref="T:System.Collections.SortedList" /> 元素复制到一维 <see cref="T:System.Array" /> 对象中。</summary>
+      <param name="array">一维 <see cref="T:System.Array" /> 对象，它是从 <see cref="T:System.Collections.SortedList" /> 复制的 <see cref="T:System.Collections.DictionaryEntry" /> 对象的目标位置。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="arrayIndex">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 为 null。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="arrayIndex" /> 小于零。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 是多维的。- 或 -源 <see cref="T:System.Collections.SortedList" /> 对象中的元素数目大于从 <paramref name="arrayIndex" /> 到目标 <paramref name="array" /> 末尾之间的可用空间。</exception>
+      <exception cref="T:System.InvalidCastException">源 <see cref="T:System.Collections.SortedList" /> 的类型无法自动转换为目标 <paramref name="array" /> 的类型。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Count">
+      <summary>获取 <see cref="T:System.Collections.SortedList" /> 对象中包含的元素数。</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 对象中包含的元素数。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetByIndex(System.Int32)">
+      <summary>获取 <see cref="T:System.Collections.SortedList" /> 对象的指定索引处的值。</summary>
+      <returns>位于 <see cref="T:System.Collections.SortedList" /> 对象的指定索引处的值。</returns>
+      <param name="index">要获取的值的从零开始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 不在 <see cref="T:System.Collections.SortedList" /> 对象的有效索引范围内。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetEnumerator">
+      <summary>返回一个循环访问 <see cref="T:System.Collections.SortedList" /> 对象的 <see cref="T:System.Collections.IDictionaryEnumerator" /> 对象。</summary>
+      <returns>一个用于 <see cref="T:System.Collections.SortedList" /> 对象的 <see cref="T:System.Collections.IDictionaryEnumerator" /> 对象。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetKey(System.Int32)">
+      <summary>获取 <see cref="T:System.Collections.SortedList" /> 对象的指定索引处的键。</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 对象的指定索引处的键。</returns>
+      <param name="index">要获取的键的从零开始的索引。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 不在 <see cref="T:System.Collections.SortedList" /> 对象的有效索引范围内。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetKeyList">
+      <summary>获取 <see cref="T:System.Collections.SortedList" /> 对象中的键。</summary>
+      <returns>包含 <see cref="T:System.Collections.SortedList" /> 对象中的键的 <see cref="T:System.Collections.IList" /> 对象。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetValueList">
+      <summary>获取 <see cref="T:System.Collections.SortedList" /> 对象中的值。</summary>
+      <returns>
+        <see cref="T:System.Collections.IList" /> 对象，它包含 <see cref="T:System.Collections.SortedList" /> 对象中的值。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.IndexOfKey(System.Object)">
+      <summary>返回 <see cref="T:System.Collections.SortedList" /> 对象中指定键的从零开始的索引。</summary>
+      <returns>如果在 <see cref="T:System.Collections.SortedList" /> 对象中找到 <paramref name="key" />，则为 <paramref name="key" /> 参数的从零开始的索引；否则为 -1。</returns>
+      <param name="key">要在 <see cref="T:System.Collections.SortedList" /> 对象中定位的键。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.InvalidOperationException">比较器引发异常。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.IndexOfValue(System.Object)">
+      <summary>返回指定的值在 <see cref="T:System.Collections.SortedList" /> 对象中第一个匹配项的从零开始的索引。</summary>
+      <returns>如果在 <see cref="T:System.Collections.SortedList" /> 对象中找到 <paramref name="value" />，则为 <paramref name="value" /> 参数的第一个匹配项的从零开始的索引；否则为 -1。</returns>
+      <param name="value">要在 <see cref="T:System.Collections.SortedList" /> 对象中定位的值。该值可以为 null。</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.IsFixedSize">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.SortedList" /> 对象是否具有固定大小。</summary>
+      <returns>true if the <see cref="T:System.Collections.SortedList" /> object has a fixed size; otherwise, false.默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.IsReadOnly">
+      <summary>获取一个值，该值指示 <see cref="T:System.Collections.SortedList" /> 对象是否为只读。</summary>
+      <returns>true if the <see cref="T:System.Collections.SortedList" /> object is read-only; otherwise, false.默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.IsSynchronized">
+      <summary>获取一个值，该值指示对 <see cref="T:System.Collections.SortedList" /> 对象的访问是否同步（线程安全）。</summary>
+      <returns>true if access to the <see cref="T:System.Collections.SortedList" /> object is synchronized (thread safe); otherwise, false.默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Item(System.Object)">
+      <summary>获取并设置与 <see cref="T:System.Collections.SortedList" /> 对象中的特定键相关联的值。</summary>
+      <returns>如果找到 <paramref name="key" />，则为与 <see cref="T:System.Collections.SortedList" /> 对象中的 <paramref name="key" /> 参数相关联的值；否则为 null。</returns>
+      <param name="key">与要获取或设置的值相关联的键。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.NotSupportedException">设置该属性，而且 <see cref="T:System.Collections.SortedList" /> 对象为只读。- 或 -设置该属性，集合中不存在 <paramref name="key" />，而且 <see cref="T:System.Collections.SortedList" /> 具有固定大小。</exception>
+      <exception cref="T:System.OutOfMemoryException">没有足够的可用内存来将元素添加到 <see cref="T:System.Collections.SortedList" />。</exception>
+      <exception cref="T:System.InvalidOperationException">比较器引发异常。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Keys">
+      <summary>获取 <see cref="T:System.Collections.SortedList" /> 对象中的键。</summary>
+      <returns>包含 <see cref="T:System.Collections.SortedList" /> 对象中的键的 <see cref="T:System.Collections.ICollection" /> 对象。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Remove(System.Object)">
+      <summary>从 <see cref="T:System.Collections.SortedList" /> 对象中移除带有指定键的元素。</summary>
+      <param name="key">要移除的元素的键。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> 为 null。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 对象是只读的。- 或 -<see cref="T:System.Collections.SortedList" /> 具有固定大小。</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.RemoveAt(System.Int32)">
+      <summary>移除 <see cref="T:System.Collections.SortedList" /> 对象的指定索引处的元素。</summary>
+      <param name="index">要移除的元素的从零开始的索引。 </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 不在 <see cref="T:System.Collections.SortedList" /> 对象的有效索引范围内。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 为只读。- 或 -<see cref="T:System.Collections.SortedList" /> 具有固定大小。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.SetByIndex(System.Int32,System.Object)">
+      <summary>替换 <see cref="T:System.Collections.SortedList" /> 对象中指定索引处的值。</summary>
+      <param name="index">从零开始的索引，在该位置保存 <paramref name="value" />。</param>
+      <param name="value">要保存到 <see cref="T:System.Collections.SortedList" /> 对象中的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 不在 <see cref="T:System.Collections.SortedList" /> 对象的有效索引范围内。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Synchronized(System.Collections.SortedList)">
+      <summary>返回 <see cref="T:System.Collections.SortedList" /> 对象的同步（线程安全）包装。</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 对象的同步（线程安全）包装。</returns>
+      <param name="list">要同步的 <see cref="T:System.Collections.SortedList" /> 对象。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> 为 null。</exception>
+      <filterpriority>1</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Collections.SortedList.SyncRoot">
+      <summary>获取一个对象，该对象可用于同步对 <see cref="T:System.Collections.SortedList" /> 对象的访问。</summary>
+      <returns>一个对象，该对象可用于同步对 <see cref="T:System.Collections.SortedList" /> 对象的访问。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.System#Collections#IEnumerable#GetEnumerator">
+      <summary>返回循环访问 <see cref="T:System.Collections.SortedList" /> 的 <see cref="T:System.Collections.IEnumerator" />。</summary>
+      <returns>用于 <see cref="T:System.Collections.SortedList" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="M:System.Collections.SortedList.TrimToSize">
+      <summary>将容量设置为 <see cref="T:System.Collections.SortedList" /> 对象中元素的实际数目。</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 对象是只读的。- 或 -<see cref="T:System.Collections.SortedList" /> 具有固定大小。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Values">
+      <summary>获取 <see cref="T:System.Collections.SortedList" /> 对象中的值。</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" /> 对象，它包含 <see cref="T:System.Collections.SortedList" /> 对象中的值。</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="T:System.Collections.Stack">
+      <summary>表示对象的简单后进先出 (LIFO) 非泛型集合。</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Stack" /> 类的新实例，该实例为空并且具有默认初始容量。</summary>
+    </member>
+    <member name="M:System.Collections.Stack.#ctor(System.Collections.ICollection)">
+      <summary>初始化 <see cref="T:System.Collections.Stack" /> 类的新实例，该实例包含从指定集合复制的元素并且具有与所复制的元素数相同的初始容量。</summary>
+      <param name="col">
+        <see cref="T:System.Collections.ICollection" />，从其中复制元素。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" /> 为 null。</exception>
+    </member>
+    <member name="M:System.Collections.Stack.#ctor(System.Int32)">
+      <summary>初始化 <see cref="T:System.Collections.Stack" /> 类的新实例，该实例为空并且具有指定的初始容量或默认初始容量（这两个容量中的较大者）。</summary>
+      <param name="initialCapacity">
+        <see cref="T:System.Collections.Stack" /> 可包含的初始元素数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="initialCapacity" /> 小于零。</exception>
+    </member>
+    <member name="M:System.Collections.Stack.Clear">
+      <summary>从 <see cref="T:System.Collections.Stack" /> 中移除所有对象。</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Clone">
+      <summary>创建 <see cref="T:System.Collections.Stack" /> 的浅表副本。</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" /> 的浅表副本。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Contains(System.Object)">
+      <summary>确定某元素是否在 <see cref="T:System.Collections.Stack" /> 中。</summary>
+      <returns>如果在 <see cref="T:System.Collections.Stack" /> 中找到 <paramref name="obj" />，则为 true；否则为 false。</returns>
+      <param name="obj">要在 <see cref="T:System.Collections.Stack" /> 中查找的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.CopyTo(System.Array,System.Int32)">
+      <summary>从指定数组索引开始将 <see cref="T:System.Collections.Stack" /> 复制到现有一维 <see cref="T:System.Array" /> 中。</summary>
+      <param name="array">作为从 <see cref="T:System.Collections.Stack" /> 复制的元素的目标的一维 <see cref="T:System.Array" />。<see cref="T:System.Array" /> 必须具有从零开始的索引。</param>
+      <param name="index">
+        <paramref name="array" /> 中从零开始的索引，从此索引处开始进行复制。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> 为 null。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> 小于零。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> 是多维的。- 或 -源 <see cref="T:System.Collections.Stack" /> 中的元素数目大于从 <paramref name="index" /> 到目标 <paramref name="array" /> 末尾之间的可用空间。</exception>
+      <exception cref="T:System.InvalidCastException">源 <see cref="T:System.Collections.Stack" /> 的类型无法自动转换为目标 <paramref name="array" /> 的类型。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Stack.Count">
+      <summary>获取 <see cref="T:System.Collections.Stack" /> 中包含的元素数。</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" /> 中包含的元素个数。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.GetEnumerator">
+      <summary>返回 <see cref="T:System.Collections.Stack" /> 的 <see cref="T:System.Collections.IEnumerator" />。</summary>
+      <returns>用于 <see cref="T:System.Collections.Stack" /> 的 <see cref="T:System.Collections.IEnumerator" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Stack.IsSynchronized">
+      <summary>获取一个值，该值指示是否同步对 <see cref="T:System.Collections.Stack" /> 的访问（线程安全）。</summary>
+      <returns>如果对 <see cref="T:System.Collections.Stack" /> 的访问是同步的（线程安全），则为 true；否则为 false。默认值为 false。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Peek">
+      <summary>返回位于 <see cref="T:System.Collections.Stack" /> 顶部的对象但不将其移除。</summary>
+      <returns>位于 <see cref="T:System.Collections.Stack" /> 顶部的 <see cref="T:System.Object" />。</returns>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="T:System.Collections.Stack" /> 为空。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Pop">
+      <summary>移除并返回位于 <see cref="T:System.Collections.Stack" /> 顶部的对象。</summary>
+      <returns>从 <see cref="T:System.Collections.Stack" /> 的顶部移除的 <see cref="T:System.Object" />。</returns>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="T:System.Collections.Stack" /> 为空。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Push(System.Object)">
+      <summary>将对象插入 <see cref="T:System.Collections.Stack" /> 的顶部。</summary>
+      <param name="obj">要推入到 <see cref="T:System.Collections.Stack" /> 中的 <see cref="T:System.Object" />。该值可以为 null。</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Synchronized(System.Collections.Stack)">
+      <summary>返回 <see cref="T:System.Collections.Stack" /> 的同步（线程安全）包装。</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" /> 周围的同步包装。</returns>
+      <param name="stack">要同步的 <see cref="T:System.Collections.Stack" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="stack" /> 为 null。</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Stack.SyncRoot">
+      <summary>获取可用于同步对 <see cref="T:System.Collections.Stack" /> 的访问的对象。</summary>
+      <returns>可用于同步对 <see cref="T:System.Collections.Stack" /> 的访问的 <see cref="T:System.Object" />。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.ToArray">
+      <summary>将 <see cref="T:System.Collections.Stack" /> 复制到新数组中。</summary>
+      <returns>新数组，包含 <see cref="T:System.Collections.Stack" /> 的元素的副本。</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="T:System.Collections.Specialized.CollectionsUtil">
+      <summary>创建忽略字符串大小写的集合。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.#ctor">
+      <summary>初始化 <see cref="T:System.Collections.Specialized.CollectionsUtil" /> 类的新实例。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveHashtable">
+      <summary>创建 <see cref="T:System.Collections.Hashtable" /> 类具有默认初始容量的不区分大小写的新实例。</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" /> 类具有默认初始容量的不区分大小写的新实例。</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveHashtable(System.Collections.IDictionary)">
+      <summary>将项从指定字典复制到 <see cref="T:System.Collections.Hashtable" /> 类的不区分大小写的新实例，该实例具有与复制项的数量相同的初始容量。</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" /> 类的不区分大小写的新实例，该实例包含指定的 <see cref="T:System.Collections.IDictionary" /> 中的项。</returns>
+      <param name="d">要复制到不区分大小写的新 <see cref="T:System.Collections.Hashtable" /> 的 <see cref="T:System.Collections.IDictionary" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" /> 为 null。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveHashtable(System.Int32)">
+      <summary>创建 <see cref="T:System.Collections.Hashtable" /> 类具有指定初始容量的不区分大小写的新实例。</summary>
+      <returns>具有指定初始容量的 <see cref="T:System.Collections.Hashtable" /> 类的不区分大小写的新实例。</returns>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 最初可包含的大概项数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> 小于零。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveSortedList">
+      <summary>创建 <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例忽略字符串的大小写。</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 类的新实例，该实例忽略字符串的大小写。</returns>
+    </member>
+  </members>
+</doc>
