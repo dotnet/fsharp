@@ -1,4 +1,4 @@
-﻿#r @"..\..\..\..\..\packages\FSharp.Data.2.2.5\lib\net40\FSharp.Data.dll"
+#r @"..\..\..\..\..\packages\FSharp.Data.2.2.5\lib\net40\FSharp.Data.dll"
 
 open System.Diagnostics
 open System.IO
@@ -92,7 +92,8 @@ let executeProcess filename arguments =
         0
 let _ =
     let arguments = "restore -PackagesDirectory " + PackagesDir + " " + ProjectJson
-    executeProcess NugetPath arguments
+    //executeProcess NugetPath arguments
+    ()
 
 let setPathSeperators (path:string) = path.Replace('/', '\\')
 
