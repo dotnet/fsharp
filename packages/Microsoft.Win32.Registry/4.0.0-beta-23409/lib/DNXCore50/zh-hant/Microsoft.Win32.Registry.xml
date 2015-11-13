@@ -1,0 +1,567 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Microsoft.Win32.Registry</name>
+  </assembly>
+  <members>
+    <member name="T:Microsoft.Win32.Registry">
+      <summary>提供用於表示 Windows 登錄中根目錄機碼的 <see cref="T:Microsoft.Win32.RegistryKey" /> 物件，以及用於存取機碼/值組的 static 方法。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.ClassesRoot">
+      <summary>定義文件的型別 (或類別) 以及與型別相關聯的屬性。這個欄位會讀取 Windows 登錄主要機碼 HKEY_CLASSES_ROOT。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentConfig">
+      <summary>包含非針對特定使用者的硬體相關組態資訊。這個欄位會讀取 Windows 登錄主要機碼 HKEY_CURRENT_CONFIG。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentUser">
+      <summary>包含有關目前使用者喜好設定的資訊。這個欄位會讀取 Windows 登錄主要機碼 HKEY_CURRENT_USER。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.GetValue(System.String,System.String,System.Object)">
+      <summary>在指定的登錄機碼中，擷取與所指定名稱關聯的值。如果在指定的機碼中找不到該名稱，則會傳回提供的預設值；如果指定的機碼不存在，則傳回 null。</summary>
+      <returns>如果 <paramref name="keyName" /> 指定的子機碼不存在，則為 null，否則為與 <paramref name="valueName" /> 關聯的值；如果找不到 <paramref name="valueName" />，則為 <paramref name="defaultValue" />。</returns>
+      <param name="keyName">機碼的完整登錄路徑，以有效登錄根目錄開頭 (例如 "HKEY_CURRENT_USER")。</param>
+      <param name="valueName">名稱/值組的名稱。</param>
+      <param name="defaultValue">
+        <paramref name="valueName" /> 不存在時所傳回的值。</param>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已標記為刪除。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> 不是以有效的登錄根目錄開頭。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.LocalMachine">
+      <summary>包含本機電腦的組態資料。這個欄位會讀取 Windows 登錄主要機碼 HKEY_LOCAL_MACHINE。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.PerformanceData">
+      <summary>包含軟體元件的效能資訊這個欄位會讀取 Windows 登錄主要機碼 HKEY_PERFORMANCE_DATA。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object)">
+      <summary>在指定的登錄機碼上設定指定的名稱/值組。如果指定的機碼不存在，則會建立它。</summary>
+      <param name="keyName">機碼的完整登錄路徑，以有效登錄根目錄開頭 (例如 "HKEY_CURRENT_USER")。</param>
+      <param name="valueName">名稱/值組的名稱。</param>
+      <param name="value">要儲存的值。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> 不是以有效的登錄根目錄開頭。-或-<paramref name="keyName" /> 超過所允許的最大長度 (255 個字元)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 為唯讀，因此無法寫入 (例如，它是根層次節點)。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有建立或修改登錄機碼所需的使用權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>使用指定的登錄資料型別，在指定的登錄機碼上設定名稱/值組。如果指定的機碼不存在，則會建立它。</summary>
+      <param name="keyName">機碼的完整登錄路徑，以有效登錄根目錄開頭 (例如 "HKEY_CURRENT_USER")。</param>
+      <param name="valueName">名稱/值組的名稱。</param>
+      <param name="value">要儲存的值。</param>
+      <param name="valueKind">儲存資料時要使用的登錄資料型別。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> 不是以有效的登錄根目錄開頭。-或-<paramref name="keyName" /> 超過所允許的最大長度 (255 個字元)。-或-<paramref name="value" /> 的型別與 <paramref name="valueKind" /> 所指定的登錄資料型別不符，因此，無法正確轉換資料。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 為唯讀，因此無法寫入 (例如，它是根層次節點，或未以寫入權限來開啟該機碼)。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有建立或修改登錄機碼所需的使用權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.Users">
+      <summary>包含有關預設使用者組態的資訊。這個欄位會讀取 Windows 登錄主要機碼 HKEY_USERS。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryHive">
+      <summary>表示外部電腦最上層節點的可能值。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.ClassesRoot">
+      <summary>表示其他電腦上的 HKEY_CLASSES_ROOT 機碼。這個值可以傳遞至 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法以遠端方式來開啟這個節點。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentConfig">
+      <summary>表示其他電腦上的 HKEY_CURRENT_CONFIG 機碼。這個值可以傳遞至 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法以遠端方式來開啟這個節點。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentUser">
+      <summary>表示其他電腦上的 HKEY_CURRENT_USER 機碼。這個值可以傳遞至 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法以遠端方式來開啟這個節點。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.LocalMachine">
+      <summary>表示其他電腦上的 HKEY_LOCAL_MACHINE 機碼。這個值可以傳遞至 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法以遠端方式來開啟這個節點。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.PerformanceData">
+      <summary>表示其他電腦上的 HKEY_PERFORMANCE_DATA 機碼。這個值可以傳遞至 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法以遠端方式來開啟這個節點。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.Users">
+      <summary>表示其他電腦上的 HKEY_USERS 機碼。這個值可以傳遞至 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 方法以遠端方式來開啟這個節點。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryKey">
+      <summary>表示 Windows 登錄中的機碼層級節點。這個類別的作用是登錄封裝。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String)">
+      <summary>為寫入權限建立新的子機碼，或開啟現有的子機碼。</summary>
+      <returns>傳回新建立的子機碼，或者如果作業失敗，則傳回 null。如果為 <paramref name="subkey" /> 指定了長度為零的字串，則會傳回目前的 <see cref="T:Microsoft.Win32.RegistryKey" /> 物件。</returns>
+      <param name="subkey">要建立或開啟之子機碼的名稱或路徑。這個字串不會區分大小寫。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 為 null。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有建立或開啟登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">叫用這個方法的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">無法寫入 <see cref="T:Microsoft.Win32.RegistryKey" />，例如不是開啟為可寫入的機碼，或使用者沒有必要的存取權限。</exception>
+      <exception cref="T:System.IO.IOException">巢狀層次超過 510。-或-發生系統錯誤，例如刪除機碼，或是嘗試在 <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 根目錄中建立機碼。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean)">
+      <summary>建立新的子機碼，或開啟現有的子機碼指定的存取權。從開始提供.NET Framework 2015</summary>
+      <returns>傳回新建立的子機碼，或者如果作業失敗，則傳回 null。如果為 <paramref name="subkey" /> 指定了長度為零的字串，則會傳回目前的 <see cref="T:Microsoft.Win32.RegistryKey" /> 物件。</returns>
+      <param name="subkey">要建立或開啟之子機碼的名稱或路徑。這個字串不會區分大小寫。</param>
+      <param name="writable">true若要指出新的子機碼是可寫入 ；否則， false。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 為 null。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有建立或開啟登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">無法寫入目前的 <see cref="T:Microsoft.Win32.RegistryKey" />，例如不是開啟為可寫入的機碼，或使用者沒有必要的存取權限。</exception>
+      <exception cref="T:System.IO.IOException">巢狀層次超過 510。-或-發生系統錯誤，例如刪除機碼，或是嘗試在 <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 根目錄中建立機碼。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean,Microsoft.Win32.RegistryOptions)">
+      <summary>建立新的子機碼，或開啟現有的子機碼指定的存取權。從開始提供.NET Framework 2015</summary>
+      <returns>傳回新建立的子機碼，或者如果作業失敗，則傳回 null。如果為 <paramref name="subkey" /> 指定了長度為零的字串，則會傳回目前的 <see cref="T:Microsoft.Win32.RegistryKey" /> 物件。</returns>
+      <param name="subkey">要建立或開啟之子機碼的名稱或路徑。這個字串不會區分大小寫。</param>
+      <param name="writable">true若要指出新的子機碼是可寫入 ；否則， false。</param>
+      <param name="options">要使用的登錄選項。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 為 null。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" />未指定有效的選項</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有建立或開啟登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">無法寫入目前的 <see cref="T:Microsoft.Win32.RegistryKey" />，例如不是開啟為可寫入的機碼，或使用者沒有必要的存取權限。</exception>
+      <exception cref="T:System.IO.IOException">巢狀層次超過 510。-或-發生系統錯誤，例如刪除機碼，或是嘗試在 <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 根目錄中建立機碼。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String)">
+      <summary>刪除指定的子機碼。</summary>
+      <param name="subkey">要刪除的子機碼名稱。這個字串不會區分大小寫。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> 有子系子機碼</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> 參數沒有指定有效的登錄機碼 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 是null</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有刪除機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String,System.Boolean)">
+      <summary>刪除指定的子機碼，並且指定在找不到該子機碼時是否引發例外狀況。</summary>
+      <param name="subkey">要刪除的子機碼名稱。這個字串不會區分大小寫。</param>
+      <param name="throwOnMissingSubKey">表示如果找不到指定子機碼時，是否引發例外狀況。如果這個引數為 true，而指定的子機碼不存在時，則會引發例外狀況。如果這個引數為 false，而指定的子機碼不存在時，則不採取任何動作。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> 有子系子機碼。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> 沒有指定有效的登錄機碼，而且 <paramref name="throwOnMissingSubKey" /> 為 true。 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 為 null。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有刪除機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String)">
+      <summary>遞迴地刪除子機碼和任何子系子機碼。</summary>
+      <param name="subkey">要刪除的子機碼。這個字串不會區分大小寫。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">已嘗試根群組的刪除。-或-<paramref name="subkey" /> 沒有指定有效的登錄子機碼。</exception>
+      <exception cref="T:System.IO.IOException">發生 I/O 錯誤。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有刪除機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String,System.Boolean)">
+      <summary>遞迴地刪除指定的子機碼和任何子系子機碼，並且指定在找不到該子機碼時是否引發例外狀況。</summary>
+      <param name="subkey">要刪除的子機碼名稱。這個字串不會區分大小寫。</param>
+      <param name="throwOnMissingSubKey">表示如果找不到指定子機碼時，是否引發例外狀況。如果這個引數為 true，而指定的子機碼不存在時，則會引發例外狀況。如果這個引數為 false，而指定的子機碼不存在時，則不採取任何動作。</param>
+      <exception cref="T:System.ArgumentException">嘗試刪除樹狀目錄的根登錄區。-或-<paramref name="subkey" /> 沒有指定有效的登錄子機碼，而且 <paramref name="throwOnMissingSubKey" /> 為 true。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 為 null。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有刪除機碼所需的使用權限。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String)">
+      <summary>從這個機碼中刪除指定值。</summary>
+      <param name="name">要刪除的值的名稱。 </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 不是值的有效參考。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有刪除值所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">管理中的 <see cref="T:Microsoft.Win32.RegistryKey" /> 是唯讀的。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String,System.Boolean)">
+      <summary>刪除此機碼的指定值，並且指定找不到該值時是否引發例外狀況。</summary>
+      <param name="name">要刪除的值的名稱。</param>
+      <param name="throwOnMissingValue">表示如果找不到指定的值時，是否引發例外狀況。如果這個引數為 true，而指定的值不存在時，則會引發例外狀況。如果這個引數為 false，而指定的值不存在時，則不採取任何動作。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 不是值的有效參考，而且 <paramref name="throwOnMissingValue" /> 為 true。-或- <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有刪除值所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">管理中的 <see cref="T:Microsoft.Win32.RegistryKey" /> 是唯讀的。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Dispose">
+      <summary>將 <see cref="T:Microsoft.Win32.RegistryKey" /> 類別目前的執行個體所使用的資源全部釋出。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Flush">
+      <summary>將指定的開啟登錄機碼的所有屬性 (Attribute) 寫入登錄中。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle)">
+      <summary>[安全性關鍵] 從指定的控制代碼建立登錄機碼。</summary>
+      <returns>登錄機碼 (Registry Key)。</returns>
+      <param name="handle">登錄機碼的控制代碼。</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle,Microsoft.Win32.RegistryView)">
+      <summary>[安全性關鍵] 從指定的控制代碼和登錄檢視設定，建立登錄機碼。</summary>
+      <returns>登錄機碼 (Registry Key)。</returns>
+      <param name="handle">登錄機碼的控制代碼。</param>
+      <param name="view">要使用的登錄檢視。</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetSubKeyNames">
+      <summary>擷取包含所有子機碼名稱的字串陣列。</summary>
+      <returns>字串的陣列包含了目前機碼的子機碼名稱。</returns>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <exception cref="T:System.IO.IOException">發生系統錯誤，例如，目前的機碼已經刪除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String)">
+      <summary>擷取與指定名稱關聯的值。如果登錄中沒有名稱/值組，則傳回 null。</summary>
+      <returns>與 <paramref name="name" /> 關聯的值，如果找不到 <paramref name="name" />，則為 null。</returns>
+      <param name="name">要擷取的值的名稱。這個字串不會區分大小寫。</param>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已標記為刪除。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object)">
+      <summary>擷取與指定名稱關聯的值。如果找不到名稱，則傳回您提供的預設值。</summary>
+      <returns>與 <paramref name="name" /> 關聯的值，擁有未展開的內嵌環境變數，如果找不到 <paramref name="name" />，則為 <paramref name="defaultValue" />。</returns>
+      <param name="name">要擷取的值的名稱。這個字串不會區分大小寫。</param>
+      <param name="defaultValue">
+        <paramref name="name" /> 不存在時所傳回的值。</param>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已標記為刪除。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object,Microsoft.Win32.RegistryValueOptions)">
+      <summary>擷取與指定名稱及擷取選項關聯的值。如果找不到名稱，則傳回您提供的預設值。</summary>
+      <returns>與 <paramref name="name" /> 關聯的值，根據指定的 <paramref name="options" /> 處理，如果找不到 <paramref name="name" />，則為 <paramref name="defaultValue" />。</returns>
+      <param name="name">要擷取的值的名稱。這個字串不會區分大小寫。</param>
+      <param name="defaultValue">
+        <paramref name="name" /> 不存在時所傳回的值。</param>
+      <param name="options">其中一個列舉值，指定擷取之值的選擇性處理。</param>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已標記為刪除。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" /> 不是有效的 <see cref="T:Microsoft.Win32.RegistryValueOptions" /> 值，例如將無效的值轉換成 <see cref="T:Microsoft.Win32.RegistryValueOptions" />。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueKind(System.String)">
+      <summary>擷取與指定名稱關聯之值的登錄資料類型。</summary>
+      <returns>與 <paramref name="name" /> 關聯的值的登錄資料型別。</returns>
+      <param name="name">要擷取之登錄資料類型的值的名稱。這個字串不會區分大小寫。</param>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.IO.IOException">包含指定值的子機碼不存在。-或-<paramref name="name" /> 指定的名稱/值組不存在。在 Windows 95、Windows 98 或 Windows Millennium Edition 上不會擲回這個例外狀況。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueNames">
+      <summary>擷取包含所有與這個機碼相關值名稱的字串陣列。</summary>
+      <returns>字串的陣列，包含目前機碼的值名稱。</returns>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <exception cref="T:System.IO.IOException">發生系統錯誤，例如，目前的機碼已經刪除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Handle">
+      <summary>[安全性關鍵] 取得 <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> 物件，這個物件表示目前 <see cref="T:Microsoft.Win32.RegistryKey" /> 物件所封裝的登錄機碼。</summary>
+      <returns>登錄機碼的控制代碼。</returns>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Name">
+      <summary>擷取機碼名稱。</summary>
+      <returns>機碼的絕對 (限定) 名稱。</returns>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive,Microsoft.Win32.RegistryView)">
+      <summary>使用指定的檢視，開啟本機電腦上表示要求機碼的新 <see cref="T:Microsoft.Win32.RegistryKey" />。</summary>
+      <returns>要求的登錄機碼。</returns>
+      <param name="hKey">要開啟的 HKEY。</param>
+      <param name="view">要使用的登錄檢視。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="hKey" /> 或 <paramref name="view" /> 無效。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有執行此動作所需的權限。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String)">
+      <summary>擷取子機碼為唯讀。</summary>
+      <returns>要求的子機碼，或者在作業失敗時則為 null。</returns>
+      <param name="name">以唯讀方式開啟之子機碼的名稱或路徑。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 是null</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有讀取登錄機碼所需的使用權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Boolean)">
+      <summary>擷取指定的子機碼，並且指定此機碼是否要套用寫入存取權限。</summary>
+      <returns>要求的子機碼，或者在作業失敗時則為 null。</returns>
+      <param name="name">要開啟的子機碼名稱或路徑。</param>
+      <param name="writable">如果需要機碼的寫入權限，請設定為 true。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有以指定模式存取登錄機碼所需的使用權限。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Security.AccessControl.RegistryRights)">
+      <summary>擷取具有指定名稱和 的子機碼。從開始提供.NET Framework 2015</summary>
+      <returns>要求的子機碼，或者在作業失敗時則為 null。</returns>
+      <param name="name">要建立或開啟之子機碼的名稱或路徑。</param>
+      <param name="rights">登錄機碼的權限。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有以指定模式存取登錄機碼所需的使用權限。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)">
+      <summary>設定指定的名稱/值組。</summary>
+      <param name="name">要儲存的值的名稱。</param>
+      <param name="value">要儲存的資料。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 為 null。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> 是不支援的資料型別。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 是唯讀的，無法被寫入，例如沒有以寫入權限開啟機碼。-或-<see cref="T:Microsoft.Win32.RegistryKey" /> 物件表示根層級節點，且作業系統是 Windows Millennium Edition 或 Windows 98。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有建立或修改登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 物件表示根層級節點，且作業系統是 Windows 2000、Windows XP 或 Windows Server 2003。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>使用指定的登錄資料類型，設定登錄機碼中名稱/值組的值。</summary>
+      <param name="name">要儲存之值的名稱。</param>
+      <param name="value">要儲存的資料。</param>
+      <param name="valueKind">儲存資料時要使用的登錄資料類型。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> 的型別與 <paramref name="valueKind" /> 所指定的登錄資料型別不符，因此，無法正確轉換資料。</exception>
+      <exception cref="T:System.ObjectDisposedException">包含指定值的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 是唯讀的，無法被寫入，例如沒有以寫入權限開啟機碼。-或-<see cref="T:Microsoft.Win32.RegistryKey" /> 物件表示根層級節點，且作業系統是 Windows Millennium Edition 或 Windows 98。</exception>
+      <exception cref="T:System.Security.SecurityException">使用者沒有建立或修改登錄機碼所需的使用權限。</exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 物件表示根層級節點，且作業系統是 Windows 2000、Windows XP 或 Windows Server 2003。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.SubKeyCount">
+      <summary>擷取目前機碼中子機碼的計數。</summary>
+      <returns>目前機碼的子機碼數目。</returns>
+      <exception cref="T:System.Security.SecurityException">使用者不具有機碼的讀取權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <exception cref="T:System.IO.IOException">發生系統錯誤，例如，目前的機碼已經刪除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.ToString">
+      <summary>擷取這個機碼的字串表示。</summary>
+      <returns>表示機碼的字串。如果指定的機碼是無效的 (找不到)，則會傳回 null 值。</returns>
+      <exception cref="T:System.ObjectDisposedException">正接受存取的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.ValueCount">
+      <summary>擷取機碼中值的計數。</summary>
+      <returns>機碼中的名稱/值組的數目。</returns>
+      <exception cref="T:System.Security.SecurityException">使用者不具有機碼的讀取權限。</exception>
+      <exception cref="T:System.ObjectDisposedException">正接受管理的 <see cref="T:Microsoft.Win32.RegistryKey" /> 已經關閉 (關閉的機碼無法存取)。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">使用者沒有必要的登錄權限。</exception>
+      <exception cref="T:System.IO.IOException">發生系統錯誤，例如，目前的機碼已經刪除。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.View">
+      <summary>取得用來建立登錄機碼的檢視。</summary>
+      <returns>用來建立登錄機碼的檢視。-或-如果未使用檢視，則為 <see cref="F:Microsoft.Win32.RegistryView.Default" />。</returns>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryOptions">
+      <summary>指定建立登錄機碼時要使用的選項。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.None">
+      <summary>非 Volatile 機碼。這是預設值。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.Volatile">
+      <summary>Volatile 機碼。在記憶體中儲存資訊，而且當對應的登錄區卸載時不會保留資訊。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueKind">
+      <summary>設定將資料值放到登錄內時所使用的資料型別，或代表登錄資料庫內資料值的型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Binary">
+      <summary>任何形式的二進位資料，等於 Win32 API 中的 REG_BINARY 登錄資料型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.DWord">
+      <summary>32 位元二進位數字，等於 Win32 API 中的 REG_DWORD 登錄資料型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.ExpandString">
+      <summary>以 null 結尾的字串，其中包含未展開的環境變數參考，例如 %PATH%，以後要擷取值時，環境變數就會展開。這個值等於 Win32 API 中的 REG_EXPAND_SZ 登錄資料型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.MultiString">
+      <summary>以 null 結尾的字串所組成的陣列，整個陣列最後以兩個 null 字元做為結尾。這個值等於 Win32 API 中的 REG_MULTI_SZ 登錄資料型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.None">
+      <summary>無資料型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.QWord">
+      <summary>64 位元二進位數字，等於 Win32 API 中的 REG_QWORD 登錄資料型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.String">
+      <summary>以 null 結尾的字串，等於 Win32 API 中的 REG_SZ 登錄資料型別。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Unknown">
+      <summary>不支援的登錄資料型別，例如，Microsoft Win32 API 的 REG_RESOURCE_LIST 登錄資料型別就是其中之一。您可以使用這個值指定 <see cref="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)" /> 方法在儲存名稱/值組時，應該自行決定適當的登錄資料型別。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueOptions">
+      <summary>在擷取登錄機碼的名稱/值組時，指定選擇項行為。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames">
+      <summary>
+        <see cref="F:Microsoft.Win32.RegistryValueKind.ExpandString" /> 型別的值，能夠在沒有展開其內嵌環境變數的情況下擷取。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.None">
+      <summary>沒有指定的選擇項行為。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryView">
+      <summary>指定在 64 位元作業系統上以哪個登錄檢視為目標。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Default">
+      <summary>預設檢視。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry32">
+      <summary>32 位元檢視。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry64">
+      <summary>64 位元檢視。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle">
+      <summary>[安全性關鍵] 表示 Windows 登錄的安全控制代碼。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.SafeHandles.SafeRegistryHandle.#ctor(System.IntPtr,System.Boolean)">
+      <summary>[安全性關鍵] 初始化 <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> 類別的新執行個體。</summary>
+      <param name="preexistingHandle">物件，表示要使用的既有控制代碼。</param>
+      <param name="ownsHandle">true 表示在結束階段確實地釋放控制代碼，false 表示不要確實地釋放。</param>
+    </member>
+    <member name="P:Microsoft.Win32.SafeHandles.SafeRegistryHandle.IsInvalid"></member>
+    <member name="T:System.Security.AccessControl.RegistryRights">
+      <summary>指定可套用至登錄物件的存取控制 (Access Control) 權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ChangePermissions">
+      <summary>變更與登錄機碼相關聯之存取規則和稽核規則的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateLink">
+      <summary>保留供系統使用。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateSubKey">
+      <summary>建立登錄機碼之子機碼的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Delete">
+      <summary>刪除登錄機碼的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.EnumerateSubKeys">
+      <summary>列出登錄機碼之子機碼的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ExecuteKey">
+      <summary>與 <see cref="F:System.Security.AccessControl.RegistryRights.ReadKey" /> 相同。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.FullControl">
+      <summary>對登錄機碼執行完全控制以及修改其存取規則和稽核規則的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Notify">
+      <summary>要求通知登錄機碼變更的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.QueryValues">
+      <summary>查詢登錄機碼中名稱/值組的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadKey">
+      <summary>查詢登錄機碼中名稱/值組、要求通知變更、列舉其子機碼，以及讀取其存取規則和稽核規則的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadPermissions">
+      <summary>開啟並複製登錄機碼之存取規則和稽核規則的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.SetValue">
+      <summary>建立、刪除或設定登錄機碼中名稱/值組的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.TakeOwnership">
+      <summary>變更登錄機碼擁有人的權限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.WriteKey">
+      <summary>建立、刪除、設定登錄機碼中名稱/值組、建立或刪除子機碼、要求通知變更、列舉其子機碼，以及讀取其存取規則和稽核規則的權限。</summary>
+    </member>
+  </members>
+</doc>

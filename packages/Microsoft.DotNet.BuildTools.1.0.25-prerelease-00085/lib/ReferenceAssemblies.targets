@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <IsReferenceAssembly Condition="'$(IsReferenceAssembly)'=='' AND ($(MSBuildProjectFullPath.Contains('\ref\')) OR $(MSBuildProjectFullPath.Contains('/ref/')))">true</IsReferenceAssembly>
+
+    <!-- The first two parts of the assembly version represent API version, 
+         the third part is for bugfixes, the fourth is for hotfixes/securtity-updates -->
+    <APIVersion>$([System.Version]::Parse('$(AssemblyVersion)').ToString(2))</APIVersion>
+
+    <_usingRoslyn Condition="'$(MSBuildToolsVersion)' == 'dogfood' OR '$(MSBuildToolsVersion)' &gt;= '14.0'">true</_usingRoslyn>
+    <!-- Roslyn requires the runtimemetadataversion parameter when building a core assembly -->
+    <CompilerResponseFile Condition="'$(IsCoreAssembly)' == 'true' AND '$(_usingRoslyn)' == 'true'">$(MSBuildThisFileDirectory)coreAssembly.rsp</CompilerResponseFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsReferenceAssembly)'=='true'">
+    <AssemblyName Condition="'$(AssemblyName)' == ''">$(MSBuildProjectName)</AssemblyName>
+    <ReferenceAssemblyOutputPath Condition="'$(ReferenceAssemblyOutputPath)' == ''">$(BaseOutputPath)ref\</ReferenceAssemblyOutputPath>
+    <OutputPath>$(ReferenceAssemblyOutputPath)$(AssemblyName)\$(AssemblyVersion)</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)ref\$(AssemblyName)\$(AssemblyVersion)</IntermediateOutputPath>
+
+    <OmitTransitiveCompileReferences>true</OmitTransitiveCompileReferences>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsReferenceAssembly)'=='true'">
+    <!-- All reference assemblies are marked APTCA. An internal tool used to generate reference 
+         assembly source normalizes the security annotations from seed -> reference assembly 
+         under that assumption. -->
+    <!-- NOTE: Reference assemblies are not executable so this is for reference only and does 
+         not provide any security privileges at runtime. -->
+    <AssemblyInfoLines Include="[assembly:System.Security.AllowPartiallyTrustedCallers]" />
+    <!-- All reference assemblies should have the 0x70 flag which prevents them from loading 
+         and the ReferenceAssemblyAttribute. -->
+    <AssemblyInfoLines Include="[assembly:System.Runtime.CompilerServices.ReferenceAssembly]" />
+    <AssemblyInfoLines Include="[assembly:System.Reflection.AssemblyFlags((System.Reflection.AssemblyNameFlags)0x70)]" />
+  </ItemGroup>
+</Project>

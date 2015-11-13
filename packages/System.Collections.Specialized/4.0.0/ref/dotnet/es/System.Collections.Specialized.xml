@@ -1,0 +1,1056 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Collections.Specialized</name>
+  </assembly>
+  <members>
+    <member name="T:System.Collections.Specialized.BitVector32">
+      <summary>Proporciona una estructura simple que almacena valores booleanos y pequeños enteros en 32 bits de memoria.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Collections.Specialized.BitVector32)">
+      <summary>Inicializa una nueva instancia de la estructura <see cref="T:System.Collections.Specialized.BitVector32" /> que contiene los datos representados en una estructura <see cref="T:System.Collections.Specialized.BitVector32" /> existente.</summary>
+      <param name="value">Estructura <see cref="T:System.Collections.Specialized.BitVector32" /> que contiene los datos que hay que copiar. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Int32)">
+      <summary>Inicializa una nueva instancia de la estructura <see cref="T:System.Collections.Specialized.BitVector32" /> que contiene los datos representados en un entero.</summary>
+      <param name="data">Entero que representa los datos del nuevo <see cref="T:System.Collections.Specialized.BitVector32" />. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask">
+      <summary>Crea la primera máscara de una serie, que puede usarse para recuperar bits individuales en <see cref="T:System.Collections.Specialized.BitVector32" /> que está configurado en marcadores de bits.</summary>
+      <returns>Máscara que aísla el primer marcador de bits de <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask(System.Int32)">
+      <summary>Crea una máscara adicional que sigue a la máscara especificada de una serie, que puede usarse para recuperar bits individuales en <see cref="T:System.Collections.Specialized.BitVector32" /> que está configurado como marcadores de bits.</summary>
+      <returns>Máscara que aísla el marcador de bits que sigue al que <paramref name="previous" /> apunta en <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+      <param name="previous">Máscara que muestra el marcador de bits previo. </param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> indicates the last bit flag in the <see cref="T:System.Collections.Specialized.BitVector32" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16)">
+      <summary>Crea la primera <see cref="T:System.Collections.Specialized.BitVector32.Section" /> de una serie de secciones que contienen pequeños enteros.</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> que puede contener un número de cero a <paramref name="maxValue" />.</returns>
+      <param name="maxValue">Entero de 16 bits con signo, que especifica el valor máximo de la nueva <see cref="T:System.Collections.Specialized.BitVector32.Section" />. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16,System.Collections.Specialized.BitVector32.Section)">
+      <summary>Crea una nueva <see cref="T:System.Collections.Specialized.BitVector32.Section" /> que sigue a la <see cref="T:System.Collections.Specialized.BitVector32.Section" /> especificada de una serie de secciones que contienen pequeños enteros.</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> que puede contener un número de cero a <paramref name="maxValue" />.</returns>
+      <param name="maxValue">Entero de 16 bits con signo, que especifica el valor máximo de la nueva <see cref="T:System.Collections.Specialized.BitVector32.Section" />. </param>
+      <param name="previous">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> previo en <see cref="T:System.Collections.Specialized.BitVector32" />. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> includes the final bit in the <see cref="T:System.Collections.Specialized.BitVector32" />.-or- <paramref name="maxValue" /> is greater than the highest value that can be represented by the number of bits after <paramref name="previous" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Data">
+      <summary>Obtiene el valor de <see cref="T:System.Collections.Specialized.BitVector32" /> como un entero.</summary>
+      <returns>Valor de <see cref="T:System.Collections.Specialized.BitVector32" /> como un entero.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Equals(System.Object)">
+      <summary>Determina si el objeto especificado es igual a <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Es true si el objeto especificado es igual a <see cref="T:System.Collections.Specialized.BitVector32" />; en caso contrario, es false.</returns>
+      <param name="o">Objeto que se va a comparar con el objeto <see cref="T:System.Collections.Specialized.BitVector32" /> actual. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.GetHashCode">
+      <summary>Sirve como función hash para <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Código hash para <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Collections.Specialized.BitVector32.Section)">
+      <summary>Obtiene o establece el valor almacenado en la <see cref="T:System.Collections.Specialized.BitVector32.Section" /> especificada.</summary>
+      <returns>Valor almacenado en la <see cref="T:System.Collections.Specialized.BitVector32.Section" /> especificada.</returns>
+      <param name="section">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> que contiene el valor que hay que obtener o establecer. </param>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Int32)">
+      <summary>Obtiene o establece el estado del marcador de bits que indica la máscara especificada.</summary>
+      <returns>true si el marcador de bits especificado está activo (1); en caso contrario, es false.</returns>
+      <param name="bit">Máscara que indica el bit que hay que obtener o establecer. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString">
+      <summary>Devuelve una cadena que representa el objeto <see cref="T:System.Collections.Specialized.BitVector32" /> actual.</summary>
+      <returns>Cadena que representa el objeto <see cref="T:System.Collections.Specialized.BitVector32" /> actual.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString(System.Collections.Specialized.BitVector32)">
+      <summary>Devuelve una cadena que representa la estructura <see cref="T:System.Collections.Specialized.BitVector32" /> especificada.</summary>
+      <returns>Una cadena que representa la estructura <see cref="T:System.Collections.Specialized.BitVector32" /> especificada.</returns>
+      <param name="value">Estructura <see cref="T:System.Collections.Specialized.BitVector32" /> que se va a representar. </param>
+    </member>
+    <member name="T:System.Collections.Specialized.BitVector32.Section">
+      <summary>Representa una sección del vector que puede contener un número entero.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Collections.Specialized.BitVector32.Section)">
+      <summary>Determina si el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> especificado coincide con el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual.</summary>
+      <returns>Es true si el parámetro <paramref name="obj" /> coincide con el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual; en caso contrario, es false.</returns>
+      <param name="obj">Objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> que se va a comparar con el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Object)">
+      <summary>Determina si el objeto especificado coincide con el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual.</summary>
+      <returns>Es true si el objeto especificado coincide con el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual; en caso contrario, es false.</returns>
+      <param name="o">Objeto que se va a comparar con el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.GetHashCode">
+      <summary>Sirve como función hash para la <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual, que se puede utilizar en algoritmos hash y estructuras de datos, como una tabla hash.</summary>
+      <returns>Código hash para el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Mask">
+      <summary>Obtiene una máscara que aísla esta sección dentro de <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Una máscara que aísla esta sección dentro de <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Offset">
+      <summary>Obtiene el desplazamiento de esta sección desde el inicio de <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>El desplazamiento de esta sección desde el inicio de <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Equality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>Determina si los dos objetos <see cref="T:System.Collections.Specialized.BitVector32.Section" /> especificados son iguales.</summary>
+      <returns>Es true si los parámetros <paramref name="a" /> y <paramref name="b" /> representan el mismo objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" />; de lo contrario, es false.</returns>
+      <param name="a">Un objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+      <param name="b">Un objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Inequality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>Determina si dos objetos <see cref="T:System.Collections.Specialized.BitVector32.Section" /> tienen valores diferentes.</summary>
+      <returns>Es true si los parámetros <paramref name="a" /> y <paramref name="b" /> representan objetos <see cref="T:System.Collections.Specialized.BitVector32.Section" /> diferentes; de lo contrario, es false.</returns>
+      <param name="a">Un objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+      <param name="b">Un objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString">
+      <summary>Devuelve una cadena que representa el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual.</summary>
+      <returns>Cadena que representa el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> actual.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString(System.Collections.Specialized.BitVector32.Section)">
+      <summary>Devuelve una cadena que representa el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> especificado.</summary>
+      <returns>Una cadena que representa el objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> especificado.</returns>
+      <param name="value">El objeto <see cref="T:System.Collections.Specialized.BitVector32.Section" /> que se va a representar.</param>
+    </member>
+    <member name="T:System.Collections.Specialized.HybridDictionary">
+      <summary>Implementa IDictionary mediante el uso de un <see cref="T:System.Collections.Specialized.ListDictionary" /> mientras la colección es pequeña y, a continuación, cambiar a un <see cref="T:System.Collections.Hashtable" /> cuando la colección se hace grande.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor">
+      <summary>Crea un <see cref="T:System.Collections.Specialized.HybridDictionary" /> vacío que distingue entre mayúsculas y minúsculas.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Boolean)">
+      <summary>Crea un valor vacío <see cref="T:System.Collections.Specialized.HybridDictionary" /> con especificado entre mayúsculas y minúsculas.</summary>
+      <param name="caseInsensitive">Valor booleano que indica si <see cref="T:System.Collections.Specialized.HybridDictionary" /> distingue entre mayúsculas y minúsculas. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32)">
+      <summary>Crea una mayúsculas y minúsculas <see cref="T:System.Collections.Specialized.HybridDictionary" /> con el tamaño inicial especificado.</summary>
+      <param name="initialSize">Número aproximado de entradas que <see cref="T:System.Collections.Specialized.HybridDictionary" /> puede contener inicialmente. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32,System.Boolean)">
+      <summary>Crea un <see cref="T:System.Collections.Specialized.HybridDictionary" /> con el tamaño inicial especificado y la distinción de mayúsculas y minúsculas.</summary>
+      <param name="initialSize">Número aproximado de entradas que <see cref="T:System.Collections.Specialized.HybridDictionary" /> puede contener inicialmente. </param>
+      <param name="caseInsensitive">Valor booleano que indica si <see cref="T:System.Collections.Specialized.HybridDictionary" /> distingue entre mayúsculas y minúsculas. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Add(System.Object,System.Object)">
+      <summary>Agrega una entrada con la clave y el valor especificados a <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <param name="key">Clave de la entrada que se va a agregar. </param>
+      <param name="value">Valor de la entrada que se va a agregar.El valor puede ser null.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+      <exception cref="T:System.ArgumentException">Ya existe una entrada con la misma clave en <see cref="T:System.Collections.Specialized.HybridDictionary" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Clear">
+      <summary>Quita todas las entradas de <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Contains(System.Object)">
+      <summary>Determina si <see cref="T:System.Collections.Specialized.HybridDictionary" /> contiene una clave específica.</summary>
+      <returns>trueSi el <see cref="T:System.Collections.Specialized.HybridDictionary" /> contiene una entrada con la clave especificada; de lo contrario, false.</returns>
+      <param name="key">Clave que se buscará en <see cref="T:System.Collections.Specialized.HybridDictionary" />. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Copia las entradas de <see cref="T:System.Collections.Specialized.HybridDictionary" /> a una instancia de <see cref="T:System.Array" /> unidimensional en el índice especificado.</summary>
+      <param name="array">
+        <see cref="T:System.Array" /> unidimensional que constituye el destino de los objetos <see cref="T:System.Collections.DictionaryEntry" /> copiados de <see cref="T:System.Collections.Specialized.HybridDictionary" />.<see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero en la <paramref name="array" /> donde comienza la copia. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> es multidimensional.o bien El número de elementos de la interfaz <see cref="T:System.Collections.Specialized.HybridDictionary" /> de origen es mayor que el espacio disponible desde <paramref name="arrayIndex" /> hasta el final del parámetro <paramref name="array" /> de destino. </exception>
+      <exception cref="T:System.InvalidCastException">El tipo de la interfaz <see cref="T:System.Collections.Specialized.HybridDictionary" /> de origen no se puede convertir automáticamente al tipo de la matriz <paramref name="array" /> de destino. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Count">
+      <summary>Obtiene el número de pares clave-valor incluidos en <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>El número de pares de clave y valor incluidos en la <see cref="T:System.Collections.Specialized.HybridDictionary" />.La recuperación del valor de esta propiedad es una operación O(1).</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.GetEnumerator">
+      <summary>Devuelve un <see cref="T:System.Collections.IDictionaryEnumerator" /> que recorre en iteración la <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Estructura <see cref="T:System.Collections.IDictionaryEnumerator" /> para la colección <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsFixedSize">
+      <summary>Obtiene un valor que indica si la interfaz <see cref="T:System.Collections.Specialized.HybridDictionary" /> tiene un tamaño fijo.</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsReadOnly">
+      <summary>Obtiene un valor que indica si <see cref="T:System.Collections.Specialized.HybridDictionary" /> es de solo lectura.</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsSynchronized">
+      <summary>Obtiene un valor que indica si la <see cref="T:System.Collections.Specialized.HybridDictionary" /> está sincronizado (seguro para subprocesos).</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Item(System.Object)">
+      <summary>Obtiene o establece el valor asociado a la clave especificada.</summary>
+      <returns>Valor asociado a la clave especificada.Si no se encuentra la clave especificada, al intentar obtenerla, se devuelve null y, al intentar establecerla, se crea una nueva entrada con la clave especificada.</returns>
+      <param name="key">Clave cuyo valor se va a obtener o a establecer. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Keys">
+      <summary>Obtiene un <see cref="T:System.Collections.ICollection" /> que contiene las claves de <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" /> que contiene las claves de <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Remove(System.Object)">
+      <summary>Quita la entrada con la clave especificada de <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <param name="key">Clave de la entrada que se va a quitar. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.SyncRoot">
+      <summary>Obtiene un objeto que se puede usar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Objeto que se puede usar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Devuelve un <see cref="T:System.Collections.IEnumerator" /> que recorre en iteración la <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Estructura <see cref="T:System.Collections.IEnumerator" /> para la colección <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Values">
+      <summary>Obtiene un <see cref="T:System.Collections.ICollection" /> que contiene los valores en el <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Un <see cref="T:System.Collections.ICollection" /> que contiene los valores en el <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.IOrderedDictionary">
+      <summary>Representa una colección indizada de pares de clave y valor.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.GetEnumerator">
+      <summary>Devuelve un enumerador que itera por la colección <see cref="T:System.Collections.Specialized.IOrderedDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IDictionaryEnumerator" /> para toda la colección <see cref="T:System.Collections.Specialized.IOrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>Inserta un par de clave y valor en la colección, en el índice especificado.</summary>
+      <param name="index">Índice de base cero donde se debe insertar el par de clave y valor.</param>
+      <param name="key">Objeto que se va a utilizar como clave del elemento que se va a agregar.</param>
+      <param name="value">El objeto que se va a usar como valor del elemento que se va a agregar.El valor puede ser null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que 0.o bien<paramref name="index" /> es mayor que <see cref="P:System.Collections.ICollection.Count" />.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null.</exception>
+      <exception cref="T:System.ArgumentException">Ya existe un elemento con la misma clave en la colección <see cref="T:System.Collections.Specialized.IOrderedDictionary" />.</exception>
+      <exception cref="T:System.NotSupportedException">La colección <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> es de sólo lectura.o bienLa colección <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> tiene un tamaño fijo.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.IOrderedDictionary.Item(System.Int32)">
+      <summary>Obtiene o establece el elemento en el índice especificado.</summary>
+      <returns>Elemento en el índice especificado.</returns>
+      <param name="index">Índice de base cero del elemento que se va a obtener o establecer.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que 0.o bien <paramref name="index" /> es mayor o igual que <see cref="P:System.Collections.ICollection.Count" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.RemoveAt(System.Int32)">
+      <summary>Quita el elemento en el índice especificado.</summary>
+      <param name="index">Índice de base cero del elemento que se va a quitar.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que 0.o bien <paramref name="index" /> es mayor o igual que <see cref="P:System.Collections.ICollection.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">La colección <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> es de sólo lectura.o bien La colección <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> tiene un tamaño fijo. </exception>
+    </member>
+    <member name="T:System.Collections.Specialized.ListDictionary">
+      <summary>Implementa IDictionary utilizando una lista de vínculo única.Se recomienda para las colecciones que normalmente contienen menos de 10 elementos.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor">
+      <summary>Crea un <see cref="T:System.Collections.Specialized.ListDictionary" /> vacío mediante el comparador predeterminado.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor(System.Collections.IComparer)">
+      <summary>Crea un <see cref="T:System.Collections.Specialized.ListDictionary" /> vacío mediante el comparador especificado.</summary>
+      <param name="comparer">
+        <see cref="T:System.Collections.IComparer" /> que se va a utilizar para determinar si dos claves son iguales.o bien null para utilizar el comparador predeterminado, que es la implementación de cada clave de <see cref="M:System.Object.Equals(System.Object)" />. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Add(System.Object,System.Object)">
+      <summary>Agrega una entrada con la clave y el valor especificados a <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <param name="key">Clave de la entrada que se va a agregar. </param>
+      <param name="value">Valor de la entrada que se va a agregar.El valor puede ser null.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+      <exception cref="T:System.ArgumentException">Ya existe una entrada con la misma clave en <see cref="T:System.Collections.Specialized.ListDictionary" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Clear">
+      <summary>Quita todas las entradas de <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Contains(System.Object)">
+      <summary>Determina si <see cref="T:System.Collections.Specialized.ListDictionary" /> contiene una clave específica.</summary>
+      <returns>trueSi el <see cref="T:System.Collections.Specialized.ListDictionary" /> contiene una entrada con la clave especificada; de lo contrario, false.</returns>
+      <param name="key">Clave que se buscará en <see cref="T:System.Collections.Specialized.ListDictionary" />. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Copia las entradas de <see cref="T:System.Collections.Specialized.ListDictionary" /> a una instancia de <see cref="T:System.Array" /> unidimensional en el índice especificado.</summary>
+      <param name="array">
+        <see cref="T:System.Array" /> unidimensional que constituye el destino de los objetos <see cref="T:System.Collections.DictionaryEntry" /> copiados de <see cref="T:System.Collections.Specialized.ListDictionary" />.<see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero en la <paramref name="array" /> donde comienza la copia. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> es multidimensional.o bien El número de elementos de la interfaz <see cref="T:System.Collections.Specialized.ListDictionary" /> de origen es mayor que el espacio disponible desde <paramref name="index" /> hasta el final del parámetro <paramref name="array" /> de destino. </exception>
+      <exception cref="T:System.InvalidCastException">El tipo de la interfaz <see cref="T:System.Collections.Specialized.ListDictionary" /> de origen no se puede convertir automáticamente al tipo de la matriz <paramref name="array" /> de destino. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Count">
+      <summary>Obtiene el número de pares clave-valor incluidos en <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>El número de pares de clave y valor incluidos en la <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.GetEnumerator">
+      <summary>Devuelve un <see cref="T:System.Collections.IDictionaryEnumerator" /> que recorre en iteración la <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Estructura <see cref="T:System.Collections.IDictionaryEnumerator" /> para la colección <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsFixedSize">
+      <summary>Obtiene un valor que indica si la interfaz <see cref="T:System.Collections.Specialized.ListDictionary" /> tiene un tamaño fijo.</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsReadOnly">
+      <summary>Obtiene un valor que indica si <see cref="T:System.Collections.Specialized.ListDictionary" /> es de solo lectura.</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsSynchronized">
+      <summary>Obtiene un valor que indica si la <see cref="T:System.Collections.Specialized.ListDictionary" /> está sincronizado (seguro para subprocesos).</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Item(System.Object)">
+      <summary>Obtiene o establece el valor asociado a la clave especificada.</summary>
+      <returns>Valor asociado a la clave especificada.Si no se encuentra la clave especificada, al intentar obtenerla, se devuelve null y, al intentar establecerla, se crea una nueva entrada con la clave especificada.</returns>
+      <param name="key">Clave cuyo valor se va a obtener o a establecer. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Keys">
+      <summary>Obtiene un <see cref="T:System.Collections.ICollection" /> que contiene las claves de <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.ICollection" /> que contiene las claves de <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Remove(System.Object)">
+      <summary>Quita la entrada con la clave especificada de <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <param name="key">Clave de la entrada que se va a quitar. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.SyncRoot">
+      <summary>Obtiene un objeto que se puede usar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Objeto que se puede usar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Devuelve un <see cref="T:System.Collections.IEnumerator" /> que recorre en iteración la <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Estructura <see cref="T:System.Collections.IEnumerator" /> para la colección <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Values">
+      <summary>Obtiene un <see cref="T:System.Collections.ICollection" /> que contiene los valores en el <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Un <see cref="T:System.Collections.ICollection" /> que contiene los valores en el <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase">
+      <summary>Proporciona la clase base abstract de una colección de claves de <see cref="T:System.String" /> y valores de <see cref="T:System.Object" /> asociados a los que se puede obtener acceso con la clave o con el índice.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> que está vacía.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Collections.IEqualityComparer)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> que está vacía, tiene la capacidad inicial predeterminada y usa el objeto <see cref="T:System.Collections.IEqualityComparer" /> especificado.</summary>
+      <param name="equalityComparer">Objeto <see cref="T:System.Collections.IEqualityComparer" /> que se usa para determinar si dos claves son iguales y generar los códigos hash para las claves de la colección.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> que está vacía, tiene la capacidad inicial especificada y usa el proveedor de código hash y el comparador predeterminados.</summary>
+      <param name="capacity">Número aproximado de entradas que la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> puede contener inicialmente.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> es menor que cero. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> que está vacía, tiene la capacidad inicial especificada y usa el objeto <see cref="T:System.Collections.IEqualityComparer" /> especificado.</summary>
+      <param name="capacity">Número aproximado de entradas que el objeto <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> puede contener inicialmente.</param>
+      <param name="equalityComparer">Objeto <see cref="T:System.Collections.IEqualityComparer" /> que se usa para determinar si dos claves son iguales y generar los códigos hash para las claves de la colección.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> es menor que cero.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseAdd(System.String,System.Object)">
+      <summary>Agrega una entrada con la clave y el valor especificados a la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Clave de <see cref="T:System.String" /> de la entrada que se va a agregar.La clave puede ser null.</param>
+      <param name="value">Valor <see cref="T:System.Object" /> de la entrada que se va a agregar.El valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseClear">
+      <summary>Elimina todas las entradas de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.Int32)">
+      <summary>Obtiene el valor de la entrada que se encuentra en el índice especificado de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>
+        <see cref="T:System.Object" /> que representa el valor de la entrada que se encuentra en el índice especificado.</returns>
+      <param name="index">Índice de base cero del valor que se va a obtener.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.String)">
+      <summary>Obtiene el valor de la primera entrada con la clave especificada desde la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>
+        <see cref="T:System.Object" /> que representa el valor de la primera entrada con la clave especificada, si se encuentra; en caso contrario, es null.</returns>
+      <param name="name">Clave <see cref="T:System.String" /> de la entrada que se va a obtener.La clave puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllKeys">
+      <summary>Devuelve una matriz <see cref="T:System.String" /> que contiene todas las claves de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Matriz <see cref="T:System.String" /> que contiene todas las claves de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues">
+      <summary>Devuelve una matriz <see cref="T:System.Object" /> que contiene todos los valores de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Matriz <see cref="T:System.Object" /> que contiene todos los valores de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues(System.Type)">
+      <summary>Devuelve una matriz del tipo especificado que contiene todos los valores de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Matriz del tipo especificado que contiene todos los valores de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+      <param name="type">
+        <see cref="T:System.Type" /> que representa el tipo de matriz que se va a devolver.</param>
+      <exception cref="T:System.ArgumentNullException">El valor de <paramref name="type" /> es null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> no es válida <see cref="T:System.Type" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetKey(System.Int32)">
+      <summary>Obtiene la clave de la entrada que se encuentra en el índice especificado de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>
+        <see cref="T:System.String" /> que representa la clave de la entrada que se encuentra en el índice especificado.</returns>
+      <param name="index">Índice de base cero de la clave que se va a obtener.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseHasKeys">
+      <summary>Obtiene un valor que indica si la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> contiene entradas cuyas claves no son null.</summary>
+      <returns>true si la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> contiene entradas cuyas claves no son null; en caso contrario, es false.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemove(System.String)">
+      <summary>Quita las entradas con la clave especificada de la instancia de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Clave <see cref="T:System.String" /> de las entradas que se van a quitar.La clave puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemoveAt(System.Int32)">
+      <summary>Elimina la entrada que se encuentra en el índice especificado de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="index">Índice de base cero de la entrada que se va a quitar.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección.</exception>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.Int32,System.Object)">
+      <summary>Establece el valor de la entrada que se encuentra en el índice especificado de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="index">Índice de base cero de la entrada que se va a establecer.</param>
+      <param name="value">
+        <see cref="T:System.Object" /> que representa el nuevo valor de la entrada que se va a establecer.El valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.String,System.Object)">
+      <summary>Establece el valor de la primera entrada con la clave especificada de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />, si la encuentra; en caso contrario, agrega una entrada con la clave y el valor especificados a la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Clave <see cref="T:System.String" /> de la entrada que se va a establecer.La clave puede ser null.</param>
+      <param name="value">
+        <see cref="T:System.Object" /> que representa el nuevo valor de la entrada que se va a establecer.El valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Count">
+      <summary>Obtiene el número de pares de clave y valor incluidos en la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>El número de pares de clave y valor incluidos en la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.GetEnumerator">
+      <summary>Devuelve un enumerador que itera a través de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" /> correspondiente a la instancia de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.IsReadOnly">
+      <summary>Obtiene o establece un valor que indica si la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> es de solo lectura.</summary>
+      <returns>true si la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> es de solo lectura; en caso contrario, false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Keys">
+      <summary>Obtiene una instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> que contiene todas las claves de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> que contiene todas las claves de la instancia <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>Copia la totalidad de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> en una matriz <see cref="T:System.Array" /> unidimensional compatible, comenzando en el índice especificado de la matriz de destino.</summary>
+      <param name="array">
+        <see cref="T:System.Array" /> unidimensional que constituye el destino de los elementos copiados de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.La matriz <see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero en la <paramref name="array" /> donde comienza la copia.</param>
+      <exception cref="T:System.ArgumentNullException">El valor de <paramref name="array" /> es null.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> es multidimensional.o bienEl número de elementos en el origen de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> es mayor que el espacio disponible desde <paramref name="index" /> hasta el final del destino de <paramref name="array" />.</exception>
+      <exception cref="T:System.InvalidCastException">El tipo de origen <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> no puede convertirse automáticamente al tipo del destino de <paramref name="array" />.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>Obtiene un valor que indica si el acceso al objeto <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> está sincronizado (es seguro para subprocesos).</summary>
+      <returns>Es true si el acceso al objeto <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> está sincronizado (es seguro para subprocesos); en caso contrario, es false.De manera predeterminada, es false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>Obtiene un objeto que puede utilizarse para sincronizar el acceso al objeto <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Objeto que puede utilizarse para sincronizar el acceso al objeto <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection">
+      <summary>Representa una colección de las claves <see cref="T:System.String" /> de una colección.</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Count">
+      <summary>Obtiene el número de claves de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</summary>
+      <returns>Número de claves en <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Get(System.Int32)">
+      <summary>Obtiene la clave que se encuentra en el índice especificado de la colección.</summary>
+      <returns>
+        <see cref="T:System.String" /> que contiene la clave que se encuentra en el índice especificado de la colección.</returns>
+      <param name="index">Índice de base cero de la clave que se va a obtener de la colección. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> se encuentra fuera del intervalo de índices válido de la colección. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.GetEnumerator">
+      <summary>Devuelve un enumerador que recorre en iteración la colección <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</summary>
+      <returns>Estructura <see cref="T:System.Collections.IEnumerator" /> para la colección <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Item(System.Int32)">
+      <summary>Obtiene la entrada que se encuentra en el índice especificado de la colección.</summary>
+      <returns>Clave <see cref="T:System.String" /> de la entrada que se encuentra en el índice especificado de la colección.</returns>
+      <param name="index">Índice de base cero de la entrada que se va a localizar en la colección. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> se encuentra fuera del intervalo de índices válido de la colección. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>Copia la totalidad de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> en una matriz <see cref="T:System.Array" /> unidimensional compatible, comenzando en el índice especificado de la matriz de destino.</summary>
+      <param name="array">
+        <see cref="T:System.Array" /> unidimensional que constituye el destino de los elementos copiados de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.<see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero de <paramref name="array" /> en el que empieza la operación de copia. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> es null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> es multidimensional.O bien El número de elementos de la interfaz <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> de origen es mayor que el espacio disponible desde <paramref name="index" /> hasta el final del parámetro <paramref name="array" /> de destino. </exception>
+      <exception cref="T:System.InvalidCastException">El tipo de la interfaz <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> de origen no se puede convertir automáticamente al tipo de la matriz <paramref name="array" /> de destino. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#IsSynchronized">
+      <summary>Obtiene un valor que indica si el acceso a la interfaz <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> está sincronizado (es seguro para subprocesos).</summary>
+      <returns>Es true si el acceso a <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> está sincronizado (es seguro para subprocesos); de lo contrario, es false.El valor predeterminado es false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#SyncRoot">
+      <summary>Obtiene un objeto que se puede utilizar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</summary>
+      <returns>Objeto que se puede utilizar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameValueCollection">
+      <summary>Representa una colección de claves de <see cref="T:System.String" /> y valores <see cref="T:System.String" /> asociados a los que se puede obtener acceso con la clave o con el índice.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> que está vacía, tiene la capacidad inicial predeterminada y usa el proveedor de código hash y el comparador predeterminados que no distinguen mayúsculas de minúsculas.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.IEqualityComparer)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> que está vacía, tiene la capacidad inicial predeterminada y usa el objeto <see cref="T:System.Collections.IEqualityComparer" /> especificado.</summary>
+      <param name="equalityComparer">Objeto <see cref="T:System.Collections.IEqualityComparer" /> que se usa para determinar si dos claves son iguales y generar los códigos hash para las claves de la colección.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.Specialized.NameValueCollection)">
+      <summary>Copia las entradas de la clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> especificada en una nueva clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> que tiene la misma capacidad inicial que el número de entradas copiadas, usando el mismo proveedor de códigos hash y el mismo comparador que la colección de origen.</summary>
+      <param name="col">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> que se va a copiar en la nueva instancia <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <exception cref="T:System.ArgumentNullException">El valor de <paramref name="col" /> es null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> que está vacía, tiene la capacidad inicial especificada y usa el proveedor de códigos hash y el comparador predeterminados que no distinguen mayúsculas de minúsculas.</summary>
+      <param name="capacity">Número inicial de entradas que <see cref="T:System.Collections.Specialized.NameValueCollection" /> puede contener.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> es menor que cero.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> que está vacía, tiene la capacidad inicial especificada y usa el objeto <see cref="T:System.Collections.IEqualityComparer" /> especificado.</summary>
+      <param name="capacity">Número inicial de entradas que el objeto <see cref="T:System.Collections.Specialized.NameValueCollection" /> puede contener.</param>
+      <param name="equalityComparer">Objeto <see cref="T:System.Collections.IEqualityComparer" /> que se usa para determinar si dos claves son iguales y generar los códigos hash para las claves de la colección.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> es menor que cero.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.Specialized.NameValueCollection)">
+      <summary>Copia las entradas de la clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> especificada en una nueva clase <see cref="T:System.Collections.Specialized.NameValueCollection" /> con la capacidad inicial especificada o con la misma capacidad inicial que el número de entradas copiadas, la que sea mayor, y con el proveedor de códigos hash y el comparador predeterminados que no distinguen mayúsculas de minúsculas.</summary>
+      <param name="capacity">Número inicial de entradas que <see cref="T:System.Collections.Specialized.NameValueCollection" /> puede contener.</param>
+      <param name="col">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> que se va a copiar en la nueva instancia <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> es menor que cero.</exception>
+      <exception cref="T:System.ArgumentNullException">El valor de <paramref name="col" /> es null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.Collections.Specialized.NameValueCollection)">
+      <summary>Copia las entradas del elemento <see cref="T:System.Collections.Specialized.NameValueCollection" /> especificado en el elemento <see cref="T:System.Collections.Specialized.NameValueCollection" /> actual.</summary>
+      <param name="c">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> que se va a copiar en el elemento <see cref="T:System.Collections.Specialized.NameValueCollection" /> actual.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura.</exception>
+      <exception cref="T:System.ArgumentNullException">El valor de <paramref name="c" /> es null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.String,System.String)">
+      <summary>Agrega una entrada con el nombre y el valor especificados a <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <param name="name">Clave de <see cref="T:System.String" /> de la entrada que se va a agregar.La clave puede ser null.</param>
+      <param name="value">Valor <see cref="T:System.String" /> de la entrada que se va a agregar.El valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.AllKeys">
+      <summary>Obtiene todas las claves de <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Matriz <see cref="T:System.String" /> que contiene todas las claves de <see cref="T:System.Collections.Specialized.NameValueCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Clear">
+      <summary>Invalida las matrices almacenadas en caché y quita todas las entradas de <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.CopyTo(System.Array,System.Int32)">
+      <summary>Copia la totalidad de <see cref="T:System.Collections.Specialized.NameValueCollection" /> en una matriz <see cref="T:System.Array" /> unidimensional compatible, comenzando en el índice especificado de la matriz de destino.</summary>
+      <param name="dest">
+        <see cref="T:System.Array" /> unidimensional que constituye el destino de los elementos copiados de <see cref="T:System.Collections.Specialized.NameValueCollection" />.La matriz <see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero en la <paramref name="dest" /> donde comienza la copia.</param>
+      <exception cref="T:System.ArgumentNullException">El valor de <paramref name="dest" /> es null.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="dest" /> es multidimensional.o bien El número de elementos en el origen de <see cref="T:System.Collections.Specialized.NameValueCollection" /> es mayor que el espacio disponible desde <paramref name="index" /> hasta el final del destino de <paramref name="dest" />.</exception>
+      <exception cref="T:System.InvalidCastException">El tipo de origen <see cref="T:System.Collections.Specialized.NameValueCollection" /> no puede convertirse automáticamente al tipo del destino de <paramref name="dest" />.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.Int32)">
+      <summary>Obtiene los valores en el índice especificado de <see cref="T:System.Collections.Specialized.NameValueCollection" /> combinados en una lista y separados por comas.</summary>
+      <returns>
+        <see cref="T:System.String" /> que contiene una lista de valores separados por comas en el índice especificado de la <see cref="T:System.Collections.Specialized.NameValueCollection" />, si se encuentra; en caso contrario, es null.</returns>
+      <param name="index">Índice de base cero de la entrada que contiene los valores que se van a obtener de la colección.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.String)">
+      <summary>Obtiene los valores asociados a la clave especificada del elemento <see cref="T:System.Collections.Specialized.NameValueCollection" /> combinados en una lista y separados por comas.</summary>
+      <returns>
+        <see cref="T:System.String" /> que contiene una lista de valores separados por comas asociados a la clave especificada del elemento <see cref="T:System.Collections.Specialized.NameValueCollection" />, si se encuentra; en caso contrario, es null.</returns>
+      <param name="name">Clave de <see cref="T:System.String" /> de la entrada que contiene los valores que se van a obtener.La clave puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetKey(System.Int32)">
+      <summary>Obtiene la clave en el índice especificado del elemento <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>
+        <see cref="T:System.String" /> que contiene la clave en el índice especificado del elemento <see cref="T:System.Collections.Specialized.NameValueCollection" />, si se encuentra; en caso contrario, es null.</returns>
+      <param name="index">Índice de base cero de la clave que se va a obtener de la colección.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.Int32)">
+      <summary>Obtiene los valores que se encuentran en el índice especificado de <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Matriz <see cref="T:System.String" /> que contiene los valores en el índice especificado de <see cref="T:System.Collections.Specialized.NameValueCollection" />, si se encuentra; en caso contrario, es null.</returns>
+      <param name="index">Índice de base cero de la entrada que contiene los valores que se van a obtener de la colección.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.String)">
+      <summary>Obtiene los valores asociados a la clave especificada de <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Matriz <see cref="T:System.String" /> que contiene los valores asociados a la clave especificada de <see cref="T:System.Collections.Specialized.NameValueCollection" />, si se encuentra; en caso contrario, es null.</returns>
+      <param name="name">Clave de <see cref="T:System.String" /> de la entrada que contiene los valores que se van a obtener.La clave puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.HasKeys">
+      <summary>Obtiene un valor que indica si <see cref="T:System.Collections.Specialized.NameValueCollection" /> contiene claves que no son null.</summary>
+      <returns>true si <see cref="T:System.Collections.Specialized.NameValueCollection" /> contiene claves que no son null; en caso contrario, es false.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.InvalidateCachedArrays">
+      <summary>Restablece las matrices almacenadas en caché de la colección a null.</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.Int32)">
+      <summary>Obtiene la entrada que se encuentra en el índice especificado de <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>
+        <see cref="T:System.String" /> que contiene la lista de valores separados por comas en el índice especificado de la colección.</returns>
+      <param name="index">Índice de base cero de la entrada que se va a localizar en la colección.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo válido de índices de la colección.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.String)">
+      <summary>Obtiene o establece la entrada con la clave especificada en <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>
+        <see cref="T:System.String" /> que contiene la lista de valores, separados por comas, asociados a la clave especificada, si se encuentra; en caso contrario, es null.</returns>
+      <param name="name">Clave <see cref="T:System.String" /> de la entrada que se va a localizar.La clave puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura y la operación ha intentado modificarla. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Remove(System.String)">
+      <summary>Quita las entradas con la clave especificada de la instancia de <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Clave <see cref="T:System.String" /> de la entrada que se va a quitar.La clave puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Set(System.String,System.String)">
+      <summary>Establece el valor de una entrada de <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <param name="name">Clave <see cref="T:System.String" /> de la entrada a la que se va a agregar el nuevo valor.La clave puede ser null.</param>
+      <param name="value">
+        <see cref="T:System.Object" /> que representa el nuevo valor que se va a agregar a la entrada especificada.El valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección es de sólo lectura.</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.OrderedDictionary">
+      <summary>Representa una colección de pares de clave y valor a los que se puede tener acceso por clave o por índice.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Collections.IEqualityComparer)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.OrderedDictionary" /> con el comparador especificado.</summary>
+      <param name="comparer">
+        <see cref="T:System.Collections.IComparer" /> que se va a utilizar para determinar si dos claves son iguales.o bien null para utilizar el comparador predeterminado, que es la implementación de cada clave de <see cref="M:System.Object.Equals(System.Object)" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.OrderedDictionary" /> con la capacidad inicial especificada.</summary>
+      <param name="capacity">Número inicial de elementos que puede contener la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.OrderedDictionary" /> con la capacidad inicial y el comparador especificados.</summary>
+      <param name="capacity">Número inicial de elementos que puede contener la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</param>
+      <param name="comparer">
+        <see cref="T:System.Collections.IComparer" /> que se va a utilizar para determinar si dos claves son iguales.o bien null para utilizar el comparador predeterminado, que es la implementación de cada clave de <see cref="M:System.Object.Equals(System.Object)" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Add(System.Object,System.Object)">
+      <summary>Agrega una entrada con la clave y el valor especificados a la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />, en el índice más bajo que esté disponible.</summary>
+      <param name="key">Clave de la entrada que se va a agregar.</param>
+      <param name="value">Valor de la entrada que se va a agregar.Este valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">La colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de sólo lectura.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.AsReadOnly">
+      <summary>Devuelve una copia de solo lectura de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> actual.</summary>
+      <returns>Copia de solo lectura de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> actual.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Clear">
+      <summary>Quita todos los elementos de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <exception cref="T:System.NotSupportedException">La colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de sólo lectura.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Contains(System.Object)">
+      <summary>Determina si la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> contiene una clave específica.</summary>
+      <returns>true si la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> contiene un elemento con la clave especificada; en caso contrario, false.</returns>
+      <param name="key">Clave que se va a buscar en la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Copia los elementos de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> a un objeto <see cref="T:System.Array" /> unidimensional en el índice especificado.</summary>
+      <param name="array">Objeto <see cref="T:System.Array" /> unidimensional que constituye el destino de los objetos <see cref="T:System.Collections.DictionaryEntry" /> copiados de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.<see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero en la <paramref name="array" /> donde comienza la copia.</param>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Count">
+      <summary>Obtiene el número de pares clave-valor incluidos en la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Número de pares clave-valor incluidos en la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.GetEnumerator">
+      <summary>Devuelve un <see cref="T:System.Collections.IDictionaryEnumerator" /> objeto que recorre en iteración la <see cref="T:System.Collections.Specialized.OrderedDictionary" /> colección.</summary>
+      <returns>Objeto <see cref="T:System.Collections.IDictionaryEnumerator" /> para la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>Inserta una nueva entrada en el <see cref="T:System.Collections.Specialized.OrderedDictionary" /> colección con la clave especificada y el valor en el índice especificado.</summary>
+      <param name="index">Índice de base cero en el que se debe insertar el elemento.</param>
+      <param name="key">Clave de la entrada que se va a agregar.</param>
+      <param name="value">Valor de la entrada que se va a agregar.El valor puede ser null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> está fuera del intervalo.</exception>
+      <exception cref="T:System.NotSupportedException">Esta colección es de solo lectura.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.IsReadOnly">
+      <summary>Obtiene un valor que indica si la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de solo lectura.</summary>
+      <returns>true si la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de sólo lectura; en caso contrario, false.De manera predeterminada, es false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Int32)">
+      <summary>Obtiene o establece el valor en el índice especificado.</summary>
+      <returns>Valor del elemento en el índice especificado. </returns>
+      <param name="index">El índice de base cero del valor que se va a obtener o establecer.</param>
+      <exception cref="T:System.NotSupportedException">Se está estableciendo la propiedad y la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de sólo lectura.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.o bien<paramref name="index" /> es mayor o igual que <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" />.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Object)">
+      <summary>Obtiene o establece el valor con la clave especificada.</summary>
+      <returns>Valor asociado a la clave especificada.Si no se encuentra la clave especificada, al intentar obtenerla se devuelve null y al intentar establecerla se crea una nueva entrada con la clave especificada.</returns>
+      <param name="key">Clave del valor que se va a obtener o establecer.</param>
+      <exception cref="T:System.NotSupportedException">Se está estableciendo la propiedad y la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de sólo lectura.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Keys">
+      <summary>Obtiene un objeto <see cref="T:System.Collections.ICollection" /> que contiene las claves de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Objeto <see cref="T:System.Collections.ICollection" /> que contiene las claves de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Remove(System.Object)">
+      <summary>Quita la entrada con la clave especificada de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <param name="key">Clave de la entrada que se va a quitar.</param>
+      <exception cref="T:System.NotSupportedException">La colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de sólo lectura.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.RemoveAt(System.Int32)">
+      <summary>Quita la entrada del índice especificado de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <param name="index">Índice de base cero de la entrada que se va a quitar.</param>
+      <exception cref="T:System.NotSupportedException">La colección <see cref="T:System.Collections.Specialized.OrderedDictionary" /> es de sólo lectura.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.o bien<paramref name="index" /> es mayor o igual que <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" />.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#IsSynchronized">
+      <summary>Obtiene un valor que indica si el acceso al objeto <see cref="T:System.Collections.Specialized.OrderedDictionary" /> está sincronizado (es seguro para subprocesos).</summary>
+      <returns>Este método devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#SyncRoot">
+      <summary>Obtiene un objeto que puede utilizarse para sincronizar el acceso al objeto <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Objeto que puede utilizarse para sincronizar el acceso al objeto <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#IDictionary#IsFixedSize">
+      <summary>Obtiene un valor que indica si la interfaz <see cref="T:System.Collections.Specialized.OrderedDictionary" /> tiene un tamaño fijo.</summary>
+      <returns>trueSi el <see cref="T:System.Collections.Specialized.OrderedDictionary" /> tiene un tamaño fijo; de lo contrario, false.De manera predeterminada, es false.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Devuelve un <see cref="T:System.Collections.IDictionaryEnumerator" /> objeto que recorre en iteración la <see cref="T:System.Collections.Specialized.OrderedDictionary" /> colección.</summary>
+      <returns>Objeto <see cref="T:System.Collections.IDictionaryEnumerator" /> para la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Values">
+      <summary>Obtiene un objeto <see cref="T:System.Collections.ICollection" /> que contiene los valores de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Objeto <see cref="T:System.Collections.ICollection" /> que contiene los valores de la colección <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringCollection">
+      <summary>Representa una colección de cadenas.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.#ctor">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.StringCollection" />. </summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Add(System.String)">
+      <summary>Agrega una cadena al final de <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Índice de base cero donde se insertó el nuevo elemento.</returns>
+      <param name="value">Cadena que se va a agregar al final de <see cref="T:System.Collections.Specialized.StringCollection" />.El valor puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.AddRange(System.String[])">
+      <summary>Copia los elementos de una matriz de cadenas al final del objeto <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="value">Matriz de cadenas que se agregan al final de <see cref="T:System.Collections.Specialized.StringCollection" />.La propia matriz no puede ser null pero puede contener elementos que sean null.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> es null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Clear">
+      <summary>Quita todas las cadenas de <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Contains(System.String)">
+      <summary>Determina si la cadena especificada se incluye en <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>true si <paramref name="value" /> se encuentra en la matriz <see cref="T:System.Collections.Specialized.StringCollection" />; en caso contrario, false.</returns>
+      <param name="value">Valor que se buscará en <see cref="T:System.Collections.Specialized.StringCollection" />.El valor puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.CopyTo(System.String[],System.Int32)">
+      <summary>Copia todos los valores <see cref="T:System.Collections.Specialized.StringCollection" /> en una matriz de cadenas unidimensional, comenzando por el índice especificado de la matriz de destino.</summary>
+      <param name="array">Matriz de cadenas unidimensional que constituye el destino de los elementos copiados de <see cref="T:System.Collections.Specialized.StringCollection" />.<see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero de <paramref name="array" /> en el que empieza la operación de copia. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> es null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> es multidimensional.O bien El número de elementos de la interfaz <see cref="T:System.Collections.Specialized.StringCollection" /> de origen es mayor que el espacio disponible desde <paramref name="index" /> hasta el final del parámetro <paramref name="array" /> de destino. </exception>
+      <exception cref="T:System.InvalidCastException">El tipo de la interfaz <see cref="T:System.Collections.Specialized.StringCollection" /> de origen no se puede convertir automáticamente al tipo de la matriz <paramref name="array" /> de destino. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Count">
+      <summary>Obtiene el número de cadenas incluidas en <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Número de cadenas incluidas en <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.GetEnumerator">
+      <summary>Devuelve una clase <see cref="T:System.Collections.Specialized.StringEnumerator" /> que recorre en iteración la clase <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringEnumerator" /> para <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.IndexOf(System.String)">
+      <summary>Busca la cadena especificada y devuelve el índice de base cero de la primera aparición de <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Índice de base cero de la primera aparición de <paramref name="value" /> en <see cref="T:System.Collections.Specialized.StringCollection" />, si se encuentra; en caso contrario, -1.</returns>
+      <param name="value">Cadena que se va a localizar.El valor puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Insert(System.Int32,System.String)">
+      <summary>Inserta una cadena en <see cref="T:System.Collections.Specialized.StringCollection" /> en el índice especificado.</summary>
+      <param name="index">Índice de base cero en el que se inserta <paramref name="value" />. </param>
+      <param name="value">Cadena que se va a insertar.El valor puede ser null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.O bien <paramref name="index" /> es mayor que <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsReadOnly">
+      <summary>Obtiene un valor que indica si <see cref="T:System.Collections.Specialized.StringCollection" /> es de sólo lectura.</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsSynchronized">
+      <summary>Obtiene un valor que indica si el acceso a la interfaz <see cref="T:System.Collections.Specialized.StringCollection" /> está sincronizado (es seguro para subprocesos).</summary>
+      <returns>Esta propiedad devuelve siempre false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Item(System.Int32)">
+      <summary>Obtiene o establece el elemento que se encuentra en el índice especificado.</summary>
+      <returns>El elemento en el índice especificado.</returns>
+      <param name="index">Índice de base cero de la entrada que se va a obtener o establecer. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.O bien <paramref name="index" /> es mayor o igual que <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Remove(System.String)">
+      <summary>Quita la primera aparición de una cadena especifica de <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="value">Cadena que se va a quitar de <see cref="T:System.Collections.Specialized.StringCollection" />.El valor puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.RemoveAt(System.Int32)">
+      <summary>Quita la cadena del índice especificado de <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="index">Índice de base cero de la cadena que se va a quitar. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.O bien <paramref name="index" /> es mayor o igual que <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.SyncRoot">
+      <summary>Obtiene un objeto que se puede utilizar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Objeto que se puede utilizar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>Copia la totalidad de <see cref="T:System.Collections.Specialized.StringCollection" /> en una matriz <see cref="T:System.Array" /> unidimensional compatible, comenzando en el índice especificado de la matriz de destino.</summary>
+      <param name="array">
+        <see cref="T:System.Array" /> unidimensional que constituye el destino de los elementos copiados de <see cref="T:System.Collections.Specialized.StringCollection" />.<see cref="T:System.Array" /> debe tener una indización de base cero.</param>
+      <param name="index">Índice de base cero de <paramref name="array" /> en el que empieza la operación de copia. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> es null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> es multidimensional.O bien El número de elementos de la interfaz <see cref="T:System.Collections.Specialized.StringCollection" /> de origen es mayor que el espacio disponible desde <paramref name="index" /> hasta el final del parámetro <paramref name="array" /> de destino. </exception>
+      <exception cref="T:System.InvalidCastException">El tipo de la interfaz <see cref="T:System.Collections.Specialized.StringCollection" /> de origen no se puede convertir automáticamente al tipo de la matriz <paramref name="array" /> de destino. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Devuelve una interfaz <see cref="T:System.Collections.IEnumerator" /> que recorre en iteración la clase <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" /> para <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Add(System.Object)">
+      <summary>Agrega un objeto al final de <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>El índice de <see cref="T:System.Collections.Specialized.StringCollection" /> en el que se ha agregado <paramref name="value" />.</returns>
+      <param name="value">El objeto <see cref="T:System.Object" /> que se va a agregar al final de <see cref="T:System.Collections.Specialized.StringCollection" />.El valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> es de solo lectura.O bien <see cref="T:System.Collections.Specialized.StringCollection" /> tiene un tamaño fijo. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Contains(System.Object)">
+      <summary>Determina si un elemento se encuentra en <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>true si <paramref name="value" /> se encuentra en la matriz <see cref="T:System.Collections.Specialized.StringCollection" />; en caso contrario, false.</returns>
+      <param name="value">Objeto <see cref="T:System.Object" /> que se va a buscar en la interfaz <see cref="T:System.Collections.Specialized.StringCollection" />.El valor puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#IndexOf(System.Object)">
+      <summary>Busca el objeto <see cref="T:System.Object" /> especificado y devuelve el índice de base cero de la primera aparición en toda la colección <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Índice de base cero de la primera aparición de <paramref name="value" /> en la totalidad de <see cref="T:System.Collections.Specialized.StringCollection" />, si se encuentra; en caso contrario, -1.</returns>
+      <param name="value">Objeto <see cref="T:System.Object" /> que se va a buscar en la interfaz <see cref="T:System.Collections.Specialized.StringCollection" />.El valor puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Insert(System.Int32,System.Object)">
+      <summary>Inserta un elemento en <see cref="T:System.Collections.Specialized.StringCollection" />, en el índice especificado.</summary>
+      <param name="index">Índice basado en cero en el que debe insertarse <paramref name="value" />. </param>
+      <param name="value">
+        <see cref="T:System.Object" /> que se va a insertar.El valor puede ser null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.O bien <paramref name="index" /> es mayor que <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> es de solo lectura.O bien <see cref="T:System.Collections.Specialized.StringCollection" /> tiene un tamaño fijo. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsFixedSize">
+      <summary>Obtiene un valor que indica si el objeto <see cref="T:System.Collections.Specialized.StringCollection" /> tiene un tamaño fijo.</summary>
+      <returns>true si el objeto <see cref="T:System.Collections.Specialized.StringCollection" /> tiene un tamaño fijo; en caso contrario, false.El valor predeterminado es false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsReadOnly">
+      <summary>Obtiene un valor que indica si el objeto <see cref="T:System.Collections.Specialized.StringCollection" /> es de solo lectura.</summary>
+      <returns>true si el objeto <see cref="T:System.Collections.Specialized.StringCollection" /> es de solo lectura; en caso contrario, false.El valor predeterminado es false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#Item(System.Int32)">
+      <summary>Obtiene o establece el elemento que se encuentra en el índice especificado.</summary>
+      <returns>El elemento en el índice especificado.</returns>
+      <param name="index">Índice de base cero del elemento que se va a obtener o establecer. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> es menor que cero.O bien <paramref name="index" /> es mayor o igual que <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Remove(System.Object)">
+      <summary>Quita la primera aparición de un objeto específico de la interfaz <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="value">
+        <see cref="T:System.Object" /> que se va a quitar de <see cref="T:System.Collections.Specialized.StringCollection" />.El valor puede ser null.</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> es de solo lectura.O bien <see cref="T:System.Collections.Specialized.StringCollection" /> tiene un tamaño fijo. </exception>
+    </member>
+    <member name="T:System.Collections.Specialized.StringDictionary">
+      <summary>Implementa una tabla hash con la clave y el valor fuertemente tipado de forma que sean cadenas en lugar de objetos.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.#ctor">
+      <summary>Inicializa una nueva instancia de la clase <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Add(System.String,System.String)">
+      <summary>Agrega una entrada con la clave y el valor especificados a la clase <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <param name="key">Clave de la entrada que se va a agregar. </param>
+      <param name="value">Valor de la entrada que se va a agregar.El valor puede ser null.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null. </exception>
+      <exception cref="T:System.ArgumentException">An entry with the same key already exists in the <see cref="T:System.Collections.Specialized.StringDictionary" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Clear">
+      <summary>Quita todas las entradas de <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsKey(System.String)">
+      <summary>Determina si <see cref="T:System.Collections.Specialized.StringDictionary" /> contiene una clave específica.</summary>
+      <returns>true si <see cref="T:System.Collections.Specialized.StringDictionary" /> contiene una entrada con la clave especificada; de lo contrario, false.</returns>
+      <param name="key">Clave que se buscará en la interfaz <see cref="T:System.Collections.Specialized.StringDictionary" />. </param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsValue(System.String)">
+      <summary>Determina si <see cref="T:System.Collections.Specialized.StringDictionary" /> contiene un valor específico.</summary>
+      <returns>true si <see cref="T:System.Collections.Specialized.StringDictionary" /> contiene un elemento con el valor especificado; en caso contrario, false.</returns>
+      <param name="value">Valor que se va a buscar en la colección <see cref="T:System.Collections.Specialized.StringDictionary" />.El valor puede ser null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Copia los valores del diccionario de cadenas en una instancia de <see cref="T:System.Array" /> unidimensional en el índice especificado.</summary>
+      <param name="array">
+        <see cref="T:System.Array" /> unidimensional que constituye el destino de los valores copiados desde <see cref="T:System.Collections.Specialized.StringDictionary" />. </param>
+      <param name="index">Índice de la matriz en que se inicia la copia. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the <see cref="T:System.Collections.Specialized.StringDictionary" /> is greater than the available space from <paramref name="index" /> to the end of <paramref name="array" />. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than the lower bound of <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Count">
+      <summary>Obtiene el número de pares de clave y valor incluidos en <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Número de pares de clave y valor incluidos en <see cref="T:System.Collections.Specialized.StringDictionary" />.La recuperación del valor de esta propiedad es una operación O(1).</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.GetEnumerator">
+      <summary>Devuelve un enumerador que recorre en iteración el diccionario de cadenas.</summary>
+      <returns>Interfaz <see cref="T:System.Collections.IEnumerator" /> que recorre en iteración el diccionario de cadenas.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.IsSynchronized">
+      <summary>Obtiene un valor que indica si el acceso a la interfaz <see cref="T:System.Collections.Specialized.StringDictionary" /> está sincronizado (es seguro para subprocesos).</summary>
+      <returns>Es true si el acceso a <see cref="T:System.Collections.Specialized.StringDictionary" /> está sincronizado (es seguro para subprocesos); de lo contrario, es false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Item(System.String)">
+      <summary>Obtiene o establece el valor asociado a la clave especificada.</summary>
+      <returns>Valor asociado a la clave especificada.Si no se encuentra la clave especificada, Get devuelve null y Set crea una nueva entrada con la clave especificada.</returns>
+      <param name="key">Clave cuyo valor se va a obtener o a establecer. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Keys">
+      <summary>Obtiene una colección de claves incluidas en <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Interfaz <see cref="T:System.Collections.ICollection" /> que proporciona las claves de <see cref="T:System.Collections.Specialized.StringDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Remove(System.String)">
+      <summary>Quita la entrada con la clave especificada del diccionario de cadenas.</summary>
+      <param name="key">Clave de la entrada que se va a quitar. </param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.SyncRoot">
+      <summary>Obtiene un objeto que se puede usar para sincronizar el acceso a <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Objeto <see cref="T:System.Object" /> que se puede utilizar para sincronizar el acceso a la colección <see cref="T:System.Collections.Specialized.StringDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Values">
+      <summary>Obtiene una colección de valores incluidos en <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Interfaz <see cref="T:System.Collections.ICollection" /> que proporciona los valores de <see cref="T:System.Collections.Specialized.StringDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringEnumerator">
+      <summary>Admite una iteración simple a través de un <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.StringEnumerator.Current">
+      <summary>Obtiene el elemento actual de la colección.</summary>
+      <returns>Elemento actual de la colección.</returns>
+      <exception cref="T:System.InvalidOperationException">El enumerador se sitúa antes del primer elemento de la colección o después del último. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.MoveNext">
+      <summary>Desplaza el enumerador al siguiente elemento de la colección.</summary>
+      <returns>true si el enumerador avanzó con éxito hasta el siguiente elemento; false si el enumerador alcanzó el final de la colección.</returns>
+      <exception cref="T:System.InvalidOperationException">La colección se modificó después de crear el enumerador. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.Reset">
+      <summary>Establece el enumerador en su posición inicial (antes del primer elemento de la colección).</summary>
+      <exception cref="T:System.InvalidOperationException">La colección se modificó después de crear el enumerador. </exception>
+    </member>
+  </members>
+</doc>

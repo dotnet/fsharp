@@ -1,0 +1,503 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.ILGeneration</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.CustomAttributeBuilder">
+      <summary>Hilft beim Erstellen benutzerdefinierter Attribute.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[])">
+      <summary>Initialisiert eine Instanz der CustomAttributeBuilder-Klasse, wobei der Konstruktor für das benutzerdefinierte Attribut und die Konstruktorargumente angegeben sind.</summary>
+      <param name="con">Der Konstruktor für das benutzerdefinierte Attribut. </param>
+      <param name="constructorArgs">Die Argumente für den Konstruktor des benutzerdefinierten Attributs. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> ist statisch oder privat.- oder - Die Anzahl der angegebenen Argumente stimmt nicht mit der für die Aufrufkonvention des Konstruktors erforderlichen Anzahl der Parameter des Konstruktors überein.- oder - Der Typ des angegebenen Arguments stimmt nicht mit dem Typ des im Konstruktor deklarierten Parameters überein. - oder -Ein angegebenes Argument ist von einem anderen Referenztyp als <see cref="T:System.String" /> oder <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> oder <paramref name="constructorArgs" /> ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>Initialisiert eine Instanz der CustomAttributeBuilder-Klasse, wobei der Konstruktor für das benutzerdefinierte Attribut, die Konstruktorargumente und eine Gruppe benannter Feld-Wert-Paare angegeben sind.</summary>
+      <param name="con">Der Konstruktor für das benutzerdefinierte Attribut. </param>
+      <param name="constructorArgs">Die Argumente für den Konstruktor des benutzerdefinierten Attributs. </param>
+      <param name="namedFields">Benannte Felder des benutzerdefinierten Attributs. </param>
+      <param name="fieldValues">Werte für die benannten Felder des benutzerdefinierten Attributs. </param>
+      <exception cref="T:System.ArgumentException">Das <paramref name="namedFields" />-Array und das <paramref name="fieldValues" />-Array ist von unterschiedlicher Länge.- oder - <paramref name="con" /> ist statisch oder privat.- oder - Die Anzahl der angegebenen Argumente stimmt nicht mit der für die Aufrufkonvention des Konstruktors erforderlichen Anzahl der Parameter des Konstruktors überein.- oder - Der Typ des angegebenen Arguments stimmt nicht mit dem Typ des im Konstruktor deklarierten Parameters überein.- oder - Die Typen der Feldwerte stimmen nicht mit den Typen der benannten Felder überein.- oder - Das Feld gehört nicht zu derselben Klasse oder Basisklasse wie der Konstruktor. - oder -Ein angegebenes Argument oder ein benanntes Feld ist von einem anderen Referenztyp als <see cref="T:System.String" /> oder <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Einer der Parameter ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[])">
+      <summary>Initialisiert eine Instanz der CustomAttributeBuilder-Klasse, wobei der Konstruktor für das benutzerdefinierte Attribut, die Konstruktorargumente und eine Gruppe benannter Eigenschaften- oder Wert-Paare angegeben sind.</summary>
+      <param name="con">Der Konstruktor für das benutzerdefinierte Attribut. </param>
+      <param name="constructorArgs">Die Argumente für den Konstruktor des benutzerdefinierten Attributs. </param>
+      <param name="namedProperties">Benannte Eigenschaften des benutzerdefinierten Attributs. </param>
+      <param name="propertyValues">Werte für die benannten Eigenschaften des benutzerdefinierten Attributs. </param>
+      <exception cref="T:System.ArgumentException">Das <paramref name="namedProperties" />-Array und das <paramref name="propertyValues" />-Array sind von unterschiedlicher Länge.- oder - <paramref name="con" /> ist statisch oder privat.- oder - Die Anzahl der angegebenen Argumente stimmt nicht mit der für die Aufrufkonvention des Konstruktors erforderlichen Anzahl der Parameter des Konstruktors überein.- oder - Der Typ des angegebenen Arguments stimmt nicht mit dem Typ des im Konstruktor deklarierten Parameters überein.- oder - Die Typen der Eigenschaftenwerte stimmen nicht mit den Typen der benannten Eigenschaften überein.- oder - Eine Eigenschaft verfügt über keine Set-Methode.- oder - Die Eigenschaft gehört nicht zu derselben Klasse oder Basisklasse wie der Konstruktor. - oder -Ein angegebenes Argument oder eine benannte Eigenschaft ist von einem anderen Referenztyp als <see cref="T:System.String" /> oder <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Einer der Parameter ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.CustomAttributeBuilder.#ctor(System.Reflection.ConstructorInfo,System.Object[],System.Reflection.PropertyInfo[],System.Object[],System.Reflection.FieldInfo[],System.Object[])">
+      <summary>Initialisiert eine Instanz der CustomAttributeBuilder-Klasse, wobei der Konstruktor für das benutzerdefinierte Attribut, die Konstruktorargumente, eine Gruppe benannter Eigenschaften- bzw. Wert-Paare sowie eine Gruppe benannter Feld- bzw. Wert-Paare angegeben sind.</summary>
+      <param name="con">Der Konstruktor für das benutzerdefinierte Attribut. </param>
+      <param name="constructorArgs">Die Argumente für den Konstruktor des benutzerdefinierten Attributs. </param>
+      <param name="namedProperties">Benannte Eigenschaften des benutzerdefinierten Attributs. </param>
+      <param name="propertyValues">Werte für die benannten Eigenschaften des benutzerdefinierten Attributs. </param>
+      <param name="namedFields">Benannte Felder des benutzerdefinierten Attributs. </param>
+      <param name="fieldValues">Werte für die benannten Felder des benutzerdefinierten Attributs. </param>
+      <exception cref="T:System.ArgumentException">Das <paramref name="namedProperties" />-Array und das <paramref name="propertyValues" />-Array sind von unterschiedlicher Länge.- oder - Das <paramref name="namedFields" />-Array und das <paramref name="fieldValues" />-Array ist von unterschiedlicher Länge.- oder - <paramref name="con" /> ist statisch oder privat.- oder - Die Anzahl der angegebenen Argumente stimmt nicht mit der für die Aufrufkonvention des Konstruktors erforderlichen Anzahl der Parameter des Konstruktors überein.- oder - Der Typ des angegebenen Arguments stimmt nicht mit dem Typ des im Konstruktor deklarierten Parameters überein.- oder - Die Typen der Eigenschaftenwerte stimmen nicht mit den Typen der benannten Eigenschaften überein.- oder - Die Typen der Feldwerte stimmen nicht mit den Typen der entsprechenden Feldtypen überein.- oder - Eine Eigenschaft verfügt über keine Set-Methode.- oder - Die Eigenschaft oder das Feld gehört nicht zu derselben Klasse oder Basisklasse wie der Konstruktor. - oder -Ein angegebenes Argument, eine benannte Eigenschaft oder ein benanntes Feld ist von einem anderen Referenztyp als <see cref="T:System.String" /> oder <see cref="T:System.Type" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Einer der Parameter ist null. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.ILGenerator">
+      <summary>Generiert MSIL-Anweisungen (Microsoft Intermediate Language).</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginCatchBlock(System.Type)">
+      <summary>Beginnt einen Catch-Block.</summary>
+      <param name="exceptionType">Das <see cref="T:System.Type" />-Objekt, das die Ausnahme darstellt. </param>
+      <exception cref="T:System.ArgumentException">Der Catch-Block befindet sich in einer gefilterten Ausnahme. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="exceptionType" /> ist null, und der Ausnahmefilterblock hat keinen Wert zurückgegeben, der anzeigt, dass Finally-Blöcke bis zum Auffinden dieses Catch-Blocks ausgeführt werden sollen. </exception>
+      <exception cref="T:System.NotSupportedException">Die Microsoft Intermediate Language (MSIL), die generiert wird, befindet sich derzeit nicht in einem Ausnahmeblock. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptFilterBlock">
+      <summary>Beginnt einen Ausnahmeblock für eine gefilterte Ausnahme.</summary>
+      <exception cref="T:System.NotSupportedException">Die Microsoft Intermediate Language (MSIL), die generiert wird, befindet sich derzeit nicht in einem Ausnahmeblock. - oder -Dieser <see cref="T:System.Reflection.Emit.ILGenerator" /> gehört zu einer <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginExceptionBlock">
+      <summary>Beginnt einen Ausnahmeblock für eine nicht gefilterte Ausnahme.</summary>
+      <returns>Die Sprungmarke für das Ende des Blocks.Durch diese befinden Sie sich an der richtigen Stelle zum Ausführen von finally-Blöcken oder zum Beenden von try.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFaultBlock">
+      <summary>Beginnt einen Ausnahmefehlerblock im MSIL-Stream (Microsoft Intermediate Language).</summary>
+      <exception cref="T:System.NotSupportedException">Die generierte MSIL befindet sich derzeit nicht in einem Ausnahmeblock. - oder -Dieser <see cref="T:System.Reflection.Emit.ILGenerator" /> gehört zu einer <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginFinallyBlock">
+      <summary>Beginnt einen finally-Block im MSIL-Anweisungsstream (Microsoft Intermediate Language).</summary>
+      <exception cref="T:System.NotSupportedException">Die generierte MSIL befindet sich derzeit nicht in einem Ausnahmeblock. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.BeginScope">
+      <summary>Leitet einen lexikalischen Gültigkeitsbereich ein.</summary>
+      <exception cref="T:System.NotSupportedException">Dieser <see cref="T:System.Reflection.Emit.ILGenerator" /> gehört zu einer <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type)">
+      <summary>Deklariert eine lokale Variable vom angegebenen Typ.</summary>
+      <returns>Die deklarierte lokale Variable.</returns>
+      <param name="localType">Ein <see cref="T:System.Type" />-Objekt, das den Typ der lokalen Variablen darstellt. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" /> ist null. </exception>
+      <exception cref="T:System.InvalidOperationException">Der enthaltende Typ wurde von der <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />-Methode erstellt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DeclareLocal(System.Type,System.Boolean)">
+      <summary>Deklariert eine lokale Variable des angegebenen Typs und fixiert optional das Objekt, auf das von der Variablen verwiesen wird.</summary>
+      <returns>Ein <see cref="T:System.Reflection.Emit.LocalBuilder" />-Objekt, das die lokale Variable darstellt.</returns>
+      <param name="localType">Ein <see cref="T:System.Type" />-Objekt, das den Typ der lokalen Variablen darstellt.</param>
+      <param name="pinned">true, um das Objekt im Arbeitsspeicher zu fixieren; andernfalls false.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localType" /> ist null. </exception>
+      <exception cref="T:System.InvalidOperationException">Der enthaltende Typ wurde von der <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />-Methode erstellt.- oder -Der Methodentext der einschließenden Methode wurde von der <see cref="M:System.Reflection.Emit.MethodBuilder.CreateMethodBody(System.Byte[],System.Int32)" />-Methode erstellt. </exception>
+      <exception cref="T:System.NotSupportedException">Die Methode, der dieser <see cref="T:System.Reflection.Emit.ILGenerator" /> zugeordnet ist, wird nicht von einem <see cref="T:System.Reflection.Emit.MethodBuilder" /> dargestellt.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.DefineLabel">
+      <summary>Deklariert eine neue Sprungmarke.</summary>
+      <returns>Gibt eine neue Sprungmarke zurück, die als Token für Verzweigungen verwendet werden kann.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode)">
+      <summary>Fügt die angegebene Anweisung in den Anweisungsstream ein.</summary>
+      <param name="opcode">Die in den Stream einzufügende MSIL-Anweisung (Microsoft Intermediate Language). </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Byte)">
+      <summary>Fügt die angegebene Anweisung und das Zeichenargument in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="arg">Das unmittelbar hinter der Anweisung in den Stream eingefügte Zeichenargument. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Double)">
+      <summary>Fügt die angegebene Anweisung und das numerische Argument in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung.In der OpCodes-Enumeration definiert.</param>
+      <param name="arg">Das unmittelbar hinter der Anweisung in den Stream eingefügte numerische Argument. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int16)">
+      <summary>Fügt die angegebene Anweisung und das numerische Argument in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="arg">Das unmittelbar hinter der Anweisung in den Stream eingefügte Int-Argument. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int32)">
+      <summary>Fügt die angegebene Anweisung und das numerische Argument in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="arg">Das unmittelbar hinter der Anweisung in den Stream eingefügte numerische Argument. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Int64)">
+      <summary>Fügt die angegebene Anweisung und das numerische Argument in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="arg">Das unmittelbar hinter der Anweisung in den Stream eingefügte numerische Argument. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.ConstructorInfo)">
+      <summary>Fügt die angegebene Anweisung und das Metadatentoken für den angegebenen Konstruktor in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="con">Eine ConstructorInfo, die einen Konstruktor darstellt. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> ist null.Diese Ausnahme ist in .NET Framework 4 neu.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label)">
+      <summary>Fügt die angegebene Anweisung in den MSIL-Stream (Microsoft Intermediate Language) ein und lässt für den Fall von Korrekturen Platz zum Einfügen einer Sprungmarke.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="label">Die Sprungmarke, zu der von dieser Position aus verzweigt werden soll. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.Label[])">
+      <summary>Fügt die angegebene Anweisung in den MSIL-Stream (Microsoft Intermediate Language) ein und lässt für den Fall von Korrekturen Platz zum Einfügen einer Sprungmarke.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="labels">Das Array von Sprungmarkenobjekten, zu denen von dieser Position aus verzweigt werden soll.Es werden alle Sprungmarken verwendet.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> ist null.Diese Ausnahme ist in .NET Framework 4 neu.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.LocalBuilder)">
+      <summary>Fügt die angegebene Anweisung in den MSIL-Stream (Microsoft Intermediate Language) ein, gefolgt vom Index der angegebenen lokalen Variable.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="local">Eine lokale Variable. </param>
+      <exception cref="T:System.ArgumentException">Die übergeordnete Methode des <paramref name="local" />-Parameters stimmt nicht mit der Methode überein, die diesem <see cref="T:System.Reflection.Emit.ILGenerator" /> zugeordnet ist. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="local" /> ist null. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="opcode" /> ist eine Einzelbyteanweisung, und <paramref name="local" /> stellt eine lokale Variable mit einem Index dar, der größer als Byte.MaxValue ist. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.Emit.SignatureHelper)">
+      <summary>Fügt die angegebene Anweisung und ein Signaturtoken in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="signature">Ein Helper zum Erstellen eines Signaturtokens. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="signature" /> ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.FieldInfo)">
+      <summary>Fügt die angegebene Anweisung und das Metadatentoken für das angegebene Feld in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="field">Eine FieldInfo, die ein Feld darstellt. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo)">
+      <summary>Fügt die angegebene Anweisung in den MSIL-Stream (Microsoft Intermediate Language) ein, gefolgt vom Metadatentoken für die angegebene Methode.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="meth">Eine MethodInfo, die eine Methode darstellt. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="meth" /> ist null. </exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="meth" /> ist eine generische Methode, für die die <see cref="P:System.Reflection.MethodInfo.IsGenericMethodDefinition" />-Eigenschaft false ist.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.SByte)">
+      <summary>Fügt die angegebene Anweisung und das Zeichenargument in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="arg">Das unmittelbar hinter der Anweisung in den Stream eingefügte Zeichenargument. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Single)">
+      <summary>Fügt die angegebene Anweisung und das numerische Argument in den MSIL-Anweisungsstream (Microsoft Intermediate Language) ein.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="arg">Das unmittelbar hinter der Anweisung in den Stream eingefügte Single-Argument. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.String)">
+      <summary>Fügt die angegebene Anweisung in den MSIL-Stream (Microsoft Intermediate Language) ein, gefolgt vom Metadatentoken für die angegebene Zeichenfolge.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="str">Der auszugebende String. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.Emit(System.Reflection.Emit.OpCode,System.Type)">
+      <summary>Fügt die angegebene Anweisung in den MSIL-Stream (Microsoft Intermediate Language) ein, gefolgt vom Metadatentoken für den angegebenen Typ.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung. </param>
+      <param name="cls">Type</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="cls" /> ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCall(System.Reflection.Emit.OpCode,System.Reflection.MethodInfo,System.Type[])">
+      <summary>Fügt eine call-Anweisung oder callvirt-Anweisung in den MSIL (Microsoft Intermediate Language)-Stream ein, um eine varargs-Methode aufzurufen.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung.Muss <see cref="F:System.Reflection.Emit.OpCodes.Call" />, <see cref="F:System.Reflection.Emit.OpCodes.Callvirt" /> oder <see cref="F:System.Reflection.Emit.OpCodes.Newobj" /> sein.</param>
+      <param name="methodInfo">Die aufzurufende varargs-Methode. </param>
+      <param name="optionalParameterTypes">Die Typen der optionalen Argumente, wenn die Methode eine varargs-Methode ist, andernfalls null. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="opcode" /> gibt keinen Methodenaufruf an.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfo" /> ist null. </exception>
+      <exception cref="T:System.InvalidOperationException">Die Aufrufkonvention für die Methode ist nicht varargs, es werden jedoch optionale Parametertypen bereitgestellt.Diese Ausnahme wird in .NET Framework, Version 1.0 und Version 1.1, ausgelöst. In späteren Versionen wird keine Ausnahme ausgelöst.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitCalli(System.Reflection.Emit.OpCode,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[])">
+      <summary>Fügt eine <see cref="F:System.Reflection.Emit.OpCodes.Calli" />-Anweisung in den MSIL-Stream (Microsoft Intermediate Language) ein, die eine verwaltete Aufrufkonvention für den indirekten Aufruf angibt.</summary>
+      <param name="opcode">Die an den Stream auszugebende MSIL-Anweisung.Dieser Wert muss <see cref="F:System.Reflection.Emit.OpCodes.Calli" /> sein.</param>
+      <param name="callingConvention">Die zu verwendende verwaltete Aufrufkonvention. </param>
+      <param name="returnType">Der <see cref="T:System.Type" /> des Ergebnisses. </param>
+      <param name="parameterTypes">Die Typen der für die Anweisung erforderlichen Argumente. </param>
+      <param name="optionalParameterTypes">Die Typen der optionalen Argumente für varargs-Aufrufe. </param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="optionalParameterTypes" /> ist null, aber <paramref name="callingConvention" /> schließt das <see cref="F:System.Reflection.CallingConventions.VarArgs" />-Flag nicht ein.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.Emit.LocalBuilder)">
+      <summary>Gibt die für einen Aufruf von <see cref="Overload:System.Console.WriteLine" /> mit der angegebenen lokalen Variable benötigte Microsoft Intermediate Language (MSIL) aus.</summary>
+      <param name="localBuilder">Die lokale Variable, deren Wert in der Konsole ausgegeben werden soll. </param>
+      <exception cref="T:System.ArgumentException">Der Typ von <paramref name="localBuilder" /> ist <see cref="T:System.Reflection.Emit.TypeBuilder" /> oder <see cref="T:System.Reflection.Emit.EnumBuilder" />. Diese Typen werden nicht unterstützt. - oder -Es gibt keine Überladung der <see cref="Overload:System.Console.WriteLine" />-Methode, die den Typ von <paramref name="localBuilder" /> akzeptiert. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="localBuilder" /> ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.Reflection.FieldInfo)">
+      <summary>Gibt die für einen Aufruf von <see cref="Overload:System.Console.WriteLine" /> mit dem angegebenen Feld benötigte Microsoft Intermediate Language (MSIL) aus.</summary>
+      <param name="fld">Das Feld, dessen Wert in der Konsole ausgegeben werden soll. </param>
+      <exception cref="T:System.ArgumentException">Es ist keine Überladung der <see cref="Overload:System.Console.WriteLine" />-Methode vorhanden, die den Typ des angegebenen Felds akzeptiert. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fld" /> ist null. </exception>
+      <exception cref="T:System.NotSupportedException">Der Feldtyp ist <see cref="T:System.Reflection.Emit.TypeBuilder" /> oder <see cref="T:System.Reflection.Emit.EnumBuilder" />. Beide Typen werden nicht unterstützt. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EmitWriteLine(System.String)">
+      <summary>Gibt die Microsoft Intermediate Language (MSIL) für einen Aufruf von <see cref="Overload:System.Console.WriteLine" /> mit einer Zeichenfolge aus.</summary>
+      <param name="value">Die auszugebende Zeichenfolge. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndExceptionBlock">
+      <summary>Beendet einen Ausnahmeblock.</summary>
+      <exception cref="T:System.InvalidOperationException">Das Ende des Ausnahmeblocks tritt an einer unerwarteten Stelle im Codestream auf. </exception>
+      <exception cref="T:System.NotSupportedException">Die Microsoft Intermediate Language (MSIL), die generiert wird, befindet sich derzeit nicht in einem Ausnahmeblock. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.EndScope">
+      <summary>Beendet einen lexikalischen Gültigkeitsbereich.</summary>
+      <exception cref="T:System.NotSupportedException">Dieser <see cref="T:System.Reflection.Emit.ILGenerator" /> gehört zu einer <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ILGenerator.ILOffset">
+      <summary>Ruft den aktuellen Offset in Bytes im MSIL-Datenstrom (Microsoft Intermediate Language) ab, der vom <see cref="T:System.Reflection.Emit.ILGenerator" /> ausgegeben wird.</summary>
+      <returns>Der Offset im MSIL-Datenstrom, bei dem die nächste Anweisung ausgegeben wird. </returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.MarkLabel(System.Reflection.Emit.Label)">
+      <summary>Markiert die aktuelle Position des MSIL-Streams (Microsoft Intermediate Language) mit der angegebenen Sprungmarke.</summary>
+      <param name="loc">Die Sprungmarke, für die ein Index festzulegen ist. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="loc" /> stellt einen unzulässigen Index im Sprungmarkenarray dar.- oder - Es wurde bereits ein Index für <paramref name="loc" /> definiert. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.ThrowException(System.Type)">
+      <summary>Gibt eine Anweisung zum Auslösen einer Ausnahme aus.</summary>
+      <param name="excType">Die Klasse für den Typ der auszulösenden Ausnahme. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="excType" /> ist nicht die <see cref="T:System.Exception" />-Klasse oder eine von <see cref="T:System.Exception" /> abgeleitete Klasse.- oder - Der Typ besitzt keinen Standardkonstruktor. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="excType" /> ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ILGenerator.UsingNamespace(System.String)">
+      <summary>Gibt den Namespace an, der zur Auswertung der lokalen Variablen und Überwachungen für den derzeit aktiven lexikalischen Gültigkeitsbereich verwendet werden soll.</summary>
+      <param name="usingNamespace">Der Namespace, der zur Auswertung der lokalen Variablen und Überwachungen für den derzeit aktiven lexikalischen Gültigkeitsbereich verwendet werden soll. </param>
+      <exception cref="T:System.ArgumentException">Die Länge von <paramref name="usingNamespace" /> ist 0 (null). </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="usingNamespace" /> ist null. </exception>
+      <exception cref="T:System.NotSupportedException">Dieser <see cref="T:System.Reflection.Emit.ILGenerator" /> gehört zu einer <see cref="T:System.Reflection.Emit.DynamicMethod" />.</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.Label">
+      <summary>Stellt eine Sprungmarke im Anweisungsstream dar.Label wird in Verbindung mit der <see cref="T:System.Reflection.Emit.ILGenerator" />-Klasse verwendet.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Object)">
+      <summary>Überprüft, ob das angegebene Objekt eine Instanz von Label und gleich dieser Instanz ist.</summary>
+      <returns>Gibt true zurück, wenn <paramref name="obj" /> eine Instanz von Label und gleich diesem Objekt ist, andernfalls false.</returns>
+      <param name="obj">Das mit dieser Label-Instanz zu vergleichende Objekt. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.Equals(System.Reflection.Emit.Label)">
+      <summary>Gibt an, ob die aktuelle Instanz und das angegebene <see cref="T:System.Reflection.Emit.Label" /> gleich sind.</summary>
+      <returns>true, wenn der Wert von <paramref name="obj" /> dem Wert der aktuellen Instanz entspricht, andernfalls false.</returns>
+      <param name="obj">Das <see cref="T:System.Reflection.Emit.Label" />, das mit der aktuellen Instanz verglichen werden soll.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.GetHashCode">
+      <summary>Generiert einen Hashcode für diese Instanz.</summary>
+      <returns>Gibt einen Hashcode für diese Instanz zurück.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Equality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>Gibt an, ob zwei <see cref="T:System.Reflection.Emit.Label" />-Strukturen gleich sind.</summary>
+      <returns>true, wenn <paramref name="a" /> und <paramref name="b" /> gleich sind, andernfalls false.</returns>
+      <param name="a">Das <see cref="T:System.Reflection.Emit.Label" />, das mit <paramref name="b" /> verglichen werden soll.</param>
+      <param name="b">Das <see cref="T:System.Reflection.Emit.Label" />, das mit <paramref name="a" /> verglichen werden soll.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.Label.op_Inequality(System.Reflection.Emit.Label,System.Reflection.Emit.Label)">
+      <summary>Gibt an, ob zwei <see cref="T:System.Reflection.Emit.Label" />-Strukturen ungleich sind.</summary>
+      <returns>true, wenn <paramref name="a" /> und <paramref name="b" /> ungleich sind, andernfalls false.</returns>
+      <param name="a">Das <see cref="T:System.Reflection.Emit.Label" />, das mit <paramref name="b" /> verglichen werden soll.</param>
+      <param name="b">Das <see cref="T:System.Reflection.Emit.Label" />, das mit <paramref name="a" /> verglichen werden soll.</param>
+    </member>
+    <member name="T:System.Reflection.Emit.LocalBuilder">
+      <summary>Stellt eine lokale Variable in einer Methode oder einem Konstruktor dar.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.IsPinned">
+      <summary>Ruft einen Wert ab, der angibt, ob das Objekt, auf das die lokale Variable verweist, im Arbeitsspeicher fixiert ist.</summary>
+      <returns>true, wenn das Objekt, auf das die lokale Variable verweist, im Arbeitsspeicher fixiert ist, andernfalls false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalIndex">
+      <summary>Ruft den nullbasierten Index der lokalen Variable innerhalb des Methodentextes ab.</summary>
+      <returns>Ein ganzzahliger Wert, der die Reihenfolge der Deklaration der lokalen Variablen innerhalb des Methodentexts darstellt.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.LocalBuilder.LocalType">
+      <summary>Ruft den Typ der lokalen Variablen ab.</summary>
+      <returns>Der <see cref="T:System.Type" /> der lokalen Variablen.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ParameterBuilder">
+      <summary>Erstellt Parameterinformationen oder ordnet diese zu.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Attributes">
+      <summary>Ruft die Attribute für diesen Parameter ab.</summary>
+      <returns>Schreibgeschützt.Ruft die Attribute für diesen Parameter ab.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsIn">
+      <summary>Ruft ab, ob es sich um einen Eingabeparameter handelt.</summary>
+      <returns>Schreibgeschützt.Ruft ab, ob es sich um einen Eingabeparameter handelt.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOptional">
+      <summary>Ruft ab, ob dieser Parameter optional ist.</summary>
+      <returns>Schreibgeschützt.Gibt an, ob dieser Parameter optional ist.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.IsOut">
+      <summary>Ruft ab, ob es sich bei diesem Parameter um einen Ausgabeparameter handelt.</summary>
+      <returns>Schreibgeschützt.Ruft ab, ob es sich bei diesem Parameter um einen Ausgabeparameter handelt.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Name">
+      <summary>Ruft den Namen dieses Parameters ab.</summary>
+      <returns>Schreibgeschützt.Ruft den Namen dieses Parameters ab.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ParameterBuilder.Position">
+      <summary>Ruft die Signaturposition für diesen Parameter ab.</summary>
+      <returns>Schreibgeschützt.Ruft die Signaturposition für diesen Parameter ab.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetConstant(System.Object)">
+      <summary>Legt den Standardwert des Parameters fest.</summary>
+      <param name="defaultValue">Der Standardwert dieses Parameters. </param>
+      <exception cref="T:System.ArgumentException">Die Parameter weist keinen unterstützten Typ auf.- oder -Der Typ von <paramref name="defaultValue" /> entspricht nicht dem Typ der Parameters.- oder -Der Parameter weist den Typ <see cref="T:System.Object" /> oder einen anderen Verweistyp auf, <paramref name="defaultValue" /> ist nicht null, und der Wert kann nicht dem Verweistyp zugewiesen werden. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Legt ein benutzerdefiniertes Attribut mithilfe eines angegebenen BLOBs für benutzerdefinierte Attribute fest.</summary>
+      <param name="con">Der Konstruktor für das benutzerdefinierte Attribut. </param>
+      <param name="binaryAttribute">Ein Byte-BLOB, das die Attribute darstellt. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> oder <paramref name="binaryAttribute" /> ist null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Legt ein benutzerdefiniertes Attribut mit einem Generator für benutzerdefinierte Attribute fest.</summary>
+      <param name="customBuilder">Eine Instanz einer Unterstützungsklasse zum Definieren des benutzerdefinierten Attributs. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> ist null. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.SignatureHelper">
+      <summary>Stellt Methoden zum Erstellen von Signaturen bereit.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type)">
+      <summary>Fügt der Signatur ein Argument hinzu.</summary>
+      <param name="clsArgument">Der Typ des Arguments. </param>
+      <exception cref="T:System.ArgumentException">Die Signatur wurde bereits fertiggestellt. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="clsArgument" /> ist null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Boolean)">
+      <summary>Fügt der Signatur ein Argument vom angegebenen Typ hinzu und gibt an, ob das Argument fixiert ist.</summary>
+      <param name="argument">Der Argumenttyp.</param>
+      <param name="pinned">true, wenn das Argument fixiert ist, andernfalls false.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" /> ist null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArgument(System.Type,System.Type[],System.Type[])">
+      <summary>Fügt der Signatur ein Argument mit den angegebenen benutzerdefinierten Modifizierern hinzu.</summary>
+      <param name="argument">Der Argumenttyp.</param>
+      <param name="requiredCustomModifiers">Ein Array von Typen, die die erforderlichen benutzerdefinierten Modifizierer für das Argument darstellen, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn das Argument über keine erforderlichen benutzerdefinierten Modifizierer verfügt, geben Sie null an.</param>
+      <param name="optionalCustomModifiers">Ein Array von Typen, die die optionalen benutzerdefinierten Modifizierer für das Argument darstellen, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn das Argument über keine optionalen benutzerdefinierten Modifizierer verfügt, geben Sie null an.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="argument" /> ist null. - oder -Ein Element von <paramref name="requiredCustomModifiers" /> oder <paramref name="optionalCustomModifiers" /> ist null.</exception>
+      <exception cref="T:System.ArgumentException">Die Signatur wurde bereits fertiggestellt. - oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein Arraytyp.- oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein offener generischer Typ.Das heißt, die <see cref="P:System.Type.ContainsGenericParameters" />-Eigenschaft ist für den benutzerdefinierten Modifizierer true.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddArguments(System.Type[],System.Type[][],System.Type[][])">
+      <summary>Fügt der Signatur einen Satz von Argumenten mit den angegebenen benutzerdefinierten Modifizierern hinzu.</summary>
+      <param name="arguments">Die Typen der hinzuzufügenden Argumente.</param>
+      <param name="requiredCustomModifiers">Ein Array mit Arrays von Typen.Jedes Array von Typen stellt die erforderlichen benutzerdefinierten Modifizierer für das entsprechende Argument dar, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn ein bestimmtes Argument über keine erforderlichen benutzerdefinierten Modifizierer verfügt, geben Sie anstelle eines Arrays von Typen null an.Wenn keines der Argumente über erforderliche benutzerdefinierte Modifizierer verfügt, geben Sie anstelle eines Arrays von Arrays null an.</param>
+      <param name="optionalCustomModifiers">Ein Array mit Arrays von Typen.Jedes Array von Typen stellt die optionalen benutzerdefinierten Modifizierer für das entsprechende Argument dar, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn ein bestimmtes Argument über keine optionalen benutzerdefinierten Modifizierer verfügt, geben Sie anstelle eines Arrays von Typen null an.Wenn keines der Argumente über optionale benutzerdefinierte Modifizierer verfügt, geben Sie anstelle eines Arrays von Arrays null an.</param>
+      <exception cref="T:System.ArgumentNullException">Ein Element von <paramref name="arguments" /> ist null. - oder -Einer der angegebenen benutzerdefinierten Modifizierer ist null. (null kann aber auch für das Array von benutzerdefinierten Modifizierern für jedes beliebige Argument angegeben werden.)</exception>
+      <exception cref="T:System.ArgumentException">Die Signatur wurde bereits fertiggestellt. - oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein Arraytyp.- oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein offener generischer Typ.Das heißt, die <see cref="P:System.Type.ContainsGenericParameters" />-Eigenschaft ist für den benutzerdefinierten Modifizierer true.- oder -Die Größe von <paramref name="requiredCustomModifiers" /> oder <paramref name="optionalCustomModifiers" /> ist ungleich der Größe von <paramref name="arguments" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.AddSentinel">
+      <summary>Markiert das Ende eines festen Teils von Vararg.Dies wird nur verwendet, wenn der Aufrufer eine Vararg-Signaturaufrufsite erstellt.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.Equals(System.Object)">
+      <summary>Überprüft, ob diese Instanz gleich dem angegebenen Objekt ist.</summary>
+      <returns>true, wenn das angegebene Objekt ein SignatureHelper ist und dieselbe Signatur darstellt, andernfalls false.</returns>
+      <param name="obj">Das Objekt, mit dem diese Instanz verglichen werden soll. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetFieldSigHelper(System.Reflection.Module)">
+      <summary>Gibt eine Signaturhilfe für ein Feld zurück.</summary>
+      <returns>Das SignatureHelper-Objekt für ein Feld.</returns>
+      <param name="mod">Das dynamische Modul, das das Feld enthält, für das SignatureHelper angefordert wird. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetHashCode">
+      <summary>Erstellt einen Hashcode für diese Instanz und gibt diesen zurück.</summary>
+      <returns>Gibt den Hashcode anhand des Namens zurück.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper">
+      <summary>Gibt eine Signaturhilfe für eine lokale Variable zurück.</summary>
+      <returns>Ein <see cref="T:System.Reflection.Emit.SignatureHelper" /> für eine lokale Variable.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetLocalVarSigHelper(System.Reflection.Module)">
+      <summary>Gibt eine Signaturhilfe für eine lokale Variable zurück.</summary>
+      <returns>Das SignatureHelper-Objekt für eine lokale Variable.</returns>
+      <param name="mod">Das dynamische Modul, das die lokale Variable enthält, für die SignatureHelper angefordert wird. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.CallingConventions,System.Type)">
+      <summary>Gibt eine Signaturhilfe für eine Methode mit der Aufrufkonvention und dem Rückgabetyp der Methode zurück.</summary>
+      <returns>Das SignatureHelper-Objekt für eine Methode.</returns>
+      <param name="callingConvention">Die Aufrufkonvention der Methode. </param>
+      <param name="returnType">Der Rückgabetyp der Methode oder null für einen leeren Rückgabetyp (Sub-Prozedur in Visual Basic). </param>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type)">
+      <summary>Gibt eine Signaturhilfe für eine Methode mit dem Modul, der Aufrufkonvention und dem Rückgabetyp der Methode zurück.</summary>
+      <returns>Das SignatureHelper-Objekt für eine Methode.</returns>
+      <param name="mod">Der <see cref="T:System.Reflection.Emit.ModuleBuilder" /> mit der Methode, für die SignatureHelper angefordert wird. </param>
+      <param name="callingConvention">Die Aufrufkonvention der Methode. </param>
+      <param name="returnType">Der Rückgabetyp der Methode oder null für einen leeren Rückgabetyp (Sub-Prozedur in Visual Basic). </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> ist null.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> ist kein <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetMethodSigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>Gibt eine Signaturhilfe für eine Methode mit einer Standardaufrufkonvention, den Angaben für das Modul, dem Rückgabetyp und den Argumenttypen zurück.</summary>
+      <returns>Das SignatureHelper-Objekt für eine Methode.</returns>
+      <param name="mod">Der <see cref="T:System.Reflection.Emit.ModuleBuilder" /> mit der Methode, für die SignatureHelper angefordert wird. </param>
+      <param name="returnType">Der Rückgabetyp der Methode oder null für einen leeren Rückgabetyp (Sub-Prozedur in Visual Basic). </param>
+      <param name="parameterTypes">Die Typen der Argumente der Methode oder null, wenn die Methode über keine Argumente verfügt. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> ist null.- oder -Ein Element von <paramref name="parameterTypes" /> ist null.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> ist kein <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Gibt eine Signaturhilfe für eine Eigenschaft mit dem dynamischen Modul, das die Eigenschaft enthält, der Aufrufkonvention, dem Eigenschaftentyp, den Eigenschaftenargumenten und benutzerdefinierten Modifizierern für den Rückgabetyp und die Argumente zurück.</summary>
+      <returns>Das <see cref="T:System.Reflection.Emit.SignatureHelper" />-Objekt für eine Eigenschaft.</returns>
+      <param name="mod">Der <see cref="T:System.Reflection.Emit.ModuleBuilder" /> mit der Eigenschaft, für die <see cref="T:System.Reflection.Emit.SignatureHelper" /> angefordert wird.</param>
+      <param name="callingConvention">Die Aufrufkonvention der Eigenschaftenaccessoren.</param>
+      <param name="returnType">Eigenschaftentyp.</param>
+      <param name="requiredReturnTypeCustomModifiers">Ein Array von Typen, die die erforderlichen benutzerdefinierten Modifizierer für den Rückgabetyp darstellen, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn der Rückgabetyp über keine erforderlichen benutzerdefinierten Modifizierer verfügt, geben Sie null an.</param>
+      <param name="optionalReturnTypeCustomModifiers">Ein Array von Typen, die die optionalen benutzerdefinierten Modifizierer für den Rückgabetyp darstellen, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn der Rückgabetyp über keine optionalen benutzerdefinierten Modifizierer verfügt, geben Sie null an.</param>
+      <param name="parameterTypes">Die Typen der Argumente der Eigenschaft oder null, wenn die Eigenschaft über keine Argumente verfügt.</param>
+      <param name="requiredParameterTypeCustomModifiers">Ein Array mit Arrays von Typen.Jedes Array von Typen stellt die erforderlichen benutzerdefinierten Modifizierer für das entsprechende Argument der Eigenschaft dar.Wenn ein bestimmtes Argument über keine erforderlichen benutzerdefinierten Modifizierer verfügt, geben Sie anstelle eines Arrays von Typen null an.Wenn die Eigenschaft über keine Argumente oder keines der Argumente über erforderliche benutzerdefinierte Modifizierer verfügt, geben Sie anstelle eines Arrays von Arrays null an.</param>
+      <param name="optionalParameterTypeCustomModifiers">Ein Array mit Arrays von Typen.Jedes Array von Typen stellt die optionalen benutzerdefinierten Modifizierer für das entsprechende Argument der Eigenschaft dar.Wenn ein bestimmtes Argument über keine optionalen benutzerdefinierten Modifizierer verfügt, geben Sie anstelle eines Arrays von Typen null an.Wenn die Eigenschaft über keine Argumente oder keines der Argumente über optionale benutzerdefinierte Modifizierer verfügt, geben Sie anstelle eines Arrays von Arrays null an.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> ist null.- oder -Ein Element von <paramref name="parameterTypes" /> ist null. - oder -Einer der angegebenen benutzerdefinierten Modifizierer ist null. (null kann aber auch für das Array von benutzerdefinierten Modifizierern für jedes beliebige Argument angegeben werden.)</exception>
+      <exception cref="T:System.ArgumentException">Die Signatur wurde bereits fertiggestellt. - oder -<paramref name="mod" /> ist kein <see cref="T:System.Reflection.Emit.ModuleBuilder" />.- oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein Arraytyp.- oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein offener generischer Typ.Das heißt, die <see cref="P:System.Type.ContainsGenericParameters" />-Eigenschaft ist für den benutzerdefinierten Modifizierer true.- oder -Die Größe von <paramref name="requiredParameterTypeCustomModifiers" /> oder <paramref name="optionalParameterTypeCustomModifiers" /> ist ungleich der Größe von <paramref name="parameterTypes" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[])">
+      <summary>Gibt eine Signaturhilfe für eine Eigenschaft mit dem dynamischen Modul, das die Eigenschaft enthält, dem Eigenschaftentyp und den Eigenschaftenargumenten zurück.</summary>
+      <returns>Das <see cref="T:System.Reflection.Emit.SignatureHelper" />-Objekt für eine Eigenschaft.</returns>
+      <param name="mod">Der <see cref="T:System.Reflection.Emit.ModuleBuilder" /> mit der Eigenschaft, für die <see cref="T:System.Reflection.Emit.SignatureHelper" /> angefordert wird.</param>
+      <param name="returnType">Eigenschaftentyp.</param>
+      <param name="parameterTypes">Die Argumenttypen oder null, wenn die Eigenschaft über keine Argumente verfügt.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> ist null.- oder -Ein Element von <paramref name="parameterTypes" /> ist null.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="mod" /> ist kein <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetPropertySigHelper(System.Reflection.Module,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Gibt eine Signaturhilfe für eine Eigenschaft mit dem dynamischen Modul, das die Eigenschaft enthält, dem Eigenschaftentyp, den Eigenschaftenargumenten und benutzerdefinierten Modifizierern für den Rückgabetyp und die Argumente zurück.</summary>
+      <returns>Das <see cref="T:System.Reflection.Emit.SignatureHelper" />-Objekt für eine Eigenschaft.</returns>
+      <param name="mod">Der <see cref="T:System.Reflection.Emit.ModuleBuilder" /> mit der Eigenschaft, für die <see cref="T:System.Reflection.Emit.SignatureHelper" /> angefordert wird.</param>
+      <param name="returnType">Eigenschaftentyp.</param>
+      <param name="requiredReturnTypeCustomModifiers">Ein Array von Typen, die die erforderlichen benutzerdefinierten Modifizierer für den Rückgabetyp darstellen, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn der Rückgabetyp über keine erforderlichen benutzerdefinierten Modifizierer verfügt, geben Sie null an.</param>
+      <param name="optionalReturnTypeCustomModifiers">Ein Array von Typen, die die optionalen benutzerdefinierten Modifizierer für den Rückgabetyp darstellen, z. B. <see cref="T:System.Runtime.CompilerServices.IsConst" /> oder <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Wenn der Rückgabetyp über keine optionalen benutzerdefinierten Modifizierer verfügt, geben Sie null an.</param>
+      <param name="parameterTypes">Die Typen der Argumente der Eigenschaft oder null, wenn die Eigenschaft über keine Argumente verfügt.</param>
+      <param name="requiredParameterTypeCustomModifiers">Ein Array mit Arrays von Typen.Jedes Array von Typen stellt die erforderlichen benutzerdefinierten Modifizierer für das entsprechende Argument der Eigenschaft dar.Wenn ein bestimmtes Argument über keine erforderlichen benutzerdefinierten Modifizierer verfügt, geben Sie anstelle eines Arrays von Typen null an.Wenn die Eigenschaft über keine Argumente oder keines der Argumente über erforderliche benutzerdefinierte Modifizierer verfügt, geben Sie anstelle eines Arrays von Arrays null an.</param>
+      <param name="optionalParameterTypeCustomModifiers">Ein Array mit Arrays von Typen.Jedes Array von Typen stellt die optionalen benutzerdefinierten Modifizierer für das entsprechende Argument der Eigenschaft dar.Wenn ein bestimmtes Argument über keine optionalen benutzerdefinierten Modifizierer verfügt, geben Sie anstelle eines Arrays von Typen null an.Wenn die Eigenschaft über keine Argumente oder keines der Argumente über optionale benutzerdefinierte Modifizierer verfügt, geben Sie anstelle eines Arrays von Arrays null an.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mod" /> ist null.- oder -Ein Element von <paramref name="parameterTypes" /> ist null. - oder -Einer der angegebenen benutzerdefinierten Modifizierer ist null. (null kann aber auch für das Array von benutzerdefinierten Modifizierern für jedes beliebige Argument angegeben werden.)</exception>
+      <exception cref="T:System.ArgumentException">Die Signatur wurde bereits fertiggestellt. - oder -<paramref name="mod" /> ist kein <see cref="T:System.Reflection.Emit.ModuleBuilder" />.- oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein Arraytyp.- oder -Einer der angegebenen benutzerdefinierten Modifizierer ist ein offener generischer Typ.Das heißt, die <see cref="P:System.Type.ContainsGenericParameters" />-Eigenschaft ist für den benutzerdefinierten Modifizierer true.- oder -Die Größe von <paramref name="requiredParameterTypeCustomModifiers" /> oder <paramref name="optionalParameterTypeCustomModifiers" /> ist ungleich der Größe von <paramref name="parameterTypes" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.GetSignature">
+      <summary>Fügt der Signatur das Endtoken hinzu und markiert die Signatur als fertig gestellt, sodass keine weiteren Token hinzugefügt werden können.</summary>
+      <returns>Gibt ein Bytearray zurück, das aus der vollständigen Signatur besteht.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.SignatureHelper.ToString">
+      <summary>Gibt eine Zeichenfolge zurück, die die Signaturargumente darstellt.</summary>
+      <returns>Gibt eine Zeichenfolge zurück, die die Argumente dieser Signatur darstellt.</returns>
+    </member>
+  </members>
+</doc>

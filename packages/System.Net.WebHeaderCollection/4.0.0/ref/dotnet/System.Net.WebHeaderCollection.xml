@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>The HTTP headers that may be specified in a client request.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>The Accept header, which specifies the MIME types that are acceptable for the response.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>The Accept-Charset header, which specifies the character sets that are acceptable for the response.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>The Accept-Encoding header, which specifies the content encodings that are acceptable for the response.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>The Accept-Langauge header, which specifies that natural languages that are preferred for the response.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>The Allow header, which specifies the set of HTTP methods supported.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>The Authorization header, which specifies the credentials that the client presents in order to authenticate itself to the server.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>The Cache-Control header, which specifies directives that must be obeyed by all cache control mechanisms along the request/response chain.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>The Connection header, which specifies options that are desired for a particular connection.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>The Content-Encoding header, which specifies the encodings that have been applied to the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>The Content-Langauge header, which specifies the natural language(s) of the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>The Content-Length header, which specifies the length, in bytes, of the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>The Content-Location header, which specifies a URI from which the accompanying body may be obtained.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>The Content-MD5 header, which specifies the MD5 digest of the accompanying body data, for the purpose of providing an end-to-end message integrity check.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>The Content-Range header, which specifies where in the full body the accompanying partial body data should be applied.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>The Content-Type header, which specifies the MIME type of the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>The Cookie header, which specifies cookie data presented to the server.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>The Date header, which specifies the date and time at which the request originated.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>The Expect header, which specifies particular server behaviors that are required by the client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>The Expires header, which specifies the date and time after which the accompanying body data should be considered stale.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>The From header, which specifies an Internet E-mail address for the human user who controls the requesting user agent.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>The Host header, which specifies the host name and port number of the resource being requested.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>The If-Match header, which specifies that the requested operation should be performed only if the client's cached copy of the indicated resource is current.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>The If-Modified-Since header, which specifies that the requested operation should be performed only if the requested resource has been modified since the indicated data and time.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>The If-None-Match header, which specifies that the requested operation should be performed only if none of client's cached copies of the indicated resources are current.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>The If-Range header, which specifies that only the specified range of the requested resource should be sent, if the client's cached copy is current.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>The If-Unmodified-Since header, which specifies that the requested operation should be performed only if the requested resource has not been modified since the indicated date and time.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>The Keep-Alive header, which specifies a parameter used into order to maintain a persistent connection.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>The Last-Modified header, which specifies the date and time at which the accompanying body data was last modified.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>The Max-Forwards header, which specifies an integer indicating the remaining number of times that this request may be forwarded.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>The Pragma header, which specifies implementation-specific directives that might apply to any agent along the request/response chain.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>The Proxy-Authorization header, which specifies the credentials that the client presents in order to authenticate itself to a proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>The Range header, which specifies the the sub-range(s) of the response that the client requests be returned in lieu of the entire response.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>The Referer header, which specifies the URI of the resource from which the request URI was obtained.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>The TE header, which specifies the transfer encodings that are acceptable for the response.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>The Trailer header, which specifies the header fields present in the trailer of a message encoded with chunked transfer-coding.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>The Transfer-Encoding header, which specifies what (if any) type of transformation that has been applied to the message body.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>The Translate header, a Microsoft extension to the HTTP specification used in conjunction with WebDAV functionality.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>The Upgrade header, which specifies additional communications protocols that the client supports.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>The User-Agent header, which specifies information about the client agent.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>The Via header, which specifies intermediate protocols to be used by gateway and proxy agents.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>The Warning header, which specifies additional information about that status or transformation of a message that might not be reflected in the message.</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>The HTTP headers that can be specified in a server response.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>The Accept-Ranges header, which specifies the range that is accepted by the server.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>The Age header, which specifies the time, in seconds, since the response was generated by the originating server.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>The Allow header, which specifies the set of HTTP methods that are supported.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>The Cache-Control header, which specifies caching directives that must be obeyed by all caching mechanisms along the request/response chain.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>The Connection header, which specifies options that are desired for a particular connection.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>The Content-Encoding header, which specifies the encodings that have been applied to the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>The Content-Langauge header, which specifies the natural language or languages of the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>The Content-Length header, which specifies the length, in bytes, of the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>The Content-Location header, which specifies a URI from which the accompanying body can be obtained.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>The Content-MD5 header, which specifies the MD5 digest of the accompanying body data, for the purpose of providing an end-to-end message integrity check.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>The Range header, which specifies the subrange or subranges of the response that the client requests be returned in lieu of the entire response.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>The Content-Type header, which specifies the MIME type of the accompanying body data.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>The Date header, which specifies the date and time at which the response originated.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>The Etag header, which specifies the current value for the requested variant. </summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>The Expires header, which specifies the date and time after which the accompanying body data should be considered stale.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>The Keep-Alive header, which specifies a parameter to be used to maintain a persistent connection.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>The Last-Modified header, which specifies the date and time at which the accompanying body data was last modified.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>The Location header, which specifies a URI to which the client is redirected to obtain the requested resource.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>The Pragma header, which specifies implementation-specific directives that might apply to any agent along the request/response chain.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>The Proxy-Authenticate header, which specifies that the client must authenticate itself to a proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>The Retry-After header, which specifies a time (in seconds), or a date and time, after which the client can retry its request.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>The Server header, which specifies information about the originating server agent.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>The Set-Cookie header, which specifies cookie data that is presented to the client.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>The Trailer header, which specifies that the indicated header fields are present in the trailer of a message that is encoded with chunked transfer-coding.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>The Transfer-Encoding header, which specifies what (if any) type of transformation has been applied to the message body.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>The Upgrade header, which specifies additional communications protocols that the client supports.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>The Vary header, which specifies the request headers that are used to determine whether a cached response is fresh.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>The Via header, which specifies intermediate protocols to be used by gateway and proxy agents.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>The Warning header, which specifies additional information about that status or transformation of a message that might not be reflected in the message.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>The WWW-Authenticate header, which specifies that the client must authenticate itself to the server.</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>Contains protocol headers associated with a request or response.</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>Initializes a new instance of the <see cref="T:System.Net.WebHeaderCollection" /> class.</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>Gets all header names (keys) in the collection.</summary>
+      <returns>An array of type <see cref="T:System.String" /> containing all header names in a Web request.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>Gets the number of headers in the collection.</summary>
+      <returns>An <see cref="T:System.Int32" /> indicating the number of headers in a request.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>Gets or sets the specified request header.</summary>
+      <returns>A <see cref="T:System.String" /> instance containing the specified header value.</returns>
+      <param name="header">The request header value.</param>
+      <exception cref="T:System.InvalidOperationException">This <see cref="T:System.Net.WebHeaderCollection" /> instance does not allow instances of <see cref="T:System.Net.HttpRequestHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>Gets or sets the specified response header.</summary>
+      <returns>A <see cref="T:System.String" /> instance containing the specified header.</returns>
+      <param name="header">The response header value.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">The length of <paramref name="value" /> is greater than 65535. </exception>
+      <exception cref="T:System.InvalidOperationException">This <see cref="T:System.Net.WebHeaderCollection" /> instance does not allow instances of <see cref="T:System.Net.HttpResponseHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>Gets or sets the specified response header.</summary>
+      <returns>The specified response header.</returns>
+      <param name="name">The name of the specified request header.</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>Removes the specified header from the collection.</summary>
+      <param name="name">The name of the header to remove from the collection. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> is null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> is a restricted header.-or- <paramref name="name" /> contains invalid characters. </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Returns an enumerator that can iterate through the <see cref="T:System.Net.WebHeaderCollection" /> instance.</summary>
+      <returns>Returns <see cref="T:System.Collections.IEnumerator" />.An enumerator that can iterate through the <see cref="T:System.Net.WebHeaderCollection" /> instance.</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>This method is obsolete.</summary>
+      <returns>The <see cref="T:System.String" /> representation of the collection.</returns>
+    </member>
+  </members>
+</doc>

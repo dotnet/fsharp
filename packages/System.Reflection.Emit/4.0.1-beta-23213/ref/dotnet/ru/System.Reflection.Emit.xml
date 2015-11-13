@@ -1,0 +1,1404 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.AssemblyBuilder">
+      <summary>Определяет и представляет динамическую сборку.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.DefinedTypes"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess)">
+      <summary>Определяет динамическую сборку с указанным именем и правами доступа.</summary>
+      <returns>Объект, представляющий новую сборку.</returns>
+      <param name="name">Имя сборки.</param>
+      <param name="access">Права доступа сборки.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess,System.Collections.Generic.IEnumerable{System.Reflection.Emit.CustomAttributeBuilder})">
+      <summary>Определяет новую сборку с указанным именем и правами доступа и атрибутами.</summary>
+      <returns>Объект, представляющий новую сборку.</returns>
+      <param name="name">Имя сборки.</param>
+      <param name="access">Права доступа сборки.</param>
+      <param name="assemblyAttributes">Коллекция, содержащая атрибуты сборки.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicModule(System.String)">
+      <summary>Определяет именованный несохраняемый динамический модуль в данной сборке.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.ModuleBuilder" />, представляющий определенный в результате динамический модуль.</returns>
+      <param name="name">Имя динамического модуля.Не должно превышать 260 знаков.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> начинается с пробела.– или – Длина параметра <paramref name="name" /> равна нулю.– или – Длина <paramref name="name" /> больше или равна 260. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.Security.SecurityException">У вызывающего объекта отсутствует необходимое разрешение. </exception>
+      <exception cref="T:System.ExecutionEngineException">Не удается загрузить сборку для используемого по умолчанию интерфейса записи символов.– или – Не удается найти тип, реализующий используемый по умолчанию интерфейс записи символов. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*" />
+        <IPermission class="System.Security.Permissions.ReflectionPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="MemberAccess" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.Equals(System.Object)">
+      <summary>Возвращает значение, показывающее, равен ли данный экземпляр указанному объекту.</summary>
+      <returns>true, если объект <paramref name="obj" /> типу и значению данного экземпляра; в противном случае — false.</returns>
+      <param name="obj">Объект, сравниваемый с этим экземпляром, или значение null.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.FullName">
+      <summary>Получает отображаемое имя текущей динамической сборки. </summary>
+      <returns>Отображаемое имя динамической сборки.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetDynamicModule(System.String)">
+      <summary>Возвращает динамический модуль с указанным именем.</summary>
+      <returns>Объект ModuleBuilder, представляющий запрошенный динамический модуль.</returns>
+      <param name="name">Имя запрошенного динамического модуля. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю. </exception>
+      <exception cref="T:System.Security.SecurityException">У вызывающего объекта отсутствует необходимое разрешение. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetHashCode">
+      <summary>Возвращает хэш-код для данного экземпляра.</summary>
+      <returns>Хэш-код 32-битового целого числа со знаком.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceInfo(System.String)">
+      <summary>Возвращает сведения о сохранении заданного ресурса.</summary>
+      <returns>
+        <see cref="T:System.Reflection.ManifestResourceInfo" /> со сведениями о топологии ресурса или null, если ресурс не найден.</returns>
+      <param name="resourceName">Имя ресурса. </param>
+      <exception cref="T:System.NotSupportedException">В настоящее время этот метод не поддерживается. </exception>
+      <exception cref="T:System.Security.SecurityException">У вызывающего объекта отсутствует необходимое разрешение. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceNames">
+      <summary>Загружает указанный ресурс манифеста из сборки.</summary>
+      <returns>Массив типа String, содержащий имена всех ресурсов.</returns>
+      <exception cref="T:System.NotSupportedException">Этот метод не поддерживается для динамической сборки.Для получения имен ресурсов манифеста используйте метод <see cref="M:System.Reflection.Assembly.GetManifestResourceNames" />.</exception>
+      <exception cref="T:System.Security.SecurityException">У вызывающего объекта отсутствует необходимое разрешение. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceStream(System.String)">
+      <summary>Загружает указанный ресурс манифеста из сборки.</summary>
+      <returns>Объект <see cref="T:System.IO.Stream" />, представляющий данный ресурс манифеста.</returns>
+      <param name="name">Имя запрошенного ресурса манифеста. </param>
+      <exception cref="T:System.NotSupportedException">В настоящее время этот метод не поддерживается. </exception>
+      <exception cref="T:System.Security.SecurityException">У вызывающего объекта отсутствует необходимое разрешение. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.IsDynamic">
+      <summary>Получает значение, указывающее, что текущая сборка — динамическая.</summary>
+      <returns>Всегда имеет значение true.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.ManifestModule">
+      <summary>Получает модуль в текущем объекте <see cref="T:System.Reflection.Emit.AssemblyBuilder" />, содержащий манифест сборки.</summary>
+      <returns>Модуль манифеста.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.Modules"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут сборки с помощью большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+      <exception cref="T:System.Security.SecurityException">У вызывающего объекта отсутствует необходимое разрешение. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> не является объектом типа RuntimeConstructorInfo.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Задается пользовательский атрибут сборки с помощью средства построения пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null. </exception>
+      <exception cref="T:System.Security.SecurityException">У вызывающего объекта отсутствует необходимое разрешение. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.AssemblyBuilderAccess">
+      <summary>Определяет режимы доступа для динамической сборки. </summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.Run">
+      <summary>Динамическую сборку можно выполнять, но нельзя сохранять.</summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.RunAndCollect">
+      <summary>Динамическую сборку можно выгрузить и освободить занимаемую ею память, с учетом ограничений, описанных в разделе Собираемые сборки для динамической генерации типа.</summary>
+    </member>
+    <member name="T:System.Reflection.Emit.ConstructorBuilder">
+      <summary>Определяет и представляет конструктор динамического класса.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Attributes">
+      <summary>Извлекает атрибуты данного конструктора.</summary>
+      <returns>Возвращает атрибуты данного конструктора.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.CallingConvention">
+      <summary>Возвращает значение <see cref="T:System.Reflection.CallingConventions" />, которое зависит от того, является ли объявленный тип универсальным.</summary>
+      <returns>
+        <see cref="F:System.Reflection.CallingConventions.HasThis" />, если объявляемый тип является универсальным; в противном случае — <see cref="F:System.Reflection.CallingConventions.Standard" />. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.DeclaringType">
+      <summary>Извлекает ссылку на объект <see cref="T:System.Type" /> для типа, посредством которого объявлен данный элемент.</summary>
+      <returns>Возвращает объект <see cref="T:System.Type" /> для типа, посредством которого объявлен данный элемент.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>Определяет параметр данного конструктора.</summary>
+      <returns>Возвращает объект ParameterBuilder, который предоставляет новый параметр конструктора.</returns>
+      <param name="iSequence">Позиция параметра в списке параметров.Параметры индексируются так, что первый параметр имеет номер 1.</param>
+      <param name="attributes">Атрибуты параметра. </param>
+      <param name="strParamName">Имя параметра.Имя может быть пустой строкой (null).</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение <paramref name="iSequence" /> меньше 0 (нуля) или больше, чем число параметров конструктора. </exception>
+      <exception cref="T:System.InvalidOperationException">Включающий тип был создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator">
+      <summary>Получает объект <see cref="T:System.Reflection.Emit.ILGenerator" /> для данного конструктора.</summary>
+      <returns>Возвращает объект <see cref="T:System.Reflection.Emit.ILGenerator" /> для данного конструктора.</returns>
+      <exception cref="T:System.InvalidOperationException">Конструктор используется по умолчанию.– или –Конструктор содержит флаги <see cref="T:System.Reflection.MethodAttributes" /> или <see cref="T:System.Reflection.MethodImplAttributes" />, которые указывают. что конструктор не должен содержать основной метод текста.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator(System.Int32)">
+      <summary>Возвращает объект <see cref="T:System.Reflection.Emit.ILGenerator" /> с указанным размером потока MSIL, который может быть использован для построения основного текста метода для этого конструктора.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.ILGenerator" /> для данного конструктора.</returns>
+      <param name="streamSize">Размер потока языка MSIL в байтах.</param>
+      <exception cref="T:System.InvalidOperationException">Конструктор используется по умолчанию.– или –Конструктор содержит флаги <see cref="T:System.Reflection.MethodAttributes" /> или <see cref="T:System.Reflection.MethodImplAttributes" />, которые указывают. что конструктор не должен содержать основной метод текста. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetParameters">
+      <summary>Возвращает параметры данного конструктора.</summary>
+      <returns>Возвращает массив объектов <see cref="T:System.Reflection.ParameterInfo" />, представляющих параметры данного конструктора.</returns>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> не был вызван для этого типа конструктора в платформе .NET Framework версии 1.0 и 1.1. </exception>
+      <exception cref="T:System.NotSupportedException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> не был вызван для этого типа конструктора в платформе .NET Framework версии 2.0. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.InitLocals">
+      <summary>Возвращает или задает признак, показывающий, инициализируются локальные переменные нулем или нет.</summary>
+      <returns>Для чтения и записи.Возвращает или задает признак, показывающий, инициализируются локальные переменные нулем или нет.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Name">
+      <summary>Извлекает имя данного конструктора.</summary>
+      <returns>Возвращает имя данного конструктора.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с помощью большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Задание пользовательского атрибута с помощью средства построения пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="customBuilder" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>Устанавливает флаги реализации метода для данного конструктора.</summary>
+      <param name="attributes">Флаги реализации метода. </param>
+      <exception cref="T:System.InvalidOperationException">Включающий тип был создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.ToString">
+      <summary>Возвращает экземпляр объекта <see cref="T:System.Reflection.Emit.ConstructorBuilder" /> в виде объекта <see cref="T:System.String" />.</summary>
+      <returns>Возвращает объект <see cref="T:System.String" />, содержащий имя, атрибуты и исключения данного конструктора, за которыми следует поток инструкций на языке MSIL.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EnumBuilder">
+      <summary>Описывает и представляет тип перечисления.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Assembly">
+      <summary>Возвращает динамическую сборку, которая содержит определение данного перечисления.</summary>
+      <returns>Только для чтения.Динамическая сборка, которая содержит определение данного перечисления.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.AssemblyQualifiedName">
+      <summary>Возвращает полный путь перечисления, определяемый отображаемым именем родительской сборки.</summary>
+      <returns>Только для чтения.Полный путь перечисления, определяемый отображаемым именем родительской сборки.</returns>
+      <exception cref="T:System.NotSupportedException">Если метод <see cref="M:System.Reflection.Emit.EnumBuilder.CreateType" /> не был вызван ранее. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.BaseType">
+      <summary>Возвращает родительский объект <see cref="T:System.Type" /> данного типа, который всегда представляет собой объект типа <see cref="T:System.Enum" />.</summary>
+      <returns>Только для чтения.Родительский объект <see cref="T:System.Type" /> данного типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.CreateTypeInfo">
+      <summary>Получает объект <see cref="T:System.Reflection.TypeInfo" />, представляющий данное перечисление.</summary>
+      <returns>Объект, представляющий данное перечисление.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringMethod"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringType">
+      <summary>Возвращает тип, которым объявлен данный объект <see cref="T:System.Reflection.Emit.EnumBuilder" />.</summary>
+      <returns>Только для чтения.Тип, которым объявлен данный объект <see cref="T:System.Reflection.Emit.EnumBuilder" />.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.DefineLiteral(System.String,System.Object)">
+      <summary>Задает определенную числовую константу для поименованного статического поля в типе перечисления.</summary>
+      <returns>Определенное в результате поле.</returns>
+      <param name="literalName">Имя статического поля. </param>
+      <param name="literalValue">Числовая константа данного литерала. </param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.FullName">
+      <summary>Возвращает полное имя данного перечисления.</summary>
+      <returns>Только для чтения.Полное имя данного перечисления.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterPosition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetElementType">
+      <summary>При вызове этого метода всегда возникает исключение <see cref="T:System.NotSupportedException" />.</summary>
+      <returns>Этот метод не поддерживается.Возвращаемое значение отсутствует.</returns>
+      <exception cref="T:System.NotSupportedException">В настоящее время этот метод не поддерживается. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GUID">
+      <summary>Возвращает GUID данного перечисления.</summary>
+      <returns>Только для чтения.GUID данного перечисления.</returns>
+      <exception cref="T:System.NotSupportedException">В настоящее время этот метод не поддерживается в неполных типах. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>Получает значение, указывающее, можно ли назначить указанный объект <see cref="T:System.Reflection.TypeInfo" /> данному объекту.</summary>
+      <returns>Значение true, если параметр <paramref name="typeInfo" /> можно назначить данному объекту; в противном случае — значение false.</returns>
+      <param name="typeInfo">Объект для тестирования.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericParameter"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType(System.Int32)">
+      <exception cref="T:System.IndexOutOfRangeException">Значение параметра <paramref name="rank" /> меньше 1.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeByRefType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeGenericType(System.Type[])"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakePointerType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Module">
+      <summary>Возвращает динамический модуль, содержащий определение объекта <see cref="T:System.Reflection.Emit.EnumBuilder" />.</summary>
+      <returns>Только для чтения.Динамический модуль, содержащий определение объекта <see cref="T:System.Reflection.Emit.EnumBuilder" />.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Name">
+      <summary>Возвращает имя данного перечисления.</summary>
+      <returns>Только для чтения.Имя данного перечисления.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Namespace">
+      <summary>Возвращает пространство имен данного перечисления.</summary>
+      <returns>Только для чтения.Пространство имен данного перечисления.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с использованием заданного большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Устанавливает пользовательский атрибут с помощью построителя пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.UnderlyingField">
+      <summary>Возвращает основное поле для данного перечисления.</summary>
+      <returns>Только для чтения.Основное поле для данного перечисления.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EventBuilder">
+      <summary>Определяет события для класса.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Добавляет "дополнительный" метод, связанный с данным событием. "Дополнительным" называется метод, который не вызывается при наступлении события и не вызывает событие сам.Эту функцию можно вызывать много раз для добавления нужного числа "дополнительных" методов.</summary>
+      <param name="mdBuilder">Объект MethodBuilder, представляющий "дополнительный" метод. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mdBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetAddOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Устанавливает метод, используемый для подписки на событие.</summary>
+      <param name="mdBuilder">Объект MethodBuilder, представляющий метод, используемый для подписки на данное событие. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mdBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с помощью большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Устанавливает пользовательский атрибут с помощью построителя пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для описания пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRaiseMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Устанавливает метод, используемый для вызова данного события.</summary>
+      <param name="mdBuilder">Объект MethodBuilder, представляющий метод, используемый для вызова данного события. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mdBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRemoveOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Устанавливает метод, используемый для отказа от подписки на событие.</summary>
+      <param name="mdBuilder">Объект MethodBuilder, представляющий метод, используемый для отказа от подписки на данное событие. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mdBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.FieldBuilder">
+      <summary>Определяет и предоставляет поле.Этот класс не наследуется.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Attributes">
+      <summary>Указывает атрибуты данного поля.Это свойство доступно только для чтения.</summary>
+      <returns>Атрибуты данного поля.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.DeclaringType">
+      <summary>Указывает ссылку на объект <see cref="T:System.Type" /> типа, которым объявлено данное поле.Это свойство доступно только для чтения.</summary>
+      <returns>Ссылка на объект <see cref="T:System.Type" /> типа, которым объявлено данное поле.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.FieldType">
+      <summary>Указывает объект <see cref="T:System.Type" />, предоставляющий тип данного поля.Это свойство доступно только для чтения.</summary>
+      <returns>Объект <see cref="T:System.Type" />, представляющий тип данного поля.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.GetValue(System.Object)">
+      <summary>Извлекает значение поля для указанного объекта.</summary>
+      <returns>Объект <see cref="T:System.Object" />, содержащий значение поля, отражаемого данным экземпляром.</returns>
+      <param name="obj">Объект, к полю которого требуется доступ. </param>
+      <exception cref="T:System.NotSupportedException">Этот метод не поддерживается. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Name">
+      <summary>Указывает имя данного поля.Это свойство доступно только для чтения.</summary>
+      <returns>Объект <see cref="T:System.String" />, содержащий имя данного поля.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetConstant(System.Object)">
+      <summary>Устанавливает значение, присваиваемое полю по умолчанию.</summary>
+      <param name="defaultValue">Новое значение, присваиваемое полю по умолчанию. </param>
+      <exception cref="T:System.InvalidOperationException">Включающий тип был создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+      <exception cref="T:System.ArgumentException">Тип поля не поддерживается.– или –Тип параметра <paramref name="defaultValue" /> не совпадает с типом поля.– или –Поле имеет тип <see cref="T:System.Object" /> или другой ссылочный тип, значение <paramref name="defaultValue" /> не равно null, и значение не может быть присвоено ссылочному типу.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с использованием заданного большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Родительский тип данного поля закрыт. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Устанавливает пользовательский атрибут с помощью построителя пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Родительский тип данного поля закрыт. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetOffset(System.Int32)">
+      <summary>Устанавливает расположение поля.</summary>
+      <param name="iOffset">Смещение поля внутри содержащего это поле типа. </param>
+      <exception cref="T:System.InvalidOperationException">Включающий тип был создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+      <exception cref="T:System.ArgumentException">Значение параметра <paramref name="iOffset" /> меньше нуля.</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.GenericTypeParameterBuilder">
+      <summary>Определяет и создает параметры универсального типа для динамически определенных универсальных типов и методов.Этот класс не наследуется.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Assembly">
+      <summary>Возвращает объект <see cref="T:System.Reflection.Assembly" />, представляющий динамическую сборку, содержащую определение универсального типа, к которому принадлежит текущий параметр типа.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Assembly" />, представляющий динамическую сборку, содержащую определение универсального типа, к которому принадлежит текущий параметр типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.AssemblyQualifiedName">
+      <summary>Получает значение null во всех случаях.</summary>
+      <returns>Пустая ссылка (Nothing в Visual Basic) во всех случаях.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.BaseType">
+      <summary>Возвращает ограничение базового типа, относящееся к текущему параметру универсального типа.</summary>
+      <returns>Объект <see cref="T:System.Type" />, представляющий ограничение базового типа, относящееся к параметру универсального типа, или значение null, если параметр типа не имеет ограничения базового типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.ContainsGenericParameters">
+      <summary>Возвращает значение true во всех классах.</summary>
+      <returns>true во всех случаях.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringMethod">
+      <summary>Возвращает метод <see cref="T:System.Reflection.MethodInfo" />, который представляет объявляемый метод, если текущий <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> представляет параметр типа универсального метода.</summary>
+      <returns>Метод <see cref="T:System.Reflection.MethodInfo" />, который представляет объявляемый метод, если текущий <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> представляет параметр типа универсального метода; в противном случае — null.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringType">
+      <summary>Возвращает определение универсального типа или определение универсального метода, к которому принадлежит параметр универсального типа.</summary>
+      <returns>Если параметр типа принадлежит универсальному типу, объект <see cref="T:System.Type" /> представляет этот универсальный тип; если параметр типа принадлежит универсальному методу, объект <see cref="T:System.Type" /> представляет этот тип, объявивший указанный универсальный метод.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.Equals(System.Object)">
+      <summary>Проверяет, является ли данный объект экземпляром EventToken и равен ли он текущему экземпляру.</summary>
+      <returns>Возвращает true, если <paramref name="o" /> является экземпляром EventToken и совпадает с текущим экземпляром; в противном случае возвращает false.</returns>
+      <param name="o">Объект для сравнения с текущим экземпляром.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.FullName">
+      <summary>Получает значение null во всех случаях.</summary>
+      <returns>Пустая ссылка (Nothing в Visual Basic) во всех случаях.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterPosition">
+      <summary>Возвращает позицию параметра типа в списке параметров типа универсального типа или метода, объявившего об этом параметре.</summary>
+      <returns>Позиция параметра типа в списке параметров типа универсального типа или метода, объявившего об этом параметре.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetElementType">
+      <summary>Во всех случаях создает исключение <see cref="T:System.NotSupportedException" />. </summary>
+      <returns>Тип, на который ссылается текущий тип массива, тип указателя или тип ByRef; значение null, если текущий тип не является типом массива или указателя и не передается по ссылке.</returns>
+      <exception cref="T:System.NotSupportedException">Во всех случаях.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericTypeDefinition">
+      <summary>Недопустим для параметров универсального типа.</summary>
+      <returns>Недопустим для параметров универсального типа.</returns>
+      <exception cref="T:System.InvalidOperationException">Во всех случаях.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetHashCode">
+      <summary>Возвращает 32-разрядный целочисленный хэш-код для текущего экземпляра.</summary>
+      <returns>Хэш-код 32-разрядного целого числа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GUID">
+      <summary>Для неполных параметров универсального типа не поддерживается.</summary>
+      <returns>Для неполных параметров универсального типа не поддерживается.</returns>
+      <exception cref="T:System.NotSupportedException">Во всех случаях. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>Во всех случаях создает исключение <see cref="T:System.NotSupportedException" />.</summary>
+      <returns>Во всех случаях создает исключение <see cref="T:System.NotSupportedException" />.</returns>
+      <param name="typeInfo">Объект для тестирования.</param>
+      <exception cref="T:System.NotSupportedException">Во всех случаях.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericParameter">
+      <summary>Возвращает значение true во всех классах.</summary>
+      <returns>true во всех случаях.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericType">
+      <summary>Возвращает false во всех случаях.</summary>
+      <returns>Во всех случаях — значение false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericTypeDefinition">
+      <summary>Получает значение false во всех случаях.</summary>
+      <returns>Во всех случаях — значение false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsSubclassOf(System.Type)">
+      <summary>Для неполных параметров универсального типа не поддерживается.</summary>
+      <returns>Для неполных параметров универсального типа не поддерживается.</returns>
+      <param name="c">Не поддерживается.</param>
+      <exception cref="T:System.NotSupportedException">Во всех случаях.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType">
+      <summary>Возвращает тип одномерного массива, тип элементов которого является параметром универсального типа.</summary>
+      <returns>Объект <see cref="T:System.Type" />, который представляет тип одномерного массива, тип элементов которого равен параметру универсального типа.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType(System.Int32)">
+      <summary>Возвращает тип массива, типом элемента которого является параметр универсального типа с определенным количеством измерений.</summary>
+      <returns>Объект <see cref="T:System.Type" />, который представляет тип массива, тип элементов которого равен параметру универсального типа с указанным количеством измерений.</returns>
+      <param name="rank">Размерность массива.</param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> не является допустимым количеством измерений.Например, значение меньше 1.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeByRefType">
+      <summary>Возвращает объект <see cref="T:System.Type" />, который представляет текущий параметр универсального типа при передаче его в качестве параметра ссылки.</summary>
+      <returns>Объект <see cref="T:System.Type" />, который представляет текущий параметр универсального типа при передаче его в качестве параметра ссылки.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeGenericType(System.Type[])">
+      <summary>Недопустим для неполных параметров универсального типа.</summary>
+      <returns>Этот метод является недопустимым для неполных параметров универсального типа.</returns>
+      <param name="typeArguments">Массив аргументов типа.</param>
+      <exception cref="T:System.InvalidOperationException">Во всех случаях.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakePointerType">
+      <summary>Возвращает объект <see cref="T:System.Type" />, который представляет указатель на текущий параметра универсального типа.</summary>
+      <returns>Объект <see cref="T:System.Type" />, который представляет указатель на текущий параметра универсального типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Module">
+      <summary>Возвращает динамический модуль, содержащий параметр универсального типа.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Module" />, который представляет динамический модуль, содержащий параметр общего типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Name">
+      <summary>Возвращает имя параметра универсального типа.</summary>
+      <returns>Имя параметра универсального типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Namespace">
+      <summary>Получает значение null во всех случаях.</summary>
+      <returns>Пустая ссылка (Nothing в Visual Basic) во всех случаях.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetBaseTypeConstraint(System.Type)">
+      <summary>Задает базовый тип, который должен наследоваться типом, чтобы быть замещенным для параметра типа.</summary>
+      <param name="baseTypeConstraint">Тип <see cref="T:System.Type" />, который должен быть унаследован любым типом, который должен быть замещенным для параметра типа.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с использованием заданного большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута.</param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибут.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="con" /> имеет значение null.– или –Массив <paramref name="binaryAttribute" /> является нулевой ссылкой.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Задание пользовательского атрибута с помощью средства построения пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="customBuilder" /> имеет значение null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetGenericParameterAttributes(System.Reflection.GenericParameterAttributes)">
+      <summary>Задает дисперсию характеристик и специальные ограничения универсального параметра, такие как ограничение конструктора без параметров.</summary>
+      <param name="genericParameterAttributes">Побитовая комбинация значений <see cref="T:System.Reflection.GenericParameterAttributes" />, которая представляет дисперсные характеристики и специальные ограничения текущего параметра универсального типа.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetInterfaceConstraints(System.Type[])">
+      <summary>Задает интерфейсы, которые должны быть реализованы типом, чтобы быть замещенным параметром типа. </summary>
+      <param name="interfaceConstraints">Массив объектов <see cref="T:System.Type" />, который представляет интерфейсы, которые должен реализовать тип, чтобы быть замещенным параметром типа.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.ToString">
+      <summary>Возвращает представление строки текущего параметра универсального типа.</summary>
+      <returns>Строка, которая содержит имя параметра универсального типа.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.MethodBuilder">
+      <summary>Определяет и предоставляет метод (или конструктор) для динамического класса.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Attributes">
+      <summary>Извлекает атрибуты данного метода.</summary>
+      <returns>Только для чтения.Извлекает перечисление MethodAttributes данного метода.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.CallingConvention">
+      <summary>Возвращает соглашение о вызовах данного метода.</summary>
+      <returns>Только для чтения.Соглашение о вызове метода.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ContainsGenericParameters">
+      <summary>Не поддерживается для этого типа.</summary>
+      <returns>Не поддерживается.</returns>
+      <exception cref="T:System.NotSupportedException">Вызванный метод не поддерживается в базовом классе.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.DeclaringType">
+      <summary>Возвращает тип, которым объявлен данный метод.</summary>
+      <returns>Только для чтения.Тип, которым объявлен данный метод.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineGenericParameters(System.String[])">
+      <summary>Задает количество параметров универсального типа для текущего метода, определяет их имена и возвращает массив объектов <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />, которые могут использоваться для определения ограничений.</summary>
+      <returns>Массив объектов <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />, представляющий параметры типа универсального метода.</returns>
+      <param name="names">Массив строк, который представляет имена параметров универсального типа.</param>
+      <exception cref="T:System.InvalidOperationException">Для этого метода уже были определены параметры универсального типа.– или –Метод уже завершен.– или –Метод <see cref="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)" /> был вызван для текущего метода.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="names" /> имеет значение null.– или –Элемент параметра <paramref name="names" /> имеет значение null.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> является пустым массивом.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>Задает атрибуты параметров и имя параметра этого метода или возвращаемого значения этого метода.Возвращает ParameterBuilder, который может быть использован для применения пользовательских атрибутов.</summary>
+      <returns>Возвращает объект ParameterBuilder, который представляет параметр этого метода или возвращаемое значение этого метода.</returns>
+      <param name="position">Позиция параметра в списке параметров.Параметры индексируются, начиная с 1 для первого параметра; значение 0 означает возвращаемое значение метода.</param>
+      <param name="attributes">Атрибуты параметра. </param>
+      <param name="strParamName">Имя параметра.Имя может быть пустой строкой (null).</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Метод не имеет параметров.– или – Значение параметра <paramref name="position" /> меньше нуля.– или – <paramref name="position" /> превосходит число параметров метода. </exception>
+      <exception cref="T:System.InvalidOperationException">Вмещающий тип был создан ранее с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего метода значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.Equals(System.Object)">
+      <summary>Определяет, идентичен ли указанный объект данному экземпляру.</summary>
+      <returns>true, если <paramref name="obj" /> является экземпляром MethodBuilder и равен этому объекту, в противном случае — false.</returns>
+      <param name="obj">Объект, который следует сравнить с этим экземпляром MethodBuilder. </param>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericArguments">
+      <summary>Возвращает массив объектов <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />, которые представляют параметры типа метода, если последний является универсальным.</summary>
+      <returns>Массив объектов <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />, представляющих параметры типа, если метод является универсальным, или значение null, если метод не является универсальным. </returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericMethodDefinition">
+      <summary>Возвращает этот метод.</summary>
+      <returns>Текущий экземпляр <see cref="T:System.Reflection.Emit.MethodBuilder" />. </returns>
+      <exception cref="T:System.InvalidOperationException">Текущий метод не является универсальным.То есть свойство <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> возвращает значение false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetHashCode">
+      <summary>Получает хэш-код данного метода.</summary>
+      <returns>Хэш-код данного метода.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator">
+      <summary>Возвращает объект ILGenerator данного метода с используемым по умолчанию 64-байтным потоком языка MSIL.</summary>
+      <returns>Возвращает объект ILGenerator данного метода.</returns>
+      <exception cref="T:System.InvalidOperationException">Метод не должен содержать основной текст из-за флагов <see cref="T:System.Reflection.MethodAttributes" /> и <see cref="T:System.Reflection.MethodImplAttributes" />, например потому, что выставлен флаг <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" />. – или –Этот метод является универсальным, но не является определением универсального метода.То есть значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator(System.Int32)">
+      <summary>Возвращает объект ILGenerator данного метода с заданным размером потока языка MSIL.</summary>
+      <returns>Возвращает объект ILGenerator данного метода.</returns>
+      <param name="size">Размер потока языка MSIL в байтах. </param>
+      <exception cref="T:System.InvalidOperationException">Метод не должен содержать основной текст из-за флагов <see cref="T:System.Reflection.MethodAttributes" /> и <see cref="T:System.Reflection.MethodImplAttributes" />, например потому, что выставлен флаг <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" />. – или –Этот метод является универсальным, но не является определением универсального метода.То есть значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetParameters">
+      <summary>Возвращает параметры данного метода.</summary>
+      <returns>Массив объектов ParameterInfo, предоставляющих параметры данного метода.</returns>
+      <exception cref="T:System.NotSupportedException">В настоящее время этот метод не поддерживается.Чтобы извлечь метод, можно воспользоваться методом <see cref="M:System.Type.GetMethod(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])" /> и для полученного объекта <see cref="T:System.Reflection.MethodInfo" /> вызвать GetParameters.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.InitLocals">
+      <summary>Возвращает или задает логическое значение, которое определяет, инициализированы ли с нуля локальные переменные в этом методе.По умолчанию для этого свойства устанавливается значение true.</summary>
+      <returns>Значение true, если локальные переменные в этом методе инициализируются с нуля, в противном случае — false.</returns>
+      <exception cref="T:System.InvalidOperationException">Для текущего метода значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false. (Возвращает или задает).</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod">
+      <summary>Возвращает значение, указывающее, является ли этот метод универсальным методом.</summary>
+      <returns>Значение true, если объект является универсальным; в противном случае — false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition">
+      <summary>Возвращает значение, указывающее, представляет ли текущий объект <see cref="T:System.Reflection.Emit.MethodBuilder" /> определение универсального метода.</summary>
+      <returns>Значение true, если текущий объект <see cref="T:System.Reflection.Emit.MethodBuilder" /> представляет определение универсального метода; в противном случае — false.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.MakeGenericMethod(System.Type[])">
+      <summary>Возвращает универсальный метод, сконструированный на основе текущего определения универсального метода с помощью определенных аргументов универсального типа.</summary>
+      <returns>Метод <see cref="T:System.Reflection.MethodInfo" />, представляющий универсальный метод, который был сконструирован на основе текущего определения универсального метода с помощью определенных аргументов универсального типа.</returns>
+      <param name="typeArguments">Массив объектов <see cref="T:System.Type" />, который представляет тип аргументов для универсального метода.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Name">
+      <summary>Извлекает имя данного метода.</summary>
+      <returns>Только для чтения.Извлекает строку, содержащую простое имя метода.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnParameter">
+      <summary>Получает объект <see cref="T:System.Reflection.ParameterInfo" />, который содержит сведения о типе возвращаемого значения этого метода, например: имеет ли возвращаемый тип пользовательские модификаторы. </summary>
+      <returns>Объект <see cref="T:System.Reflection.ParameterInfo" />, содержащий сведения о типе возвращаемого значения.</returns>
+      <exception cref="T:System.InvalidOperationException">Объявленный тип не был создан.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnType">
+      <summary>Возвращает тип возвращаемого значения метода, предоставленного этим объектом <see cref="T:System.Reflection.Emit.MethodBuilder" />.</summary>
+      <returns>Тип возвращаемого значения метода.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с использованием заданного большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Для текущего метода значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Устанавливает пользовательский атрибут с помощью построителя пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для описания пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="customBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Для текущего метода значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>Устанавливает флаги реализации метода для данного метода.</summary>
+      <param name="attributes">Флаги реализации, которые следует установить. </param>
+      <exception cref="T:System.InvalidOperationException">Вмещающий тип был создан ранее с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего метода значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetParameters(System.Type[])">
+      <summary>Задает количество и типы параметров для метода. </summary>
+      <param name="parameterTypes">Массив объектов <see cref="T:System.Type" />, представляющий типы параметров.</param>
+      <exception cref="T:System.InvalidOperationException">Текущий метод является универсальным, однако не является определением универсального метода.То есть значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetReturnType(System.Type)">
+      <summary>Задает тип возвращаемого значения метода.</summary>
+      <param name="returnType">Объект <see cref="T:System.Type" />, который представляет тип возвращаемого значения метода.</param>
+      <exception cref="T:System.InvalidOperationException">Текущий метод является универсальным, однако не является определением универсального метода.То есть значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetSignature(System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Задает сигнатуру метода, включая тип возвращаемого значения, типы параметров, а также требуемые и необязательные пользовательские модификаторы типа возвращаемых значений и типов параметров.</summary>
+      <param name="returnType">Тип возвращаемого значения метода.</param>
+      <param name="returnTypeRequiredCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений метода.Если у типа возвращаемого значения нет обязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений метода.Если у типа возвращаемого значения нет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="parameterTypes">Типы параметров метода.</param>
+      <param name="parameterTypeRequiredCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит требуемые пользовательские модификаторы, вместо массива массивов укажите null.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит необязательные пользовательские модификаторы, вместо массива массивов нужно задать значение null.</param>
+      <exception cref="T:System.InvalidOperationException">Текущий метод является универсальным, однако не является определением универсального метода.То есть значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.ToString">
+      <summary>Возвращает экземпляр MethodBuilder в виде строки.</summary>
+      <returns>Возвращает строку, содержащую имя, атрибуты, подпись метода, исключения и локальную подпись данного метода, за которыми следует поток инструкций языка MSIL.</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ModuleBuilder">
+      <summary>Определяет и представляет модуль в динамической сборке.</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Assembly">
+      <summary>Получает динамическую сборку, определившую данный экземпляр <see cref="T:System.Reflection.Emit.ModuleBuilder" />.</summary>
+      <returns>Динамическая сборка, определившая текущий динамический модуль.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions">
+      <summary>Завершает определения глобальной функции и глобальных данных для этого динамического модуля.</summary>
+      <exception cref="T:System.InvalidOperationException">Данный метод был вызван ранее. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineEnum(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>Определяет тип перечисления, который является типом значения с одним нестатическим полем, называемым <paramref name="value__" /> указанного типа.</summary>
+      <returns>Определенное перечисление.</returns>
+      <param name="name">Полный путь к типу перечисления.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="visibility">Атрибуты типа данного перечисления.Атрибутами являются любые биты, определенные с помощью <see cref="F:System.Reflection.TypeAttributes.VisibilityMask" />.</param>
+      <param name="underlyingType">Базовый тип данного перечисления.Это должен быть встроенный целочисленный тип.</param>
+      <exception cref="T:System.ArgumentException">Переданы атрибуты, не являющиеся атрибутами видимости.– или – Перечисление с указанным именем существует в родительской сборке этого модуля.– или – Атрибуты видимости не соответствуют области действия перечисления.Например, если в качестве значения параметра <paramref name="visibility" /> указано <see cref="F:System.Reflection.TypeAttributes.NestedPublic" />, но перечисление не относится к вложенному типу.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Определяет глобальный метод с данными именем, атрибутами, соглашениями о вызовах, возвращаемыми типами и типами параметров.</summary>
+      <returns>Определенный глобальный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты метода.Параметр <paramref name="attributes" /> должен включать атрибут <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="callingConvention">Соглашение о вызовах данного метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода. </param>
+      <param name="parameterTypes">Типы параметров метода. </param>
+      <exception cref="T:System.ArgumentException">Данный метод не является статическим.То есть параметр <paramref name="attributes" /> не включает <see cref="F:System.Reflection.MethodAttributes.Static" />.– или –Элементом массива <see cref="T:System.Type" /> является null.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Вызов метода <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> уже был выполнен. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Определяет глобальный метод с данными именем, атрибутами, соглашениями о вызовах, возвращаемым типом, пользовательскими модификаторами для возвращаемого типа, типами параметров и пользовательскими модификаторами для типов параметров.</summary>
+      <returns>Определенный глобальный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные символы NULL.</param>
+      <param name="attributes">Атрибуты метода.Параметр <paramref name="attributes" /> должен включать атрибут <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="callingConvention">Соглашение о вызовах данного метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода. </param>
+      <param name="requiredReturnTypeCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для возвращаемого типа, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если у типа возвращаемого значения нет обязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="optionalReturnTypeCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для возвращаемого типа, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> или <see cref="T:System.Runtime.CompilerServices.IsBoxed" />.Если у типа возвращаемого значения нет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="parameterTypes">Типы параметров метода. </param>
+      <param name="requiredParameterTypeCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего параметра глобального метода.Если определенный аргумент не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если глобальный метод не содержит аргументов или если аргументы не содержат пользовательские модификаторы, укажите значение null вместо массива массивов.</param>
+      <param name="optionalParameterTypeCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего параметра.Если определенный аргумент не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если глобальный метод не содержит аргументов или если аргументы не содержат необязательные пользовательские модификаторы, укажите значение null вместо массива массивов.</param>
+      <exception cref="T:System.ArgumentException">Данный метод не является статическим.То есть параметр <paramref name="attributes" /> не включает <see cref="F:System.Reflection.MethodAttributes.Static" />.– или –Элементом массива <see cref="T:System.Type" /> является null.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> вызывался до этого. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>Определяет глобальный метод с данными именем, атрибутами, возвращаемыми типами и типами параметров.</summary>
+      <returns>Определенный глобальный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты метода.Параметр <paramref name="attributes" /> должен включать атрибут <see cref="F:System.Reflection.MethodAttributes.Static" />.</param>
+      <param name="returnType">Тип возвращаемого значения метода. </param>
+      <param name="parameterTypes">Типы параметров метода. </param>
+      <exception cref="T:System.ArgumentException">Данный метод не является статическим.То есть параметр <paramref name="attributes" /> не включает <see cref="F:System.Reflection.MethodAttributes.Static" />.– или – Длина параметра <paramref name="name" /> равна нулю. – или –Элементом массива <see cref="T:System.Type" /> является null.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Вызов метода <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> уже был выполнен. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>Определяет инициализированное поле данных в разделе .sdata переносимого исполняемого PE-файла.</summary>
+      <returns>Поле для ссылки на данные.</returns>
+      <param name="name">Имя, используемое для ссылки на данные.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="data">Большой двоичный объект (BLOB) данных. </param>
+      <param name="attributes">Атрибуты поля.Значение по умолчанию — Static.</param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Размер параметра <paramref name="data" /> меньше или равен нулю, либо больше или равен 0x3f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="name" /> или <paramref name="data" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Вызов метода <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> уже был выполнен. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String)">
+      <summary>Создает объект TypeBuilder для закрытого типа с указанным в этом модуле именем. </summary>
+      <returns>Закрытый тип с указанным именем.</returns>
+      <param name="name">Полный путь к типу, включая пространство имен.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <exception cref="T:System.ArgumentException">Тип с данным именем существует в родительской сборке этого модуля.– или – Атрибуты вложенного типа установлены для типа, который не является вложенным. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes)">
+      <summary>Конструирует TypeBuilder с заданными именем и атрибутами типа.</summary>
+      <returns>Объект TypeBuilder, созданный с учетом всех запрошенных атрибутов.</returns>
+      <param name="name">Полный путь к типу.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты определенного в результате типа. </param>
+      <exception cref="T:System.ArgumentException">Тип с данным именем существует в родительской сборке этого модуля.– или – Атрибуты вложенного типа установлены для типа, который не является вложенным. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>Конструирует TypeBuilder с заданным именем, атрибутами и типом, который расширяет определенный тип.</summary>
+      <returns>Объект TypeBuilder, созданный с учетом всех запрошенных атрибутов.</returns>
+      <param name="name">Полный путь к типу.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибут, который будет связан с типом. </param>
+      <param name="parent">Тип, расширяющий определенный тип. </param>
+      <exception cref="T:System.ArgumentException">Тип с данным именем существует в родительской сборке этого модуля.– или – Атрибуты вложенного типа установлены для типа, который не является вложенным. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>Конструирует TypeBuilder с заданными именем, атрибутами, типом, который расширяет определенный тип, и общим размером типа.</summary>
+      <returns>Объект TypeBuilder.</returns>
+      <param name="name">Полный путь к типу.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты определенного в результате типа. </param>
+      <param name="parent">Тип, расширяющий определенный тип. </param>
+      <param name="typesize">Общий размер типа. </param>
+      <exception cref="T:System.ArgumentException">Тип с данным именем существует в родительской сборке этого модуля.– или – Атрибуты вложенного типа установлены для типа, который не является вложенным. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>Конструирует TypeBuilder с заданными именем, атрибутами, типом, который расширяет определенный тип, и размером упаковки типа.</summary>
+      <returns>Объект TypeBuilder.</returns>
+      <param name="name">Полный путь к типу.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты определенного в результате типа. </param>
+      <param name="parent">Тип, расширяющий определенный тип. </param>
+      <param name="packsize">Размер упаковки типа. </param>
+      <exception cref="T:System.ArgumentException">Тип с данным именем существует в родительской сборке этого модуля.– или – Атрибуты вложенного типа установлены для типа, который не является вложенным. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>Конструирует TypeBuilder с заданными именем, атрибутами, типом, который расширяет определенный тип, а также размером уплотнения и общим размером определенного типа.</summary>
+      <returns>Объект TypeBuilder, созданный с учетом всех запрошенных атрибутов.</returns>
+      <param name="name">Полный путь к типу.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты определенного в результате типа. </param>
+      <param name="parent">Тип, расширяющий определенный тип. </param>
+      <param name="packingSize">Размер упаковки типа. </param>
+      <param name="typesize">Общий размер типа. </param>
+      <exception cref="T:System.ArgumentException">Тип с данным именем существует в родительской сборке этого модуля.– или – Атрибуты вложенного типа установлены для типа, который не является вложенным. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>Конструирует TypeBuilder с заданными именем, атрибутами, типом, который расширяет определенный тип, и интерфейсами, реализующими этот тип.</summary>
+      <returns>Объект TypeBuilder, созданный с учетом всех запрошенных атрибутов.</returns>
+      <param name="name">Полный путь к типу.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты, которые будут связаны с типом. </param>
+      <param name="parent">Тип, расширяющий определенный тип. </param>
+      <param name="interfaces">Список интерфейсов, реализуемых типом. </param>
+      <exception cref="T:System.ArgumentException">Тип с данным именем существует в родительской сборке этого модуля.– или – Атрибуты вложенного типа установлены для типа, который не является вложенным. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>Определяет неинициализированное поле данных в разделе .sdata переносимого исполняемого PE-файла.</summary>
+      <returns>Поле для ссылки на данные.</returns>
+      <param name="name">Имя, используемое для ссылки на данные.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="size">Размер поля данных. </param>
+      <param name="attributes">Атрибуты поля. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Параметр <paramref name="size" /> меньше или равен нулю, либо больше или равен 0x003f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Вызов метода <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> уже был выполнен. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.Equals(System.Object)">
+      <summary>Возвращает значение, показывающее, равен ли данный экземпляр указанному объекту.</summary>
+      <returns>true, если объект <paramref name="obj" /> типу и значению данного экземпляра; в противном случае — false.</returns>
+      <param name="obj">Объект, сравниваемый с этим экземпляром, или значение null.</param>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.FullyQualifiedName">
+      <summary>Получает значение типа String, предоставляющее полное имя и путь для данного модуля.</summary>
+      <returns>Полное имя модуля.</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetArrayMethod(System.Type,System.String,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Возвращает именованный метод класса массива.</summary>
+      <returns>Именованный метод класса массива.</returns>
+      <param name="arrayClass">Класс массива. </param>
+      <param name="methodName">Имя метода класса массива. </param>
+      <param name="callingConvention">Соглашение о вызовах метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода. </param>
+      <param name="parameterTypes">Типы параметров метода. </param>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="arrayClass" /> не является массивом. </exception>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="arrayClass" /> или <paramref name="methodName" /> — null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetHashCode">
+      <summary>Возвращает хэш-код для данного экземпляра.</summary>
+      <returns>Хэш-код 32-битового целого числа со знаком.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Name">
+      <summary>Строка, указывающая, что это модуль, расположенный в памяти.</summary>
+      <returns>Текст, указывающий, что это модуль, расположенный в памяти.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут для этого модуля с помощью указанного большого двоичного объекта (BLOB), представляющего атрибут.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, представляющий атрибут. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Применяет к модулю настраиваемый атрибут с помощью построителя настраиваемых атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения применяемого пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="customBuilder" /> имеет значение null. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.PropertyBuilder">
+      <summary>Определяет свойства для типа.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Добавляет один из дополнительных методов, связанных с данным свойством.</summary>
+      <param name="mdBuilder">Объект MethodBuilder, представляющий "дополнительный" метод. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mdBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Attributes">
+      <summary>Получает атрибуты данного свойства.</summary>
+      <returns>Атрибуты данного свойства.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanRead">
+      <summary>Получает значение, указывающее, можно ли выполнить считывание данного свойства.</summary>
+      <returns>Значение true, если свойство доступно для чтения; в противном случае — значение false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanWrite">
+      <summary>Получает значение, указывающее, можно ли производить запись в данное свойство.</summary>
+      <returns>Значение true, если свойство доступно для записи; в обратном случае — значение false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.DeclaringType">
+      <summary>Получает класс, объявляющий этот член.</summary>
+      <returns>Объект Type для класса, объявляющего данный член.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetIndexParameters">
+      <summary>Возвращает массив, содержащий все индексные параметры данного свойства.</summary>
+      <returns>Массив элементов типа ParameterInfo, содержащий параметры для индексов.</returns>
+      <exception cref="T:System.NotSupportedException">Этот метод не поддерживается. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetValue(System.Object,System.Object[])">
+      <summary>Получает значение индексированного свойства через вызов метода чтения данного свойства.</summary>
+      <returns>Значение указанного индексированного свойства.</returns>
+      <param name="obj">Объект, свойство которого будет возвращено. </param>
+      <param name="index">Необязательные значения индекса для индексированных свойств.Для неиндексированных свойств это значение должно быть равно null.</param>
+      <exception cref="T:System.NotSupportedException">Этот метод не поддерживается. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Name">
+      <summary>Получает имя данного элемента.</summary>
+      <returns>Объект <see cref="T:System.String" />, содержащий имя данного элемента.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.PropertyType">
+      <summary>Возвращает тип поля данного свойства.</summary>
+      <returns>Тип свойства.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetConstant(System.Object)">
+      <summary>Устанавливает значение, присваиваемое свойству по умолчанию.</summary>
+      <param name="defaultValue">Значение, принимаемое данным свойством по умолчанию. </param>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+      <exception cref="T:System.ArgumentException">Тип свойства не является поддерживаемым.– или –Тип параметра <paramref name="defaultValue" /> не совпадает с типом свойства.– или –Свойство имеет тип <see cref="T:System.Object" /> или другой ссылочный тип, значение <paramref name="defaultValue" /> не равно null, и значение не может быть присвоено ссылочному типу. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с помощью большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Задание пользовательского атрибута с помощью средства построения пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="customBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetGetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Устанавливает метод, который получает значение свойства.</summary>
+      <param name="mdBuilder">Объект MethodBuilder, предоставляющий метод, который получает значение свойства. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mdBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetSetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>Устанавливает метод, который задает значение свойства.</summary>
+      <param name="mdBuilder">Объект MethodBuilder, предоставляющий метод, который задает значение свойства. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="mdBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> был вызван для включающего типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetValue(System.Object,System.Object,System.Object[])">
+      <summary>Задает значение свойства с необязательными значениями индекса для свойств индекса.</summary>
+      <param name="obj">Объект, значение свойства которого будет установлено. </param>
+      <param name="value">Новое значение этого свойства. </param>
+      <param name="index">Необязательные значения индекса для индексированных свойств.Для неиндексированных свойств это значение должно быть равно null.</param>
+      <exception cref="T:System.NotSupportedException">Этот метод не поддерживается. </exception>
+    </member>
+    <member name="T:System.Reflection.Emit.TypeBuilder">
+      <summary>Определяет и создает новые экземпляры классов во время выполнения.</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.AddInterfaceImplementation(System.Type)">
+      <summary>Добавляет интерфейс, реализуемый данным типом.</summary>
+      <param name="interfaceType">Интерфейс, реализуемый данным типом. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="interfaceType" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Assembly">
+      <summary>Извлекает динамическую сборку, содержащую определение данного типа.</summary>
+      <returns>Только для чтения.Извлекает динамическую сборку, содержащую определение данного типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.AssemblyQualifiedName">
+      <summary>Возвращает полное имя данного типа, дополненное отображаемым именем сборки.</summary>
+      <returns>Только для чтения.Полное имя данного типа, дополненное отображаемым именем сборки.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.BaseType">
+      <summary>Возвращает базовый тип данного типа.</summary>
+      <returns>Только для чтения.Возвращает базовый тип данного типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.CreateTypeInfo">
+      <summary>Получает объект <see cref="T:System.Reflection.TypeInfo" />, представляющий данный тип.</summary>
+      <returns>Объект, представляющий данный тип.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringMethod">
+      <summary>Возвращает метод, объявивший текущий параметр универсального типа.</summary>
+      <returns>
+        <see cref="T:System.Reflection.MethodBase" />, представляющий метод, объявивший текущий тип, если текущий тип является параметром универсального типа; в противном случае — null.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringType">
+      <summary>Возвращает тот тип, в котором объявлен данный тип.</summary>
+      <returns>Только для чтения.Тип, в котором объявлен данный тип.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[])">
+      <summary>Добавляет в тип новый конструктор с данными атрибутами и сигнатурой.</summary>
+      <returns>Определенный конструктор.</returns>
+      <param name="attributes">Атрибуты конструктора. </param>
+      <param name="callingConvention">Соглашение о вызовах конструктора. </param>
+      <param name="parameterTypes">Типы параметров конструктора. </param>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[],System.Type[][],System.Type[][])">
+      <summary>Добавляет в тип новый конструктор с данными атрибутами, сигнатурой и пользовательскими модификаторами.</summary>
+      <returns>Определенный конструктор.</returns>
+      <param name="attributes">Атрибуты конструктора. </param>
+      <param name="callingConvention">Соглашение о вызовах конструктора. </param>
+      <param name="parameterTypes">Типы параметров конструктора. </param>
+      <param name="requiredCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит требуемые пользовательские модификаторы, вместо массива массивов укажите null.</param>
+      <param name="optionalCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит необязательные пользовательские модификаторы, вместо массива массивов нужно задать значение null.</param>
+      <exception cref="T:System.ArgumentException">Размер <paramref name="requiredCustomModifiers" /> или <paramref name="optionalCustomModifiers" /> не равен размеру <paramref name="parameterTypes" />.</exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineDefaultConstructor(System.Reflection.MethodAttributes)">
+      <summary>Определяет конструктор по умолчанию.Конструктор, определенный здесь, просто вызывает конструктор по умолчанию для родительского класса.</summary>
+      <returns>Возвращает конструктор.</returns>
+      <param name="attributes">Объект MethodAttributes, представляющий атрибуты, которые нужно применить к конструктору. </param>
+      <exception cref="T:System.NotSupportedException">В родительском типе (базовый тип) отсутствует конструктор по умолчанию. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineEvent(System.String,System.Reflection.EventAttributes,System.Type)">
+      <summary>Добавляет в тип новое событие с данными именем, атрибутами и типом события.</summary>
+      <returns>Определенное событие.</returns>
+      <param name="name">Имя события.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты события. </param>
+      <param name="eventtype">Тип события. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null.– или – Параметр <paramref name="eventtype" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Reflection.FieldAttributes)">
+      <summary>Добавляет в тип новое поле с данными именем, атрибутами и типом поля.</summary>
+      <returns>Определенное в результате поле.</returns>
+      <param name="fieldName">Имя поля.Параметр <paramref name="fieldName" /> не должен содержать внедренные значения NULL.</param>
+      <param name="type">Тип поля. </param>
+      <param name="attributes">Атрибуты поля. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="fieldName" /> равна нулю.– или – Параметр <paramref name="type" /> имеет значение System.Void.– или – Для родительского класса этого поля был задан полный размер. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="fieldName" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Type[],System.Type[],System.Reflection.FieldAttributes)">
+      <summary>Добавляет в тип новое поле с данными именем, атрибутами, типом поля и пользовательскими модификаторами.</summary>
+      <returns>Определенное в результате поле.</returns>
+      <param name="fieldName">Имя поля.Параметр <paramref name="fieldName" /> не должен содержать внедренные значения NULL.</param>
+      <param name="type">Тип поля. </param>
+      <param name="requiredCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для поля, например <see cref="T:Microsoft.VisualC.IsConstModifier" />.</param>
+      <param name="optionalCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для поля, например <see cref="T:Microsoft.VisualC.IsConstModifier" />.</param>
+      <param name="attributes">Атрибуты поля. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="fieldName" /> равна нулю.– или – Параметр <paramref name="type" /> имеет значение System.Void.– или – Для родительского класса этого поля был задан полный размер. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="fieldName" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineGenericParameters(System.String[])">
+      <summary>Определяет параметры универсального типа для текущего типа, указывая их номера и имена, а также возвращает массив объектов <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />, который может быть использован для определения ограничений.</summary>
+      <returns>Массив объектов <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" />, который можно использовать для определения ограничений параметров универсального типа для текущего типа.</returns>
+      <param name="names">Массив имен для параметров универсального типа.</param>
+      <exception cref="T:System.InvalidOperationException">Для этого типа уже были определены параметры универсального типа.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="names" /> имеет значение null.– или –Элемент параметра <paramref name="names" /> имеет значение null.</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> является пустым массивом.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>Определяет инициализированное поле данных в разделе .sdata переносимого исполняемого PE-файла.</summary>
+      <returns>Поле для ссылки на данные.</returns>
+      <param name="name">Имя, используемое для ссылки на данные.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="data">Большой двоичный объект. </param>
+      <param name="attributes">Атрибуты поля. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Размер данных менее или равен нулю либо более или равен 0x3f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="name" /> или <paramref name="data" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Вызов метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> уже был выполнен. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes)">
+      <summary>Добавляет в тип новый метод с данными именем и атрибутами метода.</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> представляет собой новый определенный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты метода. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Родительский тип данного метода — интерфейс, и данный метод не является виртуальным (Overridable в Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions)">
+      <summary>Добавляет в тип новый метод с указанным именем, атрибутами метода и соглашением о вызове.</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> представляет собой новый определенный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты метода. </param>
+      <param name="callingConvention">Соглашение о вызове метода. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Родительский тип данного метода — интерфейс, и данный метод не является виртуальным (Overridable в Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Добавляет в тип новый метод с указанным именем, атрибутами метода, соглашением о вызове и сигнатурой метода.</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> представляет собой новый определенный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты метода. </param>
+      <param name="callingConvention">Соглашение о вызове метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода. </param>
+      <param name="parameterTypes">Типы параметров метода. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Родительский тип данного метода — интерфейс, и данный метод не является виртуальным (Overridable в Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Добавляет в тип новый метод с указанным именем, атрибутами метода, соглашением о вызове, сигнатурой метода и пользовательскими модификаторами.</summary>
+      <returns>Объект <see cref="T:System.Reflection.Emit.MethodBuilder" />, представляющий новый, добавленный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты метода. </param>
+      <param name="callingConvention">Соглашение о вызове метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода. </param>
+      <param name="returnTypeRequiredCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений метода.Если у типа возвращаемого значения нет обязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений метода.Если у типа возвращаемого значения нет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="parameterTypes">Типы параметров метода.</param>
+      <param name="parameterTypeRequiredCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит требуемые пользовательские модификаторы, вместо массива массивов укажите null.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит необязательные пользовательские модификаторы, вместо массива массивов нужно задать значение null.</param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Родительский тип данного метода — интерфейс, и данный метод не является виртуальным (Overridable в Visual Basic). – или –Размер <paramref name="parameterTypeRequiredCustomModifiers" /> или <paramref name="parameterTypeOptionalCustomModifiers" /> не равен размеру <paramref name="parameterTypes" />.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>Добавляет в тип новый метод с данными именем, атрибутами метода и сигнатурой метода.</summary>
+      <returns>Определенный метод.</returns>
+      <param name="name">Имя метода.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты метода. </param>
+      <param name="returnType">Тип возвращаемого значения метода. </param>
+      <param name="parameterTypes">Типы параметров метода. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Родительский тип данного метода — интерфейс, и данный метод не является виртуальным (Overridable в Visual Basic). </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethodOverride(System.Reflection.MethodInfo,System.Reflection.MethodInfo)">
+      <summary>Задает основной текст метода, реализующий данное объявление метода, возможно, под другим именем.</summary>
+      <param name="methodInfoBody">Используемый основной текст метода.Это должен быть объект MethodBuilder.</param>
+      <param name="methodInfoDeclaration">Метод, объявления которого используются. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="methodInfoBody" /> не принадлежит к этому классу. </exception>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="methodInfoBody" /> или <paramref name="methodInfoDeclaration" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или – Объявляемый тип <paramref name="methodInfoBody" /> не является типом, представленным <see cref="T:System.Reflection.Emit.TypeBuilder" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String)">
+      <summary>Определяет вложенный тип с данным именем.</summary>
+      <returns>Определенный вложенный тип.</returns>
+      <param name="name">Краткое имя типа.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <exception cref="T:System.ArgumentException">Длина <paramref name="name" /> равна нулю или превышает 1023. – или –Эта операция создала бы тип с повторяющимся <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> в текущей сборке.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes)">
+      <summary>Определяет вложенный тип с данными именем и атрибутами.</summary>
+      <returns>Определенный вложенный тип.</returns>
+      <param name="name">Краткое имя типа.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты типа. </param>
+      <exception cref="T:System.ArgumentException">Не указан вложенный атрибут.– или – Этот тип запечатан.– или – Этот тип является массивом.– или – Этот тип является интерфейсом, но вложенный тип — не интерфейс.– или – Длина <paramref name="name" /> равна нулю или больше 1023. – или –Эта операция создала бы тип с повторяющимся <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> в текущей сборке.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>Определяет вложенный тип с данными именем, атрибутами и расширяемым типом.</summary>
+      <returns>Определенный вложенный тип.</returns>
+      <param name="name">Краткое имя типа.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты типа. </param>
+      <param name="parent">Тип, расширяемый данным вложенным типом. </param>
+      <exception cref="T:System.ArgumentException">Не указан вложенный атрибут.– или – Этот тип запечатан.– или – Этот тип является массивом.– или – Этот тип является интерфейсом, но вложенный тип — не интерфейс.– или – Длина <paramref name="name" /> равна нулю или больше 1023. – или –Эта операция создала бы тип с повторяющимся <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> в текущей сборке.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>Определяет вложенный тип с данными именем, атрибутами, общим размером типа и расширяемым типом.</summary>
+      <returns>Определенный вложенный тип.</returns>
+      <param name="name">Краткое имя типа.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты типа. </param>
+      <param name="parent">Тип, расширяемый данным вложенным типом. </param>
+      <param name="typeSize">Общий размер типа. </param>
+      <exception cref="T:System.ArgumentException">Не указан вложенный атрибут.– или – Этот тип запечатан.– или – Этот тип является массивом.– или – Этот тип является интерфейсом, но вложенный тип — не интерфейс.– или – Длина <paramref name="name" /> равна нулю или больше 1023. – или –Эта операция создала бы тип с повторяющимся <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> в текущей сборке.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>Определяет вложенный тип с данными именем, атрибутами, расширяемым им типом и упаковочным размером.</summary>
+      <returns>Определенный вложенный тип.</returns>
+      <param name="name">Краткое имя типа.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты типа. </param>
+      <param name="parent">Тип, расширяемый данным вложенным типом. </param>
+      <param name="packSize">Размер упаковки типа. </param>
+      <exception cref="T:System.ArgumentException">Не указан вложенный атрибут.– или – Этот тип запечатан.– или – Этот тип является массивом.– или – Этот тип является интерфейсом, но вложенный тип — не интерфейс.– или – Длина <paramref name="name" /> равна нулю или больше 1023. – или –Эта операция создала бы тип с повторяющимся <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> в текущей сборке.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>Определяет вложенный тип с данным именем, атрибутами, размером и расширяемым типом.</summary>
+      <returns>Определенный вложенный тип.</returns>
+      <param name="name">Краткое имя типа.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты типа.</param>
+      <param name="parent">Тип, расширяемый данным вложенным типом.</param>
+      <param name="packSize">Размер упаковки типа.</param>
+      <param name="typeSize">Общий размер типа.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>Определяет вложенный тип для расширения заданного типа с данными именем, атрибутами, расширяемым типом и реализуемыми интерфейсами.</summary>
+      <returns>Определенный вложенный тип.</returns>
+      <param name="name">Краткое имя типа.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attr">Атрибуты типа. </param>
+      <param name="parent">Тип, расширяемый данным вложенным типом. </param>
+      <param name="interfaces">Интерфейсы, реализуемые данным вложенным типом. </param>
+      <exception cref="T:System.ArgumentException">Не указан вложенный атрибут.– или – Этот тип запечатан.– или – Этот тип является массивом.– или – Этот тип является интерфейсом, но вложенный тип — не интерфейс.– или – Длина <paramref name="name" /> равна нулю или больше 1023. – или –Эта операция создала бы тип с повторяющимся <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> в текущей сборке.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null.– или –Элементом массива <paramref name="interfaces" /> является null.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>Добавляет в тип новое свойство с данными именем, атрибутами, соглашением о вызове и сигнатурой свойства.</summary>
+      <returns>Определенное свойство.</returns>
+      <param name="name">Имя свойства.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты свойства. </param>
+      <param name="callingConvention">Соглашение о вызовах методов доступа к свойству. </param>
+      <param name="returnType">Возвращаемый тип свойства. </param>
+      <param name="parameterTypes">Типы параметров свойства.</param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. – или – Значение любого из элементов массива <paramref name="parameterTypes" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Добавляет в тип новое свойство с данными именем, соглашением о вызове, сигнатурой свойства и пользовательскими модификаторами.</summary>
+      <returns>Определенное свойство.</returns>
+      <param name="name">Имя свойства.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты свойства. </param>
+      <param name="callingConvention">Соглашение о вызовах методов доступа к свойству. </param>
+      <param name="returnType">Возвращаемый тип свойства. </param>
+      <param name="returnTypeRequiredCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений свойства.Если у типа возвращаемого значения нет обязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений свойства.Если у типа возвращаемого значения нет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="parameterTypes">Типы параметров свойства. </param>
+      <param name="parameterTypeRequiredCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит требуемые пользовательские модификаторы, вместо массива массивов укажите null.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит необязательные пользовательские модификаторы, вместо массива массивов нужно задать значение null.</param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. – или – Значение любого из элементов массива <paramref name="parameterTypes" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[])">
+      <summary>Добавляет в тип новое свойство с данными именем и сигнатурой свойства.</summary>
+      <returns>Определенное свойство.</returns>
+      <param name="name">Имя свойства.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты свойства. </param>
+      <param name="returnType">Возвращаемый тип свойства. </param>
+      <param name="parameterTypes">Типы параметров свойства. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. – или – Значение любого из элементов массива <paramref name="parameterTypes" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>Добавляет в тип новое свойство с данными именем, сигнатурой свойства и пользовательскими модификаторами.</summary>
+      <returns>Определенное свойство.</returns>
+      <param name="name">Имя свойства.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="attributes">Атрибуты свойства. </param>
+      <param name="returnType">Возвращаемый тип свойства. </param>
+      <param name="returnTypeRequiredCustomModifiers">Массив типов представляет собой требуемые пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений свойства.Если у типа возвращаемого значения нет обязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="returnTypeOptionalCustomModifiers">Массив типов представляет собой необязательные пользовательские модификаторы для поля, например <see cref="T:System.Runtime.CompilerServices.IsConst" /> для типа возвращаемых значений свойства.Если у типа возвращаемого значения нет необязательных пользовательских модификаторов, укажите значение null.</param>
+      <param name="parameterTypes">Типы параметров свойства. </param>
+      <param name="parameterTypeRequiredCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой требуемые пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит требуемые пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит требуемые пользовательские модификаторы, вместо массива массивов укажите null.</param>
+      <param name="parameterTypeOptionalCustomModifiers">Массив массивов типов.Каждый массив типов представляет собой необязательные пользовательские модификаторы для соответствующего параметра, например <see cref="T:System.Runtime.CompilerServices.IsConst" />.Если определенный параметр не содержит необязательные пользовательские модификаторы, вместо массива данных укажите null.Если ни один из параметров не содержит необязательные пользовательские модификаторы, вместо массива массивов нужно задать значение null.</param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null.– или – Любой из элементов массива <paramref name="parameterTypes" /> равен null.</exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineTypeInitializer">
+      <summary>Определяет инициализатор для данного типа.</summary>
+      <returns>Возвращает инициализатор типа.</returns>
+      <exception cref="T:System.InvalidOperationException">Содержащий тип был создан ранее с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>Определяет неинициализированное поле данных в разделе .sdata переносимого исполняемого файла.</summary>
+      <returns>Поле для ссылки на данные.</returns>
+      <param name="name">Имя, используемое для ссылки на данные.Параметр <paramref name="name" /> не должен содержать внедренные значения NULL.</param>
+      <param name="size">Размер поля данных. </param>
+      <param name="attributes">Атрибуты поля. </param>
+      <exception cref="T:System.ArgumentException">Длина параметра <paramref name="name" /> равна нулю.– или – Параметр <paramref name="size" /> меньше или равен нулю, либо больше или равен 0x003f0000. </exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="name" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />. </exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.FullName">
+      <summary>Извлекает полный путь данного типа.</summary>
+      <returns>Только для чтения.Извлекает полный путь данного типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterAttributes">
+      <summary>Возвращает значение, которое указывает ковариацию и особые ограничения текущего параметра универсального типа. </summary>
+      <returns>Побитовое сочетание значений <see cref="T:System.Reflection.GenericParameterAttributes" />, которое описывает ковариацию и особые ограничения текущего параметра универсального типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterPosition">
+      <summary>Возвращает позицию параметра типа в списке параметров типа универсального параметра, объявившем об этом параметре.</summary>
+      <returns>Если текущий объект <see cref="T:System.Reflection.Emit.TypeBuilder" /> представляет параметр универсального типа, позиция параметра типа в списке параметров типа универсального типа, объявившего этот параметр; в противном случае — без определения.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetConstructor(System.Type,System.Reflection.ConstructorInfo)">
+      <summary>Возвращает конструктор указанного сконструированного универсального типа, соответствующего указанному конструктору определения универсального типа. </summary>
+      <returns>Объект <see cref="T:System.Reflection.ConstructorInfo" />, который представляет конструктор <paramref name="type" />, соответствующий <paramref name="constructor" />, который определяет конструктор, принадлежащий определению универсального типа <paramref name="type" />.</returns>
+      <param name="type">Сконструированный универсальный тип, конструктор которого возвращается.</param>
+      <param name="constructor">Конструктор определения универсального типа <paramref name="type" />, который определяет, какой конструктор <paramref name="type" /> должен быть возвращен.</param>
+      <exception cref="T:System.ArgumentException">Тип <paramref name="type" /> не представляет универсальный тип. – или –Параметр <paramref name="type" /> не относится к типу <see cref="T:System.Reflection.Emit.TypeBuilder" />.– или –Объявленный тип параметра <paramref name="constructor" /> не является определением универсального типа. – или –Объявленный тип <paramref name="constructor" /> не является определением универсального типа <paramref name="type" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetElementType">
+      <summary>При вызове этого метода всегда возникает исключение <see cref="T:System.NotSupportedException" />.</summary>
+      <returns>Этот метод не поддерживается.Возвращаемое значение отсутствует.</returns>
+      <exception cref="T:System.NotSupportedException">Этот метод не поддерживается. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetField(System.Type,System.Reflection.FieldInfo)">
+      <summary>Возвращает поле указанного сконструированного универсального типа, соответствующего указанному полю определения универсального типа. </summary>
+      <returns>Объект <see cref="T:System.Reflection.FieldInfo" />, который представляет поле <paramref name="type" />, соответствующий <paramref name="field" />, который определяет поле, принадлежащее определению универсального типа <paramref name="type" />.</returns>
+      <param name="type">Сконструированный универсальный тип, поле которого возвращается.</param>
+      <param name="field">Поле определения универсального типа <paramref name="type" />, которое задает, какое поле <paramref name="type" /> должно быть возвращено.</param>
+      <exception cref="T:System.ArgumentException">Тип <paramref name="type" /> не представляет универсальный тип. – или –Параметр <paramref name="type" /> не относится к типу <see cref="T:System.Reflection.Emit.TypeBuilder" />.– или –Объявленный тип параметра <paramref name="field" /> не является определением универсального типа. – или –Объявленный тип <paramref name="field" /> не является определением универсального типа <paramref name="type" />.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericTypeDefinition">
+      <summary>Возвращает объект <see cref="T:System.Type" />, представляющий определение универсального типа, из которого можно получить текущий тип.</summary>
+      <returns>Объект <see cref="T:System.Type" />, представляющий определение универсального типа, из которого можно получить текущий тип.</returns>
+      <exception cref="T:System.InvalidOperationException">Текущий тип не является универсальным.То есть <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> возвращает значение false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetMethod(System.Type,System.Reflection.MethodInfo)">
+      <summary>Возвращает метод указанного сконструированного универсального типа, соответствующего указанному методу определения универсального типа. </summary>
+      <returns>Объект <see cref="T:System.Reflection.MethodInfo" />, который представляет метод <paramref name="type" />, соответствующий <paramref name="method" />, который определяет метод, принадлежащий определению универсального типа <paramref name="type" />.</returns>
+      <param name="type">Сконструированный универсальный тип, метод которого возвращается.</param>
+      <param name="method">Метод определения универсального типа <paramref name="type" />, который определяет, какой метод <paramref name="type" /> должен быть возвращен.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="method" /> — это универсальный метод, который не является определением универсального метода.– или –Тип <paramref name="type" /> не представляет универсальный тип.– или –Параметр <paramref name="type" /> не относится к типу <see cref="T:System.Reflection.Emit.TypeBuilder" />.– или –Объявленный тип <paramref name="method" /> не является определением универсального типа. – или –Объявленный тип <paramref name="method" /> не является определением универсального типа <paramref name="type" />.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GUID">
+      <summary>Извлекает идентификатор GUID данного типа.</summary>
+      <returns>Только для чтения.Извлекает идентификатор GUID данного типа.</returns>
+      <exception cref="T:System.NotSupportedException">В настоящее время этот метод не поддерживается для неполных типов. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>Получает значение, указывающее, можно ли назначить указанный объект <see cref="T:System.Reflection.TypeInfo" /> данному объекту.</summary>
+      <returns>Значение true, если параметр <paramref name="typeInfo" /> можно назначить данному объекту; в противном случае — значение false.</returns>
+      <param name="typeInfo">Объект для тестирования.</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsCreated">
+      <summary>Возвращает значение, указывающее, был ли создан текущий динамический тип.</summary>
+      <returns>Значение true, если был вызван метод <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />; в противном случае — false. </returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericParameter">
+      <summary>Возвращает значение, указывающее, является ли текущий тип параметром универсального типа.</summary>
+      <returns>Значение true, если текущий объект <see cref="T:System.Reflection.Emit.TypeBuilder" /> представляет параметр универсального типа; в противном случае — false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericType">
+      <summary>Возвращает значение, указывающее, является ли текущий тип универсальным. </summary>
+      <returns>Значение true, если тип, представленный текущим объектом <see cref="T:System.Reflection.Emit.TypeBuilder" /> является универсальным; в противном случае — false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition">
+      <summary>Возвращает значение, указывающее, представляет ли текущий объект <see cref="T:System.Reflection.Emit.TypeBuilder" /> определение универсального типа, на основе которого могут быть созданы другие универсальные типы.</summary>
+      <returns>Значение true, если этот объект <see cref="T:System.Reflection.Emit.TypeBuilder" /> представляет определение универсального типа, в противном случае — false.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType">
+      <summary>Возвращает объект <see cref="T:System.Type" />, который представляет одномерный массив текущего типа с нижней границей, равной нулю.</summary>
+      <returns>Объект <see cref="T:System.Type" />, который представляет одномерный тип массива, тип элемента в котором является текущим, с нижней границей, равной нулю.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType(System.Int32)">
+      <summary>Возвращает объект <see cref="T:System.Type" />, который представляет массив текущего типа с заданным числом измерений.</summary>
+      <returns>Объект <see cref="T:System.Type" />, представляющий одномерный массив текущего типа.</returns>
+      <param name="rank">Размерность массива. </param>
+      <exception cref="T:System.IndexOutOfRangeException">Параметр <paramref name="rank" /> не является допустимым измерением массива.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeByRefType">
+      <summary>Возвращает объект <see cref="T:System.Type" />, который представляет текущий тип при передаче в качестве параметра ref (ByRef в Visual Basic).</summary>
+      <returns>Объект <see cref="T:System.Type" />, который представляет текущий тип при передаче в качестве параметра ref (ByRef в Visual Basic).</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeGenericType(System.Type[])">
+      <summary>Замещает элементы массива типов параметрами типов текущего определения универсального типа, затем возвращает получившийся сконструированный тип.</summary>
+      <returns>
+        <see cref="T:System.Type" /> представляет сконструированный тип, сформированный путем замещения элементов объекта <paramref name="typeArguments" /> параметрами текущего универсального типа. </returns>
+      <param name="typeArguments">Массив типов, который должен быть замещен параметрами типов текущего определения универсального типа.</param>
+      <exception cref="T:System.InvalidOperationException">Текущий тип не представляет определение универсального типа.То есть <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> возвращает значение false.</exception>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="typeArguments" /> имеет значение null.– или – Значение любого элемента массива <paramref name="typeArguments" /> — null. </exception>
+      <exception cref="T:System.ArgumentException">Ни в одном из элементов объекта <paramref name="typeArguments" /> не соблюдаются ограничения, заданные для соответствующего параметра текущего универсального типа. </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakePointerType">
+      <summary>Возвращает объект <see cref="T:System.Type" />, который представляет тип неуправляемого указателя на текущий тип.</summary>
+      <returns>Объект <see cref="T:System.Type" />, который представляет тип неуправляемого указателя на текущий тип.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Module">
+      <summary>Извлекает динамический модуль, содержащий определение данного типа.</summary>
+      <returns>Только для чтения.Извлекает динамический модуль, содержащий определение данного типа.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Name">
+      <summary>Извлекает имя данного типа.</summary>
+      <returns>Только для чтения.Извлекает имя данного типа <see cref="T:System.String" />.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Namespace">
+      <summary>Извлекает пространство имен, в котором определен данный TypeBuilder.</summary>
+      <returns>Только для чтения.Извлекает пространство имен, в котором определен данный TypeBuilder.</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.PackingSize">
+      <summary>Извлекает размер упаковки данного типа.</summary>
+      <returns>Только для чтения.Извлекает размер упаковки данного типа.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>Устанавливает пользовательский атрибут с использованием заданного большого двоичного объекта пользовательских атрибутов.</summary>
+      <param name="con">Конструктор пользовательского атрибута. </param>
+      <param name="binaryAttribute">Большой двоичный объект байтов, предоставляющий атрибуты. </param>
+      <exception cref="T:System.ArgumentNullException">Значение параметра <paramref name="con" /> или <paramref name="binaryAttribute" /> — null. </exception>
+      <exception cref="T:System.InvalidOperationException">Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>Задание пользовательского атрибута с помощью средства построения пользовательских атрибутов.</summary>
+      <param name="customBuilder">Экземпляр вспомогательного класса для определения пользовательского атрибута. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="customBuilder" /> имеет значение null. </exception>
+      <exception cref="T:System.InvalidOperationException">Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false.</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetParent(System.Type)">
+      <summary>Задает базовый тип для создаваемого в настоящий момент типа.</summary>
+      <param name="parent">Новый базовый тип. </param>
+      <exception cref="T:System.InvalidOperationException">Данный тип был ранее создан с помощью метода <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />.– или –Значение параметра <paramref name="parent" /> равно null, и текущий экземпляр представляет интерфейс, атрибуты которого не содержат <see cref="F:System.Reflection.TypeAttributes.Abstract" />.– или –Для текущего динамического типа значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> равно true, однако значение свойства <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> равно false. </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="parent" /> является интерфейсом.Это условие исключения является новым в .NET Framework версии 2.0.</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Size">
+      <summary>Извлекает полный размер типа.</summary>
+      <returns>Только для чтения.Извлекает полный размер данного типа.</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.ToString">
+      <summary>Возвращает имя типа, исключая пространство имен.</summary>
+      <returns>Только для чтения.Имя типа, исключая пространство имен.</returns>
+    </member>
+    <member name="F:System.Reflection.Emit.TypeBuilder.UnspecifiedTypeSize">
+      <summary>Показывает, что полный размер типа не указан.</summary>
+    </member>
+  </members>
+</doc>

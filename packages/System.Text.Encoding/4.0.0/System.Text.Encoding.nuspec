@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>System.Text.Encoding</id>
+    <version>4.0.0</version>
+    <title>System.Text.Encoding</title>
+    <authors>Microsoft</authors>
+    <owners>Microsoft</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides base abstract encoding classes for converting blocks of characters to and from blocks of bytes.
+
+Commonly Used Types:
+System.Text.Encoding
+System.Text.DecoderFallbackException
+System.Text.Decoder
+System.Text.EncoderFallbackException
+System.Text.Encoder
+System.Text.EncoderFallback
+System.Text.EncoderFallbackBuffer
+System.Text.DecoderFallback
+System.Text.DecoderFallbackBuffer
+System.Text.DecoderExceptionFallback</description>
+    <summary>Provides base abstract encoding classes for converting blocks of characters to and from blocks of bytes.</summary>
+    <copyright>Copyright © Microsoft Corporation</copyright>
+    <dependencies>
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Runtime" version="4.0.0" />
+      </group>
+      <group targetFramework="Windows8.0" />
+      <group targetFramework=".NETFramework4.5" />
+      <group targetFramework="MonoAndroid1.0" />
+      <group targetFramework="MonoTouch1.0" />
+      <group targetFramework="WindowsPhone8.0" />
+      <group targetFramework="WindowsPhoneApp8.1" />
+      <group targetFramework="Xamarin.iOS1.0" />
+      <group targetFramework="Xamarin.Mac2.0" />
+      <group targetFramework=".NETCore5.0">
+        <dependency id="System.Runtime" version="4.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

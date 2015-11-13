@@ -1,0 +1,572 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Microsoft.Win32.Registry</name>
+  </assembly>
+  <members>
+    <member name="T:Microsoft.Win32.Registry">
+      <summary>Windows 레지스트리의 루트 키를 나타내는 <see cref="T:Microsoft.Win32.RegistryKey" /> 개체와 키/값 쌍에 액세스하는 static 메서드를 제공합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.ClassesRoot">
+      <summary>해당 형식과 관련된 속성 및 문서의 형식 또는 클래스를 정의합니다.이 필드는 Windows 레지스트리 기본 키 HKEY_CLASSES_ROOT를 읽습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentConfig">
+      <summary>사용자와 관련되지 않은 하드웨어에 대한 구성 정보가 들어 있습니다.이 필드는 Windows 레지스트리 기본 키 HKEY_CURRENT_CONFIG를 읽습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentUser">
+      <summary>현재 사용자 기본 설정에 대한 정보가 들어 있습니다.이 필드는 Windows 레지스트리 기본 키 HKEY_CURRENT_USER를 읽습니다.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.GetValue(System.String,System.String,System.Object)">
+      <summary>지정된 레지스트리 키에서 지정된 이름에 연결된 값을 검색합니다.지정된 키에 해당 이름이 없으면 사용자가 제공한 기본값이 반환되고, 지정된 키가 없으면 null이 반환됩니다.</summary>
+      <returns>
+        <paramref name="keyName" />에 지정된 하위 키가 없으면 null이 반환되고, 그렇지 않으면 <paramref name="valueName" />과 연결된 값이 반환됩니다. <paramref name="valueName" />이 없으면 <paramref name="defaultValue" />가 반환됩니다.</returns>
+      <param name="keyName">"HKEY_CURRENT_USER"와 같이 유효한 레지스트리 루트로 시작하는 키의 전체 레지스트리 경로입니다. </param>
+      <param name="valueName">이름/값 쌍의 이름입니다.</param>
+      <param name="defaultValue">
+        <paramref name="valueName" />이 없는 경우에 반환할 값입니다.</param>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 읽는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.IO.IOException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 삭제 표시된 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" />이 유효한 레지스트리 루트로 시작하지 않은 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.LocalMachine">
+      <summary>로컬 컴퓨터에 대한 구성 데이터가 들어 있습니다.이 필드는 Windows 레지스트리 기본 키 HKEY_LOCAL_MACHINE을 읽습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.PerformanceData">
+      <summary>소프트웨어 구성 요소의 성능 정보를 포함합니다.이 필드는 Windows 레지스트리 기본 키 HKEY_PERFORMANCE_DATA를 읽습니다.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object)">
+      <summary>지정된 레지스트리 키에 지정된 이름/값 쌍을 설정합니다.지정된 키가 없으면 키가 새로 만들어집니다.</summary>
+      <param name="keyName">"HKEY_CURRENT_USER"와 같이 유효한 레지스트리 루트로 시작하는 키의 전체 레지스트리 경로입니다. </param>
+      <param name="valueName">이름/값 쌍의 이름입니다.</param>
+      <param name="value">저장할 값입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" />가 null입니다. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" />이 유효한 레지스트리 루트로 시작하지 않은 경우 또는<paramref name="keyName" />이 최대 허용 길이(255자)보다 긴 경우</exception>
+      <exception cref="T:System.UnauthorizedAccessException">루트 수준 노드와 같이 <see cref="T:Microsoft.Win32.RegistryKey" />가 읽기 전용이므로 여기에 쓸 수 없는 경우 </exception>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 만들거나 수정하는 데 필요한 사용 권한이 없는 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>지정된 레지스트리 데이터 형식을 사용하여 지정된 레지스트리 키에 이름/값 쌍을 설정합니다.지정된 키가 없으면 키가 새로 만들어집니다.</summary>
+      <param name="keyName">"HKEY_CURRENT_USER"와 같이 유효한 레지스트리 루트로 시작하는 키의 전체 레지스트리 경로입니다. </param>
+      <param name="valueName">이름/값 쌍의 이름입니다.</param>
+      <param name="value">저장할 값입니다.</param>
+      <param name="valueKind">데이터를 저장할 때 사용할 레지스트리 데이터 형식입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" />가 null입니다. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" />이 유효한 레지스트리 루트로 시작하지 않은 경우또는<paramref name="keyName" />이 최대 허용 길이(255자)보다 긴 경우또는 <paramref name="value" />의 형식이 <paramref name="valueKind" />에 지정된 레지스트리 데이터 형식과 일치하지 않아 데이터가 올바르게 변환되지 않은 경우 </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 읽기 전용이므로 쓸 수 없는 경우. 예를 들어, 루트 수준 노드이거나 쓰기 권한으로 키를 열지 않은 경우일 수 있습니다. </exception>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 만들거나 수정하는 데 필요한 사용 권한이 없는 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.Users">
+      <summary>기본 사용자 구성에 대한 정보가 들어 있습니다.이 필드는 Windows 레지스트리 기본 키 HKEY_USERS를 읽습니다.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryHive">
+      <summary>외부 시스템의 상위 수준 노드에 대한 가능한 값을 나타냅니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.ClassesRoot">
+      <summary>다른 컴퓨터의 HKEY_CLASSES_ROOT 기본 키를 나타냅니다.이 값을 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 메서드에 전달하여 해당 노드를 원격으로 열 수 있습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentConfig">
+      <summary>다른 컴퓨터의 HKEY_CURRENT_CONFIG 기본 키를 나타냅니다.이 값을 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 메서드에 전달하여 해당 노드를 원격으로 열 수 있습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentUser">
+      <summary>다른 컴퓨터의 HKEY_CURRENT_USER 기본 키를 나타냅니다.이 값을 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 메서드에 전달하여 해당 노드를 원격으로 열 수 있습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.LocalMachine">
+      <summary>다른 컴퓨터의 HKEY_LOCAL_MACHINE 기본 키를 나타냅니다.이 값을 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 메서드에 전달하여 해당 노드를 원격으로 열 수 있습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.PerformanceData">
+      <summary>다른 컴퓨터의 HKEY_PERFORMANCE_DATA 기본 키를 나타냅니다.이 값을 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 메서드에 전달하여 해당 노드를 원격으로 열 수 있습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.Users">
+      <summary>다른 컴퓨터의 HKEY_USERS 기본 키를 나타냅니다.이 값을 <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> 메서드에 전달하여 해당 노드를 원격으로 열 수 있습니다.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryKey">
+      <summary>Windows 레지스트리의 키 수준 노드를 나타냅니다.이 클래스는 레지스트리 캡슐화 클래스입니다.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String)">
+      <summary>새 하위 키를 만들거나 쓰기 권한으로 기존 하위 키를 엽니다.  </summary>
+      <returns>새로 만든 하위 키 또는 작업이 실패한 경우 null입니다.길이가 0인 문자열이 <paramref name="subkey" />에 지정되어 있으면 현재 <see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 반환됩니다.</returns>
+      <param name="subkey">만들거나 열 하위 키의 이름 또는 경로입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />가 null인 경우 </exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 레지스트리 키를 만들거나 여는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">이 메서드를 호출할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />에 쓸 수 없는 경우. 예를 들어, 해당 키가 쓸 수 있는 키로 열리지 않았거나 사용자에게 필요한 액세스 권한이 없습니다. </exception>
+      <exception cref="T:System.IO.IOException">중첩 수준이 510을 초과하는 경우또는시스템 오류가 발생한 경우. 예를 들어, <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 루트에서 키를 삭제했거나 키를 만들려고 했습니다.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean)">
+      <summary>새 하위 키를 만들거나 지정 된 액세스 기존 하위 키를 엽니다. 부터 사용할 수 있습니다.NET Framework 2015</summary>
+      <returns>새로 만든 하위 키 또는 작업이 실패한 경우 null입니다.길이가 0인 문자열이 <paramref name="subkey" />에 지정되어 있으면 현재 <see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 반환됩니다.</returns>
+      <param name="subkey">만들거나 열 하위 키의 이름 또는 경로입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <param name="writable">true새 하위 키를 나타내려면를 쓸 수 있습니다. 그렇지 않은 경우 false.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />가 null인 경우 </exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 레지스트리 키를 만들거나 여는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.UnauthorizedAccessException">현재 <see cref="T:Microsoft.Win32.RegistryKey" />에 쓸 수 없는 경우. 예를 들어, 해당 키가 쓸 수 있는 키로 열리지 않았거나 사용자에게 필요한 액세스 권한이 없습니다.</exception>
+      <exception cref="T:System.IO.IOException">중첩 수준이 510을 초과하는 경우또는시스템 오류가 발생한 경우. 예를 들어, <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 루트에서 키를 삭제했거나 키를 만들려고 했습니다.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean,Microsoft.Win32.RegistryOptions)">
+      <summary>새 하위 키를 만들거나 지정 된 액세스 기존 하위 키를 엽니다. 부터 사용할 수 있습니다.NET Framework 2015</summary>
+      <returns>새로 만든 하위 키 또는 작업이 실패한 경우 null입니다.길이가 0인 문자열이 <paramref name="subkey" />에 지정되어 있으면 현재 <see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 반환됩니다.</returns>
+      <param name="subkey">만들거나 열 하위 키의 이름 또는 경로입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <param name="writable">true새 하위 키를 나타내려면를 쓸 수 있습니다. 그렇지 않은 경우 false.</param>
+      <param name="options">사용할 레지스트리 옵션입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" />유효한 옵션을 지정 하지 않습니다.</exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 레지스트리 키를 만들거나 여는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.UnauthorizedAccessException">현재 <see cref="T:Microsoft.Win32.RegistryKey" />에 쓸 수 없는 경우. 예를 들어, 해당 키가 쓸 수 있는 키로 열리지 않았거나 사용자에게 필요한 액세스 권한이 없습니다.</exception>
+      <exception cref="T:System.IO.IOException">중첩 수준이 510을 초과하는 경우또는시스템 오류가 발생한 경우. 예를 들어, <see cref="F:Microsoft.Win32.Registry.LocalMachine" /> 루트에서 키를 삭제했거나 키를 만들려고 했습니다.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String)">
+      <summary>지정된 하위 키를 삭제합니다. </summary>
+      <param name="subkey">삭제할 하위 키의 이름입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" />에 자식 하위 키가 있는 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> 매개 변수에 유효한 레지스트리 키가 지정되지 않은 경우 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> 이 선언은 아래 선언과 같습니다. null</exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 키를 삭제하는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String,System.Boolean)">
+      <summary>지정된 하위 키를 삭제하고 하위 키가 없는 경우 예외를 발생시킬지 여부를 지정합니다. </summary>
+      <param name="subkey">삭제할 하위 키의 이름입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <param name="throwOnMissingSubKey">지정된 하위 키를 찾을 수 없는 경우에 예외를 발생시킬지 여부를 나타냅니다.이 인수가 true이고 지정된 하위 키가 없으면 예외가 발생합니다.이 인수가 false이고 지정된 하위 키가 없으면 아무 작업도 수행되지 않습니다.</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" />에 자식 하위 키가 있는 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" />가 유효한 레지스트리 키를 지정하지 않으며, <paramref name="throwOnMissingSubKey" />는 true입니다. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />가 null인 경우</exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 키를 삭제하는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String)">
+      <summary>하위 키와 자식 하위 키를 재귀적으로 삭제합니다. </summary>
+      <param name="subkey">삭제할 하위 키입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">루트 하이브를 삭제하려고 한 경우또는<paramref name="subkey" />에 유효한 레지스트리 하위 키가 지정되지 않은 경우 </exception>
+      <exception cref="T:System.IO.IOException">I/O 오류가 발생한 경우</exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 키를 삭제하는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String,System.Boolean)">
+      <summary>지정된 하위 키와 자식 하위 키를 재귀적으로 삭제하고 하위 키가 없는 경우 예외를 발생시킬지 여부를 지정합니다. </summary>
+      <param name="subkey">삭제할 하위 키의 이름입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <param name="throwOnMissingSubKey">지정된 하위 키를 찾을 수 없는 경우에 예외를 발생시킬지 여부를 나타냅니다.이 인수가 true이고 지정된 하위 키가 없으면 예외가 발생합니다.이 인수가 false이고 지정된 하위 키가 없으면 아무 작업도 수행되지 않습니다.</param>
+      <exception cref="T:System.ArgumentException">트리의 루트 하이브를 삭제하려고 한 경우또는<paramref name="subkey" />을를는 유효한 레지스트리 하위 키를 지정하지 않으며, <paramref name="throwOnMissingSubKey" />을를는 true입니다.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />가 null인 경우</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 키를 삭제하는 데 필요한 권한이 없는 경우</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String)">
+      <summary>지정된 값을 이 키에서 삭제합니다.</summary>
+      <param name="name">삭제할 값의 이름입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />이 값에 대한 유효한 참조가 아닌 경우 </exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 값을 삭제하는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 읽기 전용인 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String,System.Boolean)">
+      <summary>이 키에서 지정된 값을 삭제하고 값이 없을 경우 예외를 발생시킬지 여부를 지정합니다.</summary>
+      <param name="name">삭제할 값의 이름입니다. </param>
+      <param name="throwOnMissingValue">지정된 값을 찾을 수 없는 경우에 예외를 발생시킬지 여부를 나타냅니다.이 인수가 true이고 지정된 값이 없으면 예외가 발생합니다.이 인수가 false이고 지정된 값이 없으면 아무 작업도 수행되지 않습니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" />이 값에 대한 유효한 참조가 아니고 <paramref name="throwOnMissingValue" />가 true인 경우 또는 <paramref name="name" />가 null인 경우</exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 값을 삭제하는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 읽기 전용인 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Dispose">
+      <summary>
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 클래스의 현재 인스턴스에서 사용하는 모든 리소스를 해제합니다.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Flush">
+      <summary>지정된 열린 레지스트리 키의 특성을 모두 레지스트리에 기록합니다.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle)">
+      <summary>[보안 중요] 지정된 핸들에서 레지스트리 키를 만듭니다.</summary>
+      <returns>레지스트리 키입니다.</returns>
+      <param name="handle">레지스트리 키에 대한 핸들입니다.</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle,Microsoft.Win32.RegistryView)">
+      <summary>[보안 중요] 지정된 핸들 및 레지스트리 뷰 설정에서 레지스트리 키를 만듭니다. </summary>
+      <returns>레지스트리 키입니다.</returns>
+      <param name="handle">레지스트리 키에 대한 핸들입니다.</param>
+      <param name="view">사용할 레지스트리 뷰입니다.</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetSubKeyNames">
+      <summary>모든 하위 키 이름이 포함된 문자열의 배열을 검색합니다.</summary>
+      <returns>현재 키에 대한 하위 키의 이름이 포함된 문자열의 배열입니다.</returns>
+      <exception cref="T:System.Security.SecurityException">사용자에게 키를 읽는 데 필요한 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <exception cref="T:System.IO.IOException">시스템 오류가 발생한 경우. 예를 들어, 현재 키가 삭제되었습니다.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String)">
+      <summary>지정된 이름과 연결된 값을 검색합니다.이름/값 쌍이 레지스트리에 없으면 null을 반환합니다.</summary>
+      <returns>
+        <paramref name="name" />과 연결된 값이거나, <paramref name="name" />이 없으면 null입니다.</returns>
+      <param name="name">검색할 값의 이름입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 읽는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.IO.IOException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 삭제 표시된 경우 </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object)">
+      <summary>지정된 이름과 연결된 값을 검색합니다.이름이 없으면 사용자가 제공하는 기본값을 반환합니다.</summary>
+      <returns>확장되지 않은 상태로 유지되는 포함 환경 변수가 있는 <paramref name="name" />과 연결된 값이거나, <paramref name="name" />이 없으면 <paramref name="defaultValue" />입니다.</returns>
+      <param name="name">검색할 값의 이름입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <param name="defaultValue">
+        <paramref name="name" />이 없는 경우에 반환할 값입니다. </param>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 읽는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.IO.IOException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 삭제 표시된 경우 </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object,Microsoft.Win32.RegistryValueOptions)">
+      <summary>지정된 이름 및 검색 옵션과 연결된 값을 검색합니다.이름이 없으면 사용자가 제공하는 기본값을 반환합니다.</summary>
+      <returns>지정된 <paramref name="options" />에 따라 처리되는 <paramref name="name" />과 연결된 값이거나, <paramref name="name" />이 없으면 <paramref name="defaultValue" />입니다.</returns>
+      <param name="name">검색할 값의 이름입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <param name="defaultValue">
+        <paramref name="name" />이 없는 경우에 반환할 값입니다. </param>
+      <param name="options">검색된 값의 선택적인 처리를 지정하는 열거형 값 중 하나입니다.</param>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 읽는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.IO.IOException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 삭제 표시된 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" />가 유효한 <see cref="T:Microsoft.Win32.RegistryValueOptions" /> 값이 아닌 경우. 예를 들어, 잘못된 값이 <see cref="T:Microsoft.Win32.RegistryValueOptions" />로 캐스팅되었습니다.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueKind(System.String)">
+      <summary>지정된 이름과 연결된 값의 레지스트리 데이터 형식을 검색합니다.</summary>
+      <returns>
+        <paramref name="name" />에 연결된 값의 레지스트리 데이터 형식입니다.</returns>
+      <param name="name">레지스트리 데이터 형식을 검색할 값의 이름입니다.이 문자열은 대/소문자를 구분하지 않습니다.</param>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 읽는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.IO.IOException">지정된 값이 포함된 하위 키가 없는 경우또는<paramref name="name" />으로 지정된 이름/값 쌍이 없는 경우Windows 95, Windows 98 또는 Windows Millennium Edition에서는 이 예외가 throw되지 않습니다.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueNames">
+      <summary>이 키와 관련된 모든 값 이름이 포함된 문자열의 배열을 검색합니다.</summary>
+      <returns>현재 키의 값 이름이 포함된 문자열의 배열입니다.</returns>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 읽는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <exception cref="T:System.IO.IOException">시스템 오류가 발생한 경우. 예를 들어, 현재 키가 삭제되었습니다.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Handle">
+      <summary>[보안 중요] 현재 <see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 캡슐화하는 레지스트리 키를 나타내는 <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> 개체를 가져옵니다.</summary>
+      <returns>레지스트리 키에 대한 핸들입니다.</returns>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Name">
+      <summary>키 이름을 검색합니다.</summary>
+      <returns>키의 절대(정규화된) 이름입니다.</returns>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive,Microsoft.Win32.RegistryView)">
+      <summary>지정된 뷰를 사용하여 로컬 컴퓨터의 요청된 키를 나타내는 새 <see cref="T:Microsoft.Win32.RegistryKey" />를 엽니다.</summary>
+      <returns>요청된 레지스트리 키입니다.</returns>
+      <param name="hKey">열려는 HKEY입니다.</param>
+      <param name="view">사용할 레지스트리 뷰입니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="hKey" /> 또는 <paramref name="view" />가 잘못되었습니다.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <exception cref="T:System.Security.SecurityException">사용자는 이 작업을 수행한 데 필요한 권한을 가지고 있지 않습니다.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String)">
+      <summary>하위 키를 읽기 전용으로 검색합니다.</summary>
+      <returns>요청된 하위 키이거나, 작업에 실패하면 null입니다.</returns>
+      <param name="name">읽기 전용으로 열려는 하위 키의 이름 또는 경로입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 이 선언은 아래 선언과 같습니다. null</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 레지스트리 키를 읽는 데 필요한 권한이 없는 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Boolean)">
+      <summary>지정된 하위 키를 검색하고 키에 쓰기 액세스를 적용할지 여부를 지정합니다. </summary>
+      <returns>요청된 하위 키이거나, 작업에 실패하면 null입니다.</returns>
+      <param name="name">열려는 하위 키의 이름 또는 경로입니다. </param>
+      <param name="writable">키에 대한 쓰기 권한이 필요하면 true로 설정합니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null인 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 지정된 모드에서 레지스트리 키에 액세스하는 데 필요한 권한이 없는 경우 </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Security.AccessControl.RegistryRights)">
+      <summary>지정된 이름으로 하위 키를 검색합니다.부터 사용할 수 있습니다.NET Framework 2015</summary>
+      <returns>요청된 하위 키이거나, 작업에 실패하면 null입니다.</returns>
+      <param name="name">만들거나 열 하위 키의 이름 또는 경로입니다.</param>
+      <param name="rights">레지스트리 키의 권한입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />가 null인 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.Security.SecurityException">사용자에게 지정된 모드에서 레지스트리 키에 액세스하는 데 필요한 권한이 없는 경우 </exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)">
+      <summary>지정된 이름/값 쌍을 설정합니다.</summary>
+      <param name="name">저장할 값의 이름입니다. </param>
+      <param name="value">저장할 데이터입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" />가 지원되지 않는 데이터 형식인 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 읽기 전용이고 쓸 수 없는 경우. 예를 들어, 키가 쓰기 권한으로 열리지 않았습니다. 또는<see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 루트 수준 노드를 나타내고 운영 체제가 Windows Millennium Edition이나 Windows 98인 경우</exception>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 만들거나 수정하는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 루트 수준 노드를 나타내고 운영 체제가 Windows 2000, Windows XP 또는 Windows Server 2003인 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>지정된 레지스트리 데이터 형식을 사용하여 레지스트리 키에서 이름/값 쌍의 값을 설정합니다.</summary>
+      <param name="name">저장할 값의 이름입니다. </param>
+      <param name="value">저장할 데이터입니다. </param>
+      <param name="valueKind">데이터를 저장할 때 사용할 레지스트리 데이터 형식입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" />의 형식이 <paramref name="valueKind" />에 지정된 레지스트리 데이터 형식과 일치하지 않아 데이터가 올바르게 변환되지 않은 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">지정된 값이 포함된 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" />가 읽기 전용이고 쓸 수 없는 경우. 예를 들어, 키가 쓰기 권한으로 열리지 않았습니다.또는<see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 루트 수준 노드를 나타내고 운영 체제가 Windows Millennium Edition이나 Windows 98인 경우 </exception>
+      <exception cref="T:System.Security.SecurityException">사용자가 레지스트리 키를 만들거나 수정하는 데 필요한 사용 권한이 없는 경우 </exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> 개체가 루트 수준 노드를 나타내고 운영 체제가 Windows 2000, Windows XP 또는 Windows Server 2003인 경우</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.SubKeyCount">
+      <summary>현재 키의 하위 키 개수를 검색합니다.</summary>
+      <returns>현재 키의 하위 키 수입니다.</returns>
+      <exception cref="T:System.Security.SecurityException">키에 대한 읽기 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <exception cref="T:System.IO.IOException">시스템 오류가 발생한 경우. 예를 들어, 현재 키가 삭제되었습니다.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.ToString">
+      <summary>이 키의 문자열 표현을 검색합니다.</summary>
+      <returns>키를 나타내는 문자열입니다.지정된 키가 잘못되었으면(없으면) null이 반환됩니다.</returns>
+      <exception cref="T:System.ObjectDisposedException">액세스할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.ValueCount">
+      <summary>키의 값 개수를 검색합니다.</summary>
+      <returns>키에 있는 이름/값 쌍의 수입니다.</returns>
+      <exception cref="T:System.Security.SecurityException">키에 대한 읽기 권한이 없는 경우 </exception>
+      <exception cref="T:System.ObjectDisposedException">조작할 <see cref="T:Microsoft.Win32.RegistryKey" />가 닫힌 경우. 닫힌 키는 액세스할 수 없습니다. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">사용자에게 필요한 레지스트리 권한이 없는 경우</exception>
+      <exception cref="T:System.IO.IOException">시스템 오류가 발생한 경우. 예를 들어, 현재 키가 삭제되었습니다.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.View">
+      <summary>레지스트리 키를 만드는 데 사용된 뷰를 가져옵니다. </summary>
+      <returns>레지스트리 키를 만드는 데 사용된 뷰입니다.또는뷰를 사용하지 않은 경우 <see cref="F:Microsoft.Win32.RegistryView.Default" />입니다.</returns>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryOptions">
+      <summary>레지스트리 키를 만들 때 사용할 옵션을 지정합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.None">
+      <summary>비휘발성 키입니다.이 값이 기본값입니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.Volatile">
+      <summary>휘발성 키입니다.정보는 메모리에 저장되며 해당 레지스트리 하이브를 언로드하면 유지되지 않습니다.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueKind">
+      <summary>레지스트리에 값을 저장할 때 사용할 데이터 형식을 지정하거나 레지스트리 값의 데이터 형식을 나타냅니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Binary">
+      <summary>모든 형태의 이진 데이터입니다.이 값은 Win32 API 레지스트리 데이터 형식 REG_BINARY와 동일합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.DWord">
+      <summary>32비트 이진수입니다.이 값은 Win32 API 레지스트리 데이터 형식 REG_DWORD와 동일합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.ExpandString">
+      <summary>값이 검색될 때 확장되는 %PATH%와 같은 환경 변수에 대한 확장되지 않는 참조가 포함된 null로 끝나는 문자열입니다.이 값은 Win32 API 레지스트리 데이터 형식 REG_EXPAND_SZ와 동일합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.MultiString">
+      <summary>두 null 문자로 끝나는, null로 끝나는 문자열의 배열입니다.이 값은 Win32 API 레지스트리 데이터 형식 REG_MULTI_SZ와 동일합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.None">
+      <summary>데이터 형식이 없습니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.QWord">
+      <summary>64비트 이진수입니다.이 값은 Win32 API 레지스트리 데이터 형식 REG_QWORD와 동일합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.String">
+      <summary>null로 끝나는 문자열입니다.이 값은 Win32 API 레지스트리 데이터 형식 REG_SZ와 동일합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Unknown">
+      <summary>지원되지 않는 레지스트리 데이터 형식입니다.예를 들어, Microsoft Win32 API 레지스트리 데이터 형식 REG_RESOURCE_LIST는 지원되지 않습니다.<see cref="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)" /> 메서드가 이름/값 쌍을 저장할 때 적절한 레지스트리 데이터 형식을 확인해야 함을 지정하려면 이 값을 사용합니다.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueOptions">
+      <summary>레지스트리 키에서 이름/값 쌍을 검색하는 경우의 선택적 동작을 지정합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames">
+      <summary>
+        <see cref="F:Microsoft.Win32.RegistryValueKind.ExpandString" /> 형식의 값이 포함 환경 변수를 확장하지 않고 검색됩니다. </summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.None">
+      <summary>선택적 동작이 지정되어 있지 않습니다.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryView">
+      <summary>64비트 운영 체제에서 대상으로 사용할 레지스트리 뷰를 지정합니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Default">
+      <summary>기본 뷰입니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry32">
+      <summary>32비트 뷰입니다.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry64">
+      <summary>64비트 뷰입니다.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle">
+      <summary>[보안 중요] Windows 레지스트리에 대한 SafeHandle을 나타냅니다.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.SafeHandles.SafeRegistryHandle.#ctor(System.IntPtr,System.Boolean)">
+      <summary>[보안 중요] <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> 클래스의 새 인스턴스를 초기화합니다. </summary>
+      <param name="preexistingHandle">사용할 기존 핸들을 나타내는 개체입니다.</param>
+      <param name="ownsHandle">종료 단계 중 핸들을 안정적으로 해제하려면 true이고, 안정적으로 해제되지 않게 하려면 false입니다.</param>
+    </member>
+    <member name="P:Microsoft.Win32.SafeHandles.SafeRegistryHandle.IsInvalid"></member>
+    <member name="T:System.Security.AccessControl.RegistryRights">
+      <summary>레지스트리 개체에 적용할 수 있는 액세스 제어 권한을 지정합니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ChangePermissions">
+      <summary>레지스트리 키와 관련된 액세스 규칙 및 감사 규칙을 변경할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateLink">
+      <summary>시스템에서 사용하도록 예약됩니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateSubKey">
+      <summary>레지스트리 키의 하위 키를 만들 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Delete">
+      <summary>레지스트리 키를 삭제할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.EnumerateSubKeys">
+      <summary>레지스트리 키의 하위 키를 나열할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ExecuteKey">
+      <summary>
+        <see cref="F:System.Security.AccessControl.RegistryRights.ReadKey" />와 동일합니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.FullControl">
+      <summary>레지스트리 키에 대한 모든 권한을 실행하고 해당 액세스 규칙 및 감사 규칙을 수정할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Notify">
+      <summary>레지스트리 키에 대한 변경 알림을 요청할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.QueryValues">
+      <summary>레지스트리 키의 이름/값 쌍을 쿼리할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadKey">
+      <summary>레지스트리 키의 이름/값 쌍을 쿼리하고, 변경 알림을 요청하고, 하위 키를 열거하고, 해당 액세스 규칙과 감사 규칙을 읽을 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadPermissions">
+      <summary>레지스트리 키에 대한 액세스 규칙 및 감사 규칙을 열고 복사할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.SetValue">
+      <summary>레지스트리 키의 이름/값 쌍을 만들거나 삭제하거나 설정할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.TakeOwnership">
+      <summary>레지스트리 키의 소유자를 변경할 권한입니다.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.WriteKey">
+      <summary>레지스트리 키의 이름/값 쌍을 만들거나 삭제하거나 설정하고, 하위 키를 만들거나 삭제하고, 변경 알림을 요청하고, 하위 키를 열거하고, 해당 액세스 규칙과 감사 규칙을 읽을 권한입니다.</summary>
+    </member>
+  </members>
+</doc>

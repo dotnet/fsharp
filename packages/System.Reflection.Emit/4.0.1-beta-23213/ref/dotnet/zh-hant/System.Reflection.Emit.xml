@@ -1,0 +1,1549 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.AssemblyBuilder">
+      <summary>定義並顯示動態組件。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.DefinedTypes"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess)">
+      <summary>定義具有指定名稱和存取權限的動態組件。</summary>
+      <returns>表示新組件的物件。</returns>
+      <param name="name">組件的名稱。</param>
+      <param name="access">組件的存取權限。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess,System.Collections.Generic.IEnumerable{System.Reflection.Emit.CustomAttributeBuilder})">
+      <summary>定義具有指定之名稱、存取權限及屬性的新組件。</summary>
+      <returns>表示新組件的物件。</returns>
+      <param name="name">組件的名稱。</param>
+      <param name="access">組件的存取權限。</param>
+      <param name="assemblyAttributes">包含組件屬性的集合。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicModule(System.String)">
+      <summary>定義這個組件中的具名暫時性 (Transient) 動態模組。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.ModuleBuilder" />，表示定義的動態模組。</returns>
+      <param name="name">動態模組名稱。長度必須小於 260 字元。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 開頭為泛空白字元。-或-<paramref name="name" /> 的長度為零。-或-<paramref name="name" /> 的長度大於或等於 260。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.Security.SecurityException">呼叫端沒有必要的使用權限。</exception>
+      <exception cref="T:System.ExecutionEngineException">預設符號寫入器的組件無法載入。-或-找不到實作預設符號寫入器介面的型別。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*" />
+        <IPermission class="System.Security.Permissions.ReflectionPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="MemberAccess" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.Equals(System.Object)">
+      <summary>傳回值，這個值表示這個執行個體是否等於指定的物件。</summary>
+      <returns>如果 <paramref name="obj" /> 和這個執行個體具有相同的型別和值，則為 true，否則為 false。</returns>
+      <param name="obj">與這個執行個體相比較的物件，或 null。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.FullName">
+      <summary>取得目前動態組件的顯示名稱。</summary>
+      <returns>動態組件的顯示名稱。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetDynamicModule(System.String)">
+      <summary>傳回具有指定名稱的動態模組。</summary>
+      <returns>ModuleBuilder 物件，表示要求的動態模組。</returns>
+      <param name="name">要求的動態模組名稱。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。</exception>
+      <exception cref="T:System.Security.SecurityException">呼叫端沒有必要的使用權限。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetHashCode">
+      <summary>傳回這個執行個體的雜湊碼。</summary>
+      <returns>32 位元帶正負號的整數雜湊碼。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceInfo(System.String)">
+      <summary>傳回指定資源已保存方式的資訊。</summary>
+      <returns>
+        <see cref="T:System.Reflection.ManifestResourceInfo" />，使用資源拓撲的相關資訊填入，或為 null (如果找不到資源)。</returns>
+      <param name="resourceName">資源名稱。</param>
+      <exception cref="T:System.NotSupportedException">這個方法目前並不支援。</exception>
+      <exception cref="T:System.Security.SecurityException">呼叫端沒有必要的使用權限。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceNames">
+      <summary>載入來自這個組件的指定資訊清單資源。</summary>
+      <returns>String 型別的陣列，包含所有資源的名稱。</returns>
+      <exception cref="T:System.NotSupportedException">在動態組件上不支援這個方法。若要取得資訊清單資源名稱，請使用 <see cref="M:System.Reflection.Assembly.GetManifestResourceNames" />。</exception>
+      <exception cref="T:System.Security.SecurityException">呼叫端沒有必要的使用權限。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceStream(System.String)">
+      <summary>載入來自這個組件的指定資訊清單資源。</summary>
+      <returns>
+        <see cref="T:System.IO.Stream" />，表示這個資訊清單資源。</returns>
+      <param name="name">所要求的資訊清單資源名稱。</param>
+      <exception cref="T:System.NotSupportedException">這個方法目前並不支援。</exception>
+      <exception cref="T:System.Security.SecurityException">呼叫端沒有必要的使用權限。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.IsDynamic">
+      <summary>取得值，這個值指出目前組件為動態組件。</summary>
+      <returns>一定是 true。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.ManifestModule">
+      <summary>取得目前 <see cref="T:System.Reflection.Emit.AssemblyBuilder" /> 中包含組件資訊清單的模組。</summary>
+      <returns>資訊清單模組。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.Modules"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 Blob，在這個組件上設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+      <exception cref="T:System.Security.SecurityException">呼叫端沒有必要的使用權限。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> 不是 RuntimeConstructorInfo。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器 (Builder) 在這個組件上設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。</exception>
+      <exception cref="T:System.Security.SecurityException">呼叫端沒有必要的使用權限。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.AssemblyBuilderAccess">
+      <summary>定義動態組件的存取模式。</summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.Run">
+      <summary>動態組件可以執行，但不能儲存。</summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.RunAndCollect">
+      <summary>動態組件可以卸載而且其記憶體可以回收 (受到動態類型產生的可收集組件中所述的限制)。</summary>
+    </member>
+    <member name="T:System.Reflection.Emit.ConstructorBuilder">
+      <summary>定義或表示動態 (Dynamic) 類別的建構函式。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Attributes">
+      <summary>擷取這個建構函式的屬性。</summary>
+      <returns>傳回這個建構函式的屬性。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.CallingConvention">
+      <summary>取得 <see cref="T:System.Reflection.CallingConventions" /> 值，該值會依據宣告型別是否為泛型而定。</summary>
+      <returns>如果宣告型別為泛型，則為 <see cref="F:System.Reflection.CallingConventions.HasThis" />，否則為 <see cref="F:System.Reflection.CallingConventions.Standard" />。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.DeclaringType">
+      <summary>擷取型別的 <see cref="T:System.Type" /> 物件參考，這個型別會宣告這個成員。</summary>
+      <returns>傳回型別的 <see cref="T:System.Type" /> 物件，這個型別會宣告這個成員。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>定義這個建構函式的參數。</summary>
+      <returns>傳回 ParameterBuilder 物件，其表示這個建構函式的新參數。</returns>
+      <param name="iSequence">參數清單中的參數位置。參數的索引開頭以數字 1 代表第一個參數。</param>
+      <param name="attributes">參數的屬性。</param>
+      <param name="strParamName">參數名稱。名稱可以是 Null 字串。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="iSequence" /> 小於 0 (零)，或者大於建構函式參數的數目。</exception>
+      <exception cref="T:System.InvalidOperationException">包含型別 (Containing Type) 已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 來建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator">
+      <summary>取得這個建構函式的 <see cref="T:System.Reflection.Emit.ILGenerator" />。</summary>
+      <returns>傳回這個建構函式的 <see cref="T:System.Reflection.Emit.ILGenerator" /> 物件。</returns>
+      <exception cref="T:System.InvalidOperationException">建構函式為預設建構函式。-或-建構函式具有 <see cref="T:System.Reflection.MethodAttributes" /> 或 <see cref="T:System.Reflection.MethodImplAttributes" /> 旗標，表示它不應具有方法主體。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator(System.Int32)">
+      <summary>取得 <see cref="T:System.Reflection.Emit.ILGenerator" /> 物件，該物件具有指定的 MSIL 資料流大小，可用於建置這個建構函式的方法主體。</summary>
+      <returns>這個建構函式的 <see cref="T:System.Reflection.Emit.ILGenerator" />。</returns>
+      <param name="streamSize">MSIL 緩衝區的大小，以位元組為單位。</param>
+      <exception cref="T:System.InvalidOperationException">建構函式為預設建構函式。-或-建構函式具有 <see cref="T:System.Reflection.MethodAttributes" /> 或 <see cref="T:System.Reflection.MethodImplAttributes" /> 旗標，表示它不應具有方法主體。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetParameters">
+      <summary>傳回這個建構函式的參數。</summary>
+      <returns>傳回 <see cref="T:System.Reflection.ParameterInfo" /> 物件陣列，其表示這個建構函式的參數。</returns>
+      <exception cref="T:System.InvalidOperationException">在 .NET Framework 1.0 和 1.1 版中，尚未在這個建構函式的型別上呼叫 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />。</exception>
+      <exception cref="T:System.NotSupportedException">在 .NET Framework 2.0 中，尚未在這個建構函式的型別上呼叫 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" />。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.InitLocals">
+      <summary>取得或設定用來判斷這個建構函式中的區域變數是否應為未初始化的值。</summary>
+      <returns>讀取/寫入。取得或設定用來判斷這個建構函式中的區域變數是否應為未初始化的值。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Name">
+      <summary>擷取這個建構函式的名稱。</summary>
+      <returns>傳回這個建構函式的名稱。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 BLOB (二進位大型物件) 來設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器來設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>設定這個建構函式的方法實作旗標。</summary>
+      <param name="attributes">方法實作旗標。</param>
+      <exception cref="T:System.InvalidOperationException">包含型別 (Containing Type) 已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 來建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.ToString">
+      <summary>傳回這個 <see cref="T:System.Reflection.Emit.ConstructorBuilder" /> 執行個體為 <see cref="T:System.String" />。</summary>
+      <returns>傳回 <see cref="T:System.String" />，包含這個建構函式的名稱、屬性和例外狀況，其後是目前的 Microsoft Intermediate Language (MSIL) 資料流。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EnumBuilder">
+      <summary>描述和表示列舉型別 (Enumeration)。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Assembly">
+      <summary>擷取包含這個列舉定義的動態組件。</summary>
+      <returns>唯讀。包含這個列舉定義的動態組件。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.AssemblyQualifiedName">
+      <summary>傳回由父組件顯示名稱所限定的這個列舉的完整路徑。</summary>
+      <returns>唯讀。這個列舉的完整路徑，由父組件顯示名稱所限定。</returns>
+      <exception cref="T:System.NotSupportedException">如果之前尚未呼叫 <see cref="M:System.Reflection.Emit.EnumBuilder.CreateType" />。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.BaseType">
+      <summary>傳回這個型別的父 <see cref="T:System.Type" />，其一定是 <see cref="T:System.Enum" />。</summary>
+      <returns>唯讀。這個型別的父 <see cref="T:System.Type" />。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.CreateTypeInfo">
+      <summary>取得表示這個列舉的 <see cref="T:System.Reflection.TypeInfo" /> 物件。</summary>
+      <returns>表示這個列舉的物件。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringMethod"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringType">
+      <summary>傳回宣告這個 <see cref="T:System.Reflection.Emit.EnumBuilder" /> 的型別。</summary>
+      <returns>唯讀。宣告這個 <see cref="T:System.Reflection.Emit.EnumBuilder" /> 的型別。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.DefineLiteral(System.String,System.Object)">
+      <summary>使用指定的常數值，定義在列舉型別中的具名靜態 (Static) 欄位。</summary>
+      <returns>已定義的欄位。</returns>
+      <param name="literalName">靜態欄位的名稱。</param>
+      <param name="literalValue">常值 (Literal) 的常數值。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.FullName">
+      <summary>傳回這個列舉的完整路徑。</summary>
+      <returns>唯讀。這個列舉的完整路徑。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterPosition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetElementType">
+      <summary>呼叫這個方法永遠會擲回 <see cref="T:System.NotSupportedException" />。</summary>
+      <returns>不支援這個方法。沒有值被傳回。</returns>
+      <exception cref="T:System.NotSupportedException">這個方法目前並不支援。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GUID">
+      <summary>傳回這個列舉的 GUID。</summary>
+      <returns>唯讀。這個列舉的 GUID。</returns>
+      <exception cref="T:System.NotSupportedException">這個方法目前在不完整的型別中並不支援。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>取得值，指出指定的 <see cref="T:System.Reflection.TypeInfo" /> 物件是否可以指派給這個物件。</summary>
+      <returns>如果 <paramref name="typeInfo" /> 可以指派給此物件，則為 true，否則為 false。</returns>
+      <param name="typeInfo">要測試的物件。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericParameter"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType(System.Int32)">
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> 小於 1。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeByRefType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeGenericType(System.Type[])"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakePointerType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Module">
+      <summary>擷取包含這個 <see cref="T:System.Reflection.Emit.EnumBuilder" /> 定義的動態模組。</summary>
+      <returns>唯讀。包含這個 <see cref="T:System.Reflection.Emit.EnumBuilder" /> 定義的動態模組。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Name">
+      <summary>傳回這個列舉的名稱。</summary>
+      <returns>唯讀。這個列舉的名稱。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Namespace">
+      <summary>傳回這個列舉的命名空間。</summary>
+      <returns>唯讀。這個列舉的命名空間。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 Blob 設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器 (Builder) 設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.UnderlyingField">
+      <summary>傳回這個列舉的基礎欄位。</summary>
+      <returns>唯讀。這個列舉的基礎欄位。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EventBuilder">
+      <summary>定義類別的事件。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>加入一個與這個事件相關聯的「其他」方法。「其他」方法是指除了「on」和「raise」方法之外，與這個事件關聯的方法。您可呼叫這個函式許多次，視需要加入許多「其他」方法。</summary>
+      <param name="mdBuilder">表示另一個方法的 MethodBuilder 物件。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetAddOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>設定用來訂閱這個事件的方法。</summary>
+      <param name="mdBuilder">MethodBuilder 物件，表示用來訂閱這個事件的方法。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 BLOB (二進位大型物件) 來設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器 (Builder) 設定自訂屬性。</summary>
+      <param name="customBuilder">用來描述自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRaiseMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>設定用來引發這個事件的方法。</summary>
+      <param name="mdBuilder">MethodBuilder 物件，表示用來引發這個事件的方法。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRemoveOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>設定用來取消訂閱這個事件的方法。</summary>
+      <param name="mdBuilder">MethodBuilder 物件，表示用來取消訂閱這個事件的方法。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.FieldBuilder">
+      <summary>定義和表示欄位。此類別無法被繼承。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Attributes">
+      <summary>指出這個欄位的屬性 (Attribute)。這個屬性是唯讀的。</summary>
+      <returns>這個欄位的屬性。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.DeclaringType">
+      <summary>指出型別的 <see cref="T:System.Type" /> 物件參考，這個型別會宣告這個欄位。這個屬性是唯讀的。</summary>
+      <returns>型別的 <see cref="T:System.Type" /> 物件參考，這個型別會宣告這個欄位。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.FieldType">
+      <summary>指出 <see cref="T:System.Type" /> 物件，表示這個欄位的型別。這個屬性是唯讀的。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示這個欄位的型別。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.GetValue(System.Object)">
+      <summary>擷取欄位值，由指定物件所支援。</summary>
+      <returns>
+        <see cref="T:System.Object" />，含有這個執行個體所反映的欄位值。</returns>
+      <param name="obj">要在其上存取欄位的物件。</param>
+      <exception cref="T:System.NotSupportedException">不支援這個方法。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Name">
+      <summary>指出這個欄位的名稱。這個屬性是唯讀的。</summary>
+      <returns>
+        <see cref="T:System.String" />，包含這個欄位的名稱。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetConstant(System.Object)">
+      <summary>設定這個欄位的預設值。</summary>
+      <param name="defaultValue">這個欄位的新預設值。</param>
+      <exception cref="T:System.InvalidOperationException">包含型別 (Containing Type) 已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 來建立。</exception>
+      <exception cref="T:System.ArgumentException">這個欄位並不是其中一個支援型別。-或-<paramref name="defaultValue" /> 的型別不符合欄位的型別。-或-欄位的型別是 <see cref="T:System.Object" /> 或其他參考型別、<paramref name="defaultValue" /> 不是 null，而且無法將此值指派給參考型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 Blob 設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個欄位的父型別是完整的。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器 (Builder) 設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個欄位的父型別是完整的。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetOffset(System.Int32)">
+      <summary>指定欄位配置。</summary>
+      <param name="iOffset">型別中的欄位位移 (Offset)，型別包含這個欄位。</param>
+      <exception cref="T:System.InvalidOperationException">包含型別 (Containing Type) 已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 來建立。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="iOffset" /> 小於零。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.GenericTypeParameterBuilder">
+      <summary>為動態定義的泛型型別和方法定義並建立泛型型別參數。此類別無法被繼承。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Assembly">
+      <summary>取得 <see cref="T:System.Reflection.Assembly" /> 物件，表示包含目前型別參數所屬之泛型型別定義的動態組件。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Assembly" /> 物件，表示包含目前型別參數所屬之泛型型別定義的動態組件。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.AssemblyQualifiedName">
+      <summary>在所有情況下都會取得 null。</summary>
+      <returns>所有情況下都是 null 參考 (在 Visual Basic 中為 Nothing)。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.BaseType">
+      <summary>取得目前泛型型別參數的基底型別條件約束。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示泛型型別參數的基底型別條件約束，但如果型別參數沒有基底型別條件約束則為 null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.ContainsGenericParameters">
+      <summary>在所有情況下都會取得 true。</summary>
+      <returns>所有情況下都是 true。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringMethod">
+      <summary>如果目前的 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 表示泛型方法的型別參數，則取得表示宣告方法的 <see cref="T:System.Reflection.MethodInfo" />。</summary>
+      <returns>如果目前的 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 表示泛型方法的型別參數，則為表示宣告方法的 <see cref="T:System.Reflection.MethodInfo" />，否則為 null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringType">
+      <summary>取得泛型型別參數所屬之泛型型別定義或泛型方法定義。</summary>
+      <returns>如果型別參數屬於泛型型別，則為表示該泛型型別的 <see cref="T:System.Type" /> 物件，但如果型別參數屬於泛型方法，則為表示宣告該泛型方法之型別的 <see cref="T:System.Type" /> 物件。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.Equals(System.Object)">
+      <summary>測試指定的物件是否為 EventToken 的執行個體，以及是否等於目前執行個體。</summary>
+      <returns>如果 <paramref name="o" /> 為 EventToken 的執行個體，且等於目前的執行個體，則傳回 true，否則為 false。</returns>
+      <param name="o">要與目前執行個體比較的物件。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.FullName">
+      <summary>在所有情況下都會取得 null。</summary>
+      <returns>所有情況下都是 null 參考 (在 Visual Basic 中為 Nothing)。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterPosition">
+      <summary>取得宣告參數的泛型型別或方法之型別參數清單中的型別參數位置。</summary>
+      <returns>宣告參數的泛型型別或方法之型別參數清單中的型別參數位置。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetElementType">
+      <summary>在所有情況下都擲回 <see cref="T:System.NotSupportedException" />。</summary>
+      <returns>目前陣列型別、指標型別或 ByRef 型別所參考的型別，如果目前型別不是陣列型別或指標型別，且不是透過參考傳遞，則為 null。</returns>
+      <exception cref="T:System.NotSupportedException">在所有情況下。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericTypeDefinition">
+      <summary>對於泛型型別參數無效。</summary>
+      <returns>對於泛型型別參數無效。</returns>
+      <exception cref="T:System.InvalidOperationException">在所有情況下。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetHashCode">
+      <summary>傳回目前執行個體的 32 位元整數雜湊碼。</summary>
+      <returns>32 位元整數雜湊碼。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GUID">
+      <summary>不支援不完整的泛型型別參數。</summary>
+      <returns>不支援不完整的泛型型別參數。</returns>
+      <exception cref="T:System.NotSupportedException">在所有情況下。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>在所有情況下都會擲回 <see cref="T:System.NotSupportedException" /> 例外狀況。</summary>
+      <returns>在所有情況下都會擲回 <see cref="T:System.NotSupportedException" /> 例外狀況。</returns>
+      <param name="typeInfo">要測試的物件。</param>
+      <exception cref="T:System.NotSupportedException">在所有情況下。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericParameter">
+      <summary>在所有情況下都會取得 true。</summary>
+      <returns>所有情況下都是 true。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericType">
+      <summary>在所有情況下都會傳回 false。</summary>
+      <returns>所有情況下都是 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericTypeDefinition">
+      <summary>在所有情況下都會取得 false。</summary>
+      <returns>所有情況下都是 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsSubclassOf(System.Type)">
+      <summary>不支援不完整的泛型型別參數。</summary>
+      <returns>不支援不完整的泛型型別參數。</returns>
+      <param name="c">不支援。</param>
+      <exception cref="T:System.NotSupportedException">在所有情況下。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType">
+      <summary>傳回一維陣列型別，其元素型別為泛型型別參數。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示其元素型別為泛型型別參數的一維陣列型別。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType(System.Int32)">
+      <summary>傳回陣列型別，其元素型別為泛型型別參數，且具有指定的維度數目。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示其元素型別為泛型型別參數且具有指定維度數目的陣列型別。</returns>
+      <param name="rank">陣列的維度數目。</param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> 不是有效的維度數目。例如，它的值小於 1。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeByRefType">
+      <summary>傳回 <see cref="T:System.Type" /> 物件，表示做為參考參數傳遞的目前泛型型別參數。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示做為參考參數傳遞的目前泛型型別參數。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeGenericType(System.Type[])">
+      <summary>對於不完整的泛型型別參數無效。</summary>
+      <returns>這個方法對於不完整的泛型型別參數無效。</returns>
+      <param name="typeArguments">型別引數的陣列。</param>
+      <exception cref="T:System.InvalidOperationException">在所有情況下。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakePointerType">
+      <summary>傳回 <see cref="T:System.Type" /> 物件，表示目前泛型型別參數的指標。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示目前泛型型別參數的指標。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Module">
+      <summary>取得包含泛型型別參數的動態模組。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Module" /> 物件，表示包含泛型型別參數的動態模組。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Name">
+      <summary>取得泛型型別參數的名稱。</summary>
+      <returns>泛型型別參數的名稱。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Namespace">
+      <summary>在所有情況下都會取得 null。</summary>
+      <returns>所有情況下都是 null 參考 (在 Visual Basic 中為 Nothing)。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetBaseTypeConstraint(System.Type)">
+      <summary>設定基底型別，型別必須繼承它才可取代型別參數。</summary>
+      <param name="baseTypeConstraint">
+        <see cref="T:System.Type" />，要取代型別參數的型別必須繼承它。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 Blob 設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 為 null。-或-<paramref name="binaryAttribute" /> 為 Null 參考。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器來設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性之 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetGenericParameterAttributes(System.Reflection.GenericParameterAttributes)">
+      <summary>設定泛型參數的變異數特性和特殊條件約束，例如無參數的建構函式條件約束。</summary>
+      <param name="genericParameterAttributes">
+        <see cref="T:System.Reflection.GenericParameterAttributes" /> 值的位元組合，表示泛型型別參數的變異數特性和特殊條件約束。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetInterfaceConstraints(System.Type[])">
+      <summary>設定介面，型別必須實作它們才可取代型別參數。</summary>
+      <param name="interfaceConstraints">
+        <see cref="T:System.Type" /> 物件的陣列，表示型別必須實作才可取代型別參數的介面。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.ToString">
+      <summary>傳回目前泛型型別參數的字串表示。</summary>
+      <returns>包含泛型型別參數名稱的字串。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.MethodBuilder">
+      <summary>在動態類別上定義及表示方法 (或建構函式)。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Attributes">
+      <summary>擷取這個方法的屬性。</summary>
+      <returns>唯讀。擷取這個方法的 MethodAttributes。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.CallingConvention">
+      <summary>傳回方法的呼叫慣例。</summary>
+      <returns>唯讀。方法的呼叫慣例。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ContainsGenericParameters">
+      <summary>不支援此型別。</summary>
+      <returns>不支援。</returns>
+      <exception cref="T:System.NotSupportedException">基底類別中不支援叫用的方法。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.DeclaringType">
+      <summary>傳回宣告這個方法的型別。</summary>
+      <returns>唯讀。型別，宣告這個方法。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineGenericParameters(System.String[])">
+      <summary>設定目前方法之泛型型別參數的數目、指定其名稱，並傳回可用於定義其條件約束之 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 物件的陣列。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 物件的陣列，表示泛型方法的型別參數。</returns>
+      <param name="names">字串的陣列，表示泛型型別參數的名稱。</param>
+      <exception cref="T:System.InvalidOperationException">已為這個方法定義泛型型別參數。-或-這個方法已經完成。-或-已針對目前的方法呼叫 <see cref="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)" /> 方法。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" /> 為 null。-或-<paramref name="names" /> 的元素是 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> 是空陣列。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>設定此方法之參數或此方法之傳回值的參數屬性和名稱。傳回可用來套用自訂屬性的 ParameterBuilder。</summary>
+      <returns>傳回 ParameterBuilder 物件，表示此方法的參數或此方法的傳回值。</returns>
+      <param name="position">參數清單中的參數位置。參數會從第一個參數的數字 1 開始檢索；數字 0 代表此方法的傳回值。</param>
+      <param name="attributes">參數的參數屬性。</param>
+      <param name="strParamName">參數名稱。名稱可以是 Null 字串。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">這個方法沒有參數。-或-<paramref name="position" /> 小於零。-或-<paramref name="position" /> 大於方法的參數數目。</exception>
+      <exception cref="T:System.InvalidOperationException">包含的型別先前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的方法上，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.Equals(System.Object)">
+      <summary>判斷指定物件是否等於這個執行個體。</summary>
+      <returns>如果 <paramref name="obj" /> 是 MethodBuilder 的執行個體，並且與這個物件相等，則為 true，否則為 false。</returns>
+      <param name="obj">物件，要與這個 MethodBuilder 執行個體比較。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericArguments">
+      <summary>傳回 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 物件的陣列，表示方法的型別參數 (如果方法為泛型時)。</summary>
+      <returns>如果方法為泛型，則為 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 物件的陣列，表示型別參數，但如果方法並非泛型，則為 null。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericMethodDefinition">
+      <summary>傳回這個方法。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> 目前的執行個體。</returns>
+      <exception cref="T:System.InvalidOperationException">目前的方法不是泛型。也就是說，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性會傳回 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetHashCode">
+      <summary>取得這個方法的雜湊碼。</summary>
+      <returns>這個方法的雜湊碼。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator">
+      <summary>傳回這個方法的 ILGenerator，使用預設 Microsoft Intermediate Language (MSIL) 資料流的 64 位元大小。</summary>
+      <returns>傳回這個方法的 ILGenerator 物件。</returns>
+      <exception cref="T:System.InvalidOperationException">這個方法不應該具有主體，因為它含有 <see cref="T:System.Reflection.MethodAttributes" /> 或 <see cref="T:System.Reflection.MethodImplAttributes" /> 旗標，例如因為它含有 <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" /> 旗標。-或-這個方法是泛型方法，但不是泛型方法定義。也就是說，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但是 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator(System.Int32)">
+      <summary>傳回這個方法的 ILGenerator，使用指定 Microsoft Intermediate Language (MSIL) 資料流大小。</summary>
+      <returns>傳回這個方法的 ILGenerator 物件。</returns>
+      <param name="size">MSIL 緩衝區的大小，以位元組為單位。</param>
+      <exception cref="T:System.InvalidOperationException">這個方法不應該具有主體，因為它含有 <see cref="T:System.Reflection.MethodAttributes" /> 或 <see cref="T:System.Reflection.MethodImplAttributes" /> 旗標，例如因為它含有 <see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" /> 旗標。-或-這個方法是泛型方法，但不是泛型方法定義。也就是說，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但是 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetParameters">
+      <summary>傳回這個方法的參數。</summary>
+      <returns>ParameterInfo 物件陣列，表示方法的參數。</returns>
+      <exception cref="T:System.NotSupportedException">這個方法目前並不支援。使用 <see cref="M:System.Type.GetMethod(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])" /> 來擷取方法，並在傳回的 <see cref="T:System.Reflection.MethodInfo" /> 上呼叫 GetParameters。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.InitLocals">
+      <summary>取得或設定布林值 (Boolean)，指出這個方法中的區域變數是否以零初始化。此屬性的預設值為 true。</summary>
+      <returns>如果這個方法中的區域變數是以零初始化，則為 true，否則為 false。</returns>
+      <exception cref="T:System.InvalidOperationException">在目前的方法上，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。(Get 或 Set)。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod">
+      <summary>取得值，指出方法是否為泛型方法。</summary>
+      <returns>如果這個方法為泛型，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition">
+      <summary>取得值，指出目前的 <see cref="T:System.Reflection.Emit.MethodBuilder" /> 物件是否表示泛型方法的定義。</summary>
+      <returns>如果目前的 <see cref="T:System.Reflection.Emit.MethodBuilder" /> 物件表示泛型方法的定義，則為 true，否則為 false。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.MakeGenericMethod(System.Type[])">
+      <summary>使用指定的泛型型別引數，從目前泛型方法定義傳回所建構的泛型方法。</summary>
+      <returns>
+        <see cref="T:System.Reflection.MethodInfo" />，表示使用指定的泛型型別引數，從目前泛型方法定義所建構的泛型方法。</returns>
+      <param name="typeArguments">
+        <see cref="T:System.Type" /> 物件的陣列，表示泛型方法的型別引數。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Name">
+      <summary>擷取這個方法的名稱。</summary>
+      <returns>唯讀。擷取字串，含有這個方法的簡單名稱。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnParameter">
+      <summary>取得 <see cref="T:System.Reflection.ParameterInfo" /> 物件，其中含有方法之傳回型別的相關資訊，例如傳回型別是否含有自訂修飾詞 (Modifier)。</summary>
+      <returns>
+        <see cref="T:System.Reflection.ParameterInfo" /> 物件，含有傳回型別的相關資訊。</returns>
+      <exception cref="T:System.InvalidOperationException">宣告型別尚未建立。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnType">
+      <summary>取得這個 <see cref="T:System.Reflection.Emit.MethodBuilder" /> 所表示方法的傳回型別。</summary>
+      <returns>方法的傳回型別。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 Blob 設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">在目前的方法上，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器 (Builder) 設定自訂屬性。</summary>
+      <param name="customBuilder">用來描述自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">在目前的方法上，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>設定這個方法的實作旗標。</summary>
+      <param name="attributes">要設定的實作旗標。</param>
+      <exception cref="T:System.InvalidOperationException">包含的型別先前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的方法上，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetParameters(System.Type[])">
+      <summary>設定方法的參數數目以及型別。</summary>
+      <param name="parameterTypes">
+        <see cref="T:System.Type" /> 物件的陣列，表示參數型別。</param>
+      <exception cref="T:System.InvalidOperationException">目前的方法是泛型方法，但不是泛型方法定義。也就是說，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但是 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetReturnType(System.Type)">
+      <summary>設定方法的傳回型別。</summary>
+      <param name="returnType">
+        <see cref="T:System.Type" /> 物件，表示方法的傳回型別。</param>
+      <exception cref="T:System.InvalidOperationException">目前的方法是泛型方法，但不是泛型方法定義。也就是說，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但是 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetSignature(System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>設定方法簽章，包括傳回型別、參數型別以及傳回型別和參數型別的必要及選擇性自訂修飾詞。</summary>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="returnTypeRequiredCustomModifiers">型別的陣列，表示方法之傳回型別的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="returnTypeOptionalCustomModifiers">型別的陣列，表示方法之傳回型別的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有選擇性自訂修飾詞，請指定 null。</param>
+      <param name="parameterTypes">方法的參數型別。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有選擇性的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.InvalidOperationException">目前的方法是泛型方法，但不是泛型方法定義。也就是說，<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> 屬性為 true，但是 <see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.ToString">
+      <summary>傳回這個 MethodBuilder 執行個體為字串。</summary>
+      <returns>傳回字串，包含這個方法的名稱、屬性、方法簽章、例外狀況和本機簽章，其後是目前的 Microsoft Intermediate Language (MSIL) 資料流。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ModuleBuilder">
+      <summary>定義及表示動態組件中的模組。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Assembly">
+      <summary>取得定義此 <see cref="T:System.Reflection.Emit.ModuleBuilder" /> 執行個體的動態組件。</summary>
+      <returns>定義目前動態模組的動態組件。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions">
+      <summary>完成這個動態模組的全域函式定義和全域資料定義。</summary>
+      <exception cref="T:System.InvalidOperationException">這個方法先前已呼叫過。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineEnum(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>定義列舉型別，此列舉型別為實值型別 (Value Type)，具有指定之型別的單一非靜態欄位 (稱為 <paramref name="value__" />)。</summary>
+      <returns>已定義的列舉型別。</returns>
+      <param name="name">列舉型別的完整路徑。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="visibility">列舉型別的型別屬性。屬性是由 <see cref="F:System.Reflection.TypeAttributes.VisibilityMask" /> 定義的任何位元。</param>
+      <param name="underlyingType">列舉型別的基礎型別。這必須是內建整數型別 (Integer Type)。</param>
+      <exception cref="T:System.ArgumentException">提供可視性屬性 (Attribute) 以外的屬性。-或-具有指定名稱的列舉型別存在於這個模組的父組件中。-或-可視性屬性不符合列舉型別範圍。例如，<see cref="F:System.Reflection.TypeAttributes.NestedPublic" /> 已指定給 <paramref name="visibility" />，但是列舉型別並非巢狀型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>使用指定的名稱、屬性、呼叫慣例、傳回型別和參數型別，來定義全域方法。</summary>
+      <returns>已定義的全域方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">方法的屬性。<paramref name="attributes" /> 必須包括 <see cref="F:System.Reflection.MethodAttributes.Static" />。</param>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="parameterTypes">方法參數的型別。</param>
+      <exception cref="T:System.ArgumentException">方法不是靜態的。也就是說，<paramref name="attributes" /> 不包括 <see cref="F:System.Reflection.MethodAttributes.Static" />。-或-<see cref="T:System.Type" /> 陣列中的元素為 null。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> 之前已被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>使用指定的名稱、屬性、呼叫慣例、傳回型別、傳回型別的自訂修飾詞、參數型別以及參數型別的自訂修飾詞，來定義全域方法。</summary>
+      <returns>已定義的全域方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null 字元。</param>
+      <param name="attributes">方法的屬性。<paramref name="attributes" /> 必須包括 <see cref="F:System.Reflection.MethodAttributes.Static" />。</param>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="requiredReturnTypeCustomModifiers">型別的陣列，表示傳回型別的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果傳回型別沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="optionalReturnTypeCustomModifiers">型別的陣列，表示傳回型別的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" /> 或 <see cref="T:System.Runtime.CompilerServices.IsBoxed" />。如果傳回型別沒有選擇性自訂修飾詞，請指定 null。</param>
+      <param name="parameterTypes">方法參數的型別。</param>
+      <param name="requiredParameterTypeCustomModifiers">型別陣列的陣列。每一個型別陣列都表示全域方法之對應參數的必要自訂修飾詞。如果特定引數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果全域方法沒有任何引數，或者沒有任何引數具有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="optionalParameterTypeCustomModifiers">型別陣列的陣列。每一個型別陣列都表示對應參數的選擇性自訂修飾詞。如果特定引數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果全域方法沒有任何引數，或者沒有任何引數具有選擇性自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentException">方法不是靜態的。也就是說，<paramref name="attributes" /> 不包括 <see cref="F:System.Reflection.MethodAttributes.Static" />。-或-<see cref="T:System.Type" /> 陣列中的元素為 null。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">之前已呼叫 <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> 方法。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>使用指定的名稱、屬性、傳回型別和參數型別，來定義全域方法。</summary>
+      <returns>已定義的全域方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">方法的屬性。<paramref name="attributes" /> 必須包括 <see cref="F:System.Reflection.MethodAttributes.Static" />。</param>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="parameterTypes">方法參數的型別。</param>
+      <exception cref="T:System.ArgumentException">方法不是靜態的。也就是說，<paramref name="attributes" /> 不包括 <see cref="F:System.Reflection.MethodAttributes.Static" />。-或-<paramref name="name" /> 的長度為零。-或-<see cref="T:System.Type" /> 陣列中的元素為 null。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> 之前已被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>在可攜式執行檔 (PE) 的 .sdata 區段中定義初始化的資料欄位。</summary>
+      <returns>參考資料的欄位。</returns>
+      <param name="name">用來參考資料的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="data">資料的二進位大型物件 (BLOB)。</param>
+      <param name="attributes">欄位的屬性。預設為 Static。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-<paramref name="data" /> 的大小是小於等於零，或大於等於 0x3f0000。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 或 <paramref name="data" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> 之前已被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String)">
+      <summary>在這個模組中使用指定的名稱來建構私用型別的 TypeBuilder。</summary>
+      <returns>具有指定之名稱的私用型別。</returns>
+      <param name="name">型別的完整路徑，包含命名空間。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <exception cref="T:System.ArgumentException">具有指定名稱的型別存在於這個模組的父組件中。-或-巢狀型別 (Nested Type) 屬性 (Attribute) 要設定在沒有巢狀化的型別上。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes)">
+      <summary>建構 TypeBuilder 需指定型別名稱和型別屬性。</summary>
+      <returns>使用所有要求的屬性建立的 TypeBuilder。</returns>
+      <param name="name">型別的完整路徑。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">定義型別的屬性。</param>
+      <exception cref="T:System.ArgumentException">具有指定名稱的型別存在於這個模組的父組件中。-或-巢狀型別 (Nested Type) 屬性 (Attribute) 要設定在沒有巢狀化的型別上。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>建構 TypeBuilder 需指定型別名稱、其屬性和定義型別所擴充的型別。</summary>
+      <returns>使用所有要求的屬性建立的 TypeBuilder。</returns>
+      <param name="name">型別的完整路徑。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">屬性，與型別相關聯。</param>
+      <param name="parent">型別，定義型別所擴充的。</param>
+      <exception cref="T:System.ArgumentException">具有指定名稱的型別存在於這個模組的父組件中。-或-巢狀型別 (Nested Type) 屬性 (Attribute) 要設定在沒有巢狀化的型別上。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>建構 TypeBuilder 需指定型別名稱、屬性、定義型別所擴充的型別和型別的總共大小。</summary>
+      <returns>TypeBuilder 物件。</returns>
+      <param name="name">型別的完整路徑。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">定義型別的屬性。</param>
+      <param name="parent">型別，定義型別所擴充的。</param>
+      <param name="typesize">型別的總共大小。</param>
+      <exception cref="T:System.ArgumentException">具有指定名稱的型別存在於這個模組的父組件中。-或-巢狀型別 (Nested Type) 屬性 (Attribute) 要設定在沒有巢狀化的型別上。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>建構 TypeBuilder 需指定型別名稱、屬性、定義型別所擴充的型別和型別的封裝大小。</summary>
+      <returns>TypeBuilder 物件。</returns>
+      <param name="name">型別的完整路徑。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">定義型別的屬性。</param>
+      <param name="parent">型別，定義型別所擴充的。</param>
+      <param name="packsize">型別的封裝大小。</param>
+      <exception cref="T:System.ArgumentException">具有指定名稱的型別存在於這個模組的父組件中。-或-巢狀型別 (Nested Type) 屬性 (Attribute) 要設定在沒有巢狀化的型別上。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>建構 TypeBuilder 需指定型別名稱、屬性、定義型別所擴充的型別、定義型別的封裝大小和定義型別的總共大小。</summary>
+      <returns>使用所有要求的屬性建立的 TypeBuilder。</returns>
+      <param name="name">型別的完整路徑。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">定義型別的屬性。</param>
+      <param name="parent">型別，定義型別所擴充的。</param>
+      <param name="packingSize">型別的封裝大小。</param>
+      <param name="typesize">型別的總共大小。</param>
+      <exception cref="T:System.ArgumentException">具有指定名稱的型別存在於這個模組的父組件中。-或-巢狀型別 (Nested Type) 屬性 (Attribute) 要設定在沒有巢狀化的型別上。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>建構 TypeBuilder 需指定型別名稱、屬性、定義型別所擴充的型別和定義型別實作的介面。</summary>
+      <returns>使用所有要求的屬性建立的 TypeBuilder。</returns>
+      <param name="name">型別的完整路徑。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">屬性，與型別相關聯。</param>
+      <param name="parent">型別，定義型別所擴充的。</param>
+      <param name="interfaces">介面清單，為型別所實作的。</param>
+      <exception cref="T:System.ArgumentException">具有指定名稱的型別存在於這個模組的父組件中。-或-巢狀型別 (Nested Type) 屬性 (Attribute) 要設定在沒有巢狀化的型別上。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>在可攜式執行檔 (PE) 的 .sdata 區段中定義未初始化的資料欄位。</summary>
+      <returns>參考資料的欄位。</returns>
+      <param name="name">用來參考資料的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="size">資料欄位的大小。</param>
+      <param name="attributes">欄位的屬性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-<paramref name="size" /> 小於等於零，或大於等於 0x003f0000。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> 之前已被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.Equals(System.Object)">
+      <summary>傳回值，這個值表示這個執行個體是否等於指定的物件。</summary>
+      <returns>如果 <paramref name="obj" /> 和這個執行個體具有相同的型別和值，則為 true，否則為 false。</returns>
+      <param name="obj">與這個執行個體相比較的物件，或 null。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.FullyQualifiedName">
+      <summary>取得 String，表示這個模組的完整名稱和路徑。</summary>
+      <returns>完整的模組名稱。</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetArrayMethod(System.Type,System.String,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>傳回陣列類別上的具名方法。</summary>
+      <returns>陣列類別上的具名方法。</returns>
+      <param name="arrayClass">陣列類別。</param>
+      <param name="methodName">陣列類別上方法的名稱。</param>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="parameterTypes">方法參數的型別。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="arrayClass" /> 不是陣列。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="arrayClass" /> 或 <paramref name="methodName" /> 是 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetHashCode">
+      <summary>傳回這個執行個體的雜湊碼。</summary>
+      <returns>32 位元帶正負號的整數雜湊碼。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Name">
+      <summary>表示這是記憶體中模組的字串。</summary>
+      <returns>表示這是記憶體中模組的文字。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>將自訂屬性套用至這個模組，方式是使用指定的二進位大型物件 (BLOB) 表示該屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器，將自訂屬性套用至這個模組。</summary>
+      <param name="customBuilder">用來指定所要套用的自訂屬性的 Helper 類別執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> 為 null。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.PropertyBuilder">
+      <summary>定義型別的屬性。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>加入其中一個與這個屬性相關聯的其他方法。</summary>
+      <param name="mdBuilder">表示另一個方法的 MethodBuilder 物件。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Attributes">
+      <summary>取得這個屬性 (Property) 的屬性 (Attribute)。</summary>
+      <returns>這個屬性 (Property) 的屬性 (Attribute)。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanRead">
+      <summary>取得值，指出是否可讀取屬性。</summary>
+      <returns>如果可讀取這個屬性，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanWrite">
+      <summary>取得值，指出是否可寫入至屬性。</summary>
+      <returns>如果可寫入至屬性，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.DeclaringType">
+      <summary>取得宣告這個成員的類別。</summary>
+      <returns>宣告這個成員之類別的 Type 物件。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetIndexParameters">
+      <summary>傳回屬性的所有索引參數陣列。</summary>
+      <returns>ParameterInfo 型別的陣列，包含索引的參數。</returns>
+      <exception cref="T:System.NotSupportedException">不支援這個方法。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetValue(System.Object,System.Object[])">
+      <summary>藉由呼叫屬性的 getter 方法，取得索引屬性的值。</summary>
+      <returns>指定的索引屬性值。</returns>
+      <param name="obj">其屬性值將被傳回的物件。</param>
+      <param name="index">索引屬性的選擇性索引值。非索引屬性的這個值應為 null。</param>
+      <exception cref="T:System.NotSupportedException">不支援這個方法。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Name">
+      <summary>取得這個成員的名稱。</summary>
+      <returns>含有這個成員名稱的 <see cref="T:System.String" />。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.PropertyType">
+      <summary>取得這個屬性的欄位型別。</summary>
+      <returns>這個屬性的型別。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetConstant(System.Object)">
+      <summary>設定這個屬性的預設值。</summary>
+      <param name="defaultValue">這個屬性的預設值。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+      <exception cref="T:System.ArgumentException">這個屬性並不是其中一個支援型別。-或-<paramref name="defaultValue" /> 的型別不符合屬性的型別。-或-屬性的型別是 <see cref="T:System.Object" /> 或其他參考型別、<paramref name="defaultValue" /> 不是 null，而且無法將此值指派給參考型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 BLOB (二進位大型物件) 來設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器來設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">如果 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetGetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>設定會取得屬性值的方法。</summary>
+      <param name="mdBuilder">MethodBuilder 物件，表示取得屬性值的方法。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetSetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>設定會設定屬性值的方法。</summary>
+      <param name="mdBuilder">MethodBuilder 物件，表示設定屬性值的方法。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 已在封入型別上被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetValue(System.Object,System.Object,System.Object[])">
+      <summary>使用索引屬性的選擇性索引值設定屬性值。</summary>
+      <param name="obj">將設定其屬性值的物件。</param>
+      <param name="value">這個屬性的新值。</param>
+      <param name="index">索引屬性的選擇性索引值。非索引屬性的這個值應為 null。</param>
+      <exception cref="T:System.NotSupportedException">不支援這個方法。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.TypeBuilder">
+      <summary>在執行階段期間定義和建立類別的新執行個體。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.AddInterfaceImplementation(System.Type)">
+      <summary>加入這個型別所實作的介面。</summary>
+      <param name="interfaceType">這個型別所實作的介面。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="interfaceType" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Assembly">
+      <summary>擷取包含這個型別定義的動態組件。</summary>
+      <returns>唯讀。擷取包含這個型別定義的動態組件。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.AssemblyQualifiedName">
+      <summary>傳回組件顯示名稱所限定的這個型別的完整名稱。</summary>
+      <returns>唯讀。這個型別的完整名稱是由組件的顯示名稱所限定。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.BaseType">
+      <summary>擷取這個型別的基底型別。</summary>
+      <returns>唯讀。擷取這個型別的基底型別。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.CreateTypeInfo">
+      <summary>取得表示這個型別的 <see cref="T:System.Reflection.TypeInfo" /> 物件。</summary>
+      <returns>表示這個型別的物件。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringMethod">
+      <summary>取得宣告目前泛型型別參數的方法。</summary>
+      <returns>如果目前型別為泛型型別參數，則為 <see cref="T:System.Reflection.MethodBase" />，表示宣告目前型別的方法，否則為 null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringType">
+      <summary>傳回宣告這個型別的型別。</summary>
+      <returns>唯讀。宣告這個型別的型別。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[])">
+      <summary>使用指定的屬性和簽章 (Signature)，將新的建構函式 (Constructor) 加入型別。</summary>
+      <returns>已定義的建構函式。</returns>
+      <param name="attributes">建構函式的屬性。</param>
+      <param name="callingConvention">建構函式的呼叫慣例。</param>
+      <param name="parameterTypes">建構函式的參數型別。</param>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[],System.Type[][],System.Type[][])">
+      <summary>使用指定的屬性、簽章和自訂修飾詞 (Modifier)，將新的建構函式加入型別。</summary>
+      <returns>已定義的建構函式。</returns>
+      <param name="attributes">建構函式的屬性。</param>
+      <param name="callingConvention">建構函式的呼叫慣例。</param>
+      <param name="parameterTypes">建構函式的參數型別。</param>
+      <param name="requiredCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="optionalCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有選擇性的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="requiredCustomModifiers" /> 或 <paramref name="optionalCustomModifiers" /> 的大小不等於 <paramref name="parameterTypes" /> 的大小。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineDefaultConstructor(System.Reflection.MethodAttributes)">
+      <summary>定義預設的建構函式。此處定義的建構函式將簡單呼叫父代 (Parent) 的預設建構函式。</summary>
+      <returns>傳回建構函式。</returns>
+      <param name="attributes">MethodAttributes 物件表示要套用至建構函式的屬性。</param>
+      <exception cref="T:System.NotSupportedException">父型別 (基底型別) 沒有預設建構函式。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineEvent(System.String,System.Reflection.EventAttributes,System.Type)">
+      <summary>使用指定的名稱、屬性和事件型別，將新的事件加入型別。</summary>
+      <returns>已定義的事件。</returns>
+      <param name="name">事件的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">事件的屬性。</param>
+      <param name="eventtype">事件的型別。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="eventtype" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Reflection.FieldAttributes)">
+      <summary>使用指定的名稱、屬性和欄位型別，將新的欄位加入至型別。</summary>
+      <returns>已定義的欄位。</returns>
+      <param name="fieldName">欄位名稱。<paramref name="fieldName" /> 不能含有內嵌 null。</param>
+      <param name="type">欄位的型別。</param>
+      <param name="attributes">欄位的屬性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="fieldName" /> 的長度為零。-或-<paramref name="type" /> 為 System.Void。-或-已指定這個欄位之父類別的總共大小。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Type[],System.Type[],System.Reflection.FieldAttributes)">
+      <summary>使用指定的名稱、屬性、欄位型別和自訂修飾詞，將新的欄位加入型別。</summary>
+      <returns>已定義的欄位。</returns>
+      <param name="fieldName">欄位名稱。<paramref name="fieldName" /> 不能含有內嵌 null。</param>
+      <param name="type">欄位的型別。</param>
+      <param name="requiredCustomModifiers">型別的陣列，表示欄位的必要自訂修飾詞，例如 <see cref="T:Microsoft.VisualC.IsConstModifier" />。</param>
+      <param name="optionalCustomModifiers">型別的陣列，表示欄位的選擇性自訂修飾詞，例如 <see cref="T:Microsoft.VisualC.IsConstModifier" />。</param>
+      <param name="attributes">欄位的屬性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="fieldName" /> 的長度為零。-或-<paramref name="type" /> 為 System.Void。-或-已指定這個欄位之父類別的總共大小。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineGenericParameters(System.String[])">
+      <summary>定義目前型別的泛型型別參數，指定其編號和名稱，並傳回可用於設定其條件約束之 <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 物件的陣列。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> 物件的陣列，這些物件可用於定義目前型別之泛型型別參數的條件約束。</returns>
+      <param name="names">泛型型別參數的名稱陣列。</param>
+      <exception cref="T:System.InvalidOperationException">已為這個型別定義泛型型別參數。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" /> 為 null。-或-<paramref name="names" /> 的元素是 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> 是空陣列。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>在可攜式執行 (PE) 檔的 .sdata 區段中定義初始化資料欄位。</summary>
+      <returns>參考資料的欄位。</returns>
+      <param name="name">用來參考資料的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="data">資料的 Blob。</param>
+      <param name="attributes">欄位的屬性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-資料大小是小於等於零，或大於等於 0x3f0000。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 或 <paramref name="data" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 之前已被呼叫。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes)">
+      <summary>使用指定的名稱和方法屬性，將新的方法加入型別。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" />，表示新定義的方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">方法的屬性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-這個方法的父項型別為介面，但這個方法不是虛擬 (Visual Basic 中的 Overridable)。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions)">
+      <summary>使用指定的名稱、方法屬性和呼叫慣例，將新的方法加入型別。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" />，表示新定義的方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">方法的屬性。</param>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-這個方法的父型別為介面，但這個方法不是虛擬 (Visual Basic 中的 Overridable)。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>使用指定的名稱、方法屬性、呼叫慣例和方法簽章，將新的方法加入型別。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" />，表示新定義的方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">方法的屬性。</param>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="parameterTypes">方法的參數型別。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-這個方法的父項型別為介面，但這個方法不是虛擬 (Visual Basic 中的 Overridable)。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>使用指定的名稱、方法屬性、呼叫慣例、方法簽章和自訂修飾詞，將新的方法加入型別。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> 物件，表示新加入的方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">方法的屬性。</param>
+      <param name="callingConvention">方法的呼叫慣例。</param>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="returnTypeRequiredCustomModifiers">型別的陣列，表示方法之傳回型別的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="returnTypeOptionalCustomModifiers">型別的陣列，表示方法之傳回型別的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有選擇性自訂修飾詞，請指定 null。</param>
+      <param name="parameterTypes">方法的參數型別。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有選擇性的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-這個方法的父項型別為介面，但這個方法不是虛擬 (Visual Basic 中的 Overridable)。-或-<paramref name="parameterTypeRequiredCustomModifiers" /> 或 <paramref name="parameterTypeOptionalCustomModifiers" /> 的大小不等於 <paramref name="parameterTypes" /> 的大小。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>使用指定的名稱、方法屬性和方法簽章，將新的方法加入型別。</summary>
+      <returns>已定義的方法。</returns>
+      <param name="name">方法的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">方法的屬性。</param>
+      <param name="returnType">方法的傳回型別。</param>
+      <param name="parameterTypes">方法的參數型別。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-這個方法的父項型別為介面，但這個方法不是虛擬 (Visual Basic 中的 Overridable)。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethodOverride(System.Reflection.MethodInfo,System.Reflection.MethodInfo)">
+      <summary>指定實作指定之方法宣告的指定方法主體，此方法主體可能具有不同的名稱。</summary>
+      <param name="methodInfoBody">要使用的方法主體。這應該為 MethodBuilder 物件。</param>
+      <param name="methodInfoDeclaration">將使用其宣告的方法。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="methodInfoBody" /> 不屬於這個類別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfoBody" /> 或 <paramref name="methodInfoDeclaration" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-<paramref name="methodInfoBody" /> 的宣告型別不是由此 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 表示的型別。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String)">
+      <summary>定義指定其名稱的巢狀型別。</summary>
+      <returns>定義的巢狀型別。</returns>
+      <param name="name">型別的簡短名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零或大於 1023。-或-這項作業會以目前組件中的重複 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> 來建立型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes)">
+      <summary>定義指定其名稱和屬性的巢狀型別。</summary>
+      <returns>定義的巢狀型別。</returns>
+      <param name="name">型別的簡短名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">型別的屬性。</param>
+      <exception cref="T:System.ArgumentException">巢狀屬性並未指定。-或-這個型別不是密封的。-或-這個型別是陣列。-或-這個型別是介面，但是巢狀型別不是介面。-或-<paramref name="name" /> 的長度為零或大於 1023。-或-這項作業會以目前組件中的重複 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> 來建立型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>定義巢狀型別，指定其名稱、屬性和其擴充的型別。</summary>
+      <returns>定義的巢狀型別。</returns>
+      <param name="name">型別的簡短名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">型別的屬性。</param>
+      <param name="parent">巢狀型別所擴充的型別。</param>
+      <exception cref="T:System.ArgumentException">巢狀屬性並未指定。-或-這個型別不是密封的。-或-這個型別是陣列。-或-這個型別是介面，但是巢狀型別不是介面。-或-<paramref name="name" /> 的長度為零或大於 1023。-或-這項作業會以目前組件中的重複 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> 來建立型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>定義巢狀型別，指定其名稱、屬性、型別的總共大小和其擴充的型別。</summary>
+      <returns>定義的巢狀型別。</returns>
+      <param name="name">型別的簡短名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">型別的屬性。</param>
+      <param name="parent">巢狀型別所擴充的型別。</param>
+      <param name="typeSize">型別的總共大小。</param>
+      <exception cref="T:System.ArgumentException">巢狀屬性並未指定。-或-這個型別不是密封的。-或-這個型別是陣列。-或-這個型別是介面，但是巢狀型別不是介面。-或-<paramref name="name" /> 的長度為零或大於 1023。-或-這項作業會以目前組件中的重複 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> 來建立型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>定義巢狀型別，指定其名稱、屬性、其擴充的型別和封裝大小。</summary>
+      <returns>定義的巢狀型別。</returns>
+      <param name="name">型別的簡短名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">型別的屬性。</param>
+      <param name="parent">巢狀型別所擴充的型別。</param>
+      <param name="packSize">型別的封裝大小。</param>
+      <exception cref="T:System.ArgumentException">巢狀屬性並未指定。-或-這個型別不是密封的。-或-這個型別是陣列。-或-這個型別是介面，但是巢狀型別不是介面。-或-<paramref name="name" /> 的長度為零或大於 1023。-或-這項作業會以目前組件中的重複 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> 來建立型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>定義巢狀型別，指定其名稱、屬性、大小和其擴充的型別。</summary>
+      <returns>定義的巢狀型別。</returns>
+      <param name="name">型別的簡短名稱。<paramref name="name" /> 不可以包含內嵌 null 值。</param>
+      <param name="attr">型別的屬性。</param>
+      <param name="parent">巢狀型別所擴充的型別。</param>
+      <param name="packSize">型別的封裝大小。</param>
+      <param name="typeSize">型別的總共大小。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>定義巢狀型別，指定其名稱、屬性、其擴充的型別和其實作的介面。</summary>
+      <returns>定義的巢狀型別。</returns>
+      <param name="name">型別的簡短名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attr">型別的屬性。</param>
+      <param name="parent">巢狀型別所擴充的型別。</param>
+      <param name="interfaces">巢狀型別所實作的介面。</param>
+      <exception cref="T:System.ArgumentException">巢狀屬性並未指定。-或-這個型別不是密封的。-或-這個型別是陣列。-或-這個型別是介面，但是巢狀型別不是介面。-或-<paramref name="name" /> 的長度為零或大於 1023。-或-這項作業會以目前組件中的重複 <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> 來建立型別。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="interfaces" /> 陣列的元素為 null。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>使用指定的名稱、屬性 (Attribute)、呼叫慣例和屬性 (Property) 簽章，將新的屬性 (Property) 新增至型別。</summary>
+      <returns>已定義的屬性。</returns>
+      <param name="name">屬性的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">屬性 (Property) 的屬性 (Attribute)。</param>
+      <param name="callingConvention">屬性存取子的呼叫慣例。</param>
+      <param name="returnType">屬性的傳回型別。</param>
+      <param name="parameterTypes">屬性的參數型別。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="parameterTypes" /> 陣列的任何一個元素都為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>使用指定的名稱、呼叫慣例、屬性簽章和自訂修飾詞，將新的屬性新增至型別。</summary>
+      <returns>已定義的屬性。</returns>
+      <param name="name">屬性的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">屬性 (Property) 的屬性 (Attribute)。</param>
+      <param name="callingConvention">屬性存取子的呼叫慣例。</param>
+      <param name="returnType">屬性的傳回型別。</param>
+      <param name="returnTypeRequiredCustomModifiers">型別的陣列，表示屬性之傳回型別的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="returnTypeOptionalCustomModifiers">型別的陣列，表示屬性之傳回型別的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有選擇性自訂修飾詞，請指定 null。</param>
+      <param name="parameterTypes">屬性的參數型別。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有選擇性的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="parameterTypes" /> 陣列的任何一個元素都為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[])">
+      <summary>使用指定的名稱和屬性簽章，將新的屬性加入型別。</summary>
+      <returns>已定義的屬性。</returns>
+      <param name="name">屬性的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">屬性 (Property) 的屬性 (Attribute)。</param>
+      <param name="returnType">屬性的傳回型別。</param>
+      <param name="parameterTypes">屬性的參數型別。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="parameterTypes" /> 陣列的任何一個元素都為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>使用指定的名稱、屬性簽章和自訂修飾詞，將新的屬性加入型別。</summary>
+      <returns>已定義的屬性。</returns>
+      <param name="name">屬性的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="attributes">屬性 (Property) 的屬性 (Attribute)。</param>
+      <param name="returnType">屬性的傳回型別。</param>
+      <param name="returnTypeRequiredCustomModifiers">型別的陣列，表示屬性之傳回型別的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有必要的自訂修飾詞，請指定 null。</param>
+      <param name="returnTypeOptionalCustomModifiers">型別的陣列，表示屬性之傳回型別的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果傳回型別沒有選擇性自訂修飾詞，請指定 null。</param>
+      <param name="parameterTypes">屬性的參數型別。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的必要自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有必要的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有必要的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型別陣列的陣列。每一個型別陣列，表示對應參數的選擇性自訂修飾詞，例如 <see cref="T:System.Runtime.CompilerServices.IsConst" />。如果某特定參數沒有選擇性的自訂修飾詞，請指定 null，而不要指定型別的陣列。如果沒有任何參數有選擇性的自訂修飾詞，請指定 null，而不要指定陣列的陣列。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。-或-<paramref name="parameterTypes" /> 陣列的任何一個元素都為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineTypeInitializer">
+      <summary>定義這個型別的初始設定式。</summary>
+      <returns>傳回型別初始設定式。</returns>
+      <exception cref="T:System.InvalidOperationException">先前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立包含型別 (Containing Type) </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>在可攜式執行檔 (PE) 的 .sdata 區段中定義未初始化的資料欄位。</summary>
+      <returns>參考資料的欄位。</returns>
+      <param name="name">用來參考資料的名稱。<paramref name="name" /> 不能含有內嵌 null。</param>
+      <param name="size">資料欄位的大小。</param>
+      <param name="attributes">欄位的屬性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 的長度為零。-或-<paramref name="size" /> 小於等於零，或大於等於 0x003f0000。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.FullName">
+      <summary>擷取這個型別的完整路徑。</summary>
+      <returns>唯讀。擷取這個型別的完整路徑。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterAttributes">
+      <summary>取得值，指出目前泛型型別參數的共變數和特殊條件約束。</summary>
+      <returns>
+        <see cref="T:System.Reflection.GenericParameterAttributes" /> 值的位元組合，描述目前泛型型別參數的共變數和特殊條件約束。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterPosition">
+      <summary>取得宣告參數的泛型型別之型別參數清單中的型別參數位置。</summary>
+      <returns>如果目前 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 物件表示泛型型別參數，則為宣告參數的泛型型別之型別參數清單中的型別參數位置，否則為未定義。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetConstructor(System.Type,System.Reflection.ConstructorInfo)">
+      <summary>傳回指定之建構泛型型別的建構函式，其對應於泛型型別定義的指定建構函式。</summary>
+      <returns>
+        <see cref="T:System.Reflection.ConstructorInfo" /> 物件，表示對應於 <paramref name="constructor" /> 之 <paramref name="type" /> 的建構函式，其指定屬於 <paramref name="type" /> 之泛型型別定義的建構函式。</returns>
+      <param name="type">已傳回建構函式的建構泛型型別。</param>
+      <param name="constructor">
+        <paramref name="type" /> 之泛型型別定義上的建構函式，其指定要傳回 <paramref name="type" /> 的哪個建構函式。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> 不表示泛型型別。-或-<paramref name="type" /> 不是 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 型別。-或-<paramref name="constructor" /> 的宣告型別不是泛型型別定義。-或-<paramref name="constructor" /> 的宣告型別不是 <paramref name="type" /> 的泛型型別定義。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetElementType">
+      <summary>呼叫這個方法永遠會擲回 <see cref="T:System.NotSupportedException" />。</summary>
+      <returns>不支援這個方法。沒有值被傳回。</returns>
+      <exception cref="T:System.NotSupportedException">不支援這個方法。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetField(System.Type,System.Reflection.FieldInfo)">
+      <summary>傳回指定之建構泛型型別的欄位，其對應於泛型型別定義的指定欄位。</summary>
+      <returns>
+        <see cref="T:System.Reflection.FieldInfo" /> 物件，表示對應於 <paramref name="field" /> 之 <paramref name="type" /> 的欄位，其指定屬於 <paramref name="type" /> 之泛型型別定義的欄位。</returns>
+      <param name="type">已傳回欄位的建構泛型型別。</param>
+      <param name="field">
+        <paramref name="type" /> 之泛型型別定義上的欄位，其指定要傳回 <paramref name="type" /> 的哪個欄位。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> 不表示泛型型別。-或-<paramref name="type" /> 不是 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 型別。-或-<paramref name="field" /> 的宣告型別不是泛型型別定義。-或-<paramref name="field" /> 的宣告型別不是 <paramref name="type" /> 的泛型型別定義。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericTypeDefinition">
+      <summary>傳回表示泛型型別定義的 <see cref="T:System.Type" /> 物件，利用此泛型型別定義就可以取得目前型別。</summary>
+      <returns>表示泛型型別定義的 <see cref="T:System.Type" /> 物件，利用此泛型型別定義就可以取得目前型別。</returns>
+      <exception cref="T:System.InvalidOperationException">目前型別不是泛型的。也就是，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 傳回 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetMethod(System.Type,System.Reflection.MethodInfo)">
+      <summary>傳回指定之建構泛型型別的方法，其對應於泛型型別定義的指定方法。</summary>
+      <returns>
+        <see cref="T:System.Reflection.MethodInfo" /> 物件，表示對應於 <paramref name="method" /> 之 <paramref name="type" /> 的方法，其指定屬於 <paramref name="type" /> 之泛型型別定義的方法。</returns>
+      <param name="type">已傳回方法的建構泛型型別。</param>
+      <param name="method">
+        <paramref name="type" /> 之泛型型別定義上的方法，其指定要傳回 <paramref name="type" /> 的哪個方法。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="method" /> 是泛型方法，但並非泛型方法定義。-或-<paramref name="type" /> 不表示泛型型別。-或-<paramref name="type" /> 不是 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 型別。-或-<paramref name="method" /> 的宣告型別不是泛型型別定義。-或-<paramref name="method" /> 的宣告型別不是 <paramref name="type" /> 的泛型型別定義。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GUID">
+      <summary>擷取這個型別的 GUID。</summary>
+      <returns>唯讀。擷取這個型別的 GUID。</returns>
+      <exception cref="T:System.NotSupportedException">不完整型別的這個方法目前並不支援。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>取得值，指出指定的 <see cref="T:System.Reflection.TypeInfo" /> 物件是否可以指派給這個物件。</summary>
+      <returns>如果 <paramref name="typeInfo" /> 可以指派給此物件，則為 true，否則為 false。</returns>
+      <param name="typeInfo">要測試的物件。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsCreated">
+      <summary>傳回值，指出是否已建立目前動態型別。</summary>
+      <returns>如果已呼叫 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 方法，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericParameter">
+      <summary>取得值，指出目前型別是否為泛型型別參數。</summary>
+      <returns>如果目前 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 物件表示泛型型別參數，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericType">
+      <summary>取得值，指出目前型別是否為泛型型別。</summary>
+      <returns>如果目前 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 物件表示的型別是泛型的，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition">
+      <summary>取得值，指出目前 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 是否表示可用於建構其他泛型型別的泛型型別定義。</summary>
+      <returns>如果這個 <see cref="T:System.Reflection.Emit.TypeBuilder" /> 物件表示泛型型別定義，則為 true，否則為 false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType">
+      <summary>傳回 <see cref="T:System.Type" /> 物件，表示目前型別的一維陣列，其下限為零。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示其元素型別為目前型別的一維陣列型別，其下限為零。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType(System.Int32)">
+      <summary>傳回 <see cref="T:System.Type" /> 物件，表示具有指定維度數目的目前型別陣列。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示目前型別的一維陣列。</returns>
+      <param name="rank">陣列的維度數目。</param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> 不是有效的陣列維度。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeByRefType">
+      <summary>傳回 <see cref="T:System.Type" /> 物件，表示當做 ref (Visual Basic 中為 ByRef) 參數傳遞時的目前型別。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示當做 ref (Visual Basic 中為 ByRef) 參數傳遞時的目前型別。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeGenericType(System.Type[])">
+      <summary>用型別陣列的元素取代目前泛型型別定義的型別參數，並傳回結果建構型別。</summary>
+      <returns>
+        <see cref="T:System.Type" />，表示用 <paramref name="typeArguments" /> 的元素取代目前泛型型別之型別參數所得到的建構型別。</returns>
+      <param name="typeArguments">型別的陣列，用於取代目前泛型型別定義的型別參數。</param>
+      <exception cref="T:System.InvalidOperationException">目前型別不表示泛型型別的定義。也就是，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 傳回 false。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="typeArguments" /> 為 null。-或-<paramref name="typeArguments" /> 的元素是 null。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="typeArguments" /> 中的所有元素都不符合目前泛型型別對應之型別參數所設定的條件。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakePointerType">
+      <summary>傳回 <see cref="T:System.Type" /> 物件，表示目前型別的 Unmanaged 指標型別。</summary>
+      <returns>
+        <see cref="T:System.Type" /> 物件，表示目前型別的 Unmanaged 指標型別。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Module">
+      <summary>擷取包含這個型別定義的動態模組。</summary>
+      <returns>唯讀。擷取包含這個型別定義的動態模組。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Name">
+      <summary>擷取這個型別的名稱。</summary>
+      <returns>唯讀。擷取這個型別的 <see cref="T:System.String" /> 名稱。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Namespace">
+      <summary>擷取定義這個 TypeBuilder 的命名空間。</summary>
+      <returns>唯讀。擷取定義這個 TypeBuilder 的命名空間。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.PackingSize">
+      <summary>擷取這個型別的封裝大小。</summary>
+      <returns>唯讀。擷取這個型別的封裝大小。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>使用指定的自訂屬性 Blob 設定自訂屬性。</summary>
+      <param name="con">自訂屬性的建構函式。</param>
+      <param name="binaryAttribute">表示屬性的位元組 BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> 或 <paramref name="binaryAttribute" /> 是 null。</exception>
+      <exception cref="T:System.InvalidOperationException">在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>使用自訂屬性產生器來設定自訂屬性。</summary>
+      <param name="customBuilder">用來定義自訂屬性的 Helper 類別的執行個體。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> 為 null。</exception>
+      <exception cref="T:System.InvalidOperationException">在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetParent(System.Type)">
+      <summary>設定目前正在建構之型別的基底型別。</summary>
+      <param name="parent">新的基底型別。</param>
+      <exception cref="T:System.InvalidOperationException">這個型別之前已使用 <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> 建立。-或-<paramref name="parent" /> 為 null，而且目前的執行個體表示其屬性不包含 <see cref="F:System.Reflection.TypeAttributes.Abstract" /> 的介面。-或-在目前的動態型別上，<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> 屬性為 true，但 <see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> 屬性為 false。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parent" /> 是介面。這個例外狀況條件是 .NET Framework 2.0 的新功能。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Size">
+      <summary>擷取型別的總共大小。</summary>
+      <returns>唯讀。擷取這個型別的總共大小。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.ToString">
+      <summary>傳回不包含命名空間的型別名稱。</summary>
+      <returns>唯讀。不包含命名空間的型別名稱。</returns>
+    </member>
+    <member name="F:System.Reflection.Emit.TypeBuilder.UnspecifiedTypeSize">
+      <summary>表示未指定型別的總共大小。</summary>
+    </member>
+  </members>
+</doc>

@@ -1,0 +1,2956 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>FSharp.Data</name></assembly>
+<members>
+<member name="M:FSharp.Data.CsvFile.Parse(System.String,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Int32})">
+<summary>
+ Parses the specified CSV content
+</summary>
+</member>
+<member name="M:FSharp.Data.CsvFile.Load(System.String,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Int32})">
+<summary>
+ Loads CSV from the specified uri
+</summary>
+</member>
+<member name="M:FSharp.Data.CsvFile.Load(System.IO.TextReader,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Int32})">
+<summary>
+ Loads CSV from the specified reader
+</summary>
+</member>
+<member name="M:FSharp.Data.CsvFile.Load(System.IO.Stream,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Int32})">
+<summary>
+ Loads CSV from the specified stream
+</summary>
+</member>
+<member name="M:FSharp.Data.CsvFile.AsyncLoad(System.String,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.Int32})">
+<summary>
+ Loads CSV from the specified uri asynchronously
+</summary>
+</member>
+<member name="T:FSharp.Data.CsvFile">
+<summary>
+ Represents a CSV file. The lines are read on demand from `reader`.
+ Columns are delimited by one of the chars passed by `separators` (defaults to just `,`), and
+ to escape the separator chars, the `quote` character will be used (defaults to `&quot;`).
+ If `hasHeaders` is true (the default), the first line read by `reader` will not be considered part of data.
+ If `ignoreErrors` is true (the default is false), rows with a different number of columns from the header row
+ (or the first row if headers are not present) will be ignored.
+ The first `skipRows` lines will be skipped.
+</summary>
+</member>
+<member name="P:FSharp.Data.CsvRow.Item(System.String)">
+<summary>
+ Gets a column by name
+</summary>
+</member>
+<member name="P:FSharp.Data.CsvRow.Item(System.Int32)">
+<summary>
+ Gets a column by index
+</summary>
+</member>
+<member name="P:FSharp.Data.CsvRow.Columns">
+<summary>
+ The columns of the row
+</summary>
+</member>
+<member name="M:FSharp.Data.CsvRow.GetColumn(System.String)">
+<summary>
+ Gets a column by name
+</summary>
+</member>
+<member name="M:FSharp.Data.CsvRow.GetColumn(System.Int32)">
+<summary>
+ Gets a column by index
+</summary>
+</member>
+<member name="T:FSharp.Data.CsvRow">
+<summary>
+ Represents a CSV row.
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlAttribute.New(System.String,System.String)">
+ <summary>
+ Creates an html attribute
+ </summary>
+ <param name="name">The name of the attribute</param>
+ <param name="value">The value of the attribute</param>
+</member>
+<member name="T:FSharp.Data.HtmlAttribute">
+<summary>
+ Represents an HTML attribute. The name is always normalized to lowercase
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlAttributeExtensions.Value(FSharp.Data.HtmlAttribute)">
+<summary>
+ Gets the value of the current attribute
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlAttributeExtensions.Name(FSharp.Data.HtmlAttribute)">
+<summary>
+ Gets the name of the current attribute
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlAttributeExtensions">
+<summary>
+ Extension methods with operations on HTML attributes
+</summary>
+</member>
+<member name="P:FSharp.Data.HtmlDocument._Print">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocument.Parse(System.String)">
+<summary>
+ Parses the specified HTML string
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocument.New(System.Collections.Generic.IEnumerable{FSharp.Data.HtmlNode})">
+ <summary>
+ Creates an html document
+ </summary>
+ <param name="children">The child elements of this document</param>
+</member>
+<member name="M:FSharp.Data.HtmlDocument.New(System.String,System.Collections.Generic.IEnumerable{FSharp.Data.HtmlNode})">
+ <summary>
+ Creates an html document
+ </summary>
+ <param name="docType">The document type specifier string</param>
+ <param name="children">The child elements of this document</param>
+</member>
+<member name="M:FSharp.Data.HtmlDocument.Load(System.String)">
+<summary>
+ Loads HTML from the specified uri
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocument.Load(System.IO.TextReader)">
+<summary>
+ Loads HTML from the specified reader
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocument.Load(System.IO.Stream)">
+<summary>
+ Loads HTML from the specified stream
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocument.AsyncLoad(System.String)">
+<summary>
+ Loads HTML from the specified uri asynchronously
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlDocument">
+<summary>
+ Represents an HTML document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.TryGetBody(FSharp.Data.HtmlDocument)">
+<summary>
+ Tries to find the body element of the given document.
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Elements(FSharp.Data.HtmlDocument,System.String)">
+<summary>
+ Returns all of the root elements in the current document that match the name
+ Parameters:
+ * name - The name to match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Elements(FSharp.Data.HtmlDocument,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Returns all of the root elements in the current document that match the set of names
+ Parameters:
+ * names - The set of names to match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Elements(FSharp.Data.HtmlDocument)">
+<summary>
+ Returns all of the root elements of the current document
+ that match the given predicate
+ Parameters:
+ * predicate - The predicate used to match elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.DescendantsWithPath(FSharp.Data.HtmlDocument,System.String)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given name
+ Recurses on match
+ Parameters:
+ * name - The name to match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.DescendantsWithPath(FSharp.Data.HtmlDocument,System.String,System.Boolean)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given name
+ Parameters:
+ * name - The name to match
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.DescendantsWithPath(FSharp.Data.HtmlDocument,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Finds all of the descendant nodes of this document that match the given set of names
+ Recurses on match
+ Parameters:
+ * names - The set of names to match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.DescendantsWithPath(FSharp.Data.HtmlDocument,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given set of names
+ Parameters:
+ * names - The set of names to match
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.DescendantsWithPath(FSharp.Data.HtmlDocument)">
+<summary>
+ Gets all of the descendants of this document
+ Recurses on match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.DescendantsWithPath(FSharp.Data.HtmlDocument,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean})">
+<summary>
+ Gets all of the descendants of this document that statisfy the given predicate
+ Recurses on match
+ Parameters:
+ * predicate - The predicate by which to match the nodes to return
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.DescendantsWithPath(FSharp.Data.HtmlDocument,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},System.Boolean)">
+<summary>
+ Gets all of the descendants of this document that statisfy the given predicate
+ Parameters:
+ * predicate - The predicate by which to match the nodes to return
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Descendants(FSharp.Data.HtmlDocument,System.String)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given name
+ Recurses on match
+ Parameters:
+ * names - The name to match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Descendants(FSharp.Data.HtmlDocument,System.String,System.Boolean)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given name
+ Parameters:
+ * name - The name to match
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Descendants(FSharp.Data.HtmlDocument,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Finds all of the descendant nodes of this document that match the given set of names
+ Recurses on match
+ Parameters:
+ * names - The set of names to match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Descendants(FSharp.Data.HtmlDocument,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given set of names
+ Parameters:
+ * names - The set of names to match
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Descendants(FSharp.Data.HtmlDocument)">
+<summary>
+ Gets all of the descendants of this document
+ Recurses on match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Descendants(FSharp.Data.HtmlDocument,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean})">
+<summary>
+ Gets all of the descendants of this document that statisfy the given predicate
+ Recurses on match
+ Parameters:
+ * predicate - The predicate by which to match the nodes to return
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Descendants(FSharp.Data.HtmlDocument,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},System.Boolean)">
+<summary>
+ Gets all of the descendants of this document that statisfy the given predicate
+ Parameters:
+ * predicate - The predicate by which to match the nodes to return
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentExtensions.Body(FSharp.Data.HtmlDocument)">
+<summary>
+ Finds the body element of the given document,
+ this throws an exception if no body element exists.
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlDocumentExtensions">
+<summary>
+ Extension methods with operations on HTML documents
+</summary>
+</member>
+<member name="P:FSharp.Data.HtmlNode._Print">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNode.ParseRooted(System.String,System.String)">
+<summary>
+ Parses the specified HTML string to a list of HTML nodes
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNode.Parse(System.String)">
+<summary>
+ Parses the specified HTML string to a list of HTML nodes
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNode.NewText(System.String)">
+ <summary>
+ Creates a text content element
+ </summary>
+ <param name="content">The actual content</param>
+</member>
+<member name="M:FSharp.Data.HtmlNode.NewElement(System.String,System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}},System.Collections.Generic.IEnumerable{FSharp.Data.HtmlNode})">
+ <summary>
+ Creates an html element
+ </summary>
+ <param name="name">The name of the element</param>
+ <param name="attrs">The HtmlAttribute(s) of the element</param>
+ <param name="children">The children elements of this element</param>
+</member>
+<member name="M:FSharp.Data.HtmlNode.NewElement(System.String,System.Collections.Generic.IEnumerable{FSharp.Data.HtmlNode})">
+ <summary>
+ Creates an html element
+ </summary>
+ <param name="name">The name of the element</param>
+ <param name="children">The children elements of this element</param>
+</member>
+<member name="M:FSharp.Data.HtmlNode.NewElement(System.String,System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}})">
+ <summary>
+ Creates an html element
+ </summary>
+ <param name="name">The name of the element</param>
+ <param name="attrs">The HtmlAttribute(s) of the element</param>
+</member>
+<member name="M:FSharp.Data.HtmlNode.NewElement(System.String)">
+ <summary>
+ Creates an html element
+ </summary>
+ <param name="name">The name of the element</param>
+</member>
+<member name="M:FSharp.Data.HtmlNode.NewComment(System.String)">
+ <summary>
+ Creates a comment element
+ </summary>
+ <param name="content">The actual content</param>
+</member>
+<member name="T:FSharp.Data.HtmlNode">
+<summary>
+ Represents an HTML node. The names of elements are always normalized to lowercase
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.TryGetAttribute(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Tries to select an attribute with the given name from the current node.
+ Parameters:
+ * name - The name of the attribute to select
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Name(FSharp.Data.HtmlNode)">
+<summary>
+ Gets the given nodes name
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.InnerText(FSharp.Data.HtmlNode)">
+<summary>
+ Returns the inner text of the current node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.HasName(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Returns true if the current node has the specified name
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.HasId(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Returns true if the current node has the specified id
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.HasClass(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Returns true if the current node has the specified class
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.HasAttribute(FSharp.Data.HtmlNode,System.String,System.String)">
+<summary>
+ Returns true if the current node has an attribute that
+ matches both the name and the value
+ Parameters:
+ * name - The name of the attribute
+ * value - The value of the attribute
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Elements(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Gets all of the elements of the current node, which match the given name
+ Parameters:
+ * names - The name by which to map the elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Elements(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Gets all of the elements of the current node, which match the given set of names
+ Parameters:
+ * names - The set of names by which to map the elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Elements(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the nodes immediately under this node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsWithPath(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ Recurses on match
+ Parameters:
+ * name - The names by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsWithPath(FSharp.Data.HtmlNode,System.String,System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ Parameters:
+ * name - The name by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsWithPath(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ Recurses on match
+ Parameters:
+ * names - The set of names by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsWithPath(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ Parameters:
+ * names - The set of names by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsWithPath(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of the current node
+ Recurses on match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsWithPath(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean})">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ Recurses on match
+ Parameters:
+ * predicate - The predicate for which descendants to return
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsWithPath(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ Parameters:
+ * predicate - The predicate for which descendants to return
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelfWithPath(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ The current node is also considered in the comparison
+ Recurses on match
+ Parameters:
+ * name - The names by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelfWithPath(FSharp.Data.HtmlNode,System.String,System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ The current node is also considered in the comparison
+ Parameters:
+ * name - The name by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelfWithPath(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ The current node is also considered in the comparison
+ Recurses on match
+ Parameters:
+ * names - The set of names by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelfWithPath(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ The current node is also considered in the comparison
+ Parameters:
+ * names - The set of names by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelfWithPath(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of the current node
+ The current node is also considered in the comparison
+ Recurses on match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelfWithPath(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean})">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ The current node is also considered in the comparison
+ Recurses on match
+ Parameters:
+ * predicate - The predicate for which descendants to return
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelfWithPath(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ The current node is also considered in the comparison
+ Parameters:
+ * predicate - The predicate for which descendants to return
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelf(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ The current node is also considered in the comparison
+ Recurses on match
+ Parameters:
+ * name - The name by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelf(FSharp.Data.HtmlNode,System.String,System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ The current node is also considered in the comparison
+ Parameters:
+ * name - The name by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelf(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ The current node is also considered in the comparison
+ Recurses on match
+ Parameters:
+ * names - The set of names by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelf(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ The current node is also considered in the comparison
+ Parameters:
+ * names - The set of names by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelf(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of the current node
+ The current node is also considered in the comparison
+ Recurses on match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelf(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean})">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ The current node is also considered in the comparison
+ Recurses on match
+ Parameters:
+ * predicate - The predicate for which descendants to return
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.DescendantsAndSelf(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ The current node is also considered in the comparison
+ Parameters:
+ * predicate - The predicate for which descendants to return
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Descendants(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ Recurses on match
+ Parameters:
+ * name - The name by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Descendants(FSharp.Data.HtmlNode,System.String,System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given name
+ Parameters:
+ * name - The name by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Descendants(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String})">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ Recurses on match
+ Parameters:
+ * names - The set of names by which to map the descendants
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Descendants(FSharp.Data.HtmlNode,System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node, which match the given set of names
+ Parameters:
+ * names - The set of names by which to map the descendants
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Descendants(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of the current node
+ Recurses on match
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Descendants(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean})">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ Recurses on match
+ Parameters:
+ * predicate - The predicate for which descendants to return
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Descendants(FSharp.Data.HtmlNode,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},System.Boolean)">
+<summary>
+ Gets all of the descendants of the current node that satisfy the predicate
+ Parameters:
+ * predicate - The predicate for which descendants to return
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Attributes(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the attributes of this node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.AttributeValue(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Return the value of the named attribute, or an empty string if not found.
+ Parameters:
+ * name - The name of the attribute to get the value from
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeExtensions.Attribute(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Returns the attribute with the given name. If the
+ attribute does not exist then this will throw an exception
+ Parameters:
+ * name - The name of the attribute to select
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlNodeExtensions">
+<summary>
+ Extension methods with operations on HTML nodes
+</summary>
+</member>
+<member name="M:FSharp.Data.Http.RequestString(System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{FSharp.Data.HttpRequestBody},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Net.CookieContainer},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Core.FSharpFunc{System.Net.HttpWebRequest,System.Net.HttpWebRequest}})">
+<summary>
+ Download an HTTP web resource from the specified URL synchronously
+ (allows specifying query string parameters and HTTP headers including
+ headers that have to be handled specially - such as Accept, Content-Type &amp; Referer)
+ The body for POST request can be specified either as text or as a list of parameters
+ that will be encoded, and the method will automatically be set if not specified
+</summary>
+</member>
+<member name="M:FSharp.Data.Http.RequestStream(System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{FSharp.Data.HttpRequestBody},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Net.CookieContainer},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Core.FSharpFunc{System.Net.HttpWebRequest,System.Net.HttpWebRequest}})">
+<summary>
+ Download an HTTP web resource from the specified URL synchronously
+ (allows specifying query string parameters and HTTP headers including
+ headers that have to be handled specially - such as Accept, Content-Type &amp; Referer)
+ The body for POST request can be specified either as text or as a list of parameters
+ that will be encoded, and the method will automatically be set if not specified
+</summary>
+</member>
+<member name="M:FSharp.Data.Http.Request(System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{FSharp.Data.HttpRequestBody},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Net.CookieContainer},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Core.FSharpFunc{System.Net.HttpWebRequest,System.Net.HttpWebRequest}})">
+<summary>
+ Download an HTTP web resource from the specified URL synchronously
+ (allows specifying query string parameters and HTTP headers including
+ headers that have to be handled specially - such as Accept, Content-Type &amp; Referer)
+ The body for POST request can be specified either as text or as a list of parameters
+ that will be encoded, and the method will automatically be set if not specified
+</summary>
+</member>
+<member name="M:FSharp.Data.Http.AsyncRequestString(System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{FSharp.Data.HttpRequestBody},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Net.CookieContainer},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Core.FSharpFunc{System.Net.HttpWebRequest,System.Net.HttpWebRequest}})">
+<summary>
+ Download an HTTP web resource from the specified URL asynchronously
+ (allows specifying query string parameters and HTTP headers including
+ headers that have to be handled specially - such as Accept, Content-Type &amp; Referer)
+ The body for POST request can be specified either as text or as a list of parameters
+ that will be encoded, and the method will automatically be set if not specified
+</summary>
+</member>
+<member name="M:FSharp.Data.Http.AsyncRequestStream(System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{FSharp.Data.HttpRequestBody},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Net.CookieContainer},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Core.FSharpFunc{System.Net.HttpWebRequest,System.Net.HttpWebRequest}})">
+<summary>
+ Download an HTTP web resource from the specified URL synchronously
+ (allows specifying query string parameters and HTTP headers including
+ headers that have to be handled specially - such as Accept, Content-Type &amp; Referer)
+ The body for POST request can be specified either as text or as a list of parameters
+ that will be encoded, and the method will automatically be set if not specified
+</summary>
+</member>
+<member name="M:FSharp.Data.Http.AsyncRequest(System.String,Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{FSharp.Data.HttpRequestBody},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}},Microsoft.FSharp.Core.FSharpOption{System.Net.CookieContainer},Microsoft.FSharp.Core.FSharpOption{System.Boolean},Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{Microsoft.FSharp.Core.FSharpFunc{System.Net.HttpWebRequest,System.Net.HttpWebRequest}})">
+<summary>
+ Download an HTTP web resource from the specified URL asynchronously
+ (allows specifying query string parameters and HTTP headers including
+ headers that have to be handled specially - such as Accept, Content-Type &amp; Referer)
+ The body for POST request can be specified either as text or as a list of parameters
+ that will be encoded, and the method will automatically be set if not specified
+</summary>
+</member>
+<member name="M:FSharp.Data.Http.AppendQueryToUrl(System.String,Microsoft.FSharp.Collections.FSharpList{System.Tuple{System.String,System.String}})">
+<summary>
+ Appends the query parameters to the url, taking care of proper escaping
+</summary>
+</member>
+<member name="T:FSharp.Data.Http">
+<summary>
+ Utilities for working with network via HTTP. Includes methods for downloading 
+ resources with specified headers, query parameters and HTTP body
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpRequestBody">
+<summary>
+ The body to send in an HTTP request
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponse.Headers">
+<summary>
+ If the same header is present multiple times, the values will be concatenated with comma as the separator
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpResponse">
+<summary>
+ The response returned by an HTTP request
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpResponseBody">
+<summary>
+ The response body returned by an HTTP request
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseWithStream.Headers">
+<summary>
+ If the same header is present multiple times, the values will be concatenated with comma as the separator
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpResponseWithStream">
+<summary>
+ The response returned by an HTTP request with direct access to the response stream
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.TryGetProperty(FSharp.Data.JsonValue,System.String)">
+<summary>
+ Try to get a property of a JSON value.
+ Returns None if the value is not an object or if the property is not present.
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.Properties(FSharp.Data.JsonValue)">
+<summary>
+ Get a sequence of key-value pairs representing the properties of an object
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.Item(FSharp.Data.JsonValue,System.Int32)">
+<summary>
+ Try to get the value at the specified index, if the value is a JSON array.
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.Item(FSharp.Data.JsonValue,System.String)">
+<summary>
+ Assuming the value is an object, get value with the specified name
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.InnerText(FSharp.Data.JsonValue)">
+<summary>
+ Get inner text of an element
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.GetProperty(FSharp.Data.JsonValue,System.String)">
+<summary>
+ Get property of a JSON object. Fails if the value is not an object
+ or if the property is not present
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.GetEnumerator(FSharp.Data.JsonValue)">
+<summary>
+ Get all the elements of a JSON value (assuming that the value is an array)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsString(FSharp.Data.JsonValue,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Get the string value of an element (assuming that the value is a scalar)
+ Returns the empty string for JsonValue.Null
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsInteger64(FSharp.Data.JsonValue,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Get a number as a 64-bit integer (assuming that the value fits in 64-bit integer)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsInteger(FSharp.Data.JsonValue,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Get a number as an integer (assuming that the value fits in integer)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsGuid(FSharp.Data.JsonValue)">
+<summary>
+ Get the guid value of an element (assuming that the value is a guid)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsFloat(FSharp.Data.JsonValue,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo},Microsoft.FSharp.Core.FSharpOption{System.String[]})">
+<summary>
+ Get a number as a float (assuming that the value is convertible to a float)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsDecimal(FSharp.Data.JsonValue,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Get a number as a decimal (assuming that the value fits in decimal)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsDateTime(FSharp.Data.JsonValue,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Get the datetime value of an element (assuming that the value is a string
+ containing well-formed ISO date or MSFT JSON date)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsBoolean(FSharp.Data.JsonValue)">
+<summary>
+ Get the boolean value of an element (assuming that the value is a boolean)
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensions.AsArray(FSharp.Data.JsonValue)">
+<summary>
+ Get all the elements of a JSON value.
+ Returns an empty array if the value is not a JSON array.
+</summary>
+</member>
+<member name="T:FSharp.Data.JsonExtensions">
+<summary>
+ Extension methods with operations on JSON values
+</summary>
+</member>
+<member name="F:FSharp.Data.JsonSaveOptions.DisableFormatting">
+<summary>
+ Print the JsonValue in one line in a compact way
+</summary>
+</member>
+<member name="F:FSharp.Data.JsonSaveOptions.None">
+<summary>
+ Format (indent) the JsonValue
+</summary>
+</member>
+<member name="T:FSharp.Data.JsonSaveOptions">
+<summary>
+ Specifies the formatting behaviour of JSON values
+</summary>
+</member>
+<member name="P:FSharp.Data.JsonValue._Print">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.WriteTo(System.IO.TextWriter,FSharp.Data.JsonSaveOptions)">
+<summary>
+ Serializes the JsonValue to the specified System.IO.TextWriter.
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.RequestAsync(System.String,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}})">
+<summary>
+ Sends the JSON to the specified uri. Defaults to a POST request.
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.Request(System.String,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}})">
+<summary>
+ Sends the JSON to the specified uri. Defaults to a POST request.
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.ParseSample(System.String,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Parses the specified JSON string, tolerating invalid errors like trailing commans, and ignore content with elipsis ... or {...}
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.ParseMultiple(System.String,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Parses the specified string into multiple JSON values
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.Parse(System.String,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Parses the specified JSON string
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.Load(System.String,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Loads JSON from the specified uri
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.Load(System.IO.TextReader,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Loads JSON from the specified reader
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.Load(System.IO.Stream,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Loads JSON from the specified stream
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValue.AsyncLoad(System.String,Microsoft.FSharp.Core.FSharpOption{System.Globalization.CultureInfo})">
+<summary>
+ Loads JSON from the specified uri asynchronously
+</summary>
+</member>
+<member name="T:FSharp.Data.JsonValue">
+<summary>
+ Represents a JSON value. Large numbers that do not fit in the
+ Decimal type are represented using the Float case, while
+ smaller numbers are represented as decimals to avoid precision loss.
+</summary>
+</member>
+<member name="T:FSharp.Data.StringExtensions">
+<summary>
+ Extension methods with conversions from strings to other types
+</summary>
+</member>
+<member name="F:FSharp.Data.TextConversions.DefaultCurrencyAdorners@">
+<summary>
+ `¤` `$` `¢` `£` `¥` `₱` `﷼` `₤` `₭` `₦` `₨` `₩` `₮` `€` `฿` `₡` `៛` `؋` `₴` `₪` `₫` `₹` `ƒ`
+</summary>
+</member>
+<member name="F:FSharp.Data.TextConversions.DefaultNonCurrencyAdorners@">
+<summary>
+ `%` `‰` `‱`
+</summary>
+</member>
+<member name="F:FSharp.Data.TextConversions.DefaultMissingValues@">
+<summary>
+ `NaN` `NA` `N/A` `#N/A` `:` `-` `TBA` `TBD`
+</summary>
+</member>
+<member name="P:FSharp.Data.TextConversions.DefaultNonCurrencyAdorners">
+<summary>
+ `%` `‰` `‱`
+</summary>
+</member>
+<member name="P:FSharp.Data.TextConversions.DefaultMissingValues">
+<summary>
+ `NaN` `NA` `N/A` `#N/A` `:` `-` `TBA` `TBD`
+</summary>
+</member>
+<member name="P:FSharp.Data.TextConversions.DefaultCurrencyAdorners">
+<summary>
+ `¤` `$` `¢` `£` `¥` `₱` `﷼` `₤` `₭` `₦` `₨` `₩` `₮` `€` `฿` `₡` `៛` `؋` `₴` `₪` `₫` `₹` `ƒ`
+</summary>
+</member>
+<member name="M:FSharp.Data.TextConversions.AsString(System.String)">
+<summary>
+ Turns empty or null string value into None, otherwise returns Some
+</summary>
+</member>
+<member name="M:FSharp.Data.TextConversions.AsFloat(System.String[],System.Boolean,System.IFormatProvider,System.String)">
+<summary>
+ if useNoneForMissingValues is true, NAs are returned as None, otherwise Some Double.NaN is used
+</summary>
+</member>
+<member name="M:FSharp.Data.TextConversions.AsDateTime(System.IFormatProvider,System.String)">
+<summary>
+ Parse date time using either the JSON milliseconds format or using ISO 8601
+ that is, either `/Date(&lt;msec-since-1/1/1970&gt;)/` or something
+ along the lines of `2013-01-28T00:37Z`
+</summary>
+</member>
+<member name="T:FSharp.Data.TextConversions">
+<summary>
+ Conversions from string to string/int/int64/decimal/float/boolean/datetime/guid options
+</summary>
+</member>
+<member name="M:FSharp.Data.CsvExtensionsModule.op_Dynamic(FSharp.Data.CsvRow,System.String)">
+<summary>
+ Get the value of a column by name from a CSV row
+</summary>
+</member>
+<member name="T:FSharp.Data.CsvExtensionsModule">
+<summary>
+ Provides the dynamic operator for getting column values by name from CSV rows
+</summary>
+</member>
+<member name="M:FSharp.Data.Helpers.asOption``1(System.Boolean,``0)">
+<summary>
+ Convert the result of TryParse to option type
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlAttributeModule.value(FSharp.Data.HtmlAttribute)">
+<summary>
+ Gets the value of the given attribute
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlAttributeModule.name(FSharp.Data.HtmlAttribute)">
+<summary>
+ Gets the name of the given attribute
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlAttributeModule">
+<summary>
+ Module with operations on HTML attributes
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.tryGetBody(FSharp.Data.HtmlDocument)">
+<summary>
+ Tries to find the body element of the given document.
+ Parameters:
+ * x - The given document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.body(FSharp.Data.HtmlDocument)">
+<summary>
+ Finds the body element of the given document,
+ this throws an exception if no body element exists.
+ Parameters:
+ * x - The given document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.descendantsNamedWithPath(System.Boolean,System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlDocument)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given set of names
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * names - The set of names to match
+ * doc - The given document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.descendantsWithPath(System.Boolean,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},FSharp.Data.HtmlDocument)">
+<summary>
+ Gets all of the descendants of this document that statisfy the given predicate
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * predicate - The predicate by which to match the nodes to return
+ * doc - The given document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.descendantsNamed(System.Boolean,System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlDocument)">
+<summary>
+ Finds all of the descendant nodes of this document that match the given set of names
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * names - The set of names to match
+ * doc - The given document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.descendants(System.Boolean,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},FSharp.Data.HtmlDocument)">
+<summary>
+ Gets all of the descendants of this document that statisfy the given predicate
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * predicate - The predicate by which to match the nodes to return
+ * doc - The given document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.elementsNamed(System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlDocument)">
+<summary>
+ Returns all of the root elements of the document that match the set of names
+ Parameters:
+ * names - The set of names to match
+ * doc - The given document
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlDocumentModule.docType(FSharp.Data.HtmlDocument)">
+<summary>
+ Returns the doctype of the document
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlDocumentModule">
+<summary>
+ Module with operations on HTML documents
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlExtensionsModule.op_Dynamic(FSharp.Data.HtmlNode,System.String)">
+<summary>
+ Gets the value of an attribute from an HTML element
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlExtensionsModule">
+<summary>
+ Provides the dynamic operator for getting attribute values from HTML elements
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.innerText(FSharp.Data.HtmlNode)">
+<summary>
+ Returns the inner text of the current node
+ Parameters:
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.hasClass(System.String,FSharp.Data.HtmlNode)">
+<summary>
+ Returns true if the current node has the specified class
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.hasId(System.String,FSharp.Data.HtmlNode)">
+<summary>
+ Returns true if the current node has the specified id
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.hasName(System.String,FSharp.Data.HtmlNode)">
+<summary>
+ Returns true if the current node has the specified name
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.hasAttribute(System.String,System.String,FSharp.Data.HtmlNode)">
+<summary>
+ Returns true if the current node has an attribute that
+ matches both the name and the value
+ Parameters:
+ * name - The name of the attribute
+ * value - The value of the attribute
+ * x - The given html node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.attributeValue(System.String,FSharp.Data.HtmlNode)">
+<summary>
+ Return the value of the named attribute, or an empty string if not found.
+ Parameters:
+ * name - The name of the attribute to get the value from
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.attribute(System.String,FSharp.Data.HtmlNode)">
+<summary>
+ Returns the attribute with the given name. If the
+ attribute does not exist then this will throw an exception
+ Parameters:
+ * name - The name of the attribute to select
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.tryGetAttribute(System.String,FSharp.Data.HtmlNode)">
+<summary>
+ Tries to return an attribute that exists on the current node
+ Parameters:
+ * name - The name of the attribute to return.
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.attributes(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the attributes of this node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendantsAndSelfNamedWithPath(System.Boolean,System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlNode)">
+<summary>
+ Finds all of the descendant nodes of this nodes that match the given set of names
+ The current node is also considered in the comparison
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * names - The set of names to match
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendantsNamedWithPath(System.Boolean,System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlNode)">
+<summary>
+ Finds all of the descendant nodes of this nodes that match the given set of names
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * names - The set of names to match
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendantsAndSelfWithPath(System.Boolean,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of this node that statisfy the given predicate
+ The current node is also considered in the comparison
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * predicate - The predicate by which to match the nodes to return
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendantsWithPath(System.Boolean,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of this node that statisfy the given predicate
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * predicate - The predicate by which to match the nodes to return
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendantsAndSelfNamed(System.Boolean,System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlNode)">
+<summary>
+ Finds all of the descendant nodes of this nodes that match the given set of names
+ The current node is also considered in the comparison
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * names - The set of names to match
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendantsNamed(System.Boolean,System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlNode)">
+<summary>
+ Finds all of the descendant nodes of this nodes that match the given set of names
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * names - The set of names to match
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendantsAndSelf(System.Boolean,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of this node that statisfy the given predicate
+ The current node is also considered in the comparison
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * predicate - The predicate by which to match the nodes to return
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.descendants(System.Boolean,Microsoft.FSharp.Core.FSharpFunc{FSharp.Data.HtmlNode,System.Boolean},FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the descendants of this node that statisfy the given predicate
+ Parameters:
+ * recurseOnMatch - If a match is found continues down the tree matching child elements
+ * predicate - The predicate by which to match the nodes to return
+ * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.elementsNamed(System.Collections.Generic.IEnumerable{System.String},FSharp.Data.HtmlNode)">
+<summary>
+ Finds all of the elements nodes of this node that match the given set of names
+ Parameters:
+  * names - The set of names to match
+  * n - The given node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.elements(FSharp.Data.HtmlNode)">
+<summary>
+ Gets all of the nodes immediately under this node
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlNodeModule.name(FSharp.Data.HtmlNode)">
+<summary>
+ Gets the given nodes name
+</summary>
+</member>
+<member name="T:FSharp.Data.HtmlNodeModule">
+<summary>
+ Module with operations on HTML nodes
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlParser.parseFragment(System.IO.TextReader)">
+<summary>
+ All attribute names and tag names will be normalized to lowercase
+ All html entities will be replaced by the corresponding characters
+ All the consecutive whitespace (except for `&amp;nbsp;`) will be collapsed to a single space
+ All br tags will be replaced by newlines
+</summary>
+</member>
+<member name="M:FSharp.Data.HtmlParser.parseDocument(System.IO.TextReader)">
+<summary>
+ All attribute names and tag names will be normalized to lowercase
+ All html entities will be replaced by the corresponding characters
+ All the consecutive whitespace (except for `&amp;nbsp;`) will be collapsed to a single space
+ All br tags will be replaced by newlines
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Csv">
+<summary>
+ text/csv
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Soap">
+<summary>
+ application/soap+xml
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.XHtml">
+<summary>
+ application/xhtml+xml
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Html">
+<summary>
+ text/html
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Rdf">
+<summary>
+ application/rdf+xml
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Atom">
+<summary>
+ application/atom+xml
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Rss">
+<summary>
+ application/rss+xml
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Xml">
+<summary>
+ application/xml
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.JavaScript">
+<summary>
+ application/javascript
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Json">
+<summary>
+ application/json
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.FormValues">
+<summary>
+ application/x-www-form-urlencoded
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.GZip">
+<summary>
+ application/octet-stream
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Zip">
+<summary>
+ application/octet-stream
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Binary">
+<summary>
+ application/octet-stream
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Text">
+<summary>
+ plain/text
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpContentTypes.Any">
+<summary>
+ */*
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpContentTypes">
+<summary>
+ Constants for common HTTP content types
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpEncodings.ResponseDefaultEncoding">
+<summary>
+ ISO-8859-1
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpEncodings.PostDefaultEncoding">
+<summary>
+ ISO-8859-1
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpEncodings">
+<summary>
+ Constants for common HTTP encodings
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpHelpers.asyncRead(System.IO.Stream)">
+<summary>
+ consumes a stream asynchronously until the end
+ and returns a memory stream with the full content
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Patch">
+<summary>
+ Requests that the origin server applies partial modifications contained in the entity enclosed in the request to the resource identified by the request URI
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Unlock">
+<summary>
+ Removes the lock identified by the lock token from the request URI, and all other resources included in the lock
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Lock">
+<summary>
+ Used to take out a lock of any access type on the resource identified by the request URI.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Move">
+<summary>
+ Logical equivalent of a copy, followed by consistency maintenance processing, followed by a delete of the source where all three actions are performed atomically
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Copy">
+<summary>
+ Creates a duplicate of the source resource, identified by the Request-URI, in the destination resource, identified by the URI in the Destination header
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.MkCol">
+<summary>
+ Creates a new collection resource at the location specified by the Request URI
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.PropPatch">
+<summary>
+ Processes instructions specified in the request body to set and/or remove properties defined on the resource identified by the request URI
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.PropFind">
+<summary>
+ Retrieves properties defined on the resource identified by the request URI
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Connect">
+<summary>
+ Reserved for use with a proxy that can dynamically switch to being a tunnel 
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Trace">
+<summary>
+ Used to invoke a remote, application-layer loop- back of the request message
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Delete">
+<summary>
+ Requests that the origin server deletes the resource identified by the Request-URI
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Put">
+<summary>
+ Requests that the enclosed entity be stored under the supplied Request-URI
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Post">
+<summary>
+ Requests that the server accepts the entity enclosed in the request as a 
+ new subordinate of the resource identified by the Request-URI in the Request-Line
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Head">
+<summary>
+ Identical to GET except that the server MUST NOT return a message-body in the response
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Get">
+<summary>
+ Retrieve whatever information (in the form of an entity) is identified by the URI
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpMethod.Options">
+<summary>
+ Request information about the communication options available on the request/response chain identified by the URI
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpMethod">
+<summary>
+ The method to use in an HTTP request
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.XHTTPMethodOverride(System.String)">
+<summary>
+ Override HTTP method. 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Warning(System.String)">
+<summary>
+ A general warning about possible problems with the entity body
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Via(System.String)">
+<summary>
+ Informs the server of proxies through which the request was sent
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.UserAgent(System.String)">
+<summary>
+ The user agent string of the user agent
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Upgrade(System.String)">
+<summary>
+ Specifies additional communications protocols that the client supports.
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Translate(System.String)">
+<summary>
+ Microsoft extension to the HTTP specification used in conjunction with WebDAV functionality.
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Trailer(System.String)">
+<summary>
+ The Trailer general field value indicates that the given set of header fields is present in the trailer of a message encoded with chunked transfer-coding
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.TE(System.String)">
+<summary>
+ The transfer encodings the user agent is willing to accept: the same values as for the response header 
+ Transfer-Encoding can be used, plus the &quot;trailers&quot; value (related to the &quot;chunked&quot; transfer method) to 
+ notify the server it expects to receive additional headers (the trailers) after the last, zero-sized, chunk.
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Referer(System.String)">
+<summary>
+ This is the address of the previous web page from which a link to the currently requested page was followed. (The word &quot;referrer&quot; is misspelled in the RFC as well as in most implementations.) 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Range(System.Int64,System.Int64)">
+<summary>
+ Request only part of an entity. Bytes are numbered from 0
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.ProxyAuthorization(System.String)">
+<summary>
+ Authorization credentials for connecting to a proxy. 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Pragma(System.String)">
+<summary>
+ Implementation-specific headers that may have various effects anywhere along the request-response chain.
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Origin(System.String)">
+<summary>
+ Initiates a request for cross-origin resource sharing (asks server for an &apos;Access-Control-Allow-Origin&apos; response header)
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.MaxForwards(System.Int32)">
+<summary>
+ Limit the number of times the message can be forwarded through proxies or gateways
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.LastModified(System.DateTime)">
+<summary>
+ Specifies the date and time at which the accompanying body data was last modified
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.KeepAlive(System.String)">
+<summary>
+ Specifies a parameter used into order to maintain a persistent connection
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.IfUnmodifiedSince(System.DateTime)">
+<summary>
+ Only send the response if the entity has not been modified since a specific time
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.IfRange(System.String)">
+<summary>
+ If the entity is unchanged, send me the part(s) that I am missing; otherwise, send me the entire new entity
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.IfNoneMatch(System.String)">
+<summary>
+ Allows a 304 Not Modified to be returned if content is unchanged
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.IfModifiedSince(System.DateTime)">
+<summary>
+ Allows a 304 Not Modified to be returned if content is unchanged 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.IfMatch(System.String)">
+<summary>
+ Only perform the action if the client supplied entity matches the same entity on the server. 
+ This is mainly for methods like PUT to only update a resource if it has not been modified since the user last updated it. If-Match: &quot;737060cd8c284d8af7ad3082f209582d&quot; Permanent 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Host(System.String)">
+<summary>
+ The domain name of the server (for virtual hosting), and the TCP port number on which the server is listening. 
+ The port number may be omitted if the port is the standard port for the service requested.
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.From(System.String)">
+<summary>
+ The email address of the user making the request 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Expires(System.DateTime)">
+<summary>
+ Gives the date/time after which the response is considered stale
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Expect(System.String)">
+<summary>
+ Indicates that particular server behaviors are required by the client
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Date(System.DateTime)">
+<summary>
+ The date and time that the message was sent
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.ContentType(System.String)">
+<summary>
+ The MIME type of the body of the request (used with POST and PUT requests)
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.ContentRange(System.String)">
+<summary>
+ Where in a full body message this partial message belongs
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.ContentMD5(System.String)">
+<summary>
+ A Base64-encoded binary MD5 sum of the content of the request body
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.ContentLocation(System.String)">
+<summary>
+ An alternate location for the returned data
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.ContentLanguage(System.String)">
+<summary>
+ The language the content is in
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.ContentEncoding(System.String)">
+<summary>
+ The type of encoding used on the data
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Connection(System.String)">
+<summary>
+ What type of connection the user-agent would prefer 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.CacheControl(System.String)">
+<summary>
+ Used to specify directives that MUST be obeyed by all caching mechanisms along the request/response chain 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.BasicAuth(System.String,System.String)">
+<summary>
+ Authentication header using Basic Auth encoding
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Authorization(System.String)">
+<summary>
+ Authentication credentials for HTTP authentication
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Allow(System.String)">
+<summary>
+ The Allow header, which specifies the set of HTTP methods supported.
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.AcceptLanguage(System.String)">
+<summary>
+ List of acceptable human languages for response 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.AcceptEncoding(System.String)">
+<summary>
+ List of acceptable encodings. See HTTP compression.
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.AcceptDatetime(System.DateTime)">
+<summary>
+ Acceptable version in time 
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.AcceptCharset(System.String)">
+<summary>
+ Character sets that are acceptable
+</summary>
+</member>
+<member name="M:FSharp.Data.HttpRequestHeaders.Accept(System.String)">
+<summary>
+ Content-Types that are acceptable for the response
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpRequestHeaders">
+<summary>
+ Headers that can be sent in an HTTP request
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.WWWAuthenticate">
+<summary>
+ Indicates the authentication scheme that should be used to access the requested entity.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Warning">
+<summary>
+ A general warning about possible problems with the entity body.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Via">
+<summary>
+ Informs the client of proxies through which the response was sent. 
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Vary">
+<summary>
+ Tells downstream proxies how to match future request headers to decide whether the cached response can be used rather than requesting a fresh one from the origin server.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.TransferEncoding">
+<summary>
+ The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Trailer">
+<summary>
+ The Trailer general field value indicates that the given set of header fields is present in the trailer of a message encoded with chunked transfer-coding.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.StrictTransportSecurity">
+<summary>
+ A HSTS Policy informing the HTTP client how long to cache the HTTPS only policy and whether this applies to subdomains.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Status">
+<summary>
+ The HTTP status of the response
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.SetCookie">
+<summary>
+ An HTTP cookie
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Server">
+<summary>
+ A name for the server
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.RetryAfter">
+<summary>
+ If an entity is temporarily unavailable, this instructs the client to try again later. Value could be a specified period of time (in seconds) or a HTTP-date.[28]
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Refresh">
+<summary>
+ Used in redirection, or when a new resource has been created. This refresh redirects after 5 seconds.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ProxyAuthenticate">
+<summary>
+ Request authentication to access the proxy.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Pragma">
+<summary>
+ Implementation-specific headers that may have various effects anywhere along the request-response chain.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.P3P">
+<summary>
+ This header is supposed to set P3P policy
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Location">
+<summary>
+ Used in redirection, or when a new resource has been created.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Link">
+<summary>
+ Used to express a typed relationship with another resource, where the relation type is defined by RFC 5988
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.LastModified">
+<summary>
+ The last modified date for the requested object 
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Expires">
+<summary>
+ Gives the date/time after which the response is considered stale
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ETag">
+<summary>
+ An identifier for a specific version of a resource, often a message digest
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Date">
+<summary>
+ The date and time that the message was sent (in &quot;HTTP-date&quot; format as defined by RFC 2616)
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentType">
+<summary>
+ The MIME type of this content
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentRange">
+<summary>
+ Where in a full body message this partial message belongs
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentDisposition">
+<summary>
+ An opportunity to raise a &quot;File Download&quot; dialogue box for a known MIME type with binary format or suggest a filename for dynamic content. Quotes are necessary with special characters.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentMD5">
+<summary>
+ A Base64-encoded binary MD5 sum of the content of the response
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentLocation">
+<summary>
+ An alternate location for the returned data
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentLength">
+<summary>
+ The length of the response body in octets (8-bit bytes)
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentLanguage">
+<summary>
+ The language the content is in
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.ContentEncoding">
+<summary>
+ The type of encoding used on the data. See HTTP compression.
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Connection">
+<summary>
+ Options that are desired for the connection
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.CacheControl">
+<summary>
+ Tells all caching mechanisms from server to client whether they may cache this object. It is measured in seconds
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Allow">
+<summary>
+ Valid actions for a specified resource. To be used for a 405 Method not allowed
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.Age">
+<summary>
+ The age the object has been in a proxy cache in seconds
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.AcceptRanges">
+<summary>
+ What partial content range types this server supports
+</summary>
+</member>
+<member name="P:FSharp.Data.HttpResponseHeaders.AccessControlAllowOrigin">
+<summary>
+ Specifying which web sites can participate in cross-origin resource sharing
+</summary>
+</member>
+<member name="T:FSharp.Data.HttpResponseHeaders">
+<summary>
+ Headers that can be received in an HTTP response
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonExtensionsModule.op_Dynamic(FSharp.Data.JsonValue,System.String)">
+<summary>
+ Get a property of a JSON object  
+</summary>
+</member>
+<member name="T:FSharp.Data.JsonExtensionsModule">
+<summary>
+ Provides the dynamic operator for getting a property of a JSON object
+</summary>
+</member>
+<member name="P:FSharp.Data.JsonValueModule.Object">
+<summary>
+ Constructor to create a `JsonValue.Record of (string * JsonValue)[]` as a `JsonValue.Object of Map&lt;string, JsonValue&gt;` for
+ backwards compatibility reaons
+</summary>
+</member>
+<member name="M:FSharp.Data.JsonValueModule.|Object|_|(FSharp.Data.JsonValue)">
+<summary>
+ Active Pattern to view a `JsonValue.Record of (string * JsonValue)[]` as a `JsonValue.Object of Map&lt;string, JsonValue&gt;` for
+ backwards compatibility reaons
+</summary>
+</member>
+<member name="T:FSharp.Data.JsonValueModule">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.CsvFile`1.Separators">
+<summary>
+ The character(s) used as column separator(s)
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.CsvFile`1.Rows">
+<summary>
+ The rows with data
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.CsvFile`1.Quote">
+<summary>
+ The quotation mark use for surrounding values containing separator chars
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.CsvFile`1.NumberOfColumns">
+<summary>
+ The number of columns
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.CsvFile`1.Headers">
+<summary>
+ The names of the columns
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Truncate(System.Int32)">
+<summary>
+ Returns a csv that when enumerated returns at most N rows.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.TakeWhile(System.Func{`0,System.Boolean})">
+<summary>
+ Returns a csv that, when iterated, yields rowswhile the given predicate
+ returns &lt;c&gt;true&lt;/c&gt;, and then returns no further rows.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Take(System.Int32)">
+<summary>
+ Returns a new csv with only the first N rows of the underlying csv.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.SkipWhile(System.Func{`0,System.Boolean})">
+<summary>
+ Returns a csv that, when iterated, skips rows while the given predicate returns
+ &lt;c&gt;true&lt;/c&gt;, and then yields the remaining rows.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Skip(System.Int32)">
+<summary>
+ Returns a csv that skips N rows and then yields the remaining rows.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.SaveToString(Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Char})">
+<summary>
+ Saves CSV to a string
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Save(System.String,Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Char})">
+<summary>
+ Saves CSV to the specified file
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Save(System.IO.Stream,Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Char})">
+<summary>
+ Saves CSV to the specified stream
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Save(System.IO.TextWriter,Microsoft.FSharp.Core.FSharpOption{System.Char},Microsoft.FSharp.Core.FSharpOption{System.Char})">
+<summary>
+ Saves CSV to the specified writer
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.ParseRows(System.String,System.Func{System.Object,System.String[],`0},System.String,System.Char,System.Boolean)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Map(System.Func{`0,`0})">
+<summary>
+ Returns a new csv where every row has been transformed by the provided mapping function.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Filter(System.Func{`0,System.Boolean})">
+<summary>
+ Returns a new csv containing only the rows for which the given predicate returns &quot;true&quot;.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.CreateEmpty(System.Func{`0,System.String[]},System.Collections.Generic.IEnumerable{`0},Microsoft.FSharp.Core.FSharpOption{System.String[]},System.Int32,System.String,System.Char)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Create(System.Func{System.Object,System.String[],`0},System.Func{`0,System.String[]},System.IO.TextReader,System.String,System.Char,System.Boolean,System.Boolean,System.Int32,System.Boolean)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Cache">
+<summary>
+ Returns a new csv with the same rows as the original but which guarantees
+ that each row will be only be read and parsed from the input at most once.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.Append(System.Collections.Generic.IEnumerable{`0})">
+<summary>
+ Returns a csv with the same rows as the original plus the provided rows appended
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvFile`1.#ctor(System.Func{System.Object,System.String[],`0},System.Func{`0,System.String[]},System.Func{System.IO.TextReader},System.String,System.Char,System.Boolean,System.Boolean,System.Int32)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.CsvFile`1">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.HtmlDefinitionList">
+<summary>
+ Representation of an HTML definition list
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.HtmlList">
+<summary>
+ Representation of an HTML list
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.HtmlObject">
+<summary>
+ Representation of an HTML table, list, or definition list
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.HtmlTable">
+<summary>
+ Representation of an HTML table cell
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.HtmlTableCell">
+<summary>
+ Representation of an HTML table cell
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.JsonConversions">
+<summary>
+ Conversions from JsonValue to string/int/int64/decimal/float/boolean/datetime/guid options
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.TryGetValueByTypeTag``1(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String,System.String,System.Func{FSharp.Data.Runtime.BaseTypes.IJsonDocument,``0})">
+<summary>
+ Returns a single or no value by tag type
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.TryGetPropertyUnpackedWithPath(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String)">
+<summary>
+ Get optional json property and wrap it together with path
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.TryGetPropertyUnpacked(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String)">
+<summary>
+ Get optional json property
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.TryGetPropertyPacked(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String)">
+<summary>
+ Get optional json property wrapped in json document
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.TryGetArrayChildByTypeTag``1(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String,System.String,System.Func{FSharp.Data.Runtime.BaseTypes.IJsonDocument,``0})">
+<summary>
+ Returns single or no value from an array matching the specified tag
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.GetPropertyPackedOrNull(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String)">
+<summary>
+ Get json property and wrap in json document, and return null if not found
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.GetPropertyPacked(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String)">
+<summary>
+ Get json property and wrap in json document
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.GetNonOptionalValue``1(System.String,Microsoft.FSharp.Core.FSharpOption{``0},Microsoft.FSharp.Core.FSharpOption{FSharp.Data.JsonValue})">
+<summary>
+ Operation that extracts the value from an option and reports a meaningful error message when the value is not there
+ If the originalValue is a scalar, for missing strings we return &quot;&quot;, and for missing doubles we return NaN
+ For other types an error is thrown
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.GetArrayChildrenByTypeTag``1(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String,System.String,System.Func{FSharp.Data.Runtime.BaseTypes.IJsonDocument,``0})">
+<summary>
+ Returns all array values that match the specified tag
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.GetArrayChildByTypeTag(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String,System.String)">
+<summary>
+ Returns a single array children that matches the specified tag
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.CreateValue(System.Object,System.String)">
+<summary>
+ Creates a scalar JsonValue and wraps it in a json document
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.CreateArray(System.Object[],System.String)">
+<summary>
+ Creates a scalar JsonValue.Array and wraps it in a json document
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.ConvertOptionalProperty``1(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.String,System.Func{FSharp.Data.Runtime.BaseTypes.IJsonDocument,``0})">
+<summary>
+ Get optional json property and convert to a specified type
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.JsonRuntime.ConvertArray``1(FSharp.Data.Runtime.BaseTypes.IJsonDocument,System.Func{FSharp.Data.Runtime.BaseTypes.IJsonDocument,``0})">
+<summary>
+ Converts JSON array to array of target types
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.JsonRuntime">
+<summary>
+ Static helper methods called from the generated code for working with JSON
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.JsonValueOptionAndPath">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.TextRuntime.OptionToNullable``1(Microsoft.FSharp.Core.FSharpOption{``0})">
+<summary>
+ Turn an F# option type Option&lt;&apos;T&gt; containing a primitive 
+ value type into a .NET type Nullable&lt;&apos;T&gt;
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.TextRuntime.NullableToOption``1(System.Nullable{``0})">
+<summary>
+ Turn a .NET type Nullable&lt;&apos;T&gt; to an F# option type Option&lt;&apos;T&gt;
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.TextRuntime.GetNonOptionalValue``1(System.String,Microsoft.FSharp.Core.FSharpOption{``0},Microsoft.FSharp.Core.FSharpOption{System.String})">
+<summary>
+ Operation that extracts the value from an option and reports a meaningful error message when the value is not there
+ For missing strings we return &quot;&quot;, and for missing doubles we return NaN
+ For other types an error is thrown
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.TextRuntime.GetCulture(System.String)">
+<summary>
+ Returns CultureInfo matching the specified culture string
+ (or InvariantCulture if the argument is null or empty)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.TextRuntime.AsyncMap``2(Microsoft.FSharp.Control.FSharpAsync{``0},System.Func{``0,``1})">
+<summary>
+ Turn a sync operation into an async operation
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.TextRuntime">
+<summary>
+ Static helper methods called from the generated code for working with text
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.XmlRuntime.TryGetJsonValue(FSharp.Data.Runtime.BaseTypes.XmlElement,System.String)">
+<summary>
+ Tries to return the contents of the element as a JsonValue
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.XmlRuntime.GetJsonValue(FSharp.Data.Runtime.BaseTypes.XmlElement,System.String)">
+<summary>
+ Returns the contents of the element as a JsonValue
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.XmlRuntime.CreateValue(System.String,System.Object,System.String)">
+<summary>
+ Creates a XElement with a scalar value and wraps it in a XmlElement
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.XmlRuntime.ConvertAsName``1(FSharp.Data.Runtime.BaseTypes.XmlElement,System.String,System.Func{FSharp.Data.Runtime.BaseTypes.XmlElement,``0})">
+<summary>
+ Returns Some if the specified XmlElement has the specified name
+ (otherwise None is returned). This is used when the current element
+ can be one of multiple elements.
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.XmlRuntime">
+<summary>
+ Static helper methods called from the generated code for working with XML
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.HtmlDocument.GetTable(System.String)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.HtmlDocument.GetList(System.String)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.HtmlDocument.GetDefinitionList(System.String)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.HtmlDocument.Create(System.Boolean,System.IO.TextReader)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.BaseTypes.HtmlDocument">
+<summary>
+ Underlying representation of the root types generated by HtmlProvider
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.BaseTypes.HtmlList`1">
+<summary>
+ Underlying representation of list types generated by HtmlProvider
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.HtmlTable`1.Create(System.Func{System.String[],`0},FSharp.Data.Runtime.BaseTypes.HtmlDocument,System.String,System.Boolean)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.BaseTypes.HtmlTable`1">
+<summary>
+ Underlying representation of table types generated by HtmlProvider
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.BaseTypes.IJsonDocument">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.BaseTypes.JsonDocument.Path">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.BaseTypes.JsonDocument.Json">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.BaseTypes.JsonDocument.JsonValue">
+<summary>
+ The underlying JsonValue
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.JsonDocument.ToString">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.JsonDocument.CreateList(System.IO.TextReader,System.String)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.JsonDocument.Create(System.IO.TextReader,System.String)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.JsonDocument.Create(FSharp.Data.JsonValue,System.String)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.BaseTypes.JsonDocument">
+<summary>
+ Underlying representation of types generated by JsonProvider
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.BaseTypes.XmlElement._Print">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.XmlElement.ToString">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.XmlElement.CreateList(System.IO.TextReader)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.XmlElement.Create(System.IO.TextReader)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.BaseTypes.XmlElement.Create(System.Xml.Linq.XElement)">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.BaseTypes.XmlElement">
+<summary>
+ Underlying representation of types generated by XmlProvider
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.Caching.ICache`1">
+<summary>
+ Represents a cache (various implementations are available)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.Caching.createInternetFileCache(System.String,System.TimeSpan)">
+<summary>
+ Creates a cache that stores data in a local file system
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.Caching.hashString(System.String)">
+<summary>
+ Get hash code of a string - used to determine cache file
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.Caching.createInMemoryCache``1(System.TimeSpan)">
+<summary>
+ Creates a cache that uses in-memory collection
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.Caching.createNonCachingCache``1">
+<summary>
+ Creates a fake cache
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.Caching">
+<summary>
+ Implements caching using in-memory and local file system 
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.CsvHelpers.ReentrantEnumerable`1">
+<summary>
+ An enumerable that will return elements from the &apos;firstSeq&apos; first time it
+ is accessed and then will call &apos;nextSeq&apos; each time for all future GetEnumerator calls
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvInference.CsvFile.InferColumnTypes(FSharp.Data.CsvFile,System.Int32,System.String[],System.Globalization.CultureInfo,System.String,System.Boolean,System.Boolean,Microsoft.FSharp.Core.FSharpOption{FSharp.Data.Runtime.StructuralInference.IUnitsOfMeasureProvider})">
+<summary>
+ Infers the types of the columns of a CSV file
+ Parameters:
+ * inferRows - Number of rows to use for inference. If this is zero, all rows are used
+ * missingValues - The set of strings recogized as missing values
+ * cultureInfo - The culture used for parsing numbers and dates
+ * schema - Optional column types, in a comma separated list. Valid types are &quot;int&quot;, &quot;int64&quot;, &quot;bool&quot;, &quot;float&quot;, &quot;decimal&quot;, &quot;date&quot;, &quot;guid&quot;, &quot;string&quot;, &quot;int?&quot;, &quot;int64?&quot;, &quot;bool?&quot;, &quot;float?&quot;, &quot;decimal?&quot;, &quot;date?&quot;, &quot;guid?&quot;, &quot;int option&quot;, &quot;int64 option&quot;, &quot;bool option&quot;, &quot;float option&quot;, &quot;decimal option&quot;, &quot;date option&quot;, &quot;guid option&quot; and &quot;string option&quot;. You can also specify a unit and the name of the column like this: Name (type&amp;lt;unit&amp;gt;). You can also override only the name. If you don&apos;t want to specify all the columns, you can specify by name like this: &apos;ColumnName=type&apos;
+ * assumeMissingValues - Assumes all columns can have missing values
+ * preferOptionals - when set to true, inference will prefer to use the option type instead of nullable types, double.NaN or &quot;&quot; for missing values
+ * unitsOfMeasureProvider - optional function to resolve Units of Measure
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvInference.getFields(System.Boolean,FSharp.Data.Runtime.StructuralTypes.InferedType,Microsoft.FSharp.Core.FSharpOption{FSharp.Data.Runtime.StructuralTypes.PrimitiveInferedProperty}[])">
+<summary>
+ Generates the fields for a CSV row. The CSV provider should be
+ numerical-friendly, so we do a few simple adjustments.
+ When preferOptionals is false:
+  
+  - Optional fields of type &apos;int&apos; are generated as Nullable&lt;int&gt;
+  - Optional fields of type &apos;int64&apos; are generated as Nullable&lt;int64&gt;
+  - Optional fields of type &apos;float&apos; are just floats (and null becomes NaN)
+  - Optional fields of type &apos;decimal&apos; are generated as floats too
+  - Optional fields of any other non-nullable T (bool/date/guid) become option&lt;T&gt;
+  - All other types are simply strings.
+
+ When preferOptionals is true:
+  
+  - All optional fields of type &apos;T&apos; for any type become option&lt;T&gt;, including strings and floats
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvInference.inferType``1(System.Tuple{System.String,Microsoft.FSharp.Core.FSharpOption{System.Type}}[],Microsoft.FSharp.Core.FSharpOption{``0}[],System.Collections.Generic.IEnumerable{System.String[]},System.Int32,System.String[],System.Globalization.CultureInfo,System.Boolean,System.Boolean)">
+<summary>
+ Infers the type of a CSV file using the specified number of rows
+ (This handles units in the same way as the original MiniCSV provider)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvInference.parseSchemaItem(FSharp.Data.Runtime.StructuralInference.IUnitsOfMeasureProvider,System.String,System.Boolean)">
+<summary>
+ Parse schema specification for column. This can either be a name
+ with type or just type: name (typeInfo)|typeInfo.
+ If forSchemaOverride is set to true, only Full or Name is returne
+ (if we succeed we override the inferred schema, otherwise, we just
+ override the header name)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvInference.parseTypeAndUnit(FSharp.Data.Runtime.StructuralInference.IUnitsOfMeasureProvider,System.String)">
+<summary>
+ Parses type specification in the schema for a single column. 
+ This can be of the form: type|measure|type&lt;measure&gt;
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.CsvInference.nameToType">
+<summary>
+ The schema may be set explicitly. This table specifies the mapping
+ from the names that users can use to the types used.
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.CsvInference">
+<summary>
+ Structural inference for CSV
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.CsvReader.readCsvFile(System.IO.TextReader,System.String,System.Char)">
+<summary>
+ Lazily reads the specified CSV file using the specified separators
+ (Handles most of the RFC 4180 - most notably quoted values and also
+ quoted newline characters in columns)
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.HtmlInference">
+<summary>
+ Structural inference for HTML tables
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.HtmlRuntime">
+<summary>
+ Helper functions called from the generated code for working with HTML tables
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.IO.UriResolver.Resolve(System.Uri)">
+<summary>
+ Resolve the absolute location of a file (or web URL) according to the rules
+ used by standard F# type providers as described here:
+ https://github.com/fsharp/fsharpx/issues/195#issuecomment-12141785
+
+  * if it is web resource, just return it
+  * if it is full path, just return it
+  * otherwise.
+
+    At design-time:
+      * if the user specified resolution folder, use that
+      * otherwise use the default resolution folder
+    At run-time:
+      * if the user specified resolution folder, use that
+      * if it is running in F# interactive (config.IsHostedExecution) 
+        use the default resolution folder
+      * otherwise, use &apos;CurrentDomain.BaseDirectory&apos;
+ returns an absolute uri * isWeb flag
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.IO.asyncReadTextAtRuntimeWithDesignTimeRules(System.String,System.String,System.String,System.String,System.String)">
+<summary>
+ Returns a TextReader for the uri using the designtime resolution rules
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.IO.asyncReadTextAtRuntime(System.Boolean,System.String,System.String,System.String,System.String,System.String)">
+<summary>
+ Returns a TextReader for the uri using the runtime resolution rules
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.IO.asyncRead(Microsoft.FSharp.Core.FSharpOption{System.Tuple{FSharp.Data.Runtime.IO.IDisposableTypeProvider,System.String}},FSharp.Data.Runtime.IO.UriResolver,System.String,System.String,System.Uri)">
+<summary>
+ Opens a stream to the uri using the uriResolver resolution rules
+ It the uri is a file, uses shared read, so it works when the file locked by Excel or similar tools,
+ and sets up a filesystem watcher that calls the invalidate function whenever the file changes
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.IO">
+<summary>
+ Helper functions called from the generated code for working with files
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.NameUtils.singularize(System.String)">
+<summary>
+ Return the singular of an English word
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.NameUtils.pluralize(System.String)">
+<summary>
+ Return the plural of an English word
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.NameUtils.trimHtml(System.String)">
+<summary>
+ Trim HTML tags from a given string and replace all of them with spaces
+ Multiple tags are replaced with just a single space. (This is a recursive 
+ implementation that is somewhat faster than regular expression.)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.NameUtils.uniqueGenerator``1(Microsoft.FSharp.Core.FSharpFunc{``0,System.String})">
+<summary>
+ Given a function to format names (such as `niceCamelName` or `nicePascalName`)
+ returns a name generator that never returns duplicate name (by appending an
+ index to already used names)
+ 
+ This function is curried and should be used with partial function application:
+
+     let makeUnique = uniqueGenerator nicePascalName
+     let n1 = makeUnique &quot;sample-name&quot;
+     let n2 = makeUnique &quot;sample-name&quot;
+
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.NameUtils.niceCamelName(System.String)">
+<summary>
+ Turns a given non-empty string into a nice &apos;camelCase&apos; identifier
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.NameUtils.nicePascalName(System.String)">
+<summary>
+ Turns a given non-empty string into a nice &apos;PascalCase&apos; identifier
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.NameUtils">
+<summary>
+ Tools for generating nice member names that follow F# &amp; .NET naming conventions
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.getInferedTypeFromString(System.Globalization.CultureInfo,System.String,Microsoft.FSharp.Core.FSharpOption{System.Type})">
+<summary>
+ Infers the type of a simple string value
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.inferPrimitiveType(System.Globalization.CultureInfo,System.String)">
+<summary>
+ Infers the type of a simple string value
+ Returns one of null|typeof&lt;Bit0&gt;|typeof&lt;Bit1&gt;|typeof&lt;bool&gt;|typeof&lt;int&gt;|typeof&lt;int64&gt;|typeof&lt;decimal&gt;|typeof&lt;float&gt;|typeof&lt;Guid&gt;|typeof&lt;DateTime&gt;|typeof&lt;string&gt;
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.inferCollectionType(System.Boolean,System.Collections.Generic.IEnumerable{FSharp.Data.Runtime.StructuralTypes.InferedType})">
+<summary>
+ Infer the type of the collection based on multiple sample types
+ (group the types by tag, count their multiplicity)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.unionRecordTypes(System.Boolean,Microsoft.FSharp.Collections.FSharpList{FSharp.Data.Runtime.StructuralTypes.InferedProperty},Microsoft.FSharp.Collections.FSharpList{FSharp.Data.Runtime.StructuralTypes.InferedProperty})">
+<summary>
+ Get the union of record types (merge their properties)
+ This matches the corresponding members and marks them as `Optional`
+ if one may be missing. It also returns subtype of their types.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.unionCollectionTypes(System.Boolean,Microsoft.FSharp.Collections.FSharpMap{FSharp.Data.Runtime.StructuralTypes.InferedTypeTag,System.Tuple{FSharp.Data.Runtime.StructuralTypes.InferedMultiplicity,FSharp.Data.Runtime.StructuralTypes.InferedType}},Microsoft.FSharp.Collections.FSharpMap{FSharp.Data.Runtime.StructuralTypes.InferedTypeTag,System.Tuple{FSharp.Data.Runtime.StructuralTypes.InferedMultiplicity,FSharp.Data.Runtime.StructuralTypes.InferedType}})">
+<summary>
+ A collection can contain multiple types - in that case, we do keep 
+ the multiplicity for each different type tag to generate better types
+ (this is essentially the same as `unionHeterogeneousTypes`, but 
+ it also handles the multiplicity)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.unionHeterogeneousTypes(System.Boolean,Microsoft.FSharp.Collections.FSharpMap{FSharp.Data.Runtime.StructuralTypes.InferedTypeTag,FSharp.Data.Runtime.StructuralTypes.InferedType},Microsoft.FSharp.Collections.FSharpMap{FSharp.Data.Runtime.StructuralTypes.InferedTypeTag,FSharp.Data.Runtime.StructuralTypes.InferedType})">
+<summary>
+ Given two heterogeneous types, get a single type that can represent all the
+ types that the two heterogeneous types can.
+ Heterogeneous types already handle optionality on their own, so we drop
+ optionality from all its inner types
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.subtypeInfered(System.Boolean,FSharp.Data.Runtime.StructuralTypes.InferedType,FSharp.Data.Runtime.StructuralTypes.InferedType)">
+<summary>
+ Find common subtype of two infered types:
+ 
+  * If the types are both primitive, then we find common subtype of the primitive types
+  * If the types are both records, then we union their fields (and mark some as optional)
+  * If the types are both collections, then we take subtype of their elements
+    (note we do not generate heterogeneous types in this case!)
+  * If one type is the Top type, then we return the other without checking
+  * If one of the types is the Null type and the other is not a value type
+    (numbers or booleans, but not string) then we return the other type.
+    Otherwise, we return bottom.
+
+ The contract that should hold about the function is that given two types with the
+ same `InferedTypeTag`, the result also has the same `InferedTypeTag`. 
+
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.|SubtypePrimitives|_|(System.Boolean,FSharp.Data.Runtime.StructuralTypes.InferedType,FSharp.Data.Runtime.StructuralTypes.InferedType)">
+<summary>
+ Active pattern that calls `subtypePrimitives` on two primitive types
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.StructuralInference.conversionTable">
+<summary>
+ Find common subtype of two primitive types or `Bottom` if there is no such type.
+ The numeric types are ordered as below, other types are not related in any way.
+
+   float :&gt; decimal :&gt; int64 :&gt; int :&gt; bit :&gt; bit0
+   float :&gt; decimal :&gt; int64 :&gt; int :&gt; bit :&gt; bit1
+   bool :&gt; bit :&gt; bit0
+   bool :&gt; bit :&gt; bit1
+
+ This means that e.g. `int` is a subtype of `decimal` and so all `int` values
+ are also `decimal` (and `float`) values, but not the other way round.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.typeTag(FSharp.Data.Runtime.StructuralTypes.InferedType)">
+<summary>
+ Returns a tag of a type - a tag represents a &apos;kind&apos; of type 
+ (essentially it describes the different bottom types we have)
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.supportsUnitsOfMeasure(System.Type)">
+<summary>
+ Checks whether a type supports unit of measure
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.StructuralInference.primitiveTypes">
+<summary>
+ List of primitive types that can be returned as a result of the inference
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralInference.List.pairBy``2(Microsoft.FSharp.Core.FSharpFunc{``0,``1},System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
+<summary>
+ Merge two sequences by pairing elements for which
+ the specified predicate returns the same key
+
+ (If the inputs contain the same keys, then the order
+ of the elements is preserved.)
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralInference.List">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralInference">
+<summary>
+ Implements type inference for unstructured documents like XML or JSON
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.TypeWrapper.Nullable">
+<summary>
+ The type T will be converter to type Nullable&lt;T&gt;
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.TypeWrapper.Option">
+<summary>
+ The type T will be converter to type T option
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.TypeWrapper.None">
+<summary>
+ No transformation will be made to the type
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.TypeWrapper">
+<summary>
+ Represents a transformation of a type
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.PrimitiveInferedProperty">
+<summary>
+ Represents type information about a primitive property (used mainly in the CSV provider)
+ This type captures the type, unit of measure and handling of missing values (if we
+ infer that the value may be missing, we can generate option&lt;T&gt; or nullable&lt;T&gt;)
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.Bit">
+<summary>
+ Dummy type to represent that only one of &quot;0&quot; and &quot;1&quot; were found
+ Will be generated as a &apos;bool&apos;, unless it&apos;s converted to another numerical type
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.Bit1">
+<summary>
+ Dummy type to represent that only &quot;1&quot; was found
+ Will be generated as &apos;int&apos;, unless it&apos;s converted to Bit
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.Bit0">
+<summary>
+ Dummy type to represent that only &quot;0&quot; was found.
+ Will be generated as &apos;int&apos;, unless it&apos;s converted to Bit.
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralTypes.InferedType.EnsuresHandlesMissingValues(System.Boolean)">
+<summary>
+ When allowEmptyValues is true, we allow &quot;&quot; and double.NaN, otherwise
+ we make the type optional and use None instead.
+ It&apos;s currently only true in CsvProvider when PreferOptionals is set to false
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.InferedType">
+<summary>
+ Represents inferred structural type. A type may be either primitive type
+ (one of those listed by `primitiveTypes`) or it can be collection, 
+ (named) record and heterogeneous type. We also have `Null` type (which is
+ a subtype of all non-primitive types) and universal `Top` type.
+
+  * For collection, we infer the types of different things that appear in 
+    the collection and how many times they do.
+
+  * A heterogeneous type (sum type) is simply a choice containing one
+    of multiple different possibilities
+
+ Why is collection not simply a list of Heterogeneous types? If we used that
+ we would lose information about multiplicity and so we would not be able
+ to generate nicer types!
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.StructuralTypes.InferedTypeTag.Code">
+<summary>
+ Converts tag to string code that can be passed to generated code
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.StructuralTypes.InferedTypeTag.ParseCode(System.String)">
+<summary>
+ Parses code returned by &apos;Code&apos; member (to be used in provided code)
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.InferedTypeTag">
+<summary>
+ For heterogeneous types, this represents the tag that defines the form
+ (that is either primitive type, collection, named record etc.)
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.InferedMultiplicity">
+<summary>
+ For heterogeneous types (types that have multiple possible forms
+ such as differently named XML nodes or records and arrays mixed together)
+ this type represents the number of occurrences of individual forms
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.StructuralTypes.InferedProperty">
+<summary>
+ A property of a record has a name and type and may be optional
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.WorldBankData">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.IWorldBankData">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.TopicCollection`1">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.ITopicCollection">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Topic.Name">
+<summary>
+ Get the name of the topic 
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Topic.Description">
+<summary>
+ Get the description of the topic 
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Topic.Code">
+<summary>
+ Get the WorldBank code of the topic
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.Topic">
+<summary>
+ Metadata for a Topic
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.ITopic">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.RegionCollection`1">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.IRegionCollection">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Region.RegionCode">
+<summary>
+ Get the WorldBank code for the region
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Region.Name">
+<summary>
+ Get the name of the region
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.Region">
+<summary>
+ Metadata for a Region
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.IRegion">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.CountryCollection`1">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.ICountryCollection">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Country.Region">
+<summary>
+ Get the region of the country 
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Country.Name">
+<summary>
+ Get the name of the country 
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Country.Code">
+<summary>
+ Get the WorldBank code of the country
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Country.CapitalCity">
+<summary>
+ Get the capital city of the country 
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.Country">
+<summary>
+ Metadata for a Country
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.ICountry">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.IndicatorsDescriptions">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.IIndicatorsDescriptions">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.Indicators">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.IIndicators">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.IndicatorDescription.Source">
+<summary>
+ Get the source of the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.IndicatorDescription.Name">
+<summary>
+ Get the name of the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.IndicatorDescription.IndicatorCode">
+<summary>
+ Get the code for the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.IndicatorDescription.Description">
+<summary>
+ Get the description of the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.IndicatorDescription.Code">
+<summary>
+ Get the code for the topic of the indicator
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.IndicatorDescription">
+<summary>
+ Metadata for an Indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.Years">
+<summary>
+ Get the years for which the indicator has values
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.Values">
+<summary>
+ Get the values for the indicator (without years)
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.Source">
+<summary>
+ Get the source of the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.Name">
+<summary>
+ Get the name of the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.Item(System.Int32)">
+<summary>
+ Get the indicator value for the given year. If there&apos;s no data for that year, NaN is returned
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.IndicatorCode">
+<summary>
+ Get the code for the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.Description">
+<summary>
+ Get the description of the indicator
+</summary>
+</member>
+<member name="P:FSharp.Data.Runtime.WorldBank.Indicator.Code">
+<summary>
+ Get the code for the country or region of the indicator
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.WorldBank.Indicator.TryGetValueAt(System.Int32)">
+<summary>
+ Get the indicator value for the given year, if present
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.Indicator">
+<summary>
+ Indicator data
+</summary>
+</member>
+<member name="F:FSharp.Data.Runtime.WorldBank.Implementation.ServiceConnection.topics">
+<summary>
+ At compile time, download the schema
+</summary>
+</member>
+<member name="M:FSharp.Data.Runtime.WorldBank.Implementation.ServiceConnection.GetDataAsync(System.String,System.String)">
+<summary>
+ At runtime, download the data
+</summary>
+</member>
+<member name="T:FSharp.Data.Runtime.WorldBank.Implementation">
+<summary>
+ [omit]
+</summary>
+</member>
+<member name="M:FSharp.Data.XElementExtensions.XElement.RequestAsync(System.Xml.Linq.XElement,System.String,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}})">
+<summary>
+ Sends the XML to the specified uri. Defaults to a POST request.
+</summary>
+</member>
+<member name="M:FSharp.Data.XElementExtensions.XElement.Request(System.Xml.Linq.XElement,System.String,Microsoft.FSharp.Core.FSharpOption{System.String},Microsoft.FSharp.Core.FSharpOption{System.Collections.Generic.IEnumerable{System.Tuple{System.String,System.String}}})">
+<summary>
+ Sends the XML to the specified uri. Defaults to a POST request.
+</summary>
+</member>
+<member name="T:FSharp.Data.XElementExtensions">
+<summary>
+ Extension methods for XElement
+</summary>
+</member>
+</members>
+</doc>

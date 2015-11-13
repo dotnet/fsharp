@@ -1,0 +1,185 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit.Lightweight</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.DynamicMethod">
+      <summary>コンパイル、実行、および破棄できる動的メソッドを定義し、表します。破棄されたメソッドは、ガベージ コレクションの対象となります。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>メソッド名、属性、呼び出し規約、戻り値の型、パラメーターの型、モジュールを指定し、さらに動的メソッドの MSIL (Microsoft Intermediate Language) によってアクセスされる型およびメンバーに対して JIT (Just-In-Time) の参照範囲チェックをスキップする必要があるかどうかを指定して、モジュールに対してグローバルな動的メソッドを作成します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="attributes">動的メソッドの属性を指定する <see cref="T:System.Reflection.MethodAttributes" /> 値のビットごとの組み合わせ。許可される組み合わせは、<see cref="F:System.Reflection.MethodAttributes.Public" /> と <see cref="F:System.Reflection.MethodAttributes.Static" /> の組み合わせだけです。</param>
+      <param name="callingConvention">動的メソッドの呼び出し規約。<see cref="F:System.Reflection.CallingConventions.Standard" /> にする必要があります。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <param name="m">動的メソッドを論理的に関連付けるモジュールを表す <see cref="T:System.Reflection.Module" />。</param>
+      <param name="skipVisibility">動的メソッドの MSIL によってアクセスされる型およびメンバーに対して JIT の参照範囲チェックをスキップする場合は true。それ以外の場合は false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。または<paramref name="m" /> が、動的メソッドを匿名でホストするモジュールです。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="m" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" /> が <see cref="F:System.Reflection.MethodAttributes.Public" /> と <see cref="F:System.Reflection.MethodAttributes.Static" /> 以外のフラグの組み合わせです。または<paramref name="callingConvention" /> が <see cref="F:System.Reflection.CallingConventions.Standard" /> ではありません。または<paramref name="returnType" /> は <see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>メソッド名、属性、呼び出し規約、戻り値の型、パラメーターの型、動的メソッドを論理的に関連付ける型を指定し、さらに動的メソッドの MSIL (Microsoft Intermediate Language) によってアクセスされる型およびメンバーに対して JIT (Just-In-Time) の参照範囲チェックをスキップする必要があるかどうかを指定して、動的メソッドを作成します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="attributes">動的メソッドの属性を指定する <see cref="T:System.Reflection.MethodAttributes" /> 値のビットごとの組み合わせ。許可される組み合わせは、<see cref="F:System.Reflection.MethodAttributes.Public" /> と <see cref="F:System.Reflection.MethodAttributes.Static" /> の組み合わせだけです。</param>
+      <param name="callingConvention">動的メソッドの呼び出し規約。<see cref="F:System.Reflection.CallingConventions.Standard" /> にする必要があります。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <param name="owner">動的メソッドを論理的に関連付ける <see cref="T:System.Type" />。動的メソッドはこの型のすべてのメンバーにアクセスできます。</param>
+      <param name="skipVisibility">動的メソッドの MSIL によってアクセスされる型およびメンバーに対して JIT の参照範囲チェックをスキップする場合は true。それ以外の場合は false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。または<paramref name="owner" /> がインターフェイス、配列、オープン ジェネリック型、ジェネリック型またはジェネリック メソッドの型パラメーターです。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="owner" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="attributes" /> が <see cref="F:System.Reflection.MethodAttributes.Public" /> と <see cref="F:System.Reflection.MethodAttributes.Static" /> 以外のフラグの組み合わせです。または<paramref name="callingConvention" /> が <see cref="F:System.Reflection.CallingConventions.Standard" /> ではありません。または<paramref name="returnType" /> は <see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[])">
+      <summary>メソッド名、戻り値の型、およびパラメーターの型を指定して、匿名でホストされる動的メソッドを初期化します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> は <see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Boolean)">
+      <summary>メソッド名、戻り値の型、パラメーターの型、モジュールを指定し、さらに動的メソッドの MSIL (Microsoft Intermediate Language) によってアクセスされる型およびメンバーに対して JIT (Just-In-Time) の参照範囲チェックをスキップする必要があるかどうかを指定して、匿名でホストされる動的メソッドを初期化します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <param name="restrictedSkipVisibility">動的メソッドの MSIL によってアクセスされる型およびメンバーに対して、このような型およびメンバーを含むアセンブリの信頼レベルが、動的メソッドを出力するコール スタックの信頼レベル以下である必要があるという制限付きで、JIT の参照範囲チェックをスキップする場合は true。それ以外の場合は false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> は <see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module)">
+      <summary>メソッド名、戻り値の型、パラメーターの型、およびモジュールを指定して、モジュールに対してグローバルな動的メソッドを作成します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <param name="m">動的メソッドを論理的に関連付けるモジュールを表す <see cref="T:System.Reflection.Module" />。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。または<paramref name="m" /> が、動的メソッドを匿名でホストするモジュールです。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="m" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> は <see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Reflection.Module,System.Boolean)">
+      <summary>メソッド名、戻り値の型、パラメーターの型、モジュールを指定し、さらに動的メソッドの MSIL (Microsoft Intermediate Language) によってアクセスされる型およびメンバーに対して JIT (Just-In-Time) の参照範囲チェックをスキップする必要があるかどうかを指定して、モジュールに対してグローバルな動的メソッドを作成します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <param name="m">動的メソッドを論理的に関連付けるモジュールを表す <see cref="T:System.Reflection.Module" />。</param>
+      <param name="skipVisibility">動的メソッドの MSIL によってアクセスされる型およびメンバーに対して JIT の参照範囲チェックをスキップする場合は true。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。または<paramref name="m" /> が、動的メソッドを匿名でホストするモジュールです。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="m" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> は <see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type)">
+      <summary>メソッド名、戻り値の型、パラメーターの型、および動的メソッドを論理的に関連付ける型を指定して、動的メソッドを作成します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <param name="owner">動的メソッドを論理的に関連付ける <see cref="T:System.Type" />。動的メソッドはこの型のすべてのメンバーにアクセスできます。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。または<paramref name="owner" /> がインターフェイス、配列、オープン ジェネリック型、ジェネリック型またはジェネリック メソッドの型パラメーターです。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="owner" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> が null であるか、<see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.#ctor(System.String,System.Type,System.Type[],System.Type,System.Boolean)">
+      <summary>メソッド名、戻り値の型、パラメーターの型、動的メソッドを論理的に関連付ける型を指定し、さらに動的メソッドの MSIL (Microsoft Intermediate Language) によってアクセスされる型およびメンバーに対して JIT (Just-In-Time) の参照範囲チェックをスキップする必要があるかどうかを指定して、動的メソッドを作成します。</summary>
+      <param name="name">動的メソッドの名前。これは、長さ 0 の文字列にすることはできますが、null にすることはできません。</param>
+      <param name="returnType">動的メソッドの戻り値の型を指定する <see cref="T:System.Type" /> オブジェクト。メソッドに戻り値の型がない場合は null。</param>
+      <param name="parameterTypes">動的メソッドのパラメーターの型を指定する <see cref="T:System.Type" /> オブジェクトの配列。メソッドにパラメーターがない場合は null。</param>
+      <param name="owner">動的メソッドを論理的に関連付ける <see cref="T:System.Type" />。動的メソッドはこの型のすべてのメンバーにアクセスできます。</param>
+      <param name="skipVisibility">動的メソッドの MSIL によってアクセスされる型およびメンバーに対して JIT の参照範囲チェックをスキップする場合は true。それ以外の場合は false。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parameterTypes" /> の要素が null または <see cref="T:System.Void" /> です。または<paramref name="owner" /> がインターフェイス、配列、オープン ジェネリック型、ジェネリック型またはジェネリック メソッドの型パラメーターです。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="owner" /> は null なので、</exception>
+      <exception cref="T:System.NotSupportedException">
+        <paramref name="returnType" /> が null であるか、<see cref="P:System.Type.IsByRef" /> で true が返される型です。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Attributes">
+      <summary>動的メソッドの作成時に指定した属性を取得します。</summary>
+      <returns>メソッドの属性を表す <see cref="T:System.Reflection.MethodAttributes" /> 値のビットごとの組み合わせ。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.CallingConvention">
+      <summary>動的メソッドの作成時に指定した呼び出し規約を取得します。</summary>
+      <returns>メソッドの呼び出し規約を示す <see cref="T:System.Reflection.CallingConventions" /> 値のいずれか。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type)">
+      <summary>動的メソッドを完了し、メソッドの実行に使用できるデリゲートを作成します。</summary>
+      <returns>動的メソッドの実行に使用できる指定した型のデリゲート。</returns>
+      <param name="delegateType">シグネチャが動的メソッドのシグネチャと一致するデリゲート型。</param>
+      <exception cref="T:System.InvalidOperationException">動的メソッドにメソッド本体がありません。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="delegateType" /> のパラメーターの数に誤りがあるか、パラメーターの型に誤りがあります。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.CreateDelegate(System.Type,System.Object)">
+      <summary>デリゲート型とデリゲートのバインド先となるオブジェクトを指定して、動的メソッドを完了し、メソッドの実行に使用できるデリゲートを作成します。</summary>
+      <returns>指定した対象オブジェクトで動的メソッドの実行に使用できる、指定した型のデリゲート。</returns>
+      <param name="delegateType">1 つ目のパラメーターがない、シグネチャが動的メソッドのシグネチャと一致するデリゲート型。</param>
+      <param name="target">デリゲートのバインド先となるオブジェクト。動的メソッドの 1 つ目のパラメーターと同じ型であることが必要です。</param>
+      <exception cref="T:System.InvalidOperationException">動的メソッドにメソッド本体がありません。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="target" /> が動的メソッドの 1 つ目のパラメーターと同じ型でないため、この型に割り当てることはできません。または<paramref name="delegateType" /> のパラメーターの数に誤りがあるか、パラメーターの型に誤りがあります。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.DeclaringType">
+      <summary>動的メソッドに対して常に null である、メソッドを宣言する型を取得します。</summary>
+      <returns>常に null。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator">
+      <summary>既定の MSIL (Microsoft Intermediate Language) ストリーム サイズである 64 バイトを使用して、このメソッドに対応する MSIL ジェネレーターを返します。</summary>
+      <returns>メソッドの <see cref="T:System.Reflection.Emit.ILGenerator" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetILGenerator(System.Int32)">
+      <summary>指定された MSIL (Microsoft Intermediate Language) ストリーム サイズのメソッドに MSIL ジェネレーターを返します。</summary>
+      <returns>MSIL ストリームの指定したサイズを使用するメソッドの <see cref="T:System.Reflection.Emit.ILGenerator" /> オブジェクト。</returns>
+      <param name="streamSize">MSIL ストリームのサイズ (バイト単位)。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.GetParameters">
+      <summary>動的メソッドのパラメーターを返します。</summary>
+      <returns>動的メソッドのパラメーターを表す <see cref="T:System.Reflection.ParameterInfo" /> オブジェクトの配列。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.InitLocals">
+      <summary>メソッドのローカル変数を 0 で初期化するかどうかを示す値を取得または設定します。</summary>
+      <returns>メソッドのローカル変数を 0 で初期化する場合は true。それ以外の場合は false。既定値は、true です。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.Name">
+      <summary>動的メソッドの名前を取得します。</summary>
+      <returns>メソッドの簡易名。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnParameter">
+      <summary>動的メソッドの返されるパラメーターを取得します。</summary>
+      <returns>常に null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.DynamicMethod.ReturnType">
+      <summary>動的メソッドの戻り値の型を取得します。</summary>
+      <returns>現在のメソッドの戻り値の型を表す <see cref="T:System.Type" />。メソッドに戻り値の型がない場合は <see cref="T:System.Void" />。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.DynamicMethod.ToString">
+      <summary>文字列として表されたメソッドのシグネチャを返します。</summary>
+      <returns>メソッドのシグネチャを表す文字列。</returns>
+    </member>
+  </members>
+</doc>

@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>Le intestazioni HTTP che si possono specificare in una richiesta del client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>Intestazione Accept che specifica i tipi MIME accettabili per la risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>Intestazione Accept-Charset che specifica i set di caratteri accettabili per la risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>Intestazione Accept-Encoding che specifica le codifiche del contenuto accettabili per la risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>Intestazione Accept-Langauge che specifica i linguaggi naturali preferiti per la risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>Intestazione Allow, che specifica il set dei metodi HTTP supportati.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>Intestazione Authorization che specifica le credenziali di cui dispone il client per la propria autenticazione al server.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>Intestazione Cache-Control che specifica le direttive che devono essere osservate da tutti i meccanismi di controllo della cache unitamente alla catena richiesta/risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>Intestazione Connection, che specifica le opzioni desiderate per una particolare connessione.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>Intestazione Content-Encoding, che specifica le codifiche applicate ai relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>Intestazione Content-Langauge, che specifica i linguaggi naturali dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>Intestazione Content-Length, che specifica la lunghezza, in byte, dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>Intestazione Content-Location, che specifica un URI dal quale è possibile ottenere il relativo corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>Intestazione Content-MD5, che specifica il digest MD5 dei relativi dati del corpo allo scopo di verificare l'integrità di un messaggio end-to-end.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>Intestazione Content-Range che specifica in che punto nell'intero corpo devono essere applicati i relativi dati parziali del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>Intestazione Content-Type, che specifica il tipo MIME dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>Intestazione Cookie che specifica i dati del cookie presentati al server.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>Intestazione Date che specifica la data e l'ora in cui è stata originata la richiesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>Intestazione Expect che specifica particolari comportamenti del server richiesti dal client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>Intestazione Expires, che specifica la data e l'ora dopo la quale i relativi dati del corpo devono essere considerati non aggiornati.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>Intestazione From che specifica un indirizzo Internet di posta elettronica per l'utente che controlla l'agente utente richiedente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>Intestazione Host che specifica il nome host e il numero porta della risorsa che viene richiesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>Intestazione If-Match che specifica che l'operazione richiesta deve essere eseguita solo se la copia nella cache del client della risorsa indicata è corrente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>Intestazione If-Modified-Since che specifica che l'operazione richiesta deve essere eseguita solo se la risorsa richiesta è stata modificata dopo la data e ora indicate.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>Intestazione If-None-Match che specifica che l'operazione richiesta deve essere eseguita solo se nessuna delle copie nella cache del client delle risorse indicate è corrente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>Intestazione If-Range che indica che deve essere inviato solo l'intervallo specificato della risorsa richiesta, se la copia nella cache del client è corrente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>Intestazione If-Unmodified-Since che specifica che l'operazione richiesta deve essere eseguita solo se la risorsa richiesta non è stata modificata dopo la data e ora indicate.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>Intestazione Keep-Alive, che specifica un parametro utilizzato per mantenere una connessione permanente.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>Intestazione Last-Modified che specifica la data e l'ora dell'ultima modifica dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>Intestazione Max-Forwards che specifica un Integer indicante il numero rimanente di volte in cui la richiesta può essere inviata.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>Intestazione Pragma, che indica le direttive specifiche dell'implementazione applicabili a qualsiasi agente della catena richiesta/risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>Intestazione Proxy-Authorization che specifica le credenziali di cui dispone il client per la propria autenticazione a un proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>Intestazione Range, che specifica i sottointervalli della risposta di cui il client richiede la restituzione al posto dell'intera risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>Intestazione Referer che specifica l'URI della risorsa dalla quale è stato ottenuto l'URI della richiesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>Intestazione TE che specifica le codifiche di trasferimento accettabili per la risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>Intestazione Trailer che specifica i campi di intestazione presenti nella pagina di riepilogo di un messaggio codificato con la codifica di trasferimento Chunked.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>Intestazione Transfer-Encoding, che specifica il tipo (se presente) di trasformazione applicato al corpo del messaggio.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>Intestazione Translate ovvero un'estensione Microsoft alla specifica HTTP utilizzata insieme alla funzionalità WebDAV.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>Intestazione Upgrade, che specifica protocolli di comunicazioni aggiuntivi supportati dal client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>Intestazione User-Agent che specifica le informazioni sull'agente client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>Intestazione Via, che specifica i protocolli intermedi che gli agenti gateway e proxy dovranno utilizzare.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>Intestazione Warning, che specifica le informazioni aggiuntive su uno stato o una trasformazione di un messaggio che è possibile non vengano riflessi nel messaggio.</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>Intestazioni HTTP che possono essere specificate in una risposta del server.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>Intestazione Accept-Range, che specifica l'intervallo accettato dal server.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>Intestazione Age, che specifica, in secondi, il tempo trascorso dal momento in cui la risposta è stata generata dal server di origine.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>Intestazione Allow, che specifica l'insieme dei metodi HTTP supportati.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>Intestazione Cache-Control, che specifica le direttive della cache che devono essere osservate da tutti i meccanismi di memorizzazione nella cache della catena richiesta/risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>Intestazione Connection, che specifica le opzioni desiderate per una particolare connessione.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>Intestazione Content-Encoding, che specifica le codifiche applicate ai relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>Intestazione Content-Langauge, che specifica il linguaggio o i linguaggi naturali dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>Intestazione Content-Length, che specifica la lunghezza, in byte, dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>Intestazione Content-Location, che specifica un URI dal quale è possibile ottenere il relativo corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>Intestazione Content-MD5, che specifica il digest MD5 dei relativi dati del corpo allo scopo di verificare l'integrità di un messaggio end-to-end.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>Intestazione Range, che specifica il sottointervallo o i sottointervalli della risposta di cui il client richiede la restituzione al posto dell'intera risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>Intestazione Content-Type, che specifica il tipo MIME dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>Intestazione Date, che specifica la data e l'ora in cui è stata originata la richiesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>Intestazione Etag, che specifica il valore corrente della variante richiesta. </summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>Intestazione Expires, che specifica la data e l'ora dopo la quale i relativi dati del corpo devono essere considerati non aggiornati.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>Intestazione Keep-Alive, che specifica un parametro utilizzato per mantenere una connessione permanente.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>Intestazione Last-Modified che specifica la data e l'ora dell'ultima modifica dei relativi dati del corpo.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>Intestazione Location, che specifica un URI a cui il client viene reindirizzato per ottenere la risorsa richiesta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>Intestazione Pragma, che indica le direttive specifiche dell'implementazione applicabili a qualsiasi agente della catena richiesta/risposta.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>Intestazione Proxy-Authenticate, che indica che il client deve autenticarsi a un proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>Intestazione Retry-After, che indica un periodo di tempo (in secondi) oppure una data e un'ora, dopo la quale il client può tentare nuovamente le proprie richieste.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>Intestazione Server, che specifica le informazioni sull'agente del server di origine.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>Intestazione Set-Cookie, che specifica i dati del cookie presentati al client.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>Intestazione Trailer, che specifica che i campi di intestazione sono presenti nella pagina di riepilogo di un messaggio codificato con la codifica di trasferimento in blocchi.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>Intestazione Transfer-Encoding, che specifica il tipo (se presente) di trasformazione applicato al corpo del messaggio.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>Intestazione Upgrade, che specifica protocolli di comunicazioni aggiuntivi supportati dal client.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>Intestazione Vary, che specifica le intestazioni di richiesta utilizzate per determinare se una risposta memorizzata nella cache è aggiornata.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>Intestazione Via, che specifica i protocolli intermedi che gli agenti gateway e proxy dovranno utilizzare.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>Intestazione Warning, che specifica le informazioni aggiuntive su uno stato o una trasformazione di un messaggio che è possibile non vengano riflessi nel messaggio.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>IntestazioneWWW-Authenticate, che specifica che il client deve autenticarsi al server.</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>Contiene le intestazioni di protocollo associate a una richiesta o a una risposta.</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>Inizializza una nuova istanza della classe <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>Ottiene tutti i nomi di intestazione (chiavi) presenti nella raccolta.</summary>
+      <returns>Matrice di tipo <see cref="T:System.String" /> in cui sono contenuti tutti i nomi di intestazione in una richiesta Web.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>Ottiene il numero di intestazioni nella raccolta.</summary>
+      <returns>Struttura <see cref="T:System.Int32" /> che indica il numero di intestazioni in una richiesta.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>Ottiene o imposta l'intestazione della richiesta specificata.</summary>
+      <returns>Istanza di <see cref="T:System.String" /> contenente il valore di intestazione specificato.</returns>
+      <param name="header">Valore dell'intestazione della richiesta.</param>
+      <exception cref="T:System.InvalidOperationException">Questa istanza <see cref="T:System.Net.WebHeaderCollection" /> non consente istanze di <see cref="T:System.Net.HttpRequestHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>Ottiene o imposta l'intestazione della risposta specificata.</summary>
+      <returns>Istanza di <see cref="T:System.String" /> contenente l'intestazione specificata.</returns>
+      <param name="header">Valore dell'intestazione della risposta.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">La lunghezza di <paramref name="value" /> è maggiore di 65535. </exception>
+      <exception cref="T:System.InvalidOperationException">Questa istanza <see cref="T:System.Net.WebHeaderCollection" /> non consente istanze di <see cref="T:System.Net.HttpResponseHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>Ottiene o imposta l'intestazione della risposta specificata.</summary>
+      <returns>Intestazione di richiesta specificata.</returns>
+      <param name="name">Nome dell'intestazione di richiesta specificata.</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>Rimuove l'intestazione specificata dalla raccolta.</summary>
+      <param name="name">Il nome dell'intestazione da rimuovere dalla raccolta. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> è null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> è un'intestazione con restrizioni.-oppure- <paramref name="name" /> contiene caratteri non validi. </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Restituisce un enumeratore che consente di scorrere l'istanza di <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+      <returns>Restituisce <see cref="T:System.Collections.IEnumerator" />.Enumeratore che consente di scorrere l'istanza di <see cref="T:System.Net.WebHeaderCollection" />.</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>Questo metodo è obsoleto.</summary>
+      <returns>Rappresentazione in formato <see cref="T:System.String" /> della raccolta.</returns>
+    </member>
+  </members>
+</doc>

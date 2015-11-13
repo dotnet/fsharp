@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.Reflection.Emit.Lightweight</id>
+    <version>4.0.0</version>
+    <title>System.Reflection.Emit.Lightweight</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides the System.Reflection.Emit.DynamicMethod class, which represents a dynamic method that can be compiled, executed, and discarded. Discarded methods are available for garbage collection.
+
+Commonly Used Types:
+System.Reflection.Emit.DynamicMethod</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework=".NETFramework4.5" />
+      <group targetFramework="WindowsPhone8.0" />
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Reflection" version="4.0.0" />
+        <dependency id="System.Reflection.Primitives" version="4.0.0" />
+        <dependency id="System.Runtime" version="4.0.0" />
+        <dependency id="System.Reflection.Emit.ILGeneration" version="4.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

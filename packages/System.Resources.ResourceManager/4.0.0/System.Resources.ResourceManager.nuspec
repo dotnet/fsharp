@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.Resources.ResourceManager</id>
+    <version>4.0.0</version>
+    <title>System.Resources.ResourceManager</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides classes and attributes that allow developers to create, store, and manage various culture-specific resources used in an application.
+
+Commonly Used Types:
+System.Resources.ResourceManager
+System.Resources.NeutralResourcesLanguageAttribute
+System.Resources.SatelliteContractVersionAttribute
+System.Resources.MissingManifestResourceException</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework=".NETFramework4.5" />
+      <group targetFramework="Windows8.0" />
+      <group targetFramework="WindowsPhone8.0" />
+      <group targetFramework="WindowsPhoneApp8.1" />
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Runtime" version="4.0.0" />
+        <dependency id="System.Reflection" version="4.0.0" />
+        <dependency id="System.Globalization" version="4.0.0" />
+      </group>
+      <group targetFramework=".NETCore5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.Reflection" version="4.0.10" />
+        <dependency id="System.Globalization" version="4.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

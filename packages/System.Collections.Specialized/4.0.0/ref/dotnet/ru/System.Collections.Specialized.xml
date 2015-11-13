@@ -1,0 +1,978 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Collections.Specialized</name>
+  </assembly>
+  <members>
+    <member name="T:System.Collections.Specialized.BitVector32">
+      <summary>Представляет простую структуру с объемом памяти 32 бита, в которой хранятся логические значения и двухбайтовые целые числа.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Collections.Specialized.BitVector32)">
+      <summary>Инициализирует новый экземпляр структуры <see cref="T:System.Collections.Specialized.BitVector32" />, содержащий данные, представленные в существующей структуре <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <param name="value">Структура <see cref="T:System.Collections.Specialized.BitVector32" />, содержащая данные, которые требуется скопировать. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Int32)">
+      <summary>Инициализирует новый экземпляр структуры <see cref="T:System.Collections.Specialized.BitVector32" />, содержащий данные, представленные в целом числе.</summary>
+      <param name="data">Целое число, представляющее данные новой структуры <see cref="T:System.Collections.Specialized.BitVector32" />. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask">
+      <summary>Создает первую маску в наборе масок, которую можно использовать для получения отдельных разрядов в структуре <see cref="T:System.Collections.Specialized.BitVector32" />, которая построена в виде одноразрядных флагов.</summary>
+      <returns>Маска, которая изолирует первый одноразрядный флаг в структуре <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask(System.Int32)">
+      <summary>Создает дополнительную маску, следующую за указанной маской в наборе масок, которую можно использовать для получения отдельных разрядов в структуре <see cref="T:System.Collections.Specialized.BitVector32" />, построенной в виде одноразрядных флагов.</summary>
+      <returns>Маска, которая изолирует одноразрядный флаг, следующий за тем, на который указывает параметр <paramref name="previous" /> в структуре <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+      <param name="previous">Маска, которая указывает на предыдущий одноразрядный флаг. </param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> indicates the last bit flag in the <see cref="T:System.Collections.Specialized.BitVector32" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16)">
+      <summary>Создает первую структуру <see cref="T:System.Collections.Specialized.BitVector32.Section" /> в наборе разделов, который содержит двухбайтовые целые числа.</summary>
+      <returns>Структура <see cref="T:System.Collections.Specialized.BitVector32.Section" />, которая может содержать числа от нуля до значения параметра <paramref name="maxValue" />.</returns>
+      <param name="maxValue">16-битное целое число со знаком, которое определяет максимальное значение для новой структуры <see cref="T:System.Collections.Specialized.BitVector32.Section" />. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16,System.Collections.Specialized.BitVector32.Section)">
+      <summary>Создает структуру <see cref="T:System.Collections.Specialized.BitVector32.Section" />, следующую за указанной структурой <see cref="T:System.Collections.Specialized.BitVector32.Section" /> в наборе разделов, который содержит двухбайтовые целые числа.</summary>
+      <returns>Структура <see cref="T:System.Collections.Specialized.BitVector32.Section" />, которая может содержать числа от нуля до значения параметра <paramref name="maxValue" />.</returns>
+      <param name="maxValue">16-битное целое число со знаком, которое определяет максимальное значение для новой структуры <see cref="T:System.Collections.Specialized.BitVector32.Section" />. </param>
+      <param name="previous">Предыдущая структура <see cref="T:System.Collections.Specialized.BitVector32.Section" /> в структуре <see cref="T:System.Collections.Specialized.BitVector32" />. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> includes the final bit in the <see cref="T:System.Collections.Specialized.BitVector32" />.-or- <paramref name="maxValue" /> is greater than the highest value that can be represented by the number of bits after <paramref name="previous" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Data">
+      <summary>Возвращает значение структуры <see cref="T:System.Collections.Specialized.BitVector32" /> в виде целого числа.</summary>
+      <returns>Значение структуры <see cref="T:System.Collections.Specialized.BitVector32" /> в виде целого числа.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Equals(System.Object)">
+      <summary>Определяет, равен ли указанный объект структуре <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Значение true, если указанный объект равен объекту <see cref="T:System.Collections.Specialized.BitVector32" />; в противном случае — значение false.</returns>
+      <param name="o">Объект для сравнения с текущим объектом <see cref="T:System.Collections.Specialized.BitVector32" />. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.GetHashCode">
+      <summary>Играет роль хэш-функции для структуры <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Хэш-код для <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Collections.Specialized.BitVector32.Section)">
+      <summary>Получает или задает значение, хранящееся в указанной структуре <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</summary>
+      <returns>Значение, хранящееся в указанной структуре <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</returns>
+      <param name="section">Структура <see cref="T:System.Collections.Specialized.BitVector32.Section" />, содержащая значение, которое требуется получить или задать. </param>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Int32)">
+      <summary>Получает или задает состояние одноразрядного флага, указанного определенной маской.</summary>
+      <returns>Значение true, если указанный одноразрядный флаг установлен в (1); в противном случае — значение false.</returns>
+      <param name="bit">Маска, которая указывает разряд, который требуется получить или задать. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString">
+      <summary>Возвращает строку, представляющую текущий объект <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Строка, представляющая текущий <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString(System.Collections.Specialized.BitVector32)">
+      <summary>Возвращает строку, представляющую указанный объект <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Строка, представляющая указанную структуру <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+      <param name="value">Представляемый объект <see cref="T:System.Collections.Specialized.BitVector32" />. </param>
+    </member>
+    <member name="T:System.Collections.Specialized.BitVector32.Section">
+      <summary>Представляет раздел вектора, который может содержать целое число.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Collections.Specialized.BitVector32.Section)">
+      <summary>Определяет, является ли указанный объект <see cref="T:System.Collections.Specialized.BitVector32.Section" /> тем же самым, что и текущий объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</summary>
+      <returns>Значение true, если параметр <paramref name="obj" /> совпадает с текущим объектом <see cref="T:System.Collections.Specialized.BitVector32.Section" />; в противном случае — значение false.</returns>
+      <param name="obj">Объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />, сравниваемый с текущим объектом <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Object)">
+      <summary>Определяет, является ли указанный объект тем же самым, что и текущий объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</summary>
+      <returns>Значение true, если указанный объект является тем же, что и текущий объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />; в противном случае — значение false.</returns>
+      <param name="o">Объект для сравнения с текущим объектом <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.GetHashCode">
+      <summary>Служит хэш-функцией текущего класса <see cref="T:System.Collections.Specialized.BitVector32.Section" /> для использования в алгоритмах и структурах данных хеширования, например в хэш-таблице.</summary>
+      <returns>Хэш-код для текущего объекта <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Mask">
+      <summary>Получает маску, которая изолирует этот раздел в структуре <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Маска, которая изолирует этот раздел в структуре <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Offset">
+      <summary>Получает смещение этого раздела от начала структуры <see cref="T:System.Collections.Specialized.BitVector32" />.</summary>
+      <returns>Смещение этого раздела от начала структуры <see cref="T:System.Collections.Specialized.BitVector32" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Equality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>Определяет, равны ли между собой два указанных объекта <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</summary>
+      <returns>Значение true, если параметры <paramref name="a" /> и <paramref name="b" /> представляют один и тот же объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />, в противном случае — false.</returns>
+      <param name="a">Объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+      <param name="b">Объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Inequality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>Определяет, имеют ли два объекта <see cref="T:System.Collections.Specialized.BitVector32.Section" /> различные значения.</summary>
+      <returns>Значение true, если параметры <paramref name="a" /> и <paramref name="b" /> представляют различные объекты <see cref="T:System.Collections.Specialized.BitVector32.Section" />, в противном случае — значение false.</returns>
+      <param name="a">Объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+      <param name="b">Объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString">
+      <summary>Возвращает строку, представляющую текущий объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</summary>
+      <returns>Строка, представляющая текущий <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString(System.Collections.Specialized.BitVector32.Section)">
+      <summary>Возвращает строку, представляющую указанный объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</summary>
+      <returns>Строка, представляющая указанный объект <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</returns>
+      <param name="value">Представляемая структура <see cref="T:System.Collections.Specialized.BitVector32.Section" />.</param>
+    </member>
+    <member name="T:System.Collections.Specialized.HybridDictionary">
+      <summary>Реализует интерфейс IDictionary с помощью класса <see cref="T:System.Collections.Specialized.ListDictionary" />, когда коллекция небольшая, и переключается на класс <see cref="T:System.Collections.Hashtable" />, когда коллекция увеличивается.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor">
+      <summary>Создает пустой объект <see cref="T:System.Collections.Specialized.HybridDictionary" />, в котором регистр не учитывается.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Boolean)">
+      <summary>Создает пустой объект <see cref="T:System.Collections.Specialized.HybridDictionary" /> с заданным требованием к учету регистра.</summary>
+      <param name="caseInsensitive">Логическое выражение, которое определяет, учитывается ли регистр в объекте <see cref="T:System.Collections.Specialized.HybridDictionary" />. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32)">
+      <summary>Создает объект <see cref="T:System.Collections.Specialized.HybridDictionary" />, в котором учитывается регистр, с указанным исходным размером.</summary>
+      <param name="initialSize">Приблизительное количество элементов, которое может содержать класс <see cref="T:System.Collections.Specialized.HybridDictionary" />. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32,System.Boolean)">
+      <summary>Создает объект <see cref="T:System.Collections.Specialized.HybridDictionary" /> указанного исходного размера с заданным требованием к учету регистра.</summary>
+      <param name="initialSize">Приблизительное количество элементов, которое может содержать класс <see cref="T:System.Collections.Specialized.HybridDictionary" />. </param>
+      <param name="caseInsensitive">Логическое выражение, которое определяет, учитывается ли регистр в объекте <see cref="T:System.Collections.Specialized.HybridDictionary" />. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Add(System.Object,System.Object)">
+      <summary>Добавляет запись с указанным ключом и значением в объект <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <param name="key">Ключ записи, которую требуется добавить. </param>
+      <param name="value">Добавляемое значение записи.Допускается значение null.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+      <exception cref="T:System.ArgumentException">Запись с таким же ключом уже существует в <see cref="T:System.Collections.Specialized.HybridDictionary" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Clear">
+      <summary>Удаляет все записи из <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Contains(System.Object)">
+      <summary>Определяет, содержит ли объект <see cref="T:System.Collections.Specialized.HybridDictionary" /> указанный ключ.</summary>
+      <returns>Значение true, если <see cref="T:System.Collections.Specialized.HybridDictionary" /> содержит запись с указанным ключом; в противном случае — значение false.</returns>
+      <param name="key">Ключ, который требуется найти в <see cref="T:System.Collections.Specialized.HybridDictionary" />. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Копирует записи <see cref="T:System.Collections.Specialized.HybridDictionary" /> в одномерный экземпляр массива <see cref="T:System.Array" /> по указанному индексу.</summary>
+      <param name="array">Одномерный массив <see cref="T:System.Array" />, который является назначением для объектов <see cref="T:System.Collections.DictionaryEntry" />, копируемых из коллекции <see cref="T:System.Collections.Specialized.HybridDictionary" />.Массив <see cref="T:System.Array" /> должен иметь индексацию, начинающуюся с нуля.</param>
+      <param name="index">Отсчитываемый от нуля индекс в массиве <paramref name="array" />, указывающий начало копирования. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля. </exception>
+      <exception cref="T:System.ArgumentException">Массив <paramref name="array" /> является многомерным.-или- Количество элементов в исходной коллекции <see cref="T:System.Collections.Specialized.HybridDictionary" /> превышает доступное место, начиная с индекса <paramref name="arrayIndex" /> до конца массива назначения <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">Тип исходной коллекции <see cref="T:System.Collections.Specialized.HybridDictionary" /> нельзя автоматически привести к типу массива назначения <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Count">
+      <summary>Возвращает число пар "ключ-значение", содержащихся в словаре <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Число пар "ключ-значение", содержащихся в словаре <see cref="T:System.Collections.Specialized.HybridDictionary" />.Получение значения данного свойства является операцией порядка сложности O(1).</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.IDictionaryEnumerator" />, осуществляющий перебор <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IDictionaryEnumerator" /> для <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsFixedSize">
+      <summary>Получает значение, указывающее, имеет ли список <see cref="T:System.Collections.Specialized.HybridDictionary" /> фиксированный размер.</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsReadOnly">
+      <summary>Получает значение, указывающее, является ли объект <see cref="T:System.Collections.Specialized.HybridDictionary" /> доступным только для чтения.</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsSynchronized">
+      <summary>Получает значение, показывающее, является ли доступ к <see cref="T:System.Collections.Specialized.HybridDictionary" /> синхронизированным (потокобезопасным).</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Item(System.Object)">
+      <summary>Возвращает или задает значение, связанное с указанным ключом.</summary>
+      <returns>Значение, связанное с указанным ключом.Если указанный ключ не найден, при попытке его получения возвращается значение null, а при попытке задания ключа создается новая запись с использованием указанного ключа.</returns>
+      <param name="key">Задаваемое или получаемое значение ключа. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Keys">
+      <summary>Получает коллекцию <see cref="T:System.Collections.ICollection" />, содержащую ключи из коллекции <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Коллекция <see cref="T:System.Collections.ICollection" />, содержащая ключи из коллекции <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Remove(System.Object)">
+      <summary>Удаляет запись с указанным ключом из коллекции <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <param name="key">Ключ записи, которую требуется удалить. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.SyncRoot">
+      <summary>Получает объект, с помощью которого можно синхронизировать доступ к коллекции <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Объект, который может использоваться для синхронизации доступа к <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.IEnumerator" />, осуществляющий перебор <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" /> для <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Values">
+      <summary>Получает интерфейс <see cref="T:System.Collections.ICollection" />, содержащий значения из <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>Коллекция <see cref="T:System.Collections.ICollection" />, содержащая значения из словаря <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.IOrderedDictionary">
+      <summary>Представляет индексированную коллекцию пар "ключ-значение".</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.GetEnumerator">
+      <summary>Возвращает перечислитель, выполняющий перебор коллекции <see cref="T:System.Collections.Specialized.IOrderedDictionary" />.</summary>
+      <returns>Объект <see cref="T:System.Collections.IDictionaryEnumerator" /> для всей коллекции <see cref="T:System.Collections.Specialized.IOrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>Вставляет пару "ключ-значение" в коллекцию по указанному индексу.</summary>
+      <param name="index">Отсчитываемый от нуля индекс, по которому требуется вставить пару "ключ-значение".</param>
+      <param name="key">Объект, используемый в качестве ключа добавляемого элемента.</param>
+      <param name="value">Объект, используемый в качестве значения добавляемого элемента.Допускается значение null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше 0.-или-Значение <paramref name="index" /> больше значения <see cref="P:System.Collections.ICollection.Count" />.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null.</exception>
+      <exception cref="T:System.ArgumentException">Элемент с таким ключом уже существует в коллекции <see cref="T:System.Collections.Specialized.IOrderedDictionary" />.</exception>
+      <exception cref="T:System.NotSupportedException">Коллекция <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> доступна только для чтения.-или-Коллекция <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> имеет фиксированный размер.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.IOrderedDictionary.Item(System.Int32)">
+      <summary>Возвращает или задает элемент по указанному индексу.</summary>
+      <returns>Элемент, расположенный по указанному индексу.</returns>
+      <param name="index">Отсчитываемый от нуля индекс элемента, который требуется возвратить или задать.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше 0.-или- Значение параметра <paramref name="index" /> больше или равно значению свойства <see cref="P:System.Collections.ICollection.Count" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.RemoveAt(System.Int32)">
+      <summary>Удаляет элемент по указанному индексу.</summary>
+      <param name="index">Индекс (с нуля) элемента, который требуется удалить.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше 0.-или- Значение параметра <paramref name="index" /> больше или равно значению свойства <see cref="P:System.Collections.ICollection.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">Коллекция <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> доступна только для чтения.-или- Коллекция <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> имеет фиксированный размер. </exception>
+    </member>
+    <member name="T:System.Collections.Specialized.ListDictionary">
+      <summary>Реализует интерфейс IDictionary с помощью однонаправленного списка.Рекомендуется для коллекций, которые обычно содержат менее 10 элементов.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor">
+      <summary>Создает пустую коллекцию <see cref="T:System.Collections.Specialized.ListDictionary" />, используя компаратор по умолчанию.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor(System.Collections.IComparer)">
+      <summary>Создает пустую коллекцию <see cref="T:System.Collections.Specialized.ListDictionary" />, используя компаратор по умолчанию.</summary>
+      <param name="comparer">Интерфейс <see cref="T:System.Collections.IComparer" />, который используется для определения равенства двух ключей.-или- Значение null для использования блока сравнения по умолчанию, который является реализацией метода <see cref="M:System.Object.Equals(System.Object)" /> для каждого ключа. </param>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Add(System.Object,System.Object)">
+      <summary>Добавляет запись с указанным ключом и значением в объект <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <param name="key">Ключ записи, которую требуется добавить. </param>
+      <param name="value">Добавляемое значение записи.Допускается значение null.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+      <exception cref="T:System.ArgumentException">Запись с таким же ключом уже существует в <see cref="T:System.Collections.Specialized.ListDictionary" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Clear">
+      <summary>Удаляет все записи из <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Contains(System.Object)">
+      <summary>Определяет, содержит ли объект <see cref="T:System.Collections.Specialized.ListDictionary" /> указанный ключ.</summary>
+      <returns>Значение true, если <see cref="T:System.Collections.Specialized.ListDictionary" /> содержит запись с указанным ключом; в противном случае — значение false.</returns>
+      <param name="key">Ключ, который требуется найти в <see cref="T:System.Collections.Specialized.ListDictionary" />. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Копирует записи <see cref="T:System.Collections.Specialized.ListDictionary" /> в одномерный экземпляр массива <see cref="T:System.Array" /> по указанному индексу.</summary>
+      <param name="array">Одномерный массив <see cref="T:System.Array" />, который является назначением для объектов <see cref="T:System.Collections.DictionaryEntry" />, копируемых из коллекции <see cref="T:System.Collections.Specialized.ListDictionary" />.Массив <see cref="T:System.Array" /> должен иметь индексацию, начинающуюся с нуля.</param>
+      <param name="index">Отсчитываемый от нуля индекс в массиве <paramref name="array" />, указывающий начало копирования. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля. </exception>
+      <exception cref="T:System.ArgumentException">Массив <paramref name="array" /> является многомерным.-или- Количество элементов в исходной коллекции <see cref="T:System.Collections.Specialized.ListDictionary" /> превышает доступное место, начиная с индекса <paramref name="index" /> до конца массива назначения <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">Тип исходной коллекции <see cref="T:System.Collections.Specialized.ListDictionary" /> нельзя автоматически привести к типу массива назначения <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Count">
+      <summary>Возвращает число пар "ключ-значение", содержащихся в словаре <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Число пар "ключ-значение", содержащихся в словаре <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.IDictionaryEnumerator" />, осуществляющий перебор <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IDictionaryEnumerator" /> для <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsFixedSize">
+      <summary>Получает значение, указывающее, имеет ли список <see cref="T:System.Collections.Specialized.ListDictionary" /> фиксированный размер.</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsReadOnly">
+      <summary>Получает значение, указывающее, является ли объект <see cref="T:System.Collections.Specialized.ListDictionary" /> доступным только для чтения.</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsSynchronized">
+      <summary>Получает значение, показывающее, является ли доступ к <see cref="T:System.Collections.Specialized.ListDictionary" /> синхронизированным (потокобезопасным).</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Item(System.Object)">
+      <summary>Возвращает или задает значение, связанное с указанным ключом.</summary>
+      <returns>Значение, связанное с указанным ключом.Если указанный ключ не найден, при попытке его получения возвращается значение null, а при попытке задания ключа создается новая запись с использованием указанного ключа.</returns>
+      <param name="key">Задаваемое или получаемое значение ключа. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Keys">
+      <summary>Получает коллекцию <see cref="T:System.Collections.ICollection" />, содержащую ключи из коллекции <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Коллекция <see cref="T:System.Collections.ICollection" />, содержащая ключи из коллекции <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Remove(System.Object)">
+      <summary>Удаляет запись с указанным ключом из коллекции <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <param name="key">Ключ записи, которую требуется удалить. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.SyncRoot">
+      <summary>Получает объект, с помощью которого можно синхронизировать доступ к коллекции <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Объект, который может использоваться для синхронизации доступа к <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.IEnumerator" />, осуществляющий перебор <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" /> для <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Values">
+      <summary>Получает интерфейс <see cref="T:System.Collections.ICollection" />, содержащий значения из <see cref="T:System.Collections.Specialized.ListDictionary" />.</summary>
+      <returns>Коллекция <see cref="T:System.Collections.ICollection" />, содержащая значения из словаря <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase">
+      <summary>Предоставляет abstract базовый класс для коллекции связанных ключей <see cref="T:System.String" /> и значений <see cref="T:System.Object" />, доступ к которым можно получить с помощью ключа или индекса.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor">
+      <summary>Инициализирует новый экземпляр пустого класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Collections.IEqualityComparer)">
+      <summary>Инициализирует новый экземпляр пустого класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />, который обладает начальной емкостью по умолчанию и использует указанный объект <see cref="T:System.Collections.IEqualityComparer" />.</summary>
+      <param name="equalityComparer">Объект <see cref="T:System.Collections.IEqualityComparer" />, который используется для определения равенства двух ключей и создания хэш-кодов для ключей в коллекции.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32)">
+      <summary>Инициализирует новый экземпляр пустого класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />, который обладает указанной начальной емкостью и использует поставщика хэш-кода по умолчанию и функцию сравнения по умолчанию.</summary>
+      <param name="capacity">Приблизительное количество записей, которое может первоначально содержать экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="capacity" /> меньше нуля. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />, который является пустым, обладает указанной исходной емкостью и использует заданный объект <see cref="T:System.Collections.IEqualityComparer" />.</summary>
+      <param name="capacity">Приблизительное количество записей, которое может первоначально содержать объект <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</param>
+      <param name="equalityComparer">Объект <see cref="T:System.Collections.IEqualityComparer" />, который используется для определения равенства двух ключей и создания хэш-кодов для ключей в коллекции.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="capacity" /> меньше нуля.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseAdd(System.String,System.Object)">
+      <summary>Добавляет запись с указанным ключом и значением в экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Добавляемый ключ записи <see cref="T:System.String" />.Значением ключа может быть null.</param>
+      <param name="value">Добавляемое значение записи <see cref="T:System.Object" />.Допускается значение null.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseClear">
+      <summary>Удаляет все записи из экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.Int32)">
+      <summary>Возвращает значение записи по указанному индексу экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Объект класса <see cref="T:System.Object" />, который представляет значение записи по указанному индексу.</returns>
+      <param name="index">Отсчитываемый от нуля индекс значения, которое нужно получить.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.String)">
+      <summary>Возвращает значение первой записи с указанным ключом из экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Объект <see cref="T:System.Object" />, который представляет значение первой записи с указанным ключом, если он найден; в противном случае — значение null.</returns>
+      <param name="name">Возвращаемый ключ записи <see cref="T:System.String" />.Значением ключа может быть null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllKeys">
+      <summary>Возвращает массив <see cref="T:System.String" />, который содержит все ключи экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Массив <see cref="T:System.String" />, который содержит все ключи экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues">
+      <summary>Возвращает массив <see cref="T:System.Object" />, который содержит все значения экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Массив <see cref="T:System.Object" />, который содержит все значения экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues(System.Type)">
+      <summary>Возвращает массив указанного типа, который содержит все значения экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Массив указанного типа, который содержит все значения экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+      <param name="type">Объект <see cref="T:System.Type" />, который представляет тип возвращаемого массива.</param>
+      <exception cref="T:System.ArgumentNullException">Свойство <paramref name="type" /> имеет значение null. </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="type" /> не является допустимым типом <see cref="T:System.Type" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetKey(System.Int32)">
+      <summary>Возвращает ключ записи по указанному индексу в экземпляре класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Объект <see cref="T:System.String" />, который представляет ключ записи по указанному индексу.</returns>
+      <param name="index">Отсчитываемый от нуля индекс получаемого ключа.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseHasKeys">
+      <summary>Возвращает значение, показывающее, содержит ли экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> записи, в которых значение ключа отлично от null.</summary>
+      <returns>Значение true, если экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> содержит записи, для которых значение ключа отлично от null; в противном случае — значение false.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemove(System.String)">
+      <summary>Удаляет записи с указанным ключом из экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Удаляемый ключ записей <see cref="T:System.String" />.Значением ключа может быть null.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemoveAt(System.Int32)">
+      <summary>Удаляет запись по указанному индексу в экземпляре класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="index">Отсчитываемый от нуля индекс записи, которую требуется удалить.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции.</exception>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.Int32,System.Object)">
+      <summary>Задает значение записи по указанному индексу экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="index">Отсчитываемый от нуля индекс записи, для которой требуется задать значение.</param>
+      <param name="value">Объект <see cref="T:System.Object" />, представляющий новое значение записи, которое требуется задать.Допускается значение null.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.String,System.Object)">
+      <summary>Задает значение первой записи с указанным ключом в экземпляре класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />, если ключ найден; в противном случае добавляет запись с указанным ключом и значением в экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Задаваемый ключ записи <see cref="T:System.String" />.Значением ключа может быть null.</param>
+      <param name="value">Объект <see cref="T:System.Object" />, представляющий новое значение записи, которое требуется задать.Допускается значение null.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Count">
+      <summary>Возвращает число пар "ключ-значение", содержащихся в экземпляре класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Число пар "ключ-значение", содержащихся в экземпляре класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.GetEnumerator">
+      <summary>Возвращает перечислитель, осуществляющий перебор элементов списка <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Перечислитель <see cref="T:System.Collections.IEnumerator" /> для экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.IsReadOnly">
+      <summary>Возвращает или задает значение, указывающее, является ли экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> доступным только для чтения.</summary>
+      <returns>Значение true, если экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> доступен только для чтения, в противном случае — значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Keys">
+      <summary>Возвращает экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />, который содержит все ключи экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Экземпляр класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />, который содержит все ключи экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>Копирует целый массив <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> в совместимый одномерный массив <see cref="T:System.Array" />, начиная с заданного индекса целевого массива.</summary>
+      <param name="array">Одномерный массив <see cref="T:System.Array" />, в который копируются элементы из интерфейса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.Массив <see cref="T:System.Array" /> должен иметь индексацию, начинающуюся с нуля.</param>
+      <param name="index">Отсчитываемый от нуля индекс в массиве <paramref name="array" />, указывающий начало копирования.</param>
+      <exception cref="T:System.ArgumentNullException">Свойство <paramref name="array" /> имеет значение null.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.</exception>
+      <exception cref="T:System.ArgumentException">Массив <paramref name="array" /> является многомерным.-или-Количество элементов в исходной коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> превышает доступное место, начиная с индекса <paramref name="index" /> до конца массива назначения <paramref name="array" />.</exception>
+      <exception cref="T:System.InvalidCastException">Тип исходной коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> нельзя автоматически привести к типу массива назначения <paramref name="array" />.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>Возвращает значение, указывающее на то, является ли доступ к объекту <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> синхронизированным (потокобезопасным).</summary>
+      <returns>Значение true, если доступ к объекту <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> является синхронизированным (потокобезопасным); в противном случае — значение false.Значение по умолчанию — false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>Возвращает объект, который позволяет синхронизировать доступ к объекту <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <returns>Объект, который позволяет синхронизировать доступ к объекту <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection">
+      <summary>Представляет коллекцию ключей <see cref="T:System.String" /> коллекции.</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Count">
+      <summary>Получает число ключей в <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</summary>
+      <returns>Число ключей в <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Get(System.Int32)">
+      <summary>Получает ключ по указанному индексу коллекции.</summary>
+      <returns>Объект <see cref="T:System.String" />, который содержит ключ по указанному индексу коллекции.</returns>
+      <param name="index">Индекс (с нуля) ключа, который требуется получить из коллекции. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.GetEnumerator">
+      <summary>Возвращает перечислитель, осуществляющий перебор элементов списка <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" /> для <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Item(System.Int32)">
+      <summary>Получает запись по указанному индексу коллекции.</summary>
+      <returns>Ключ <see cref="T:System.String" /> для записи по указанному индексу коллекции.</returns>
+      <param name="index">Индекс (с нуля) записи, местоположение которой требуется определить в коллекции. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>Копирует целый массив <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> в совместимый одномерный массив <see cref="T:System.Array" />, начиная с заданного индекса целевого массива.</summary>
+      <param name="array">Одномерный массив <see cref="T:System.Array" />, в который копируются элементы из интерфейса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.Индексация в массиве <see cref="T:System.Array" /> должна начинаться с нуля.</param>
+      <param name="index">Индекс (с нуля) в массиве <paramref name="array" />, с которого начинается копирование. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="array" /> имеет значение null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля. </exception>
+      <exception cref="T:System.ArgumentException">Массив <paramref name="array" /> является многомерным.– или – Количество элементов в исходной коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> превышает доступное место, начиная с индекса <paramref name="index" /> до конца массива назначения <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">Тип исходной коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> нельзя автоматически привести к типу массива назначения <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#IsSynchronized">
+      <summary>Получает значение, показывающее, является ли доступ к коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> синхронизированным (потокобезопасным).</summary>
+      <returns>Значение true, если доступ к коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> является синхронизированным (потокобезопасным); в противном случае — значение false.Значение по умолчанию — false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#SyncRoot">
+      <summary>Получает объект, с помощью которого можно синхронизировать доступ к коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</summary>
+      <returns>Объект, который может использоваться для синхронизации доступа к коллекции <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameValueCollection">
+      <summary>Представляет коллекцию связанных ключей <see cref="T:System.String" /> и значений <see cref="T:System.String" />, доступ к которым можно получить с помощью ключа или индекса.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.NameValueCollection" />, который является пустым, обладает исходной емкостью по умолчанию, использует поставщика хэш-кода по умолчанию и функцию сравнения по умолчанию. Функция сравнения и поставщик хэш-кода работают без учета регистра.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.IEqualityComparer)">
+      <summary>Инициализирует новый экземпляр пустого класса <see cref="T:System.Collections.Specialized.NameValueCollection" />, который обладает начальной емкостью по умолчанию и использует указанный объект <see cref="T:System.Collections.IEqualityComparer" />.</summary>
+      <param name="equalityComparer">Объект <see cref="T:System.Collections.IEqualityComparer" />, который используется для определения равенства двух ключей и создания хэш-кодов для ключей в коллекции.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.Specialized.NameValueCollection)">
+      <summary>Копирует записи из указанной коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" /> в новую коллекцию <see cref="T:System.Collections.Specialized.NameValueCollection" /> с начальной емкостью, равной количеству копируемых записей. При этом используется такой же поставщик хэш-кода и такая же функция сравнения, которые использовались в исходной коллекции.</summary>
+      <param name="col">Коллекция <see cref="T:System.Collections.Specialized.NameValueCollection" />, копируемая в новый экземпляр класса <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <exception cref="T:System.ArgumentNullException">Свойство <paramref name="col" /> имеет значение null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32)">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.NameValueCollection" />, который является пустым, обладает указанной исходной емкостью, использует поставщика хэш-кода по умолчанию и функцию сравнения по умолчанию. Функция сравнения и поставщик хэш-кода работают без учета регистра.</summary>
+      <param name="capacity">Начальное количество записей, которое может содержать <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="capacity" /> меньше нуля.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.NameValueCollection" />, который является пустым, обладает указанной исходной емкостью и использует заданный объект <see cref="T:System.Collections.IEqualityComparer" />.</summary>
+      <param name="capacity">Начальное количество записей, которое может содержать объект <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <param name="equalityComparer">Объект <see cref="T:System.Collections.IEqualityComparer" />, который используется для определения равенства двух ключей и создания хэш-кодов для ключей в коллекции.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="capacity" /> меньше нуля.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.Specialized.NameValueCollection)">
+      <summary>Копирует записи из указанной коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" /> в новую коллекцию <see cref="T:System.Collections.Specialized.NameValueCollection" /> с указанной начальной емкостью или начальной емкостью, равной количеству копируемых записей, — в зависимости от того, какое значение больше. При этом используются поставщик хэш-кода по умолчанию и функция сравнения по умолчанию, работающие без учета регистра.</summary>
+      <param name="capacity">Начальное количество записей, которое может содержать <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <param name="col">Коллекция <see cref="T:System.Collections.Specialized.NameValueCollection" />, копируемая в новый экземпляр класса <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="capacity" /> меньше нуля.</exception>
+      <exception cref="T:System.ArgumentNullException">Свойство <paramref name="col" /> имеет значение null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.Collections.Specialized.NameValueCollection)">
+      <summary>Копирует записи из указанной коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" /> в текущую коллекцию <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <param name="c">Коллекция <see cref="T:System.Collections.Specialized.NameValueCollection" />, копируемая в текущую коллекцию <see cref="T:System.Collections.Specialized.NameValueCollection" />.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения.</exception>
+      <exception cref="T:System.ArgumentNullException">Свойство <paramref name="c" /> имеет значение null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.String,System.String)">
+      <summary>Добавляет запись с указанным ключом и значением в коллекцию <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <param name="name">Добавляемый ключ записи <see cref="T:System.String" />.Значением ключа может быть null.</param>
+      <param name="value">Добавляемое значение записи <see cref="T:System.String" />.Допускается значение null.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.AllKeys">
+      <summary>Получает все ключи в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Массив <see cref="T:System.String" />, который содержит все ключи коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Clear">
+      <summary>Делает недопустимыми кэшированные массивы и удаляет все записи из коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.CopyTo(System.Array,System.Int32)">
+      <summary>Копирует целый массив <see cref="T:System.Collections.Specialized.NameValueCollection" /> в совместимый одномерный массив <see cref="T:System.Array" />, начиная с заданного индекса целевого массива.</summary>
+      <param name="dest">Одномерный массив <see cref="T:System.Array" />, в который копируются элементы из интерфейса <see cref="T:System.Collections.Specialized.NameValueCollection" />.Массив <see cref="T:System.Array" /> должен иметь индексацию, начинающуюся с нуля.</param>
+      <param name="index">Отсчитываемый от нуля индекс в массиве <paramref name="dest" />, указывающий начало копирования.</param>
+      <exception cref="T:System.ArgumentNullException">Свойство <paramref name="dest" /> имеет значение null.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.</exception>
+      <exception cref="T:System.ArgumentException">Массив <paramref name="dest" /> является многомерным.-или- Количество элементов в исходной коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" /> превышает доступное место, начиная с индекса <paramref name="index" /> до конца массива назначения <paramref name="dest" />.</exception>
+      <exception cref="T:System.InvalidCastException">Тип исходной коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" /> нельзя автоматически привести к типу массива назначения <paramref name="dest" />.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.Int32)">
+      <summary>Получает значения по указанному индексу в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />, объединенные в один список с разделителями-запятыми.</summary>
+      <returns>Объект <see cref="T:System.String" />, который содержит список значений с разделителями-запятыми, по указанному адресу в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />, если найден; в противном случае — значение null.</returns>
+      <param name="index">Индекс (с нуля) записи, содержащей значения, которые требуется получить из коллекции.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.String)">
+      <summary>Получает значения, связанные с указанным ключом, из коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />, объединенные в один список, в котором используются разделители-запятые.</summary>
+      <returns>Объект <see cref="T:System.String" />, который содержит список значений с разделителями-запятыми, связанных с указанным ключом в классе <see cref="T:System.Collections.Specialized.NameValueCollection" />, если найден; в противном случае — значение null.</returns>
+      <param name="name">Ключ <see cref="T:System.String" /> для записи, содержащей значения, которые требуется получить.Значением ключа может быть null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetKey(System.Int32)">
+      <summary>Получает ключ по указанному индексу в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Объект <see cref="T:System.String" />, который содержит ключ по указанному индексу в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />, если найден; в противном случае — значение null.</returns>
+      <param name="index">Отсчитываемый от нуля индекс ключа, который требуется получить из коллекции.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.Int32)">
+      <summary>Получает значения по указанному индексу в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Массив <see cref="T:System.String" />, который содержит значения по указанному индексу в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />, если найден; в противном случае — значение null.</returns>
+      <param name="index">Индекс (с нуля) записи, содержащей значения, которые требуется получить из коллекции.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.String)">
+      <summary>Получает значения, связанные с указанным ключом, из коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Массив <see cref="T:System.String" />, который содержит значения, связанные с указанным ключом, в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />, если найден; в противном случае — значение null.</returns>
+      <param name="name">Ключ <see cref="T:System.String" /> для записи, содержащей значения, которые требуется получить.Значением ключа может быть null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.HasKeys">
+      <summary>Получает значение, показывающее, содержит ли коллекция <see cref="T:System.Collections.Specialized.NameValueCollection" /> ключи, отличные от null.</summary>
+      <returns>Значение true, если коллекция <see cref="T:System.Collections.Specialized.NameValueCollection" /> содержит ключи, которые отличны от null; в противном случае — значение false.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.InvalidateCachedArrays">
+      <summary>Сбрасывает кэшированные массивы в коллекции до значения null.</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.Int32)">
+      <summary>Получает запись по указанному индексу в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Объект <see cref="T:System.String" />, который содержит список значений с разделителями-запятыми по указанному индексу в коллекции.</returns>
+      <param name="index">Индекс (с нуля) записи, расположение которой требуется определить в коллекции.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> находится вне диапазона допустимых индексов коллекции.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.String)">
+      <summary>Получает или задает запись с указанным ключом в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <returns>Объект <see cref="T:System.String" />, который содержит список значений с разделителями-запятыми, связанных с указанным ключом, если он найден; в противном случае — значение null.</returns>
+      <param name="name">Ключ <see cref="T:System.String" /> для записи, которую требуется найти.Значением ключа может быть null.</param>
+      <exception cref="T:System.NotSupportedException">Коллекция доступна только для чтения, а в операции предпринимается попытка изменить коллекцию. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Remove(System.String)">
+      <summary>Удаляет записи с указанным ключом из экземпляра класса <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />.</summary>
+      <param name="name">Удаляемый ключ записи <see cref="T:System.String" />.Значением ключа может быть null.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Set(System.String,System.String)">
+      <summary>Задает значение записи в коллекции <see cref="T:System.Collections.Specialized.NameValueCollection" />.</summary>
+      <param name="name">Ключ <see cref="T:System.String" /> для записи, в которую требуется добавить новое значение.Значением ключа может быть null.</param>
+      <param name="value">Объект <see cref="T:System.Object" />, представляющий новое значение, которое требуется добавить в указанную запись.Допускается значение null.</param>
+      <exception cref="T:System.NotSupportedException">Семейство доступно только для чтения.</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.OrderedDictionary">
+      <summary>Представляет коллекцию пар "ключ-значение", доступ к которым можно получить по ключу и индексу.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Collections.IEqualityComparer)">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.OrderedDictionary" /> с помощью указанного компаратора.</summary>
+      <param name="comparer">Интерфейс <see cref="T:System.Collections.IComparer" />, который используется для определения равенства двух ключей.-или- Значение null для использования блока сравнения по умолчанию, который является реализацией метода <see cref="M:System.Object.Equals(System.Object)" /> для каждого ключа.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32)">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.OrderedDictionary" />, используя указанную исходную емкость.</summary>
+      <param name="capacity">Начальное количество элементов, которое может содержать коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.OrderedDictionary" />, используя указанную исходную емкость и компаратор.</summary>
+      <param name="capacity">Начальное количество элементов, которое может содержать коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</param>
+      <param name="comparer">Интерфейс <see cref="T:System.Collections.IComparer" />, который используется для определения равенства двух ключей.-или- Значение null для использования блока сравнения по умолчанию, который является реализацией метода <see cref="M:System.Object.Equals(System.Object)" /> для каждого ключа.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Add(System.Object,System.Object)">
+      <summary>Добавляет запись с указанным ключом и значением в коллекцию <see cref="T:System.Collections.Specialized.OrderedDictionary" /> с наименьшим доступным индексом.</summary>
+      <param name="key">Ключ записи, которую требуется добавить.</param>
+      <param name="value">Добавляемое значение записи.Данное значение может быть null.</param>
+      <exception cref="T:System.NotSupportedException">Коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> доступна только для чтения.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.AsReadOnly">
+      <summary>Возвращает доступную только для чтения копию текущей коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Доступная только для чтения копия текущей коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Clear">
+      <summary>Удаляет все элементы из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <exception cref="T:System.NotSupportedException">Коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> доступна только для чтения.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Contains(System.Object)">
+      <summary>Определяет, содержит ли коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> указанный ключ.</summary>
+      <returns>Значение true, если коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> содержит элемент с указанным ключом, в противном случае — значение false.</returns>
+      <param name="key">Ключ, который требуется отыскать в коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Копирует элементы коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" /> в одномерный объект <see cref="T:System.Array" /> по указанному индексу.</summary>
+      <param name="array">Одномерный объект <see cref="T:System.Array" />, который является конечным объектом для объектов <see cref="T:System.Collections.DictionaryEntry" />, копируемых из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.Массив <see cref="T:System.Array" /> должен иметь индексацию, начинающуюся с нуля.</param>
+      <param name="index">Отсчитываемый от нуля индекс в массиве <paramref name="array" />, указывающий начало копирования.</param>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Count">
+      <summary>Получает число пар ключ/значение, содержащихся в коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Число пар ключ/значение, содержащихся в коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.IDictionaryEnumerator" />, который выполняет перебор элементов коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Объект <see cref="T:System.Collections.IDictionaryEnumerator" /> для коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>Вставляет новую запись в коллекцию <see cref="T:System.Collections.Specialized.OrderedDictionary" /> с указанным ключом и значением по указанному индексу.</summary>
+      <param name="index">Отсчитываемый от нуля индекс, по которому следует вставить элемент.</param>
+      <param name="key">Ключ записи, которую требуется добавить.</param>
+      <param name="value">Добавляемое значение записи.Допускается значение null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> выходит за пределы допустимого диапазона.</exception>
+      <exception cref="T:System.NotSupportedException">Эта коллекция доступна только для чтения.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.IsReadOnly">
+      <summary>Получает значение, определяющее, доступна ли коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> только для чтения.</summary>
+      <returns>Значение true, если коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> доступна только для чтения; в противном случае — значение false.Значение по умолчанию — false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Int32)">
+      <summary>Возвращает или задает значение по указанному индексу.</summary>
+      <returns>Значение элемента с заданным индексом. </returns>
+      <param name="index">Отсчитываемый от нуля индекс возвращаемого или задаваемого значения.</param>
+      <exception cref="T:System.NotSupportedException">Свойство задается, и коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> доступна только для чтения.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.-или-Значение параметра <paramref name="index" /> больше или равно значению свойства <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" />.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Object)">
+      <summary>Возвращает или задает значение с указанным ключом.</summary>
+      <returns>Значение, связанное с указанным ключом.Если указанный ключ не найден, при попытке его получения возвращается значение null, а при попытке задания ключа создается новый элемент с использованием указанного ключа.</returns>
+      <param name="key">Ключ, значение которого требуется получить или задать.</param>
+      <exception cref="T:System.NotSupportedException">Свойство задается, и коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> доступна только для чтения.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Keys">
+      <summary>Получает объект <see cref="T:System.Collections.ICollection" />, содержащий ключи из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Объект <see cref="T:System.Collections.ICollection" />, содержащий ключи из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Remove(System.Object)">
+      <summary>Удаляет запись с указанным ключом из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <param name="key">Ключ записи, которую требуется удалить.</param>
+      <exception cref="T:System.NotSupportedException">Коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> доступна только для чтения.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />is null.</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.RemoveAt(System.Int32)">
+      <summary>Удаляет запись с указанным индексом из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <param name="index">Отсчитываемый от нуля индекс записи, которую требуется удалить.</param>
+      <exception cref="T:System.NotSupportedException">Коллекция <see cref="T:System.Collections.Specialized.OrderedDictionary" /> доступна только для чтения.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.-или-Значение параметра <paramref name="index" /> больше или равно значению свойства <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" />.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#IsSynchronized">
+      <summary>Возвращает значение, указывающее на то, является ли доступ к объекту <see cref="T:System.Collections.Specialized.OrderedDictionary" /> синхронизированным (потокобезопасным).</summary>
+      <returns>Этот метод всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#SyncRoot">
+      <summary>Получает объект, который позволяет синхронизировать доступ к объекту <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Объект, который позволяет синхронизировать доступ к объекту <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#IDictionary#IsFixedSize">
+      <summary>Получает значение, указывающее, имеет ли список <see cref="T:System.Collections.Specialized.OrderedDictionary" /> фиксированный размер.</summary>
+      <returns>Значение true, если список <see cref="T:System.Collections.Specialized.OrderedDictionary" /> имеет фиксированный размер, в противном случае — значение false.Значение по умолчанию — false.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.IDictionaryEnumerator" />, который выполняет перебор элементов коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Объект <see cref="T:System.Collections.IDictionaryEnumerator" /> для коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Values">
+      <summary>Получает объект <see cref="T:System.Collections.ICollection" />, содержащий значения из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</summary>
+      <returns>Получает объект <see cref="T:System.Collections.ICollection" />, содержащий значения из коллекции <see cref="T:System.Collections.Specialized.OrderedDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringCollection">
+      <summary>Представляет коллекцию строк.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.#ctor">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.StringCollection" />. </summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Add(System.String)">
+      <summary>Добавляет строку в конец <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Индекс (с нуля), указывающий, куда был вставлен новый элемент.</returns>
+      <param name="value">Строка, добавляемая в конец <see cref="T:System.Collections.Specialized.StringCollection" />.Допускается значение null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.AddRange(System.String[])">
+      <summary>Копирует элементы массива строк в конец <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="value">Массив строк, добавляемый в конец <see cref="T:System.Collections.Specialized.StringCollection" />.Сам массив не может быть равен null, но может содержать элементы со значением null.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="value" /> имеет значение null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Clear">
+      <summary>Удаляет все строки из <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Contains(System.String)">
+      <summary>Определяет, находится ли указанная строка в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Значение true, если параметр <paramref name="value" /> найден в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />; в противном случае — значение false.</returns>
+      <param name="value">Строка, которую требуется найти в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.Допускается значение null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.CopyTo(System.String[],System.Int32)">
+      <summary>Копирует значения всей коллекции <see cref="T:System.Collections.Specialized.StringCollection" /> в одномерный массив строк, начиная с указанного индекса целевого массива.</summary>
+      <param name="array">Одномерный массив строк, который является конечным массивом для элементов, копируемых из <see cref="T:System.Collections.Specialized.StringCollection" />.Индексация в массиве <see cref="T:System.Array" /> должна начинаться с нуля.</param>
+      <param name="index">Индекс (с нуля) в массиве <paramref name="array" />, с которого начинается копирование. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="array" /> имеет значение null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля. </exception>
+      <exception cref="T:System.ArgumentException">Массив <paramref name="array" /> является многомерным.– или – Количество элементов в исходной коллекции <see cref="T:System.Collections.Specialized.StringCollection" /> превышает доступное место, начиная с индекса <paramref name="index" /> до конца массива назначения <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">Тип исходной коллекции <see cref="T:System.Collections.Specialized.StringCollection" /> нельзя автоматически привести к типу массива назначения <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Count">
+      <summary>Получает число строк, содержащихся в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Число строк, содержащихся в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.Specialized.StringEnumerator" />, который осуществляющий перебор элементов <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringEnumerator" /> для <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.IndexOf(System.String)">
+      <summary>Осуществляет поиск указанной строки и возвращает индекс (с нуля) ее первого вхождения в коллекцию <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Индекс (с нуля) первого вхождения параметра <paramref name="value" /> в коллекцию <see cref="T:System.Collections.Specialized.StringCollection" />, если он найден; в противном случае — значение -1.</returns>
+      <param name="value">Строка, которую требуется найти.Допускается значение null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Insert(System.Int32,System.String)">
+      <summary>Вставляет строку в класс <see cref="T:System.Collections.Specialized.StringCollection" /> по указанному индексу.</summary>
+      <param name="index">Индекс (с нуля) места вставки параметра <paramref name="value" />. </param>
+      <param name="value">Строка, которую требуется вставить.Допускается значение null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.– или – Параметр <paramref name="index" /> больше значения свойства <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsReadOnly">
+      <summary>Получает значение, указывающее, доступна ли <see cref="T:System.Collections.Specialized.StringCollection" /> только для чтения.</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsSynchronized">
+      <summary>Получает значение, показывающее, является ли доступ к коллекции <see cref="T:System.Collections.Specialized.StringCollection" /> синхронизированным (потокобезопасным).</summary>
+      <returns>Данное свойство всегда возвращает значение false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Item(System.Int32)">
+      <summary>Получает или задает элемент с указанным индексом.</summary>
+      <returns>Элемент с заданным индексом.</returns>
+      <param name="index">Индекс (с нуля) записи, которую требуется получить или задать. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.– или – Значение параметра <paramref name="index" /> больше или равно значению свойства <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Remove(System.String)">
+      <summary>Удаляет первое вхождение указанной строки из коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="value">Строка, которую требуется удалить из коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.Допускается значение null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.RemoveAt(System.Int32)">
+      <summary>Удаляет строку по указанному индексу в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="index">Отсчитываемый от нуля индекс строки, которую требуется удалить. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.– или – Значение параметра <paramref name="index" /> больше или равно значению свойства <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.SyncRoot">
+      <summary>Получает объект, с помощью которого можно синхронизировать доступ к коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Объект, который может использоваться для синхронизации доступа к коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>Копирует целый массив <see cref="T:System.Collections.Specialized.StringCollection" /> в совместимый одномерный массив <see cref="T:System.Array" />, начиная с заданного индекса целевого массива.</summary>
+      <param name="array">Одномерный массив <see cref="T:System.Array" />, в который копируются элементы из интерфейса <see cref="T:System.Collections.Specialized.StringCollection" />.Индексация в массиве <see cref="T:System.Array" /> должна начинаться с нуля.</param>
+      <param name="index">Индекс (с нуля) в массиве <paramref name="array" />, с которого начинается копирование. </param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="array" /> имеет значение null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля. </exception>
+      <exception cref="T:System.ArgumentException">Массив <paramref name="array" /> является многомерным.– или – Количество элементов в исходной коллекции <see cref="T:System.Collections.Specialized.StringCollection" /> превышает доступное место, начиная с индекса <paramref name="index" /> до конца массива назначения <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">Тип исходной коллекции <see cref="T:System.Collections.Specialized.StringCollection" /> нельзя автоматически привести к типу массива назначения <paramref name="array" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Возвращает объект <see cref="T:System.Collections.IEnumerator" />, который осуществляющий перебор элементов <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.IEnumerator" /> для <see cref="T:System.Collections.Specialized.StringCollection" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Add(System.Object)">
+      <summary>Добавляет объект в конец коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Индекс коллекции <see cref="T:System.Collections.Specialized.StringCollection" />, по которому был добавлен параметр <paramref name="value" />.</returns>
+      <param name="value">Объект <see cref="T:System.Object" />, добавляемый в конец коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.Допускается значение null.</param>
+      <exception cref="T:System.NotSupportedException">Список <see cref="T:System.Collections.Specialized.StringCollection" /> доступен только для чтения.– или – Коллекция <see cref="T:System.Collections.Specialized.StringCollection" /> имеет фиксированный размер. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Contains(System.Object)">
+      <summary>Определяет, входит ли элемент в состав <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Значение true, если параметр <paramref name="value" /> найден в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />; в противном случае — значение false.</returns>
+      <param name="value">Объект <see cref="T:System.Object" />, который требуется найти в списке <see cref="T:System.Collections.Specialized.StringCollection" />.Допускается значение null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#IndexOf(System.Object)">
+      <summary>Осуществляет поиск указанного индекса <see cref="T:System.Object" /> и возвращает индекс (с нуля) первого вхождения в коллекцию <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <returns>Индекс (с нуля) первого вхождения параметра <paramref name="value" />, если оно найдено в коллекции <see cref="T:System.Collections.Specialized.StringCollection" />; в противном случае -1.</returns>
+      <param name="value">Объект <see cref="T:System.Object" />, который требуется найти в списке <see cref="T:System.Collections.Specialized.StringCollection" />.Допускается значение null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Insert(System.Int32,System.Object)">
+      <summary>Добавляет элемент в список <see cref="T:System.Collections.Specialized.StringCollection" /> в позиции с указанным индексом.</summary>
+      <param name="index">Отсчитываемый от нуля индекс, по которому следует вставить параметр <paramref name="value" />. </param>
+      <param name="value">Вставляемый объект <see cref="T:System.Object" />.Допускается значение null.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.– или – Значение <paramref name="index" /> больше значения <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">Список <see cref="T:System.Collections.Specialized.StringCollection" /> доступен только для чтения.– или – Коллекция <see cref="T:System.Collections.Specialized.StringCollection" /> имеет фиксированный размер. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsFixedSize">
+      <summary>Получает значение, показывающее, имеет ли объект <see cref="T:System.Collections.Specialized.StringCollection" /> фиксированный размер.</summary>
+      <returns>true, если объект <see cref="T:System.Collections.Specialized.StringCollection" /> имеет фиксированный размер, в противном случае — false.Значение по умолчанию — false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsReadOnly">
+      <summary>Получает значение, показывающее, является ли объект <see cref="T:System.Collections.Specialized.StringCollection" /> доступным только для чтения.</summary>
+      <returns>true, если объект <see cref="T:System.Collections.Specialized.StringCollection" /> доступен только для чтения, в противном случае — false.Значение по умолчанию — false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#Item(System.Int32)">
+      <summary>Получает или задает элемент с указанным индексом.</summary>
+      <returns>Элемент с заданным индексом.</returns>
+      <param name="index">Отсчитываемый с нуля индекс получаемого или задаваемого элемента. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Значение параметра <paramref name="index" /> меньше нуля.– или – Значение параметра <paramref name="index" /> больше или равно значению свойства <see cref="P:System.Collections.Specialized.StringCollection.Count" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Remove(System.Object)">
+      <summary>Удаляет первый экземпляр указанного объекта из коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+      <param name="value">Элемент <see cref="T:System.Object" />, который требуется удалить из <see cref="T:System.Collections.Specialized.StringCollection" />.Допускается значение null.</param>
+      <exception cref="T:System.NotSupportedException">Список <see cref="T:System.Collections.Specialized.StringCollection" /> доступен только для чтения.– или – Коллекция <see cref="T:System.Collections.Specialized.StringCollection" /> имеет фиксированный размер. </exception>
+    </member>
+    <member name="T:System.Collections.Specialized.StringDictionary">
+      <summary>Реализует хэш-таблицу с ключом и значением, строго типизированными как строки, а не объекты.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.#ctor">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Add(System.String,System.String)">
+      <summary>Добавляет запись с указанными ключом и значением в словарь <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <param name="key">Ключ записи, которую требуется добавить. </param>
+      <param name="value">Добавляемое значение записи.Допускается значение null.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null. </exception>
+      <exception cref="T:System.ArgumentException">An entry with the same key already exists in the <see cref="T:System.Collections.Specialized.StringDictionary" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Clear">
+      <summary>Удаляет все записи из <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsKey(System.String)">
+      <summary>Определяет, содержит ли объект <see cref="T:System.Collections.Specialized.StringDictionary" /> указанный ключ.</summary>
+      <returns>Значение true, если <see cref="T:System.Collections.Specialized.StringDictionary" /> содержит запись с указанным ключом; в противном случае — значение false.</returns>
+      <param name="key">Ключ, который требуется найти в <see cref="T:System.Collections.Specialized.StringDictionary" />. </param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsValue(System.String)">
+      <summary>Определяет, содержит ли объект <see cref="T:System.Collections.Specialized.StringDictionary" /> указанное значение.</summary>
+      <returns>Значение true, если <see cref="T:System.Collections.Specialized.StringDictionary" /> содержит элемент с указанным значением, в противном случае — значение false.</returns>
+      <param name="value">Значение, которое требуется найти в словаре <see cref="T:System.Collections.Specialized.StringDictionary" />.Допускается значение null.</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>Копирует значения из словаря строк в одномерный экземпляр класса <see cref="T:System.Array" /> по указанному индексу.</summary>
+      <param name="array">Одномерный массив <see cref="T:System.Array" />, который является назначением для значений, копируемых из <see cref="T:System.Collections.Specialized.StringDictionary" />. </param>
+      <param name="index">Индекс массива, с которого начинается копирование. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the <see cref="T:System.Collections.Specialized.StringDictionary" /> is greater than the available space from <paramref name="index" /> to the end of <paramref name="array" />. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than the lower bound of <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Count">
+      <summary>Возвращает число пар ключ/значение, содержащихся в <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Число пар ключ/значение, содержащихся в <see cref="T:System.Collections.Specialized.StringDictionary" />.Получение значения данного свойства является операцией порядка сложности O(1).</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.GetEnumerator">
+      <summary>Возвращает перечислитель, который осуществляет перебор элементов словаря строк.</summary>
+      <returns>Перечислитель <see cref="T:System.Collections.IEnumerator" />, который осуществляет перебор элементов словаря строк.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.IsSynchronized">
+      <summary>Получает значение, показывающее, является ли доступ к коллекции <see cref="T:System.Collections.Specialized.StringDictionary" /> синхронизированным (потокобезопасным).</summary>
+      <returns>true, если доступ к классу <see cref="T:System.Collections.Specialized.StringDictionary" /> является синхронизированным (потокобезопасным); в противном случае — false.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Item(System.String)">
+      <summary>Возвращает или задает значение, связанное с указанным ключом.</summary>
+      <returns>Значение, связанное с указанным ключом.Если указанный ключ не найден, оператор Get возвращает значение null, а оператор Set создает запись с указанным ключом.</returns>
+      <param name="key">Ключ, значение которого необходимо задать или получить. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Keys">
+      <summary>Возвращает коллекцию ключей в <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Интерфейс <see cref="T:System.Collections.ICollection" />, предоставляющий ключи в <see cref="T:System.Collections.Specialized.StringDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Remove(System.String)">
+      <summary>Удаляет запись с указанным ключом из словаря строк.</summary>
+      <param name="key">Ключ записи, которую требуется удалить. </param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.SyncRoot">
+      <summary>Получает объект, с помощью которого можно синхронизировать доступ к коллекции <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Объект <see cref="T:System.Object" />, который можно использовать для синхронизации доступа к <see cref="T:System.Collections.Specialized.StringDictionary" />.</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Values">
+      <summary>Возвращает коллекцию значений в <see cref="T:System.Collections.Specialized.StringDictionary" />.</summary>
+      <returns>Интерфейс <see cref="T:System.Collections.ICollection" />, предоставляющий значения в <see cref="T:System.Collections.Specialized.StringDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringEnumerator">
+      <summary>Поддерживает простой перебор элементов коллекции <see cref="T:System.Collections.Specialized.StringCollection" />.</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.StringEnumerator.Current">
+      <summary>Получает текущий элемент в коллекции.</summary>
+      <returns>Текущий элемент в коллекции.</returns>
+      <exception cref="T:System.InvalidOperationException">Перечислитель помещается перед первым элементом коллекции или после последнего элемента. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.MoveNext">
+      <summary>Перемещает перечислитель к следующему элементу коллекции.</summary>
+      <returns>Значение true, если перечислитель был успешно перемещен к следующему элементу; значение false, если перечислитель достиг конца коллекции.</returns>
+      <exception cref="T:System.InvalidOperationException">Коллекция была изменена после создания перечислителя. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.Reset">
+      <summary>Устанавливает перечислитель в его начальное положение, т. е. перед первым элементом коллекции.</summary>
+      <exception cref="T:System.InvalidOperationException">Коллекция была изменена после создания перечислителя. </exception>
+    </member>
+  </members>
+</doc>

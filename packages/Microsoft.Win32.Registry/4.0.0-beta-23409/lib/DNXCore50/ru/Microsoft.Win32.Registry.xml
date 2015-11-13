@@ -1,0 +1,537 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Microsoft.Win32.Registry</name>
+  </assembly>
+  <members>
+    <member name="T:Microsoft.Win32.Registry">
+      <summary>Предоставляет объекты <see cref="T:Microsoft.Win32.RegistryKey" />, представляющие корневые разделы в реестре Windows, и методы static для доступа к парам "раздел-значение".</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.ClassesRoot">
+      <summary>Определяет типы (или классы) документов и свойства, связанные с этими типами.Это поле считывает базовый раздел реестра Windows HKEY_CLASSES_ROOT.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentConfig">
+      <summary>Содержит сведения о конфигурации, относящиеся к оборудованию, не связанному с конкретным пользователем.Это поле считывает базовый раздел реестра Windows HKEY_CURRENT_CONFIG.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentUser">
+      <summary>Содержит сведения о текущих пользовательских параметрах.Это поле считывает базовый раздел реестра Windows HKEY_CURRENT_USER.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.GetValue(System.String,System.String,System.Object)">
+      <summary>Извлекает значение, связанное с указанным именем, в указанном разделе реестра.Если имя не найдено в указанном разделе, возвращает предоставленное значение по умолчанию или значение null, если указанный раздел не существует.</summary>
+      <returns>Значение null, если вложенный раздел, заданный параметром <paramref name="keyName" />, не существует; в противном случае — значение, связанное с параметром <paramref name="valueName" />, или <paramref name="defaultValue" />, если значение параметра <paramref name="valueName" /> не найдено.</returns>
+      <param name="keyName">Полный путь к разделу реестра, начинающийся с правильного корневого раздела реестра, такого как HKEY_CURRENT_USER.</param>
+      <param name="valueName">Имя в паре "имя-значение".</param>
+      <param name="defaultValue">Возвращаемое значение, если значение параметра <paramref name="valueName" /> не существует.</param>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения из раздела реестра. </exception>
+      <exception cref="T:System.IO.IOException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, был помечен для удаления. </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="keyName" /> не начинается с правильного корневого раздела реестра. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.LocalMachine">
+      <summary>Содержит данные о конфигурации для локального компьютера.Это поле считывает базовый раздел реестра Windows HKEY_LOCAL_MACHINE.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.PerformanceData">
+      <summary>Содержит данные о производительности для компонентов программного обеспечения.Это поле считывает базовый раздел реестра Windows HKEY_PERFORMANCE_DATA.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object)">
+      <summary>Задает указанное значение пары "имя-значение" для указанного раздела реестра.Если указанный раздел не существует, он будет создан.</summary>
+      <param name="keyName">Полный путь к разделу реестра, начинающийся с правильного корневого раздела реестра, такого как HKEY_CURRENT_USER.</param>
+      <param name="valueName">Имя в паре "имя-значение".</param>
+      <param name="value">Сохраняемое значение.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="value" /> имеет значение null. </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="keyName" /> не начинается с правильного корневого раздела реестра. – или –Значение параметра <paramref name="keyName" /> длиннее максимально допустимой длины (255 знаков).</exception>
+      <exception cref="T:System.UnauthorizedAccessException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является разделом только для чтения и запись в него невозможна, например, если это узел корневого уровня. </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для изменения разделов реестра. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>Задает пару "имя-значение" для указанного раздела реестра, используя указанный тип данных реестра.Если указанный раздел не существует, он будет создан.</summary>
+      <param name="keyName">Полный путь к разделу реестра, начинающийся с правильного корневого раздела реестра, такого как HKEY_CURRENT_USER.</param>
+      <param name="valueName">Имя в паре "имя-значение".</param>
+      <param name="value">Сохраняемое значение.</param>
+      <param name="valueKind">Тип данных реестра, используемый при сохранении данных.</param>
+      <exception cref="T:System.ArgumentNullException">Параметр <paramref name="value" /> имеет значение null. </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="keyName" /> не начинается с правильного корневого раздела реестра.– или –Значение параметра <paramref name="keyName" /> длиннее максимально допустимой длины (255 знаков).– или – Тип параметра <paramref name="value" /> не соответствует типу данных реестра, заданному параметром <paramref name="valueKind" />, поэтому данные не удалось правильно преобразовать. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> доступен только для чтения, и, следовательно, запись в него невозможна (например, это узел корневого уровня или раздел не был открыт с доступом для записи). </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для изменения разделов реестра. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.Users">
+      <summary>Содержит сведения о стандартной пользовательской конфигурации.Это поле считывает базовый раздел реестра Windows HKEY_USERS.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryHive">
+      <summary>Представляет возможные значения для узла верхнего уровня на чужом компьютере.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.ClassesRoot">
+      <summary>Представляет базовый раздел HKEY_CLASSES_ROOT на другом компьютере.Для удаленного открытия данного узла это значение может быть передано в метод <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" />.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentConfig">
+      <summary>Представляете базовый раздел HKEY_CURRENT_CONFIG на другом компьютере.Для удаленного открытия данного узла это значение может быть передано в метод <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" />.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentUser">
+      <summary>Представляете базовый раздел HKEY_CURRENT_USER на другом компьютере.Для удаленного открытия данного узла это значение может быть передано в метод <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" />.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.LocalMachine">
+      <summary>Представляете базовый раздел HKEY_LOCAL_MACHINE на другом компьютере.Для удаленного открытия данного узла это значение может быть передано в метод <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" />.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.PerformanceData">
+      <summary>Представляете базовый раздел HKEY_PERFORMANCE_DATA на другом компьютере.Для удаленного открытия данного узла это значение может быть передано в метод <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" />.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.Users">
+      <summary>Представляете базовый раздел HKEY_USERS на другом компьютере.Для удаленного открытия данного узла это значение может быть передано в метод <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" />.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryKey">
+      <summary>Представляет узел уровня раздела в реестре Windows.Этот класс является инкапсуляцией реестра.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String)">
+      <summary>Создает новый вложенный раздел или открывает существующий вложенный раздел с доступом на запись.  </summary>
+      <returns>Созданный подраздел или null в случае сбоя операции.Если в качестве значения <paramref name="subkey" /> задана строка нулевой длины, возвращается текущий объект <see cref="T:Microsoft.Win32.RegistryKey" />.</returns>
+      <param name="subkey">Имя или путь создаваемого или открываемого подраздела.В этой строке не учитывается регистр знаков.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />is null. </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для создания или открытия раздела реестра. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, для которого вызывается этот метод, закрыт (доступ к закрытым разделам невозможен). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Запись в объект <see cref="T:Microsoft.Win32.RegistryKey" /> невозможна, например, он не может быть открыт как раздел, доступный для записи, или у пользователя нет необходимых прав доступа. </exception>
+      <exception cref="T:System.IO.IOException">Уровень вложенности превосходит 510.-или-Произошла системная ошибка, например удаление раздела или попытка создать раздел в корне <see cref="F:Microsoft.Win32.Registry.LocalMachine" />.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean)">
+      <summary>Создает новый вложенный раздел или открывает существующий вложенный раздел с указанным доступом. Появился в.NET Framework 2015</summary>
+      <returns>Созданный подраздел или null в случае сбоя операции.Если в качестве значения <paramref name="subkey" /> задана строка нулевой длины, возвращается текущий объект <see cref="T:Microsoft.Win32.RegistryKey" />.</returns>
+      <param name="subkey">Имя или путь создаваемого или открываемого подраздела.В этой строке не учитывается регистр знаков.</param>
+      <param name="writable">trueЧтобы указать новый подраздел для записи; в противном случае — false.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />is null. </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для создания или открытия раздела реестра. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Запись в текущий объект <see cref="T:Microsoft.Win32.RegistryKey" /> невозможна, например, он не может быть открыт как раздел, доступный для записи, или у пользователя нет необходимых прав доступа.</exception>
+      <exception cref="T:System.IO.IOException">Уровень вложенности превосходит 510.-или-Произошла системная ошибка, например удаление раздела или попытка создать раздел в корне <see cref="F:Microsoft.Win32.Registry.LocalMachine" />.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean,Microsoft.Win32.RegistryOptions)">
+      <summary>Создает новый вложенный раздел или открывает существующий вложенный раздел с указанным доступом. Появился в.NET Framework 2015</summary>
+      <returns>Созданный подраздел или null в случае сбоя операции.Если в качестве значения <paramref name="subkey" /> задана строка нулевой длины, возвращается текущий объект <see cref="T:Microsoft.Win32.RegistryKey" />.</returns>
+      <param name="subkey">Имя или путь создаваемого или открываемого подраздела.В этой строке не учитывается регистр знаков.</param>
+      <param name="writable">trueЧтобы указать новый подраздел для записи; в противном случае — false.</param>
+      <param name="options">Параметр реестра для использования.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />is null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" />не указан допустимый параметр</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для создания или открытия раздела реестра. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Запись в текущий объект <see cref="T:Microsoft.Win32.RegistryKey" /> невозможна, например, он не может быть открыт как раздел, доступный для записи, или у пользователя нет необходимых прав доступа.</exception>
+      <exception cref="T:System.IO.IOException">Уровень вложенности превосходит 510.-или-Произошла системная ошибка, например удаление раздела или попытка создать раздел в корне <see cref="F:Microsoft.Win32.Registry.LocalMachine" />.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String)">
+      <summary>Удаляет заданный подраздел. </summary>
+      <param name="subkey">Имя удаляемого подраздела.В этой строке не учитывается регистр знаков.</param>
+      <exception cref="T:System.InvalidOperationException">У вложенного раздела <paramref name="subkey" /> есть вложенные разделы </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="subkey" /> не задает правильный раздел реестра </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> является null</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для удаления раздела. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String,System.Boolean)">
+      <summary>Удаляет указанный подраздел и определяет, нужно ли создавать исключение, если подраздел не найден. </summary>
+      <param name="subkey">Имя удаляемого подраздела.В этой строке не учитывается регистр знаков.</param>
+      <param name="throwOnMissingSubKey">Указывает, должно ли вызываться исключение, если заданный подраздел найти невозможно.Если этот аргумент равен true, а заданный подраздел не существует, создается исключение.Если этот аргумент равен false, а заданный подраздел не существует, никакие действия не предпринимаются.</param>
+      <exception cref="T:System.InvalidOperationException">У вложенного раздела <paramref name="subkey" /> есть дочерние вложенные разделы. </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="subkey" /> не задает правильный раздел реестра, и значение <paramref name="throwOnMissingSubKey" /> равно true. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />is null.</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для удаления раздела. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String)">
+      <summary>Рекурсивно удаляет вложенный раздел и все дочерние вложенные разделы. </summary>
+      <param name="subkey">Удаляемый подраздел.В этой строке не учитывается регистр знаков.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />is null. </exception>
+      <exception cref="T:System.ArgumentException">Предпринята попытка удаления корневого куста реестра.-или-Параметр <paramref name="subkey" /> не определяет правильный вложенный раздел реестра. </exception>
+      <exception cref="T:System.IO.IOException">Произошла ошибка ввода-вывода.</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для удаления раздела. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String,System.Boolean)">
+      <summary>Рекурсивно удаляет указанный подраздел и все дочерние подразделы и определяет, нужно ли создавать исключение, если не удается найти подраздел. </summary>
+      <param name="subkey">Имя удаляемого подраздела.В этой строке не учитывается регистр знаков.</param>
+      <param name="throwOnMissingSubKey">Указывает, должно ли вызываться исключение, если заданный подраздел найти невозможно.Если этот аргумент равен true, а заданный подраздел не существует, создается исключение.Если этот аргумент равен false, а заданный подраздел не существует, никакие действия не предпринимаются.</param>
+      <exception cref="T:System.ArgumentException">Предпринята попытка удаления корневого куста дерева.-или-Параметр <paramref name="subkey" /> не задает правильный подраздел реестра, и значение <paramref name="throwOnMissingSubKey" /> равно true.</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" />is null.</exception>
+      <exception cref="T:System.ObjectDisposedException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является закрытым (доступ к закрытым разделам невозможен).</exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для удаления раздела.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String)">
+      <summary>Удаляет заданное значение из этого раздела.</summary>
+      <param name="name">Имя удаляемого значения. </param>
+      <exception cref="T:System.ArgumentException">Значение <paramref name="name" /> не является допустимой ссылкой на значение. </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для удаления значения. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Объект <see cref="T:Microsoft.Win32.RegistryKey" /> доступен только для чтения. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String,System.Boolean)">
+      <summary>Удаляет указанное значение из данного раздела и определяет, нужно ли создавать исключение, если значение на найдено.</summary>
+      <param name="name">Имя удаляемого значения. </param>
+      <param name="throwOnMissingValue">Показывает, должно ли вызываться исключение, если заданное значение найти невозможно.Если этот аргумент равен true, а заданное значение не существует, создается исключение.Если этот аргумент равен false, а заданное значение не существует, никакие действия не предпринимаются.</param>
+      <exception cref="T:System.ArgumentException">Значение <paramref name="name" /> не является допустимой ссылкой на значение и <paramref name="throwOnMissingValue" /> равно true. -или- <paramref name="name" />is null.</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для удаления значения. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Объект <see cref="T:Microsoft.Win32.RegistryKey" /> доступен только для чтения. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Dispose">
+      <summary>Освобождает все ресурсы, используемые текущим экземпляром класса <see cref="T:Microsoft.Win32.RegistryKey" />.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Flush">
+      <summary>Записывает в реестр все атрибуты заданного открытого раздела реестра.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle)">
+      <summary>[SECURITY CRITICAL] Создает раздел реестра на базе указанного дескриптора.</summary>
+      <returns>Раздел реестра.</returns>
+      <param name="handle">Дескриптор раздела реестра.</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle,Microsoft.Win32.RegistryView)">
+      <summary>[SECURITY CRITICAL] Создает раздел реестра на базе указанного дескриптора и параметров представления реестра. </summary>
+      <returns>Раздел реестра.</returns>
+      <param name="handle">Дескриптор раздела реестра.</param>
+      <param name="view">Представление реестра для использования.</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetSubKeyNames">
+      <summary>Возвращает массив строк, который содержит все имена подразделов.</summary>
+      <returns>Массив строк, который содержит имена подразделов для текущего раздела.</returns>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения из раздела. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <exception cref="T:System.IO.IOException">Произошла системная ошибка, например, был удален текущий раздел.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String)">
+      <summary>Возвращает значение, связанное с заданным именем.Возвращает null, если пара "имя-значение" отсутствует в реестре.</summary>
+      <returns>Значение, связанное с параметром <paramref name="name" />, или null, если параметр <paramref name="name" /> не обнаружен.</returns>
+      <param name="name">Имя извлекаемого значения.В этой строке не учитывается регистр знаков.</param>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения из раздела реестра. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.IO.IOException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, был помечен для удаления. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object)">
+      <summary>Возвращает значение, связанное с заданным именем.Если имя не найдено, возвращает предоставленное значение по умолчанию.</summary>
+      <returns>Значение, связанное с параметром <paramref name="name" />, с оставшимися нерасширенными встроенными переменными среды, или <paramref name="defaultValue" />, если параметр <paramref name="name" /> не найден.</returns>
+      <param name="name">Имя извлекаемого значения.В этой строке не учитывается регистр знаков.</param>
+      <param name="defaultValue">Возвращаемое значение, если параметр <paramref name="name" /> не существует. </param>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения из раздела реестра. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.IO.IOException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, был помечен для удаления. </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object,Microsoft.Win32.RegistryValueOptions)">
+      <summary>Возвращает значение, связанное с заданным именем и параметрами извлечения.Если имя не найдено, возвращает предоставленное значение по умолчанию.</summary>
+      <returns>Значение, связанное с параметром <paramref name="name" />, обрабатываемым с соответствии с заданным параметром <paramref name="options" />, или <paramref name="defaultValue" />, если значение <paramref name="name" /> не найдено.</returns>
+      <param name="name">Имя извлекаемого значения.В этой строке не учитывается регистр знаков.</param>
+      <param name="defaultValue">Возвращаемое значение, если параметр <paramref name="name" /> не существует. </param>
+      <param name="options">Одно из значений перечисления, определяющее дополнительную обработку возвращаемого значения.</param>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения из раздела реестра. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.IO.IOException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, был помечен для удаления. </exception>
+      <exception cref="T:System.ArgumentException">Параметр <paramref name="options" /> не является допустимым значением <see cref="T:Microsoft.Win32.RegistryValueOptions" />; например, недопустимое значение приводится к типу <see cref="T:Microsoft.Win32.RegistryValueOptions" />.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueKind(System.String)">
+      <summary>Возвращает тип данных реестра для значения, связанного с заданным именем.</summary>
+      <returns>Тип данных реестра для значения, связанного с параметром <paramref name="name" />.</returns>
+      <param name="name">Имя значения, для которого возвращается тип данных реестра.В этой строке не учитывается регистр знаков.</param>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения из раздела реестра. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.IO.IOException">Вложенный раздел, содержащий заданное значение, не существует.-или-Пара "имя-значение", заданное параметром <paramref name="name" />, не существует.Это исключение не выбрасывается в операционных системах Windows 98 и Windows Millennium Edition.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueNames">
+      <summary>Возвращает массив строк, содержащий все имена значений, связанных с этим разделом.</summary>
+      <returns>Массив строк, который содержит имена значений для текущего раздела.</returns>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения из раздела реестра. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <exception cref="T:System.IO.IOException">Произошла системная ошибка, например, был удален текущий раздел.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Handle">
+      <summary>[SECURITY CRITICAL] Получает объект <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" />, представляющий раздел реестра, инкапсулируемый текущим объектом <see cref="T:Microsoft.Win32.RegistryKey" />.</summary>
+      <returns>Дескриптор раздела реестра.</returns>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Name">
+      <summary>Возвращает имя раздела.</summary>
+      <returns>Абсолютное (полное) имя раздела.</returns>
+      <exception cref="T:System.ObjectDisposedException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является закрытым (доступ к закрытым разделам невозможен). </exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive,Microsoft.Win32.RegistryView)">
+      <summary>Открывает новый объект <see cref="T:Microsoft.Win32.RegistryKey" />, который представляет запрошенный раздел на локальном компьютере в указанном представлении.</summary>
+      <returns>Запрошенный раздел реестра.</returns>
+      <param name="hKey">Раздел HKEY, который необходимо открыть.</param>
+      <param name="view">Представление реестра для использования.</param>
+      <exception cref="T:System.ArgumentException">Недопустимое значение <paramref name="hKey" /> или <paramref name="view" />.</exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для выполнения этого действия.</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String)">
+      <summary>Возвращает подраздел с доступом только для чтения.</summary>
+      <returns>Запрошенный вложенный раздел или null при неудачном выполнении операции.</returns>
+      <param name="name">Имя или путь для подраздела, открываемого только для чтения. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> является null</exception>
+      <exception cref="T:System.ObjectDisposedException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является закрытым (доступ к закрытым разделам невозможен). </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для чтения раздела реестра. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Boolean)">
+      <summary>Получает указанный подраздел и определяет, следует ли предоставить доступ для записи в этот раздел. </summary>
+      <returns>Запрошенный вложенный раздел или null при неудачном выполнении операции.</returns>
+      <param name="name">Имя или путь для открываемого вложенного раздела. </param>
+      <param name="writable">Если для раздела необходим доступ на запись, следует задать значение true. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />is null. </exception>
+      <exception cref="T:System.ObjectDisposedException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является закрытым (доступ к закрытым разделам невозможен). </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для доступа к разделу реестра в заданном режиме. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Security.AccessControl.RegistryRights)">
+      <summary>Получает раздел с указанным именем и.Появился в.NET Framework 2015</summary>
+      <returns>Запрошенный вложенный раздел или null при неудачном выполнении операции.</returns>
+      <param name="name">Имя или путь создаваемого или открываемого подраздела.</param>
+      <param name="rights">Права для раздела реестра.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" />is null. </exception>
+      <exception cref="T:System.ObjectDisposedException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является закрытым (доступ к закрытым разделам невозможен). </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для доступа к разделу реестра в заданном режиме. </exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)">
+      <summary>Задает указанную пару "имя-значение".</summary>
+      <param name="name">Имя сохраняемого значения. </param>
+      <param name="value">Сохраняемые данные. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" />is null. </exception>
+      <exception cref="T:System.ArgumentException">Значение параметра <paramref name="value" /> является неподдерживаемым типом данных. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является разделом только для чтения, и запись в него невозможна. Например, этот раздел не был открыт с доступом для записи. -или-Объект <see cref="T:Microsoft.Win32.RegistryKey" /> представляет собой узел корневого уровня, и операционной системой является Windows Millennium Edition или Windows 98.</exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для изменения разделов реестра. </exception>
+      <exception cref="T:System.IO.IOException">Объект <see cref="T:Microsoft.Win32.RegistryKey" /> представляет собой узел корневого уровня, и операционной системой является Windows 2000, Windows XP или Windows Server 2003.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>Устанавливает значение пары "имя-значение" в разделе реестра, используя заданный тип данных реестра.</summary>
+      <param name="name">Имя сохраняемого значения. </param>
+      <param name="value">Сохраняемые данные. </param>
+      <param name="valueKind">Тип данных реестра, используемый при сохранении данных. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" />is null. </exception>
+      <exception cref="T:System.ArgumentException">Тип параметра <paramref name="value" /> не соответствует типу данных реестра, заданному параметром <paramref name="valueKind" />, поэтому данные не удалось правильно преобразовать. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, содержащий заданное значение, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" /> является разделом только для чтения, и запись в него невозможна. Например, этот раздел не был открыт с доступом для записи.-или-Объект <see cref="T:Microsoft.Win32.RegistryKey" /> представляет собой узел корневого уровня, и операционной системой является Windows Millennium Edition или Windows 98. </exception>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствуют разрешения, необходимые для изменения разделов реестра. </exception>
+      <exception cref="T:System.IO.IOException">Объект <see cref="T:Microsoft.Win32.RegistryKey" /> представляет собой узел корневого уровня, и операционной системой является Windows 2000, Windows XP или Windows Server 2003.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.SubKeyCount">
+      <summary>Возвращает количество подразделов для текущего раздела.</summary>
+      <returns>Количество подразделов для текущего раздела.</returns>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствует разрешение на чтение раздела. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <exception cref="T:System.IO.IOException">Произошла системная ошибка, например, был удален текущий раздел.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.ToString">
+      <summary>Возвращает строковое представление этого раздела.</summary>
+      <returns>Строка, представляющая раздел.Если заданный раздел является неправильным (найти его не удается), возвращается значение null.</returns>
+      <exception cref="T:System.ObjectDisposedException">Раздел <see cref="T:Microsoft.Win32.RegistryKey" />, к которому осуществляется попытка доступа, закрыт (к закрытым ключам доступ отсутствует). </exception>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.ValueCount">
+      <summary>Возвращает число значений в разделе.</summary>
+      <returns>Число пар "имя/значение" в разделе.</returns>
+      <exception cref="T:System.Security.SecurityException">У пользователя отсутствует разрешение на чтение раздела. </exception>
+      <exception cref="T:System.ObjectDisposedException">Объект <see cref="T:Microsoft.Win32.RegistryKey" />, с которым выполняются действия, закрыт (доступ к закрытым разделам отсутствует). </exception>
+      <exception cref="T:System.UnauthorizedAccessException">У пользователя отсутствуют необходимые права доступа к реестру.</exception>
+      <exception cref="T:System.IO.IOException">Произошла системная ошибка, например, был удален текущий раздел.</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.View">
+      <summary>Получает представление, которое использовалось для создания раздела реестра. </summary>
+      <returns>Представление, которое использовалось для создания раздела реестра.-или-Значение <see cref="F:Microsoft.Win32.RegistryView.Default" />, если представление не использовалось.</returns>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryOptions">
+      <summary>Задает параметры, которые необходимо использовать при создании раздела реестра.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.None">
+      <summary>Постоянный ключ.Это значение по умолчанию.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.Volatile">
+      <summary>Временный ключ.Информация хранится в памяти и не сохраняется при выгрузке соответствующего куста реестра.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueKind">
+      <summary>Определяет типы данных, используемые для хранения значений в реестре, или задает тип данных значения в реестре.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Binary">
+      <summary>Двоичные данные в любой форме.Это значение эквивалентно типу данных реестра REG_BINARY интерфейса Win32 API.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.DWord">
+      <summary>32-разрядное двоичное число.Это значение эквивалентно типу данных реестра REG_DWORD интерфейса Win32 API.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.ExpandString">
+      <summary>Заканчивающаяся нулем строка, содержащая нерасширенные ссылки на переменные среды, такие как %PATH%, которые расширяются при получении значения.Это значение эквивалентно типу данных реестра REG_EXPAND_SZ интерфейса Win32 API.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.MultiString">
+      <summary>Массив заканчивающихся нулем строк, завершаемый двумя символами NULL.Это значение эквивалентно типу данных реестра REG_MULTI_SZ интерфейса Win32 API.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.None">
+      <summary>Нет типа данных.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.QWord">
+      <summary>64-разрядное двоичное число.Это значение эквивалентно типу данных реестра REG_QWORD интерфейса Win32 API.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.String">
+      <summary>Строка, заканчивающаяся нулем.Это значение эквивалентно типу данных реестра REG_SZ интерфейса Win32 API.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Unknown">
+      <summary>Неподдерживаемый тип данных реестра.Например, неподдерживаемым является тип данных REG_RESOURCE_LIST интерфейса Win32 API.Это значение позволяет определить, что при сохранении пары "имя-значение" метод <see cref="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)" /> должен определять соответствующий тип данных реестра.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueOptions">
+      <summary>Определяет необязательное поведение при возвращении пар "имя-значение" из раздела реестра.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames">
+      <summary>Значение типа <see cref="F:Microsoft.Win32.RegistryValueKind.ExpandString" /> возвращается без расширения соответствующих встроенных переменных среды. </summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.None">
+      <summary>Необязательное поведение не задано.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryView">
+      <summary>Задает представление реестра, которое должны быть целевым в 64-разрядных операционных системах.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Default">
+      <summary>Представление по умолчанию.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry32">
+      <summary>32-разрядное представление.</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry64">
+      <summary>64-разрядное представление.</summary>
+    </member>
+    <member name="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle">
+      <summary>[SECURITY CRITICAL] Представляет безопасный дескриптор для реестра Windows.</summary>
+    </member>
+    <member name="M:Microsoft.Win32.SafeHandles.SafeRegistryHandle.#ctor(System.IntPtr,System.Boolean)">
+      <summary>[SECURITY CRITICAL] Инициализирует новый экземпляр класса <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" />. </summary>
+      <param name="preexistingHandle">Объект, представляющий ранее существовавший дескриптор, который можно использовать.</param>
+      <param name="ownsHandle">Значение true, чтобы наверняка освободить дескриптор на стадии завершения; в противном случае — значение false.</param>
+    </member>
+    <member name="P:Microsoft.Win32.SafeHandles.SafeRegistryHandle.IsInvalid"></member>
+    <member name="T:System.Security.AccessControl.RegistryRights">
+      <summary>Определяет права доступа, которые можно применять к объектам реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ChangePermissions">
+      <summary>Право изменять правила доступа и аудита, связанные с разделом реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateLink">
+      <summary>Зарезервировано для системного использования.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateSubKey">
+      <summary>Право создавать подразделы в разделе реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Delete">
+      <summary>Право удалить раздел реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.EnumerateSubKeys">
+      <summary>Право создавать список подразделов в разделе реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ExecuteKey">
+      <summary>Эквивалентно <see cref="F:System.Security.AccessControl.RegistryRights.ReadKey" />.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.FullControl">
+      <summary>Право на полный контроль над разделом реестра, а также на изменение правил доступа и аудита.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Notify">
+      <summary>Право запрашивать уведомление об изменениях раздела реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.QueryValues">
+      <summary>Право запрашивать пары "имя-значение" в разделе реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadKey">
+      <summary>Право запрашивать пары "имя-значение" в разделе реестра, запрашивать уведомление об изменениях, получать список подразделов, а также право на чтение правил доступа и аудита раздела.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadPermissions">
+      <summary>Право открывать и копировать правила доступа и аудита, связанные с разделом реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.SetValue">
+      <summary>Право создавать, удалять и задавать пары "имя-значение" в разделе реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.TakeOwnership">
+      <summary>Право изменять владельца раздела реестра.</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.WriteKey">
+      <summary>Право создавать, удалять и задавать пары "имя-значение" в разделе реестра, создавать и удалять подразделы, запрашивать уведомление об изменениях, получать список подразделов, а также право на чтение правил доступа и аудита раздела.</summary>
+    </member>
+  </members>
+</doc>

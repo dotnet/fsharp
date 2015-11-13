@@ -1,0 +1,1878 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Collections.NonGeneric</name>
+  </assembly>
+  <members>
+    <member name="T:System.Collections.ArrayList">
+      <summary>필요에 따라 크기가 동적으로 증가하는 배열을 사용하여 <see cref="T:System.Collections.IList" /> 인터페이스를 구현합니다.이 유형에 대한 .NET Framework 소스 코드를 검색하려면 참조 소스를 참조하세요.</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.#ctor">
+      <summary>비어 있는 상태에서 기본 초기 용량을 가지는 <see cref="T:System.Collections.ArrayList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.ArrayList.#ctor(System.Collections.ICollection)">
+      <summary>지정한 컬렉션에서 복사된 요소가 포함되어 있고 복사된 요소의 수와 같은 초기 용량을 가지는 <see cref="T:System.Collections.ArrayList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="c">요소가 새 목록에 복사되는 <see cref="T:System.Collections.ICollection" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+    </member>
+    <member name="M:System.Collections.ArrayList.#ctor(System.Int32)">
+      <summary>비어 있는 상태에서 지정한 초기 용량을 가지는 <see cref="T:System.Collections.ArrayList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">새 목록에 처음부터 저장할 수 있는 요소의 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> is less than zero. </exception>
+    </member>
+    <member name="M:System.Collections.ArrayList.Adapter(System.Collections.IList)">
+      <summary>특정 <see cref="T:System.Collections.IList" />에 대해 <see cref="T:System.Collections.ArrayList" /> 래퍼를 만듭니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.IList" /> 주변의 <see cref="T:System.Collections.ArrayList" /> 래퍼입니다.</returns>
+      <param name="list">래핑할 <see cref="T:System.Collections.IList" />입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null.</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Add(System.Object)">
+      <summary>개체를 <see cref="T:System.Collections.ArrayList" />의 끝 부분에 추가합니다.</summary>
+      <returns>
+        <paramref name="value" />이 추가된 <see cref="T:System.Collections.ArrayList" /> 인덱스입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.ArrayList" />의 끝에 추가할 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.AddRange(System.Collections.ICollection)">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 끝에 <see cref="T:System.Collections.ICollection" />의 요소를 추가합니다.</summary>
+      <param name="c">요소가 <see cref="T:System.Collections.ArrayList" />의 끝에 추가되어야 하는 <see cref="T:System.Collections.ICollection" />입니다.컬렉션 자체가 null일 수는 없지만 null인 요소를 포함할 수는 있습니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.BinarySearch(System.Int32,System.Int32,System.Object,System.Collections.IComparer)">
+      <summary>지정된 비교자를 사용하여 정렬된 <see cref="T:System.Collections.ArrayList" />의 요소 범위에서 요소를 검색하고 요소의 인덱스(0부터 시작)를 반환합니다.</summary>
+      <returns>
+        <paramref name="value" />가 있는 경우, 정렬된 <see cref="T:System.Collections.ArrayList" />에 있는 <paramref name="value" />의 0부터 시작하는 인덱스이고, 그렇지 않은 경우 <paramref name="value" />보다 큰 다음 요소의 인덱스에 대한 비트 보수인 음수이고, 더 큰 요소가 없는 경우 <see cref="P:System.Collections.ArrayList.Count" />의 비트 보수입니다.</returns>
+      <param name="index">검색할 범위의 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">검색할 범위의 길이입니다. </param>
+      <param name="value">찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <param name="comparer">요소를 비교할 때 사용하는 <see cref="T:System.Collections.IComparer" /> 구현입니다.또는 
+              각 요소의 <see cref="T:System.IComparable" /> 구현인 기본 비교자를 사용하면 null입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range in the <see cref="T:System.Collections.ArrayList" />.-or- <paramref name="comparer" /> is null and neither <paramref name="value" /> nor the elements of <see cref="T:System.Collections.ArrayList" /> implement the <see cref="T:System.IComparable" /> interface. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="comparer" /> is null and <paramref name="value" /> is not of the same type as the elements of the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.BinarySearch(System.Object)">
+      <summary>기본 비교자를 사용하여 정렬된 전체 <see cref="T:System.Collections.ArrayList" />에서 요소를 검색하고 요소의 인덱스(0부터 시작)를 반환합니다.</summary>
+      <returns>
+        <paramref name="value" />가 있는 경우 정렬된 <see cref="T:System.Collections.ArrayList" />에 있는 <paramref name="value" />의 0부터 시작하는 인덱스이고, 그렇지 않은 경우 <paramref name="value" />보다 큰 다음 요소의 인덱스에 대한 비트 보수인 음수이고, 더 큰 요소가 없는 경우 <see cref="P:System.Collections.ArrayList.Count" />의 비트 보수입니다.</returns>
+      <param name="value">찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <exception cref="T:System.ArgumentException">Neither <paramref name="value" /> nor the elements of <see cref="T:System.Collections.ArrayList" /> implement the <see cref="T:System.IComparable" /> interface. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="value" /> is not of the same type as the elements of the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.BinarySearch(System.Object,System.Collections.IComparer)">
+      <summary>지정된 비교자를 사용하여 정렬된 전체 <see cref="T:System.Collections.ArrayList" />에서 요소를 검색하고 요소의 인덱스(0부터 시작)를 반환합니다.</summary>
+      <returns>
+        <paramref name="value" />가 있는 경우 정렬된 <see cref="T:System.Collections.ArrayList" />에 있는 <paramref name="value" />의 0부터 시작하는 인덱스이고, 그렇지 않은 경우 <paramref name="value" />보다 큰 다음 요소의 인덱스에 대한 비트 보수인 음수이고, 더 큰 요소가 없는 경우 <see cref="P:System.Collections.ArrayList.Count" />의 비트 보수입니다.</returns>
+      <param name="value">찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <param name="comparer">요소를 비교할 때 사용하는 <see cref="T:System.Collections.IComparer" /> 구현입니다.또는 
+              각 요소의 <see cref="T:System.IComparable" /> 구현인 기본 비교자를 사용하면 null입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="comparer" /> is null and neither <paramref name="value" /> nor the elements of <see cref="T:System.Collections.ArrayList" /> implement the <see cref="T:System.IComparable" /> interface. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="comparer" /> is null and <paramref name="value" /> is not of the same type as the elements of the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.Capacity">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />에 포함될 수 있는 요소의 수를 가져오거나 설정합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />에 포함될 수 있는 요소의 수입니다.</returns>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <see cref="P:System.Collections.ArrayList.Capacity" /> is set to a value that is less than <see cref="P:System.Collections.ArrayList.Count" />.</exception>
+      <exception cref="T:System.OutOfMemoryException">There is not enough memory available on the system.</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Clear">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />에서 요소를 모두 제거합니다.</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Clone">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 부분 복사본을 만듭니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />의 단순 복사본입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Contains(System.Object)">
+      <summary>요소가 <see cref="T:System.Collections.ArrayList" />에 있는지를 확인합니다.</summary>
+      <returns>
+        <paramref name="item" />가 <see cref="T:System.Collections.ArrayList" />에 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="item">
+        <see cref="T:System.Collections.ArrayList" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.CopyTo(System.Array)">
+      <summary>대상 배열의 맨 처음부터 시작하여 전체 <see cref="T:System.Collections.ArrayList" />를 호환되는 1차원 <see cref="T:System.Array" />에 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.ArrayList" />에서 복사한 요소의 대상인 1차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the source <see cref="T:System.Collections.ArrayList" /> is greater than the number of elements that the destination <paramref name="array" /> can contain. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.CopyTo(System.Array,System.Int32)">
+      <summary>대상 배열의 지정된 인덱스에서 시작하여 전체 <see cref="T:System.Collections.ArrayList" />을 호환되는 1차원 <see cref="T:System.Array" />에 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.ArrayList" />에서 복사한 요소의 대상인 1차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="arrayIndex">
+        <paramref name="array" />에서 복사가 시작되는 0부터 시작하는 인덱스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="arrayIndex" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the source <see cref="T:System.Collections.ArrayList" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.CopyTo(System.Int32,System.Array,System.Int32,System.Int32)">
+      <summary>대상 배열의 지정한 인덱스에서 시작하여 <see cref="T:System.Collections.ArrayList" />의 요소 범위를 호환되는 1차원 <see cref="T:System.Array" />에 복사합니다.</summary>
+      <param name="index">소스 <see cref="T:System.Collections.ArrayList" />에서 복사가 시작되는 0부터 시작하는 인덱스입니다. </param>
+      <param name="array">
+        <see cref="T:System.Collections.ArrayList" />에서 복사한 요소의 대상인 1차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="arrayIndex">
+        <paramref name="array" />에서 복사가 시작되는 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">복사할 요소의 수입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="arrayIndex" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- <paramref name="index" /> is equal to or greater than the <see cref="P:System.Collections.ArrayList.Count" /> of the source <see cref="T:System.Collections.ArrayList" />.-or- The number of elements from <paramref name="index" /> to the end of the source <see cref="T:System.Collections.ArrayList" /> is greater than the available space from <paramref name="arrayIndex" /> to the end of the destination <paramref name="array" />. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.Count">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />에 실제로 포함된 요소의 수를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />에 실제로 포함된 요소의 수입니다.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.FixedSize(System.Collections.ArrayList)">
+      <summary>고정 크기의 <see cref="T:System.Collections.ArrayList" /> 래퍼를 반환합니다.</summary>
+      <returns>고정 크기의 <see cref="T:System.Collections.ArrayList" /> 래퍼입니다.</returns>
+      <param name="list">래핑할 <see cref="T:System.Collections.ArrayList" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.FixedSize(System.Collections.IList)">
+      <summary>고정 크기의 <see cref="T:System.Collections.IList" /> 래퍼를 반환합니다.</summary>
+      <returns>고정 크기의 <see cref="T:System.Collections.IList" /> 래퍼입니다.</returns>
+      <param name="list">래핑할 <see cref="T:System.Collections.IList" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.GetEnumerator">
+      <summary>전체 <see cref="T:System.Collections.ArrayList" />에 대한 열거자를 반환합니다.</summary>
+      <returns>전체 <see cref="T:System.Collections.ArrayList" />의 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.GetEnumerator(System.Int32,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 요소 범위에 대한 열거자를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />의 지정된 요소 범위에 대한 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+      <param name="index">열거자가 참조해야 하는 <see cref="T:System.Collections.ArrayList" /> 섹션의 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">열거자가 참조해야 하는 <see cref="T:System.Collections.ArrayList" /> 섹션의 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not specify a valid range in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.GetRange(System.Int32,System.Int32)">
+      <summary>소스 <see cref="T:System.Collections.ArrayList" />에서 요소의 하위 집합을 나타내는 <see cref="T:System.Collections.ArrayList" />를 반환합니다.</summary>
+      <returns>소스 <see cref="T:System.Collections.ArrayList" />에서 요소의 하위 집합을 나타내는 <see cref="T:System.Collections.ArrayList" />입니다.</returns>
+      <param name="index">범위가 시작되는 <see cref="T:System.Collections.ArrayList" /> 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">범위의 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range of elements in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.IndexOf(System.Object)">
+      <summary>지정한 <see cref="T:System.Object" />를 검색하고, 전체 <see cref="T:System.Collections.ArrayList" /> 내에서 처음 나오는 0부터 시작하는 인덱스를 반환합니다.</summary>
+      <returns>
+        <paramref name="value" />가 있으면 전체 <see cref="T:System.Collections.ArrayList" />에서 처음 발견되는 값의 0부터 시작하는 인덱스이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.ArrayList" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.IndexOf(System.Object,System.Int32)">
+      <summary>지정된 <see cref="T:System.Object" />를 검색하고, 지정된 인덱스부터 마지막 요소까지 포함되는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에서 처음 나오는 0부터 시작하는 인덱스를 반환합니다.</summary>
+      <returns>
+        <paramref name="startIndex" />부터 마지막 요소까지 포함하는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에 <paramref name="value" />이 있으면 처음으로 검색한 개체의 0부터 시작하는 인덱스이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.ArrayList" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <param name="startIndex">검색의 0부터 시작하는 인덱스입니다.0은 빈 목록에서 유효합니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.IndexOf(System.Object,System.Int32,System.Int32)">
+      <summary>지정된 <see cref="T:System.Object" />를 검색하고, 지정된 인덱스부터 시작하여 지정된 수의 요소를 포함하는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에서 처음 나오는 0부터 시작하는 인덱스를 반환합니다.</summary>
+      <returns>
+        <paramref name="startIndex" />에서 시작하여 <paramref name="count" />개의 요소를 포함하는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에 <paramref name="value" />가 있으면 처음으로 검색한 개체의 0부터 시작하는 인덱스이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.ArrayList" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <param name="startIndex">검색의 0부터 시작하는 인덱스입니다.0은 빈 목록에서 유효합니다.</param>
+      <param name="count">검색할 섹션에 있는 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />.-or- <paramref name="count" /> is less than zero.-or- <paramref name="startIndex" /> and <paramref name="count" /> do not specify a valid section in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Insert(System.Int32,System.Object)">
+      <summary>지정된 인덱스의 <see cref="T:System.Collections.ArrayList" />에 요소를 삽입합니다.</summary>
+      <param name="index">
+        <paramref name="value" />를 삽입해야 하는 0부터 시작하는 인덱스입니다. </param>
+      <param name="value">삽입할 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.InsertRange(System.Int32,System.Collections.ICollection)">
+      <summary>지정된 인덱스의 <see cref="T:System.Collections.ArrayList" />에 컬렉션의 요소를 삽입합니다.</summary>
+      <param name="index">새 요소가 삽입되어야 하는 0부터 시작하는 인덱스입니다. </param>
+      <param name="c">요소가 <see cref="T:System.Collections.ArrayList" />에 삽입되어야 하는 <see cref="T:System.Collections.ICollection" />입니다.컬렉션 자체가 null일 수는 없지만 null인 요소를 포함할 수는 있습니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 크기가 고정되어 있는지를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />의 크기가 고정되어 있으면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />가 읽기 전용인지를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />이 읽기 전용이면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.Item(System.Int32)">
+      <summary>지정한 인덱스에 있는 요소를 가져오거나 설정합니다.</summary>
+      <returns>지정한 인덱스의 요소입니다.</returns>
+      <param name="index">가져오거나 설정할 요소의 0부터 시작하는 인덱스입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is equal to or greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.LastIndexOf(System.Object)">
+      <summary>지정한 <see cref="T:System.Object" />를 검색하고, 전체 <see cref="T:System.Collections.ArrayList" /> 내에서 마지막으로 나오는 0부터 시작하는 인덱스를 반환합니다.</summary>
+      <returns>전체 <see cref="T:System.Collections.ArrayList" />에 <paramref name="value" />이 있으면 마지막으로 검색한 개체의 인덱스(0부터 시작)이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.ArrayList" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.LastIndexOf(System.Object,System.Int32)">
+      <summary>지정된 <see cref="T:System.Object" />를 검색하고, 첫 번째 요소부터 지정된 인덱스까지 포함되는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에서 마지막으로 나오는 0부터 시작하는 인덱스를 반환합니다.</summary>
+      <returns>첫 번째 요소부터 <paramref name="startIndex" />까지 포함하는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에 <paramref name="value" />이 있으면 마지막으로 검색한 개체의 인덱스(0부터 시작)이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.ArrayList" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <param name="startIndex">역방향 검색의 0부터 시작하는 인덱스입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.LastIndexOf(System.Object,System.Int32,System.Int32)">
+      <summary>지정된 <see cref="T:System.Object" />를 검색하며, 지정된 수의 요소를 포함하고 지정된 인덱스에서 끝나는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에서 마지막으로 나오는 0부터 시작하는 인덱스를 반환합니다.</summary>
+      <returns>요소를 <paramref name="count" />개 포함하고 <paramref name="startIndex" />에서 끝나는 <see cref="T:System.Collections.ArrayList" />의 요소 범위에 <paramref name="value" />가 있으면 마지막으로 검색한 개체의 0부터 시작하는 인덱스이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.ArrayList" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <param name="startIndex">역방향 검색의 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">검색할 섹션에 있는 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="startIndex" /> is outside the range of valid indexes for the <see cref="T:System.Collections.ArrayList" />.-or- <paramref name="count" /> is less than zero.-or- <paramref name="startIndex" /> and <paramref name="count" /> do not specify a valid section in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ReadOnly(System.Collections.ArrayList)">
+      <summary>읽기 전용 <see cref="T:System.Collections.ArrayList" /> 래퍼를 반환합니다.</summary>
+      <returns>
+        <paramref name="list" /> 주변의 읽기 전용 <see cref="T:System.Collections.ArrayList" /> 래퍼입니다.</returns>
+      <param name="list">래핑할 <see cref="T:System.Collections.ArrayList" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ReadOnly(System.Collections.IList)">
+      <summary>읽기 전용 <see cref="T:System.Collections.IList" /> 래퍼를 반환합니다.</summary>
+      <returns>
+        <paramref name="list" /> 주변의 읽기 전용 <see cref="T:System.Collections.IList" /> 래퍼입니다.</returns>
+      <param name="list">래핑할 <see cref="T:System.Collections.IList" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Remove(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />에서 처음 발견되는 특정 개체를 제거합니다.</summary>
+      <param name="obj">
+        <see cref="T:System.Collections.ArrayList" />에서 제거할 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.RemoveAt(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 지정한 인덱스에서 요소를 제거합니다.</summary>
+      <param name="index">제거할 요소의 0부터 시작하는 인덱스입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> is equal to or greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.RemoveRange(System.Int32,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />에서 요소의 범위를 제거합니다.</summary>
+      <param name="index">제거할 요소의 범위에 대한 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">제거할 요소의 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range of elements in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Repeat(System.Object,System.Int32)">
+      <summary>요소가 지정된 값의 복사본인 <see cref="T:System.Collections.ArrayList" />를 반환합니다.</summary>
+      <returns>모두 <paramref name="value" />의 복사본에 해당하는 <paramref name="count" />의 요소 수를 포함하는 <see cref="T:System.Collections.ArrayList" />입니다.</returns>
+      <param name="value">새 <see cref="T:System.Collections.ArrayList" />에서 여러 번 복사할 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <param name="count">
+        <paramref name="value" />가 복사되어야 하는 횟수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="count" /> is less than zero. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Reverse">
+      <summary>전체 <see cref="T:System.Collections.ArrayList" />에서 요소의 순서를 반대로 바꿉니다.</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Reverse(System.Int32,System.Int32)">
+      <summary>지정된 범위에서 요소의 순서를 반대로 바꿉니다.</summary>
+      <param name="index">순서를 반대로 바꿀 범위의 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">순서를 반대로 바꿀 범위의 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not denote a valid range of elements in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.SetRange(System.Int32,System.Collections.ICollection)">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 요소 범위에 대해 컬렉션의 요소를 복사합니다.</summary>
+      <param name="index">
+        <paramref name="c" />의 요소 복사를 시작할 <see cref="T:System.Collections.ArrayList" /> 0부터 시작하는 인덱스입니다. </param>
+      <param name="c">
+        <see cref="T:System.Collections.ArrayList" />에 요소를 복사할 <see cref="T:System.Collections.ICollection" />입니다.컬렉션 자체가 null일 수는 없지만 null인 요소를 포함할 수는 있습니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="index" /> plus the number of elements in <paramref name="c" /> is greater than <see cref="P:System.Collections.ArrayList.Count" />. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Sort">
+      <summary>전체 <see cref="T:System.Collections.ArrayList" />의 요소를 정렬합니다.</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Sort(System.Collections.IComparer)">
+      <summary>지정된 비교자를 사용하여 전체 <see cref="T:System.Collections.ArrayList" />에 있는 요소를 정렬합니다.</summary>
+      <param name="comparer">요소를 비교할 때 사용하는 <see cref="T:System.Collections.IComparer" /> 구현입니다.또는 각 요소의 <see cref="T:System.IComparable" /> 구현을 사용하기 위한 null 참조(Visual Basic에서는 Nothing)입니다. </param>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <exception cref="T:System.InvalidOperationException">An error occurred while comparing two elements.</exception>
+      <exception cref="T:System.ArgumentException">null is passed for <paramref name="comparer" />, and the elements in the list do not implement <see cref="T:System.IComparable" />.</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Sort(System.Int32,System.Int32,System.Collections.IComparer)">
+      <summary>지정된 비교자를 사용하여 <see cref="T:System.Collections.ArrayList" />의 요소 범위에 있는 요소를 정렬합니다.</summary>
+      <param name="index">정렬할 범위의 0부터 시작하는 인덱스입니다. </param>
+      <param name="count">정렬할 범위의 길이입니다. </param>
+      <param name="comparer">요소를 비교할 때 사용하는 <see cref="T:System.Collections.IComparer" /> 구현입니다.또는 각 요소의 <see cref="T:System.IComparable" /> 구현을 사용하기 위한 null 참조(Visual Basic에서는 Nothing)입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero.-or- <paramref name="count" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="index" /> and <paramref name="count" /> do not specify a valid range in the <see cref="T:System.Collections.ArrayList" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only. </exception>
+      <exception cref="T:System.InvalidOperationException">An error occurred while comparing two elements.</exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Synchronized(System.Collections.ArrayList)">
+      <summary>동기화되어 스레드로부터 안전하게 보호되는 <see cref="T:System.Collections.ArrayList" /> 래퍼를 반환합니다.</summary>
+      <returns>동기화되어 스레드로부터 안전하게 보호되는 <see cref="T:System.Collections.ArrayList" /> 래퍼입니다.</returns>
+      <param name="list">동기화할 <see cref="T:System.Collections.ArrayList" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.Synchronized(System.Collections.IList)">
+      <summary>동기화되어 스레드로부터 안전하게 보호되는 <see cref="T:System.Collections.IList" /> 래퍼를 반환합니다.</summary>
+      <returns>동기화되어 스레드로부터 안전하게 보호되는 <see cref="T:System.Collections.IList" /> 래퍼입니다.</returns>
+      <param name="list">동기화할 <see cref="T:System.Collections.IList" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ArrayList.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ToArray">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 요소를 새 <see cref="T:System.Object" /> 배열에 복사합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />의 요소 복사본을 포함하는 <see cref="T:System.Object" /> 배열입니다.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.ToArray(System.Type)">
+      <summary>
+        <see cref="T:System.Collections.ArrayList" />의 요소를 지정된 요소 형식의 새 배열에 복사합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ArrayList" />의 요소 복사본을 포함하는 지정된 요소 형식의 배열입니다.</returns>
+      <param name="type">요소를 복사해 넣기 위해 새로 만들 대상 배열의 요소 <see cref="T:System.Type" />입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="type" /> is null. </exception>
+      <exception cref="T:System.InvalidCastException">The type of the source <see cref="T:System.Collections.ArrayList" /> cannot be cast automatically to the specified type. </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.ArrayList.TrimToSize">
+      <summary>용량을 <see cref="T:System.Collections.ArrayList" />의 실제 요소 수로 설정합니다.</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.ArrayList" /> is read-only.-or- The <see cref="T:System.Collections.ArrayList" /> has a fixed size. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="T:System.Collections.CaseInsensitiveComparer">
+      <summary>문자열의 대/소문자를 무시하고 두 개체를 비교합니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CaseInsensitiveComparer.#ctor">
+      <summary>현재 스레드의 <see cref="P:System.Threading.Thread.CurrentCulture" />를 사용하여 <see cref="T:System.Collections.CaseInsensitiveComparer" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.CaseInsensitiveComparer.#ctor(System.Globalization.CultureInfo)">
+      <summary>지정된 <see cref="T:System.Globalization.CultureInfo" />를 사용하여 <see cref="T:System.Collections.CaseInsensitiveComparer" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="culture">새 <see cref="T:System.Collections.CaseInsensitiveComparer" />에 사용할 <see cref="T:System.Globalization.CultureInfo" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="culture" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Collections.CaseInsensitiveComparer.Compare(System.Object,System.Object)">
+      <summary>대/소문자를 구분하지 않고 같은 형식의 두 개체를 비교한 다음 한 개체가 다른 개체보다 작은지, 큰지 또는 두 개체가 같은지 여부를 나타내는 값을 반환합니다.</summary>
+      <returns>다음 표와 같이 <paramref name="a" /> 및 <paramref name="b" />의 상대 값을 나타내는 부호 있는 정수입니다.값 의미 0보다 작음 <paramref name="a" />는 대/소문자를 구분하지 않은 상태에서 <paramref name="b" />보다 작습니다. Zero <paramref name="a" />는 대/소문자를 구분하지 않은 상태에서 <paramref name="b" />와 같습니다. 0보다 큼 <paramref name="a" />는 대/소문자를 구분하지 않은 상태에서 <paramref name="b" />보다 큽니다. </returns>
+      <param name="a">비교할 첫 번째 개체입니다. </param>
+      <param name="b">비교할 두 번째 개체입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="a" /> 또는 <paramref name="b" /> 모두 <see cref="T:System.IComparable" /> 인터페이스를 구현하지 않는 경우또는 <paramref name="a" />와 <paramref name="b" />가 형식이 다른 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.CaseInsensitiveComparer.Default">
+      <summary>현재 스레드의 <see cref="P:System.Threading.Thread.CurrentCulture" />와 관련되어 있고 항상 사용 가능한 <see cref="T:System.Collections.CaseInsensitiveComparer" />의 인스턴스를 가져옵니다.</summary>
+      <returns>현재 스레드의 <see cref="P:System.Threading.Thread.CurrentCulture" />와 관련된 <see cref="T:System.Collections.CaseInsensitiveComparer" />의 인스턴스입니다.</returns>
+      <filterpriority>1</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Collections.CaseInsensitiveComparer.DefaultInvariant">
+      <summary>
+        <see cref="P:System.Globalization.CultureInfo.InvariantCulture" />와 관련되어 있고 항상 사용 가능한 <see cref="T:System.Collections.CaseInsensitiveComparer" />의 인스턴스를 가져옵니다.</summary>
+      <returns>
+        <see cref="P:System.Globalization.CultureInfo.InvariantCulture" />와 관련된 <see cref="T:System.Collections.CaseInsensitiveComparer" />의 인스턴스입니다.</returns>
+      <filterpriority>1</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="T:System.Collections.CollectionBase">
+      <summary>강력한 형식의 컬렉션에 대한 abstract 기본 클래스를 제공합니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.#ctor">
+      <summary>기본 초기 용량을 사용하여 <see cref="T:System.Collections.CollectionBase" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.CollectionBase.#ctor(System.Int32)">
+      <summary>지정된 용량을 사용하여 <see cref="T:System.Collections.CollectionBase" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">새 목록에 처음 저장할 수 있는 요소의 수입니다.</param>
+    </member>
+    <member name="P:System.Collections.CollectionBase.Capacity">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />에 포함될 수 있는 요소의 수를 가져오거나 설정합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" />에 포함될 수 있는 요소의 수입니다.</returns>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <see cref="P:System.Collections.CollectionBase.Capacity" />가 <see cref="P:System.Collections.CollectionBase.Count" />보다 작은 값으로 설정된 경우</exception>
+      <exception cref="T:System.OutOfMemoryException">시스템에 사용 가능한 메모리가 부족합니다.</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.Clear">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에서 개체를 모두 제거합니다.이 메서드는 재정의할 수 없습니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.CollectionBase.Count">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에 포함된 요소의 수를 가져옵니다.이 속성은 재정의할 수 없습니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에 포함된 요소의 수입니다.이 속성의 값을 검색하는 것은 O(1) 연산입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스를 반복하는 열거자를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스의 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.CollectionBase.InnerList">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스의 요소 목록을 포함하는 <see cref="T:System.Collections.ArrayList" />를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스 자체를 나타내는 <see cref="T:System.Collections.ArrayList" />입니다.이 속성의 값을 검색하는 것은 O(1) 연산입니다.</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.List">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스의 요소 목록을 포함하는 <see cref="T:System.Collections.IList" />를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스 자체를 나타내는 <see cref="T:System.Collections.IList" />입니다.</returns>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnClear">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스의 내용을 지울 때 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnClearComplete">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스의 내용을 지운 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnInsert(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에 새 요소를 삽입하기 전에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="index">
+        <paramref name="value" />를 삽입할 0부터 시작하는 인덱스입니다.</param>
+      <param name="value">
+        <paramref name="index" />에 있는 요소의 새 값입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnInsertComplete(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에 새 요소를 삽입한 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="index">
+        <paramref name="value" />를 삽입할 0부터 시작하는 인덱스입니다.</param>
+      <param name="value">
+        <paramref name="index" />에 있는 요소의 새 값입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnRemove(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에서 요소를 제거할 때 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="index">
+        <paramref name="value" />를 찾을 수 있는 0부터 시작하는 인덱스입니다.</param>
+      <param name="value">
+        <paramref name="index" />에서 제거할 요소의 값입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnRemoveComplete(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에서 요소를 제거한 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="index">
+        <paramref name="value" />를 찾을 수 있는 0부터 시작하는 인덱스입니다.</param>
+      <param name="value">
+        <paramref name="index" />에서 제거할 요소의 값입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnSet(System.Int32,System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에 값을 설정하기 전에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="index">
+        <paramref name="oldValue" />를 찾을 수 있는 0부터 시작하는 인덱스입니다.</param>
+      <param name="oldValue">
+        <paramref name="newValue" />로 바꿀 값입니다.</param>
+      <param name="newValue">
+        <paramref name="index" />에 있는 요소의 새 값입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnSetComplete(System.Int32,System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스에 값을 설정한 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="index">
+        <paramref name="oldValue" />를 찾을 수 있는 0부터 시작하는 인덱스입니다.</param>
+      <param name="oldValue">
+        <paramref name="newValue" />로 바꿀 값입니다.</param>
+      <param name="newValue">
+        <paramref name="index" />에 있는 요소의 새 값입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.OnValidate(System.Object)">
+      <summary>값의 유효성을 검사할 때 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="value">유효성을 검사할 개체입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" />가 null입니다.</exception>
+    </member>
+    <member name="M:System.Collections.CollectionBase.RemoveAt(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" /> 인스턴스의 지정한 인덱스에서 요소를 제거합니다.이 메서드는 재정의할 수 없습니다.</summary>
+      <param name="index">제거할 요소의 0부터 시작하는 인덱스입니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 0보다 작은 경우또는<paramref name="index" />가 <see cref="P:System.Collections.CollectionBase.Count" />보다 크거나 같은 경우</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>대상 배열의 지정된 인덱스에서 시작하여 전체 <see cref="T:System.Collections.CollectionBase" />을 호환되는 1차원 <see cref="T:System.Array" />에 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.CollectionBase" />에서 복사한 요소의 대상인 일차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="index">
+        <paramref name="array" />에서 복사가 시작되는 인덱스(0부터 시작)입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />가 null입니다.</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 0보다 작은 경우</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" />가 다차원 배열인 경우또는소스 <see cref="T:System.Collections.CollectionBase" />의 요소 수가 <paramref name="index" />에서 대상 <paramref name="array" /> 끝까지 사용 가능한 공간보다 큰 경우</exception>
+      <exception cref="T:System.InvalidCastException">소스 <see cref="T:System.Collections.CollectionBase" /> 형식을 대상 <paramref name="array" /> 형식으로 자동 캐스팅할 수 없는 경우</exception>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체입니다.</returns>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Add(System.Object)">
+      <summary>개체를 <see cref="T:System.Collections.CollectionBase" />의 끝 부분에 추가합니다.</summary>
+      <returns>
+        <paramref name="value" />가 추가된 <see cref="T:System.Collections.CollectionBase" /> 인덱스입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.CollectionBase" />의 끝에 추가할 <see cref="T:System.Object" />입니다.</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.CollectionBase" />가 읽기 전용인 경우또는<see cref="T:System.Collections.CollectionBase" />의 크기가 고정되어 있는 경우</exception>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Contains(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />에 특정 요소가 들어 있는지 여부를 확인합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" />에 지정된 <paramref name="value" />가 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.CollectionBase" />에서 찾을 <see cref="T:System.Object" />입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#IndexOf(System.Object)">
+      <summary>지정한 <see cref="T:System.Object" />를 검색하고, 전체 <see cref="T:System.Collections.CollectionBase" /> 내에서 처음 나오는 인덱스(0부터 시작)를 반환합니다.</summary>
+      <returns>전체 <see cref="T:System.Collections.CollectionBase" />에서 맨 처음 나오는 <paramref name="value" />의 인덱스(0부터 시작)가 있으면 해당 인덱스이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.CollectionBase" />에서 찾을 <see cref="T:System.Object" />입니다.</param>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Insert(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />의 지정된 인덱스에 요소를 삽입합니다.</summary>
+      <param name="index">
+        <paramref name="value" />를 삽입해야 하는 인덱스(0부터 시작)입니다.</param>
+      <param name="value">삽입할 <see cref="T:System.Object" />입니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 0보다 작은 경우또는<paramref name="index" />가 <see cref="P:System.Collections.CollectionBase.Count" />보다 큰 경우</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.CollectionBase" />가 읽기 전용인 경우또는<see cref="T:System.Collections.CollectionBase" />의 크기가 고정되어 있는 경우</exception>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#IList#IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />의 크기가 고정되어 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" />의 크기가 고정되어 있으면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#IList#IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />이 읽기 전용인지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.CollectionBase" />이 읽기 전용이면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+    </member>
+    <member name="P:System.Collections.CollectionBase.System#Collections#IList#Item(System.Int32)">
+      <summary>지정된 인덱스에 있는 요소를 가져오거나 설정합니다.</summary>
+      <returns>지정된 인덱스의 요소입니다.</returns>
+      <param name="index">가져오거나 설정할 요소의 인덱스(0부터 시작)입니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 0보다 작은 경우또는<paramref name="index" />가 <see cref="P:System.Collections.CollectionBase.Count" />보다 크거나 같은 경우</exception>
+    </member>
+    <member name="M:System.Collections.CollectionBase.System#Collections#IList#Remove(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.CollectionBase" />에서 맨 처음 발견되는 특정 개체를 제거합니다.</summary>
+      <param name="value">
+        <see cref="T:System.Collections.CollectionBase" />에서 제거할 <see cref="T:System.Object" />입니다.</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> 매개 변수가 <see cref="T:System.Collections.CollectionBase" /> 개체에 없는 경우</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.CollectionBase" />가 읽기 전용인 경우또는<see cref="T:System.Collections.CollectionBase" />의 크기가 고정되어 있는 경우</exception>
+    </member>
+    <member name="T:System.Collections.Comparer">
+      <summary>문자열의 대/소문자를 구분하여 두 개체를 비교합니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Comparer.#ctor(System.Globalization.CultureInfo)">
+      <summary>지정된 <see cref="T:System.Globalization.CultureInfo" />를 사용하여 <see cref="T:System.Collections.Comparer" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="culture">새 <see cref="T:System.Collections.Comparer" />에 사용할 <see cref="T:System.Globalization.CultureInfo" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="culture" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Collections.Comparer.Compare(System.Object,System.Object)">
+      <summary>대/소문자를 구분하여 같은 형식의 두 개체를 비교한 다음 한 개체가 다른 개체보다 작은지, 큰지 또는 두 개체가 같은지 여부를 나타내는 값을 반환합니다.</summary>
+      <returns>다음 표와 같이 <paramref name="a" /> 및 <paramref name="b" />의 상대 값을 나타내는 부호 있는 정수입니다.값 의미 0보다 작음 <paramref name="a" />가 <paramref name="b" />보다 작은 경우 Zero <paramref name="a" />가 <paramref name="b" />와 같습니다. 0보다 큼 <paramref name="a" />가 <paramref name="b" />보다 큰 경우 </returns>
+      <param name="a">비교할 첫 번째 개체입니다. </param>
+      <param name="b">비교할 두 번째 개체입니다. </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="a" /> 또는 <paramref name="b" /> 모두 <see cref="T:System.IComparable" /> 인터페이스를 구현하지 않는 경우또는 <paramref name="a" />와 <paramref name="b" />가 형식이 다르므로 서로 비교할 수 없는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="F:System.Collections.Comparer.Default">
+      <summary>현재 스레드의 <see cref="P:System.Threading.Thread.CurrentCulture" />와 관련된 <see cref="T:System.Collections.Comparer" />의 인스턴스를 나타냅니다.이 필드는 읽기 전용입니다.</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="F:System.Collections.Comparer.DefaultInvariant">
+      <summary>
+        <see cref="P:System.Globalization.CultureInfo.InvariantCulture" />와 관련된 <see cref="T:System.Collections.Comparer" />의 인스턴스를 나타냅니다.이 필드는 읽기 전용입니다.</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="T:System.Collections.DictionaryBase">
+      <summary>강력한 형식의 키/값 쌍 컬렉션에 대한 abstract 기본 클래스를 제공합니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.#ctor">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.Clear">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스의 내용을 지웁니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.CopyTo(System.Array,System.Int32)">
+      <summary>지정한 인덱스에서 1차원 <see cref="T:System.Array" />에 <see cref="T:System.Collections.DictionaryBase" /> 엔트리를 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에서 복사된 <see cref="T:System.Collections.DictionaryEntry" /> 개체의 대상인 1차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="index">
+        <paramref name="array" />에서 복사가 시작되는 인덱스(0부터 시작)입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 0보다 작은 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" />가 다차원 배열인 경우또는 소스 <see cref="T:System.Collections.DictionaryBase" />의 요소 수가 <paramref name="index" />에서 대상 <paramref name="array" /> 끝까지 사용 가능한 공간보다 큰 경우 </exception>
+      <exception cref="T:System.InvalidCastException">소스 <see cref="T:System.Collections.DictionaryBase" /> 형식을 대상 <paramref name="array" /> 형식으로 자동 캐스팅할 수 없는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.Count">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 포함된 요소의 수를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 포함된 요소의 수입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.Dictionary">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 포함된 요소의 목록을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스 자체를 나타내는 <see cref="T:System.Collections.IDictionary" />입니다.</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스를 반복하는 <see cref="T:System.Collections.IDictionaryEnumerator" />를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스의 <see cref="T:System.Collections.IDictionaryEnumerator" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.InnerHashtable">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 포함된 요소의 목록을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스 자체를 나타내는 <see cref="T:System.Collections.Hashtable" />입니다.</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnClear">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스의 내용을 지우기 전에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnClearComplete">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스의 내용을 지운 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnGet(System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에서 지정한 키와 값이 있는 요소를 가져옵니다.</summary>
+      <returns>지정된 키와 값의 요소를 포함하는 <see cref="T:System.Object" />입니다.</returns>
+      <param name="key">가져올 요소의 키입니다. </param>
+      <param name="currentValue">
+        <paramref name="key" />와 연관된 요소의 현재 값입니다. </param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnInsert(System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 새 요소를 삽입하기 전에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="key">삽입할 요소의 키입니다. </param>
+      <param name="value">삽입할 요소의 값입니다. </param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnInsertComplete(System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 새 요소를 삽입한 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="key">삽입할 요소의 키입니다. </param>
+      <param name="value">삽입할 요소의 값입니다. </param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnRemove(System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에서 요소를 제거하기 전에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="key">제거할 요소의 키입니다. </param>
+      <param name="value">제거할 요소의 값입니다. </param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnRemoveComplete(System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에서 요소를 제거한 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="key">제거할 요소의 키입니다. </param>
+      <param name="value">제거할 요소의 값입니다. </param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnSet(System.Object,System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 값을 설정하기 전에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="key">찾을 요소의 키입니다. </param>
+      <param name="oldValue">
+        <paramref name="key" />와 연관된 요소의 이전 값입니다. </param>
+      <param name="newValue">
+        <paramref name="key" />와 연관된 요소의 새 값입니다. </param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnSetComplete(System.Object,System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 인스턴스에 값을 설정한 후에 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="key">찾을 요소의 키입니다. </param>
+      <param name="oldValue">
+        <paramref name="key" />와 연관된 요소의 이전 값입니다. </param>
+      <param name="newValue">
+        <paramref name="key" />와 연관된 요소의 새 값입니다. </param>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.OnValidate(System.Object,System.Object)">
+      <summary>지정한 키와 값을 가지는 요소의 유효성을 검사할 때 추가로 사용자 지정 프로세스를 수행합니다.</summary>
+      <param name="key">유효성을 검사할 요소의 키입니다. </param>
+      <param name="value">유효성을 검사할 요소의 값입니다. </param>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#ICollection#IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if access to the <see cref="T:System.Collections.DictionaryBase" /> object is synchronized (thread safe); otherwise, false.기본값은 false입니다.</returns>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#ICollection#SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체에 대한 액세스를 동기화하는 데 사용할 수 있는 개체입니다.</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IDictionary#Add(System.Object,System.Object)">
+      <summary>지정한 키와 값을 가지는 요소를 <see cref="T:System.Collections.DictionaryBase" />에 추가합니다.</summary>
+      <param name="key">추가할 요소의 키입니다.</param>
+      <param name="value">추가할 요소의 값입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">같은 키를 가지는 요소가 이미 <see cref="T:System.Collections.DictionaryBase" />에 있는 경우 </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.DictionaryBase" />가 읽기 전용인 경우또는 <see cref="T:System.Collections.DictionaryBase" />의 크기가 고정되어 있는 경우 </exception>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IDictionary#Contains(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" />에 특정 키가 들어 있는지 여부를 확인합니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.DictionaryBase" /> contains an element with the specified key; otherwise, false.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.DictionaryBase" />에서 찾을 수 있는 키입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체의 크기가 고정되어 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.DictionaryBase" /> object has a fixed size; otherwise, false.기본값은 false입니다.</returns>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체가 읽기 전용인지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.DictionaryBase" /> object is read-only; otherwise, false.기본값은 false입니다.</returns>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#Item(System.Object)">
+      <summary>지정된 키에 연결된 값을 가져오거나 설정합니다.</summary>
+      <returns>지정한 키와 연결된 값입니다.지정한 키가 없는 경우 해당 키를 가져오려고 시도하면 null이 반환되고 해당 키를 설정하려고 시도하면 지정한 키를 사용하여 새 요소가 만들어집니다.</returns>
+      <param name="key">가져오거나 설정할 값이 있는 키입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.NotSupportedException">속성이 설정되어 있으며 <see cref="T:System.Collections.DictionaryBase" />가 읽기 전용인 경우또는 속성이 설정되어 있고 <paramref name="key" />가 컬렉션에 없으며 <see cref="T:System.Collections.DictionaryBase" />의 크기가 고정된 경우 </exception>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#Keys">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체의 키가 포함된 <see cref="T:System.Collections.ICollection" /> 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체의 키가 포함된 <see cref="T:System.Collections.ICollection" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IDictionary#Remove(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" />에서 지정한 키를 가지는 요소를 제거합니다.</summary>
+      <param name="key">제거할 요소의 키입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.DictionaryBase" />가 읽기 전용인 경우또는 <see cref="T:System.Collections.DictionaryBase" />의 크기가 고정되어 있는 경우 </exception>
+    </member>
+    <member name="P:System.Collections.DictionaryBase.System#Collections#IDictionary#Values">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체의 값이 포함된 <see cref="T:System.Collections.ICollection" /> 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" /> 개체의 값이 포함된 <see cref="T:System.Collections.ICollection" /> 개체입니다.</returns>
+    </member>
+    <member name="M:System.Collections.DictionaryBase.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.DictionaryBase" />를 반복하는 <see cref="T:System.Collections.IEnumerator" />를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.DictionaryBase" />에 대한 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+    </member>
+    <member name="T:System.Collections.Hashtable">
+      <summary>키의 해시 코드에 따라 구성된 키/값 쌍의 컬렉션을 나타냅니다.이 형식에 대 한.NET Framework 소스 코드를 찾아보려면 참조는 참조 원본.</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor">
+      <summary>기본 초기 용량, 로드 비율, 해시 코드 공급자 및 비교자를 사용하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 비어 있는 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary)">
+      <summary>지정한 사전의 요소를 새 <see cref="T:System.Collections.Hashtable" /> 개체에 복사하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 새 인스턴스를 초기화합니다.새 <see cref="T:System.Collections.Hashtable" /> 개체는 복사된 요소 수와 같은 초기 용량을 갖고 있고 기본 로드 비율, 해시 코드 공급자 및 비교자를 사용합니다.</summary>
+      <param name="d">새 <see cref="T:System.Collections.Hashtable" /> 개체로 복사할 <see cref="T:System.Collections.IDictionary" /> 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" />가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary,System.Collections.IEqualityComparer)">
+      <summary>지정된 사전의 요소를 새 <see cref="T:System.Collections.Hashtable" /> 개체에 복사하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 새 인스턴스를 초기화합니다.새 <see cref="T:System.Collections.Hashtable" /> 개체는 복사된 요소 수와 같은 초기 용량을 갖고 있고 기본 로드 비율과 지정된 <see cref="T:System.Collections.IEqualityComparer" /> 개체를 사용합니다.</summary>
+      <param name="d">새 <see cref="T:System.Collections.Hashtable" /> 개체로 복사할 <see cref="T:System.Collections.IDictionary" /> 개체입니다.</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.Hashtable" />과 함께 사용할 해시 코드 공급자와 비교자를 정의하는 <see cref="T:System.Collections.IEqualityComparer" /> 개체입니다.또는 기본 해시 코드 공급자와 기본 비교자를 사용하면 null입니다.기본 해시 코드 공급자는 각 키의 <see cref="M:System.Object.GetHashCode" /> 구현이며 기본 비교자는 각 키의 <see cref="M:System.Object.Equals(System.Object)" /> 구현입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" />가 null인 경우 </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary,System.Single)">
+      <summary>지정한 사전의 요소를 새 <see cref="T:System.Collections.Hashtable" /> 개체에 복사하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 새 인스턴스를 초기화합니다.새 <see cref="T:System.Collections.Hashtable" /> 개체는 복사된 요소 수와 같은 초기 용량을 갖고 있고 지정된 로드 비율과 기본 해시 코드 공급자 및 비교자를 사용합니다.</summary>
+      <param name="d">새 <see cref="T:System.Collections.Hashtable" /> 개체로 복사할 <see cref="T:System.Collections.IDictionary" /> 개체입니다.</param>
+      <param name="loadFactor">최고의 성능을 제공하는 기본값으로 곱한 0.1에서 1.0 사이의 수입니다.결과는 버킷과 요소의 최대 비율입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="loadFactor" />가 0.1보다 작습니다.또는 <paramref name="loadFactor" />가 1.0보다 큽니다. </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IDictionary,System.Single,System.Collections.IEqualityComparer)">
+      <summary>지정한 사전의 요소를 새 <see cref="T:System.Collections.Hashtable" /> 개체에 복사하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 새 인스턴스를 초기화합니다.새 <see cref="T:System.Collections.Hashtable" /> 개체는 복사된 요소 수와 같은 초기 용량을 갖고 있고 지정된 로드 비율 및 <see cref="T:System.Collections.IEqualityComparer" /> 개체를 사용합니다.</summary>
+      <param name="d">새 <see cref="T:System.Collections.Hashtable" /> 개체로 복사할 <see cref="T:System.Collections.IDictionary" /> 개체입니다.</param>
+      <param name="loadFactor">최고의 성능을 제공하는 기본값으로 곱한 0.1에서 1.0 사이의 수입니다.결과는 버킷과 요소의 최대 비율입니다.</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.Hashtable" />과 함께 사용할 해시 코드 공급자와 비교자를 정의하는 <see cref="T:System.Collections.IEqualityComparer" /> 개체입니다.또는 기본 해시 코드 공급자와 기본 비교자를 사용하면 null입니다.기본 해시 코드 공급자는 각 키의 <see cref="M:System.Object.GetHashCode" /> 구현이며 기본 비교자는 각 키의 <see cref="M:System.Object.Equals(System.Object)" /> 구현입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="loadFactor" />가 0.1보다 작습니다.또는 <paramref name="loadFactor" />가 1.0보다 큽니다. </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Collections.IEqualityComparer)">
+      <summary>기본 초기 용량 및 로드 비율과 지정된 <see cref="T:System.Collections.IEqualityComparer" /> 개체를 사용하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 비어 있는 새 인스턴스를 초기화합니다.</summary>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.Hashtable" /> 개체와 함께 사용할 해시 코드 공급자와 비교자를 정의하는 <see cref="T:System.Collections.IEqualityComparer" /> 개체입니다.또는 기본 해시 코드 공급자와 기본 비교자를 사용하면 null입니다.기본 해시 코드 공급자는 각 키의 <see cref="M:System.Object.GetHashCode" /> 구현이며 기본 비교자는 각 키의 <see cref="M:System.Object.Equals(System.Object)" /> 구현입니다.</param>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32)">
+      <summary>지정된 초기 용량과 기본 로드 비율, 해시 코드 공급자 및 비교자를 사용하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 비어 있는 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 개체가 처음에 포함할 수 있는 대략적인 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" />가 0보다 작은 경우 </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>지정된 초기 용량 및 <see cref="T:System.Collections.IEqualityComparer" />와 기본 로드 비율을 사용하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 비어 있는 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 개체가 처음에 포함할 수 있는 대략적인 요소 수입니다. </param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.Hashtable" />과 함께 사용할 해시 코드 공급자와 비교자를 정의하는 <see cref="T:System.Collections.IEqualityComparer" /> 개체입니다.또는 기본 해시 코드 공급자와 기본 비교자를 사용하면 null입니다.기본 해시 코드 공급자는 각 키의 <see cref="M:System.Object.GetHashCode" /> 구현이며 기본 비교자는 각 키의 <see cref="M:System.Object.Equals(System.Object)" /> 구현입니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" />가 0보다 작은 경우 </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32,System.Single)">
+      <summary>지정된 초기 용량 및 로드 비율과 기본 해시 코드 공급자 및 비교자를 사용하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 비어 있는 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 개체가 처음에 포함할 수 있는 대략적인 요소 수입니다. </param>
+      <param name="loadFactor">최고의 성능을 제공하는 기본값으로 곱한 0.1에서 1.0 사이의 수입니다.결과는 버킷과 요소의 최대 비율입니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" />가 0보다 작은 경우또는 <paramref name="loadFactor" />가 0.1보다 작습니다.또는 <paramref name="loadFactor" />가 1.0보다 큽니다. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="capacity" />가 오버플로를 일으킬 수 있습니다.</exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.#ctor(System.Int32,System.Single,System.Collections.IEqualityComparer)">
+      <summary>지정된 초기 용량, 로드 비율 및 <see cref="T:System.Collections.IEqualityComparer" /> 개체를 사용하여 <see cref="T:System.Collections.Hashtable" /> 클래스의 비어 있는 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" /> 개체가 처음에 포함할 수 있는 대략적인 요소 수입니다. </param>
+      <param name="loadFactor">최고의 성능을 제공하는 기본값으로 곱한 0.1에서 1.0 사이의 수입니다.결과는 버킷과 요소의 최대 비율입니다.</param>
+      <param name="equalityComparer">
+        <see cref="T:System.Collections.Hashtable" />과 함께 사용할 해시 코드 공급자와 비교자를 정의하는 <see cref="T:System.Collections.IEqualityComparer" /> 개체입니다.또는 기본 해시 코드 공급자와 기본 비교자를 사용하면 null입니다.기본 해시 코드 공급자는 각 키의 <see cref="M:System.Object.GetHashCode" /> 구현이며 기본 비교자는 각 키의 <see cref="M:System.Object.Equals(System.Object)" /> 구현입니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" />가 0보다 작은 경우또는 <paramref name="loadFactor" />가 0.1보다 작습니다.또는 <paramref name="loadFactor" />가 1.0보다 큽니다. </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.Add(System.Object,System.Object)">
+      <summary>지정한 키와 값을 가지는 요소를 <see cref="T:System.Collections.Hashtable" />에 추가합니다.</summary>
+      <param name="key">추가할 요소의 키입니다. </param>
+      <param name="value">추가할 요소의 값입니다.값은 null이 될 수 있습니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">같은 키를 가지는 요소가 이미 <see cref="T:System.Collections.Hashtable" />에 있는 경우 </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Hashtable" />가 읽기 전용인 경우또는 <see cref="T:System.Collections.Hashtable" />의 크기가 고정되어 있는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Clear">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에서 요소를 모두 제거합니다.</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Hashtable" />가 읽기 전용인 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Clone">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />의 단순 복사본을 만듭니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />의 단순 복사본입니다.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Contains(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 특정 키가 들어 있는지 여부를 확인합니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> contains an element with the specified key; otherwise, false.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.Hashtable" />에서 찾을 수 있는 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.ContainsKey(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 특정 키가 들어 있는지 여부를 확인합니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> contains an element with the specified key; otherwise, false.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.Hashtable" />에서 찾을 수 있는 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.ContainsValue(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 특정 값이 들어 있는지 여부를 확인합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />에 지정된 <paramref name="value" />가 있는 요소가 포함되어 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.Hashtable" />에서 찾을 수 있는 값입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" /> 요소를 지정한 인덱스의 1차원 <see cref="T:System.Array" /> 인스턴스에 복사합니다.</summary>
+      <param name="array">The one-dimensional <see cref="T:System.Array" /> that is the destination of the <see cref="T:System.Collections.DictionaryEntry" /> objects copied from <see cref="T:System.Collections.Hashtable" />.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="arrayIndex">
+        <paramref name="array" />에서 복사가 시작되는 인덱스(0부터 시작)입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="arrayIndex" />가 0보다 작은 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" />가 다차원 배열인 경우또는 소스 <see cref="T:System.Collections.Hashtable" />의 요소 수가 <paramref name="arrayIndex" />에서 대상 <paramref name="array" /> 끝까지 사용 가능한 공간보다 큰 경우 </exception>
+      <exception cref="T:System.InvalidCastException">소스 <see cref="T:System.Collections.Hashtable" /> 형식을 대상 <paramref name="array" /> 형식으로 자동 캐스팅할 수 없는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.Count">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 포함된 키/값 쌍의 수를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />에 포함된 키/값 쌍의 수입니다.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.EqualityComparer">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 사용할 <see cref="T:System.Collections.IEqualityComparer" />를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />에 사용할 <see cref="T:System.Collections.IEqualityComparer" />입니다.</returns>
+      <exception cref="T:System.ArgumentException">속성이 값으로 설정되었지만 <see cref="T:System.Collections.IHashCodeProvider" /> 및 <see cref="T:System.Collections.IComparer" />를 사용하여 해시 테이블을 만든 경우 </exception>
+    </member>
+    <member name="M:System.Collections.Hashtable.GetEnumerator">
+      <summary>Returns an <see cref="T:System.Collections.IDictionaryEnumerator" /> that iterates through the <see cref="T:System.Collections.Hashtable" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />에 대한 <see cref="T:System.Collections.IDictionaryEnumerator" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.GetHash(System.Object)">
+      <summary>지정한 키의 해시 코드를 반환합니다.</summary>
+      <returns>
+        <paramref name="key" />의 해시 코드입니다.</returns>
+      <param name="key">해시 코드가 반환될 <see cref="T:System.Object" />입니다. </param>
+      <exception cref="T:System.NullReferenceException">
+        <paramref name="key" />가 null인 경우 </exception>
+    </member>
+    <member name="P:System.Collections.Hashtable.IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />의 크기가 고정되어 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> has a fixed size; otherwise, false.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />가 읽기 전용인지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.Hashtable" /> is read-only; otherwise, false.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if access to the <see cref="T:System.Collections.Hashtable" /> is synchronized (thread safe); otherwise, false.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.Item(System.Object)">
+      <summary>지정된 키에 연결된 값을 가져오거나 설정합니다.</summary>
+      <returns>지정한 키와 연결된 값입니다.지정한 키가 없는 경우 해당 키를 가져오려고 시도하면 null이 반환되고 해당 키를 설정하려고 시도하면 지정한 키를 사용하여 새 요소가 만들어집니다.</returns>
+      <param name="key">가져오거나 설정할 값이 있는 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.NotSupportedException">속성이 설정되어 있으며 <see cref="T:System.Collections.Hashtable" />가 읽기 전용인 경우또는 속성이 설정되어 있고 <paramref name="key" />가 컬렉션에 없으며 <see cref="T:System.Collections.Hashtable" />의 크기가 고정된 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.KeyEquals(System.Object,System.Object)">
+      <summary>특정 <see cref="T:System.Object" />를 <see cref="T:System.Collections.Hashtable" />의 특정 키와 비교합니다.</summary>
+      <returns>
+        <paramref name="item" />와 <paramref name="key" />가 같으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="item">
+        <paramref name="key" />와 비교할 <see cref="T:System.Object" />입니다. </param>
+      <param name="key">
+        <paramref name="item" />과 비교할 <see cref="T:System.Collections.Hashtable" />의 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="item" />가 null인 경우또는 <paramref name="key" />가 null인 경우 </exception>
+    </member>
+    <member name="P:System.Collections.Hashtable.Keys">
+      <summary>Gets an <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Hashtable" />.</summary>
+      <returns>An <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Hashtable" />.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Remove(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에서 지정한 키를 가지는 요소를 제거합니다.</summary>
+      <param name="key">제거할 요소의 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Hashtable" />가 읽기 전용인 경우또는 <see cref="T:System.Collections.Hashtable" />의 크기가 고정되어 있는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.Synchronized(System.Collections.Hashtable)">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 대해 동기화되어 스레드로부터 안전하게 보호되는 래퍼를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />에 대해 동기화되어 스레드로부터 안전하게 보호되는 래퍼입니다.</returns>
+      <param name="table">동기화할 <see cref="T:System.Collections.Hashtable" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="table" />가 null인 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.Hashtable.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Hashtable" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Hashtable.System#Collections#IEnumerable#GetEnumerator">
+      <summary>컬렉션을 반복하는 열거자를 반환합니다.</summary>
+      <returns>컬렉션에서 반복하는 데 사용할 수 있는 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+    </member>
+    <member name="P:System.Collections.Hashtable.Values">
+      <summary>
+        <see cref="T:System.Collections.Hashtable" />의 값을 포함하는 <see cref="T:System.Collections.ICollection" />을 가져옵니다.</summary>
+      <returns>An <see cref="T:System.Collections.ICollection" /> containing the values in the <see cref="T:System.Collections.Hashtable" />.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="T:System.Collections.Queue">
+      <summary>개체의 선입선출(FIFO) 컬렉션을 나타냅니다.</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor">
+      <summary>비어 있는 상태이고 기본 초기 용량을 가지며 기본 증가 비율을 사용하는 <see cref="T:System.Collections.Queue" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor(System.Collections.ICollection)">
+      <summary>지정한 컬렉션에서 복사된 요소가 포함되어 있고, 복사된 요소의 수와 같은 초기 용량을 가지며, 기본 증가 비율을 사용하는 <see cref="T:System.Collections.Queue" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="col">요소를 복사할 원본 <see cref="T:System.Collections.ICollection" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" /> is null. </exception>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor(System.Int32)">
+      <summary>비어 있는 상태이고 기본 초기 용량을 가지며 기본 증가 비율을 사용하는 <see cref="T:System.Collections.Queue" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Queue" />에 포함될 수 있는 초기 요소의 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> is less than zero. </exception>
+    </member>
+    <member name="M:System.Collections.Queue.#ctor(System.Int32,System.Single)">
+      <summary>비어 있는 상태이고 기본 초기 용량을 가지며 지정한 증가 비율을 사용하는 <see cref="T:System.Collections.Queue" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Queue" />에 포함될 수 있는 초기 요소의 수입니다. </param>
+      <param name="growFactor">
+        <see cref="T:System.Collections.Queue" />의 용량이 확장될 때 곱해지는 비율입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> is less than zero.-or- <paramref name="growFactor" /> is less than 1.0 or greater than 10.0. </exception>
+    </member>
+    <member name="M:System.Collections.Queue.Clear">
+      <summary>
+        <see cref="T:System.Collections.Queue" />에서 모든 개체를 제거합니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Clone">
+      <summary>
+        <see cref="T:System.Collections.Queue" />의 부분 복사본을 만듭니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />의 부분 복사본입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Contains(System.Object)">
+      <summary>요소가 <see cref="T:System.Collections.Queue" />에 있는지를 확인합니다.</summary>
+      <returns>
+        <paramref name="obj" />가 <see cref="T:System.Collections.Queue" />에 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">
+        <see cref="T:System.Collections.Queue" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Queue" /> 요소를 지정한 배열 인덱스에서 시작하여 기존의 1차원 <see cref="T:System.Array" />에 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Queue" />에서 복사한 요소의 대상인 1차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다</param>
+      <param name="index">
+        <paramref name="array" />에서 복사가 시작되는 0부터 시작하는 인덱스입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than zero. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the source <see cref="T:System.Collections.Queue" /> is greater than the available space from <paramref name="index" /> to the end of the destination <paramref name="array" />. </exception>
+      <exception cref="T:System.ArrayTypeMismatchException">The type of the source <see cref="T:System.Collections.Queue" /> cannot be cast automatically to the type of the destination <paramref name="array" />. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Queue.Count">
+      <summary>
+        <see cref="T:System.Collections.Queue" />에 포함된 요소의 수를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />에 포함된 요소의 수입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Dequeue">
+      <summary>
+        <see cref="T:System.Collections.Queue" />의 시작 부분에서 개체를 제거하고 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />의 시작에서 제거하는 개체입니다.</returns>
+      <exception cref="T:System.InvalidOperationException">The <see cref="T:System.Collections.Queue" /> is empty. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Enqueue(System.Object)">
+      <summary>개체를 <see cref="T:System.Collections.Queue" />의 끝 부분에 추가합니다.</summary>
+      <param name="obj">
+        <see cref="T:System.Collections.Queue" />에 추가할 개체입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Queue" />을 반복하는 열거자를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />에 대한 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Queue.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Queue" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Peek">
+      <summary>
+        <see cref="T:System.Collections.Queue" />의 시작 부분에서 개체를 제거하지 않고 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />의 처음에 있는 개체입니다.</returns>
+      <exception cref="T:System.InvalidOperationException">The <see cref="T:System.Collections.Queue" /> is empty. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.Synchronized(System.Collections.Queue)">
+      <summary>원래 큐를 래핑하고 스레드로부터 안전한 새 <see cref="T:System.Collections.Queue" />를 반환합니다.</summary>
+      <returns>동기화되어 스레드로부터 안전하게 보호되는 <see cref="T:System.Collections.Queue" /> 래퍼입니다.</returns>
+      <param name="queue">동기화할 <see cref="T:System.Collections.Queue" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="queue" /> is null. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Queue.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Queue" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.ToArray">
+      <summary>
+        <see cref="T:System.Collections.Queue" /> 요소를 새 배열에 복사합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Queue" />에서 복사된 요소를 포함하는 새 배열입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Queue.TrimToSize">
+      <summary>용량을 <see cref="T:System.Collections.Queue" />의 실제 요소 수로 설정합니다.</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Queue" /> is read-only.</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="T:System.Collections.ReadOnlyCollectionBase">
+      <summary>제네릭이 아닌 강력한 형식의 읽기 전용 컬렉션에 대한 abstract 기본 클래스를 제공합니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ReadOnlyCollectionBase.#ctor">
+      <summary>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.Count">
+      <summary>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 인스턴스에 포함된 요소의 수를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 인스턴스에 포함된 요소의 수입니다.이 속성의 값을 검색하는 것은 O(1) 연산입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.ReadOnlyCollectionBase.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 인스턴스를 반복하는 열거자를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 인스턴스의 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.InnerList">
+      <summary>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 인스턴스에 포함된 요소의 목록을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 인스턴스 자체를 나타내는 <see cref="T:System.Collections.ArrayList" />입니다.</returns>
+    </member>
+    <member name="M:System.Collections.ReadOnlyCollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>대상 배열의 지정된 인덱스에서 시작하여 전체 <see cref="T:System.Collections.ReadOnlyCollectionBase" />을 호환되는 1차원 <see cref="T:System.Array" />에 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" />에서 복사한 요소의 대상인 일차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="index">
+        <paramref name="array" />에서 복사가 시작되는 인덱스(0부터 시작)입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />가 null입니다. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 0보다 작은 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" />가 다차원 배열인 경우또는 소스 <see cref="T:System.Collections.ReadOnlyCollectionBase" />의 요소 수가 <paramref name="index" />에서 대상 <paramref name="array" /> 끝까지 사용 가능한 공간보다 큰 경우 </exception>
+      <exception cref="T:System.InvalidCastException">소스 <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 형식을 대상 <paramref name="array" /> 형식으로 자동 캐스팅할 수 없는 경우 </exception>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 개체에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 개체에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+    </member>
+    <member name="P:System.Collections.ReadOnlyCollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 개체에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.ReadOnlyCollectionBase" /> 개체에 대한 액세스를 동기화하는 데 사용할 수 있는 개체입니다.</returns>
+    </member>
+    <member name="T:System.Collections.SortedList">
+      <summary>키를 기준으로 정렬되고 키와 인덱스로 액세스할 수 있는 키/값 쌍의 컬렉션을 나타냅니다.</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor">
+      <summary>비어 있는 상태이고 기본 초기 용량을 가지며 <see cref="T:System.Collections.SortedList" /> 개체에 추가된 각 키에서 구현하는 <see cref="T:System.IComparable" /> 인터페이스에 따라 정렬되는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IComparer)">
+      <summary>비어 있고 기본 초기 용량을 갖고 있으며 지정된 <see cref="T:System.Collections.IComparer" /> 인터페이스에 따라 정렬되는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="comparer">키를 비교할 때 사용하는 <see cref="T:System.Collections.IComparer" /> 구현입니다.또는 각 키의 <see cref="T:System.IComparable" /> 구현을 사용하면 null입니다. </param>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IComparer,System.Int32)">
+      <summary>비어 있고 지정된 초기 용량을 갖고 있으며 지정된 <see cref="T:System.Collections.IComparer" /> 인터페이스에 따라 정렬되는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="comparer">키를 비교할 때 사용하는 <see cref="T:System.Collections.IComparer" /> 구현입니다.또는 각 키의 <see cref="T:System.IComparable" /> 구현을 사용하면 null입니다. </param>
+      <param name="capacity">
+        <see cref="T:System.Collections.SortedList" /> 개체에 포함될 수 있는 초기 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" />가 0보다 작은 경우 </exception>
+      <exception cref="T:System.OutOfMemoryException">지정된 <paramref name="capacity" />의 <see cref="T:System.Collections.SortedList" /> 개체를 만드는 데 사용할 수 있는 메모리가 충분하지 않은 경우</exception>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IDictionary)">
+      <summary>지정된 사전에서 복사된 요소가 포함되어 있고 복사된 요소의 수와 같은 초기 용량을 갖고 있으며 각 키에서 구현된 <see cref="T:System.IComparable" /> 인터페이스에 따라 정렬되는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="d">새 <see cref="T:System.Collections.SortedList" /> 개체로 복사할 <see cref="T:System.Collections.IDictionary" /> 구현입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidCastException">
+        <paramref name="d" />의 요소 중 하나 이상이 <see cref="T:System.IComparable" /> 인터페이스를 구현하지 않는 경우 </exception>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Collections.IDictionary,System.Collections.IComparer)">
+      <summary>지정된 사전에서 복사된 요소가 포함되어 있고 복사된 요소의 수와 같은 초기 용량을 갖고 있으며 지정된 <see cref="T:System.Collections.IComparer" /> 인터페이스에 따라 정렬되는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="d">새 <see cref="T:System.Collections.SortedList" /> 개체로 복사할 <see cref="T:System.Collections.IDictionary" /> 구현입니다.</param>
+      <param name="comparer">키를 비교할 때 사용하는 <see cref="T:System.Collections.IComparer" /> 구현입니다.또는 각 키의 <see cref="T:System.IComparable" /> 구현을 사용하면 null입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidCastException">
+        <paramref name="comparer" />가 null이고 <paramref name="d" />의 요소 중 하나 이상이 <see cref="T:System.IComparable" /> 인터페이스를 구현하지 않는 경우 </exception>
+    </member>
+    <member name="M:System.Collections.SortedList.#ctor(System.Int32)">
+      <summary>비어 있는 상태이고 지정된 초기 용량을 가지며 <see cref="T:System.Collections.SortedList" /> 개체에 추가된 각 키에서 구현된 <see cref="T:System.IComparable" /> 인터페이스에 따라 정렬되는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="initialCapacity">
+        <see cref="T:System.Collections.SortedList" /> 개체에 포함될 수 있는 초기 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="initialCapacity" />가 0보다 작은 경우 </exception>
+      <exception cref="T:System.OutOfMemoryException">There is not enough available memory to create a <see cref="T:System.Collections.SortedList" /> object with the specified <paramref name="initialCapacity" />.</exception>
+    </member>
+    <member name="M:System.Collections.SortedList.Add(System.Object,System.Object)">
+      <summary>지정한 키와 값을 가진 요소를 <see cref="T:System.Collections.SortedList" /> 개체에 추가합니다.</summary>
+      <param name="key">추가할 요소의 키입니다. </param>
+      <param name="value">추가할 요소의 값입니다.값은 null이 될 수 있습니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentException">지정한 <paramref name="key" />를 가진 요소가 이미 <see cref="T:System.Collections.SortedList" /> 개체에 있는 경우또는 <see cref="T:System.Collections.SortedList" />가 <see cref="T:System.IComparable" /> 인터페이스를 사용하도록 설정되었으나 <paramref name="key" />는 <see cref="T:System.IComparable" /> 인터페이스를 구현하지 않는 경우 </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" />가 읽기 전용인 경우또는 <see cref="T:System.Collections.SortedList" />의 크기가 고정되어 있는 경우 </exception>
+      <exception cref="T:System.OutOfMemoryException">
+        <see cref="T:System.Collections.SortedList" />에 요소를 추가할 수 있는 메모리가 충분하지 않은 경우</exception>
+      <exception cref="T:System.InvalidOperationException">비교자에서 예외를 throw하는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Capacity">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 용량을 가져오거나 설정합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체에 포함될 수 있는 요소의 수입니다.</returns>
+      <exception cref="T:System.ArgumentOutOfRangeException">할당된 값이 <see cref="T:System.Collections.SortedList" /> 개체의 현재 요소 수보다 작은 경우</exception>
+      <exception cref="T:System.OutOfMemoryException">시스템에 사용 가능한 메모리가 부족합니다.</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Clear">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에서 요소를 모두 제거합니다.</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 개체가 읽기 전용인 경우또는 <see cref="T:System.Collections.SortedList" />의 크기가 고정되어 있는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Clone">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 단순 복사본을 만듭니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 단순 복사본입니다.</returns>
+      <filterpriority>2</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.SortedList.Contains(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에 특정 키가 포함되어 있는지 여부를 확인합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체에 지정된 <paramref name="key" />를 가진 요소가 포함되어 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.SortedList" /> 개체에서 찾을 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">비교자에서 예외를 throw하는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.ContainsKey(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에 특정 키가 포함되어 있는지 여부를 확인합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체에 지정된 <paramref name="key" />를 가진 요소가 포함되어 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.SortedList" /> 개체에서 찾을 키입니다.</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">비교자에서 예외를 throw하는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.ContainsValue(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에 특정 값이 포함되어 있는지 여부를 확인합니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.SortedList" /> object contains an element with the specified <paramref name="value" />; otherwise, false.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.SortedList" /> 개체에서 찾을 값입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 요소를 지정한 배열 인덱스에서 시작하여 1차원 <see cref="T:System.Array" /> 개체에 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.SortedList" />에서 복사한 <see cref="T:System.Collections.DictionaryEntry" /> 개체의 대상인 1차원 <see cref="T:System.Array" /> 개체입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="arrayIndex">
+        <paramref name="array" />에서 복사가 시작되는 인덱스(0부터 시작)입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />가 null인 경우 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="arrayIndex" />가 0보다 작은 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" />가 다차원 배열인 경우또는 소스 <see cref="T:System.Collections.SortedList" /> 개체의 요소 수가 <paramref name="arrayIndex" />에서 대상 <paramref name="array" /> 끝까지 사용 가능한 공간보다 큰 경우 </exception>
+      <exception cref="T:System.InvalidCastException">소스 <see cref="T:System.Collections.SortedList" /> 형식을 대상 <paramref name="array" /> 형식으로 자동 캐스팅할 수 없는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Count">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에 포함된 요소 수를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체에 포함된 요소 수입니다.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetByIndex(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 지정한 인덱스에서 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 지정한 인덱스에 있는 값입니다.</returns>
+      <param name="index">가져올 값의 0부터 시작하는 인덱스입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 <see cref="T:System.Collections.SortedList" /> 개체의 유효한 인덱스 범위 밖에 있는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체를 반복하는 <see cref="T:System.Collections.IDictionaryEnumerator" /> 개체를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 <see cref="T:System.Collections.IDictionaryEnumerator" /> 개체입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetKey(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 지정한 인덱스에서 키를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 지정한 인덱스 키입니다.</returns>
+      <param name="index">가져올 키의 0부터 시작하는 인덱스입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 <see cref="T:System.Collections.SortedList" /> 개체의 유효한 인덱스 범위 밖에 있는 경우</exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetKeyList">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 키를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 키가 포함된 <see cref="T:System.Collections.IList" /> 개체입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.GetValueList">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 값이 포함된 <see cref="T:System.Collections.IList" /> 개체입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.IndexOfKey(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 지정된 키 인덱스(0부터 시작)를 반환합니다.</summary>
+      <returns>
+        <paramref name="key" />가 <see cref="T:System.Collections.SortedList" /> 개체에 있으면 <paramref name="key" /> 매개 변수의 인덱스(0부터 시작)이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.SortedList" /> 개체에서 찾을 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.InvalidOperationException">비교자에서 예외를 throw하는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.IndexOfValue(System.Object)">
+      <summary>지정한 값이 <see cref="T:System.Collections.SortedList" /> 개체에서 맨 처음 발견되는 인덱스(0부터 시작)를 반환합니다.</summary>
+      <returns>
+        <paramref name="value" />가 <see cref="T:System.Collections.SortedList" /> 개체에 있으면 <paramref name="value" /> 매개 변수가 맨 처음 발견되는 인덱스(0부터 시작)이고, 그렇지 않으면 -1입니다.</returns>
+      <param name="value">
+        <see cref="T:System.Collections.SortedList" /> 개체에서 찾을 값입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 크기가 고정되어 있는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.SortedList" /> object has a fixed size; otherwise, false.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체가 읽기 전용인지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if the <see cref="T:System.Collections.SortedList" /> object is read-only; otherwise, false.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>true if access to the <see cref="T:System.Collections.SortedList" /> object is synchronized (thread safe); otherwise, false.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Item(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 특정 키와 연관된 값을 가져오거나 설정합니다.</summary>
+      <returns>
+        <paramref name="key" />가 있으면 <see cref="T:System.Collections.SortedList" /> 개체의 <paramref name="key" /> 매개 변수와 연관된 값이고, 그렇지 않으면 null입니다.</returns>
+      <param name="key">가져오거나 설정할 값과 관련된 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.NotSupportedException">속성이 설정되어 있고 <see cref="T:System.Collections.SortedList" /> 개체가 읽기 전용인 경우또는 속성이 설정되어 있고 <paramref name="key" />가 컬렉션에 없으며 <see cref="T:System.Collections.SortedList" />의 크기가 고정된 경우 </exception>
+      <exception cref="T:System.OutOfMemoryException">
+        <see cref="T:System.Collections.SortedList" />에 요소를 추가할 수 있는 메모리가 충분하지 않은 경우</exception>
+      <exception cref="T:System.InvalidOperationException">비교자에서 예외를 throw하는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Keys">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 키를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 키가 포함된 <see cref="T:System.Collections.ICollection" /> 개체입니다.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Remove(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에서 지정된 키를 가진 요소를 제거합니다.</summary>
+      <param name="key">제거할 요소의 키입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" />가 null인 경우 </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 개체가 읽기 전용인 경우또는 <see cref="T:System.Collections.SortedList" />의 크기가 고정되어 있는 경우 </exception>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.RemoveAt(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 지정한 인덱스에서 요소를 제거합니다.</summary>
+      <param name="index">제거할 요소의 인덱스(0부터 시작)입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 <see cref="T:System.Collections.SortedList" /> 개체의 유효한 인덱스 범위 밖에 있는 경우 </exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" />가 읽기 전용인 경우또는 <see cref="T:System.Collections.SortedList" />의 크기가 고정되어 있는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.SetByIndex(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 지정한 인덱스에서 값을 바꿉니다.</summary>
+      <param name="index">
+        <paramref name="value" />를 저장할 0부터 시작하는 인덱스입니다. </param>
+      <param name="value">
+        <see cref="T:System.Collections.SortedList" /> 개체에 저장할 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 <see cref="T:System.Collections.SortedList" /> 개체의 유효한 인덱스 범위 밖에 있는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.Synchronized(System.Collections.SortedList)">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에 대해 동기화되어 스레드로부터 안전하게 보호되는 래퍼를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체에 대해 동기화되어 스레드로부터 안전하게 보호되는 래퍼입니다.</returns>
+      <param name="list">동기화할 <see cref="T:System.Collections.SortedList" /> 개체입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="list" />가 null인 경우 </exception>
+      <filterpriority>1</filterpriority>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Collections.SortedList.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체에 대한 액세스를 동기화하는 데 사용할 수 있는 개체입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.SortedList.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.SortedList" />를 반복하는 <see cref="T:System.Collections.IEnumerator" />를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" />에 대한 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+    </member>
+    <member name="M:System.Collections.SortedList.TrimToSize">
+      <summary>용량을 <see cref="T:System.Collections.SortedList" /> 개체의 실제 요소 수로 설정합니다.</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.SortedList" /> 개체가 읽기 전용인 경우또는 <see cref="T:System.Collections.SortedList" />의 크기가 고정되어 있는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.SortedList.Values">
+      <summary>
+        <see cref="T:System.Collections.SortedList" /> 개체의 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.SortedList" /> 개체의 값이 포함된 <see cref="T:System.Collections.ICollection" /> 개체입니다.</returns>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="T:System.Collections.Stack">
+      <summary>제네릭이 아닌 간단한 LIFO(후입선출) 방식의 개체 컬렉션을 나타냅니다.</summary>
+      <filterpriority>1</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.#ctor">
+      <summary>비어 있는 상태에서 기본 초기 용량을 가지는 <see cref="T:System.Collections.Stack" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+    </member>
+    <member name="M:System.Collections.Stack.#ctor(System.Collections.ICollection)">
+      <summary>지정한 컬렉션에서 복사된 요소가 포함되어 있고 복사된 요소의 수와 같은 초기 용량을 가지는 <see cref="T:System.Collections.Stack" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="col">요소를 복사할 원본 <see cref="T:System.Collections.ICollection" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Collections.Stack.#ctor(System.Int32)">
+      <summary>비어 있는 상태이고 지정한 초기 용량과 기본 초기 용량 중에서 더 큰 용량을 가지는 <see cref="T:System.Collections.Stack" /> 클래스의 새 인스턴스를 초기화합니다.</summary>
+      <param name="initialCapacity">
+        <see cref="T:System.Collections.Stack" />에 포함될 수 있는 초기 요소 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="initialCapacity" />가 0보다 작은 경우 </exception>
+    </member>
+    <member name="M:System.Collections.Stack.Clear">
+      <summary>
+        <see cref="T:System.Collections.Stack" />에서 개체를 모두 제거합니다.</summary>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Clone">
+      <summary>
+        <see cref="T:System.Collections.Stack" />의 단순 복사본을 만듭니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />의 단순 복사본입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Contains(System.Object)">
+      <summary>요소가 <see cref="T:System.Collections.Stack" />에 있는지 여부를 확인합니다.</summary>
+      <returns>
+        <paramref name="obj" />가 <see cref="T:System.Collections.Stack" />에 있으면 true이고, 그렇지 않으면 false입니다.</returns>
+      <param name="obj">
+        <see cref="T:System.Collections.Stack" />에서 찾을 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Stack" />을 지정한 배열 인덱스에서 시작하여 기존의 1차원 <see cref="T:System.Array" />에 복사합니다.</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Stack" />에서 복사한 요소의 대상인 일차원 <see cref="T:System.Array" />입니다.<see cref="T:System.Array" />에는 0부터 시작하는 인덱스가 있어야 합니다.</param>
+      <param name="index">
+        <paramref name="array" />에서 복사가 시작되는 인덱스(0부터 시작)입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" />가 null입니다. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" />가 0보다 작은 경우 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" />가 다차원 배열인 경우또는 소스 <see cref="T:System.Collections.Stack" />의 요소 수가 <paramref name="index" />에서 대상 <paramref name="array" /> 끝까지 사용 가능한 공간보다 큰 경우 </exception>
+      <exception cref="T:System.InvalidCastException">소스 <see cref="T:System.Collections.Stack" /> 형식을 대상 <paramref name="array" /> 형식으로 자동 캐스팅할 수 없는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Stack.Count">
+      <summary>
+        <see cref="T:System.Collections.Stack" />에 포함된 요소 수를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />에 포함된 요소 수입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Stack" />에 대한 <see cref="T:System.Collections.IEnumerator" />를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />에 대한 <see cref="T:System.Collections.IEnumerator" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Stack.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Stack" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되는지 여부를 나타내는 값을 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />에 대한 액세스가 동기화되어 스레드로부터 안전하게 보호되면 true이고, 그렇지 않으면 false입니다.기본값은 false입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Peek">
+      <summary>
+        <see cref="T:System.Collections.Stack" />의 맨 위에서 개체를 제거하지 않고 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />의 맨 위에 있는 <see cref="T:System.Object" />입니다.</returns>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="T:System.Collections.Stack" />이 비어 있는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Pop">
+      <summary>
+        <see cref="T:System.Collections.Stack" />의 맨 위에서 개체를 제거하고 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />의 맨 위에서 제거되는 <see cref="T:System.Object" />입니다.</returns>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="T:System.Collections.Stack" />이 비어 있는 경우 </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Push(System.Object)">
+      <summary>개체를 <see cref="T:System.Collections.Stack" />의 맨 위에 삽입합니다.</summary>
+      <param name="obj">
+        <see cref="T:System.Collections.Stack" />에 적용할 <see cref="T:System.Object" />입니다.값은 null이 될 수 있습니다.</param>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.Synchronized(System.Collections.Stack)">
+      <summary>동기화되어 스레드로부터 안전하게 보호되는 <see cref="T:System.Collections.Stack" />의 래퍼를 반환합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />의 동기화 래퍼입니다.</returns>
+      <param name="stack">동기화할 <see cref="T:System.Collections.Stack" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="stack" />가 null입니다. </exception>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="P:System.Collections.Stack.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Stack" />에 대한 액세스를 동기화하는 데 사용할 수 있는 개체를 가져옵니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />에 대한 액세스를 동기화하는 데 사용할 수 있는 <see cref="T:System.Object" />입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="M:System.Collections.Stack.ToArray">
+      <summary>
+        <see cref="T:System.Collections.Stack" />을 새 배열에 복사합니다.</summary>
+      <returns>
+        <see cref="T:System.Collections.Stack" />의 요소 복사본을 포함하는 새 배열입니다.</returns>
+      <filterpriority>2</filterpriority>
+    </member>
+    <member name="T:System.Collections.Specialized.CollectionsUtil">
+      <summary>문자열의 대/소문자를 무시하는 컬렉션을 만듭니다.</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.#ctor">
+      <summary>
+        <see cref="T:System.Collections.Specialized.CollectionsUtil" /> 클래스의 새 인스턴스를 초기화합니다. </summary>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveHashtable">
+      <summary>기본 초기 용량을 갖는 <see cref="T:System.Collections.Hashtable" /> 클래스의 대/소문자를 구분하지 않는 새 인스턴스를 만듭니다.</summary>
+      <returns>기본 초기 용량을 갖는 <see cref="T:System.Collections.Hashtable" /> 클래스의 대/소문자를 구분하지 않는 새 인스턴스입니다.</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveHashtable(System.Collections.IDictionary)">
+      <summary>지정된 사전의 항목을 복사된 항목의 수와 초기 용량이 같은 <see cref="T:System.Collections.Hashtable" /> 클래스의 대/소문자를 구분하지 않는 새 인스턴스로 복사합니다.</summary>
+      <returns>지정된 <see cref="T:System.Collections.IDictionary" />의 항목을 포함하는 <see cref="T:System.Collections.Hashtable" /> 클래스의 대/소문자를 구분하지 않는 새 인스턴스입니다.</returns>
+      <param name="d">대/소문자를 구분하지 않는 새 <see cref="T:System.Collections.Hashtable" />로 복사할 <see cref="T:System.Collections.IDictionary" />입니다. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="d" />가 null입니다. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveHashtable(System.Int32)">
+      <summary>초기 용량이 지정된 <see cref="T:System.Collections.Hashtable" /> 클래스의 대/소문자를 구분하지 않는 새 인스턴스를 만듭니다.</summary>
+      <returns>초기 용량이 지정된 <see cref="T:System.Collections.Hashtable" /> 클래스의 대/소문자를 구분하지 않는 새 인스턴스입니다.</returns>
+      <param name="capacity">
+        <see cref="T:System.Collections.Hashtable" />가 처음에 포함할 수 있는 대략적인 엔트리 수입니다. </param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" />가 0보다 작은 경우 </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.CollectionsUtil.CreateCaseInsensitiveSortedList">
+      <summary>문자열의 대/소문자를 구분하지 않는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스를 만듭니다.</summary>
+      <returns>문자열의 대/소문자를 구분하지 않는 <see cref="T:System.Collections.SortedList" /> 클래스의 새 인스턴스입니다.</returns>
+    </member>
+  </members>
+</doc>

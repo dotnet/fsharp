@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.Reflection</id>
+    <version>4.1.0-beta-23225</version>
+    <title>System.Reflection</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides types that retrieve information about assemblies, modules, members, parameters, and other entities in managed code by examining their metadata. These types also can be used to manipulate instances of loaded types, for example to hook up events or to invoke methods.
+
+Commonly Used Types:
+System.Reflection.MethodInfo
+System.Reflection.PropertyInfo
+System.Reflection.ParameterInfo
+System.Reflection.FieldInfo
+System.Reflection.ConstructorInfo
+System.Reflection.Assembly
+System.Reflection.MemberInfo
+System.Reflection.EventInfo
+System.Reflection.Module</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework="MonoAndroid1.0" />
+      <group targetFramework="MonoTouch1.0" />
+      <group targetFramework=".NETFramework4.6" />
+      <group targetFramework="Xamarin.iOS1.0" />
+      <group targetFramework="Xamarin.Mac2.0" />
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.IO" version="4.0.0" />
+        <dependency id="System.Reflection.Primitives" version="4.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

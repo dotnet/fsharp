@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <RunPerfTestsForProject Condition="'$(Performance)' == 'true' and '$(RunPerfTestsForProject)' != 'false' and '$(OS)' == 'Windows_NT'">true</RunPerfTestsForProject>
+    <AnalyzePerfResults Condition="'$(RunPerfTestsForProject)' == 'true' And '$(AnalyzePerfResults)' != 'false'">true</AnalyzePerfResults>
+    <PerfRunId Condition="'$(PerfRunId)' == ''">latest-perf-build</PerfRunId>
+    <AnalysisReportFileName>$(PerfRunId)-analysis.html</AnalysisReportFileName>
+  </PropertyGroup>
+  
+  <!-- Perf Runner NuGet package paths -->
+  <PropertyGroup>
+    <XunitPerfRunnerPackageId>Microsoft.DotNet.xunit.performance.runner.Windows</XunitPerfRunnerPackageId>
+    <XunitPerfRunnerPackageVersion>1.0.0-alpha-build0012</XunitPerfRunnerPackageVersion>
+    <XunitPerfRunnerPackageDir>$(PackagesDir)$(XunitPerfRunnerPackageId)/$(XunitPerfRunnerPackageVersion)</XunitPerfRunnerPackageDir>
+    <XunitPerfRunnerPath>$(XunitPerfRunnerPackageDir)/tools/xunit.performance.run.exe</XunitPerfRunnerPath>
+  </PropertyGroup>
+
+  <!-- Perf Analysis NuGet package paths -->
+  <PropertyGroup>
+    <XunitPerfAnalysisPackageId>Microsoft.DotNet.xunit.performance.analysis</XunitPerfAnalysisPackageId>
+    <XunitPerfAnalysisPackageVersion>1.0.0-alpha-build0012</XunitPerfAnalysisPackageVersion>
+    <XunitPerfAnalysisPath>$(PackagesDir)$(XunitPerfAnalysisPackageId)/$(XunitPerfAnalysisPackageVersion)/tools/xunit.performance.analysis.exe</XunitPerfAnalysisPath>
+  </PropertyGroup>
+
+  <!-- Executable properties -->
+  <PropertyGroup>
+    <XunitRunnerArgs>$(TargetFileName) -runnerhost $(TestHost) -runner $(XunitExecutable) -runid $(PerfRunId) -verbose</XunitRunnerArgs>
+    <PerfTestCommandLine>$(XunitPerfRunnerPath) $(XunitRunnerArgs) $(AdditionalPerfTestArgs)</PerfTestCommandLine>
+
+    <PerfRunOutputFile>$(TestPath)$(DebugTestFrameworkFolder)/$(PerfRunId).xml</PerfRunOutputFile>
+    <XunitAnalysisArgs>$(PerfRunOutputFile) -html $(AnalysisReportFileName) $(AdditionalXunitAnalysisArgs)</XunitAnalysisArgs>
+    <PerfAnalysisCommandLine>$(XunitPerfAnalysisPath) $(XunitAnalysisArgs)</PerfAnalysisCommandLine>
+  </PropertyGroup>
+
+  <!-- Override test settings if RunPerfTestsForProject == true -->
+  <PropertyGroup Condition="'$(RunPerfTestsForProject)' == 'true'">
+    <TestCommandLine>$(PerfTestCommandLine)</TestCommandLine>
+  </PropertyGroup>
+
+  <!-- NOTE: Temporary workaround, there is some issue where the discoverer requires this to be in the target directory -->
+  <Target Name="CopyXunitExecutionDesktop" BeforeTargets="RunTestsForProject"
+          Condition="'$(RunPerfTestsForProject)' == 'true'">
+    <Copy SourceFiles="$(XunitPerfRunnerPackageDir)/tools/xunit.execution.desktop.dll"
+          DestinationFolder="$(TestPath)$(DebugTestFrameworkFolder)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="AnalyzePerfResults"
+          AfterTargets="RunTestsForProject"
+          Condition="'$(AnalyzePerfResults)' == 'true' and Exists('$(PerfRunOutputFile)')">
+    <Exec Command="$(PerfAnalysisCommandLine)"
+          WorkingDirectory="$(TestPath)%(TestTargetFramework.Folder)"
+          ContinueOnError="false">
+      <Output PropertyName="PerfTestRunExitCode" TaskParameter="ExitCode" />
+    </Exec>
+    <Message Text="Performance test analysis report is available at $(TestPath)$(DebugTestFrameworkFolder)/$(AnalysisReportFileName)" />
+  </Target>
+
+  <Target Name="WarnForDebugPerfConfiguration"
+          BeforeTargets="RunTestsForProject"
+          Condition="'$(RunPerfTestsForProject)' == 'true' and !$(Configuration.ToLower().Contains('release'))">
+    <Warning Text="You are running performance tests in a configuration other than Release. Your results may be unreliable." />
+  </Target>
+</Project>

@@ -1,0 +1,281 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>HTTP-заголовки, которые могут быть указаны в клиентском запросе.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>Заголовок Accept, который указывает типы MIME, которые допустимы для ответа.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>Заголовок Accept-Charset, который указывает набор символов, допустимый для ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>Заголовок Accept-Encoding, который указывает кодировку содержимого, допустимую для ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>Заголовок Accept-Langauge, который указывает естественные языки, предпочитаемые для ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>Заголовок Allow, который указывает набор поддерживаемых методов HTTP.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>Заголовок Authorization, который указывает учетные данные, предоставляемые клиентом для прохождения проверки подлинности на сервере.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>Заголовок Cache-Control, который указывает директивы кэширования, которые должны выполняться всеми механизмами управления кэшированием по всей цепи запросов и ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>Заголовок Connection, который указывает параметры, необходимые для определенного подключения.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>Заголовок Content-Encoding, который указывает кодировки, которые были применены к данным основного текста.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>Заголовок Content-Language, который указывает естественный язык или языки данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>Заголовок Content-Length, который указывает длину (в байтах) данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>Заголовок Content-Location, который указывает URI, с которого можно получить основной текст.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>Заголовок Content-MD5, указывающий MD5-дайджест данных основного текста с целью предоставления сквозной проверки целостности сообщения.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>Заголовок Content-Range, который указывает местоположение в полном тексте, где следует применить сопутствующие данные части основного текста.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>Заголовок Content-Type, который указывает тип MIME данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>Заголовок Cookie, который указывает данные файла cookie, предоставляемого сервером.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>Заголовок Date, который указывает дату и время создания запроса.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>Заголовок Expect, который указывает определенное поведение сервера, требуемое клиентом.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>Заголовок Expires, который указывает дату и время, после которого данные в основном тексте могут считаться устаревшими.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>Заголовок From, который указывает адрес электронной почты пользователя, управляющего запрашивающим агентом пользователя.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>Заголовок Host, который указывает имя узла и номер порта запрашиваемого ресурса.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>Заголовок If-Match, который указывает, что требуемая операция должны выполняться только в том случае, если кэшированная копия указанного ресурса на стороне клиента является текущей.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>Заголовок If-Modified-Since, который указывает, что требуемая операция должно выполняться только в том случае, если запрашиваемый ресурс был изменен с момента указанной даты и времени.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>Заголовок If-None-Match, который указывает, что требуемая операция должны выполняться только в том случае, если ни одна из кэшированных копий указанного ресурса на стороне клиента не является текущей.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>Заголовок If-Range, который указывает, что только указанный диапазон требуемого ресурса должен быть отправлен, если кэшированная копия указанного ресурса на стороне клиента является текущей.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>Заголовок If-Unmodified-Since, который указывает, что требуемая операция должна выполняться только в том случае, если запрашиваемый ресурс не был изменен с момента указанной даты и времени.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>Заголовок Keep-Alive, который указывает параметр, используемый для поддержки постоянного подключения.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>Заголовок Last-Modified, который указывает дату и время последнего изменения данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>Заголовок Max-Forwards, который указывает целое число, обозначающее количество оставшихся перенаправлений этого запроса.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>Заголовок Pragma, который указывает директивы, относящиеся к реализации. Эти директивы можно применять к любому агенту в цепи запросов и ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>Заголовок Proxy-Authorization, который указывает учетные данные, предоставляемые клиентом для прохождения проверки подлинности на прокси-сервере.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>Заголовок Range, который указывает дополнительный поддиапазон или поддиапазоны ответа, которые будут возвращены в ответ на клиентские запросы вместо полного ответа.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>Заголовок Referer, который указывает URI ответа, из которого был получен URI запроса.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>Заголовок TE, который указывает кодировки передачи, допустимые для ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>Заголовок Trailer, который определяет, что поля заголовка предоставляются в анонсе сообщения, закодированном с помощью поблочного кодирования.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>Заголовок Transfer-Encoding, который указывает, какой тип преобразования был применен к основному тексту (если применимо).</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>Заголовок Translate — расширение Microsoft для спецификации HTTP, используемой вместе с функциональными возможностями WebDAV.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>Заголовок Upgrade, который указывает дополнительные протоколы связи, поддерживаемые клиентом.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>Заголовок User-Agent, который указывает сведения об агенте клиента.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>Заголовок Via, который указывает промежуточные протоколы, которые используются агентом шлюза или прокси-агентом.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>Заголовок Warning, который указывает дополнительные сведения о состоянии или преобразовании сообщения, которое может и не быть отражено в самом сообщении.</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>Заголовки HTTP, которые могут быть указаны в ответе сервера.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>Заголовок Accept-Ranges, который указывает диапазон, принимаемый сервером.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>Заголовок Age, который указывает время (в секундах), прошедшее с момента создания ответа сервером.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>Заголовок Allow, который указывает набор поддерживаемых методов HTTP.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>Заголовок Cache-Control, который указывает директивы кэширования, которые должны выполняться всеми механизмами кэширования по всей цепи запросов и ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>Заголовок Connection, который указывает параметры, необходимые для определенного подключения.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>Заголовок Content-Encoding, который указывает кодировки, которые были применены к данным основного текста.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>Заголовок Content-Language, который указывает естественный язык или языки данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>Заголовок Content-Length, который указывает длину (в байтах) данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>Заголовок Content-Location, который указывает URI, с которого можно получить основной текст.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>Заголовок Content-MD5, указывающий MD5-дайджест данных основного текста с целью предоставления сквозной проверки целостности сообщения.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>Заголовок Range, который указывает дополнительный диапазон или диапазоны ответа, которые будут возвращены в ответ на клиентские запросы вместо полного ответа.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>Заголовок Content-Type, который указывает тип MIME данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>Заголовок Date, который указывает дату и время создания ответа.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>Заголовок Etag, который указывает текущее значение запрошенного варианта. </summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>Заголовок Expires, который указывает дату и время, после которого данные в основном тексте могут считаться устаревшими.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>Заголовок Keep-Alive, который указывает параметр, используемый для поддержки постоянного подключения.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>Заголовок Last-Modified, который указывает дату и время последнего изменения данных в основном тексте.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>Заголовок Location, указывающий URI, на который перенаправляется клиент для получения запрашиваемого ресурса.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>Заголовок Pragma, который указывает директивы, относящиеся к реализации. Эти директивы можно применять к любому агенту в цепи запросов и ответов.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>Заголовок Proxy-Authenticate, который указывает, что клиент должен пройти проверку подлинности на прокси-сервере.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>Заголовок Retry-After, который указывает время (в секундах) или дату и время, после которых клиент может повторно отправить запрос.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>Заголовок Server, который указывает сведения об исходном агенте сервера.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>Заголовок Set-Cookie, который указывает данные файла cookie, предоставляемого клиенту.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>Заголовок Trailer, который определяет, что указанные поля заголовка предоставляются в анонсе сообщения, закодированном с помощью поблочного кодирования.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>Заголовок Transfer-Encoding, который указывает, какой тип преобразования был применен к основному тексту (если применимо).</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>Заголовок Upgrade, который указывает дополнительные протоколы связи, поддерживаемые клиентом.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>Заголовок Vary, который указывает заголовки запроса, используемые для определения актуальности кэшированного ответа.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>Заголовок Via, который указывает промежуточные протоколы, которые используются агентом шлюза или прокси-агентом.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>Заголовок Warning, который указывает дополнительные сведения о состоянии или преобразовании сообщения, которое может и не быть отражено в самом сообщении.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>Заголовок WWW-Authenticate, который указывает, что клиент должен пройти проверку подлинности на сервере.</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>Содержит заголовки протокола, связанные с запросом или ответом.</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>Инициализирует новый экземпляр класса <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>Возвращает все имена заголовков (ключи) в коллекции.</summary>
+      <returns>Массив типа <see cref="T:System.String" />, содержащий все имена заголовков в веб-запросе.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>Возвращает число заголовков в коллекции.</summary>
+      <returns>Значение <see cref="T:System.Int32" />, показывающее количество заголовков в запросе.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>Возвращает или задает указанный заголовок запроса.</summary>
+      <returns>Экземпляр <see cref="T:System.String" />, содержащий указанное значение заголовка.</returns>
+      <param name="header">Значение заголовка запроса.</param>
+      <exception cref="T:System.InvalidOperationException">Этот экземпляр <see cref="T:System.Net.WebHeaderCollection" /> не разрешает наличие экземпляров класса <see cref="T:System.Net.HttpRequestHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>Возвращает или задает указанный заголовок ответа.</summary>
+      <returns>Экземпляр <see cref="T:System.String" />, содержащий указанный заголовок.</returns>
+      <param name="header">Значение заголовка ответа.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">Длина <paramref name="value" /> больше 65535. </exception>
+      <exception cref="T:System.InvalidOperationException">Этот экземпляр <see cref="T:System.Net.WebHeaderCollection" /> не разрешает наличие экземпляров класса <see cref="T:System.Net.HttpResponseHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>Возвращает или задает указанный заголовок ответа.</summary>
+      <returns>Указанный заголовок ответа.</returns>
+      <param name="name">Имя указанный заголовок запроса.</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>Удаляет указанный заголовок из коллекции.</summary>
+      <param name="name">Имя заголовка, который должен быть удален из коллекции. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> is null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> — ограниченный заголовок.-или- <paramref name="name" /> содержит недопустимые символы. </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Возвращает перечислитель, с помощью которого можно перебирать все элементы экземпляра коллекции <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+      <returns>Возвращает <see cref="T:System.Collections.IEnumerator" />.Перечислитель, с помощью которого можно перебирать все элементы экземпляра коллекции <see cref="T:System.Net.WebHeaderCollection" />.</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>Этот метод устарел.</summary>
+      <returns>Представление <see cref="T:System.String" /> этой коллекции.</returns>
+    </member>
+  </members>
+</doc>

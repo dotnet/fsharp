@@ -1,0 +1,1530 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Reflection.Emit</name>
+  </assembly>
+  <members>
+    <member name="T:System.Reflection.Emit.AssemblyBuilder">
+      <summary>動的アセンブリを定義および表現します。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.DefinedTypes"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess)">
+      <summary>指定した名前とアクセス権を持つ動的アセンブリを定義します。</summary>
+      <returns>新しいアセンブリを表すオブジェクト。</returns>
+      <param name="name">アセンブリの名前。</param>
+      <param name="access">アセンブリのアクセス権。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(System.Reflection.AssemblyName,System.Reflection.Emit.AssemblyBuilderAccess,System.Collections.Generic.IEnumerable{System.Reflection.Emit.CustomAttributeBuilder})">
+      <summary>指定した名前、アクセス権、および属性を持つ新しいアセンブリを定義します。</summary>
+      <returns>新しいアセンブリを表すオブジェクト。</returns>
+      <param name="name">アセンブリの名前。</param>
+      <param name="access">アセンブリのアクセス権。</param>
+      <param name="assemblyAttributes">アセンブリの属性が格納されているコレクション。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.DefineDynamicModule(System.String)">
+      <summary>このアセンブリに名前付き遷移動的モジュールを定義します。</summary>
+      <returns>定義する動的モジュールを表す <see cref="T:System.Reflection.Emit.ModuleBuilder" />。</returns>
+      <param name="name">動的モジュールの名前。長さは 260 文字未満にする必要があります。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の先頭が空白です。または<paramref name="name" /> の長さが 0 です。または<paramref name="name" /> の長さが 260 以上です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.Security.SecurityException">呼び出し元に、必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ExecutionEngineException">既定のシンボル ライターのアセンブリを読み込むことができません。または既定のシンボル ライター インターフェイスを実装する型が見つかりません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="*AllFiles*" PathDiscovery="*AllFiles*" />
+        <IPermission class="System.Security.Permissions.ReflectionPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="MemberAccess" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.Equals(System.Object)">
+      <summary>このインスタンスが、指定したオブジェクトに等しいかどうかを示す値を返します。</summary>
+      <returns>
+        <paramref name="obj" /> がこのインスタンスの型および値に等しい場合は true。それ以外の場合は false。</returns>
+      <param name="obj">対象のインスタンスと比較する対象のオブジェクト、または null。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.FullName">
+      <summary>現在の動的アセンブリの表示名を取得します。</summary>
+      <returns>動的アセンブリの表示名。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetDynamicModule(System.String)">
+      <summary>指定した名前の動的モジュールを返します。</summary>
+      <returns>要求された動的モジュールを表す ModuleBuilder オブジェクト。</returns>
+      <param name="name">要求する動的モジュールの名前。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。</exception>
+      <exception cref="T:System.Security.SecurityException">呼び出し元に、必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetHashCode">
+      <summary>対象のインスタンスのハッシュ コードを返します。</summary>
+      <returns>32 ビット符号付き整数ハッシュ コード。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceInfo(System.String)">
+      <summary>指定されたリソースが永続化された方法に関する情報を返します。</summary>
+      <returns>リソースのトポロジに関する情報が設定された <see cref="T:System.Reflection.ManifestResourceInfo" />。リソースが見つからない場合は null。</returns>
+      <param name="resourceName">リソースの名前。</param>
+      <exception cref="T:System.NotSupportedException">このメソッドは、現在サポートされていません。</exception>
+      <exception cref="T:System.Security.SecurityException">呼び出し元に、必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceNames">
+      <summary>このアセンブリから、指定されたマニフェスト リソースを読み込みます。</summary>
+      <returns>すべてのリソースの名前を格納している文字列型の配列。</returns>
+      <exception cref="T:System.NotSupportedException">このメソッドは、動的アセンブリではサポートされていません。マニフェスト リソース名を取得するには、<see cref="M:System.Reflection.Assembly.GetManifestResourceNames" /> を使用します。</exception>
+      <exception cref="T:System.Security.SecurityException">呼び出し元に、必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.GetManifestResourceStream(System.String)">
+      <summary>このアセンブリから、指定されたマニフェスト リソースを読み込みます。</summary>
+      <returns>マニフェスト リソースを表す <see cref="T:System.IO.Stream" />。</returns>
+      <param name="name">要求されているマニフェスト リソースの名前。</param>
+      <exception cref="T:System.NotSupportedException">このメソッドは、現在サポートされていません。</exception>
+      <exception cref="T:System.Security.SecurityException">呼び出し元に、必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.IsDynamic">
+      <summary>現在のアセンブリが動的アセンブリであることを示す値を取得します。</summary>
+      <returns>常に true。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.ManifestModule">
+      <summary>アセンブリ マニフェストを格納している現在の <see cref="T:System.Reflection.Emit.AssemblyBuilder" /> 内のモジュールを取得します。</summary>
+      <returns>マニフェスト モジュール。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.AssemblyBuilder.Modules"></member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定したカスタム属性 BLOB を使用して、このアセンブリのカスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+      <exception cref="T:System.Security.SecurityException">呼び出し元に、必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="con" /> が RuntimeConstructorInfo ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.AssemblyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、このアセンブリのカスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、</exception>
+      <exception cref="T:System.Security.SecurityException">呼び出し元に、必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.AssemblyBuilderAccess">
+      <summary>動的アセンブリのアクセス モードを定義します。</summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.Run">
+      <summary>動的アセンブリは実行できますが、保存できません。</summary>
+    </member>
+    <member name="F:System.Reflection.Emit.AssemblyBuilderAccess.RunAndCollect">
+      <summary>動的アセンブリはアンロードでき、そのメモリを再利用できますが、「動的な型生成のための収集可能なアセンブリ」に説明されている制限が適用されます。</summary>
+    </member>
+    <member name="T:System.Reflection.Emit.ConstructorBuilder">
+      <summary>動的クラスのコンストラクターを定義および表現します。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Attributes">
+      <summary>このコンストラクターの属性を取得します。</summary>
+      <returns>このコンストラクターの属性を返します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.CallingConvention">
+      <summary>宣言型がジェネリックかどうかに応じて異なる <see cref="T:System.Reflection.CallingConventions" /> 値を取得します。</summary>
+      <returns>宣言型がジェネリックである場合は <see cref="F:System.Reflection.CallingConventions.HasThis" />。それ以外の場合は <see cref="F:System.Reflection.CallingConventions.Standard" />。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.DeclaringType">
+      <summary>このメンバーを宣言する型の <see cref="T:System.Type" /> オブジェクトへの参照を取得します。</summary>
+      <returns>このメンバーを宣言する型の <see cref="T:System.Type" /> オブジェクトを返します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>このコンストラクターのパラメーターを定義します。</summary>
+      <returns>このコンストラクターの新しいパラメーターを表す ParameterBuilder オブジェクトを返します。</returns>
+      <param name="iSequence">パラメーター リスト内のパラメーターの位置。パラメーターのインデックスは 1 から始まります。最初のパラメーターが 1 です。</param>
+      <param name="attributes">パラメーターの属性。</param>
+      <param name="strParamName">パラメーターの名前。名前は null 文字列でもかまいません。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="iSequence" /> が 0 (ゼロ) 未満か、コンストラクターのパラメーター数を超える値です。</exception>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator">
+      <summary>このコンストラクターの <see cref="T:System.Reflection.Emit.ILGenerator" /> を取得します。</summary>
+      <returns>このコンストラクターの <see cref="T:System.Reflection.Emit.ILGenerator" /> オブジェクトを返します。</returns>
+      <exception cref="T:System.InvalidOperationException">コンストラクターが、既定のコンストラクターです。またはコンストラクターが、メソッド本体を持たないことを示す <see cref="T:System.Reflection.MethodAttributes" /> フラグまたは <see cref="T:System.Reflection.MethodImplAttributes" /> フラグを持っています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetILGenerator(System.Int32)">
+      <summary>このコンストラクターのメソッド本体の作成に使用できる、指定した MSIL ストリーム サイズを持つ <see cref="T:System.Reflection.Emit.ILGenerator" /> オブジェクトを取得します。</summary>
+      <returns>このコンストラクターの <see cref="T:System.Reflection.Emit.ILGenerator" />。</returns>
+      <param name="streamSize">MSIL ストリームのサイズ (バイト単位)。</param>
+      <exception cref="T:System.InvalidOperationException">コンストラクターが、既定のコンストラクターです。またはコンストラクターが、メソッド本体を持たないことを示す <see cref="T:System.Reflection.MethodAttributes" /> フラグまたは <see cref="T:System.Reflection.MethodImplAttributes" /> フラグを持っています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.GetParameters">
+      <summary>このコンストラクターのパラメーターを返します。</summary>
+      <returns>このコンストラクターのパラメーターを表す <see cref="T:System.Reflection.ParameterInfo" /> オブジェクトの配列を返します。</returns>
+      <exception cref="T:System.InvalidOperationException">.NET Framework Version 1.0 および 1.1 では、このコンストラクターの型で <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が呼び出されませんでした。</exception>
+      <exception cref="T:System.NotSupportedException">.NET Framework Version 2.0 では、このコンストラクターの型で <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が呼び出されませんでした。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.InitLocals">
+      <summary>このコンストラクターのローカル変数をゼロで初期化するかどうかを取得または設定します。</summary>
+      <returns>読み取り/書き込み。このコンストラクターのローカル変数をゼロで初期化するかどうかを取得または設定します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.ConstructorBuilder.Name">
+      <summary>このコンストラクターの名前を取得します。</summary>
+      <returns>このコンストラクターの名前を返します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>このコンストラクターのメソッド実装フラグを設定します。</summary>
+      <param name="attributes">メソッド実装フラグ。</param>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ConstructorBuilder.ToString">
+      <summary>この <see cref="T:System.Reflection.Emit.ConstructorBuilder" /> インスタンスを <see cref="T:System.String" /> として返します。</summary>
+      <returns>このコンストラクターの名前、属性、および例外を格納している <see cref="T:System.String" /> と現在の MSIL ストリームを続けて返します。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EnumBuilder">
+      <summary>列挙型を記述し、表現します。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Assembly">
+      <summary>この列挙型 (Enum) の定義が含まれた動的アセンブリを取得します。</summary>
+      <returns>読み取り専用。この列挙型 (Enum) の定義が含まれた動的アセンブリ。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.AssemblyQualifiedName">
+      <summary>親アセンブリの表示名で限定されたこの列挙型 (Enum) の完全パスを返します。</summary>
+      <returns>読み取り専用。親アセンブリの表示名で限定されたこの列挙型 (Enum) の完全パス。</returns>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="M:System.Reflection.Emit.EnumBuilder.CreateType" /> がまだ呼び出されていない場合。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.BaseType">
+      <summary>この型の親の <see cref="T:System.Type" /> を返します。これは常に <see cref="T:System.Enum" /> です。</summary>
+      <returns>読み取り専用。この型の親の <see cref="T:System.Type" />。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.CreateTypeInfo">
+      <summary>この列挙を表す <see cref="T:System.Reflection.TypeInfo" /> オブジェクトを取得します。</summary>
+      <returns>この列挙値を表すオブジェクト。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringMethod"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.DeclaringType">
+      <summary>この <see cref="T:System.Reflection.Emit.EnumBuilder" /> を宣言した型を返します。</summary>
+      <returns>読み取り専用。この <see cref="T:System.Reflection.Emit.EnumBuilder" /> を宣言した型。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.DefineLiteral(System.String,System.Object)">
+      <summary>列挙型の中に名前付き静的フィールドを定義し、指定した定数値を設定します。</summary>
+      <returns>定義されたフィールド。</returns>
+      <param name="literalName">静的フィールドの名前。</param>
+      <param name="literalValue">リテラルの定数値。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.FullName">
+      <summary>この列挙型 (Enum) の完全パスを返します。</summary>
+      <returns>読み取り専用。この列挙型 (Enum) の完全パス。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericParameterPosition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetElementType">
+      <summary>このメソッドを呼び出すと、必ず <see cref="T:System.NotSupportedException" /> がスローされます。</summary>
+      <returns>このメソッドはサポートされていません。値は返されません。</returns>
+      <exception cref="T:System.NotSupportedException">このメソッドは、現在サポートされていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.GetGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.GUID">
+      <summary>この列挙型 (Enum) のグローバル一意識別子 (GUID: Globally Unique Identifier) を返します。</summary>
+      <returns>読み取り専用。この列挙型 (Enum) の GUID。</returns>
+      <exception cref="T:System.NotSupportedException">このメソッドは現在、不完全な型に対してはサポートされていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>指定した <see cref="T:System.Reflection.TypeInfo" /> オブジェクトをこのオブジェクトに割り当てることができるかどうかを示す値を取得します。</summary>
+      <returns>
+        <paramref name="typeInfo" /> をオブジェクトに割り当てることができる場合は true、それ以外の場合は false。</returns>
+      <param name="typeInfo">テストするオブジェクト。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericParameter"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsGenericTypeDefinition"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeArrayType(System.Int32)">
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> が 1 未満です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeByRefType"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakeGenericType(System.Type[])"></member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.MakePointerType"></member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Module">
+      <summary>この <see cref="T:System.Reflection.Emit.EnumBuilder" /> の定義が含まれた動的モジュールを取得します。</summary>
+      <returns>読み取り専用。この <see cref="T:System.Reflection.Emit.EnumBuilder" /> の定義が含まれた動的モジュール。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Name">
+      <summary>この列挙型 (Enum) の名前を返します。</summary>
+      <returns>読み取り専用。この列挙型 (Enum) の名前。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.Namespace">
+      <summary>この列挙型 (Enum) の名前空間を返します。</summary>
+      <returns>読み取り専用。この列挙型 (Enum) の名前空間。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EnumBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.EnumBuilder.UnderlyingField">
+      <summary>この列挙型 (Enum) の基になるフィールドを返します。</summary>
+      <returns>読み取り専用。この列挙型 (Enum) の基になるフィールド。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.EventBuilder">
+      <summary>クラスのイベントを定義します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>このイベントに関連付ける "other" メソッドの 1 つを追加します。"other" メソッドとは、イベントに関連付けられた "on" メソッドおよび "raise" メソッド以外のメソッドです。この関数は、必要な数の "other" メソッドを追加するために何回も呼び出すことができます。</summary>
+      <param name="mdBuilder">他のメソッドを表す MethodBuilder オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetAddOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>このイベントをサブスクライブするメソッドを設定します。</summary>
+      <param name="mdBuilder">このイベントをサブスクライブするメソッドを表す MethodBuilder オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を記述するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRaiseMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>このイベントを発生させるメソッドを設定します。</summary>
+      <param name="mdBuilder">このイベントを発生させるメソッドを表す MethodBuilder オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.EventBuilder.SetRemoveOnMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>このイベントをアンサブスクライブするメソッドを設定します。</summary>
+      <param name="mdBuilder">このイベントをアンサブスクライブするメソッドを表す MethodBuilder オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.FieldBuilder">
+      <summary>フィールドを定義および表現します。このクラスは継承できません。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Attributes">
+      <summary>このフィールドの属性を示します。このプロパティは読み取り専用です。</summary>
+      <returns>このフィールドの属性。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.DeclaringType">
+      <summary>このフィールドを宣言する型の <see cref="T:System.Type" /> オブジェクトへの参照を示します。このプロパティは読み取り専用です。</summary>
+      <returns>このフィールドを宣言する型の <see cref="T:System.Type" /> オブジェクトへの参照。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.FieldType">
+      <summary>このフィールドの型を表す <see cref="T:System.Type" /> オブジェクトを示します。このプロパティは読み取り専用です。</summary>
+      <returns>このフィールドの型を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.GetValue(System.Object)">
+      <summary>指定したオブジェクトでサポートされているフィールドの値を取得します。</summary>
+      <returns>このインスタンスがリフレクションするフィールドの値を格納している <see cref="T:System.Object" />。</returns>
+      <param name="obj">フィールドにアクセスするオブジェクト。</param>
+      <exception cref="T:System.NotSupportedException">このメソッドはサポートされていません。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.FieldBuilder.Name">
+      <summary>このフィールドの名前を示します。このプロパティは読み取り専用です。</summary>
+      <returns>このフィールドの名前を格納している <see cref="T:System.String" />。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetConstant(System.Object)">
+      <summary>このフィールドの既定値を設定します。</summary>
+      <param name="defaultValue">このフィールドの新しい既定値。</param>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して作成されています。</exception>
+      <exception cref="T:System.ArgumentException">フィールドが、サポートされている型のいずれでもありません。または<paramref name="defaultValue" /> の型がフィールドの型と一致しません。またはフィールドが <see cref="T:System.Object" /> 型または他の参照型であり、<paramref name="defaultValue" /> が null ではなく、値を参照型に割り当てることができません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">このフィールドの親の型が完全型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">このフィールドの親の型が完全型です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.FieldBuilder.SetOffset(System.Int32)">
+      <summary>フィールド レイアウトを指定します。</summary>
+      <param name="iOffset">このフィールドを格納している型の中でのフィールドのオフセット。</param>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して作成されています。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="iOffset" /> が 0 未満です。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.GenericTypeParameterBuilder">
+      <summary>動的に定義されたジェネリック型およびジェネリック メソッドのジェネリック型パラメーターを定義および作成します。このクラスは継承できません。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Assembly">
+      <summary>現在の型パラメーターが属するジェネリック型の定義を格納する動的アセンブリを表す <see cref="T:System.Reflection.Assembly" /> オブジェクトを取得します。</summary>
+      <returns>現在の型パラメーターが属するジェネリック型の定義を格納する動的アセンブリを表す <see cref="T:System.Reflection.Assembly" /> オブジェクト。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.AssemblyQualifiedName">
+      <summary>常に null を取得します。</summary>
+      <returns>常に null 参照 (Visual Basic では Nothing)。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.BaseType">
+      <summary>現在のジェネリック型パラメーターの基本型の制約を取得します。</summary>
+      <returns>ジェネリック型パラメーターの基本型の制約を表す <see cref="T:System.Type" /> オブジェクト。型パラメーターに基本型の制約がない場合は null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.ContainsGenericParameters">
+      <summary>常に true を取得します。</summary>
+      <returns>常に true。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringMethod">
+      <summary>現在の <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> がジェネリック メソッドの型パラメーターを表している場合に、宣言するメソッドを表す <see cref="T:System.Reflection.MethodInfo" /> を取得します。</summary>
+      <returns>現在の <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> がジェネリック メソッドの型パラメーターを表している場合は、宣言するメソッドを表す <see cref="T:System.Reflection.MethodInfo" />。それ以外の場合は null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.DeclaringType">
+      <summary>ジェネリック型パラメーターが属するジェネリック型の定義、またはジェネリック メソッドの定義を取得します。</summary>
+      <returns>型パラメーターがジェネリック型に属する場合は、そのジェネリック型を表す <see cref="T:System.Type" /> オブジェクト。型パラメーターがジェネリック メソッドに属する場合は、そのジェネリック メソッドを宣言した型を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.Equals(System.Object)">
+      <summary>指定されたオブジェクトが EventToken のインスタンスであり、現在のインスタンスと等しいかどうかをテストします。</summary>
+      <returns>
+        <paramref name="o" /> が EventToken のインスタンスで、現在のインスタンスと等しい場合は true。それ以外の場合は false。</returns>
+      <param name="o">現在のインスタンスと比較するオブジェクト。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.FullName">
+      <summary>常に null を取得します。</summary>
+      <returns>常に null 参照 (Visual Basic では Nothing)。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterAttributes"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericParameterPosition">
+      <summary>パラメーターを宣言したジェネリック型またはジェネリック メソッドの型パラメーター リスト内の型パラメーターの位置を取得します。</summary>
+      <returns>パラメーターを宣言したジェネリック型またはジェネリック メソッドの型パラメーター リスト内の型パラメーターの位置。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetElementType">
+      <summary>常に <see cref="T:System.NotSupportedException" /> をスローします。</summary>
+      <returns>現在の配列型、ポインター型、または ByRef 型によって参照される型。現在の型が配列型でもポインター型でもなく、参照により渡されない場合は、null。</returns>
+      <exception cref="T:System.NotSupportedException">常にスローします。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetGenericTypeDefinition">
+      <summary>ジェネリック型パラメーターには有効ではありません。</summary>
+      <returns>ジェネリック型パラメーターには有効ではありません。</returns>
+      <exception cref="T:System.InvalidOperationException">常にスローします。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.GetHashCode">
+      <summary>現在のインスタンスの 32 ビット整数ハッシュ コードを返します。</summary>
+      <returns>32 ビット整数ハッシュ コード。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.GUID">
+      <summary>不完全なジェネリック型パラメーターではサポートされていません。</summary>
+      <returns>不完全なジェネリック型パラメーターではサポートされていません。</returns>
+      <exception cref="T:System.NotSupportedException">常にスローします。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>常に <see cref="T:System.NotSupportedException" /> 例外をスローします。</summary>
+      <returns>常に <see cref="T:System.NotSupportedException" /> 例外をスローします。</returns>
+      <param name="typeInfo">テストするオブジェクト。</param>
+      <exception cref="T:System.NotSupportedException">常にスローします。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericParameter">
+      <summary>常に true を取得します。</summary>
+      <returns>常に true。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericType">
+      <summary>常に false を返します。</summary>
+      <returns>常に false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsGenericTypeDefinition">
+      <summary>常に false を取得します。</summary>
+      <returns>常に false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.IsSubclassOf(System.Type)">
+      <summary>不完全なジェネリック型パラメーターではサポートされていません。</summary>
+      <returns>不完全なジェネリック型パラメーターではサポートされていません。</returns>
+      <param name="c">サポートされていません。</param>
+      <exception cref="T:System.NotSupportedException">常にスローします。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType">
+      <summary>要素型がジェネリック型パラメーターである 1 次元配列の型を返します。</summary>
+      <returns>要素型がジェネリック型パラメーターである 1 次元配列の型を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeArrayType(System.Int32)">
+      <summary>指定した次元数を持つ、要素型がジェネリック型パラメーターである配列の型を返します。</summary>
+      <returns>指定した次元数を持つ、要素型がジェネリック型パラメーターである配列の型を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+      <param name="rank">配列の次元数。</param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> が有効な次元数ではありません。たとえば、値が 1 未満であるなどです。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeByRefType">
+      <summary>参照パラメーターとして渡されるときに、現在のジェネリック型パラメーターを表す <see cref="T:System.Type" /> オブジェクトを返します。</summary>
+      <returns>参照パラメーターとして渡されるときに、現在のジェネリック型パラメーターを表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakeGenericType(System.Type[])">
+      <summary>不完全なジェネリック型パラメーターには有効ではありません。</summary>
+      <returns>このメソッドは、不完全なジェネリック型パラメーターには無効です。</returns>
+      <param name="typeArguments">型引数の配列。</param>
+      <exception cref="T:System.InvalidOperationException">常にスローします。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.MakePointerType">
+      <summary>現在のジェネリック型パラメーターへのポインターを表す <see cref="T:System.Type" /> オブジェクトを返します。</summary>
+      <returns>現在のジェネリック型パラメーターへのポインターを表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Module">
+      <summary>ジェネリック型パラメーターを格納する動的モジュールを取得します。</summary>
+      <returns>ジェネリック型パラメーターを格納する動的モジュールを表す <see cref="T:System.Reflection.Module" /> オブジェクト。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Name">
+      <summary>ジェネリック型パラメーターの名前を取得します。</summary>
+      <returns>ジェネリック型パラメーターの名前。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.GenericTypeParameterBuilder.Namespace">
+      <summary>常に null を取得します。</summary>
+      <returns>常に null 参照 (Visual Basic では Nothing)。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetBaseTypeConstraint(System.Type)">
+      <summary>型パラメーターを置き換えるために、型が継承する必要のある基本型を設定します。</summary>
+      <param name="baseTypeConstraint">型パラメーターを置き換える型が継承する必要のある <see cref="T:System.Type" />。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> は null なので、または<paramref name="binaryAttribute" /> が null 参照です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetGenericParameterAttributes(System.Reflection.GenericParameterAttributes)">
+      <summary>パラメーターなしのコンストラクターの制約など、ジェネリック パラメーターの分散特性と特殊な制約を設定します。</summary>
+      <param name="genericParameterAttributes">ジェネリック型パラメーターの分散特性と特殊な制約を表す <see cref="T:System.Reflection.GenericParameterAttributes" /> 値のビットごとの組み合わせ。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.SetInterfaceConstraints(System.Type[])">
+      <summary>型パラメーターを置き換えるために、型が実装する必要のあるインターフェイスを設定します。</summary>
+      <param name="interfaceConstraints">型パラメーターを置き換えるために、型が実装する必要のあるインターフェイスを表す <see cref="T:System.Type" /> オブジェクトの配列。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.GenericTypeParameterBuilder.ToString">
+      <summary>現在のジェネリック型パラメーターの文字列形式を返します。</summary>
+      <returns>ジェネリック型パラメーターの名前を含む文字列。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.MethodBuilder">
+      <summary>動的クラスのメソッド (またはコンストラクター) を定義および表現します。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Attributes">
+      <summary>このメソッドの属性を取得します。</summary>
+      <returns>読み取り専用。このメソッドの MethodAttributes を取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.CallingConvention">
+      <summary>メソッドの呼び出し規約を返します。</summary>
+      <returns>読み取り専用。メソッドの呼び出し規約。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ContainsGenericParameters">
+      <summary>この型ではサポートされていません。</summary>
+      <returns>サポートされていません。</returns>
+      <exception cref="T:System.NotSupportedException">呼び出されたメソッドは、基本クラスではサポートされません。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.DeclaringType">
+      <summary>このメソッドを宣言する型を返します。</summary>
+      <returns>読み取り専用。このメソッドを宣言する型。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineGenericParameters(System.String[])">
+      <summary>現在のメソッドのジェネリック型パラメーターの数を設定し、その名前を指定し、制約の定義に使用できる <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> オブジェクトの配列を返します。</summary>
+      <returns>ジェネリック メソッドの型パラメーターを表す <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> オブジェクトの配列。</returns>
+      <param name="names">ジェネリック型パラメーターの名前を表す文字列の配列。</param>
+      <exception cref="T:System.InvalidOperationException">ジェネリック型パラメーターは、このメソッドに対して既に定義されています。またはメソッドは既に完了しています。または<see cref="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)" /> メソッドは現在のメソッドに対して呼び出されています。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" /> は null なので、または<paramref name="names" /> の要素が null です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> が空の配列です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.DefineParameter(System.Int32,System.Reflection.ParameterAttributes,System.String)">
+      <summary>このメソッドのパラメーター属性およびパラメーターの名前を設定するか、このメソッドの戻り値を設定します。カスタム属性の適用に使用できる ParameterBuilder を返します。</summary>
+      <returns>このメソッドのパラメーターを表す ParameterBuilder オブジェクト、またはこのメソッドの戻り値を返します。</returns>
+      <param name="position">パラメーター リスト内のパラメーターの位置。パラメーターは、最初のパラメーターに対して 1 から始まるインデックスが付けられます。この数値が 0 の場合は、メソッドの戻り値を表します。</param>
+      <param name="attributes">パラメーターのパラメーター属性。</param>
+      <param name="strParamName">パラメーターの名前。名前は null 文字列でもかまいません。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">メソッドにパラメーターが指定されていません。または<paramref name="position" /> が 0 未満です。または<paramref name="position" /> がメソッドのパラメーター数を超える値です。</exception>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して作成されています。または現在のメソッドでは、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.Equals(System.Object)">
+      <summary>指定したオブジェクトがこのインスタンスと等しいかどうかを確認します。</summary>
+      <returns>
+        <paramref name="obj" /> が MethodBuilder のインスタンスで、このオブジェクトと等しい場合は true。それ以外の場合は false。</returns>
+      <param name="obj">この MethodBuilder インスタンスと比較するオブジェクト。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericArguments">
+      <summary>メソッドがジェネリック メソッドの場合に、メソッドの型パラメーターを表す <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> オブジェクトの配列を返します。</summary>
+      <returns>メソッドがジェネリックの場合は型パラメーターを表す <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> オブジェクトの配列。メソッドがジェネリックでない場合は null。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetGenericMethodDefinition">
+      <summary>このメソッドを返します。</summary>
+      <returns>
+        <see cref="T:System.Reflection.Emit.MethodBuilder" /> の現在のインスタンス。</returns>
+      <exception cref="T:System.InvalidOperationException">現在のメソッドはジェネリック メソッドではありません。つまり、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは false を返します。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetHashCode">
+      <summary>このメソッドのハッシュ コードを取得します。</summary>
+      <returns>このメソッドのハッシュ コード。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator">
+      <summary>既定の MSIL (Microsoft Intermediate Language) ストリーム サイズ (64 バイト) を持つこのメソッドの ILGenerator を返します。</summary>
+      <returns>このメソッドの ILGenerator オブジェクトを返します。</returns>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="T:System.Reflection.MethodAttributes" /> または <see cref="T:System.Reflection.MethodImplAttributes" /> のフラグが指定されているため、このメソッドに本体は必要ありません。たとえば、<see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" /> フラグが指定されているなどです。またはこのメソッドはジェネリック メソッドですが、ジェネリック メソッドの定義ではありません。つまり、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetILGenerator(System.Int32)">
+      <summary>指定した MSIL ストリーム サイズを持つこのメソッドの ILGenerator を返します。</summary>
+      <returns>このメソッドの ILGenerator オブジェクトを返します。</returns>
+      <param name="size">MSIL ストリームのサイズ (バイト単位)。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="T:System.Reflection.MethodAttributes" /> または <see cref="T:System.Reflection.MethodImplAttributes" /> のフラグが指定されているため、このメソッドに本体は必要ありません。たとえば、<see cref="F:System.Reflection.MethodAttributes.PinvokeImpl" /> フラグが指定されているなどです。またはこのメソッドはジェネリック メソッドですが、ジェネリック メソッドの定義ではありません。つまり、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.GetParameters">
+      <summary>このメソッドのパラメーターを返します。</summary>
+      <returns>このメソッドのパラメーターを表す ParameterInfo オブジェクトの配列。</returns>
+      <exception cref="T:System.NotSupportedException">このメソッドは、現在サポートされていません。<see cref="M:System.Type.GetMethod(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])" /> を使用してメソッドを取得し、返された <see cref="T:System.Reflection.MethodInfo" /> に対して GetParameters を呼び出します。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.InitLocals">
+      <summary>このメソッドのローカル変数を 0 で初期化するかどうかを指定するブール値を取得または設定します。このプロパティの既定値は true です。</summary>
+      <returns>このメソッドのローカル変数を 0 で初期化する必要がある場合は true。それ以外の場合は false。</returns>
+      <exception cref="T:System.InvalidOperationException">現在のメソッドでは、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です (取得または設定します)。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod">
+      <summary>メソッドがジェネリック メソッドかどうかを示す値を取得します。</summary>
+      <returns>このメソッドがジェネリック メソッドの場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition">
+      <summary>現在の <see cref="T:System.Reflection.Emit.MethodBuilder" /> オブジェクトがジェネリック メソッドの定義を表しているかどうかを示す値を取得します。</summary>
+      <returns>現在の <see cref="T:System.Reflection.Emit.MethodBuilder" /> オブジェクトがジェネリック メソッドの定義を表している場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.MakeGenericMethod(System.Type[])">
+      <summary>指定したジェネリック型引数を使用して、現在のジェネリック メソッドの定義から構築されたジェネリック メソッドを返します。</summary>
+      <returns>指定したジェネリック型引数を使用して、現在のジェネリック メソッドの定義から構築されたジェネリック メソッドを表す <see cref="T:System.Reflection.MethodInfo" />。</returns>
+      <param name="typeArguments">ジェネリック メソッドの型引数を表す <see cref="T:System.Type" /> オブジェクトの配列。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.MethodImplementationFlags"></member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.Name">
+      <summary>このメソッドの名前を取得します。</summary>
+      <returns>読み取り専用。このメソッドの簡易名を格納している文字列を取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnParameter">
+      <summary>戻り値の型にカスタム修飾子があるかどうかなど、メソッドの戻り値の型に関する情報を格納している <see cref="T:System.Reflection.ParameterInfo" /> オブジェクトを取得します。</summary>
+      <returns>戻り値の型に関する情報を格納している <see cref="T:System.Reflection.ParameterInfo" /> オブジェクト。</returns>
+      <exception cref="T:System.InvalidOperationException">宣言する型が作成されていません。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.MethodBuilder.ReturnType">
+      <summary>この <see cref="T:System.Reflection.Emit.MethodBuilder" /> が表すメソッドの戻り値の型を取得します。</summary>
+      <returns>メソッドの戻り値の型。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">現在のメソッドでは、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を記述するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">現在のメソッドでは、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetImplementationFlags(System.Reflection.MethodImplAttributes)">
+      <summary>このメソッドの実装フラグを設定します。</summary>
+      <param name="attributes">設定する実装フラグ。</param>
+      <exception cref="T:System.InvalidOperationException">外側の型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して作成されています。または現在のメソッドでは、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です </exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetParameters(System.Type[])">
+      <summary>メソッドのパラメーターの数と型を設定します。</summary>
+      <param name="parameterTypes">パラメーターの型を表す <see cref="T:System.Type" /> オブジェクトの配列。</param>
+      <exception cref="T:System.InvalidOperationException">現在のメソッドはジェネリック メソッドですが、ジェネリック メソッドの定義ではありません。つまり、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetReturnType(System.Type)">
+      <summary>メソッドの戻り値の型を設定します。</summary>
+      <param name="returnType">メソッドの戻り値の型を表す <see cref="T:System.Type" /> オブジェクト。</param>
+      <exception cref="T:System.InvalidOperationException">現在のメソッドはジェネリック メソッドですが、ジェネリック メソッドの定義ではありません。つまり、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.SetSignature(System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>戻り値の型、パラメーターの型、戻り値の型とパラメーターの型の必須およびオプションのカスタム修飾子を含むメソッド シグネチャを設定します。</summary>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="returnTypeRequiredCustomModifiers">メソッドの戻り値の型の必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="returnTypeOptionalCustomModifiers">メソッドの戻り値の型のオプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターの必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターに必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。必須のカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターのオプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターにオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。オプションのカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.InvalidOperationException">現在のメソッドはジェネリック メソッドですが、ジェネリック メソッドの定義ではありません。つまり、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethod" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.MethodBuilder.IsGenericMethodDefinition" /> プロパティが false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.MethodBuilder.ToString">
+      <summary>この MethodBuilder インスタンスを文字列として返します。</summary>
+      <returns>このメソッドの名前、属性、メソッド シグネチャ、例外、およびローカル シグネチャを格納している文字列と現在の MSIL ストリームを続けて返します。</returns>
+    </member>
+    <member name="T:System.Reflection.Emit.ModuleBuilder">
+      <summary>動的アセンブリ内のモジュールを定義および表現します。</summary>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Assembly">
+      <summary>この <see cref="T:System.Reflection.Emit.ModuleBuilder" /> インスタンスが定義されている動的アセンブリを取得します。</summary>
+      <returns>現在の動的モジュールが定義されている動的アセンブリ。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions">
+      <summary>この動的モジュールのグローバル関数定義とグローバル データ定義を完了します。</summary>
+      <exception cref="T:System.InvalidOperationException">このメソッドは、既に呼び出されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineEnum(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>指定した型の <paramref name="value__" /> という単一の非静的フィールドと共に、値型の列挙型を定義します。</summary>
+      <returns>定義された列挙型。</returns>
+      <param name="name">列挙型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="visibility">列挙型の型属性。属性は、<see cref="F:System.Reflection.TypeAttributes.VisibilityMask" /> で定義された任意のビットです。</param>
+      <param name="underlyingType">列挙型の基になる型。これは、組み込みの整数型にする必要があります。</param>
+      <exception cref="T:System.ArgumentException">可視属性以外の属性が指定されています。または指定された名前の列挙型が、このモジュールの親アセンブリに存在します。または可視属性が列挙型のスコープと一致しません。たとえば、<see cref="F:System.Reflection.TypeAttributes.NestedPublic" /> が<paramref name="visibility" /> に指定されていて、列挙型が入れ子にされた型ではありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>名前、属性、呼び出し規約、戻り値の型、およびパラメーター型を指定して、グローバル メソッドを定義します。</summary>
+      <returns>定義されたグローバル メソッド。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。<paramref name="attributes" /> には <see cref="F:System.Reflection.MethodAttributes.Static" /> を含める必要があります。</param>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <exception cref="T:System.ArgumentException">このメソッドは静的ではありません。つまり、<paramref name="attributes" /> に <see cref="F:System.Reflection.MethodAttributes.Static" /> が含まれていません。または<see cref="T:System.Type" /> 配列の要素が null です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> は既に呼び出されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>名前、属性、呼び出し規約、戻り値の型、戻り値の型のカスタム修飾子、パラメーター型、およびパラメーター型のカスタム修飾子を指定して、グローバル メソッドを定義します。</summary>
+      <returns>定義されたグローバル メソッド。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null 文字を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。<paramref name="attributes" /> には <see cref="F:System.Reflection.MethodAttributes.Static" /> を含める必要があります。</param>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="requiredReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、戻り値の型の必須のカスタム修飾子を表す型の配列。戻り値の型に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="optionalReturnTypeCustomModifiers">
+        <see cref="T:System.Runtime.CompilerServices.IsConst" /> や <see cref="T:System.Runtime.CompilerServices.IsBoxed" /> などの、戻り値の型のオプションのカスタム修飾子を表す型の配列。戻り値の型にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <param name="requiredParameterTypeCustomModifiers">型の配列の配列。型の各配列は、グローバル メソッドの対応するパラメーターの必須のカスタム修飾子を表します。特定の引数に必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。グローバル メソッドに引数がない場合、またはどの引数にも必須のカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="optionalParameterTypeCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターのオプションのカスタム修飾子を表します。特定の引数にオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。グローバル メソッドに引数がない場合、またはどの引数にもオプションのカスタム修飾子がない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentException">このメソッドは静的ではありません。つまり、<paramref name="attributes" /> に <see cref="F:System.Reflection.MethodAttributes.Static" /> が含まれていません。または<see cref="T:System.Type" /> 配列の要素が null です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> メソッドは既に呼び出されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineGlobalMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>名前、属性、戻り値の型、およびパラメーター型を指定して、グローバル メソッドを定義します。</summary>
+      <returns>定義されたグローバル メソッド。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。<paramref name="attributes" /> には <see cref="F:System.Reflection.MethodAttributes.Static" /> を含める必要があります。</param>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <exception cref="T:System.ArgumentException">このメソッドは静的ではありません。つまり、<paramref name="attributes" /> に <see cref="F:System.Reflection.MethodAttributes.Static" /> が含まれていません。または<paramref name="name" /> の長さが 0 です。または<see cref="T:System.Type" /> 配列の要素が null です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> は既に呼び出されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>移植可能な実行可能 (PE) ファイルの .sdata セクションに、初期化済みデータ フィールドを定義します。</summary>
+      <returns>データを参照するフィールド。</returns>
+      <param name="name">データを参照するために使用される名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="data">データのバイナリ ラージ オブジェクト (BLOB)。</param>
+      <param name="attributes">フィールドの属性。既定値は、Static です。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。または<paramref name="data" /> のサイズが 0 以下か、0x3f0000 以上です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> または <paramref name="data" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> は既に呼び出されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String)">
+      <summary>このモジュールで、指定した名前のプライベート型の TypeBuilder を構築します。</summary>
+      <returns>指定した名前のプライベート型。</returns>
+      <param name="name">名前空間を含む、型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <exception cref="T:System.ArgumentException">指定された名前の型が、このモジュールの親アセンブリに存在します。または入れ子にされた型の属性は、入れ子になっていない型に対して設定されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes)">
+      <summary>型名と型属性を指定して、TypeBuilder を構築します。</summary>
+      <returns>要求された属性をすべて指定して作成された TypeBuilder。</returns>
+      <param name="name">型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">定義された型の属性。</param>
+      <exception cref="T:System.ArgumentException">指定された名前の型が、このモジュールの親アセンブリに存在します。または入れ子にされた型の属性は、入れ子になっていない型に対して設定されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>型名、属性、および定義された型によって拡張される型を指定して、TypeBuilder を構築します。</summary>
+      <returns>要求された属性をすべて指定して作成された TypeBuilder。</returns>
+      <param name="name">型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">型に関連付ける属性。</param>
+      <param name="parent">定義された型を拡張する型。</param>
+      <exception cref="T:System.ArgumentException">指定された名前の型が、このモジュールの親アセンブリに存在します。または入れ子にされた型の属性は、入れ子になっていない型に対して設定されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>型名、属性、定義された型によって拡張される型、および型の合計サイズを指定して、TypeBuilder を構築します。</summary>
+      <returns>TypeBuilder オブジェクト。</returns>
+      <param name="name">型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">定義された型の属性。</param>
+      <param name="parent">定義された型を拡張する型。</param>
+      <param name="typesize">型の合計サイズ。</param>
+      <exception cref="T:System.ArgumentException">指定された名前の型が、このモジュールの親アセンブリに存在します。または入れ子にされた型の属性は、入れ子になっていない型に対して設定されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>型名、属性、定義された型によって拡張される型、および型のパッキング サイズを指定して、TypeBuilder を構築します。</summary>
+      <returns>TypeBuilder オブジェクト。</returns>
+      <param name="name">型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">定義された型の属性。</param>
+      <param name="parent">定義された型を拡張する型。</param>
+      <param name="packsize">型のパッキング サイズ。</param>
+      <exception cref="T:System.ArgumentException">指定された名前の型が、このモジュールの親アセンブリに存在します。または入れ子にされた型の属性は、入れ子になっていない型に対して設定されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>型名、属性、定義された型によって拡張される型、定義された型のパッキング サイズ、および定義された型の合計サイズを指定して、TypeBuilder を構築します。</summary>
+      <returns>要求された属性をすべて指定して作成された TypeBuilder。</returns>
+      <param name="name">型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">定義された型の属性。</param>
+      <param name="parent">定義された型を拡張する型。</param>
+      <param name="packingSize">型のパッキング サイズ。</param>
+      <param name="typesize">型の合計サイズ。</param>
+      <exception cref="T:System.ArgumentException">指定された名前の型が、このモジュールの親アセンブリに存在します。または入れ子にされた型の属性は、入れ子になっていない型に対して設定されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>型名、属性、定義された型によって拡張される型、および定義された型によって実装されるインターフェイスを指定して、TypeBuilder を構築します。</summary>
+      <returns>要求された属性をすべて指定して作成された TypeBuilder。</returns>
+      <param name="name">型の完全パス。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">型に関連付ける属性。</param>
+      <param name="parent">定義された型を拡張する型。</param>
+      <param name="interfaces">型が実装するインターフェイスのリスト。</param>
+      <exception cref="T:System.ArgumentException">指定された名前の型が、このモジュールの親アセンブリに存在します。または入れ子にされた型の属性は、入れ子になっていない型に対して設定されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>ポータブル実行可能 (PE) ファイルの .sdata セクションの初期化されていないデータ フィールドを定義します。</summary>
+      <returns>データを参照するフィールド。</returns>
+      <param name="name">データを参照するために使用される名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="size">データ フィールドのサイズ。</param>
+      <param name="attributes">フィールドの属性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。または<paramref name="size" /> が 0 以下か、0x003f0000 以上です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.ModuleBuilder.CreateGlobalFunctions" /> は既に呼び出されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.Equals(System.Object)">
+      <summary>このインスタンスが、指定したオブジェクトに等しいかどうかを示す値を返します。</summary>
+      <returns>
+        <paramref name="obj" /> がこのインスタンスの型および値に等しい場合は true。それ以外の場合は false。</returns>
+      <param name="obj">対象のインスタンスと比較する対象のオブジェクト、または null。</param>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.FullyQualifiedName">
+      <summary>このモジュールの完全修飾名とパスを表す String を取得します。</summary>
+      <returns>モジュールの完全修飾名。</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.FileIOPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetArrayMethod(System.Type,System.String,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>配列クラスの名前付きメソッドを返します。</summary>
+      <returns>配列クラスの名前付きメソッド。</returns>
+      <param name="arrayClass">配列クラス。</param>
+      <param name="methodName">配列クラスのメソッドの名前。</param>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="arrayClass" /> が配列ではありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="arrayClass" /> または <paramref name="methodName" /> が null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.GetHashCode">
+      <summary>対象のインスタンスのハッシュ コードを返します。</summary>
+      <returns>32 ビット符号付き整数ハッシュ コード。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.ModuleBuilder.Name">
+      <summary>これがメモリ内モジュールであることを示す文字列。</summary>
+      <returns>これがメモリ内モジュールであることを示すテキスト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>属性を表す指定したバイナリ ラージ オブジェクト (BLOB) を使用して、カスタム属性をこのモジュールに適用します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.ModuleBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性をこのモジュールに適用します。</summary>
+      <param name="customBuilder">適用するカスタム属性を指定するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> は null なので、</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.PropertyBuilder">
+      <summary>型のプロパティを定義します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.AddOtherMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>このプロパティに関連付ける別のメソッドを追加します。</summary>
+      <param name="mdBuilder">他のメソッドを表す MethodBuilder オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Attributes">
+      <summary>このプロパティの属性を取得します。</summary>
+      <returns>このプロパティの属性。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanRead">
+      <summary>プロパティを読み取ることができるかどうかを示す値を取得します。</summary>
+      <returns>このプロパティを読み取ることができる場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.CanWrite">
+      <summary>プロパティに書き込むことができるかどうかを示す値を取得します。</summary>
+      <returns>このプロパティに書き込むことができる場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.DeclaringType">
+      <summary>このメンバーを宣言するクラスを取得します。</summary>
+      <returns>このメンバーを宣言するクラスの Type オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetIndexParameters">
+      <summary>プロパティのすべてのインデックス パラメーターの配列を返します。</summary>
+      <returns>インデックスのパラメーターを格納している ParameterInfo 型の配列。</returns>
+      <exception cref="T:System.NotSupportedException">このメソッドはサポートされていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.GetValue(System.Object,System.Object[])">
+      <summary>プロパティの取得側メソッドを呼び出して、インデックス付きプロパティの値を取得します。</summary>
+      <returns>指定したインデックス付きプロパティの値。</returns>
+      <param name="obj">プロパティ値が返されるオブジェクト。</param>
+      <param name="index">インデックス付きプロパティのインデックス値 (省略可能)。インデックス付きでないプロパティの場合は、この値を null にする必要があります。</param>
+      <exception cref="T:System.NotSupportedException">このメソッドはサポートされていません。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.Name">
+      <summary>このメンバーの名前を取得します。</summary>
+      <returns>このメンバーの名前を格納している <see cref="T:System.String" />。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.PropertyBuilder.PropertyType">
+      <summary>このプロパティのフィールドの型を取得します。</summary>
+      <returns>このプロパティの型。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetConstant(System.Object)">
+      <summary>このプロパティの既定値を設定します。</summary>
+      <param name="defaultValue">このプロパティの既定値。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+      <exception cref="T:System.ArgumentException">プロパティが、サポートされている型のいずれでもありません。または<paramref name="defaultValue" /> の型がプロパティの型と一致しません。またはプロパティが <see cref="T:System.Object" /> 型または他の参照型であり、<paramref name="defaultValue" /> が null ではなく、値を参照型に割り当てることができません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetGetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>プロパティ値を取得するメソッドを設定します。</summary>
+      <param name="mdBuilder">プロパティ値を取得するメソッドを表す MethodBuilder オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetSetMethod(System.Reflection.Emit.MethodBuilder)">
+      <summary>プロパティ値を設定するメソッドを設定します。</summary>
+      <param name="mdBuilder">プロパティ値を設定するメソッドを表す MethodBuilder オブジェクト。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="mdBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> が、外側の型に対して呼び出されました。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.PropertyBuilder.SetValue(System.Object,System.Object,System.Object[])">
+      <summary>プロパティの値を設定します。インデックス付きプロパティの場合は、オプションでインデックス値を設定できます。</summary>
+      <param name="obj">プロパティ値が設定されるオブジェクト。</param>
+      <param name="value">このプロパティの新しい値。</param>
+      <param name="index">インデックス付きプロパティのインデックス値 (省略可能)。インデックス付きでないプロパティの場合は、この値を null にする必要があります。</param>
+      <exception cref="T:System.NotSupportedException">このメソッドはサポートされていません。</exception>
+    </member>
+    <member name="T:System.Reflection.Emit.TypeBuilder">
+      <summary>クラスの新しいインスタンスを実行時に定義および作成します。</summary>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.AddInterfaceImplementation(System.Type)">
+      <summary>この型で実装するインターフェイスを追加します。</summary>
+      <param name="interfaceType">この型で実装するインターフェイス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="interfaceType" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Assembly">
+      <summary>この型定義が含まれた動的アセンブリを取得します。</summary>
+      <returns>読み取り専用。この型定義が含まれた動的アセンブリを取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.AssemblyQualifiedName">
+      <summary>アセンブリの表示名で修飾されたこの型の完全名を返します。</summary>
+      <returns>読み取り専用。アセンブリの表示名で修飾されたこの型の完全名。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Attributes"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.BaseType">
+      <summary>この型の基本型を取得します。</summary>
+      <returns>読み取り専用。この型の基本型を取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.ContainsGenericParameters"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.CreateTypeInfo">
+      <summary>この型を表す <see cref="T:System.Reflection.TypeInfo" /> オブジェクトを取得します。</summary>
+      <returns>この型を表すオブジェクト。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringMethod">
+      <summary>現在のジェネリック型パラメーターを宣言したメソッドを取得します。</summary>
+      <returns>現在の型がジェネリック型パラメーターの場合は、現在の型を宣言したメソッドを表す <see cref="T:System.Reflection.MethodBase" />。それ以外の場合は null。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.DeclaringType">
+      <summary>この型を宣言した型を返します。</summary>
+      <returns>読み取り専用。この型を宣言した型。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[])">
+      <summary>指定した属性とシグネチャを使用して、新しいコンストラクターを型に追加します。</summary>
+      <returns>定義されたコンストラクター。</returns>
+      <param name="attributes">コンストラクターの属性。</param>
+      <param name="callingConvention">コンストラクターの呼び出し規約。</param>
+      <param name="parameterTypes">コンストラクターのパラメーターの型。</param>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineConstructor(System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type[],System.Type[][],System.Type[][])">
+      <summary>指定した属性、シグネチャ、およびカスタム修飾子を使用して、新しいコンストラクターを型に追加します。</summary>
+      <returns>定義されたコンストラクター。</returns>
+      <param name="attributes">コンストラクターの属性。</param>
+      <param name="callingConvention">コンストラクターの呼び出し規約。</param>
+      <param name="parameterTypes">コンストラクターのパラメーターの型。</param>
+      <param name="requiredCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターの必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターに必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。必須のカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="optionalCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターのオプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターにオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。オプションのカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="requiredCustomModifiers" /> または <paramref name="optionalCustomModifiers" /> のサイズが <paramref name="parameterTypes" /> のサイズと等しくありません。</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineDefaultConstructor(System.Reflection.MethodAttributes)">
+      <summary>既定のコンストラクターを定義します。ここで定義されたコンストラクターは、親の既定のコンストラクターを呼び出すだけです。</summary>
+      <returns>コンストラクターを返します。</returns>
+      <param name="attributes">コンストラクターに適用する属性を表す MethodAttributes オブジェクト。</param>
+      <exception cref="T:System.NotSupportedException">親の型 (基本型) に既定のコンストラクターがありません。</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineEvent(System.String,System.Reflection.EventAttributes,System.Type)">
+      <summary>指定した名前、属性、およびイベントの種類を使用して、新しいイベントを型に追加します。</summary>
+      <returns>定義されたイベント。</returns>
+      <param name="name">イベントの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">イベントの属性。</param>
+      <param name="eventtype">イベントの型。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="eventtype" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Reflection.FieldAttributes)">
+      <summary>指定した名前、属性、およびフィールドの型を使用して、新しいフィールドを型に追加します。</summary>
+      <returns>定義されたフィールド。</returns>
+      <param name="fieldName">フィールドの名前。<paramref name="fieldName" /> に null を埋め込むことはできません。</param>
+      <param name="type">フィールドの型。</param>
+      <param name="attributes">フィールドの属性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="fieldName" /> の長さが 0 です。または<paramref name="type" /> が System.Void です。またはこのフィールドの親クラスに合計サイズが指定されています。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineField(System.String,System.Type,System.Type[],System.Type[],System.Reflection.FieldAttributes)">
+      <summary>指定した名前、属性、フィールドの種類、およびカスタム修飾子を使用して、新しいフィールドを型に追加します。</summary>
+      <returns>定義されたフィールド。</returns>
+      <param name="fieldName">フィールドの名前。<paramref name="fieldName" /> に null を埋め込むことはできません。</param>
+      <param name="type">フィールドの型。</param>
+      <param name="requiredCustomModifiers">
+        <see cref="T:Microsoft.VisualC.IsConstModifier" /> など、フィールドの必須のカスタム修飾子を表す型の配列。</param>
+      <param name="optionalCustomModifiers">
+        <see cref="T:Microsoft.VisualC.IsConstModifier" /> など、フィールドのオプションのカスタム修飾子を表す型の配列。</param>
+      <param name="attributes">フィールドの属性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="fieldName" /> の長さが 0 です。または<paramref name="type" /> が System.Void です。またはこのフィールドの親クラスに合計サイズが指定されています。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="fieldName" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineGenericParameters(System.String[])">
+      <summary>数と名前を指定して、現在の型のジェネリック型パラメーターを定義し、制約を設定するために使用できる <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> オブジェクトの配列を返します。</summary>
+      <returns>現在の型のジェネリック型パラメーターの制約を定義するために使用できる <see cref="T:System.Reflection.Emit.GenericTypeParameterBuilder" /> オブジェクトの配列。</returns>
+      <param name="names">ジェネリック型パラメーターの名前の配列。</param>
+      <exception cref="T:System.InvalidOperationException">ジェネリック型パラメーターは、この型に対して既に定義されています。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="names" /> は null なので、または<paramref name="names" /> の要素が null です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="names" /> が空の配列です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineInitializedData(System.String,System.Byte[],System.Reflection.FieldAttributes)">
+      <summary>移植可能な実行可能 (PE) ファイルの .sdata セクションの初期化済みデータ フィールドを定義します。</summary>
+      <returns>データを参照するフィールド。</returns>
+      <param name="name">データを参照するために使用される名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="data">データの BLOB。</param>
+      <param name="attributes">フィールドの属性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。またはデータのサイズが 0 以下か、0x3f0000 以上です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> または <paramref name="data" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> は既に呼び出されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes)">
+      <summary>指定した名前とメソッド属性を使用して、新しいメソッドを型に追加します。</summary>
+      <returns>新しく定義されたメソッドを表す <see cref="T:System.Reflection.Emit.MethodBuilder" />。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。またはこのメソッドの親の型がインターフェイスであり、このメソッドが仮想メソッド (Visual Basic では Overridable) ではありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions)">
+      <summary>指定した名前、メソッド属性、および呼び出し規約を使用して、新しいメソッドを型に追加します。</summary>
+      <returns>新しく定義されたメソッドを表す <see cref="T:System.Reflection.Emit.MethodBuilder" />。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。</param>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。またはこのメソッドの親の型がインターフェイスであり、このメソッドが仮想メソッド (Visual Basic では Overridable) ではありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>指定した名前、メソッド属性、呼び出し規約、およびメソッド シグネチャを使用して、新しいメソッドを型に追加します。</summary>
+      <returns>新しく定義されたメソッドを表す <see cref="T:System.Reflection.Emit.MethodBuilder" />。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。</param>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。またはこのメソッドの親の型がインターフェイスであり、このメソッドが仮想メソッド (Visual Basic では Overridable) ではありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>指定した名前、メソッド属性、呼び出し規約、メソッド シグネチャ、およびカスタム修飾子を使用して、新しいメソッドを型に追加します。</summary>
+      <returns>新しく追加されたメソッドを表す <see cref="T:System.Reflection.Emit.MethodBuilder" /> オブジェクト。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。</param>
+      <param name="callingConvention">メソッドの呼び出し規約。</param>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="returnTypeRequiredCustomModifiers">メソッドの戻り値の型の必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="returnTypeOptionalCustomModifiers">メソッドの戻り値の型のオプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターの必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターに必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。必須のカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターのオプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターにオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。オプションのカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。またはこのメソッドの親の型がインターフェイスであり、このメソッドが仮想メソッド (Visual Basic では Overridable) ではありません。または<paramref name="parameterTypeRequiredCustomModifiers" /> または <paramref name="parameterTypeOptionalCustomModifiers" /> のサイズが <paramref name="parameterTypes" /> のサイズと等しくありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethod(System.String,System.Reflection.MethodAttributes,System.Type,System.Type[])">
+      <summary>指定した名前、メソッド属性、およびメソッド シグネチャを使用して、新しいメソッドを型に追加します。</summary>
+      <returns>定義されたメソッド。</returns>
+      <param name="name">メソッドの名前です。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">メソッドの属性。</param>
+      <param name="returnType">メソッドの戻り値の型。</param>
+      <param name="parameterTypes">メソッドのパラメーターの型。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。またはこのメソッドの親の型がインターフェイスであり、このメソッドが仮想メソッド (Visual Basic では Overridable) ではありません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineMethodOverride(System.Reflection.MethodInfo,System.Reflection.MethodInfo)">
+      <summary>指定したメソッド宣言を実装するメソッド本体を指定します。名前は異なる可能性があります。</summary>
+      <param name="methodInfoBody">使用するメソッド本体。MethodBuilder オブジェクトです。</param>
+      <param name="methodInfoDeclaration">宣言を使用するメソッド。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="methodInfoBody" /> は、このクラスに属していません。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="methodInfoBody" /> または <paramref name="methodInfoDeclaration" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または<paramref name="methodInfoBody" /> の宣言する型が、この <see cref="T:System.Reflection.Emit.TypeBuilder" /> で表される型ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String)">
+      <summary>名前を指定して、入れ子にされた型を定義します。</summary>
+      <returns>定義された入れ子にされた型。</returns>
+      <param name="name">型の短い名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さがゼロか、または 1023 を超えています。またはこの操作により、重複する <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> を持つ型が現在のアセンブリに作成されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes)">
+      <summary>名前と属性を指定して、入れ子にされた型を定義します。</summary>
+      <returns>定義された入れ子にされた型。</returns>
+      <param name="name">型の短い名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">型の属性。</param>
+      <exception cref="T:System.ArgumentException">入れ子にされた属性が指定されていません。またはこの型はシール型です。またはこの型は配列です。またはこの型はインターフェイスですが、入れ子にされた型はインターフェイスではありません。または<paramref name="name" /> の長さがゼロか、または 1023 を超えています。またはこの操作により、重複する <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> を持つ型が現在のアセンブリに作成されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type)">
+      <summary>名前、属性、および拡張する型を指定して、入れ子にされた型を定義します。</summary>
+      <returns>定義された入れ子にされた型。</returns>
+      <param name="name">型の短い名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">型の属性。</param>
+      <param name="parent">入れ子にされた型を拡張する型。</param>
+      <exception cref="T:System.ArgumentException">入れ子にされた属性が指定されていません。またはこの型はシール型です。またはこの型は配列です。またはこの型はインターフェイスですが、入れ子にされた型はインターフェイスではありません。または<paramref name="name" /> の長さがゼロか、または 1023 を超えています。またはこの操作により、重複する <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> を持つ型が現在のアセンブリに作成されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Int32)">
+      <summary>名前、属性、型の合計サイズ、および拡張する型を指定して、入れ子にされた型を定義します。</summary>
+      <returns>定義された入れ子にされた型。</returns>
+      <param name="name">型の短い名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">型の属性。</param>
+      <param name="parent">入れ子にされた型を拡張する型。</param>
+      <param name="typeSize">型の合計サイズ。</param>
+      <exception cref="T:System.ArgumentException">入れ子にされた属性が指定されていません。またはこの型はシール型です。またはこの型は配列です。またはこの型はインターフェイスですが、入れ子にされた型はインターフェイスではありません。または<paramref name="name" /> の長さがゼロか、または 1023 を超えています。またはこの操作により、重複する <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> を持つ型が現在のアセンブリに作成されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize)">
+      <summary>名前、属性、拡張する型、およびパッキング サイズを指定して、入れ子にされた型を定義します。</summary>
+      <returns>定義された入れ子にされた型。</returns>
+      <param name="name">型の短い名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">型の属性。</param>
+      <param name="parent">入れ子にされた型を拡張する型。</param>
+      <param name="packSize">型のパッキング サイズ。</param>
+      <exception cref="T:System.ArgumentException">入れ子にされた属性が指定されていません。またはこの型はシール型です。またはこの型は配列です。またはこの型はインターフェイスですが、入れ子にされた型はインターフェイスではありません。または<paramref name="name" /> の長さがゼロか、または 1023 を超えています。またはこの操作により、重複する <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> を持つ型が現在のアセンブリに作成されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Reflection.Emit.PackingSize,System.Int32)">
+      <summary>名前、属性、サイズ、および拡張する型を指定して、入れ子にされた型を定義します。</summary>
+      <returns>定義された入れ子にされた型。</returns>
+      <param name="name">型の短い名前。<paramref name="name" /> に null 値を埋め込むことはできません。</param>
+      <param name="attr">型の属性。</param>
+      <param name="parent">入れ子にされた型を拡張する型。</param>
+      <param name="packSize">型のパッキング サイズ。</param>
+      <param name="typeSize">型の合計サイズ。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineNestedType(System.String,System.Reflection.TypeAttributes,System.Type,System.Type[])">
+      <summary>名前、属性、拡張する型、および実装するインターフェイスを指定して、入れ子にされた型を定義します。</summary>
+      <returns>定義された入れ子にされた型。</returns>
+      <param name="name">型の短い名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attr">型の属性。</param>
+      <param name="parent">入れ子にされた型を拡張する型。</param>
+      <param name="interfaces">入れ子にされた型が実装するインターフェイス。</param>
+      <exception cref="T:System.ArgumentException">入れ子にされた属性が指定されていません。またはこの型はシール型です。またはこの型は配列です。またはこの型はインターフェイスですが、入れ子にされた型はインターフェイスではありません。または<paramref name="name" /> の長さがゼロか、または 1023 を超えています。またはこの操作により、重複する <see cref="P:System.Reflection.Emit.TypeBuilder.FullName" /> を持つ型が現在のアセンブリに作成されます。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="interfaces" /> 配列の要素が null です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[])">
+      <summary>指定した名前、属性、呼び出し規約、およびプロパティ シグネチャを使用して、新しいプロパティを型に追加します。</summary>
+      <returns>定義されたプロパティ。</returns>
+      <param name="name">プロパティの名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">プロパティの属性。</param>
+      <param name="callingConvention">プロパティ アクセサーの呼び出し規約。</param>
+      <param name="returnType">プロパティの戻り値の型。</param>
+      <param name="parameterTypes">プロパティのパラメーターの型。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="parameterTypes" /> 配列の要素のいずれかが null です。</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Reflection.CallingConventions,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>指定した名前、呼び出し規約、プロパティ シグネチャ、およびカスタム修飾子を使用して、新しいプロパティを型に追加します。</summary>
+      <returns>定義されたプロパティ。</returns>
+      <param name="name">プロパティの名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">プロパティの属性。</param>
+      <param name="callingConvention">プロパティ アクセサーの呼び出し規約。</param>
+      <param name="returnType">プロパティの戻り値の型。</param>
+      <param name="returnTypeRequiredCustomModifiers">プロパティの戻り値の型の、必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="returnTypeOptionalCustomModifiers">プロパティの戻り値の型の、オプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="parameterTypes">プロパティのパラメーターの型。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターの必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターに必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。必須のカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターのオプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターにオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。オプションのカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="parameterTypes" /> 配列の要素のいずれかが null です。</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[])">
+      <summary>指定した名前とプロパティ シグネチャを使用して、新しいプロパティを型に追加します。</summary>
+      <returns>定義されたプロパティ。</returns>
+      <param name="name">プロパティの名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">プロパティの属性。</param>
+      <param name="returnType">プロパティの戻り値の型。</param>
+      <param name="parameterTypes">プロパティのパラメーターの型。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、または<paramref name="parameterTypes" /> 配列の要素のいずれかが null です。</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineProperty(System.String,System.Reflection.PropertyAttributes,System.Type,System.Type[],System.Type[],System.Type[],System.Type[][],System.Type[][])">
+      <summary>指定した名前、プロパティ シグネチャ、およびカスタム修飾子を使用して、新しいプロパティを型に追加します。</summary>
+      <returns>定義されたプロパティ。</returns>
+      <param name="name">プロパティの名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="attributes">プロパティの属性。</param>
+      <param name="returnType">プロパティの戻り値の型。</param>
+      <param name="returnTypeRequiredCustomModifiers">プロパティの戻り値の型の、必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型に必須のカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="returnTypeOptionalCustomModifiers">プロパティの戻り値の型の、オプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表す型の配列。戻り値の型にオプションのカスタム修飾子がない場合は、null を指定します。</param>
+      <param name="parameterTypes">プロパティのパラメーターの型。</param>
+      <param name="parameterTypeRequiredCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターの必須のカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターに必須のカスタム修飾子がない場合は、型の配列の代わりに null を指定します。必須のカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <param name="parameterTypeOptionalCustomModifiers">型の配列の配列。型の各配列は、対応するパラメーターのオプションのカスタム修飾子 (<see cref="T:System.Runtime.CompilerServices.IsConst" /> など) を表します。特定のパラメーターにオプションのカスタム修飾子がない場合は、型の配列の代わりに null を指定します。オプションのカスタム修飾子を持つパラメーターがない場合は、配列の配列の代わりに null を指定します。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> が null です。または<paramref name="parameterTypes" /> 配列の要素のいずれかが null です。</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineTypeInitializer">
+      <summary>この型の初期化子を定義します。</summary>
+      <returns>型初期化子を返します。</returns>
+      <exception cref="T:System.InvalidOperationException">コンテナーの型が <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して作成済みの型である場合</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.DefineUninitializedData(System.String,System.Int32,System.Reflection.FieldAttributes)">
+      <summary>移植可能な実行可能 (PE) ファイルの .sdata セクションの初期化されていないデータ フィールドを定義します。</summary>
+      <returns>データを参照するフィールド。</returns>
+      <param name="name">データを参照するために使用される名前。<paramref name="name" /> に null を埋め込むことはできません。</param>
+      <param name="size">データ フィールドのサイズ。</param>
+      <param name="attributes">フィールドの属性。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> の長さが 0 です。または<paramref name="size" /> が 0 以下か、0x003f0000 以上です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.FullName">
+      <summary>この型の完全パスを取得します。</summary>
+      <returns>読み取り専用。この型の完全パスを取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterAttributes">
+      <summary>現在のジェネリック型パラメーターの共変性と特殊な制約を示す値を取得します。</summary>
+      <returns>現在のジェネリック型パラメーターの共変性と特殊な制約を表す <see cref="T:System.Reflection.GenericParameterAttributes" /> 値のビットごとの組み合わせ。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericParameterPosition">
+      <summary>パラメーターを宣言したジェネリック型の型パラメーター リスト内の型パラメーターの位置を取得します。</summary>
+      <returns>現在の <see cref="T:System.Reflection.Emit.TypeBuilder" /> オブジェクトがジェネリック型パラメーターを表している場合は、パラメーターを宣言したジェネリック型の型パラメーター リスト内の型パラメーターの位置。それ以外の場合は、定義されていません。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GenericTypeArguments"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetArrayRank"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetConstructor(System.Type,System.Reflection.ConstructorInfo)">
+      <summary>ジェネリック型の定義の指定したコンストラクターに対応する、指定の構築ジェネリック型のコンストラクターを返します。</summary>
+      <returns>
+        <paramref name="type" /> のジェネリック型の定義に属するコンストラクターを指定する、<paramref name="constructor" /> に対応する <paramref name="type" /> のコンストラクターを表す <see cref="T:System.Reflection.ConstructorInfo" /> オブジェクト。</returns>
+      <param name="type">コンストラクターが返される構築ジェネリック型。</param>
+      <param name="constructor">返される <paramref name="type" /> のコンストラクターを指定する <paramref name="type" /> のジェネリック型の定義に属するコンストラクター。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> がジェネリック型を表していません。または<paramref name="type" /> が <see cref="T:System.Reflection.Emit.TypeBuilder" /> 型ではありません。または<paramref name="constructor" /> の宣言する型がジェネリック型定義ではありません。または<paramref name="constructor" /> の宣言する型が、<paramref name="type" /> のジェネリック型の定義ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetElementType">
+      <summary>このメソッドを呼び出すと、必ず <see cref="T:System.NotSupportedException" /> がスローされます。</summary>
+      <returns>このメソッドはサポートされていません。値は返されません。</returns>
+      <exception cref="T:System.NotSupportedException">このメソッドはサポートされていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetField(System.Type,System.Reflection.FieldInfo)">
+      <summary>ジェネリック型の定義の指定したフィールドに対応する、指定の構築ジェネリック型のフィールドを返します。</summary>
+      <returns>
+        <paramref name="type" /> のジェネリック型の定義に属するフィールドを指定する、<paramref name="field" /> に対応する <paramref name="type" /> のフィールドを表す <see cref="T:System.Reflection.FieldInfo" /> オブジェクト。</returns>
+      <param name="type">フィールドが返される構築ジェネリック型。</param>
+      <param name="field">返される <paramref name="type" /> のフィールドを指定する、<paramref name="type" /> のジェネリック型の定義に属するフィールド。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> がジェネリック型を表していません。または<paramref name="type" /> が <see cref="T:System.Reflection.Emit.TypeBuilder" /> 型ではありません。または<paramref name="field" /> の宣言する型がジェネリック型定義ではありません。または<paramref name="field" /> の宣言する型が、<paramref name="type" /> のジェネリック型の定義ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericParameterConstraints"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetGenericTypeDefinition">
+      <summary>現在の型を取得できるジェネリック型の定義を表す <see cref="T:System.Type" /> オブジェクトを返します。</summary>
+      <returns>現在の型を取得できるジェネリック型の定義を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+      <exception cref="T:System.InvalidOperationException">現在の型はジェネリック型ではありません。つまり、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> は false を返します。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.GetMethod(System.Type,System.Reflection.MethodInfo)">
+      <summary>ジェネリック型の定義の指定したメソッドに対応する、指定の構築ジェネリック型のメソッドを返します。</summary>
+      <returns>
+        <paramref name="type" /> のジェネリック型の定義に属するメソッドを指定する、<paramref name="method" /> に対応する <paramref name="type" /> のメソッドを表す <see cref="T:System.Reflection.MethodInfo" /> オブジェクト。</returns>
+      <param name="type">メソッドが返される構築ジェネリック型。</param>
+      <param name="method">返される <paramref name="type" /> のメソッドを指定する、<paramref name="type" /> のジェネリック型の定義に属するメソッド。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="method" /> は、ジェネリック メソッドの定義ではないジェネリック メソッドです。または<paramref name="type" /> がジェネリック型を表していません。または<paramref name="type" /> が <see cref="T:System.Reflection.Emit.TypeBuilder" /> 型ではありません。または<paramref name="method" /> の宣言する型がジェネリック型の定義ではありません。または<paramref name="method" /> の宣言する型が、<paramref name="type" /> のジェネリック型の定義ではありません。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.GUID">
+      <summary>この型の GUID を取得します。</summary>
+      <returns>読み取り専用。この型の GUID を取得します。</returns>
+      <exception cref="T:System.NotSupportedException">このメソッドは現在、不完全な型に対してはサポートされていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsAssignableFrom(System.Reflection.TypeInfo)">
+      <summary>指定した <see cref="T:System.Reflection.TypeInfo" /> オブジェクトをこのオブジェクトに割り当てることができるかどうかを示す値を取得します。</summary>
+      <returns>
+        <paramref name="typeInfo" /> をオブジェクトに割り当てることができる場合は true、それ以外の場合は false。</returns>
+      <param name="typeInfo">テストするオブジェクト。</param>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.IsCreated">
+      <summary>現在の動的型が作成されているかどうかを示す値を返します。</summary>
+      <returns>
+        <see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> メソッドが呼び出されている場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsEnum"></member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericParameter">
+      <summary>現在の型がジェネリック型パラメーターかどうかを示す値を取得します。</summary>
+      <returns>現在の <see cref="T:System.Reflection.Emit.TypeBuilder" /> オブジェクトがジェネリック型パラメーターを表す場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericType">
+      <summary>現在の型がジェネリック型かどうかを示す値を取得します。</summary>
+      <returns>現在の <see cref="T:System.Reflection.Emit.TypeBuilder" /> オブジェクトによって表される型がジェネリック型の場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition">
+      <summary>現在の <see cref="T:System.Reflection.Emit.TypeBuilder" /> が、他のジェネリック型を構築できるジェネリック型の定義を表しているかどうかを示す値を取得します。</summary>
+      <returns>この <see cref="T:System.Reflection.Emit.TypeBuilder" /> オブジェクトがジェネリック型の定義を表している場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.IsSerializable"></member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType">
+      <summary>下限が 0 である現在の型の 1 次元配列を表す <see cref="T:System.Type" /> オブジェクトを返します。</summary>
+      <returns>下限が 0 で要素型が現在の型である 1 次元配列の型を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeArrayType(System.Int32)">
+      <summary>指定した次元数の現在の型の配列を表す <see cref="T:System.Type" /> オブジェクトを返します。</summary>
+      <returns>現在の型の 1 次元配列を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+      <param name="rank">配列の次元数。</param>
+      <exception cref="T:System.IndexOutOfRangeException">
+        <paramref name="rank" /> が配列の有効な次元ではありません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeByRefType">
+      <summary>ref パラメーター (Visual Basic では ByRef) として渡された場合の現在の型を表す <see cref="T:System.Type" /> オブジェクトを返します。</summary>
+      <returns>ref パラメーター (Visual Basic では ByRef) として渡された場合の現在の型を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakeGenericType(System.Type[])">
+      <summary>現在のジェネリック型の定義の型パラメーターを型の配列の要素に置き換え、その結果である構築された型を返します。</summary>
+      <returns>
+        <paramref name="typeArguments" /> の要素を現在のジェネリック型の型パラメーターで置き換えることによって作られる構築型を表す <see cref="T:System.Type" />。</returns>
+      <param name="typeArguments">現在のジェネリック型の定義の型パラメーターを置き換える型の配列。</param>
+      <exception cref="T:System.InvalidOperationException">現在の型はジェネリック型の定義を表していません。つまり、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> は false を返します。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="typeArguments" /> は null なので、または<paramref name="typeArguments" /> の要素が null です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="typeArguments" /> の要素が、現在のジェネリック型の対応する型パラメーターに指定された制約を満たしていません。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.MakePointerType">
+      <summary>現在の型へのアンマネージ ポインターの型を表す <see cref="T:System.Type" /> オブジェクトを返します。</summary>
+      <returns>現在の型へのアンマネージ ポインターの型を表す <see cref="T:System.Type" /> オブジェクト。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Module">
+      <summary>この型の定義が含まれている動的モジュールを取得します。</summary>
+      <returns>読み取り専用。この型の定義が含まれている動的モジュールを取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Name">
+      <summary>この型の name を取得します。</summary>
+      <returns>読み取り専用。この型の <see cref="T:System.String" /> 名を取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Namespace">
+      <summary>この TypeBuilder を定義した名前空間を取得します。</summary>
+      <returns>読み取り専用。この TypeBuilder を定義した名前空間を取得します。</returns>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.PackingSize">
+      <summary>この型のパッキング サイズを取得します。</summary>
+      <returns>読み取り専用。この型のパッキング サイズを取得します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.ConstructorInfo,System.Byte[])">
+      <summary>指定されたカスタム属性 BLOB を使用して、カスタム属性を設定します。</summary>
+      <param name="con">カスタム属性用のコンストラクター。</param>
+      <param name="binaryAttribute">属性を表すバイト BLOB。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="con" /> または <paramref name="binaryAttribute" /> が null です。</exception>
+      <exception cref="T:System.InvalidOperationException">現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetCustomAttribute(System.Reflection.Emit.CustomAttributeBuilder)">
+      <summary>カスタム属性ビルダーを使用して、カスタム属性を設定します。</summary>
+      <param name="customBuilder">カスタム属性を定義するためのヘルパー クラスのインスタンス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="customBuilder" /> は null なので、</exception>
+      <exception cref="T:System.InvalidOperationException">現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.SetParent(System.Type)">
+      <summary>現在構築中の型の基本型を設定します。</summary>
+      <param name="parent">新しい基本型。</param>
+      <exception cref="T:System.InvalidOperationException">この型は、<see cref="M:System.Reflection.Emit.TypeBuilder.CreateType" /> を使用して既に作成されています。または<paramref name="parent" /> が null であり、現在のインスタンスは属性に <see cref="F:System.Reflection.TypeAttributes.Abstract" /> が含まれていないインターフェイスを表しています。または現在の動的型では、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericType" /> プロパティは true ですが、<see cref="P:System.Reflection.Emit.TypeBuilder.IsGenericTypeDefinition" /> プロパティは false です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="parent" /> がインターフェイスです。この例外条件は、.NET Framework Version 2.0 で新たに導入されました。</exception>
+    </member>
+    <member name="P:System.Reflection.Emit.TypeBuilder.Size">
+      <summary>型の合計サイズを取得します。</summary>
+      <returns>読み取り専用。この型の合計サイズを取得します。</returns>
+    </member>
+    <member name="M:System.Reflection.Emit.TypeBuilder.ToString">
+      <summary>名前空間を含まない型の名前を返します。</summary>
+      <returns>読み取り専用。名前空間を含まない型の名前。</returns>
+    </member>
+    <member name="F:System.Reflection.Emit.TypeBuilder.UnspecifiedTypeSize">
+      <summary>型の合計サイズが指定されていないことを表します。</summary>
+    </member>
+  </members>
+</doc>

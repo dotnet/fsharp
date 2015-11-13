@@ -1,0 +1,1224 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Collections.Specialized</name>
+  </assembly>
+  <members>
+    <member name="T:System.Collections.Specialized.BitVector32">
+      <summary>ブール値と小さい整数をメモリに 32 ビットで格納する単純な構造体を提供します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Collections.Specialized.BitVector32)">
+      <summary>既存の <see cref="T:System.Collections.Specialized.BitVector32" /> 構造体で表されたデータが格納されている <see cref="T:System.Collections.Specialized.BitVector32" /> 構造体の新しいインスタンスを初期化します。</summary>
+      <param name="value">コピーするデータが格納されている <see cref="T:System.Collections.Specialized.BitVector32" /> 構造体。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.#ctor(System.Int32)">
+      <summary>整数で表されるデータが格納されている <see cref="T:System.Collections.Specialized.BitVector32" /> 構造体の新しいインスタンスを初期化します。</summary>
+      <param name="data">新しい <see cref="T:System.Collections.Specialized.BitVector32" /> のデータを表す整数。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask">
+      <summary>ビット フラグとして設定された <see cref="T:System.Collections.Specialized.BitVector32" /> の個別のビットを取得するために使用できる一連のマスクのうちの、最初のマスクを作成します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> の最初のビット フラグを分離するマスク。</returns>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateMask(System.Int32)">
+      <summary>ビット フラグとして設定された <see cref="T:System.Collections.Specialized.BitVector32" /> の個別のビットを取得するために使用できる一連のマスクのうちの、指定したマスクの次に追加マスクを作成します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> 内で <paramref name="previous" /> が指すビット フラグの次のビット フラグを分離するマスク。</returns>
+      <param name="previous">1 つ前のビット フラグを示すマスク。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> indicates the last bit flag in the <see cref="T:System.Collections.Specialized.BitVector32" />. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16)">
+      <summary>小さい整数が格納された一連のセクションのうちの、最初の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> を作成します。</summary>
+      <returns>0 から <paramref name="maxValue" /> までの範囲の数値を格納できる <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</returns>
+      <param name="maxValue">新しい <see cref="T:System.Collections.Specialized.BitVector32.Section" /> の最大値を指定する 16 ビット符号付き整数。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.CreateSection(System.Int16,System.Collections.Specialized.BitVector32.Section)">
+      <summary>小さい整数が格納された一連のセクションのうちの指定した <see cref="T:System.Collections.Specialized.BitVector32.Section" /> の次に、新しい <see cref="T:System.Collections.Specialized.BitVector32.Section" /> を作成します。</summary>
+      <returns>0 から <paramref name="maxValue" /> までの範囲の数値を格納できる <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</returns>
+      <param name="maxValue">新しい <see cref="T:System.Collections.Specialized.BitVector32.Section" /> の最大値を指定する 16 ビット符号付き整数。</param>
+      <param name="previous">
+        <see cref="T:System.Collections.Specialized.BitVector32" /> 内の 1 つ前の <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="maxValue" /> is less than 1. </exception>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="previous" /> includes the final bit in the <see cref="T:System.Collections.Specialized.BitVector32" />.-or- <paramref name="maxValue" /> is greater than the highest value that can be represented by the number of bits after <paramref name="previous" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Data">
+      <summary>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> の値を整数として取得します。</summary>
+      <returns>整数として取得された <see cref="T:System.Collections.Specialized.BitVector32" /> の値。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Equals(System.Object)">
+      <summary>指定したオブジェクトが <see cref="T:System.Collections.Specialized.BitVector32" /> と等しいかどうかを判断します。</summary>
+      <returns>指定したオブジェクトが <see cref="T:System.Collections.Specialized.BitVector32" /> に等しい場合は true。それ以外の場合は false。</returns>
+      <param name="o">現在の <see cref="T:System.Collections.Specialized.BitVector32" /> と比較するオブジェクト。 </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.GetHashCode">
+      <summary>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> のハッシュ関数として機能します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> のハッシュ コード。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Collections.Specialized.BitVector32.Section)">
+      <summary>指定した <see cref="T:System.Collections.Specialized.BitVector32.Section" /> に格納された値を取得または設定します。</summary>
+      <returns>指定した <see cref="T:System.Collections.Specialized.BitVector32.Section" /> に格納された値。</returns>
+      <param name="section">取得または設定する値が格納されている <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</param>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Item(System.Int32)">
+      <summary>指定したマスクが指すビット フラグの状態を取得または設定します。</summary>
+      <returns>指定したビット フラグがオン (1) の場合は true。それ以外の場合は false。</returns>
+      <param name="bit">取得または設定するビットを示すマスク。 </param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString">
+      <summary>現在の <see cref="T:System.Collections.Specialized.BitVector32" /> を表す文字列を返します。</summary>
+      <returns>現在の <see cref="T:System.Collections.Specialized.BitVector32" /> を表す文字列。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.ToString(System.Collections.Specialized.BitVector32)">
+      <summary>指定した <see cref="T:System.Collections.Specialized.BitVector32" /> を表す文字列を返します。</summary>
+      <returns>指定した <see cref="T:System.Collections.Specialized.BitVector32" /> を表す文字列。</returns>
+      <param name="value">表現する <see cref="T:System.Collections.Specialized.BitVector32" />。</param>
+    </member>
+    <member name="T:System.Collections.Specialized.BitVector32.Section">
+      <summary>整数を格納できるベクターのセクションを表します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Collections.Specialized.BitVector32.Section)">
+      <summary>指定した <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトが現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトと同じかどうかを判断します。</summary>
+      <returns>
+        <paramref name="obj" /> パラメーターが現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトと同じ場合は、true。それ以外の場合は false。</returns>
+      <param name="obj">現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトと比較する <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクト。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.Equals(System.Object)">
+      <summary>指定したオブジェクトが現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトと同じかどうかを判断します。</summary>
+      <returns>指定したオブジェクトが現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトと同じ場合は、true。それ以外の場合は false。</returns>
+      <param name="o">現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> と比較するオブジェクト。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.GetHashCode">
+      <summary>現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> のハッシュ関数として機能します。ハッシュ アルゴリズムや、ハッシュ テーブルのようなデータ構造での使用に適しています。</summary>
+      <returns>現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> のハッシュ コード。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Mask">
+      <summary>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> 内でこのセクションを分離するマスクを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> 内でこのセクションを分離するマスク。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.BitVector32.Section.Offset">
+      <summary>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> の先頭からの、このセクションのオフセットを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.BitVector32" /> の先頭からの、このセクションのオフセット。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Equality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>指定した 2 つの <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトが等しいかどうかを判断します。</summary>
+      <returns>
+        <paramref name="a" /> パラメーターおよび <paramref name="b" /> パラメーターが同じ <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトを表している場合は true。それ以外の場合は false。</returns>
+      <param name="a">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクト。</param>
+      <param name="b">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクト。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.op_Inequality(System.Collections.Specialized.BitVector32.Section,System.Collections.Specialized.BitVector32.Section)">
+      <summary>2 つの <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトの値が異なるかどうかを判断します。</summary>
+      <returns>
+        <paramref name="a" /> パラメーターおよび <paramref name="b" /> パラメーターが異なる <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクトを表している場合は true。それ以外の場合は false。</returns>
+      <param name="a">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクト。</param>
+      <param name="b">
+        <see cref="T:System.Collections.Specialized.BitVector32.Section" /> オブジェクト。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString">
+      <summary>現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> を表す文字列を返します。</summary>
+      <returns>現在の <see cref="T:System.Collections.Specialized.BitVector32.Section" /> を表す文字列。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.BitVector32.Section.ToString(System.Collections.Specialized.BitVector32.Section)">
+      <summary>指定した <see cref="T:System.Collections.Specialized.BitVector32.Section" /> を表す文字列を返します。</summary>
+      <returns>指定した <see cref="T:System.Collections.Specialized.BitVector32.Section" /> を表す文字列。</returns>
+      <param name="value">表現する <see cref="T:System.Collections.Specialized.BitVector32.Section" />。</param>
+    </member>
+    <member name="T:System.Collections.Specialized.HybridDictionary">
+      <summary>コレクションが小さいうちは <see cref="T:System.Collections.Specialized.ListDictionary" /> を使用し、コレクションが大きくなってきたら <see cref="T:System.Collections.Hashtable" /> に切り替える IDictionary を実装します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor">
+      <summary>大文字と小文字を区別する空の <see cref="T:System.Collections.Specialized.HybridDictionary" /> を作成します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Boolean)">
+      <summary>大文字と小文字の区別を指定して、空の <see cref="T:System.Collections.Specialized.HybridDictionary" /> を作成します。</summary>
+      <param name="caseInsensitive">
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> で大文字小文字が区別されるかどうかを指定するブール値。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32)">
+      <summary>指定した初期サイズで、大文字と小文字を区別する <see cref="T:System.Collections.Specialized.HybridDictionary" /> を作成します。</summary>
+      <param name="initialSize">
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> が初期状態で格納できるエントリの概数。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.#ctor(System.Int32,System.Boolean)">
+      <summary>初期サイズおよび大文字と小文字の区別を指定して、<see cref="T:System.Collections.Specialized.HybridDictionary" /> を作成します。</summary>
+      <param name="initialSize">
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> が初期状態で格納できるエントリの概数。</param>
+      <param name="caseInsensitive">
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> で大文字小文字が区別されるかどうかを指定するブール値。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Add(System.Object,System.Object)">
+      <summary>指定したキーおよび値を持つエントリを <see cref="T:System.Collections.Specialized.HybridDictionary" /> に追加します。</summary>
+      <param name="key">追加するエントリのキー。</param>
+      <param name="value">追加するエントリの値。値は null に設定できます。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+      <exception cref="T:System.ArgumentException">同じキーを持つエントリが、<see cref="T:System.Collections.Specialized.HybridDictionary" /> に既に存在します。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Clear">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> からすべてのエントリを削除します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Contains(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> に特定のキーが格納されているかどうかを判断します。</summary>
+      <returns>true if the <see cref="T:System.Collections.Specialized.HybridDictionary" /> contains an entry with the specified key; otherwise, false.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> 内で検索されるキー。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>1 次元の <see cref="T:System.Array" /> インスタンスの指定したインデックスに <see cref="T:System.Collections.Specialized.HybridDictionary" /> のエントリをコピーします。</summary>
+      <param name="array">The one-dimensional <see cref="T:System.Array" /> that is the destination of the <see cref="T:System.Collections.DictionaryEntry" /> objects copied from <see cref="T:System.Collections.Specialized.HybridDictionary" />.<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置となる、<paramref name="array" /> 内の 0 から始まるインデックス。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> は null です。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> が多次元です。またはコピー元の <see cref="T:System.Collections.Specialized.HybridDictionary" /> の要素数が、<paramref name="arrayIndex" /> からコピー先の <paramref name="array" /> の末尾までに格納できる数を超えています。</exception>
+      <exception cref="T:System.InvalidCastException">コピー元の <see cref="T:System.Collections.Specialized.HybridDictionary" /> の型が、コピー先の <paramref name="array" /> の型に自動的にキャストできません。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Count">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> に格納されているキー/値ペアの数を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> に格納されているキー/値ペアの数。このプロパティ値を取得することは、O(1) 操作になります。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.GetEnumerator">
+      <summary>Returns an <see cref="T:System.Collections.IDictionaryEnumerator" /> that iterates through the <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> の <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> が固定サイズかどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> が読み取り専用かどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> が同期されている (スレッド セーフである) かどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Item(System.Object)">
+      <summary>指定されたキーに関連付けられている値を取得または設定します。</summary>
+      <returns>指定されたキーに関連付けられている値。指定したキーが見つからない場合、そのキーを取得しようとした場合は null が返され、そのキーを設定しようとした場合は、指定したキーを使用して新しいエントリが作成されます。</returns>
+      <param name="key">値を取得または設定する対象のキー。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Keys">
+      <summary>Gets an <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Specialized.HybridDictionary" />.</summary>
+      <returns>An <see cref="T:System.Collections.ICollection" /> containing the keys in the <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.Remove(System.Object)">
+      <summary>指定したキーを持つエントリを <see cref="T:System.Collections.Specialized.HybridDictionary" /> から削除します。</summary>
+      <param name="key">削除するエントリのキー。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> へのアクセスを同期するために使用できるオブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> へのアクセスを同期するために使用できるオブジェクト。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.HybridDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> を反復処理する <see cref="T:System.Collections.IEnumerator" /> を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> の <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.HybridDictionary.Values">
+      <summary>
+        <see cref="T:System.Collections.Specialized.HybridDictionary" /> 内の値を格納している <see cref="T:System.Collections.ICollection" /> を取得します。</summary>
+      <returns>An <see cref="T:System.Collections.ICollection" /> containing the values in the <see cref="T:System.Collections.Specialized.HybridDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.IOrderedDictionary">
+      <summary>キーと値のペアのインデックス付きコレクションを表します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> コレクションを反復処理する列挙子を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> コレクション全体の <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>コレクション内の指定したインデックス位置に、キーと値のペアを挿入します。</summary>
+      <param name="index">キーと値のペアを挿入する位置の、0 から始まるインデックス。</param>
+      <param name="key">追加する要素のキーとして使用するオブジェクト。</param>
+      <param name="value">追加する要素の値として使用するオブジェクト。値は null に設定できます。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> が <see cref="P:System.Collections.ICollection.Count" /> より大きくなっています。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+      <exception cref="T:System.ArgumentException">同じキーを持つ要素が、<see cref="T:System.Collections.Specialized.IOrderedDictionary" /> コレクションに既に存在します。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> コレクションが読み取り専用です。または<see cref="T:System.Collections.Specialized.IOrderedDictionary" /> コレクションが固定サイズです。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.IOrderedDictionary.Item(System.Int32)">
+      <summary>指定したインデックスにある要素を取得または設定します。</summary>
+      <returns>指定したインデックス位置にある要素。</returns>
+      <param name="index">取得または設定する要素の、0 から始まるインデックス番号。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または <paramref name="index" /> が <see cref="P:System.Collections.ICollection.Count" /> 以上です。 </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.IOrderedDictionary.RemoveAt(System.Int32)">
+      <summary>指定したインデックス位置にある要素を削除します。</summary>
+      <param name="index">削除する要素の 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または <paramref name="index" /> が <see cref="P:System.Collections.ICollection.Count" /> 以上です。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.IOrderedDictionary" /> コレクションが読み取り専用です。または<see cref="T:System.Collections.Specialized.IOrderedDictionary" /> コレクションが固定サイズです。</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.ListDictionary">
+      <summary>シングルリンク リストを使用して IDictionary を実装します。おおむね 10 個未満の項目を格納するコレクションでの使用をお勧めします。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor">
+      <summary>既定の比較子を使用して空の <see cref="T:System.Collections.Specialized.ListDictionary" /> を作成します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.#ctor(System.Collections.IComparer)">
+      <summary>指定した比較子を使用して空の <see cref="T:System.Collections.Specialized.ListDictionary" /> を作成します。</summary>
+      <param name="comparer">2 つのキーが等しいかどうかを判断するために使用する <see cref="T:System.Collections.IComparer" />。または 各キーの <see cref="M:System.Object.Equals(System.Object)" /> の実装である既定の比較子を使用する場合は null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Add(System.Object,System.Object)">
+      <summary>指定したキーおよび値を持つエントリを <see cref="T:System.Collections.Specialized.ListDictionary" /> に追加します。</summary>
+      <param name="key">追加するエントリのキー。</param>
+      <param name="value">追加するエントリの値。値は null に設定できます。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+      <exception cref="T:System.ArgumentException">同じキーを持つエントリが、<see cref="T:System.Collections.Specialized.ListDictionary" /> に既に存在します。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Clear">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> からすべてのエントリを削除します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Contains(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> に特定のキーが格納されているかどうかを判断します。</summary>
+      <returns>true if the <see cref="T:System.Collections.Specialized.ListDictionary" /> contains an entry with the specified key; otherwise, false.</returns>
+      <param name="key">
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> 内で検索されるキー。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>1 次元の <see cref="T:System.Array" /> インスタンスの指定したインデックスに <see cref="T:System.Collections.Specialized.ListDictionary" /> のエントリをコピーします。</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> から <see cref="T:System.Collections.DictionaryEntry" /> オブジェクトがコピーされる 1 次元の <see cref="T:System.Array" />。<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置となる、<paramref name="array" /> 内の 0 から始まるインデックス。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> は null です。 </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> が多次元です。またはコピー元の <see cref="T:System.Collections.Specialized.ListDictionary" /> の要素数が、<paramref name="index" /> からコピー先の <paramref name="array" /> の末尾までに格納できる数を超えています。</exception>
+      <exception cref="T:System.InvalidCastException">コピー元の <see cref="T:System.Collections.Specialized.ListDictionary" /> の型が、コピー先の <paramref name="array" /> の型に自動的にキャストできません。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Count">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> に格納されているキー/値ペアの数を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> に格納されているキー/値ペアの数。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> を反復処理する <see cref="T:System.Collections.IDictionaryEnumerator" /> を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> の <see cref="T:System.Collections.IDictionaryEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> が固定サイズかどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> が読み取り専用かどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> が同期されている (スレッド セーフである) かどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Item(System.Object)">
+      <summary>指定されたキーに関連付けられている値を取得または設定します。</summary>
+      <returns>指定されたキーに関連付けられている値。指定したキーが見つからない場合、そのキーを取得しようとした場合は null が返され、そのキーを設定しようとした場合は、指定したキーを使用して新しいエントリが作成されます。</returns>
+      <param name="key">値を取得または設定する対象のキー。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Keys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> 内のキーを格納している <see cref="T:System.Collections.ICollection" /> を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> 内のキーを格納している <see cref="T:System.Collections.ICollection" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.Remove(System.Object)">
+      <summary>指定したキーを持つエントリを <see cref="T:System.Collections.Specialized.ListDictionary" /> から削除します。</summary>
+      <param name="key">削除するエントリのキー。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> へのアクセスを同期するために使用できるオブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> へのアクセスを同期するために使用できるオブジェクト。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.ListDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> を反復処理する <see cref="T:System.Collections.IEnumerator" /> を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> の <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.ListDictionary.Values">
+      <summary>
+        <see cref="T:System.Collections.Specialized.ListDictionary" /> 内の値を格納している <see cref="T:System.Collections.ICollection" /> を取得します。</summary>
+      <returns>An <see cref="T:System.Collections.ICollection" /> containing the values in the <see cref="T:System.Collections.Specialized.ListDictionary" />.</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase">
+      <summary>
+        <see cref="T:System.String" /> キーと、キーまたはインデックスを使用してアクセスできる <see cref="T:System.Object" /> 値が関連付けられたコレクションの abstract 基本クラスを指定します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> クラスの新しい空のインスタンスを初期化します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Collections.IEqualityComparer)">
+      <summary>空で、既定の初期量を備え、指定した <see cref="T:System.Collections.IEqualityComparer" /> オブジェクトを使用する、<see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="equalityComparer">2 つのキーが等しいかどうかを判断し、コレクション内のキーのハッシュ コードを生成するために使用する <see cref="T:System.Collections.IEqualityComparer" /> オブジェクト。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32)">
+      <summary>空で、指定した初期量を備え、既定のハッシュ コード プロバイダーと既定の比較子を使用する、<see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスが初期状態で格納できるエントリの概数。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> が 0 未満です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>空で、指定した初期量を備え、指定した <see cref="T:System.Collections.IEqualityComparer" /> オブジェクトを使用する、<see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> オブジェクトが初期状態で格納できるエントリの概数。</param>
+      <param name="equalityComparer">2 つのキーが等しいかどうかを判断し、コレクション内のキーのハッシュ コードを生成するために使用する <see cref="T:System.Collections.IEqualityComparer" /> オブジェクト。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> が 0 未満です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseAdd(System.String,System.Object)">
+      <summary>指定したキーと値を持つエントリを <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスに追加します。</summary>
+      <param name="name">追加するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+      <param name="value">追加するエントリの <see cref="T:System.Object" /> 値。値として null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseClear">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスからすべてのエントリを削除します。</summary>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスの指定したインデックスにあるエントリの値を取得します。</summary>
+      <returns>指定したインデックスにあるエントリの値を表す <see cref="T:System.Object" />。</returns>
+      <param name="index">取得する値の 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGet(System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスから、指定したキーを持つ最初のエントリの値を取得します。</summary>
+      <returns>指定したキーを持つエントリが存在する場合は、その最初のエントリの値を表す <see cref="T:System.Object" />。それ以外の場合は null。</returns>
+      <param name="name">取得するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllKeys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべてのキーを格納する <see cref="T:System.String" /> 配列を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべてのキーを格納する <see cref="T:System.String" /> 配列。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべての値を格納する <see cref="T:System.Object" /> 配列を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべての値を格納する <see cref="T:System.Object" /> 配列。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetAllValues(System.Type)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべての値を格納する、指定した型の配列を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべての値を格納する、指定した型の配列。</returns>
+      <param name="type">返される配列の型を表す <see cref="T:System.Type" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="type" /> は null です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="type" /> が有効な <see cref="T:System.Type" /> ではありません。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseGetKey(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスの指定したインデックスにあるエントリのキーを取得します。</summary>
+      <returns>指定したインデックスにあるエントリのキーを表す <see cref="T:System.String" />。</returns>
+      <param name="index">取得するキーの 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseHasKeys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスが、キーが null ではないエントリを格納しているかどうかを示す値を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスが、キーが null ではないエントリを格納している場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemove(System.String)">
+      <summary>指定したキーを持つエントリを <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスから削除します。</summary>
+      <param name="name">削除するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseRemoveAt(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスの指定したインデックスにあるエントリを削除します。</summary>
+      <param name="index">削除するエントリの 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスの指定したインデックスにあるエントリの値を設定します。</summary>
+      <param name="index">設定するエントリの 0 から始まるインデックス。</param>
+      <param name="value">設定するエントリの新しい値を表す <see cref="T:System.Object" />。値として null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.BaseSet(System.String,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内に指定したキーを持つエントリが存在する場合は、その最初のエントリの値を設定します。存在しない場合は、指定したキーと値を持つエントリを <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスに追加します。</summary>
+      <param name="name">設定するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+      <param name="value">設定するエントリの新しい値を表す <see cref="T:System.Object" />。値として null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Count">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスに格納されているキーと値のペアの数を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスに格納されているキーと値のペアの数。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> を反復処理する列挙子を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスの <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスが読み取り専用かどうかを示す値を取得または設定します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスが読み取り専用の場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.Keys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべてのキーを格納する <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> インスタンスを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンス内のすべてのキーを格納する <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> インスタンス。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> 全体を、互換性のある 1 次元の <see cref="T:System.Array" /> にコピーします。コピー操作は、コピー先の配列の指定したインデックスから始まる部分に行います。</summary>
+      <param name="array">
+        <see cref="T:System.Array" /> から要素がコピーされる 1 次元の <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />。<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置とする <paramref name="array" /> のインデックス (0 から始まる)。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> は null です。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> が多次元です。またはコピー元の <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> の要素数が、<paramref name="index" /> からコピー先の <paramref name="array" /> の末尾までに格納できる数を超えています。</exception>
+      <exception cref="T:System.InvalidCastException">コピー元の <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> の型が、コピー先の <paramref name="array" /> の型に自動的にキャストできません。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> オブジェクトへのアクセスが同期されている (スレッド セーフである) かどうかを示す値を取得します。</summary>
+      <returns>true オブジェクトへのアクセスが同期されている (スレッド セーフである) 場合は <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" />。それ以外の場合は false。既定値は、false です。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.System#Collections#ICollection#SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> オブジェクトへのアクセスを同期するために使用できるオブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> オブジェクトへのアクセスを同期するために使用できるオブジェクト。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection">
+      <summary>コレクションの <see cref="T:System.String" /> キーのコレクションを表します。</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Count">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 内のキーの数を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 内のキーの数。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Get(System.Int32)">
+      <summary>コレクションの指定したインデックスにあるキーを取得します。</summary>
+      <returns>コレクションの指定したインデックスにあるキーを格納している <see cref="T:System.String" />。</returns>
+      <param name="index">コレクションから取得するキーの 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> を反復処理する列挙子を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> の <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.Item(System.Int32)">
+      <summary>コレクションの指定したインデックスにあるエントリを取得します。</summary>
+      <returns>コレクションの指定したインデックスにあるエントリの <see cref="T:System.String" /> キー。</returns>
+      <param name="index">コレクションから取得するエントリの 0 から始まるインデックス番号。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> 全体を互換性のある 1 次元の <see cref="T:System.Array" /> にコピーします。コピー操作は、コピー先の配列の指定したインデックスから始まります。</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> から要素がコピーされる 1 次元の <see cref="T:System.Array" />。<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置となる、<paramref name="array" /> 内の 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> は null なので、</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> が多次元です。またはコピー元の <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> の要素数が、<paramref name="index" /> からコピー先の <paramref name="array" /> の末尾までに格納できる数を超えています。</exception>
+      <exception cref="T:System.InvalidCastException">コピー元の <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> の型が、コピー先の <paramref name="array" /> の型に自動的にキャストできません。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> へのアクセスが同期されている (スレッド セーフである) かどうかを示す値を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> へのアクセスが同期されている (スレッド セーフである) 場合は true。それ以外の場合は false。既定値は、false です。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection.System#Collections#ICollection#SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> へのアクセスを同期するために使用できるオブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameObjectCollectionBase.KeysCollection" /> へのアクセスを同期するために使用できるオブジェクト。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.NameValueCollection">
+      <summary>
+        <see cref="T:System.String" /> キーと、このキーまたはインデックスを使用してアクセスできる <see cref="T:System.String" /> 値が関連付けられたコレクションを表します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor">
+      <summary>空で、既定の初期量を備え、大文字と小文字を区別しない既定のハッシュ コード プロバイダーと大文字と小文字を区別しない既定の比較子を使用する、<see cref="T:System.Collections.Specialized.NameValueCollection" /> クラスの新しいインスタンスを初期化します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.IEqualityComparer)">
+      <summary>空で、既定の初期量を備え、指定した <see cref="T:System.Collections.IEqualityComparer" /> オブジェクトを使用する、<see cref="T:System.Collections.Specialized.NameValueCollection" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="equalityComparer">2 つのキーが等しいかどうかを判断し、コレクション内のキーのハッシュ コードを生成するために使用する <see cref="T:System.Collections.IEqualityComparer" /> オブジェクト。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Collections.Specialized.NameValueCollection)">
+      <summary>コピーされるエントリの数と同じ初期量を備え、ソース コレクションと同じハッシュ コード プロバイダーおよび比較子を使用する新しい <see cref="T:System.Collections.Specialized.NameValueCollection" /> に、指定した <see cref="T:System.Collections.Specialized.NameValueCollection" /> からエントリをコピーします。</summary>
+      <param name="col">新しい <see cref="T:System.Collections.Specialized.NameValueCollection" /> インスタンスにコピーする <see cref="T:System.Collections.Specialized.NameValueCollection" />。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" /> は null です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32)">
+      <summary>空で、指定した初期量を備え、大文字と小文字を区別しない既定のハッシュ コード プロバイダーと大文字と小文字を区別しない既定の比較子を使用する、<see cref="T:System.Collections.Specialized.NameValueCollection" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> に格納できるエントリ数の初期値。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> が 0 未満です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>空で、指定した初期量を備え、指定した <see cref="T:System.Collections.IEqualityComparer" /> オブジェクトを使用する、<see cref="T:System.Collections.Specialized.NameValueCollection" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> オブジェクトに格納できるエントリ数の初期値。</param>
+      <param name="equalityComparer">2 つのキーが等しいかどうかを判断し、コレクション内のキーのハッシュ コードを生成するために使用する <see cref="T:System.Collections.IEqualityComparer" /> オブジェクト。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> が 0 未満です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.#ctor(System.Int32,System.Collections.Specialized.NameValueCollection)">
+      <summary>指定した初期量またはコピーされるエントリの数と同じ初期量のうち値が大きい方の初期量を備え、大文字と小文字を区別しない既定のハッシュ コード プロバイダーおよび大文字と小文字を区別しない既定の比較子を使用する新しい <see cref="T:System.Collections.Specialized.NameValueCollection" /> に、指定した <see cref="T:System.Collections.Specialized.NameValueCollection" /> からエントリをコピーします。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> に格納できるエントリ数の初期値。</param>
+      <param name="col">新しい <see cref="T:System.Collections.Specialized.NameValueCollection" /> インスタンスにコピーする <see cref="T:System.Collections.Specialized.NameValueCollection" />。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="capacity" /> が 0 未満です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="col" /> は null です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.Collections.Specialized.NameValueCollection)">
+      <summary>現在の <see cref="T:System.Collections.Specialized.NameValueCollection" /> に、指定した <see cref="T:System.Collections.Specialized.NameValueCollection" /> 内のエントリをコピーします。</summary>
+      <param name="c">現在の <see cref="T:System.Collections.Specialized.NameValueCollection" /> にコピーする <see cref="T:System.Collections.Specialized.NameValueCollection" />。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="c" /> は null です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Add(System.String,System.String)">
+      <summary>指定した名前および値を持つエントリを <see cref="T:System.Collections.Specialized.NameValueCollection" /> に追加します。</summary>
+      <param name="name">追加するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+      <param name="value">追加するエントリの <see cref="T:System.String" /> 値。値として null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.AllKeys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 内のすべてのキーを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 内のすべてのキーを格納する <see cref="T:System.String" /> 配列。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Clear">
+      <summary>キャッシュに保存された配列を無効化し、<see cref="T:System.Collections.Specialized.NameValueCollection" /> からすべてのエントリを削除します。</summary>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 全体を、互換性のある 1 次元の <see cref="T:System.Array" /> にコピーします。コピー操作は、コピー先の配列の指定したインデックスから始まる部分に行います。</summary>
+      <param name="dest">
+        <see cref="T:System.Array" /> から要素がコピーされる 1 次元の <see cref="T:System.Collections.Specialized.NameValueCollection" />。<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置とする <paramref name="dest" /> のインデックス (0 から始まる)。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="dest" /> は null です。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="dest" /> が多次元です。または コピー元の <see cref="T:System.Collections.Specialized.NameValueCollection" /> の要素数が、<paramref name="index" /> からコピー先の <paramref name="dest" /> の末尾までに格納できる数を超えています。</exception>
+      <exception cref="T:System.InvalidCastException">コピー元の <see cref="T:System.Collections.Specialized.NameValueCollection" /> の型が、コピー先の <paramref name="dest" /> の型に自動的にキャストできません。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> の指定したインデックスの値をいくつか取得し、1 つのコンマ区切りリストに組み合わせます。</summary>
+      <returns>見つかった場合は、<see cref="T:System.Collections.Specialized.NameValueCollection" /> の指定したインデックスの値で構成されるコンマ区切りのリストを格納する <see cref="T:System.String" />。それ以外の場合は null。</returns>
+      <param name="index">コレクションから取得する値を格納するエントリの 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Get(System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> から指定したキーに関連付けられた値を取得し、1 つのコンマ区切りのリストに組み合わせます。</summary>
+      <returns>見つかった場合は、<see cref="T:System.Collections.Specialized.NameValueCollection" /> から取得した、指定したキーに関連付けられた値のコンマ区切りのリストを格納する <see cref="T:System.String" />。それ以外の場合は null。</returns>
+      <param name="name">取得する値を格納するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetKey(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> の指定したインデックスにあるキーを取得します。</summary>
+      <returns>見つかった場合は、<see cref="T:System.Collections.Specialized.NameValueCollection" /> の指定したインデックスにあるキーを格納する <see cref="T:System.String" />。それ以外の場合は null。</returns>
+      <param name="index">コレクションから取得するキーの 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> の指定したインデックスにある値を取得します。</summary>
+      <returns>見つかった場合は、<see cref="T:System.Collections.Specialized.NameValueCollection" /> の指定したインデックスにある値を格納する <see cref="T:System.String" /> 配列。それ以外の場合は null。</returns>
+      <param name="index">コレクションから取得する値を格納するエントリの 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.GetValues(System.String)">
+      <summary>指定したキーに関連付けられている値を <see cref="T:System.Collections.Specialized.NameValueCollection" /> から取得します。</summary>
+      <returns>見つかった場合は、<see cref="T:System.Collections.Specialized.NameValueCollection" /> から取得した、指定したキーに関連付けられた値を格納する <see cref="T:System.String" /> 配列。それ以外の場合は null。</returns>
+      <param name="name">取得する値を格納するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.HasKeys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> が null 以外のキーを格納しているかどうかを示す値を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> が null 以外のキーを格納している場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.InvalidateCachedArrays">
+      <summary>コレクション内でキャッシュに保存された配列を null にリセットします。</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> の指定したインデックスにあるエントリを取得します。</summary>
+      <returns>コレクションの指定したインデックスにあるコンマ区切りの値のリストを格納する <see cref="T:System.String" />。</returns>
+      <param name="index">コレクションでエントリの位置を示す 0 から始まるインデックス番号。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が、コレクションのインデックスの有効範囲外です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.NameValueCollection.Item(System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 内の指定したキーを持つエントリを取得または設定します。</summary>
+      <returns>見つかった場合は、指定したキーに関連付けられたコンマ区切りの値のリストを格納する <see cref="T:System.String" />。それ以外の場合は null。</returns>
+      <param name="name">検索するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションの変更操作を実行しようとしましたが、このコレクションは読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Remove(System.String)">
+      <summary>指定したキーを持つエントリを <see cref="T:System.Collections.Specialized.NameObjectCollectionBase" /> インスタンスから削除します。</summary>
+      <param name="name">削除するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.NameValueCollection.Set(System.String,System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.NameValueCollection" /> 内のエントリの値を設定します。</summary>
+      <param name="name">新しい値を追加するエントリの <see cref="T:System.String" /> キー。キーとして null を指定できます。</param>
+      <param name="value">指定したエントリに追加する新しい値を表す <see cref="T:System.Object" />。値として null を指定できます。</param>
+      <exception cref="T:System.NotSupportedException">コレクションは読み取り専用です。</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.OrderedDictionary">
+      <summary>キーまたはインデックスからアクセスできるキーと値のペアのコレクションを表します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> クラスの新しいインスタンスを初期化します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Collections.IEqualityComparer)">
+      <summary>比較子を指定して、<see cref="T:System.Collections.Specialized.OrderedDictionary" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="comparer">2 つのキーが等しいかどうかを判断するために使用する <see cref="T:System.Collections.IComparer" />。または 各キーの <see cref="M:System.Object.Equals(System.Object)" /> の実装である既定の比較子を使用する場合は null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32)">
+      <summary>指定した初期容量を使用して、<see cref="T:System.Collections.Specialized.OrderedDictionary" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが格納できる要素数の初期値。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.#ctor(System.Int32,System.Collections.IEqualityComparer)">
+      <summary>指定した初期容量および比較子を使用して、<see cref="T:System.Collections.Specialized.OrderedDictionary" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="capacity">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが格納できる要素数の初期値。</param>
+      <param name="comparer">2 つのキーが等しいかどうかを判断するために使用する <see cref="T:System.Collections.IComparer" />。または 各キーの <see cref="M:System.Object.Equals(System.Object)" /> の実装である既定の比較子を使用する場合は null。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Add(System.Object,System.Object)">
+      <summary>指定したキーおよび値を持つエントリを、使用できる最小のインデックスを持つ <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションに追加します。</summary>
+      <param name="key">追加するエントリのキー。</param>
+      <param name="value">追加するエントリの値。この値は、null の場合もあります。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.AsReadOnly">
+      <summary>現在の <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションの読み取り専用のコピーを返します。</summary>
+      <returns>現在の <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションの読み取り専用のコピー。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Clear">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションからすべての要素を削除します。</summary>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Contains(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションに特定のキーが格納されているかどうかを判断します。</summary>
+      <returns>指定したキーを持つ要素が <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションに格納されている場合は true。それ以外の場合は false。</returns>
+      <param name="key">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクション内で検索されるキー。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>1 次元の <see cref="T:System.Array" /> オブジェクトの指定したインデックスに <see cref="T:System.Collections.Specialized.OrderedDictionary" /> の要素をコピーします。</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションから <see cref="T:System.Collections.DictionaryEntry" /> オブジェクトがコピーされる 1 次元の <see cref="T:System.Array" /> オブジェクト。<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置となる、<paramref name="array" /> 内の 0 から始まるインデックス。</param>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Count">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションに格納されているキー/値ペアの数を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションに格納されているキー/値ペアの数。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションを反復処理する <see cref="T:System.Collections.IDictionaryEnumerator" /> オブジェクトを返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションの <see cref="T:System.Collections.IDictionaryEnumerator" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Insert(System.Int32,System.Object,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションの指定したインデックス位置に、指定したキーと値を持つ新しいエントリを挿入します。</summary>
+      <param name="index">要素 を挿入する位置の、0 から始まるインデックス番号。</param>
+      <param name="key">追加するエントリのキー。</param>
+      <param name="value">追加するエントリの値。値は null に設定できます。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">該当する <paramref name="index" /> がありません。</exception>
+      <exception cref="T:System.NotSupportedException">このコレクションは読み取り専用です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用かどうかを示す値を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用の場合は true。それ以外の場合は false。既定値は、false です。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Int32)">
+      <summary>指定したインデックス位置にある値を取得または設定します。</summary>
+      <returns>指定したインデックス位置にある項目の値。</returns>
+      <param name="index">取得または設定する値の、0 から始まるインデックス番号。</param>
+      <exception cref="T:System.NotSupportedException">プロパティが設定されていますが、<see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用です。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> が <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" /> 以上です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Item(System.Object)">
+      <summary>指定したキーの値を取得または設定します。</summary>
+      <returns>指定されたキーに関連付けられている値。指定したキーが見つからない場合、そのキーを取得しようとした場合は null が返され、そのキーを設定しようとした場合は、指定したキーを使用して新しい要素が作成されます。</returns>
+      <param name="key">取得または設定する値のキー。</param>
+      <exception cref="T:System.NotSupportedException">プロパティが設定されていますが、<see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Keys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションのキーを保持している <see cref="T:System.Collections.ICollection" /> オブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションのキーを保持している <see cref="T:System.Collections.ICollection" /> オブジェクト。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.Remove(System.Object)">
+      <summary>指定したキーを持つエントリを <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションから削除します。</summary>
+      <param name="key">削除するエントリのキー。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> は null です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.RemoveAt(System.Int32)">
+      <summary>指定したインデックス位置にあるエントリを <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションから削除します。</summary>
+      <param name="index">削除するエントリの 0 から始まるインデックス。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションが読み取り専用です。</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> が <see cref="P:System.Collections.Specialized.OrderedDictionary.Count" /> 以上です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> オブジェクトへのアクセスが同期されている (スレッド セーフである) かどうかを示す値を取得します。</summary>
+      <returns>このメソッドは、常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#ICollection#SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> オブジェクトへのアクセスを同期するために使用できるオブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> オブジェクトへのアクセスを同期するために使用できるオブジェクト。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.System#Collections#IDictionary#IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> が固定サイズかどうかを示す値を取得します。</summary>
+      <returns>true if the <see cref="T:System.Collections.Specialized.OrderedDictionary" /> has a fixed size; otherwise, false.既定値は、false です。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.OrderedDictionary.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションを反復処理する <see cref="T:System.Collections.IDictionaryEnumerator" /> オブジェクトを返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションの <see cref="T:System.Collections.IDictionaryEnumerator" /> オブジェクト。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.OrderedDictionary.Values">
+      <summary>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションの値を保持している <see cref="T:System.Collections.ICollection" /> オブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.OrderedDictionary" /> コレクションの値を保持している <see cref="T:System.Collections.ICollection" /> オブジェクト。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringCollection">
+      <summary>文字列のコレクションを表します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.#ctor">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> クラスの新しいインスタンスを初期化します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Add(System.String)">
+      <summary>文字列を <see cref="T:System.Collections.Specialized.StringCollection" /> の末尾に追加します。</summary>
+      <returns>新しい要素が挿入される位置の 0 から始まるインデックス。</returns>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> の末尾に追加する文字列。値は null に設定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.AddRange(System.String[])">
+      <summary>文字列配列の要素を <see cref="T:System.Collections.Specialized.StringCollection" /> の末尾にコピーします。</summary>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> の末尾に追加する文字列配列。配列自体を null にすることはできませんが、配列に格納する要素は null であってもかまいません。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> は null なので、</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Clear">
+      <summary>すべての文字列を <see cref="T:System.Collections.Specialized.StringCollection" /> から削除します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Contains(System.String)">
+      <summary>指定した文字列が <see cref="T:System.Collections.Specialized.StringCollection" /> 内にあるかどうかを確認します。</summary>
+      <returns>
+        <paramref name="value" /> が <see cref="T:System.Collections.Specialized.StringCollection" /> に存在する場合は true。それ以外の場合は false。</returns>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内で検索する文字列。値は null に設定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.CopyTo(System.String[],System.Int32)">
+      <summary>1 次元の文字列配列に、その配列内の指定したインデックスを開始位置として <see cref="T:System.Collections.Specialized.StringCollection" /> 値全体をコピーします。</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> から要素がコピーされる 1 次元の文字列配列。<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置となる、<paramref name="array" /> 内の 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> は null なので、</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> が多次元です。またはコピー元の <see cref="T:System.Collections.Specialized.StringCollection" /> の要素数が、<paramref name="index" /> からコピー先の <paramref name="array" /> の末尾までに格納できる数を超えています。</exception>
+      <exception cref="T:System.InvalidCastException">コピー元の <see cref="T:System.Collections.Specialized.StringCollection" /> の型が、コピー先の <paramref name="array" /> の型に自動的にキャストできません。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Count">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> に格納されている文字列の数を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> に格納されている文字列の数。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> を反復処理する <see cref="T:System.Collections.Specialized.StringEnumerator" /> を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> の <see cref="T:System.Collections.Specialized.StringEnumerator" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.IndexOf(System.String)">
+      <summary>指定した文字列を検索し、<see cref="T:System.Collections.Specialized.StringCollection" /> 内でその文字列が最初に見つかった位置の 0 から始まるインデックスを返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内で <paramref name="value" /> が見つかった場合は、最初に見つかった位置の 0 から始まるインデックス。それ以外の場合は -1。</returns>
+      <param name="value">検索される文字列。値は null に設定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Insert(System.Int32,System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内の指定したインデックス位置に、文字列を挿入します。</summary>
+      <param name="index">
+        <paramref name="value" /> が挿入される位置の 0 から始まるインデックス。</param>
+      <param name="value">挿入する文字列。値は null に設定できます。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> は <see cref="P:System.Collections.Specialized.StringCollection.Count" /> より大きい。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> が読み取り専用かどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> へのアクセスが同期されている (スレッド セーフである) かどうかを示す値を取得します。</summary>
+      <returns>このプロパティは常に false を返します。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.Item(System.Int32)">
+      <summary>指定したインデックスにある要素を取得または設定します。</summary>
+      <returns>指定したインデックスにある要素。</returns>
+      <param name="index">取得または設定するエントリの 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> が <see cref="P:System.Collections.Specialized.StringCollection.Count" /> 以上です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.Remove(System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内で最初に見つかった指定文字列を削除します。</summary>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> から削除する文字列。値は null に設定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.RemoveAt(System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内の指定したインデックスにある文字列を削除します。</summary>
+      <param name="index">削除する文字列の 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> が <see cref="P:System.Collections.Specialized.StringCollection.Count" /> 以上です。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> へのアクセスを同期するために使用できるオブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> へのアクセスを同期するために使用できるオブジェクト。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#ICollection#CopyTo(System.Array,System.Int32)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 全体を互換性のある 1 次元の <see cref="T:System.Array" /> にコピーします。コピー操作は、コピー先の配列の指定したインデックスから始まります。</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> から要素がコピーされる 1 次元の <see cref="T:System.Array" />。<see cref="T:System.Array" /> には、0 から始まるインデックス番号が必要です。</param>
+      <param name="index">コピーの開始位置となる、<paramref name="array" /> 内の 0 から始まるインデックス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> は null なので、</exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> が多次元です。またはコピー元の <see cref="T:System.Collections.Specialized.StringCollection" /> の要素数が、<paramref name="index" /> からコピー先の <paramref name="array" /> の末尾までに格納できる数を超えています。</exception>
+      <exception cref="T:System.InvalidCastException">コピー元の <see cref="T:System.Collections.Specialized.StringCollection" /> の型が、コピー先の <paramref name="array" /> の型に自動的にキャストできません。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> を反復処理する <see cref="T:System.Collections.IEnumerator" /> を返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> の <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Add(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> の末尾にオブジェクトを追加します。</summary>
+      <returns>
+        <paramref name="value" /> が追加された位置の <see cref="T:System.Collections.Specialized.StringCollection" /> インデックス。</returns>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> の末尾に追加する <see cref="T:System.Object" />。値は null に設定できます。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> は読み取り専用です。または<see cref="T:System.Collections.Specialized.StringCollection" /> が固定サイズです。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Contains(System.Object)">
+      <summary>ある要素が <see cref="T:System.Collections.Specialized.StringCollection" /> 内に存在するかどうかを判断します。</summary>
+      <returns>
+        <paramref name="value" /> が <see cref="T:System.Collections.Specialized.StringCollection" /> に存在する場合は true。それ以外の場合は false。</returns>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内で検索される <see cref="T:System.Object" />。値は null に設定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#IndexOf(System.Object)">
+      <summary>指定した <see cref="T:System.Object" /> を検索し、<see cref="T:System.Collections.Specialized.StringCollection" /> 全体内で最初に見つかった位置の 0 から始まるインデックスを返します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 全体内で <paramref name="value" /> が見つかった場合は、最初に見つかった位置の 0 から始まるインデックス。それ以外の場合は -1。</returns>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内で検索される <see cref="T:System.Object" />。値は null に設定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Insert(System.Int32,System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内の指定したインデックスの位置に要素を挿入します。</summary>
+      <param name="index">
+        <paramref name="value" /> を挿入する位置の、0 から始まるインデックス番号。</param>
+      <param name="value">挿入する <see cref="T:System.Object" />。値は null に設定できます。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> が <see cref="P:System.Collections.Specialized.StringCollection.Count" /> より大きくなっています。</exception>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> は読み取り専用です。または<see cref="T:System.Collections.Specialized.StringCollection" /> が固定サイズです。</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsFixedSize">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> オブジェクトが固定サイズかどうかを示す値を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> オブジェクトが固定サイズの場合は true。それ以外の場合は false。既定値は、false です。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#IsReadOnly">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> オブジェクトが読み取り専用かどうかを示す値を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> オブジェクトが読み取り専用の場合は true。それ以外の場合は false。既定値は、false です。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringCollection.System#Collections#IList#Item(System.Int32)">
+      <summary>指定したインデックスにある要素を取得または設定します。</summary>
+      <returns>指定したインデックスにある要素。</returns>
+      <param name="index">取得または設定する要素の、0 から始まるインデックス番号。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> が 0 未満です。または<paramref name="index" /> が <see cref="P:System.Collections.Specialized.StringCollection.Count" /> 以上です。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringCollection.System#Collections#IList#Remove(System.Object)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> 内で最初に見つかった特定のオブジェクトを削除します。</summary>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> から削除する <see cref="T:System.Object" />。値は null に設定できます。</param>
+      <exception cref="T:System.NotSupportedException">
+        <see cref="T:System.Collections.Specialized.StringCollection" /> は読み取り専用です。または<see cref="T:System.Collections.Specialized.StringCollection" /> が固定サイズです。</exception>
+    </member>
+    <member name="T:System.Collections.Specialized.StringDictionary">
+      <summary>キーと、オブジェクトではなく文字列として厳密に型指定された値とのハッシュ テーブルを実装します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.#ctor">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> クラスの新しいインスタンスを初期化します。</summary>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Add(System.String,System.String)">
+      <summary>指定したキーおよび値を持つエントリを <see cref="T:System.Collections.Specialized.StringDictionary" /> に追加します。</summary>
+      <param name="key">追加するエントリのキー。</param>
+      <param name="value">追加するエントリの値。値は null に設定できます。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null. </exception>
+      <exception cref="T:System.ArgumentException">An entry with the same key already exists in the <see cref="T:System.Collections.Specialized.StringDictionary" />. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Clear">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> からすべてのエントリを削除します。</summary>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsKey(System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> に特定のキーが格納されているかどうかを確認します。</summary>
+      <returns>指定したキーを持つエントリが <see cref="T:System.Collections.Specialized.StringDictionary" /> に格納されている場合は true。それ以外の場合は false。</returns>
+      <param name="key">
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> 内で検索されるキー。 </param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.ContainsValue(System.String)">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> に特定の値が格納されているかどうかを確認します。</summary>
+      <returns>指定した値を持つ要素が <see cref="T:System.Collections.Specialized.StringDictionary" /> に格納されている場合は true。それ以外の場合は false。</returns>
+      <param name="value">
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> 内で検索される値。値は null に設定できます。</param>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.CopyTo(System.Array,System.Int32)">
+      <summary>1 次元の <see cref="T:System.Array" /> インスタンスの指定したインデックス位置に、文字列ディクショナリの値をコピーします。</summary>
+      <param name="array">
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> からコピーされる値のコピー先となる 1 次元 <see cref="T:System.Array" />。</param>
+      <param name="index">配列内のコピー開始位置を示すインデックス。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="array" /> is multidimensional.-or- The number of elements in the <see cref="T:System.Collections.Specialized.StringDictionary" /> is greater than the available space from <paramref name="index" /> to the end of <paramref name="array" />. </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="array" /> is null. </exception>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="index" /> is less than the lower bound of <paramref name="array" />. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Count">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> に格納されているキー/値ペアの数を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> に格納されているキー/値ペアの数。このプロパティ値を取得することは、O(1) 操作になります。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.GetEnumerator">
+      <summary>文字列ディクショナリを反復処理する列挙子を返します。</summary>
+      <returns>文字列ディクショナリを反復処理する <see cref="T:System.Collections.IEnumerator" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.IsSynchronized">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> へのアクセスが同期されている (スレッド セーフである) かどうかを示す値を取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> へのアクセスが同期されている (スレッド セーフである) 場合は true。それ以外の場合は false。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Item(System.String)">
+      <summary>指定されたキーに関連付けられている値を取得または設定します。</summary>
+      <returns>指定されたキーに関連付けられている値。指定したキーが見つからなかった場合は、Get は null を返し、Set は指定したキーを持つ新しいエントリを作成します。</returns>
+      <param name="key">値を取得または設定する対象のキー。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="key" /> is null.</exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Keys">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> 内のキーのコレクションを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> 内のキーを格納している <see cref="T:System.Collections.ICollection" />。</returns>
+    </member>
+    <member name="M:System.Collections.Specialized.StringDictionary.Remove(System.String)">
+      <summary>指定したキーを持つエントリを文字列ディクショナリから削除します。</summary>
+      <param name="key">削除するエントリのキー。</param>
+      <exception cref="T:System.ArgumentNullException">The key is null. </exception>
+      <exception cref="T:System.NotSupportedException">The <see cref="T:System.Collections.Specialized.StringDictionary" /> is read-only. </exception>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.SyncRoot">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> へのアクセスを同期するために使用できるオブジェクトを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> へのアクセスを同期するために使用できる <see cref="T:System.Object" />。</returns>
+    </member>
+    <member name="P:System.Collections.Specialized.StringDictionary.Values">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> 内の値のコレクションを取得します。</summary>
+      <returns>
+        <see cref="T:System.Collections.Specialized.StringDictionary" /> 内の値を格納している <see cref="T:System.Collections.ICollection" />。</returns>
+    </member>
+    <member name="T:System.Collections.Specialized.StringEnumerator">
+      <summary>
+        <see cref="T:System.Collections.Specialized.StringCollection" /> に対する単純な反復処理をサポートします。</summary>
+    </member>
+    <member name="P:System.Collections.Specialized.StringEnumerator.Current">
+      <summary>コレクション内の現在の要素を取得します。</summary>
+      <returns>コレクション内の現在の要素。</returns>
+      <exception cref="T:System.InvalidOperationException">列挙子が、コレクションの最初の要素の前、または最後の要素の後に位置しています。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.MoveNext">
+      <summary>列挙子をコレクションの次の要素に進めます。</summary>
+      <returns>列挙子が次の要素に正常に進んだ場合は true。列挙子がコレクションの末尾を越えた場合は false。</returns>
+      <exception cref="T:System.InvalidOperationException">列挙子が作成された後に、コレクションが変更されました。</exception>
+    </member>
+    <member name="M:System.Collections.Specialized.StringEnumerator.Reset">
+      <summary>列挙子を初期位置、つまりコレクションの最初の要素の前に設定します。</summary>
+      <exception cref="T:System.InvalidOperationException">列挙子が作成された後に、コレクションが変更されました。</exception>
+    </member>
+  </members>
+</doc>

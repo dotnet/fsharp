@@ -1,0 +1,166 @@
+{
+    "runtimes": {
+        "base": {
+        },
+
+        "any": {
+            "#import": [ "base" ]
+        },
+
+        "win": {
+            "#import": [ "any" ]
+        },
+        "win-x86": {
+            "#import": [ "win" ]
+        },
+        "win-x64": {
+            "#import": [ "win" ]
+        },
+
+        "win7": {
+            "#import": [ "win" ]
+        },
+        "win7-x86": {
+            "#import": [ "win7", "win-x86" ]
+        },
+        "win7-x64": {
+            "#import": [ "win7", "win-x64" ]
+        },
+
+        "win8": {
+            "#import": [ "win7" ]
+        },
+        "win8-x86": {
+            "#import": [ "win8", "win7-x86" ]
+        },
+        "win8-x64": {
+            "#import": [ "win8", "win7-x64" ]
+        },
+        "win8-arm": {
+            "#import": [ "win8" ]
+        },
+
+        "win81": {
+            "#import": [ "win8" ]
+        },
+        "win81-x86": {
+            "#import": [ "win81", "win8-x86" ]
+        },
+        "win81-x64": {
+            "#import": [ "win81", "win8-x64" ]
+        },
+        "win81-arm": {
+            "#import": [ "win81", "win8-arm" ]
+        },
+
+        "win10": {
+            "#import": [ "win81" ]
+        },
+        "win10-x86": {
+            "#import": [ "win10", "win81-x86" ]
+        },
+        "win10-x64": {
+            "#import": [ "win10", "win81-x64" ]
+        },
+        "win10-arm": {
+            "#import": [ "win10", "win81-arm" ]
+        },
+
+
+        "aot": {
+            "#import": [ "any" ]
+        },
+
+        "win-aot": {
+            "#import": [ "win", "aot" ]
+        },
+        "win-x86-aot": {
+            "#import": [ "win-aot", "win-x86" ]
+        },
+        "win-x64-aot": {
+            "#import": [ "win-aot", "win-x64" ]
+        },
+
+        "win7-aot": {
+            "#import": [ "win-aot", "win7" ]
+        },
+        "win7-x86-aot": {
+            "#import": [ "win7-aot", "win7-x86" ]
+        },
+        "win7-x64-aot": {
+            "#import": [ "win7-aot", "win7-x64" ]
+        },
+
+        "win8-aot": {
+            "#import": [ "win8", "win7-aot" ]
+        },
+        "win8-x86-aot": {
+            "#import": [ "win8-aot", "win8-x86", "win7-x86-aot" ]
+        },
+        "win8-x64-aot": {
+            "#import": [ "win8-aot", "win8-x64", "win7-x64-aot" ]
+        },
+        "win8-arm-aot": {
+            "#import": [ "win8-aot", "win8-arm" ]
+        },
+
+        "win81-aot": {
+            "#import": [ "win81", "win8-aot" ]
+        },
+        "win81-x86-aot": {
+            "#import": [ "win81-aot", "win81-x86", "win8-x86-aot" ]
+        },
+        "win81-x64-aot": {
+            "#import": [ "win81-aot", "win81-x64", "win8-x64-aot" ]
+        },
+        "win81-arm-aot": {
+            "#import": [ "win81-aot", "win81-arm", "win8-arm-aot" ]
+        },
+
+        "win10-aot": {
+            "#import": [ "win10", "win81-aot" ]
+        },
+        "win10-x86-aot": {
+            "#import": [ "win10-aot", "win10-x86", "win81-x86-aot" ]
+        },
+        "win10-x64-aot": {
+            "#import": [ "win10-aot", "win10-x64", "win81-x64-aot" ]
+        },
+        "win10-arm-aot": {
+            "#import": [ "win10-aot", "win10-arm", "win81-arm-aot" ]
+        },
+
+        "unix": {
+            "#import": [ "any" ]
+        },
+
+        "osx.10.10": {
+            "#import": [ "unix" ]
+        },
+
+        "osx.10.10-x64": {
+            "#import": [ "osx.10.10" ]
+        },
+
+        "linux": {
+            "#import": [ "unix" ]
+        },
+        
+        "centos.7.1": {
+            "#import": [ "linux" ]
+        },
+
+        "centos.7.1-x64": {
+            "#import": [ "centos.7.1" ]
+        },
+        
+        "ubuntu.14.04": {
+            "#import": [ "linux" ]
+        },
+
+        "ubuntu.14.04-x64": {
+            "#import": [ "ubuntu.14.04" ]
+        }
+    }
+ }
+

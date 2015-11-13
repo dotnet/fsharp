@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.Diagnostics.Contracts</id>
+    <version>4.0.1-beta-23409</version>
+    <title>System.Diagnostics.Contracts</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides static classes for representing program contracts such as preconditions, postconditions, and invariants.
+
+Commonly Used Types:
+System.Diagnostics.Contracts.Contract
+System.Diagnostics.Contracts.ContractClassAttribute
+System.Diagnostics.Contracts.ContractClassForAttribute
+System.Diagnostics.Contracts.ContractFailureKind
+System.Runtime.CompilerServices.ContractHelper
+System.Diagnostics.Contracts.ContractInvariantMethodAttribute
+System.Diagnostics.Contracts.PureAttribute
+System.Diagnostics.Contracts.ContractArgumentValidatorAttribute
+System.Diagnostics.Contracts.ContractVerificationAttribute
+System.Diagnostics.Contracts.ContractOptionAttribute</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework=".NETFramework4.5" />
+      <group targetFramework="Windows8.0" />
+      <group targetFramework="WindowsPhone8.0" />
+      <group targetFramework="WindowsPhoneApp8.1" />
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Runtime" version="4.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

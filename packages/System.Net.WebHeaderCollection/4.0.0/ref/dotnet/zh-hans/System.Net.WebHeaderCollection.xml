@@ -1,0 +1,283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>可以在客户端请求中指定的 HTTP 标头。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>Accept 标头，指定响应可接受的 MIME 类型。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>Accept-Charset 标头，指定响应可接受的字符集。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>Accept-Encoding 标头，指定响应可接受的内容编码。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>Accept-Langauge 标头，指定响应首选的自然语言。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>Allow 标头，指定支持的 HTTP 方法集。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>Authorization 标头，指定客户端为向服务器验证自身身份而出示的凭据。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>Cache-Control 标头，指定请求/响应链上所有缓存控制机制必须服从的指令。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>Connection 标头，指定特定连接需要的选项。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>Content-Encoding 标头，指定已应用于伴随正文数据的编码。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>Content-Langauge 标头，指定伴随正文数据的自然语言。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>Content-Length 标头，指定伴随正文数据的长度（以字节为单位）。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>Content-Location 标头，指定可从其中获得伴随正文的 URI。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>Content-MD5 标头，指定伴随正文数据的 MD5 摘要，用于提供端到端消息完整性检查。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>Content-Range 标头，指定在完整正文中应用伴随部分正文数据的位置。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>Content-Type 标头，指定伴随正文数据的 MIME 类型。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>Cookie 标头，指定向服务器提供的 Cookie 数据。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>Date 标头，指定开始创建请求的日期和时间。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>Expect 标头，指定客户端要求的特定服务器行为。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>Expires 标头，指定日期和时间，在此之后伴随的正文数据应视为陈旧的。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>From 标头，指定控制请求用户代理的用户的 Internet 电子邮件地址。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>Host 标头，指定所请求资源的主机名和端口号。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>If-Match 标头，指定仅当客户端的指示资源的缓存副本是最新的时，才执行请求的操作。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>If-Modified-Since 标头，指定仅当自指示的数据和时间之后修改了请求的资源时，才执行请求的操作。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>If-None-Match 标头，指定仅当客户端的指示资源的缓存副本都不是最新的时，才执行请求的操作。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>If-Range 标头，指定如果客户端的缓存副本是最新的，仅发送指定范围的请求资源。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>If-Unmodified-Since 标头，指定仅当自指示的日期和时间之后修改了请求的资源时，才执行请求的操作。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>Keep-Alive 标头，指定用以维护持久性连接的参数。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>Last-Modified 标头，指定上次修改伴随的正文数据的日期和时间。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>Max-Forwards 标头，指定一个整数，表示此请求还可转发的次数。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>Pragma 标头，指定可应用于请求/响应链上的任何代理的特定于实现的指令。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>Proxy-Authorization 标头，指定客户端为向代理验证自身身份而出示的凭据。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>Range 标头，指定代替整个响应返回的客户端请求的响应的子范围。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>Referer 标头，指定从中获得请求 URI 的资源的 URI。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>TE 标头，指定响应可接受的传输编码方式。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>Trailer 标头，指定标头字段显示在以 chunked 传输编码方式编码的消息的尾部。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>Transfer-Encoding 标头，指定对消息正文应用的转换的类型（如果有）。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>Translate 标头，与 WebDAV 功能一起使用的 HTTP 规范的 Microsoft 扩展。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>Upgrade 标头，指定客户端支持的附加通信协议。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>User-Agent 标头，指定有关客户端代理的信息。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>Via 标头，指定网关和代理程序要使用的中间协议。</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>Warning 标头，指定关于可能未在消息中反映的消息的状态或转换的附加信息。</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>可以在服务器响应中指定的 HTTP 标头。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>Accept-Ranges 标头，指定服务器接受的范围。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>Age 标头，指定自起始服务器生成响应以来的时间长度（以秒为单位）。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>Allow 标头，指定支持的 HTTP 方法集。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>Cache-Control 标头，指定请求/响应链上所有缓存机制必须服从的缓存指令。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>Connection 标头，指定特定连接需要的选项。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>Content-Encoding 标头，指定已应用于伴随正文数据的编码。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>Content-Langauge 标头，指定自然语言或伴随正文数据的语言。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>Content-Length 标头，指定伴随正文数据的长度（以字节为单位）。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>Content-Location 标头，指定可以从中获取伴随正文的 URI。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>Content-MD5 标头，指定伴随正文数据的 MD5 摘要，用于提供端到端消息完整性检查。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>Range 标头，指定客户端请求返回的响应的单个或多个子范围来代替整个响应。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>Content-Type 标头，指定伴随正文数据的 MIME 类型。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>Date 标头，指定响应产生的日期和时间。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>Etag 标头，指定请求的变量的当前值。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>Expires 标头，指定日期和时间，在此之后伴随的正文数据应视为陈旧的。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>Keep-Alive 标头，指定用于维护持久连接的参数。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>Last-Modified 标头，指定上次修改伴随的正文数据的日期和时间。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>Location 标头，指定为获取请求的资源而将客户端重定向到的 URI。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>Pragma 标头，指定可应用于请求/响应链上的任何代理的特定于实现的指令。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>Proxy-Authenticate 标头，指定客户端必须对代理验证其自身。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>Retry-After 标头，指定某个时间（以秒为单位）或日期和时间，在此时间之后客户端可以重试其请求。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>Server 标头，指定关于起始服务器代理的信息。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>Set-Cookie 标头，指定提供给客户端的 Cookie 数据。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>Trailer 标头，指定指示的标头字段在消息（使用分块传输编码方法进行编码）的尾部显示。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>Transfer-Encoding 标头，指定对消息正文应用哪种类型的转换（如果有）。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>Upgrade 标头，指定客户端支持的附加通信协议。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>Vary 标头，指定用于确定缓存的响应是否为新响应的请求标头。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>Via 标头，指定网关和代理程序要使用的中间协议。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>Warning 标头，指定关于可能未在消息中反映的消息的状态或转换的附加信息。</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>WWW-Authenticate 标头，指定客户端必须对服务器验证其自身。</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>包含与请求或响应关联的协议标头。</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>初始化 <see cref="T:System.Net.WebHeaderCollection" /> 类的新实例。</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>获取集合中的所有标头名（关键字）。</summary>
+      <returns>包含 Web 请求中所有标头名称的 <see cref="T:System.String" /> 类型的数组。</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>获取集合中的标头数。</summary>
+      <returns>
+        <see cref="T:System.Int32" />，它指示请求中的标头数。</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>获取或设置指定的请求标头。</summary>
+      <returns>包含指定标头值的 <see cref="T:System.String" /> 实例。</returns>
+      <param name="header">请求标头值。</param>
+      <exception cref="T:System.InvalidOperationException">此 <see cref="T:System.Net.WebHeaderCollection" /> 实例不允许使用 <see cref="T:System.Net.HttpRequestHeader" /> 的实例。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>获取或设置指定的响应标头。</summary>
+      <returns>包含指定标头的 <see cref="T:System.String" /> 实例。</returns>
+      <param name="header">响应标头值。</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">
+        <paramref name="value" /> 的长度大于 65535。</exception>
+      <exception cref="T:System.InvalidOperationException">此 <see cref="T:System.Net.WebHeaderCollection" /> 实例不允许使用 <see cref="T:System.Net.HttpResponseHeader" /> 的实例。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>获取或设置指定的响应标头。</summary>
+      <returns>指定的响应标头。</returns>
+      <param name="name">指定的请求标头的名称。</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>从集合中移除指定的标头。</summary>
+      <param name="name">要从集合中移除的标头名称。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> 为 null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> 是受限制的标头。- 或 - <paramref name="name" /> 包含无效字符。 </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>返回可循环访问 <see cref="T:System.Net.WebHeaderCollection" /> 实例的枚举数。</summary>
+      <returns>返回 <see cref="T:System.Collections.IEnumerator" />。可循环访问 <see cref="T:System.Net.WebHeaderCollection" /> 实例的枚举数。</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>此方法已过时。</summary>
+      <returns>集合的 <see cref="T:System.String" /> 表示形式。</returns>
+    </member>
+  </members>
+</doc>

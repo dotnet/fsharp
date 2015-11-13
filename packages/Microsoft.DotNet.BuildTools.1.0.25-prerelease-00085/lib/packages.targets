@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <UsingTask TaskName="GetPackageVersion" AssemblyFile="$(ToolsDir)Microsoft.DotNet.Build.Tasks.dll" />
+
+  <ItemGroup>
+    <PackagesNuSpecFiles Include="$(SourceDir)nuget\*.nuspec" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackagesOutDir Condition="'$(PackagesOutDir)' == ''">$(OutDir)Packages\</PackagesOutDir>
+    <PackagesBasePath Condition="'$(PackagesBasePath)' == ''">$(OutDir)</PackagesBasePath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NuGetExe>&quot;$(NuGetToolPath)&quot;</NuGetExe>
+    <NuGetBasePath>&quot;$(PackagesBasePath.TrimEnd('\'))&quot;</NuGetBasePath>
+    <NuGetOutputDirectory>&quot;$(PackagesOutDir.TrimEnd('\'))&quot;</NuGetOutputDirectory>
+  </PropertyGroup>
+
+  <Target Name="BuildPackages"
+    DependsOnTargets="GetNuGetPackageVersions"
+    Condition="'$(SkipBuildPackages)' != 'true'">
+    
+    <!-- Create package output directory -->
+    <MakeDir Directories="$(PackagesOutDir)" />
+
+    <!-- Make package -->
+    <!-- We ignore warnings because NuGet will warn when libraries are not placed
+         in framework specific subfolders.  Our build tools do this because the
+         libraries are used during build, and do not depend on the framework being
+         targeted by the build -->
+    <!-- We trim the last backslash from properties which could end with one,
+         to prevent it from escaping the closing quote -->
+    <Exec
+      Condition="'@(PackagesNuSpecFiles)'!=''"
+      IgnoreStandardErrorWarningFormat="true"
+      StandardOutputImportance="Low"
+      Command="$(NuGetExe) pack &quot;%(PackagesNuSpecFiles.FullPath)&quot; -BasePath $(NuGetBasePath) -OutputDirectory $(NuGetOutputDirectory) %(PackagesNuSpecFiles.PackageVersion)" />
+
+    <Message
+      Condition="'@(PackagesNuSpecFiles)'!=''"
+      Importance="High"
+      Text="%(PackagesNuSpecFiles.Filename) NuGet Package -> $(PackagesOutDir)%(PackagesNuSpecFiles.Filename).%(PackagesNuSpecFiles.PackageVersion).nupkg" />
+
+    <ItemGroup>
+      <PackagesForPublishing Include="$(PackagesOutDir)*.nupkg" />
+    </ItemGroup>
+
+    <!-- push all packages to a server if one has been specified -->
+    <Exec
+      Condition="'@(PackagesForPublishing)' != '' and '$(PublishPackageSource)' != ''"
+      Command="$(NuGetExe) push &quot;%(PackagesForPublishing.Identity)&quot; -s $(PublishPackageSource)" />
+
+  </Target>
+
+  <Target
+    Name="GetNuGetPackageVersions"
+    Condition="'@(PackagesNuSpecFiles)'!='' and '$(RevisionNumber)' != ''"
+    Outputs="%(PackagesNuSpecFiles.Identity)">
+
+    <GetPackageVersion
+      Condition="Exists('$(ToolsDir)Microsoft.DotNet.Build.Tasks.dll')"
+      RevisionNumber="$(RevisionNumber)"
+      NuSpecFile="%(PackagesNuSpecFiles.Identity)">
+      <Output PropertyName="_TempPackageVersion" TaskParameter="PackageVersion" />
+    </GetPackageVersion>
+    
+    <ItemGroup>
+      <PackagesNuSpecFiles Condition="'%(PackagesNuSpecFiles.Identity)' == '%(Identity)'">
+        <PackageVersion>-Version $(_TempPackageVersion)</PackageVersion>
+      </PackagesNuSpecFiles>
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_TempPackageVersion />
+    </PropertyGroup>
+  </Target>
+
+  <PropertyGroup>
+    <LocalPublishPropsFile Condition="'$(LocalPublishPropsFile)'==''">$(PackagesDir)\localpublish.props</LocalPublishPropsFile>
+    <NugetPackageBuildTargets Condition="'$(NugetPackageBuildTargets)'==''">BuildPackages</NugetPackageBuildTargets>
+  </PropertyGroup>
+
+  <Import Condition="Exists('$(LocalPublishPropsFile)')"  Project="$(LocalPublishPropsFile)"/>
+  
+  <!-- Publish the packages locally -->
+  <Target Name="LocalPackagePublish" Condition="'@(LocalPackages)'!=''"
+          Inputs="%(LocalPackages.Identity)\%(LocalPackages.PackageName).%(LocalPackages.PackageVersion).nupkg;%(LocalPackages.InstallLocation)\%(LocalPackages.PackageName).%(LocalPackages.PackageVersion)" 
+          Outputs="%(LocalPackages.InstallLocation)\%(LocalPackages.PackageName).%(LocalPackages.PackageVersion)\MODIFIED.txt"
+          AfterTargets="$(NugetPackageBuildTargets)">
+    
+    <!-- Generate the packages.config -->
+    <ItemGroup>
+      <LocalPackageConfigLine Include="&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;" />
+      <LocalPackageConfigLine Include="&lt;packages&gt;" />
+      <LocalPackageConfigLine Include="&lt;package id=&quot;%(LocalPackages.PackageName)&quot; version=&quot;%(LocalPackages.PackageVersion)&quot; /&gt;"/>
+      <LocalPackageConfigLine Include="&lt;/packages&gt;" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <RestoreConfig>%(LocalPackages.InstallLocation)\packages.%(LocalPackages.PackageName).config</RestoreConfig>
+    </PropertyGroup>
+    
+    <WriteLinesToFile File="$(RestoreConfig)" Lines="@(LocalPackageConfigLine)" Overwrite="true" />
+    <Message Text="Generated $(RestoreConfig) for '%(LocalPackages.PackageName).%(LocalPackages.PackageVersion).nupkg'" />
+    
+    <PropertyGroup>
+      <LocalPackagesSources>@(LocalPackages, ';')</LocalPackagesSources>
+    </PropertyGroup>
+    <Message Text="Generated package install sources: '$(LocalPackages)'"/>
+
+    <!-- Remove existing directories -->
+    <RemoveDir Directories="%(LocalPackages.InstallLocation)\%(LocalPackages.PackageName).%(LocalPackages.PackageVersion)" />
+
+    <!-- Restoring the packages -->
+    <Exec Command="$(NuGetExe) install $(RestoreConfig) -Source $(LocalPackagesSources) -NoCache -Prerelease -OutputDirectory %(LocalPackages.InstallLocation)" />
+
+    <!-- Write a file in the packages folder to let the user know this is not the original package -->
+    <ItemGroup>
+      <NotOriginalPackages Include="The package was restored from $(LocalPackagesSources)" />
+    </ItemGroup>
+    <WriteLinesToFile File="%(LocalPackages.InstallLocation)\%(LocalPackages.PackageName).%(LocalPackages.PackageVersion)\MODIFIED.txt" Lines="@(NotOriginalPackages)" Overwrite="true" />
+  </Target>
+</Project>

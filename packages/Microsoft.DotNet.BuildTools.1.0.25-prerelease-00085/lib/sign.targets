@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- metadata used for Authenticode and strong-name signing in official VSO builds -->
+  <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <FilesToSign Include="$(TargetPath)">
+      <Authenticode>Microsoft</Authenticode>
+      <StrongName Condition="'$(SkipSigning)' != 'true'">StrongName</StrongName>
+    </FilesToSign>
+  </ItemGroup>
+
+  <UsingTask AssemblyFile="$(ToolsDir)Microsoft.DotNet.Build.Tasks.dll" TaskName="OpenSourceSign" />
+  
+  <PropertyGroup Condition="'$(SkipSigning)'!='true'">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(ToolsDir)MSFT.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile Condition="'$(UseECMAKey)' == 'true'">$(ToolsDir)ECMA.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>true</DelaySign>
+    <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
+    <UseOpenSourceSign Condition="'$(UseOpenSourceSign)' == ''">true</UseOpenSourceSign>
+  </PropertyGroup>
+
+  <!-- 
+    NOTE: This mechanism for wiring in the OpenSourceSign target can't be changed to any of the following:
+
+        * AfterTargets=Compile -> hit by intellisense builds while @(IntermediateAssembly) doesn't exist yet.
+        * AfterTargets=PrepareForRun -> hit after @(IntermediateAssembly) has already been copied to output.
+        * BeforeTargets=CopyFilesToOutputDirectory -> does not work on Mono.
+  -->
+  <PropertyGroup>
+    <PrepareForRunDependsOn>OpenSourceSign;$(PrepareForRunDependsOn)</PrepareForRunDependsOn>
+  </PropertyGroup>
+
+  <Target Name="OpenSourceSign"
+          Condition="'$(DelaySign)' == 'true' and '@(IntermediateAssembly)' != '' and '$(SkipSigning)' != 'true' and '$(UseOpenSourceSign)' == 'true'"
+          Inputs="@(IntermediateAssembly)"
+          Outputs="%(IntermediateAssembly.Identity).oss_signed"
+          >
+    <OpenSourceSign AssemblyPath="%(IntermediateAssembly.Identity)" />
+    <Touch Files="%(IntermediateAssembly.Identity).oss_signed" AlwaysCreate="true" />
+    <ItemGroup>
+       <FileWrites Include="%(IntermediateAssembly.Identity).oss_signed" />
+    </ItemGroup>
+  </Target>
+
+</Project>

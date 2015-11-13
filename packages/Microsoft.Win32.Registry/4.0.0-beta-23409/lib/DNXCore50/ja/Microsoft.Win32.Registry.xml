@@ -1,0 +1,575 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Microsoft.Win32.Registry</name>
+  </assembly>
+  <members>
+    <member name="T:Microsoft.Win32.Registry">
+      <summary>Windows レジストリのルート キーを表す <see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクト、およびキー/値ペアにアクセスするための static メソッドを提供します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.ClassesRoot">
+      <summary>ドキュメントの型 (またはクラス) と、これらの型に関連付けられるプロパティを定義します。このフィールドには、Windows レジストリの基本キー HKEY_CLASSES_ROOT が読み込まれます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentConfig">
+      <summary>各ユーザーに共通のハードウェアに関する構成情報を格納します。このフィールドには、Windows レジストリの基本キー HKEY_CURRENT_CONFIG が読み込まれます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.CurrentUser">
+      <summary>現在のユーザー設定に関する情報が格納されます。このフィールドには、Windows レジストリの基本キー HKEY_CURRENT_USER が読み込まれます。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.GetValue(System.String,System.String,System.Object)">
+      <summary>指定したレジストリ キーに含まれる、指定した名前に関連付けられた値を取得します。指定したキーに該当する名前が見つからない場合は、設定している既定値が返されます。指定したキーが存在しない場合は、null が返されます。</summary>
+      <returns>
+        <paramref name="keyName" /> で指定したサブキーが存在しない場合は、null。それ以外の場合は、<paramref name="valueName" /> に関連付けられた値。<paramref name="valueName" /> が見つからない場合は、<paramref name="defaultValue" />。</returns>
+      <param name="keyName">有効なレジストリ ルート ("HKEY_CURRENT_USER" など) から始まるキーの完全なレジストリ パス。</param>
+      <param name="valueName">名前/値ペアの名前。</param>
+      <param name="defaultValue">
+        <paramref name="valueName" /> が存在しない場合に返す値。</param>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーからの読み取りに必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.IO.IOException">削除対象としてマークされ、指定された値を格納する <see cref="T:Microsoft.Win32.RegistryKey" />。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> が有効なレジストリ ルートから始まっていません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.LocalMachine">
+      <summary>ローカル コンピューターの構成データが格納されます。このフィールドには、Windows レジストリの基本キー HKEY_LOCAL_MACHINE が読み込まれます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.PerformanceData">
+      <summary>ソフトウェア コンポーネントのパフォーマンス情報を格納します。このフィールドには、Windows レジストリの基本キー HKEY_PERFORMANCE_DATA が読み込まれます。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object)">
+      <summary>指定したレジストリ キーに、指定した名前/値ペアを設定します。指定したキーが存在しない場合は、キーが作成されます。</summary>
+      <param name="keyName">有効なレジストリ ルート ("HKEY_CURRENT_USER" など) から始まるキーの完全なレジストリ パス。</param>
+      <param name="valueName">名前/値ペアの名前。</param>
+      <param name="value">格納される値。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> は null なので、</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> が有効なレジストリ ルートから始まっていません。または<paramref name="keyName" /> が許容される最大長 (255 文字) を超えています。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> が読み取り専用であるため、このキーに書き込むことはできません。たとえば、ルートレベル ノードの場合などです。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーの作成または変更に必要なアクセス許可がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.Registry.SetValue(System.String,System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>指定したレジストリ データ型を使用して、指定したレジストリ キーに名前/値ペアを設定します。指定したキーが存在しない場合は、キーが作成されます。</summary>
+      <param name="keyName">有効なレジストリ ルート ("HKEY_CURRENT_USER" など) から始まるキーの完全なレジストリ パス。</param>
+      <param name="valueName">名前/値ペアの名前。</param>
+      <param name="value">格納される値。</param>
+      <param name="valueKind">データを格納する際に使用するレジストリ データ型。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> は null なので、</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="keyName" /> が有効なレジストリ ルートから始まっていません。または<paramref name="keyName" /> が許容される最大長 (255 文字) を超えています。または<paramref name="value" /> の型が <paramref name="valueKind" /> で指定したレジストリ データ型と一致しなかったため、データを適切に変換できませんでした。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> が読み取り専用であるため、このキーに書き込むことはできません。ルートレベル ノードの場合や、書き込みアクセスが設定された状態でキーが開かれていない場合などです。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーの作成または変更に必要なアクセス許可がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="F:Microsoft.Win32.Registry.Users">
+      <summary>既定のユーザー構成に関する情報を格納します。このフィールドには、Windows レジストリの基本キー HKEY_USERS が読み込まれます。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryHive">
+      <summary>外部コンピューターの最上位ノードの有効値を表します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.ClassesRoot">
+      <summary>別のコンピューターの HKEY_CLASSES_ROOT 基本キーを表します。この値を <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> メソッドに渡すと、このノードをリモートから開くことができます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentConfig">
+      <summary>別のコンピューターの HKEY_CURRENT_CONFIG 基本キーを表します。この値を <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> メソッドに渡すと、このノードをリモートから開くことができます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.CurrentUser">
+      <summary>別のコンピューターの HKEY_CURRENT_USER 基本キーを表します。この値を <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> メソッドに渡すと、このノードをリモートから開くことができます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.LocalMachine">
+      <summary>別のコンピューターの HKEY_LOCAL_MACHINE 基本キーを表します。この値を <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> メソッドに渡すと、このノードをリモートから開くことができます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.PerformanceData">
+      <summary>別のコンピューターの HKEY_PERFORMANCE_DATA 基本キーを表します。この値を <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> メソッドに渡すと、このノードをリモートから開くことができます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryHive.Users">
+      <summary>別のコンピューターの HKEY_USERS 基本キーを表します。この値を <see cref="M:Microsoft.Win32.RegistryKey.OpenRemoteBaseKey(Microsoft.Win32.RegistryHive,System.String)" /> メソッドに渡すと、このノードをリモートから開くことができます。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryKey">
+      <summary>Windows レジストリのキー レベル ノードを表します。このクラスはレジストリをカプセル化します。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String)">
+      <summary>新しいサブキーを作成するか、または既存のサブキーを書き込みアクセスで開きます。</summary>
+      <returns>新たに作成されたサブキー。操作が失敗した場合は null。<paramref name="subkey" /> に長さ 0 の文字列が指定された場合は、現在の <see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトが返されます。</returns>
+      <param name="subkey">作成または開くサブキーの名前またはパス。この文字列の大文字と小文字は区別されません。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> は null です。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーには、レジストリ キーを作成または開くために必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">このメソッドの実行対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じられています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> に書き込みができません。書き込み可能なキーとして開かれていない、必要なアクセス権がユーザーに設定されていないなどの理由が考えられます。</exception>
+      <exception cref="T:System.IO.IOException">入れ子のレベルが 510 を超えています。またはシステム エラーが発生しました。たとえば、<see cref="F:Microsoft.Win32.Registry.LocalMachine" /> ルートでのキーの削除または作成が試行されました。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean)">
+      <summary>新しいサブキーを作成するか、指定のアクセス権を持つ既存のサブキーを開きます。 Available starting in .NET Framework 2015</summary>
+      <returns>新たに作成されたサブキー。操作が失敗した場合は null。<paramref name="subkey" /> に長さ 0 の文字列が指定された場合は、現在の <see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトが返されます。</returns>
+      <param name="subkey">作成または開くサブキーの名前またはパス。この文字列の大文字と小文字は区別されません。</param>
+      <param name="writable">true新しいサブキーを示すためには、書き込み可能です。それ以外の場合、falseです。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> は null です。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーには、レジストリ キーを作成または開くために必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">現在の <see cref="T:Microsoft.Win32.RegistryKey" /> に書き込みができません。書き込み可能なキーとして開かれていない、必要なアクセス権がユーザーに設定されていないなどの理由が考えられます。</exception>
+      <exception cref="T:System.IO.IOException">入れ子のレベルが 510 を超えています。またはシステム エラーが発生しました。たとえば、<see cref="F:Microsoft.Win32.Registry.LocalMachine" /> ルートでのキーの削除または作成が試行されました。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.CreateSubKey(System.String,System.Boolean,Microsoft.Win32.RegistryOptions)">
+      <summary>新しいサブキーを作成するか、指定のアクセス権を持つ既存のサブキーを開きます。 Available starting in .NET Framework 2015</summary>
+      <returns>新たに作成されたサブキー。操作が失敗した場合は null。<paramref name="subkey" /> に長さ 0 の文字列が指定された場合は、現在の <see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトが返されます。</returns>
+      <param name="subkey">作成または開くサブキーの名前またはパス。この文字列の大文字と小文字は区別されません。</param>
+      <param name="writable">true新しいサブキーを示すためには、書き込み可能です。それ以外の場合、falseです。</param>
+      <param name="options">使用するレジストリ オプション。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> は null です。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" />有効なオプションを指定しません。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーには、レジストリ キーを作成または開くために必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">現在の <see cref="T:Microsoft.Win32.RegistryKey" /> に書き込みができません。書き込み可能なキーとして開かれていない、必要なアクセス権がユーザーに設定されていないなどの理由が考えられます。</exception>
+      <exception cref="T:System.IO.IOException">入れ子のレベルが 510 を超えています。またはシステム エラーが発生しました。たとえば、<see cref="F:Microsoft.Win32.Registry.LocalMachine" /> ルートでのキーの削除または作成が試行されました。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String)">
+      <summary>指定したサブキーを削除します。</summary>
+      <param name="subkey">削除するサブキーの名前。この文字列の大文字と小文字は区別されません。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> に子サブキーがあります。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> パラメーターに、有効なレジストリ サブキーが指定されていません。 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> がnull</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、キーの削除に必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKey(System.String,System.Boolean)">
+      <summary>指定したサブキーを削除します。また、サブキーが見つからない場合に例外を発生させるかどうかを指定します。</summary>
+      <param name="subkey">削除するサブキーの名前。この文字列の大文字と小文字は区別されません。</param>
+      <param name="throwOnMissingSubKey">指定したサブキーが見つからない場合に例外を発生させるかどうかを示します。この引数が true であり、指定したサブキーが見つからない場合は、例外が発生します。この引数が false であり、指定したサブキーが見つからない場合は、何も実行されません。</param>
+      <exception cref="T:System.InvalidOperationException">
+        <paramref name="subkey" /> に子サブキーがあります。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="subkey" /> に有効なレジストリ キーが指定されておらず、<paramref name="throwOnMissingSubKey" /> が true です。 </exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> は null です。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、キーの削除に必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String)">
+      <summary>サブキーとその子サブキーを再帰的に削除します。</summary>
+      <param name="subkey">削除するサブキー。この文字列の大文字と小文字は区別されません。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> は null です。</exception>
+      <exception cref="T:System.ArgumentException">ルート ハイブを削除しようとしました。または<paramref name="subkey" /> に、有効なレジストリ サブキーが指定されていません。</exception>
+      <exception cref="T:System.IO.IOException">I/O エラーが発生しました。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、キーの削除に必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteSubKeyTree(System.String,System.Boolean)">
+      <summary>指定されたサブキーとその子サブキーを再帰的に削除します。サブキーが見つからなかった場合に例外を発生させるかどうかを指定します。</summary>
+      <param name="subkey">削除するサブキーの名前。この文字列の大文字と小文字は区別されません。</param>
+      <param name="throwOnMissingSubKey">指定したサブキーが見つからない場合に例外を発生させるかどうかを示します。この引数が true であり、指定したサブキーが見つからない場合は、例外が発生します。この引数が false であり、指定したサブキーが見つからない場合は、何も実行されません。</param>
+      <exception cref="T:System.ArgumentException">ツリーのルート ハイブを削除しようとしました。または<paramref name="subkey" /> に有効なレジストリ サブキーが指定されておらず、<paramref name="throwOnMissingSubKey" /> が true です。</exception>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="subkey" /> は null です。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、キーの削除に必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String)">
+      <summary>指定した値をこのキーから削除します。</summary>
+      <param name="name">削除する値の名前。 </param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> が有効な値参照ではありません。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、値の削除に必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">操作しようとしている <see cref="T:Microsoft.Win32.RegistryKey" /> は読み取り専用です。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.DeleteValue(System.String,System.Boolean)">
+      <summary>指定した値をこのキーから削除します。また、値が見つからない場合に例外を発生させるかどうかを指定します。</summary>
+      <param name="name">削除する値の名前。</param>
+      <param name="throwOnMissingValue">指定した値が見つからない場合に例外を発生させるかどうかを示します。この引数が true であり、指定した値が見つからない場合は、例外が発生します。この引数が false であり、指定した値が見つからない場合は、何も実行されません。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> が有効な値参照ではなくて、<paramref name="throwOnMissingValue" /> が true です。または <paramref name="name" /> は null です。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、値の削除に必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">操作しようとしている <see cref="T:Microsoft.Win32.RegistryKey" /> は読み取り専用です。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Dispose">
+      <summary>
+        <see cref="T:Microsoft.Win32.RegistryKey" /> クラスの現在のインスタンスによって使用されているすべてのリソースを解放します。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.Flush">
+      <summary>指定したオープン レジストリ キーのすべての属性をこのレジストリへ書き込みます。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle)">
+      <summary>[セキュリティ クリティカル] 指定されたハンドルからレジストリ キーを作成します。</summary>
+      <returns>レジストリ キー</returns>
+      <param name="handle">レジストリ キーのハンドル。</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.FromHandle(Microsoft.Win32.SafeHandles.SafeRegistryHandle,Microsoft.Win32.RegistryView)">
+      <summary>[セキュリティ クリティカル] 指定されたハンドルおよびレジストリ ビュー設定に基づいてレジストリ キーを作成します。</summary>
+      <returns>レジストリ キー</returns>
+      <param name="handle">レジストリ キーのハンドル。</param>
+      <param name="view">使用するレジストリ ビュー。</param>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetSubKeyNames">
+      <summary>すべてのサブキーの名前が格納されている文字列の配列を取得します。</summary>
+      <returns>現在のキーのサブキーの名前を格納する文字列の配列。</returns>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、キーからの読み取りに必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <exception cref="T:System.IO.IOException">システム エラーが発生しました。たとえば、現在のキーが削除されています。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String)">
+      <summary>指定した名前に関連付けられている値を取得します。名前/値ペアがレジストリに存在しない場合、null を返します。</summary>
+      <returns>
+        <paramref name="name" /> に関連付けられた値。<paramref name="name" /> が見つからない場合は null。</returns>
+      <param name="name">取得する値の名前。この文字列の大文字と小文字は区別されません。</param>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーからの読み取りに必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">指定された値を格納している <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.IO.IOException">削除対象としてマークされ、指定された値を格納する <see cref="T:Microsoft.Win32.RegistryKey" />。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object)">
+      <summary>指定した名前に関連付けられている値を取得します。名前が見つからない場合、設定されている既定値を返します。</summary>
+      <returns>
+        <paramref name="name" /> に関連付けられた値 (埋め込まれた環境変数は未展開のまま)。<paramref name="name" /> が見つからない場合は <paramref name="defaultValue" />。</returns>
+      <param name="name">取得する値の名前。この文字列の大文字と小文字は区別されません。</param>
+      <param name="defaultValue">
+        <paramref name="name" /> が存在しない場合に返す値。</param>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーからの読み取りに必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">指定された値を格納している <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.IO.IOException">削除対象としてマークされ、指定された値を格納する <see cref="T:Microsoft.Win32.RegistryKey" />。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValue(System.String,System.Object,Microsoft.Win32.RegistryValueOptions)">
+      <summary>指定した名前に関連付けられている値を、取得オプションを指定して取得します。名前が見つからない場合、設定されている既定値を返します。</summary>
+      <returns>
+        <paramref name="name" /> に関連付けられた値を、指定した <paramref name="options" /> に従って処理したもの。<paramref name="name" /> が見つからなかった場合は <paramref name="defaultValue" />。</returns>
+      <param name="name">取得する値の名前。この文字列の大文字と小文字は区別されません。</param>
+      <param name="defaultValue">
+        <paramref name="name" /> が存在しない場合に返す値。</param>
+      <param name="options">取得した値のオプションの処理を指定する列挙値の 1 つ。</param>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーからの読み取りに必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">指定された値を格納している <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.IO.IOException">削除対象としてマークされ、指定された値を格納する <see cref="T:Microsoft.Win32.RegistryKey" />。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="options" /> が有効な <see cref="T:Microsoft.Win32.RegistryValueOptions" /> 値ではありません。たとえば、無効な値が <see cref="T:Microsoft.Win32.RegistryValueOptions" /> にキャストされています。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueKind(System.String)">
+      <summary>指定した名前に関連付けられた値のレジストリ データ型を取得します。</summary>
+      <returns>
+        <paramref name="name" /> に関連付けられた値のレジストリ データ型。</returns>
+      <param name="name">レジストリ データ型を取得する値の名前。この文字列の大文字と小文字は区別されません。</param>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーからの読み取りに必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">指定された値を格納している <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.IO.IOException">指定された値を格納しているサブキーが存在しません。または<paramref name="name" /> で指定された名前/値ペアが存在しません。この例外は、Windows 95、Windows 98、および Windows Millennium Edition ではスローされません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.GetValueNames">
+      <summary>このキーに関連付けられているすべての値の名前が格納されている文字列の配列を取得します。</summary>
+      <returns>現在のキーの値の名前を格納する文字列の配列。</returns>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーからの読み取りに必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <exception cref="T:System.IO.IOException">システム エラーが発生しました。たとえば、現在のキーが削除されています。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Handle">
+      <summary>[セキュリティ クリティカル] 現在の <see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトによってカプセル化されているレジストリ キーを表す <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> オブジェクトを取得します。</summary>
+      <returns>レジストリ キーのハンドル。</returns>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.Name">
+      <summary>キーの名前を取得します。</summary>
+      <returns>キーの絶対 (限定) 名。</returns>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive,Microsoft.Win32.RegistryView)">
+      <summary>ローカル コンピューター上にある要求されたキーを表す新しい <see cref="T:Microsoft.Win32.RegistryKey" /> を、指定されたビューで開きます。</summary>
+      <returns>要求されたレジストリ キー。</returns>
+      <param name="hKey">開く HKEY。</param>
+      <param name="view">使用するレジストリ ビュー。</param>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="hKey" /> または <paramref name="view" /> が無効です。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーには、この操作を実行するために必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String)">
+      <summary>サブキーを読み取り専用で取得します。</summary>
+      <returns>要求されたサブキー。操作が失敗した場合は null。</returns>
+      <param name="name">読み取り専用で開くサブキーの名前またはパス。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> がnull</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーの読み取りに必要なアクセス許可がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Read="\" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Boolean)">
+      <summary>指定したサブキーを取得します。また、キーに書き込みアクセスを適用するかどうかを指定します。</summary>
+      <returns>要求されたサブキー。操作が失敗した場合は null。</returns>
+      <param name="name">開くサブキーの名前またはパス。</param>
+      <param name="writable">キーへの書き込みアクセスが必要な場合には true に設定してください。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null です。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、指定したモードでのレジストリ キーへのアクセスに必要なアクセス許可がありません。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.OpenSubKey(System.String,System.Security.AccessControl.RegistryRights)">
+      <summary>指定された名前のサブキーを取得します。Available starting in .NET Framework 2015</summary>
+      <returns>要求されたサブキー。操作が失敗した場合は null。</returns>
+      <param name="name">作成または開くサブキーの名前またはパス。</param>
+      <param name="rights">レジストリ キーの権限。</param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> は null です。</exception>
+      <exception cref="T:System.ObjectDisposedException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、指定したモードでのレジストリ キーへのアクセスに必要なアクセス許可がありません。</exception>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)">
+      <summary>指定した名前/値ペアを設定します。</summary>
+      <param name="name">格納する値の名前。</param>
+      <param name="value">格納するデータ。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> は null です。 </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> がサポートされないデータ型です。</exception>
+      <exception cref="T:System.ObjectDisposedException">指定された値を格納している <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> は読み取り専用なので、書き込みできません。たとえば、キーが書き込みアクセスで開かれていません。または<see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトがルート レベルのノードを表し、オペレーティング システムが Windows Millennium Edition または Windows 98 です。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーの作成または変更に必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトがルート レベルのノードを表し、オペレーティング システムが Windows 2000、Windows XP、または Windows Server 2003 です。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object,Microsoft.Win32.RegistryValueKind)">
+      <summary>指定したレジストリ データ型を使用して、レジストリ キーに名前/値ペアの値を設定します。</summary>
+      <param name="name">格納される値の名前。</param>
+      <param name="value">格納するデータ。</param>
+      <param name="valueKind">データを格納する際に使用するレジストリ データ型。 </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="value" /> は null です。</exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="value" /> の型が <paramref name="valueKind" /> で指定したレジストリ データ型と一致しなかったため、データを適切に変換できませんでした。</exception>
+      <exception cref="T:System.ObjectDisposedException">指定された値を格納している <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> は読み取り専用なので、書き込みできません。たとえば、キーが書き込みアクセスで開かれていません。または<see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトがルート レベルのノードを表し、オペレーティング システムが Windows Millennium Edition または Windows 98 です。</exception>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、レジストリ キーの作成または変更に必要なアクセス許可がありません。</exception>
+      <exception cref="T:System.IO.IOException">
+        <see cref="T:Microsoft.Win32.RegistryKey" /> オブジェクトがルート レベルのノードを表し、オペレーティング システムが Windows 2000、Windows XP、または Windows Server 2003 です。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.SubKeyCount">
+      <summary>現在のキーのサブキーの数を取得します。</summary>
+      <returns>現在のキーのサブキーの数。</returns>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、キーの読み取りアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <exception cref="T:System.IO.IOException">システム エラーが発生しました。たとえば、現在のキーが削除されています。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="M:Microsoft.Win32.RegistryKey.ToString">
+      <summary>このキーの文字列形式を取得します。</summary>
+      <returns>キーを表す文字列。指定したサブキーが無効である (見つからない) 場合は、null が返されます。</returns>
+      <exception cref="T:System.ObjectDisposedException">アクセスする <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.ValueCount">
+      <summary>キーの値の数を取得します。</summary>
+      <returns>キーに格納されている名前/値ペアの数。</returns>
+      <exception cref="T:System.Security.SecurityException">ユーザーに、キーの読み取りアクセス許可がありません。</exception>
+      <exception cref="T:System.ObjectDisposedException">操作対象の <see cref="T:Microsoft.Win32.RegistryKey" /> が閉じています。閉じられたキーにはアクセスできません。</exception>
+      <exception cref="T:System.UnauthorizedAccessException">ユーザーに、必要なレジストリ権限がありません。</exception>
+      <exception cref="T:System.IO.IOException">システム エラーが発生しました。たとえば、現在のキーが削除されています。</exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.RegistryPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Unrestricted="true" />
+      </PermissionSet>
+    </member>
+    <member name="P:Microsoft.Win32.RegistryKey.View">
+      <summary>レジストリ キーの作成に使用されたビューを取得します。</summary>
+      <returns>レジストリ キーの作成に使用されたビュー。または<see cref="F:Microsoft.Win32.RegistryView.Default" /> (ビューが使用されなかった場合)。</returns>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryOptions">
+      <summary>レジストリ キーの作成時に使用するオプションを指定します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.None">
+      <summary>不揮発性のキー。これが既定値です。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryOptions.Volatile">
+      <summary>揮発性のキー。情報はメモリに格納され、対応するレジストリ ハイブのアンロード後は維持されません。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueKind">
+      <summary>レジストリに値を格納するときに使用するデータ型を指定するか、レジストリ内の値のデータ型を識別します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Binary">
+      <summary>任意の形式のバイナリ データ。この値は、Win32 API の REG_BINARY レジストリ データ型に相当します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.DWord">
+      <summary>32 ビットのバイナリ数値。この値は、Win32 API の REG_DWORD レジストリ データ型に相当します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.ExpandString">
+      <summary>値を取得するときに展開される環境変数 (%PATH% など) への、展開されていない参照が含まれている null で終わる文字列。この値は、Win32 API の REG_EXPAND_SZ レジストリ データ型に相当します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.MultiString">
+      <summary>null で終わる文字列の配列。配列は、2 つの null 文字で終わります。この値は、Win32 API の REG_MULTI_SZ レジストリ データ型に相当します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.None">
+      <summary>データ型はありません。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.QWord">
+      <summary>64 ビットのバイナリ数値。この値は、Win32 API の REG_QWORD レジストリ データ型に相当します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.String">
+      <summary>null で終わる文字列。この値は、Win32 API の REG_SZ レジストリ データ型に相当します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueKind.Unknown">
+      <summary>サポートされていないレジストリ データ型。たとえば、Microsoft Win32 API の REG_RESOURCE_LIST レジストリ データ型はサポートされていません。この値を使用して、名前と値のペアを格納するときに、<see cref="M:Microsoft.Win32.RegistryKey.SetValue(System.String,System.Object)" /> メソッドで適切なレジストリ データ型を決定する必要があることを指定します。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryValueOptions">
+      <summary>レジストリ キーから名前/値ペアを取得するときのオプションの動作を指定します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames">
+      <summary>
+        <see cref="F:Microsoft.Win32.RegistryValueKind.ExpandString" /> 型の値が、埋め込まれた環境変数を展開せずに取得されます。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryValueOptions.None">
+      <summary>オプションの動作は指定されていません。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.RegistryView">
+      <summary>64 ビット オペレーティング システム上の対象となるレジストリ ビューを指定します。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Default">
+      <summary>既定のビュー。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry32">
+      <summary>32 ビット ビュー。</summary>
+    </member>
+    <member name="F:Microsoft.Win32.RegistryView.Registry64">
+      <summary>64 ビット ビュー。</summary>
+    </member>
+    <member name="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle">
+      <summary>[セキュリティ クリティカル] Windows レジストリへのセーフ ハンドルを表します。</summary>
+    </member>
+    <member name="M:Microsoft.Win32.SafeHandles.SafeRegistryHandle.#ctor(System.IntPtr,System.Boolean)">
+      <summary>[セキュリティ クリティカル] <see cref="T:Microsoft.Win32.SafeHandles.SafeRegistryHandle" /> クラスの新しいインスタンスを初期化します。</summary>
+      <param name="preexistingHandle">使用する既存のハンドルを表すオブジェクト。</param>
+      <param name="ownsHandle">終了処理中にハンドルを安全に解放する場合は true。安全な解放を行わない場合は false。</param>
+    </member>
+    <member name="P:Microsoft.Win32.SafeHandles.SafeRegistryHandle.IsInvalid"></member>
+    <member name="T:System.Security.AccessControl.RegistryRights">
+      <summary>レジストリ オブジェクトに適用できるアクセス制御権を指定します。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ChangePermissions">
+      <summary>レジストリ キーに関連付けられたアクセス規則と監査規則を変更する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateLink">
+      <summary>システムで使用するために予約されています。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.CreateSubKey">
+      <summary>レジストリ キーのサブキーを作成する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Delete">
+      <summary>レジストリ キーを削除する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.EnumerateSubKeys">
+      <summary>レジストリ キーのサブキーをリストする権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ExecuteKey">
+      <summary>
+        <see cref="F:System.Security.AccessControl.RegistryRights.ReadKey" /> と同じ。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.FullControl">
+      <summary>レジストリ キーに対するフル コントロール、およびそのアクセス規則と監査規則を変更する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.Notify">
+      <summary>レジストリ キーの変更通知を要求する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.QueryValues">
+      <summary>レジストリ キー内の名前/値ペアを照会する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadKey">
+      <summary>レジストリ キー内の名前/値ペアの照会、変更通知の要求、そのサブキーの列挙、そのアクセス規則と監査規則の読み取りを行う権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.ReadPermissions">
+      <summary>レジストリ キーのアクセス規則と監査規則を開いてコピーする権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.SetValue">
+      <summary>レジストリ キー内の名前/値ペアを作成、削除、または設定する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.TakeOwnership">
+      <summary>レジストリ キーの所有者を変更する権限。</summary>
+    </member>
+    <member name="F:System.Security.AccessControl.RegistryRights.WriteKey">
+      <summary>レジストリ キー内の名前/値ペアの作成、削除、および設定、サブキーの作成または削除、変更通知の要求、そのサブキーの列挙、そのアクセス規則と監査規則の読み取りを行う権限。</summary>
+    </member>
+  </members>
+</doc>

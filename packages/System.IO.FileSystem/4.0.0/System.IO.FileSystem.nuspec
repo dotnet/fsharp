@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="3.0">
+    <id>System.IO.FileSystem</id>
+    <version>4.0.0</version>
+    <title>System.IO.FileSystem</title>
+    <authors>Microsoft</authors>
+    <owners>microsoft,dotnetframework</owners>
+    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
+    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides types that allow reading and writing to files and types that provide basic file and directory support.
+
+Commonly Used Types:
+System.IO.FileStream
+System.IO.FileInfo
+System.IO.DirectoryInfo
+System.IO.FileSystemInfo
+System.IO.File
+System.IO.Directory
+System.IO.SearchOption
+System.IO.FileOptions</description>
+    <copyright>© Microsoft Corporation.  All rights reserved.</copyright>
+    <dependencies>
+      <group targetFramework="MonoAndroid1.0" />
+      <group targetFramework="MonoTouch1.0" />
+      <group targetFramework="Xamarin.iOS1.0" />
+      <group targetFramework="Xamarin.Mac2.0" />
+      <group targetFramework=".NETPlatform5.0">
+        <dependency id="System.Runtime" version="4.0.0" />
+        <dependency id="System.Text.Encoding" version="4.0.0" />
+        <dependency id="System.IO" version="4.0.0" />
+        <dependency id="System.IO.FileSystem.Primitives" version="4.0.0" />
+        <dependency id="System.Threading.Tasks" version="4.0.0" />
+        <dependency id="System.Runtime.Handles" version="4.0.0" />
+      </group>
+      <group targetFramework="DNXCore5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.Runtime.InteropServices" version="4.0.20" />
+        <dependency id="System.Resources.ResourceManager" version="4.0.0" />
+        <dependency id="System.IO.FileSystem.Primitives" version="4.0.0" />
+        <dependency id="System.Runtime.Handles" version="4.0.0" />
+        <dependency id="System.Threading.Overlapped" version="4.0.0" />
+        <dependency id="System.Text.Encoding" version="4.0.10" />
+        <dependency id="System.IO" version="4.0.10" />
+        <dependency id="System.Collections" version="4.0.10" />
+        <dependency id="System.Threading.Tasks" version="4.0.10" />
+        <dependency id="System.Runtime.Extensions" version="4.0.10" />
+        <dependency id="System.Text.Encoding.Extensions" version="4.0.10" />
+        <dependency id="System.Threading" version="4.0.10" />
+      </group>
+      <group targetFramework=".NETCore5.0">
+        <dependency id="System.Runtime" version="4.0.20" />
+        <dependency id="System.Runtime.InteropServices" version="4.0.20" />
+        <dependency id="System.Resources.ResourceManager" version="4.0.0" />
+        <dependency id="System.Runtime.Handles" version="4.0.0" />
+        <dependency id="System.Threading.Overlapped" version="4.0.0" />
+        <dependency id="System.IO.FileSystem.Primitives" version="4.0.0" />
+        <dependency id="System.Runtime.WindowsRuntime" version="4.0.0" />
+        <dependency id="System.Text.Encoding" version="4.0.10" />
+        <dependency id="System.IO" version="4.0.10" />
+        <dependency id="System.Collections" version="4.0.10" />
+        <dependency id="System.Threading.Tasks" version="4.0.10" />
+        <dependency id="System.Diagnostics.Debug" version="4.0.10" />
+        <dependency id="System.Runtime.Extensions" version="4.0.10" />
+        <dependency id="System.Text.Encoding.Extensions" version="4.0.10" />
+        <dependency id="System.Threading" version="4.0.10" />
+      </group>
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="mscorlib" targetFramework=".NETFramework4.6" />
+    </frameworkAssemblies>
+  </metadata>
+</package>

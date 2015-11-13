@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>System.Net.WebHeaderCollection</name>
+  </assembly>
+  <members>
+    <member name="T:System.Net.HttpRequestHeader">
+      <summary>En-têtes HTTP qui peuvent être spécifiés dans une requête du client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Accept">
+      <summary>En-tête Accept qui spécifie les types MIME admis pour la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptCharset">
+      <summary>En-tête Accept-Charset qui spécifie les jeux de caractères admis pour la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptEncoding">
+      <summary>En-tête Accept-Encoding qui spécifie les encodages de contenu admis pour la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.AcceptLanguage">
+      <summary>En-tête Accept-Language qui spécifie les langages naturels préférés pour la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Allow">
+      <summary>En-tête Allow qui spécifie le jeu de méthodes HTTP pris en charge.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Authorization">
+      <summary>En-tête Authorization qui spécifie les informations d'identification que le client doit présenter pour s'authentifier auprès du serveur.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.CacheControl">
+      <summary>En-tête Cache-Control qui spécifie les directives devant être respectées par l'ensemble des mécanismes de contrôle de cache tout au long de la chaîne de requête/réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Connection">
+      <summary>En-tête Connection qui spécifie les options désirées pour une connexion particulière.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentEncoding">
+      <summary>En-tête Content-Encoding qui spécifie les encodages appliqués aux données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLanguage">
+      <summary>En-tête Content-Language qui spécifie le ou les langages naturels des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLength">
+      <summary>En-tête Content-Length qui spécifie la longueur en octets des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentLocation">
+      <summary>En-tête Content-Location qui spécifie un URI à partir duquel le corps fourni peut être obtenu.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentMd5">
+      <summary>En-tête Content-MD5 qui spécifie le résumé MD5 des données relatives au corps fournies en vue d'assurer un contrôle de l'intégrité des messages de bout en bout.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentRange">
+      <summary>En-tête Content-Range qui spécifie à quel endroit du corps complet les données relatives au corps partiel fournies doivent être appliquées.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ContentType">
+      <summary>En-tête Content-Type qui spécifie le type MIME des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Cookie">
+      <summary>En-tête Cookie qui spécifie des données de cookie présentées au serveur.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Date">
+      <summary>En-tête Date qui spécifie la date et l'heure de lancement de la requête.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expect">
+      <summary>En-tête Expect qui spécifie les comportements de serveurs particuliers exigés par le client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Expires">
+      <summary>En-tête Expires qui spécifie la date et l'heure après lesquelles les données relatives au corps fournies doivent être considérées comme périmées.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.From">
+      <summary>En-tête From qui spécifie une adresse de messagerie Internet pour l'utilisateur humain qui contrôle l'agent utilisateur (user agent) demandeur.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Host">
+      <summary>En-tête Host qui spécifie le nom d'hôte et le numéro de port de la ressource demandée.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfMatch">
+      <summary>En-tête If-Match qui spécifie que l'opération demandée ne doit être exécutée que si la copie mise en cache du client de la ressource indiquée est actuelle.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfModifiedSince">
+      <summary>En-tête If-Modified-Since qui spécifie que l'opération demandée ne doit être exécutée que si la ressource demandée a été modifiée depuis la date et l'heure indiquées.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfNoneMatch">
+      <summary>En-tête If-None-Match qui spécifie que l'opération demandée ne doit être exécutée que si aucune des copies mises en cache du client de la ressource indiquée n'est actuelle.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfRange">
+      <summary>En-tête If-Range qui spécifie que seule la plage spécifiée de la ressource demandée doit être envoyée, si la copie mise en cache du client est actuelle.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.IfUnmodifiedSince">
+      <summary>En-tête If-Unmodified-Since qui spécifie que l'opération demandée ne doit être exécutée que si la ressource demandée n'a pas été modifiée depuis la date et l'heure indiquées.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.KeepAlive">
+      <summary>En-tête Keep-Alive qui spécifie un paramètre utilisé pour préserver une connexion persistante.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.LastModified">
+      <summary>En-tête Last-Modified qui spécifie la date et l'heure de la dernière modification des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.MaxForwards">
+      <summary>En-tête Max-Forwards qui spécifie un entier indiquant le nombre de fois que cette requête peut encore être transférée.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Pragma">
+      <summary>En-tête Pragma qui spécifie les directives spécifiques à l'implémentation qui peuvent s'appliquer à tout agent tout au long de la chaîne de requête/réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.ProxyAuthorization">
+      <summary>En-tête Proxy-Authorization qui spécifie les informations d'identification que le client doit présenter pour s'authentifier auprès d'un proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Range">
+      <summary>En-tête Range qui spécifie à la ou les sous-plages de la réponse que les requêtes du client doivent être retournées plutôt que l'intégralité de la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Referer">
+      <summary>En-tête Referer qui spécifie l'URI de la ressource à partir de laquelle l'URI de la requête a été obtenu.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Te">
+      <summary>En-tête TE qui spécifie les encodages de transfert admis pour la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Trailer">
+      <summary>En-tête Trailer qui spécifie les champs d'en-tête présents dans le code de fin d'un message encodé à l'aide de l'encodage de transfert mémorisé en bloc.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.TransferEncoding">
+      <summary>En-tête Transfer-Encoding qui spécifie le type de transformation éventuellement appliqué au corps du message.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Translate">
+      <summary>En-tête Translate (extension Microsoft à la spécification HTTP utilisée conjointement avec la fonctionnalité WebDAV).</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Upgrade">
+      <summary>En-tête Upgrade qui spécifie les protocoles de communication supplémentaires pris en charge par le client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.UserAgent">
+      <summary>En-tête User-Agent qui spécifie les informations relatives à l'agent client.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Via">
+      <summary>En-tête Via qui spécifie les protocoles intermédiaires que la passerelle et les agents proxy doivent utiliser.</summary>
+    </member>
+    <member name="F:System.Net.HttpRequestHeader.Warning">
+      <summary>En-tête Warning qui spécifie des informations supplémentaires à propos de l'état ou de la transformation d'un message qui ne peut pas être répercuté dans le message.</summary>
+    </member>
+    <member name="T:System.Net.HttpResponseHeader">
+      <summary>En-têtes HTTP qui peuvent être spécifiés dans une réponse serveur.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.AcceptRanges">
+      <summary>En-tête Accept-Ranges qui spécifie la plage qui est acceptée par le serveur.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Age">
+      <summary>En-tête Age qui spécifie l'heure, en secondes, depuis la génération de la réponse par le serveur d'origine.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Allow">
+      <summary>En-tête Allow qui spécifie le jeu de méthodes HTTP qui sont pris en charge.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.CacheControl">
+      <summary>En-tête Cache-Control qui spécifie les directives de mise en cache devant être respectées par l'ensemble des mécanismes de mise en cache tout au long de la chaîne de demande/réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Connection">
+      <summary>En-tête Connection qui spécifie les options désirées pour une connexion particulière.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentEncoding">
+      <summary>En-tête Content-Encoding qui spécifie les encodages appliqués aux données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLanguage">
+      <summary>En-tête Content-Language qui spécifie le ou les langages naturels des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLength">
+      <summary>En-tête Content-Length qui spécifie la longueur en octets des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentLocation">
+      <summary>En-tête Content-Location qui spécifie un URI à partir duquel le corps fourni peut être obtenu.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentMd5">
+      <summary>En-tête Content-MD5 qui spécifie le résumé MD5 des données relatives au corps fournies en vue d'assurer un contrôle de l'intégrité des messages de bout en bout.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentRange">
+      <summary>En-tête Range qui spécifie à la ou les sous-plages de la réponse que les demandes du client doivent être retournées plutôt que l'intégralité de la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ContentType">
+      <summary>En-tête Content-Type qui spécifie le type MIME des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Date">
+      <summary>En-tête Date qui spécifie la date et l'heure de lancement de la réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ETag">
+      <summary>En-tête Etag qui spécifie la valeur actuelle pour la variante demandée. </summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Expires">
+      <summary>En-tête Expires qui spécifie la date et l'heure après lesquelles les données relatives au corps fournies doivent être considérées comme périmées.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.KeepAlive">
+      <summary>En-tête Keep-Alive qui spécifie un paramètre à utiliser pour préserver une connexion persistante.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.LastModified">
+      <summary>En-tête Last-Modified qui spécifie la date et l'heure de la dernière modification des données relatives au corps fournies.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Location">
+      <summary>En-tête Location qui spécifie un URI vers lequel le client est redirigé pour obtenir la ressource demandée.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Pragma">
+      <summary>En-tête Pragma qui spécifie les directives spécifiques à l'implémentation qui peuvent s'appliquer à tout agent tout au long de la chaîne de requête/réponse.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.ProxyAuthenticate">
+      <summary>En-tête Proxy-Authenticate qui spécifie que le client doit s'authentifier auprès d'un proxy.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.RetryAfter">
+      <summary>En-tête Retry-After  qui spécifie une durée (en secondes), ou une date et une heure, après lesquelles le client peut réessayer de lancer sa demande.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Server">
+      <summary>En-tête Server qui spécifie des informations à propos de l'agent serveur d'origine.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.SetCookie">
+      <summary>En-tête Set-Cookie qui spécifie les données de cookie qui sont présentées au client.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Trailer">
+      <summary>En-tête Trailer qui spécifie que les champs d'en-tête indiqués sont présents dans le code de fin d'un message qui est encodé à l'aide du codage de transfert mémorisé en bloc.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.TransferEncoding">
+      <summary>En-tête Transfer-Encoding qui spécifie le type de transformation éventuellement appliqué au corps du message.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Upgrade">
+      <summary>En-tête Upgrade qui spécifie les protocoles de communication supplémentaires pris en charge par le client.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Vary">
+      <summary>En-tête Vary qui spécifie les en-têtes de demande qui sont utilisés pour déterminer si une réponse mise en cache est nouvelle.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Via">
+      <summary>En-tête Via qui spécifie les protocoles intermédiaires que la passerelle et les agents proxy doivent utiliser.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.Warning">
+      <summary>En-tête Warning qui spécifie des informations supplémentaires à propos de l'état ou de la transformation d'un message qui ne peut pas être répercuté dans le message.</summary>
+    </member>
+    <member name="F:System.Net.HttpResponseHeader.WwwAuthenticate">
+      <summary>En-tête WWW-Authenticate qui spécifie que le client doit s'authentifier auprès du serveur.</summary>
+    </member>
+    <member name="T:System.Net.WebHeaderCollection">
+      <summary>Contient des en-têtes de protocole associés à une demande ou à une réponse.</summary>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.#ctor">
+      <summary>Initialise une nouvelle instance de la classe <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.AllKeys">
+      <summary>Obtient tous les noms d'en-têtes (clés) de la collection.</summary>
+      <returns>Tableau de type <see cref="T:System.String" /> contenant tous les noms d'en-têtes dans une demande Web.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Count">
+      <summary>Obtient le nombre d'en-têtes de la collection.</summary>
+      <returns>
+        <see cref="T:System.Int32" /> qui indique le nombre d'en-têtes dans une demande.</returns>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpRequestHeader)">
+      <summary>Obtient ou définit l'en-tête de demande spécifié.</summary>
+      <returns>Instance de <see cref="T:System.String" /> qui contient la valeur d'en-tête spécifiée.</returns>
+      <param name="header">Valeur de l'en-tête de demande.</param>
+      <exception cref="T:System.InvalidOperationException">Cette instance de <see cref="T:System.Net.WebHeaderCollection" /> n'autorise pas d'instances de <see cref="T:System.Net.HttpRequestHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.Net.HttpResponseHeader)">
+      <summary>Obtient ou définit l'en-tête de réponse spécifié.</summary>
+      <returns>Instance de <see cref="T:System.String" /> qui contient l'en-tête spécifié.</returns>
+      <param name="header">Valeur de l'en-tête de réponse.</param>
+      <exception cref="T:System.ArgumentOutOfRangeException">La longueur de <paramref name="value" /> est supérieure à 65535. </exception>
+      <exception cref="T:System.InvalidOperationException">Cette instance de <see cref="T:System.Net.WebHeaderCollection" /> n'autorise pas d'instances de <see cref="T:System.Net.HttpResponseHeader" />. </exception>
+      <PermissionSet>
+        <IPermission class="System.Security.Permissions.SecurityPermission, mscorlib, Version=2.0.3600.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" version="1" Flags="UnmanagedCode, ControlEvidence" />
+      </PermissionSet>
+    </member>
+    <member name="P:System.Net.WebHeaderCollection.Item(System.String)">
+      <summary>Obtient ou définit l'en-tête de réponse spécifié.</summary>
+      <returns>En-tête de réponse spécifié.</returns>
+      <param name="name">Nom de l'en-tête de demande spécifié.</param>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.Remove(System.String)">
+      <summary>Supprime de la collection l'en-tête spécifié.</summary>
+      <param name="name">Nom de l'en-tête à supprimer de la collection. </param>
+      <exception cref="T:System.ArgumentNullException">
+        <paramref name="name" /> a la valeur null<see cref="F:System.String.Empty" />. </exception>
+      <exception cref="T:System.ArgumentException">
+        <paramref name="name" /> est un en-tête restreint.ou <paramref name="name" /> contient des caractères non valides. </exception>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.System#Collections#IEnumerable#GetEnumerator">
+      <summary>Retourne un énumérateur qui peut itérer au sein de l'instance de <see cref="T:System.Net.WebHeaderCollection" />.</summary>
+      <returns>retourne <see cref="T:System.Collections.IEnumerator" /> ;Un énumérateur qui peut itérer au sein de l'instance de <see cref="T:System.Net.WebHeaderCollection" />.</returns>
+    </member>
+    <member name="M:System.Net.WebHeaderCollection.ToString">
+      <summary>Cette méthode est obsolète.</summary>
+      <returns>Représentation <see cref="T:System.String" /> de la collection.</returns>
+    </member>
+  </members>
+</doc>

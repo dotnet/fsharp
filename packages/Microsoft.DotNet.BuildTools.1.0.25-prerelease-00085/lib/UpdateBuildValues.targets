@@ -1,0 +1,50 @@
+<Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask TaskName="GetNextRevisionNumber" AssemblyFile="$(ToolsDir)Microsoft.DotNet.Build.Tasks.dll" />
+
+  <PropertyGroup>
+    <GitWorkingBranch Condition="'$(GitWorkingBranch)' == ''">master</GitWorkingBranch>
+  </PropertyGroup>
+
+  <Target Name="GetNextRevisionNumber"
+    BeforeTargets="Build;BuildAllProjects"
+    Condition="'$(UpdateBuildValues)' == 'true'"
+    >
+    <GetNextRevisionNumber
+      VersionPropsFile="$(SourceDir)BuildValues.props">
+      <Output PropertyName="RevisionNumber" TaskParameter="RevisionNumber" />
+    </GetNextRevisionNumber>
+  </Target>
+
+  <Target Name="CommitBuildValues"
+    AfterTargets="BuildPackages"
+    Condition="'$(UpdateBuildValues)' == 'true'"
+    >
+    <!-- configure the commit to show up as the dotnet bot -->
+    <Exec
+      WorkingDirectory="$(SourceDir)"
+      StandardOutputImportance="Low"
+      Command="git config user.name &quot;dotnet-bot&quot;" />
+
+    <Exec
+      WorkingDirectory="$(SourceDir)"
+      StandardOutputImportance="Low"
+      Command="git config user.email &quot;dotnet-bot@microsoft.com&quot;" />
+
+    <!-- commit and push to origin -->
+    <Exec
+      WorkingDirectory="$(SourceDir)"
+      StandardOutputImportance="Low"
+      Command="git checkout $(GitWorkingBranch)" />
+
+    <Exec
+      WorkingDirectory="$(SourceDir)"
+      StandardOutputImportance="Low"
+      Command="git commit -m &quot;Automated commit of revision number value $(RevisionNumber).&quot; $(SourceDir)BuildValues.props" />
+
+    <Exec
+      WorkingDirectory="$(SourceDir)"
+      StandardOutputImportance="Low"
+      Command="git push origin $(GitWorkingBranch)" />
+
+  </Target>
+</Project>
