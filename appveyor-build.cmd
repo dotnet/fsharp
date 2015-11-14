@@ -17,6 +17,15 @@ if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :failure
 
+:: See <http://www.appveyor.com/docs/environment-variables>
+if defined APPVEYOR (
+    rem See <http://www.appveyor.com/docs/build-phase>
+    if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
+	rem HACK HACK HACK
+	set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+    )
+)
+
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
