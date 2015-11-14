@@ -260,9 +260,9 @@ goto :EOF
 
 :COMPILERUNIT
 
-set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
-set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
-set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
+set XMLFILE=CompilerUnit_%compilerunitsuffix%_Xml.xml
+set OUTPUTFILE=CompilerUnit_%compilerunitsuffix%_Output.log
+set ERRORFILE=CompilerUnit_%compilerunitsuffix%_Error.log
 
 echo "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
      "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
