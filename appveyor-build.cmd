@@ -11,11 +11,11 @@ if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.ex
 if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 
 :vsversionset
-if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :eof
+if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure
 
 if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :eof
+if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :failure
 
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
