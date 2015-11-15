@@ -279,3 +279,6 @@ echo "%NUNITPATH%\nunit-console-x86.exe" /framework:V4.0 /nologo /result=%XMLFIL
      "%NUNITPATH%\nunit-console-x86.exe" /framework:V4.0 /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF
+
+:: Note: "goto :EOF" returns from an in-batchfile "call" command
+:: in preference to returning from the entire batch file.
