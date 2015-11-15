@@ -994,13 +994,16 @@ module Shim =
                 let isInvalidPath(p:string) = 
                     String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) <> -1
 
+                let isInvalidFilename(p:string) =   
+                    String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) <> -1  
+
                 let isInvalidDirectory(d:string) = 
                     d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
                 isInvalidPath (path) || 
                 let directory = Path.GetDirectoryName(path)
                 let filename = Path.GetFileName(path)
-                isInvalidDirectory(directory) || isInvalidPath(filename)
+                isInvalidDirectory(directory) || isInvalidFilename(filename)  
 
             member __.GetTempPathShim() = System.IO.Path.GetTempPath()
 
