@@ -1,8 +1,8 @@
-FSharp.Compiler.*
-FSharp.Core.*
-HostedCompilerServer.*
-ILComparer.*
-diff.*
-x86
-AMD64
-nunit
+/FSharp.Compiler.*
+/FSharp.Core.*
+/HostedCompilerServer.*
+/ILComparer.*
+/diff.*
+/x86/
+/AMD64/
+/nunit/
