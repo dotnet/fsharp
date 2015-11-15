@@ -1,0 +1,1 @@
+"%~dp0..\..\..\..\..\.nuget\nuget.exe" push "%~dp0..\..\..\..\..\Release\coreclr\nuget\*.nupkg" 6580174f-7bec-43cc-9233-c09fc3af7f61 -source https://www.myget.org/F/fsharp-daily 

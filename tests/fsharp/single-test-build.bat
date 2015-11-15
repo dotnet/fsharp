@@ -3,7 +3,6 @@
 setlocal
 if EXIST build.ok DEL /f /q build.ok
 
-echo  FSCOREDLL_CORECLR_PATH='%FSCOREDLL_CORECLR_PATH%'
 echo PERMUTATIONS='%permutations%'
 call %~d0%~p0..\config.bat
 
@@ -118,7 +117,7 @@ goto :DOBASIC
 goto :DOBASIC
 
 :FSC_CORECLR
-@Echo Build for CORECLR
+@Echo do :CORECLR
 rem Build references currently hard coded need a better long term solution
 set platform=win7-x64
 For %%A in ("%cd%") do (Set TestCaseName=%%~nxA)
@@ -138,8 +137,8 @@ echo %command_line_args%
 fsi %command_line_args%
 echo Errorlevel: %errorlevel%
 if ERRORLEVEL 1 goto Error
-
 goto :EOF
+
 :FSC_BASIC
 @echo do :FSC_BASIC
 :DOBASIC
@@ -168,7 +167,6 @@ goto :EOF
 if exist test-hw.* (
   "%FSC%" %fsc_flags% -o:test-hw.exe -g %sourceshw%
   if ERRORLEVEL 1 goto Error
-
 
   if NOT EXIST dont.run.peverify (
     "%PEVERIFY%" test-hw.exe

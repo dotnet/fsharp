@@ -56,9 +56,9 @@ type internal SimpleEventLoop() =
                  setSignal exitSignal
     interface System.IDisposable with 
          member x.Dispose() =
-                     runSignal.Close();
-                     exitSignal.Close();
-                     doneSignal.Close();
+                     runSignal.Dispose();
+                     exitSignal.Dispose();
+                     doneSignal.Dispose();
                      
 
 
@@ -67,8 +67,10 @@ type InteractiveSession()  =
     let mutable evLoop = (new SimpleEventLoop() :> IEventLoop)
     let mutable showIDictionary = true
     let mutable showDeclarationValues = true
-    let mutable args =                
-        System.Environment.GetCommandLineArgs()         
+#if FX_NO_GETCOMMANDLINEARG
+#else
+    let mutable args = System.Environment.GetCommandLineArgs()         
+#endif
     let mutable fpfmt = "g10"
     let mutable fp = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider)
     let mutable printWidth = 78
@@ -91,10 +93,13 @@ type InteractiveSession()  =
     member self.ShowIDictionary with get() = showIDictionary and set v = showIDictionary <- v
     member self.AddedPrinters with get() = addedPrinters and set v = addedPrinters <- v
 
+#if FX_NO_GETCOMMANDLINEARG
+#else
     [<CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays")>]
     member self.CommandLineArgs
        with get() = args 
        and set v  = args <- v
+#endif
 
     member self.AddPrinter(printer : 'T -> string) =
       addedPrinters <- Choice1Of2 (typeof<'T>, (fun (x:obj) -> printer (unbox x))) :: addedPrinters

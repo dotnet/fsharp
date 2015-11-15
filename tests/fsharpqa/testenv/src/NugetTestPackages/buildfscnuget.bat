@@ -1,6 +1,6 @@
 @echo off
 
-set pkgversion="1.0.0-alpha-0001"
+set pkgversion="1.0.0-alpha-0002"
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
