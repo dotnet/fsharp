@@ -20,25 +20,38 @@ if not exist "%~dp0%..\packages\NUnit.Runners.2.6.4\tools\" (
 
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
+SET TTAGS=
 set _tmp=%3
-if not '%_tmp%' == '' set TTAGS_ARG=-ttags:%_tmp:"=%
+if not '%_tmp%' == '' (
+	set TTAGS_ARG=-ttags:%_tmp:"=%
+	set TTAGS=%_tmp:"=%
+)
 if /I '%_tmp%' == 'coreclr' (
     set single_threaded=true
     set permutations=FSC_CORECLR
-)
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
 set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
+set NO_TTAGS=ReqPP,NOOPEN
 set _tmp=%4
-if not '%_tmp%' == '' set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
+if not '%_tmp%' == '' (
+	set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
+	set NO_TTAGS=ReqPP,NOOPEN,%_tmp:"=%
+)
 
-if /I "%APPVEYOR_CI%" == "1" (set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI)
+if /I "%APPVEYOR_CI%" == "1" (
+	set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI
+	set NO_TTAGS=%NO_TTAGS%,NO_CI
+)
 
 if /I not '%single_threaded%' == 'true' (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
-set REDUCED_RUNTIME=1
-if "%REDUCED_RUNTIME%" == "1" set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
+set REDUCED_RUNTIME=0
+if "%REDUCED_RUNTIME%" == "1" (
+	set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
+	set NO_TTAGS=%NO_TTAGS%,Expensive
+)
 
 rem Set this to 1 in order to use an external compiler host process
 rem    This only has an effect when running the FSHARPQA tests, but can
@@ -96,6 +109,10 @@ exit /b 1
 
 :FSHARP
 
+if not '%FSHARP_TEST_SUITE_USE_NUNIT_RUNNER%' == '' (
+	goto :FSHARP_NUNIT
+)
+
 set RESULTFILE=FSharp_Results.log
 set FAILFILE=FSharp_Failures.log
 set FAILENV=FSharp_Failures
@@ -116,6 +133,32 @@ if errorlevel 1 (
   type %RESULTSDIR%\%FAILFILE%
   exit /b 1
 )
+goto :EOF
+
+
+:FSHARP_NUNIT
+
+set FSHARP_TEST_SUITE_CONFIGURATION=%FLAVOR%
+
+set XMLFILE=%RESULTSDIR%\FSharpNunit_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\FSharpNunit_Output.log
+set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
+
+setlocal EnableDelayedExpansion
+
+set TTAGS_NUNIT_ARG=
+if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=--include="!TTAGS!")
+
+set NO_TTAGS_NUNIT_ARG=
+if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=--exclude="!NO_TTAGS!")
+
+SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0-beta-3\tools\nunit-console.exe
+
+echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
+
+"%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
+
+
 goto :EOF
 
 

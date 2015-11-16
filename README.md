@@ -24,10 +24,34 @@ This project is subject to the Apache Licence, Version 2.0. A copy of the licens
 
 ###Development and Testing
 
-See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing. 
-####[Click here for a list of required Frameworks and Development Tools](https://github.com/Microsoft/visualfsharp/wiki/Required-Software)
-
+See [DEVGUIDE.md](DEVGUIDE.md) and [TESTGUIDE.md](TESTGUIDE.md) in the root of the repo for details on build, development, and testing.
 Quickstart guides for build and test can be found [here](https://github.com/Microsoft/visualfsharp/wiki/Build-Quickstart) and [here](https://github.com/Microsoft/visualfsharp/wiki/Test-Quickstart), respectively.
+ 
+###Required Tools for Windows Development and Testing
+
+###Development tools
+
+For F# 3.1.X development
+
+- [Visual Studio 2013](http://www.visualstudio.com/en-us/downloads) + latest updates (or the free [Visual Studio Community Edition](http://www.visualstudio.com/products/visual-studio-community-vs))
+- [Visual Studio 2013 SDK](https://www.microsoft.com/en-us/download/details.aspx?id=40758)
+
+For F# 4.0 development
+
+- [Visual Studio 2015](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
+- [Visual Studio 2015 SDK](http://www.visualstudio.com/en-us/downloads/visual-studio-2015-downloads-vs)
+
+###Additional frameworks
+
+- [Git for windows](http://msysgit.github.io/)
+- [Perl](http://www.perl.org/get.html#win32) (ActiveState 5.16.3 is known to be supported)
+- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
+- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
+- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
+- [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 
 ###Contributing
 
