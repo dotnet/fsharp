@@ -60,7 +60,10 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 
-%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+@if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
+
+REM %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
 
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
@@ -102,6 +105,9 @@ call RunTests.cmd release coreunit
 
 call RunTests.cmd release fsharp coreclr
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreclr' failed && goto :failure
+
+call RunTests.cmd release coreunitcoreclr
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
 
 popd
 
