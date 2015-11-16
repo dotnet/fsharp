@@ -1,4 +1,4 @@
-[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/fsharp4.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/fsharp4)
+[![Build status](https://img.shields.io/appveyor/ci/KevinRansom/visualfsharp-radou/master.svg)](https://ci.appveyor.com/project/KevinRansom/visualfsharp-radou/branch/master)
 
 [![Join the chat at https://gitter.im/Microsoft/visualfsharp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/visualfsharp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
