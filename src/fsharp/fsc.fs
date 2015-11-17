@@ -1822,9 +1822,11 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
     let pdbfileOpt = if not runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
     let mdbfileOpt = if runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
 
-    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfileOpt,mdbfileOpt,sigDataP,mainModuleName,fsDataP,assemblyName,errorLogger,exiter
+    let xmlDocOutputOpt = tcConfig.xmlDocOutputFile |> Option.map ILBinaryWriter.EmitTo.File
 
-let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedAssembly, topAttrs, tcConfig: TcConfig, outfile, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, assemblyName, errorLogger, exiter: Exiter) =
+    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfileOpt,mdbfileOpt,sigDataP,mainModuleName,fsDataP,xmlDocOutputOpt,assemblyName,errorLogger,exiter
+
+let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedAssembly, topAttrs, tcConfig: TcConfig, outfile, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, xmlDocOutputOpt, assemblyName, errorLogger, exiter: Exiter) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
@@ -1854,8 +1856,6 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
         | _ -> None
 
     // write interface, xmldoc
-    let xmlDocOutputOpt = tcConfig.xmlDocOutputFile |> Option.map ILBinaryWriter.EmitTo.File
-
     begin
       ReportTime tcConfig ("Write Interface File");
       use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
