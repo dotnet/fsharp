@@ -1973,20 +1973,20 @@ let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxM
 let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)) = 
     ReportTime tcConfig "Write .NET Binary"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
-    let outfile = tcConfig.MakePathAbsolute outfile
+    let outfilePath = tcConfig.MakePathAbsolute outfile
 
-    let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+    let pdbfilePath = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
 
-    let pdbfileOpt = if not runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
-    let mdbfileOpt = if runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
+    let pdbfileOpt = if not runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
+    let mdbfileOpt = if runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
 
     let dumpDebugInfoOpt =
         if tcConfig.dumpDebugInfo then 
-            Some(ILBinaryWriter.EmitTo.File(outfile + ".debuginfo")) 
+            Some(ILBinaryWriter.EmitTo.File(outfilePath + ".debuginfo")) 
         else 
             None
 
-    let outfileP = ILBinaryWriter.EmitTo.File(outfile)
+    let outfileP = ILBinaryWriter.EmitTo.File(outfilePath)
 
     FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo, exiter)
 
