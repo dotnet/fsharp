@@ -549,7 +549,7 @@ module XmlDocWriter =
        
         doModuleSig None generatedCcu.Contents;          
 
-    let writeXmlDoc (assemblyName,generatedCcu:CcuThunk,xmlfile) =
+    let writeXmlDoc (assemblyName,generatedCcu:CcuThunk,os) =
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let members = ref []
         let addMember id xmlDoc = 
@@ -585,8 +585,6 @@ module XmlDocWriter =
             List.iter doTycon mtype.TypeDefinitions
        
         doModule generatedCcu.Contents;
-
-        use os = File.CreateText(xmlfile)
 
         fprintfn os ("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         fprintfn os ("<doc>");
@@ -1870,7 +1868,8 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
           let xmlFile = tcConfig.MakePathAbsolute xmlFile
           if not (Filename.hasSuffixCaseInsensitive "xml" xmlFile ) then 
             error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup));
-          XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,xmlFile)
+          use os = File.CreateText(xmlFile)
+          XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,os)
         )
       ReportTime tcConfig ("Write HTML docs");
     end;
