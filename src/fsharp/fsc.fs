@@ -1967,12 +1967,7 @@ let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxM
             exiter.Exit 1
 
     AbortOnError(errorLogger,tcConfig,exiter)
-        
-    Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
 
-let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)) = 
-    ReportTime tcConfig "Write .NET Binary"
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
     let outfilePath = tcConfig.MakePathAbsolute outfile
 
     let pdbfilePath = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
@@ -1987,6 +1982,12 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
             None
 
     let outfileP = ILBinaryWriter.EmitTo.File(outfilePath)
+        
+    Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,signingInfo,exiter)
+
+let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, signingInfo, exiter)) = 
+    ReportTime tcConfig "Write .NET Binary"
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
 
     FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo, exiter)
 
