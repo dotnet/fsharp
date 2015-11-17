@@ -962,7 +962,7 @@ let createSystemNumericsExportList tcGlobals =
 module MainModuleBuilder = 
     let CreateMainModule  
             (tcConfig:TcConfig,tcGlobals,
-             pdbfile,assemblyName,outfile,topAttrs,
+             pdbfile,assemblyName,mainModuleName,topAttrs,
              (iattrs,intfDataResources),optDataResources,
              codegenResults,assemVerFromAttrib,metadataVersion,secDecls) =
 
@@ -1199,7 +1199,7 @@ module MainModuleBuilder =
         // Add attributes, version number, resources etc. 
         {mainModule with 
               StackReserveSize = tcConfig.stackReserveSize
-              Name = (if tcConfig.target = Module then Filename.fileNameOfPath outfile else mainModule.Name);
+              Name = (if tcConfig.target = Module then mainModuleName else mainModule.Name);
               SubSystemFlags = (if tcConfig.target = WinExe then 2 else 3) ;
               Resources= resources;
               ImageBase = (match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b);
@@ -1937,8 +1937,9 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
     let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
 
+    let mainModuleName = Filename.fileNameOfPath outfile
 
-    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
+    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,mainModuleName,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
 
     AbortOnError(errorLogger,tcConfig,exiter)
 
