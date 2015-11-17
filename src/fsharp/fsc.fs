@@ -1854,7 +1854,7 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
         | _ -> None
 
     // write interface, xmldoc
-    let xmlDocOutputOpt = tcConfig.xmlDocOutputFile
+    let xmlDocOutputOpt = tcConfig.xmlDocOutputFile |> Option.map ILBinaryWriter.EmitTo.File
 
     begin
       ReportTime tcConfig ("Write Interface File");
@@ -1864,13 +1864,17 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
       if xmlDocOutputOpt.IsSome then 
           XmlDocWriter.computeXmlDocSigs (tcGlobals,generatedCcu) 
       ReportTime tcConfig ("Write XML docs");
-      xmlDocOutputOpt |> Option.iter ( fun xmlFile -> 
+      match xmlDocOutputOpt with
+      | Some(ILBinaryWriter.EmitTo.File(xmlFile)) ->
           let xmlFile = tcConfig.MakePathAbsolute xmlFile
           if not (Filename.hasSuffixCaseInsensitive "xml" xmlFile ) then 
             error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup));
           use os = File.CreateText(xmlFile)
           XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,os)
-        )
+      | Some(ILBinaryWriter.EmitTo.Stream(xmlStream)) ->
+          let os = new StreamWriter(xmlStream)
+          XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,os)
+      | None -> ()
       ReportTime tcConfig ("Write HTML docs");
     end;
 
