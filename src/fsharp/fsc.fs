@@ -1859,20 +1859,29 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
       ReportTime tcConfig ("Write HTML docs");
     end;
 
+    let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+    let sigDataP = ILBinaryWriter.EmitTo.File(sigDataFileName)
+
+    let fsDataFileName = (Filename.chopExtension outfile)+".fsdata"
+    let fsDataP = ILBinaryWriter.EmitTo.File(fsDataFileName)
+
+    let mainModuleName = Filename.fileNameOfPath outfile
+
+    let pdbfilePath = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+
+    let pdbfileOpt = if not runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
+    let mdbfileOpt = if runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
 
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
+    Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfileOpt, mdbfileOpt, sigDataP, mainModuleName, fsDataP, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
   
-let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, typedAssembly, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
+let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, typedAssembly, topAttrs, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
       
     ReportTime tcConfig ("Encode Interface Data");
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
-    
-    let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-    let sigDataP = ILBinaryWriter.EmitTo.File(sigDataFileName)
 
     let sigDataAttributes,sigDataResources = 
         EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, errorLogger, generatedCcu, outfile, sigDataP, exiter)
@@ -1895,9 +1904,6 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
         
     ReportTime tcConfig ("Encoding OptData");
     let optDataResources = EncodeOptimizationData(tcGlobals,tcConfig,outfile,exportRemapping,(generatedCcu,optimizationData))
-
-    let fsDataFileName = (Filename.chopExtension outfile)+".fsdata"
-    let fsDataP = ILBinaryWriter.EmitTo.File(fsDataFileName)
 
     let sigDataResources, _optimizationData = 
         if tcConfig.useSignatureDataFile then 
@@ -1922,14 +1928,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
             sigDataResources, optDataResources
 
 
-    let mainModuleName = Filename.fileNameOfPath outfile
-
     let outfilePath = tcConfig.MakePathAbsolute outfile
-
-    let pdbfilePath = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
-
-    let pdbfileOpt = if not runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
-    let mdbfileOpt = if runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
 
     let dumpDebugInfoOpt =
         if tcConfig.dumpDebugInfo then 
@@ -1942,7 +1941,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfileP,optimizedImpls,topAttrs,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,mainModuleName,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
+    Args(tcConfig,tcImports,tcGlobals,errorLogger,generatedCcu,outfileP,optimizedImpls,topAttrs,pdbfile,mdbfile,dumpDebugInfoOpt,mainModuleName,assemblyName, (sigDataAttributes, sigDataResources), optDataResources,assemVerFromAttrib,signingInfo,metadataVersion,exiter)
 
 let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, mdbfile, dumpDebugInfo, mainModuleName, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
   
