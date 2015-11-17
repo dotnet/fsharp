@@ -1861,8 +1861,10 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
       use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
       if tcConfig.printSignature   then InterfaceFileWriter.WriteInterfaceFile (tcGlobals,tcConfig, InfoReader(tcGlobals,tcImports.GetImportMap()), typedAssembly);
       ReportTime tcConfig ("Write XML document signatures")
-      if xmlDocOutputOpt.IsSome then 
+      match xmlDocOutputOpt with
+      | Some(_) ->
           XmlDocWriter.computeXmlDocSigs (tcGlobals,generatedCcu) 
+      | None -> ()
       ReportTime tcConfig ("Write XML docs");
       match xmlDocOutputOpt with
       | Some(ILBinaryWriter.EmitTo.File(xmlFile)) ->
