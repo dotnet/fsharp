@@ -962,7 +962,7 @@ let createSystemNumericsExportList tcGlobals =
 module MainModuleBuilder = 
     let CreateMainModule  
             (tcConfig:TcConfig,tcGlobals,
-             pdbfile,assemblyName,mainModuleName,topAttrs,
+             debuggable,assemblyName,mainModuleName,topAttrs,
              (iattrs,intfDataResources),optDataResources,
              codegenResults,assemVerFromAttrib,metadataVersion,secDecls) =
 
@@ -1019,7 +1019,7 @@ module MainModuleBuilder =
                                   [tcGlobals.ilg.typ_Int32],[ILAttribElem.Int32( 8)], []) 
                    yield! iattrs
                    yield! codegenResults.ilAssemAttrs
-                   if Option.isSome pdbfile then 
+                   if debuggable then 
                        yield (tcGlobals.ilg.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
                    yield! reflectedDefinitionAttrs ]
 
@@ -1955,7 +1955,9 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
     let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
 
-    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,mainModuleName,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
+    let debuggable = (Option.isSome pdbfile) || (Option.isSome mdbfile)
+
+    let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,debuggable,assemblyName,mainModuleName,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
 
     AbortOnError(errorLogger,tcConfig,exiter)
     
