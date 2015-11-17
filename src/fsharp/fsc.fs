@@ -1890,6 +1890,9 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
     ReportTime tcConfig ("Encoding OptData");
     let optDataResources = EncodeOptimizationData(tcGlobals,tcConfig,outfile,exportRemapping,(generatedCcu,optimizationData))
 
+    let fsDataFileName = (Filename.chopExtension outfile)+".fsdata"
+    let fsDataP = ILBinaryWriter.EmitTo.File(fsDataFileName)
+
     let sigDataResources, _optimizationData = 
         if tcConfig.useSignatureDataFile then 
             let bytes = [| yield! BinaryGenerationUtilities.i32 0x7846ce27
@@ -1902,8 +1905,12 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
                                    yield! bytes
                                | _ -> 
                                    failwith "unreachable: expected a local resource" |]
-            let sigDataFileName = (Filename.chopExtension outfile)+".fsdata"
-            File.WriteAllBytes(sigDataFileName,bytes)
+            //TODO instead of bytes array we can directly write to stream, less memory pressure
+            match fsDataP with
+            | ILBinaryWriter.EmitTo.Stream stream ->
+                stream.Write(bytes, 0, bytes.Length)
+            | ILBinaryWriter.EmitTo.File path ->
+                File.WriteAllBytes(path,bytes)
             [], []
         else
             sigDataResources, optDataResources
