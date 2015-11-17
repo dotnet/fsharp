@@ -550,8 +550,6 @@ module XmlDocWriter =
         doModuleSig None generatedCcu.Contents;          
 
     let writeXmlDoc (assemblyName,generatedCcu:CcuThunk,xmlfile) =
-        if not (Filename.hasSuffixCaseInsensitive "xml" xmlfile ) then 
-            error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup));
         (* the xmlDocSigOf* functions encode type into string to be used in "id" *)
         let members = ref []
         let addMember id xmlDoc = 
@@ -1870,6 +1868,8 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
       ReportTime tcConfig ("Write XML docs");
       xmlDocOutputOpt |> Option.iter ( fun xmlFile -> 
           let xmlFile = tcConfig.MakePathAbsolute xmlFile
+          if not (Filename.hasSuffixCaseInsensitive "xml" xmlFile ) then 
+            error(Error(FSComp.SR.docfileNoXmlSuffix(), Range.rangeStartup));
           XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,xmlFile)
         )
       ReportTime tcConfig ("Write HTML docs");
