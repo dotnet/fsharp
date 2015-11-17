@@ -1675,7 +1675,7 @@ module StaticLinker =
 type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
 
 module FileWriter = 
-    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
+    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
         let (SigningInfo(delaysign, signerOpt, container)) = signingInfo
         try
             if !progress then dprintn "Writing assembly...";
@@ -1697,17 +1697,6 @@ module FileWriter =
                                 // Note:: don't use errorR here since we really want to fail and not produce a binary
                                 error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
 
-                let pdbfileOpt = if not runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
-                let mdbfileOpt = if runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
-
-                let dumpDebugInfoOpt =
-                    if tcConfig.dumpDebugInfo then 
-                        Some(ILBinaryWriter.EmitTo.File(outfile + ".debuginfo")) 
-                    else 
-                        None
-
-                let outfileP = ILBinaryWriter.EmitTo.File(outfile)
-
                 let options : ILBinaryWriter.options = 
                     { ilg = ilGlobals
                       pdbfile = pdbfileOpt
@@ -1720,6 +1709,10 @@ module FileWriter =
                 ILBinaryWriter.WriteILBinary (outfileP, options, ilxMainModule, tcConfig.noDebugData)
 
             with Failure msg -> 
+                let outfile = 
+                    match outfileP with 
+                    | ILBinaryWriter.EmitTo.File path -> path
+                    | ILBinaryWriter.EmitTo.Stream _ -> "to stream"
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile,msg), rangeCmdArgs))
         with e -> 
             errorRecoveryNoRange e
@@ -1983,7 +1976,19 @@ let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, o
     let outfile = tcConfig.MakePathAbsolute outfile
 
     let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
-    FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
+
+    let pdbfileOpt = if not runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
+    let mdbfileOpt = if runningOnMono then pdbfile |> Option.map ILBinaryWriter.EmitTo.File else None
+
+    let dumpDebugInfoOpt =
+        if tcConfig.dumpDebugInfo then 
+            Some(ILBinaryWriter.EmitTo.File(outfile + ".debuginfo")) 
+        else 
+            None
+
+    let outfileP = ILBinaryWriter.EmitTo.File(outfile)
+
+    FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo, exiter)
 
     AbortOnError(errorLogger, tcConfig, exiter)
     if tcConfig.showLoadedAssemblies then
