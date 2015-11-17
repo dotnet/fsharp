@@ -1941,19 +1941,6 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     let ilxMainModule = MainModuleBuilder.CreateMainModule (tcConfig,tcGlobals,pdbfile,assemblyName,outfile,topAttrs,idata,optDataResources,codegenResults,assemVerFromAttrib,metadataVersion,secDecls)
 
     AbortOnError(errorLogger,tcConfig,exiter)
-    
-    Args (tcConfig,errorLogger,staticLinker,ilGlobals,outfile,pdbfile,ilxMainModule,signingInfo,exiter)
-
-let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter)) = 
-      
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlGen)
-    
-    ReportTime tcConfig "ILX -> IL (Unions)"; 
-    let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
-    ReportTime tcConfig "ILX -> IL (Funcs)"; 
-    let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
-
-    AbortOnError(errorLogger,tcConfig,exiter)
 
     let outfilePath = tcConfig.MakePathAbsolute outfile
 
@@ -1969,6 +1956,19 @@ let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile
             None
 
     let outfileP = ILBinaryWriter.EmitTo.File(outfilePath)
+    
+    Args (tcConfig,errorLogger,staticLinker,ilGlobals,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,ilxMainModule,signingInfo,exiter)
+
+let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo, exiter: Exiter)) = 
+      
+    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlGen)
+    
+    ReportTime tcConfig "ILX -> IL (Unions)"; 
+    let ilxMainModule = EraseUnions.ConvModule ilGlobals ilxMainModule
+    ReportTime tcConfig "ILX -> IL (Funcs)"; 
+    let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
+
+    AbortOnError(errorLogger,tcConfig,exiter)
 
     Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,signingInfo,exiter)
   
