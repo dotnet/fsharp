@@ -1959,7 +1959,7 @@ let main2b(Args(tcConfig: TcConfig, tcImports, tcGlobals, errorLogger, generated
     
     Args (tcConfig,errorLogger,staticLinker,ilGlobals,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,ilxMainModule,signingInfo,exiter)
 
-let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo, exiter: Exiter)) = 
+let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile, mdbfile, dumpDebugInfo, ilxMainModule, signingInfo, exiter: Exiter)) = 
       
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.IlGen)
     
@@ -1970,10 +1970,10 @@ let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfileP, pdbfil
 
     AbortOnError(errorLogger,tcConfig,exiter)
 
-    Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,signingInfo,exiter)
+    Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,mdbfile,dumpDebugInfo,signingInfo,exiter)
   
 
-let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxMainModule, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, signingInfo, exiter:Exiter)) = 
+let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxMainModule, outfile, pdbfile, mdbfile, dumpDebugInfo, signingInfo, exiter:Exiter)) = 
         
     let ilxMainModule =  
         try  staticLinker ilxMainModule
@@ -1984,13 +1984,13 @@ let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxM
 
     AbortOnError(errorLogger,tcConfig,exiter)
         
-    Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,signingInfo,exiter)
+    Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfile,pdbfile,mdbfile,dumpDebugInfo,signingInfo,exiter)
 
-let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, signingInfo, exiter)) = 
+let main4 (Args (tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, mdbfile, dumpDebugInfo, signingInfo, exiter)) = 
     ReportTime tcConfig "Write .NET Binary"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
 
-    FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo, exiter)
+    FileWriter.EmitIL (tcConfig, ilGlobals, errorLogger, outfile, pdbfile, mdbfile, dumpDebugInfo, ilxMainModule, signingInfo, exiter)
 
     AbortOnError(errorLogger, tcConfig, exiter)
     if tcConfig.showLoadedAssemblies then
