@@ -1858,15 +1858,17 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
         | _ -> None
 
     // write interface, xmldoc
+    let xmlDocOutputOpt = tcConfig.xmlDocOutputFile
+
     begin
       ReportTime tcConfig ("Write Interface File");
       use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Output)    
       if tcConfig.printSignature   then InterfaceFileWriter.WriteInterfaceFile (tcGlobals,tcConfig, InfoReader(tcGlobals,tcImports.GetImportMap()), typedAssembly);
       ReportTime tcConfig ("Write XML document signatures")
-      if tcConfig.xmlDocOutputFile.IsSome then 
+      if xmlDocOutputOpt.IsSome then 
           XmlDocWriter.computeXmlDocSigs (tcGlobals,generatedCcu) 
       ReportTime tcConfig ("Write XML docs");
-      tcConfig.xmlDocOutputFile |> Option.iter ( fun xmlFile -> 
+      xmlDocOutputOpt |> Option.iter ( fun xmlFile -> 
           let xmlFile = tcConfig.MakePathAbsolute xmlFile
           XmlDocWriter.writeXmlDoc (assemblyName,generatedCcu,xmlFile)
         )
