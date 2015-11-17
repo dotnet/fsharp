@@ -1812,9 +1812,23 @@ let main0(argv,bannerAlreadyPrinted,exiter:Exiter, errorLoggerProvider : ErrorLo
              errorLoggerProvider,
              disposables)
 
-    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger,exiter
 
-let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedAssembly, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter) =
+    let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+    let sigDataP = ILBinaryWriter.EmitTo.File(sigDataFileName)
+
+    let fsDataFileName = (Filename.chopExtension outfile)+".fsdata"
+    let fsDataP = ILBinaryWriter.EmitTo.File(fsDataFileName)
+
+    let mainModuleName = Filename.fileNameOfPath outfile
+
+    let pdbfilePath = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+
+    let pdbfileOpt = if not runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
+    let mdbfileOpt = if runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
+
+    tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfileOpt,mdbfileOpt,sigDataP,mainModuleName,fsDataP,assemblyName,errorLogger,exiter
+
+let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedAssembly, topAttrs, tcConfig: TcConfig, outfile, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, assemblyName, errorLogger, exiter: Exiter) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
@@ -1859,23 +1873,10 @@ let main1(tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typ
       ReportTime tcConfig ("Write HTML docs");
     end;
 
-    let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-    let sigDataP = ILBinaryWriter.EmitTo.File(sigDataFileName)
-
-    let fsDataFileName = (Filename.chopExtension outfile)+".fsdata"
-    let fsDataP = ILBinaryWriter.EmitTo.File(fsDataFileName)
-
-    let mainModuleName = Filename.fileNameOfPath outfile
-
-    let pdbfilePath = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
-
-    let pdbfileOpt = if not runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
-    let mdbfileOpt = if runningOnMono then pdbfilePath |> Option.map ILBinaryWriter.EmitTo.File else None
-
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfileOpt, mdbfileOpt, sigDataP, mainModuleName, fsDataP, assemblyName, assemVerFromAttrib, signingInfo, exiter)
+    Args(tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
   
 let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, typedAssembly, topAttrs, pdbfile, mdbfile, sigDataP, mainModuleName, fsDataP, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
