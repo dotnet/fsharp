@@ -1954,19 +1954,6 @@ let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile
     let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
     AbortOnError(errorLogger,tcConfig,exiter)
-    Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,signingInfo,exiter)
-  
-
-let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter:Exiter)) = 
-        
-    let ilxMainModule =  
-        try  staticLinker ilxMainModule
-        with e -> 
-            errorRecoveryNoRange e
-            SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
-            exiter.Exit 1
-
-    AbortOnError(errorLogger,tcConfig,exiter)
 
     let outfilePath = tcConfig.MakePathAbsolute outfile
 
@@ -1982,6 +1969,20 @@ let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxM
             None
 
     let outfileP = ILBinaryWriter.EmitTo.File(outfilePath)
+
+    Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,signingInfo,exiter)
+  
+
+let main3(Args(tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, ilxMainModule, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, signingInfo, exiter:Exiter)) = 
+        
+    let ilxMainModule =  
+        try  staticLinker ilxMainModule
+        with e -> 
+            errorRecoveryNoRange e
+            SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
+            exiter.Exit 1
+
+    AbortOnError(errorLogger,tcConfig,exiter)
         
     Args (tcConfig,errorLogger,ilGlobals,ilxMainModule,outfileP,pdbfileOpt,mdbfileOpt,dumpDebugInfoOpt,signingInfo,exiter)
 
