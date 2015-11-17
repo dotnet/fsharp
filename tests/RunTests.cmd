@@ -147,6 +147,7 @@ echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" -
 
 "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
 
+call :UPLOAD_XML
 
 goto :EOF
 
@@ -256,16 +257,20 @@ set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 echo "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
      "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
+call :UPLOAD_XML
+
 goto :EOF
 
 :COMPILERUNIT
 
-set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
-set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
-set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
+set XMLFILE=CompilerUnit_%compilerunitsuffix%_Xml.xml
+set OUTPUTFILE=CompilerUnit_%compilerunitsuffix%_Output.log
+set ERRORFILE=CompilerUnit_%compilerunitsuffix%_Error.log
 
 echo "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
      "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+
+call :UPLOAD_XML
 
 goto :EOF
 
@@ -278,4 +283,17 @@ set ERRORFILE=IDEUnit_Error.log
 echo "%NUNITPATH%\nunit-console-x86.exe" /framework:V4.0 /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
      "%NUNITPATH%\nunit-console-x86.exe" /framework:V4.0 /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
 
+call :UPLOAD_XML
+
 goto :EOF
+
+:UPLOAD_XML
+
+rem See <http://www.appveyor.com/docs/environment-variables>
+if not defined APPVEYOR goto :EOF
+powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
+
+goto :EOF
+
+:: Note: "goto :EOF" returns from an in-batchfile "call" command
+:: in preference to returning from the entire batch file.
