@@ -1674,7 +1674,7 @@ module StaticLinker =
 type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string option * (*container:*) string option
 
 module FileWriter = 
-    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfileP, pdbfileOpt, mdbfileOpt, dumpDebugInfoOpt, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
+    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, mdbfile, dumpDebugInfo, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
         let (SigningInfo(delaysign, signerOpt, container)) = signingInfo
         try
             if !progress then dprintn "Writing assembly...";
@@ -1698,18 +1698,18 @@ module FileWriter =
 
                 let options : ILBinaryWriter.options = 
                     { ilg = ilGlobals
-                      pdbfile = pdbfileOpt
-                      mdbfile = mdbfileOpt
+                      pdbfile = pdbfile
+                      mdbfile = mdbfile
                       emitTailcalls = tcConfig.emitTailcalls
                       showTimes = tcConfig.showTimes
                       signer = signer
                       fixupOverlappingSequencePoints = false
-                      dumpDebugInfo = dumpDebugInfoOpt  } 
-                ILBinaryWriter.WriteILBinary (outfileP, options, ilxMainModule, tcConfig.noDebugData)
+                      dumpDebugInfo = dumpDebugInfo  } 
+                ILBinaryWriter.WriteILBinary (outfile, options, ilxMainModule, tcConfig.noDebugData)
 
             with Failure msg -> 
                 let outfile = 
-                    match outfileP with 
+                    match outfile with 
                     | ILBinaryWriter.EmitTo.File path -> path
                     | ILBinaryWriter.EmitTo.Stream _ -> "to stream"
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile,msg), rangeCmdArgs))
@@ -1890,7 +1890,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
       
     ReportTime tcConfig ("Encode Interface Data");
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
-
+    
     let sigDataAttributes,sigDataResources = 
         EncodeInterfaceData(tcConfig, tcGlobals, exportRemapping, errorLogger, generatedCcu, outfile, sigDataP, exiter)
         
@@ -1993,7 +1993,6 @@ let main2c(Args(tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile
     let ilxMainModule = EraseClosures.ConvModule ilGlobals ilxMainModule 
 
     AbortOnError(errorLogger,tcConfig,exiter)
-
     Args(tcConfig,errorLogger,staticLinker,ilGlobals,ilxMainModule,outfile,pdbfile,mdbfile,dumpDebugInfo,signingInfo,exiter)
   
 
