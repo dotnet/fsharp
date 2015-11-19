@@ -5,6 +5,7 @@ namespace UnitTests.Tests.LanguageService
 open System
 open System.IO
 open NUnit.Framework
+open NUnit.Framework.Constraints
 open Salsa.Salsa
 open Salsa.VsOpsUtils               
 open Microsoft.FSharp.Compiler
@@ -505,19 +506,19 @@ type IncrementalBuild() =
         let r = GetVectorResult("TypeCheckingStates",e)
             
         ()
-        
-    [<Test;ExpectedException(typeof<Exception>)>]
+
+    [<Test>]
     member public rb.DuplicateExpressionNamesNotAllowed() =
-            let DoIt s = s
-            let b = 
-                let build = new BuildDescriptionScope()
-                let i = InputVector<string> "Input"
-                let r = Vector.Map "Input" DoIt i
-                build.DeclareVectorOutput("Output",r)
-                build.GetInitialPartialBuild(["Input",1,[box ""]],[])
-                            
-            let e = Eval "Output" b
-            ()               
+            Assert.That((fun () -> let DoIt s = s
+                                   let b = 
+                                       let build = new BuildDescriptionScope()
+                                       let i = InputVector<string> "Input"
+                                       let r = Vector.Map "Input" DoIt i
+                                       build.DeclareVectorOutput("Output",r)
+                                       build.GetInitialPartialBuild(["Input",1,[box ""]],[])
+
+                                   let e = Eval "Output" b
+                                   ()), NUnit.Framework.Throws.TypeOf(typeof<Exception>))
 
     [<Test>]
     member public rb.OneToOneWorks() =

@@ -61,24 +61,21 @@ if exist %~dp0..\%1\net40\bin (
     xcopy /Y %~dp0..\%1\net40\bin\FSharp.Core.optdata %~dp0fsharpqa\testenv\bin  || goto :error
 )
 
-set NUNITPATH=%~dp0%..\packages\NUnit.Runners.2.6.4\tools\
+echo set NUNITPATH=%~dp0%..\packages\NUnit.Console.3.0.0\tools
+set NUNITPATH=%~dp0%..\packages\NUnit.Console.3.0.0\tools
+echo if not exist "%NUNITPATH%" 
 if not exist "%NUNITPATH%" (
+    echo here
     pushd %~dp0..
     .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
     popd
 )    
-xcopy "%NUNITPATH%*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+echo and here
+echo xcopy "%NUNITPATH%\*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+xcopy "%NUNITPATH%\*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+echo xcopy "%~dp0fsharpqa\testenv\src\nunit\*.*" "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
 xcopy "%~dp0fsharpqa\testenv\src\nunit\*.*" "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-
-
-set NUNITPATH=%~dp0%..\packages\NUnit.Runners.2.6.4\tools\
-if not exist "%NUNITPATH%" (
-    pushd %~dp0..
-    .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
-    popd
-)    
-xcopy "%NUNITPATH%*.*"  "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
-xcopy "%~dp0fsharpqa\testenv\src\nunit\*.*" "%~dp0fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
+echo here
 
 echo %_fsiexe%
 rem deploy x86 version of compiler and dependencies

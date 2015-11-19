@@ -1,4 +1,4 @@
-@echo OFF
+echo OFF
 setlocal
 
 set FLAVOR=%1
@@ -11,46 +11,48 @@ goto :USAGE
 :flavor_ok
 
 set NUNITPATH=%~dp0\fsharpqa\testenv\bin\nunit\
-if not exist "%~dp0%..\packages\NUnit.Runners.2.6.4\tools\" (
-    pushd %~dp0..
+if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
+    pushd %~dp0
     .\.nuget\nuget.exe restore packages.config -PackagesDirectory packages
     call buildtesttools.cmd %FLAVOR%
     popd
-)    
+)
+SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
 SET TTAGS=
 set _tmp=%3
 if not '%_tmp%' == '' (
-	set TTAGS_ARG=-ttags:%_tmp:"=%
-	set TTAGS=%_tmp:"=%
+    set TTAGS_ARG=-ttags:%_tmp:"=%
+    set TTAGS=%_tmp:"=%
 )
 if /I '%_tmp%' == 'coreclr' (
     set single_threaded=true
     set permutations=FSC_CORECLR
+)
 
 rem "nottags" indicates which test areas/test cases will NOT be run, based on the tags in the test.lst and env.lst files
 set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN
 set NO_TTAGS=ReqPP,NOOPEN
 set _tmp=%4
 if not '%_tmp%' == '' (
-	set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
-	set NO_TTAGS=ReqPP,NOOPEN,%_tmp:"=%
+    set NO_TTAGS_ARG=-nottags:ReqPP,NOOPEN,%_tmp:"=%
+    set NO_TTAGS=ReqPP,NOOPEN,%_tmp:"=%
 )
 
 if /I "%APPVEYOR_CI%" == "1" (
-	set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI
-	set NO_TTAGS=%NO_TTAGS%,NO_CI
+    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,NO_CI
+    set NO_TTAGS=%NO_TTAGS%,NO_CI
 )
 
 if /I not '%single_threaded%' == 'true' (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
 rem This can be set to 1 to reduce the number of permutations used and avoid some of the extra-time-consuming tests
-set REDUCED_RUNTIME=0
+set REDUCED_RUNTIME=1
 if "%REDUCED_RUNTIME%" == "1" (
-	set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
-	set NO_TTAGS=%NO_TTAGS%,Expensive
+    set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Expensive
+    set NO_TTAGS=%NO_TTAGS%,Expensive
 )
 
 rem Set this to 1 in order to use an external compiler host process
@@ -106,11 +108,10 @@ echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|cor
 echo.
 exit /b 1
 
-
 :FSHARP
 
 if not '%FSHARP_TEST_SUITE_USE_NUNIT_RUNNER%' == '' (
-	goto :FSHARP_NUNIT
+    goto :FSHARP_NUNIT
 )
 
 set RESULTFILE=FSharp_Results.log
@@ -149,21 +150,16 @@ setlocal EnableDelayedExpansion
 set TTAGS_NUNIT_ARG=
 if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=--include="!TTAGS!")
 
-set NO_TTAGS_NUNIT_ARG=
-if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=--exclude="!NO_TTAGS!")
+rem set NO_TTAGS_NUNIT_ARG=
+rem if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=--exclude="!NO_TTAGS!")
 
-SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0-beta-3\tools\nunit-console.exe
+echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
 
-echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
-
-"%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
-
-
+"%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
 goto :EOF
 
 
 :FSHARPQA
-
 set OSARCH=%PROCESSOR_ARCHITECTURE%
 
 set X86_PROGRAMFILES=%ProgramFiles%
@@ -264,8 +260,8 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-echo "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-     "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
 
 goto :EOF
 
@@ -275,8 +271,8 @@ set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
 set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
 set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
 
-echo "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
-     "%NUNITPATH%\nunit-console.exe" /nologo /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
 
 goto :EOF
 
@@ -286,7 +282,7 @@ set XMLFILE=IDEUnit_Xml.xml
 set OUTPUTFILE=IDEUnit_Output.log
 set ERRORFILE=IDEUnit_Error.log
 
-echo "%NUNITPATH%\nunit-console-x86.exe" /framework:V4.0 /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
-     "%NUNITPATH%\nunit-console-x86.exe" /framework:V4.0 /nologo /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
 
 goto :EOF

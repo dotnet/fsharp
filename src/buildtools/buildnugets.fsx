@@ -18,7 +18,7 @@ let licenseUrl = @"https://github.com/Microsoft/visualfsharp/blob/master/License
 let projectUrl = @"https://github.com/Microsoft/visualfsharp";
 let tags =       @"Visual F# Compiler FSharp coreclr functional programming";
 
-let nugetArgs = sprintf "pack %s -BasePath \"%s\" -OutputDirectory \"%s\" -ExcludeEmptyDirectories -prop licenseUrl=\"%s\" -prop version=\"%s\" -prop authors=\"%s\" -prop projectURL=\"%s\" -prop tags=\"%s\""
+let nugetArgs = sprintf "pack %s -BasePath \"%s\" -OutputDirectory \"%s\" -ExcludeEmptyDirectories -prop licenseUrl=\"%s\" -prop version=\"%s\" -prop authors=\"%s\" -prop projectURL=\"%s\" -prop tags=\"%s\" -Verbosity detailed"
                         nuspec
                         bindir
                         outdir
