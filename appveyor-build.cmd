@@ -81,9 +81,10 @@ call tests\BuildTestTools.cmd release
 
 @echo on
 pushd tests
-
+set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 call RunTests.cmd release fsharp Smoke
 @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
+set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 
 call RunTests.cmd release fsharpqa Smoke
 @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
