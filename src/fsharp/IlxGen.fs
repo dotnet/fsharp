@@ -6106,7 +6106,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                 (match ilTypeDefKind with ILTypeDefKind.ValueType -> true | _ -> false) &&
                 // All structs are sequential by default 
                 // Structs with no instance fields get size 1, pack 0
-                tycon.AllFieldsAsList |> List.exists (fun f -> not f.IsStatic)
+                tycon.AllFieldsAsList |> List.forall (fun f -> f.IsStatic)
 
             isEmptyStruct && cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty
         
