@@ -1,4 +1,4 @@
-﻿// This sample will guide you through elements of the F# language.  
+﻿// This sample will guide you through elements of the F# language.
 //
 // *******************************************************************************************************
 //   To execute the code in F# Interactive, highlight a section of code and press Alt-Enter or right-click 
@@ -31,9 +31,9 @@
 //    - Recursive functions
 //    - Record types
 //    - Union types
-//    - Option types            
-//    - Pattern matching        
-//    - Units of measure        
+//    - Option types
+//    - Pattern matching
+//    - Units of measure
 //    - Parallel array programming
 //    - Using events
 //    - Database access using type providers
@@ -64,10 +64,10 @@ module Integers =
 module BasicFunctions = 
 
     // Use 'let' to define a function that accepts an integer argument and returns an integer. 
-    let func1 x = x*x + 3             
+    let func1 x = x*x + 3
 
     // Parenthesis are optional for function arguments
-    let func1a (x) = x*x + 3             
+    let func1a (x) = x*x + 3
 
     /// Apply the function, naming the function return result using 'let'. 
     /// The variable type is inferred from the function return type.
@@ -179,7 +179,7 @@ module Lists =
                   if (i+j) % 2 = 1 then 
                       yield (i, j) ]
 
-    /// Square the numbers in numberList, using the pipeline operator to pass an argument to List.map    
+    /// Square the numbers in numberList, using the pipeline operator to pass an argument to List.map
     let squares = 
         numberList 
         |> List.map (fun x -> x*x) 
@@ -205,7 +205,7 @@ module DefiningClasses =
 
         // 'this' specifies a name for the object's self identifier.
         // In instance methods, it must appear before the member name.
-        member this.DX = dx  
+        member this.DX = dx
 
         member this.DY = dy
 
@@ -264,7 +264,7 @@ type ReadFile() =
     member this.ReadLine() = file.ReadLine()
 
     // this class's implementation of IDisposable members
-    interface System.IDisposable with    
+    interface System.IDisposable with
         member this.Dispose() = file.Close()
 
 
@@ -359,9 +359,9 @@ module RecursiveFunctions  =
     /// Computes the greatest common factor of two integers. 
     //  Since all of the recursive calls are tail calls, the compiler will turn the function into a loop,
     //  which improves performance and reduces memory consumption.
-    let rec greatestCommonFactor a b =                       
+    let rec greatestCommonFactor a b =
         if a = 0 then b
-        elif a < b then greatestCommonFactor a (b - a)           
+        elif a < b then greatestCommonFactor a (b - a)
         else greatestCommonFactor (a - b) b
 
     /// Computes the sum of a list of integers using recursion.
@@ -472,19 +472,19 @@ module OptionTypes =
     /// They are used extensively in F# code to represent the cases where many other
     /// languages would use null references.
 
-    type Customer = { zipCode : decimal option }
+    type Customer = { ZipCode : decimal option }
 
     /// Abstract class that computes the shipping zone for the customer's zip code, 
     /// given implementations for the 'getState' and 'getShippingZone' abstract methods.
     [<AbstractClass>]
     type ShippingCalculator =
-        abstract getState : decimal -> string option
-        abstract getShippingZone : string -> int
+        abstract GetState : decimal -> string option
+        abstract GetShippingZone : string -> int
 
         /// Return the shipping zone corresponding to the customer's ZIP code
         /// Customer may not yet have a ZIP code or the ZIP code may be invalid
-        member this.customerShippingZone(customer : Customer) =
-            customer.zipCode |> Option.bind this.getState |> Option.map this.getShippingZone
+        member this.CustomerShippingZone(customer : Customer) =
+            customer.ZipCode |> Option.bind this.GetState |> Option.map this.GetShippingZone
 
 
 
@@ -495,7 +495,7 @@ module OptionTypes =
 module PatternMatching = 
 
     /// A record for a person's first and last name
-    type Person = {     
+    type Person = {
         First : string
         Last  : string
     }
@@ -590,7 +590,7 @@ module Events =
     simpleEvent.Trigger(5)
 
     // create instance of Event that follows standard .NET convention: (sender, EventArgs)
-    let eventForDelegateType = new Event<EventHandler, EventArgs>()    
+    let eventForDelegateType = new Event<EventHandler, EventArgs>()
 
     // add handler
     eventForDelegateType.Publish.AddHandler(
