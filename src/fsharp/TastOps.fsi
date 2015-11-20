@@ -61,6 +61,7 @@ val ensureCcuHasModuleOrNamespaceAtPath : CcuThunk -> Ident list -> CompilationP
 val stripExpr : Expr -> Expr
 
 val valsOfBinds : Bindings -> FlatVals 
+val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
