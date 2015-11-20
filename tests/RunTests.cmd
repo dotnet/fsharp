@@ -275,8 +275,8 @@ set XMLFILE=IDEUnit_Xml.xml
 set OUTPUTFILE=IDEUnit_Output.log
 set ERRORFILE=IDEUnit_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
-     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
+echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
+     "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
 
 call :UPLOAD_XML
 
