@@ -121,7 +121,7 @@ set FAILENV=FSharp_Failures
 rem Hosted compiler not supported for FSHARP suite
 set HOSTED_COMPILER=
 
-where.exe perl > NUL 2> NUL 
+where.exe perl > NUL 2> NUL
 if errorlevel 1 (
   echo Error: perl is not in the PATH
   exit /b 1
@@ -148,14 +148,14 @@ set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
 setlocal EnableDelayedExpansion
 
 set TTAGS_NUNIT_ARG=
-if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=--include="!TTAGS!")
+if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=--where "cat == !TTAGS!")
 
-rem set NO_TTAGS_NUNIT_ARG=
-rem if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=--exclude="!NO_TTAGS!")
+set NO_TTAGS_NUNIT_ARG=
+rem if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=--where "cat != !NO_TTAGS!")
 
-echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
+echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%"
 
-"%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
+"%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%"
 goto :EOF
 
 
@@ -217,7 +217,7 @@ set FSCOREDLLVPREVPATH=%FSCOREDLLVPREVPATH%\FSharp.Core.dll
 for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
 set PATH=%PATH%;%CORDIR%
 
-if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Req20 
+if not exist %WINDIR%\Microsoft.NET\Framework\v2.0.50727\mscorlib.dll set NO_TTAGS_ARG=%NO_TTAGS_ARG%,Req20
 
 set RESULTFILE=FSharpQA_Results.log
 set FAILFILE=FSharpQA_Failures.log
@@ -241,7 +241,7 @@ if /I "%2" == "fsharpqaredirect" (
    set FAILENV=FSharpQARedirect_Failures
 )
 
-where.exe perl > NUL 2> NUL 
+where.exe perl > NUL 2> NUL
 if errorlevel 1 (
   echo Error: perl is not in the PATH
   exit /b 1
@@ -260,8 +260,8 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
-     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll 
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
 
 goto :EOF
 
@@ -271,8 +271,8 @@ set XMLFILE=ComplierUnit_%compilerunitsuffix%_Xml.xml
 set OUTPUTFILE=ComplierUnit_%compilerunitsuffix%_Output.log
 set ERRORFILE=ComplierUnit_%compilerunitsuffix%_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
-     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll 
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
 
 goto :EOF
 
@@ -282,7 +282,7 @@ set XMLFILE=IDEUnit_Xml.xml
 set OUTPUTFILE=IDEUnit_Output.log
 set ERRORFILE=IDEUnit_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
-     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll 
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
 
 goto :EOF
