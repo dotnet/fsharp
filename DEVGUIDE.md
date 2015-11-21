@@ -53,20 +53,8 @@ See [TESTGUIDE.md](TESTGUIDE.md) for full details on how to run tests.
     
 Prior to a **Debug** test run, you need to complete **all** of these steps:
 
-    msbuild src/fsharp-library-build.proj
-    msbuild src/fsharp-compiler-build.proj
-    msbuild src/fsharp-typeproviders-build.proj
-    msbuild src/fsharp-compiler-unittests-build.proj
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=net20
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259
-    msbuild src/fsharp-library-unittests-build.proj
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259
+	msbuild src/fsharp-proto-build.proj
+    msbuild src/fsharp-all-the-things.proj
     src\update.cmd debug -ngen
     tests\BuildTestTools.cmd debug 
 
@@ -78,20 +66,7 @@ Prior to a **Debug** test run, you need to complete **all** of these steps:
 
 Prior to a **Release** test run, you need to do **all** of these:
 
-    msbuild src/fsharp-library-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-compiler-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-typeproviders-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-compiler-unittests-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=net20 /p:Configuration=Release
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-    msbuild src/fsharp-library-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
-    msbuild src/fsharp-library-unittests-build.proj  /p:Configuration=Release
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable7 /p:Configuration=Release
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable78 /p:Configuration=Release
-    msbuild src/fsharp-library-unittests-build.proj /p:TargetFramework=portable259 /p:Configuration=Release
+    msbuild src/fsharp-all-the-things.proj /p:Configuration=Release
     src\update.cmd release -ngen
     tests\BuildTestTools.cmd release 
 

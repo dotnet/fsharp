@@ -5,35 +5,37 @@
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
     <Configuration Condition=" '$(Configuration)' == '' ">Proto</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProtoSupported>true</ProtoSupported>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Build-proto</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
-    <BuildWith>LKG</BuildWith>
     <ProjectGuid>{D8BC791F-C1A9-49DC-9432-0F3090537555}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
-	  <FsSrGen Include="..\FSharp.Build\FSBuild.txt">
-		  <Link>FSBuild.txt</Link>
-	  </FsSrGen>
+    <FsSrGen Include="..\FSharp.Build\FSBuild.txt">
+      <Link>FSBuild.txt</Link>
+    </FsSrGen>
+    <Compile Include="..\FSharp.Build\InternalsVisibleTo.fs" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs">
+      <Link>Utilities/assemblyinfo.FSharp.Build.dll.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
-      <Link>CompilerLocationUtils.fs</Link>
+      <Link>Utilities/CompilerLocationUtils.fs</Link>
     </Compile>
-    <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fsi">
-       <Link>CreateFSharpManifestResourceName.fsi</Link>
-    </Compile>
-    <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fs" >
-       <Link>CreateFSharpManifestResourceName.fs</Link>
-    </Compile>
-
     <Compile Include="..\FSharp.Build\Fsc.fsi">
       <Link>Fsc.fsi</Link>
     </Compile>
     <Compile Include="..\FSharp.Build\Fsc.fs">
       <Link>Fsc.fs</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fsi">
+      <Link>CreateFSharpManifestResourceName.fsi</Link>
+    </Compile>
+    <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fs" >
+      <Link>CreateFSharpManifestResourceName.fs</Link>
     </Compile>
     <CustomCopyLocal Include="..\FSharp.Build\Microsoft.FSharp.targets">
       <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
@@ -44,14 +46,13 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="$(FSCoreLKGPath)" />
     <Reference Include="System" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="Microsoft.Build.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Engine, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" />
-    <Reference Include="Microsoft.Build.Tasks.v4.0" />
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Engine, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.Build.Utilities.$(MSBuildVersionSuffix)" />
+    <Reference Include="Microsoft.Build.Tasks.$(MSBuildVersionSuffix)" />
+    <Reference Include="$(FSCoreLKGPath)" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

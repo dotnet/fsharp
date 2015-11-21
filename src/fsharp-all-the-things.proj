@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+
+<!-- FIXME: This doesn't [re]build Proto. Should it? -->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003"
+         ToolsVersion="4.0" DefaultTargets="Build">
+
+  <ItemGroup>
+    <MiscProject Include="fsharp-compiler-build.proj" />
+    <MiscProject Include="fsharp-typeproviders-build.proj" />
+    <MiscProject Include="fsharp-compiler-unittests-build.proj" />
+
+    <LibProject Include="fsharp-library-build.proj" />
+    <LibProject Include="fsharp-library-unittests-build.proj" />
+
+    <LibFramework Include="net40" />
+    <LibFramework Include="net20" />
+    <LibFramework Include="portable47" />
+    <LibFramework Include="portable7" />
+    <LibFramework Include="portable78" />
+    <LibFramework Include="portable259" />
+  </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <Build>
+      <Framework>net40</Framework>
+    </Build>
+  </ItemDefinitionGroup>
+
+  <Target Name="Clean" DependsOnTargets="ComputeBuilds">
+    <Message Text="%(Build.Identity) Fx=%(Framework)" />
+    <!--
+      Here, we don't want StopOnFirstFailure because we want to
+      clean as much as possible.
+    -->
+    <MSBuild Projects="@(Build)"
+             Properties="TargetFramework=%(Framework)"
+             Targets="Clean"/>
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="ComputeBuilds">
+    <Message Text="%(Build.Identity) Fx=%(Framework)" />
+    <MSBuild Projects="@(Build)"
+             Properties="TargetFramework=%(Framework)"
+             Targets="Build"
+             StopOnFirstFailure="true" />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="ComputeBuilds">
+    <Message Text="%(Build.Identity) Fx=%(Framework)" />
+    <MSBuild Projects="@(Build)"
+             Properties="TargetFramework=%(Framework)"
+             Targets="Rebuild"
+             StopOnFirstFailure="true" />
+  </Target>
+
+  <!-- Create <Build> items for desired project/framework combos -->
+  <Target Name="ComputeBuilds" Returns="@(Build)">
+    <ItemGroup>
+      <Build Include="@(MiscProject)" />
+      <!-- Double loop from http://stackoverflow.com/a/18032552/294313 -->
+      <Build Include="@(LibProject)">
+        <Framework>%(LibFramework.Identity)</Framework>
+      </Build>
+    </ItemGroup>
+  </Target>
+</Project>

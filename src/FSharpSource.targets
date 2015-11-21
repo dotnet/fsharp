@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+
+<!--
+Include this AFTER the bulk of the project file.
+-->
+
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-   <PropertyGroup>
-       <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
-       <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.0.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.0.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.4.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.4.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.4.9055</FSCoreVersion>
-       <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.4.9055</FSCoreVersion>
-   </PropertyGroup>
-   <Choose>
+  <PropertyGroup>
+    <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
+    <FSCoreVersion Condition="'$(TargetFramework)' != 'net20' and $(IsPortableProfile) != 'true'">4.4.0.9055</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'net20'">2.4.0.9055</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.4.9055</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.4.9055</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.4.9055</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.4.9055</FSCoreVersion>
+  </PropertyGroup>
+  <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' or '$(Configuration)' == 'VSDebug' or '$(Configuration)' == 'VSRelease' ">
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
             <When Condition="'$(AssemblyName)' == 'FSharp.Core'">
-               <PropertyGroup>
+              <PropertyGroup>
                 <OtherFlags>$(OtherFlags) --version:$(FSCoreVersion)</OtherFlags>
                 <OtherFlags>$(OtherFlags) --delaysign+ --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
@@ -93,6 +98,8 @@
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
+    <BuildWith>LKG</BuildWith>
   </PropertyGroup>
 
   <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
@@ -102,8 +109,8 @@
 
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);OPEN_BUILD</DefineConstants>
-  </PropertyGroup>  
-  
+  </PropertyGroup>
+
   <PropertyGroup>
     <NUnitVersion>3.0.0</NUnitVersion>
     <NUnitFullVersion>3.0.5797.27534</NUnitFullVersion>
@@ -205,8 +212,8 @@
     <TargetFrameworkProfile>Profile47</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
-  
-   <!-- Target Portable Profile 7 -->
+
+  <!-- Target Portable Profile 7 -->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable7'">
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_NETCORE_PORTABLE7</DefineConstants>
@@ -235,11 +242,11 @@
     <DefineConstants>$(DefineConstants);PUT_TYPE_PROVIDERS_IN_FSCORE</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants> 
-    <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants> 
+    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_EVENTWAITHANDLE_NO_IDISPOSABLE</DefineConstants>
     <TargetingNetCorePortable>true</TargetingNetCorePortable>
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>    
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
   <!-- Target Portable Profile 78 -->
@@ -632,11 +639,9 @@
 
   <!-- Build with LKG compiler (location is determined by Microsoft.FSharp.targets). The output compiler has suffix "-proto" -->
   <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' == 'true'">
-    <FsBuildSuffix>-proto</FsBuildSuffix>
     <OutputPath>$(FSharpSourcesRoot)\..\vs\$(protoCLIDir)\bin</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(BuildWith)' == 'LKG' And '$(ProjectLanguage)' == 'FSharp' AND '$(STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY)' != 'true'">
-    <FsBuildSuffix>-proto</FsBuildSuffix>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(protoCLIDir)\bin</OutputPath>
   </PropertyGroup>
 
@@ -667,27 +672,27 @@
     </When>
     <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
       <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll</FSCoreLKGPath>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.1.0\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
     <When Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets') AND '$(BuildWith)' == 'LKG'">
       <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll</FSCoreLKGPath>
-         <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll</FSCoreLKGPath>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\3.0\Runtime\v4.0\FSharp.Core.dll</FSCoreLKGPath>
+        <FSCoreLKGPath Condition="Exists('$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll')">$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(BuildWith)' == 'LKG'">
       <PropertyGroup>
-         <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
-         <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
-         <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
+        <FSharpTargetsPath>..\lkg\FSharp-$(LkgVersion)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FscToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FscToolPath>
+        <FSCoreLKGPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin\FSharp.Core.dll</FSCoreLKGPath>
       </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
-         <FSharpTargetsPath>$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -713,10 +718,13 @@
 
   <Target Name="ValidateConfiguration">
     <Error
-            Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, Proto"
+            Text="Configuration '$(Configuration)' is not one of the supported configurations: Debug, Release, and sometimes Proto"
             Condition="'$(Configuration)'!='Release' and '$(Configuration)'!='Debug' and '$(Configuration)'!='VSRelease' and '$(Configuration)'!='VSDebug' and '$(Configuration)'!='Proto'"/>
     <Error
-            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: 'empty', net20, net40, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
+            Text="Configuration 'Proto' is not supported for '$(MSBuildProjectFile)'"
+            Condition="'$(Configuration)'=='Proto' and '$(ProtoSupported)'!='true'"/>
+    <Error
+            Text="TargetFramework '$(TargetFramework)' is not one of the supported configurations: net20, net40, sl3-wp, sl5, sl5-compiler, portable47, portable7, portable78, portable259"
             Condition="! ('$(TargetFramework)' == 'net40' or 
                           '$(TargetFramework)' == 'net20' or 
                           '$(TargetFramework)' == 'sl5' or 
@@ -728,11 +736,11 @@
     <Error
         Text="TargetFramework '$(TargetFramework)' is only supported when building FSharp.Core.dll and FSharp.Core.Unittests.dll. All other components must be built with TargetFramework=net40"
         Condition="'$(AssemblyName)' != 'FSharp.Core' and '$(AssemblyName)' != 'FSharp.Core.Unittests' and '$(TargetFramework)' != 'net40'"/>
-        
+
   </Target>
 
   <!-- This build step copies files to the output folder while replacing build variables in the text of
-             those file. -->
+             those files. -->
   <Target
           Name="CustomCopyLocalFiles"
           Inputs="@(CustomCopyLocal)"
@@ -747,14 +755,14 @@
   </Target>
 
   <Import Project="..\lkg\FSharp-$(LkgVersion)\bin\FSharp.SRGen.targets" />
-  
+
   <Target Name="ReorderCompileItems"
       BeforeTargets="CoreCompile"
-      Condition="'$(GenerateTargetFrameworkAttribute)' == 'true' AND '$(AssemblyName)' == 'FSharp.Core'">  
+      Condition="'$(GenerateTargetFrameworkAttribute)' == 'true' AND '$(AssemblyName)' == 'FSharp.Core'">
     <ItemGroup>
-        <!-- Infrastructure puts AssemblyAttributes.fs at the beginning of the list and this will result and error when compiling FSharp.Core because all primitive types are not defined yet - fixup is required-->
-        <CompileAfter Include="@(CompileBefore)"/>
-        <CompileBefore Remove="@(CompileBefore)"/>   
+      <!-- Infrastructure puts AssemblyAttributes.fs at the beginning of the list and this will result and error when compiling FSharp.Core because all primitive types are not defined yet - fixup is required-->
+      <CompileAfter Include="@(CompileBefore)"/>
+      <CompileBefore Remove="@(CompileBefore)"/>
     </ItemGroup>
   </Target>
   <Target Name="BeforeBuild" BeforeTargets="Build">

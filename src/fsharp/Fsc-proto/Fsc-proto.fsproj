@@ -4,6 +4,7 @@
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
     <Configuration Condition=" '$(Configuration)' == '' ">Proto</Configuration>
+    <ProtoSupported>true</ProtoSupported>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -15,8 +16,7 @@
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc-proto</AssemblyName>
-    <DefineConstants>BUILDING_PROTO;BUILDING_WITH_LKG;COMPILER;$(DefineConstants)</DefineConstants>
-    <BuildWith>LKG</BuildWith>
+    <DefineConstants>BUILDING_PROTO;COMPILER;$(DefineConstants)</DefineConstants>
     <ProjectGuid>{9D7C9060-9263-40EB-8FE3-1E4E3C6D941C}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --stackReserveSize:4096000</OtherFlags>
@@ -33,15 +33,14 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="$(FSCoreLKGPath)" />
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Runtime.Remoting" />
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
     <ProjectReference Include="..\FSharp.Compiler-proto\FSharp.Compiler-proto.fsproj">
       <Project>{33E0FB8C-93DC-4AD7-9DCD-9FBDA6C2F061}</Project>
       <Name>FSharp.Compiler-proto</Name>
     </ProjectReference>
+    <Reference Include="$(FSCoreLKGPath)" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

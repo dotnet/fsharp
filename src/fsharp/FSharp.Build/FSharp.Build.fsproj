@@ -31,15 +31,9 @@
     <CustomCopyLocal Include="Microsoft.FSharp.targets">
       <TargetFilename>Microsoft.FSharp.targets</TargetFilename>
     </CustomCopyLocal>
-    <Content Include="Microsoft.FSharp.targets">
-      <SubType>Content</SubType>
-    </Content>
     <CustomCopyLocal Include="Microsoft.Portable.FSharp.targets">
       <TargetFilename>Microsoft.Portable.FSharp.targets</TargetFilename>
     </CustomCopyLocal>
-    <Content Include="Microsoft.Portable.FSharp.targets">
-      <SubType>Content</SubType>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

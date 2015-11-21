@@ -1,5 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+
+<!--
+Include this BEFORE the bulk of the project file
+-->
+
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <!-- Tail calls on, even in debug -->
@@ -64,6 +69,7 @@
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+    <FsBuildSuffix>-proto</FsBuildSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -76,7 +82,7 @@
     <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV12=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <MSBuildVersionSuffix>core</MSBuildVersionSuffix>
     <MSBuildVersionSuffix Condition="'$(VisualStudioVersion)' == '12.0'">V12.0</MSBuildVersionSuffix>
