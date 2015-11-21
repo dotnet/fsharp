@@ -1464,6 +1464,22 @@ See also ...\SetupAuthoring\FSharp\Registry\FSProjSys_Registration.wxs, e.g.
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
+
+                // refresh which refs (if any) contain type providers
+
+                let timingFile = Environment.ExpandEnvironmentVariables("%userprofile%\\desktop\\TPRefCheckTiming.txt")
+                if File.Exists(timingFile) then
+                    let sw = Stopwatch.StartNew()
+                    for ref in this.GetReferenceContainer().EnumReferences() do
+                        match ref with
+                        | :? TypeProviderContainingReferenceNode as tpRef ->
+                            let containsTp = Microsoft.FSharp.Compiler.Driver.ContainsTypeProvider(tpRef.AssemblyPath)
+                            UIThread.RunSync (fun _ -> tpRef.ContainsTypeProvider <- containsTp)
+                        | _ -> ()
+                    sw.Stop()
+                    File.AppendAllText(timingFile, sprintf "%f %s\r\n" sw.Elapsed.TotalSeconds x.ProjectFile)
+
+                // invoke the real compilation if requested
                 if actuallyBuild then
                     compile.Invoke(0)
                 else

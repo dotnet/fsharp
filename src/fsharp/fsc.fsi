@@ -8,6 +8,9 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TypeChecker
 
+/// F# IDE tools can invoke this to obtain the set of referenced assemblies which contain type provider definitions
+val internal ContainsTypeProvider : string -> bool
+
 #if NO_COMPILER_BACKEND
 #else
 

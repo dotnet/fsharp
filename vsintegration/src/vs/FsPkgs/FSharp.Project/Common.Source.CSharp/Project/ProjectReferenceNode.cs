@@ -22,7 +22,7 @@ using Task = Microsoft.VisualStudio.Shell.Task;
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     [CLSCompliant(false), ComVisible(true)]
-    public class ProjectReferenceNode : ReferenceNode
+    public class ProjectReferenceNode : TypeProviderContainingReferenceNode
     {
         /// <summary>
         /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
@@ -497,6 +497,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     projectReference = new Automation.OAProjectReference(this);
                 }
                 return projectReference;
+            }
+        }
+
+        public override string AssemblyPath
+        {
+            get
+            {
+                return this.ReferencedProjectOutputPath;
             }
         }
 

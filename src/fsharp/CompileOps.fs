@@ -2342,7 +2342,23 @@ let GetAutoOpenAttributes ilg ilModule =
 
 let GetInternalsVisibleToAttributes ilg ilModule = 
     ilModule |> GetCustomAttributesOfIlModule |> List.choose (TryFindInternalsVisibleToAttr ilg)
-    
+
+let CheckOneAssemblyForTypeProviderAttribute (path : string) =
+#if EXTENSIONTYPING
+      let ilGlobals =
+        // "mscorlib" primary assembly can be assumed for the purposes of simply reading off assembly-level attributes
+        mkILGlobals (IL.mkMscorlibBasedTraits ILScopeRef.Local) (Some("mscorlib")) true
+      let opts = { ILBinaryReader.mkDefault ilGlobals with                       
+                      ILBinaryReader.optimizeForMemory=true;
+                      ILBinaryReader.pdbPath = None; } 
+      let reader = ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes path opts
+      GetCustomAttributesOfIlModule reader.ILModuleDef |> List.exists isTypeProviderAssemblyAttr
+#else
+      // prevent unused value warning
+      ignore path
+      false
+#endif
+
 //----------------------------------------------------------------------------
 // TcConfig 
 //--------------------------------------------------------------------------

@@ -637,6 +637,9 @@ val ParseOneInputFile : TcConfig * Lexhelp.LexResourceManager * string list * st
 /// Get the initial type checking environment including the loading of mscorlib/System.Core, FSharp.Core
 /// applying the InternalsVisibleTo in referenced assemblies and opening 'Checked' if requested.
 val GetInitialTcEnv : string option * range * TcConfig * TcImports * TcGlobals -> TcEnv
+
+/// opens an IL reader for the specified assembly and checks if there is a TypeProviderAssembly assembly-level attribute
+val CheckOneAssemblyForTypeProviderAttribute : string -> bool
                 
 [<Sealed>]
 /// Represents the incremental type checking state for a set of inputs

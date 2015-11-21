@@ -247,14 +247,14 @@ let AdjustForScriptCompile(tcConfigB:TcConfigBuilder,commandLineSourceFiles,lexR
     List.rev !allSources
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// This code has logic for a prefix of the compile that is also used by the project system to do the front-end
-// logic that starts at command-line arguments and gets as far as importing all references (used for deciding
-// to pop up the type provider security dialog).
+// This code has logic for a prefix of the compile that starts at command-line arguments and gets as far as
+// importing all references.
 //
-// The project system needs to be able to somehow crack open assemblies to look for type providers in order to pop up the security dialog when necessary when a user does 'Build'.
-// Rather than have the PS re-code that logic, it re-uses the existing code in the very front end of the compiler that parses the command-line and imports the referenced assemblies.
-// This code used to be in fsc.exe.  The PS only references FSharp.LanguageService.Compiler, so this code moved from fsc.exe to FS.C.S.dll so that the PS can re-use it.
-// A great deal of the logic of this function is repeated in fsi.fs, so maybe should refactor fsi.fs to call into this as well.
+// This code resides in FSharp.LanguageService.Compiler due to the historical need for IDE tools to access it,
+// as a way to push the compilation far enough to detect type providers in referenced assemblies. The VS IDE now
+// uses a much lighter-weight approach to acheive this, so the need for this API in the language service compiler is reduced.
+// In the long term it could be worth considering whether this should be moved.  There is also a fair amount of repeated
+// code/logic in fsi.fs which does the same thing.
 let GetTcImportsFromCommandLine
         (argv : string[], 
          defaultFSharpBinariesDir : string, 
@@ -447,6 +447,17 @@ let GetTcImportsFromCommandLine
             (tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig)
                     
     tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger
+
+// Only called by IDE tools to detect which references contain type provider definitions.
+// This invokes none of the true compilation pipeline, it simply reads the IL of the specified assembly
+//   and checks if TypeProviderAssemblyAttribute is present as an assembly-level attribute
+// Keeping this relatively fast and lightweight is key, as it will be invoked for all assembly and project references
+// in the solution.
+let ContainsTypeProvider(assemblyPath : string) =
+    if String.IsNullOrEmpty(assemblyPath) then false else
+    try
+        Microsoft.FSharp.Compiler.CompileOps.CheckOneAssemblyForTypeProviderAttribute(assemblyPath)
+    with _ -> false
 
 #if NO_COMPILER_BACKEND
 #else
