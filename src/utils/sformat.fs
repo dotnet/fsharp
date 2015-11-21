@@ -1207,7 +1207,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             | :? bool   as b -> (if b then "true" else "false")
             | :? char   as c -> "\'" + formatChar true c + "\'"
             | _ -> try  let text = obj.ToString()
-                        text
+                        if text = null then "" else text
                    with e ->
                      // If a .ToString() call throws an exception, catch it and use the message as the result.
                      // This may be informative, e.g. division by zero etc...
