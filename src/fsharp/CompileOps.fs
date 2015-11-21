@@ -1356,7 +1356,7 @@ let SanitizeFileName fileName implicitIncludeDir =
     //  - if you have a #line directive, e.g. 
     //        # 1000 "Line01.fs"
     //    then it also asserts.  But these are edge cases that can be fixed later, e.g. in bug 4651.
-    //System.Diagnostics.Debug.Assert(System.IO.Path.IsPathRooted(fileName), sprintf "filename should be absolute: '%s'" fileName)
+    //System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(fileName), sprintf "filename should be absolute: '%s'" fileName)
     try
         let fullPath = FileSystem.GetFullPathShim(fileName)
         let currentDir = implicitIncludeDir
@@ -2691,13 +2691,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             // When running on Mono we lead everyone to believe we're doing .NET 2.0 compilation 
             // by default. 
             if runningOnMono then 
-                let mono10SysDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() 
-                assert(mono10SysDir.EndsWith("1.0",StringComparison.Ordinal));
-                let mono20SysDir = Path.Combine(Path.GetDirectoryName mono10SysDir, "2.0")
-                if Directory.Exists(mono20SysDir) then
-                     [mono20SysDir]
-                else 
-                     [mono10SysDir]
+                [System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()]
             else                                
 #endif
                 try 
@@ -3914,7 +3908,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                    outputFile             = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
                    referencedAssemblies   = [| for r in resolutions.GetAssemblyResolutions() -> r.resolvedPath |]
-                   temporaryFolder        = Path.GetTempPath() }
+                   temporaryFolder        = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
             // TcImport objects.  So the callbacks provided in the type provider config

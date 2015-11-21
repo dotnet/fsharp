@@ -33,7 +33,6 @@
 //<Expects status="success">section='NoSection                ' ! option=ranges                         kind=OptionSet</Expects>
 //<Expects status="success">section='NoSection                ' ! option=terms                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=termsfile                      kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=use-incremental-build          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=stamps                         kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=pause                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=detuple                        kind=OptionInt</Expects>

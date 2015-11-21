@@ -118,6 +118,7 @@ type PublicKey =
     member IsKeyToken: bool
     member Key: byte[]
     member KeyToken: byte[]
+    static member KeyAsToken: byte[] -> PublicKey 
 
 type ILVersionInfo = uint16 * uint16 * uint16 * uint16
 
