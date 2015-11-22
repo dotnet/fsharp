@@ -1,4 +1,4 @@
-echo OFF
+@echo OFF
 setlocal
 
 set FLAVOR=%1
