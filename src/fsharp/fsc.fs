@@ -258,7 +258,11 @@ type DefaultLoggerProvider() =
     inherit ErrorLoggerProvider()
     override this.CreateErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter) = ConsoleErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter)
 
-let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals, lcidFromCodePage, argv) =
+#if FX_LCIDFROMCODEPAGE
+let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,lcidFromCodePage,argv) =
+#else
+let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,argv) =
+#endif
     let inputFilesRef   = ref ([] : string list)
     let collect name = 
         let lower = String.lowercase name
@@ -273,10 +277,12 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
     ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
     let inputFiles = List.rev !inputFilesRef
 
+#if FX_LCIDFROMCODEPAGE
     // Check if we have a codepage from the console
     match tcConfigB.lcid with
     | Some _ -> ()
     | None -> tcConfigB.lcid <- lcidFromCodePage
+#endif
 
     setProcessThreadLocals(tcConfigB)
 
@@ -333,7 +339,11 @@ let GetTcImportsFromCommandLine
         // Rather than start processing, just collect names, then process them. 
         try 
             let sourceFiles = 
-                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, lcidFromCodePage, argv)
+                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, 
+#if FX_LCIDFROMCODEPAGE
+                                                     lcidFromCodePage, 
+#endif
+                                                     argv)
                 AdjustForScriptCompile(tcConfigB,files,lexResourceManager)                     
             sourceFiles
 
