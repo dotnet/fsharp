@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-using FSSafe = Internal.Utilities.FileSystem;
+using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
 using System.Runtime.InteropServices;
 using System.Collections;
@@ -103,7 +103,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
             // Verify that No Directory/file already exists with the new name on disk
-            if (Directory.Exists(newPath) || FSSafe.File.SafeExists(newPath))
+            if (Directory.Exists(newPath) || FSLib.Shim.FileSystem.SafeExists(newPath))
             {
                 return ShowFileOrFolderAlreadExistsErrorMessage(newPath);
             }

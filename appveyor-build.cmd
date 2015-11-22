@@ -4,23 +4,34 @@ set APPVEYOR_CI=1
 
 :: Check prerequisites
 if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS140COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
 if not '%VisualStudioVersion%' == '' goto vsversionset
+if exist "%VS120COMNTOOLS%..\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
 
 :vsversionset
-if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :eof
+if '%VisualStudioVersion%' == '' echo Error: Could not find an installation of Visual Studio && goto :failure
 
 if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
 if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"      set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :eof
+if not exist %_msbuildexe% echo Error: Could not find MSBuild.exe. && goto :failure
+
+:: See <http://www.appveyor.com/docs/environment-variables>
+if defined APPVEYOR (
+    rem See <http://www.appveyor.com/docs/build-phase>
+    if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
+	rem HACK HACK HACK
+	set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+    )
+)
 
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
-.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages
+.\.nuget\NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget\nuget.config
 @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
 :: Build
@@ -72,18 +83,24 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 %_msbuildexe% vsintegration\fsharp-vsintegration-unittests-build.proj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: VS integration unit tests build failed && goto :failure
 
+
 @echo on
 call src\update.cmd release -ngen
-
-@echo on
-call tests\BuildTestTools.cmd release 
-@if ERRORLEVEL 1 echo Error: 'tests\BuildTestTools.cmd release' failed && goto :failure
-
-@echo on
 pushd tests
+
+@echo on
+call BuildTestTools.cmd release 
+@if ERRORLEVEL 1 echo Error: 'BuildTestTools.cmd release' failed && goto :failure
+
+@echo on
+set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
+
+%_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
 call RunTests.cmd release fsharp Smoke
 @if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
+set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 
 call RunTests.cmd release fsharpqa Smoke
 @if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure

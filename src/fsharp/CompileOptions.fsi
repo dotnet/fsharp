@@ -98,3 +98,4 @@ val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
 val ReportTime : TcConfig -> string -> unit
 val GetAbbrevFlagSet : TcConfigBuilder -> bool -> Set<string>
 val PostProcessCompilerArgs : string Set -> string [] -> string list
+val ParseCompilerOptions : (string -> unit) * CompilerOptionBlock list * string list -> unit

@@ -105,10 +105,10 @@
   </PropertyGroup>  
   
   <PropertyGroup>
-    <NUnitVersion>2.6.4</NUnitVersion>
-    <NUnitFullVersion>2.6.4.14350</NUnitFullVersion>
-    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\</NUnitLibDir>
-    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Runners.$(NUnitVersion)\tools\lib\</NUnitToolsLibDir>
+    <NUnitVersion>3.0.0</NUnitVersion>
+    <NUnitFullVersion>3.0.5797.27534</NUnitFullVersion>
+    <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
+    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.Console.$(NUnitVersion)\tools\</NUnitToolsLibDir>
     <FsCheckVersion>2.0.3</FsCheckVersion>
     <FsCheckFullVersion>2.0.3.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>

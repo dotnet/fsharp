@@ -294,6 +294,26 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
+
+    [<Test>]
+    member this.``error on one workflow should cancel all others``() =
+        let counter = 
+            async {
+                let counter = ref 0
+                let job i = async { 
+                    if i = 55 then failwith "boom" 
+                    else 
+                        do! Async.Sleep 1000 
+                        incr counter 
+                }
+
+                let! _ = Async.Parallel [ for i in 1 .. 100 -> job i ] |> Async.Catch
+                do! Async.Sleep 5000
+                return !counter
+            } |> Async.RunSynchronously
+
+        Assert.AreEqual(0, counter)
+
     [<Test>]
     member this.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
         let wh = new System.Threading.ManualResetEvent(false)

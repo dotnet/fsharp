@@ -103,7 +103,7 @@ To build these unit test binaries, from the `src` directory call
 - `msbuild fsharp-library-unittests-build.proj`
   - Output binary is `FSharp.Core.Unittests.dll`
 
-You can execute and re-run these tests using any standard NUnit approach - via graphical `nunit.exe` or on the command line via `nunit-console.exe`.
+You can execute and re-run these tests using any standard NUnit approach - via graphical `nunit.exe` or on the command line via `nunit3-console.exe`.
 
 ### Visual F# Tools IDE Unit Test Suite
 

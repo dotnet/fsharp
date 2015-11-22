@@ -51,3 +51,8 @@ topinit/both69514-noopt.pdb
 
 verify/xmlverify.exe
 verify/xmlverify.pdb
+
+fsi-reload/load1.exe
+fsi-reload/load2.exe
+
+quotesInMultipleModules/module2-staticlink.exe

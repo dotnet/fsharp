@@ -61,6 +61,7 @@ val ensureCcuHasModuleOrNamespaceAtPath : CcuThunk -> Ident list -> CompilationP
 val stripExpr : Expr -> Expr
 
 val valsOfBinds : Bindings -> FlatVals 
+val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 
 //-------------------------------------------------------------------------
 // Build decision trees imperatively
@@ -1324,7 +1325,6 @@ val mkChoiceCaseRef : TcGlobals -> range -> int -> int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
     member Names : string list 
-    member IsTotal: bool
 
     member ResultType : TcGlobals -> range -> TType list -> TType
     member OverallType : TcGlobals -> range -> TType -> TType list -> TType
