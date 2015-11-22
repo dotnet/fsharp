@@ -1414,8 +1414,7 @@ namespace Microsoft.FSharp.Control
                     let count = ref tasks.Length
                     let firstExn = ref None
                     let results = Array.zeroCreate tasks.Length
-                    // Attept to cancel the individual operations if an exception happens on any the other threads
-                    //let failureCTS = new CancellationTokenSource()
+                    // Attept to cancel the individual operations if an exception happens on any of the other threads
                     let innerCTS = new LinkedSubSource(aux.token)
                     let trampolineHolder = aux.trampolineHolder
                     

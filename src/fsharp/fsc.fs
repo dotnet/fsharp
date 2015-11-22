@@ -258,6 +258,49 @@ type DefaultLoggerProvider() =
     inherit ErrorLoggerProvider()
     override this.CreateErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter) = ConsoleErrorLoggerThatQuitsAfterMaxErrors(tcConfigBuilder, exiter)
 
+#if FX_LCIDFROMCODEPAGE
+let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,lcidFromCodePage,argv) =
+#else
+let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder,setProcessThreadLocals,argv) =
+#endif
+    let inputFilesRef   = ref ([] : string list)
+    let collect name = 
+        let lower = String.lowercase name
+        if List.exists (Filename.checkSuffix lower) [".resx"]  then
+            warning(Error(FSComp.SR.fscResxSourceFileDeprecated name,rangeStartup))
+            tcConfigB.AddEmbeddedResource name
+        else
+            inputFilesRef := name :: !inputFilesRef
+    let abbrevArgs = GetAbbrevFlagSet tcConfigB true
+    
+    // This is where flags are interpreted by the command line fsc.exe.
+    ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
+    let inputFiles = List.rev !inputFilesRef
+
+#if FX_LCIDFROMCODEPAGE
+    // Check if we have a codepage from the console
+    match tcConfigB.lcid with
+    | Some _ -> ()
+    | None -> tcConfigB.lcid <- lcidFromCodePage
+#endif
+
+    setProcessThreadLocals(tcConfigB)
+
+    (* step - get dll references *)
+    let dllFiles,sourceFiles = List.partition Filename.isDll inputFiles
+    match dllFiles with
+    | [] -> ()
+    | h::_ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine(h),rangeStartup))
+
+    dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup,f))
+    sourceFiles
+          
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// This code has logic for a prefix of the compile that is also used by the project system to do the front-end
+// logic that starts at command-line arguments and gets as far as importing all references (used for deciding
+// to pop up the type provider security dialog).
+//
 // The project system needs to be able to somehow crack open assemblies to look for type providers in order to pop up the security dialog when necessary when a user does 'Build'.
 // Rather than have the PS re-code that logic, it re-uses the existing code in the very front end of the compiler that parses the command-line and imports the referenced assemblies.
 // This code used to be in fsc.exe.  The PS only references FSharp.LanguageService.Compiler, so this code moved from fsc.exe to FS.C.S.dll so that the PS can re-use it.
@@ -295,37 +338,13 @@ let GetTcImportsFromCommandLine
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them. 
         try 
-            let inputFilesRef   = ref ([] : string list)
-            let collect name = 
-                let lower = String.lowercase name
-                if List.exists (Filename.checkSuffix lower) [".resx"]  then
-                    warning(Error(FSComp.SR.fscResxSourceFileDeprecated name,rangeStartup))
-                    tcConfigB.AddEmbeddedResource name
-                else
-                    inputFilesRef := name :: !inputFilesRef
-            let abbrevArgs = GetAbbrevFlagSet tcConfigB true
-    
-            // This is where flags are interpreted by the command line fsc.exe.
-            ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
-            let inputFiles = List.rev !inputFilesRef
-
+            let sourceFiles = 
+                let files = ProcessCommandLineFlags (tcConfigB, setProcessThreadLocals, 
 #if FX_LCIDFROMCODEPAGE
-            // Check if we have a codepage from the console
-            match tcConfigB.lcid with
-            | Some _ -> ()
-            | None -> tcConfigB.lcid <- lcidFromCodePage
+                                                     lcidFromCodePage, 
 #endif
-            setProcessThreadLocals(tcConfigB)
-
-            // Get DLL references 
-            let dllFiles,sourceFiles = List.partition Filename.isDll inputFiles
-            match dllFiles with
-            | [] -> ()
-            | h::_ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine(h),rangeStartup))
-
-            dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup,f))
-          
-            let sourceFiles = AdjustForScriptCompile(tcConfigB,sourceFiles,lexResourceManager)                     
+                                                     argv)
+                AdjustForScriptCompile(tcConfigB,files,lexResourceManager)                     
             sourceFiles
 
         with e -> 
@@ -375,87 +394,70 @@ let GetTcImportsFromCommandLine
     if not tcConfigB.continueAfterParseFailure then 
         AbortOnError(errorLogger, tcConfig, exiter)
 
-    let tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig = 
-    
-        ReportTime tcConfig "Import mscorlib"
+    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
+    let foundationalTcConfigP = TcConfigProvider.Constant(tcConfig)
+    let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
+    let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
 
-        if tcConfig.useIncrementalBuilder then 
-            ReportTime tcConfig "Incremental Parse and Typecheck"
-            let builder = 
-                new IncrementalFSharpBuild.IncrementalBuilder(tcConfig, directoryBuildingFrom, assemblyName, NiceNameGenerator(), lexResourceManager, sourceFiles,
-                                                                ensureReactive=false, 
-                                                                errorLogger=errorLogger,
-                                                                keepGeneratedTypedAssembly=true)
-            let tcState,topAttribs,typedAssembly,_tcEnv,tcImports,tcGlobals,tcConfig = builder.TypeCheck()
-            tcGlobals,tcImports,tcImports,tcState.Ccu,typedAssembly,topAttribs,tcConfig
-        else
-        
-            ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
-            let foundationalTcConfigP = TcConfigProvider.Constant(tcConfig)
-            let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-            let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
+    // register framework tcImports to be disposed in future
+    disposables.Register frameworkTcImports
 
-            // register framework tcImports to be disposed in future
-            disposables.Register frameworkTcImports
+    // step - parse sourceFiles 
+    ReportTime tcConfig "Parse inputs"
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)            
+    let inputs =
+        try  
+            sourceFiles 
+            |> tcConfig.ComputeCanContainEntryPoint 
+            |> List.zip sourceFiles
+            // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
+            |> List.choose (fun (filename:string,isLastCompiland:bool) -> 
+                let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
+                match ParseOneInputFile(tcConfig,lexResourceManager,["COMPILED"],filename,isLastCompiland,errorLogger,(*retryLocked*)false) with
+                | Some(input)->Some(input,pathOfMetaCommandSource)
+                | None -> None
+                ) 
+        with e -> 
+            errorRecoveryNoRange e
+            SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
+            exiter.Exit 1
 
-            // step - parse sourceFiles 
-            ReportTime tcConfig "Parse inputs"
-            use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse)            
-            let inputs =
-                try  
-                    sourceFiles 
-                    |> tcConfig.ComputeCanContainEntryPoint 
-                    |> List.zip sourceFiles
-                    // PERF: consider making this parallel, once uses of global state relevant to parsing are cleaned up 
-                    |> List.choose (fun (filename:string,isLastCompiland:bool) -> 
-                        let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
-                        match ParseOneInputFile(tcConfig,lexResourceManager,["COMPILED"],filename,isLastCompiland,errorLogger,(*retryLocked*)false) with
-                        | Some(input)->Some(input,pathOfMetaCommandSource)
-                        | None -> None
-                        ) 
-                with e -> 
-                    errorRecoveryNoRange e
-                    SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
-                    exiter.Exit 1
+    if tcConfig.parseOnly then exiter.Exit 0 
+    if not tcConfig.continueAfterParseFailure then 
+        AbortOnError(errorLogger, tcConfig, exiter)
 
-            if tcConfig.parseOnly then exiter.Exit 0 
-            if not tcConfig.continueAfterParseFailure then 
-                AbortOnError(errorLogger, tcConfig, exiter)
+    if tcConfig.printAst then                
+        inputs |> List.iter (fun (input,_filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
 
-            if tcConfig.printAst then                
-                inputs |> List.iter (fun (input,_filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
+    let tcConfig = (tcConfig,inputs) ||> List.fold ApplyMetaCommandsFromInputToTcConfig 
+    let tcConfigP = TcConfigProvider.Constant(tcConfig)
 
-            let tcConfig = (tcConfig,inputs) ||> List.fold ApplyMetaCommandsFromInputToTcConfig 
-            let tcConfigP = TcConfigProvider.Constant(tcConfig)
+    ReportTime tcConfig "Import non-system references"
+    let tcGlobals,tcImports =  
+        let tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
+        tcGlobals,tcImports
 
-            ReportTime tcConfig "Import non-system references"
-            let tcGlobals,tcImports =  
-                let tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP,tcGlobals,frameworkTcImports,otherRes,knownUnresolved)
-                tcGlobals,tcImports
+    // register tcImports to be disposed in future
+    disposables.Register tcImports
 
-            // register tcImports to be disposed in future
-            disposables.Register tcImports
+    if not tcConfig.continueAfterParseFailure then 
+        AbortOnError(errorLogger, tcConfig, exiter)
 
-            if not tcConfig.continueAfterParseFailure then 
-                AbortOnError(errorLogger, tcConfig, exiter)
+    if tcConfig.importAllReferencesOnly then exiter.Exit 0 
 
-            if tcConfig.importAllReferencesOnly then exiter.Exit 0 
+    ReportTime tcConfig "Typecheck"
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
+    let tcEnv0 = GetInitialTcEnv (Some assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
-            ReportTime tcConfig "Typecheck"
-            use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
-            let tcEnv0 = GetInitialTcEnv (Some assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+    // typecheck 
+    let inputs = inputs |> List.map fst
+    let tcState,topAttrs,typedAssembly,_tcEnvAtEnd = 
+        TypeCheck(tcConfig,tcImports,tcGlobals,errorLogger,assemblyName,NiceNameGenerator(),tcEnv0,inputs,exiter)
 
-            // typecheck 
-            let inputs : ParsedInput list = inputs |> List.map fst
-            let tcState,topAttrs,typedAssembly,_tcEnvAtEnd = 
-                TypeCheck(tcConfig,tcImports,tcGlobals,errorLogger,assemblyName,NiceNameGenerator(),tcEnv0,inputs,exiter)
+    let generatedCcu = tcState.Ccu
+    AbortOnError(errorLogger, tcConfig, exiter)
+    ReportTime tcConfig "Typechecked"
 
-            let generatedCcu = tcState.Ccu
-            AbortOnError(errorLogger, tcConfig, exiter)
-            ReportTime tcConfig "Typechecked"
-
-            (tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig)
-                    
     tcGlobals,tcImports,frameworkTcImports,generatedCcu,typedAssembly,topAttrs,tcConfig,outfile,pdbfile,assemblyName,errorLogger
 
 #if NO_COMPILER_BACKEND
@@ -1694,28 +1696,27 @@ type SigningInfo = SigningInfo of (* delaysign:*) bool * (*signer:*)  string opt
 
 #if FX_NO_KEY_SIGNING
 #else
-let GetSigner (signingInfo) = 
-    let (SigningInfo(delaysign,signer,container)) = signingInfo
-
-    // REVIEW: favor the container over the key file - C# appears to do this
-    if isSome container then
-        Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
-    else
-        match signer with 
-        | None -> None
-        | Some(s) ->
-        try 
-            if delaysign then
-                Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
-            else
-                Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
-            with e -> 
-                // Note:: don't use errorR here since we really want to fail and not produce a binary
-                error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
+let GetSigner(signingInfo) = 
+        let (SigningInfo(delaysign,signer,container)) = signingInfo
+        // REVIEW: favor the container over the key file - C# appears to do this
+        if isSome container then
+          Some(ILBinaryWriter.ILStrongNameSigner.OpenKeyContainer container.Value)
+        else
+            match signer with 
+            | None -> None
+            | Some(s) ->
+                try 
+                if delaysign then
+                    Some (ILBinaryWriter.ILStrongNameSigner.OpenPublicKeyFile s) 
+                else
+                    Some (ILBinaryWriter.ILStrongNameSigner.OpenKeyPairFile s) 
+                with e -> 
+                    // Note:: don't use errorR here since we really want to fail and not produce a binary
+                    error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened(s),rangeCmdArgs))
 #endif
 
 module FileWriter = 
-    let EmitIL (tcConfig:TcConfig, ilGlobals, _errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
+    let EmitIL (tcConfig:TcConfig, ilGlobals, errorLogger:ErrorLogger, outfile, pdbfile, ilxMainModule, signingInfo:SigningInfo, exiter:Exiter) =
 #if FX_NO_KEY_SIGNING
         ignore signingInfo
 #endif
@@ -1740,7 +1741,7 @@ module FileWriter =
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile,msg), rangeCmdArgs))
         with e -> 
             errorRecoveryNoRange e
-            SqmLoggerWithConfig tcConfig _errorLogger.ErrorNumbers _errorLogger.WarningNumbers
+            SqmLoggerWithConfig tcConfig errorLogger.ErrorNumbers errorLogger.WarningNumbers
             exiter.Exit 1 
 
 let ValidateKeySigningAttributes (tcConfig : TcConfig,tcGlobals,topAttrs) =

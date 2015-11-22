@@ -625,7 +625,7 @@ module Eventually =
 
     let force e = Option.get (forceWhile (fun () -> true) e)
         
-    /// Keep running the computation bit by bit until a time limit is reached. 
+    /// Keep running the computation bit by bit until a time limit is reached.
     /// The runner gets called each time the computation is restarted
     let repeatedlyProgressUntilDoneOrTimeShareOver timeShareInMilliseconds runner e = 
         let sw = new System.Diagnostics.Stopwatch() 
@@ -975,11 +975,11 @@ module Shim =
     type DefaultFileSystem() =
         interface IFileSystem with
             member __.AssemblyLoadFrom(fileName:string) = 
-#if FX_ATLEAST_40_COMPILER_LOCATION
+    #if FX_ATLEAST_40_COMPILER_LOCATION
                 System.Reflection.Assembly.UnsafeLoadFrom fileName
-#else
+    #else
                 System.Reflection.Assembly.LoadFrom fileName
-#endif
+    #endif
             member __.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = System.Reflection.Assembly.Load assemblyName
 
             member __.ReadAllBytesShim (fileName:string) = File.ReadAllBytes fileName
@@ -994,8 +994,8 @@ module Shim =
                 let isInvalidPath(p:string) = 
                     String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) <> -1
 
-                let isInvalidFilename(p:string) =   
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) <> -1  
+                let isInvalidFilename(p:string) = 
+                    String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) <> -1
 
                 let isInvalidDirectory(d:string) = 
                     d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
@@ -1003,7 +1003,7 @@ module Shim =
                 isInvalidPath (path) || 
                 let directory = Path.GetDirectoryName(path)
                 let filename = Path.GetFileName(path)
-                isInvalidDirectory(directory) || isInvalidFilename(filename)  
+                isInvalidDirectory(directory) || isInvalidFilename(filename)
 
             member __.GetTempPathShim() = System.IO.Path.GetTempPath()
 
