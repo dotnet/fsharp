@@ -63,6 +63,26 @@ rem folder where test logs/results will be dropped
 set RESULTSDIR=%~dp0\TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
+setlocal EnableDelayedExpansion
+
+set TTAGS_NUNIT_ARG=
+if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=-IncludeCategories !TTAGS!)
+
+set NO_TTAGS_NUNIT_ARG=
+if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=-ExcludeCategories !NO_TTAGS!)
+
+SET CONV_V2_TO_V3_CMD=powershell -nologo -noprofile -ExecutionPolicy ByPass -Command "%~dp0%\Convert-NUnit2Args-to-NUnit3Where.ps1 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG!; exit $LASTEXITCODE"
+echo %CONV_V2_TO_V3_CMD%
+
+%CONV_V2_TO_V3_CMD% > %~dp0%nunit3args.txt
+
+set /p TTAGS_NUNIT_WHERE=<%~dp0%nunit3args.txt
+if not '!TTAGS_NUNIT_WHERE!' == '' (set TTAGS_NUNIT_WHERE=--where "!TTAGS_NUNIT_WHERE!")
+
+del /Q "%~dp0%nunit3args.txt"
+
+setlocal DisableDelayedExpansion
+
 if /I "%2" == "fsharp" (goto :FSHARP)
 if /I "%2" == "fsharpqa" (goto :FSHARPQA)
 if /I "%2" == "fsharpqadowntarget" (goto :FSHARPQA)
@@ -133,16 +153,9 @@ set XMLFILE=%RESULTSDIR%\FSharpNunit_Xml.xml
 set OUTPUTFILE=%RESULTSDIR%\FSharpNunit_Output.log
 set ERRORFILE=%RESULTSDIR%\FSharpNunit_Error.log
 
-setlocal EnableDelayedExpansion
+echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%";format=nunit2 
 
-set TTAGS_NUNIT_ARG=
-if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=--where "cat == !TTAGS!")
-
-set NO_TTAGS_NUNIT_ARG=
-rem if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=--where "cat != !NO_TTAGS!")
-
-echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%"
-"%NUNIT3_CONSOLE%" "%FSCBINPATH%\FSharp.Tests.FSharp.dll" --framework:V4.0 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG! --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%"
+"%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%";format=nunit2
 
 call :UPLOAD_XML
 goto :EOF
