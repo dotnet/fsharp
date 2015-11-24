@@ -18,6 +18,7 @@ if not exist "%~dp0%..\packages\NUnit.Console.3.0.0\tools\" (
     popd
 )
 SET NUNIT3_CONSOLE=%~dp0%..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
+SET LKG_FSI=%~dp0%..\lkg\FSharp-4.0.30319.1\bin\Fsi.exe
 
 rem "ttags" indicates what test areas will be run, based on the tags in the test.lst files
 set TTAGS_ARG=
@@ -65,21 +66,24 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 setlocal EnableDelayedExpansion
 
-set TTAGS_NUNIT_ARG=
-if not '!TTAGS!' == '' (set TTAGS_NUNIT_ARG=-IncludeCategories !TTAGS!)
-
-set NO_TTAGS_NUNIT_ARG=
-if not '!NO_TTAGS!' == '' (set NO_TTAGS_NUNIT_ARG=-ExcludeCategories !NO_TTAGS!)
-
-SET CONV_V2_TO_V3_CMD=powershell -nologo -noprofile -ExecutionPolicy ByPass -Command "%~dp0%\Convert-NUnit2Args-to-NUnit3Where.ps1 !TTAGS_NUNIT_ARG! !NO_TTAGS_NUNIT_ARG!; exit $LASTEXITCODE"
+SET CONV_V2_TO_V3_CMD="%LKG_FSI%" --exec --nologo "%~dp0%\Convert-NUnit2Args-to-NUnit3Where.fsx" -- "!TTAGS!" "!NO_TTAGS!"
 echo %CONV_V2_TO_V3_CMD%
 
-%CONV_V2_TO_V3_CMD% > %~dp0%nunit3args.txt
+SET CONV_V2_TO_V3_CMD_TEMPFILE=%~dp0%nunit3args.txt
 
-set /p TTAGS_NUNIT_WHERE=<%~dp0%nunit3args.txt
+%CONV_V2_TO_V3_CMD% >%CONV_V2_TO_V3_CMD_TEMPFILE%
+
+IF ERRORLEVEL 1 (
+  echo Error converting args to nunit 3 test selection language, the nunit3-console --where argument
+  type "%CONV_V2_TO_V3_CMD_TEMPFILE%"
+  del /Q "%CONV_V2_TO_V3_CMD_TEMPFILE%"
+  exit /b 1
+)
+
+set /p TTAGS_NUNIT_WHERE=<%CONV_V2_TO_V3_CMD_TEMPFILE%
 if not '!TTAGS_NUNIT_WHERE!' == '' (set TTAGS_NUNIT_WHERE=--where "!TTAGS_NUNIT_WHERE!")
 
-del /Q "%~dp0%nunit3args.txt"
+del /Q "%CONV_V2_TO_V3_CMD_TEMPFILE%"
 
 setlocal DisableDelayedExpansion
 
