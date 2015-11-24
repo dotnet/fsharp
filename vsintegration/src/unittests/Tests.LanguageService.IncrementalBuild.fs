@@ -5,7 +5,10 @@ namespace UnitTests.Tests.LanguageService
 open System
 open System.IO
 open NUnit.Framework
+#if NUNIT_V2
+#else
 open NUnit.Framework.Constraints
+#endif
 open Salsa.Salsa
 open Salsa.VsOpsUtils               
 open Microsoft.FSharp.Compiler
@@ -507,6 +510,12 @@ type IncrementalBuild() =
             
         ()
 
+#if NUNIT_V2
+    [<Test;ExpectedException(typeof<Exception>)>]
+    member public rb.DuplicateExpressionNamesNotAllowed() =
+            let DoIt s = s
+            ()
+#else
     [<Test>]
     member public rb.DuplicateExpressionNamesNotAllowed() =
             Assert.That((fun () -> let DoIt s = s
@@ -519,6 +528,7 @@ type IncrementalBuild() =
 
                                    let e = Eval "Output" b
                                    ()), NUnit.Framework.Throws.TypeOf(typeof<Exception>))
+#endif
 
     [<Test>]
     member public rb.OneToOneWorks() =
