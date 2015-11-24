@@ -330,9 +330,6 @@ type Miscellaneous() =
             AssertEqual 1 (List.length errors)
         )        
 
-
-#if NUNIT_V2
-
     member public this.``DebuggingDLLFailsFunc``() =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
                this.MSBuildProjectBoilerplate "Library",  
@@ -348,6 +345,7 @@ type Miscellaneous() =
                    ()
                ))
 
+#if NUNIT_V2
     [<Test>][<ExpectedException (typeof<ClassLibraryCannotBeStartedDirectlyException>)>]
     member public this.``DebuggingDLLFails``() = this.``DebuggingDLLFailsFunc``()
 #else
