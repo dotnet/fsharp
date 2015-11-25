@@ -110,7 +110,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     // echo Negative typechecker testing: %testname%
     log "Negative typechecker testing: %s" testname
 
-    let fsc' = 
+    let ``fail fsc 2> a`` = 
         // "%FSC%" %fsc_flags% --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources% 2> %testname%.err
         // @if NOT ERRORLEVEL 1 (
         //     set ERRORMSG=%ERRORMSG% FSC passed unexpectedly for  %sources%;
@@ -134,7 +134,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
         }
 
     // "%FSC%" %fsc_flags% --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources% 2> %testname%.err
-    do! fsc' """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" fsc_flags testname sources (sprintf "%s.err" testname)
+    do! ``fail fsc 2> a`` """%s --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll""" fsc_flags testname sources (sprintf "%s.err" testname)
 
     // %FSDIFF% %testname%.err %testname%.bsl > %testname%.diff
     let! testnameDiff = fsdiff (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
@@ -152,7 +152,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     log "Good, output %s.err matched %s.bsl" testname testname
 
     // "%FSC%" %fsc_flags% --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%testname%.dll  %sources% 2> %testname%.vserr
-    do! fsc' "%s --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll" fsc_flags testname sources (sprintf "%s.vserr" testname)
+    do! ``fail fsc 2> a`` "%s --test:ContinueAfterParseFailure --vserrors --warnaserror --nologo --maxerrors:10000 -a -o:%s.dll" fsc_flags testname sources (sprintf "%s.vserr" testname)
     // @if NOT ERRORLEVEL 1 (
     //     set ERRORMSG=%ERRORMSG% FSC passed unexpectedly for  %sources%;
     //     goto SetError
