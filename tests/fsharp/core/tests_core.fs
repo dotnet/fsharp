@@ -683,7 +683,7 @@ module Printing =
         let fsdiff a b = 
             let ``exec >`` f p = Command.exec dir cfg.EnvironmentVariables { Output = Output(Overwrite(f)); Input = None} p >> checkResult
             let diffFile = Path.ChangeExtension(a, ".diff")
-            Commands.fsdiff (``exec >`` diffFile) cfg.FSDIFF false a b
+            Commands.fsdiff (``exec >`` diffFile) cfg.FSDIFF a b
 
         let fsc_flags_errors_ok = ""
 
@@ -1229,7 +1229,7 @@ module ``Load-Script`` =
                 log "%s %s" path args
                 let toLog = redirectToLog ()
                 Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } dir cfg.EnvironmentVariables path args
-            do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF true a b) |> (fun _ -> Success ())
+            do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
             return out.ToArray() |> List.ofArray
             }
 

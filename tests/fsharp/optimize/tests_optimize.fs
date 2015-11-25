@@ -24,7 +24,7 @@ module Analyses =
             log "%s %s" path args
             let toLog = redirectToLog ()
             Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } dir cfg.EnvironmentVariables path args
-        do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF true a b) |> (fun _ -> Success ())
+        do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> (fun _ -> Success ())
         return out.ToArray() |> List.ofArray
         }
 

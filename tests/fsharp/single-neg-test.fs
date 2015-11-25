@@ -20,7 +20,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
     ignore "already checked"
 
     let exec p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None } p >> checkResult
-    let fsdiff a = Commands.fsdiff exec cfg.FSDIFF true a
+    let fsdiff = Commands.fsdiff exec cfg.FSDIFF
     let envOrFail key =
         cfg.EnvironmentVariables 
         |> Map.tryFind key 
@@ -129,7 +129,7 @@ let private singleNegTest' (cfg: TestConfig) workDir testname = processor {
             log "%s %s" path args
             let toLog = redirectToLog ()
             Process.exec { RedirectOutput = Some (function null -> () | s -> out.Add(s)); RedirectError = Some toLog.Post; RedirectInput = None; } workDir cfg.EnvironmentVariables path args
-        do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF true a b) |> checkResult
+        do! (Commands.fsdiff redirectOutputToFile cfg.FSDIFF a b) |> checkResult
         return out.ToArray() |> List.ofArray
         }
 

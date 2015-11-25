@@ -142,9 +142,9 @@ let where envVars cmd =
     | ErrorLevel _ -> None
     | CmdResult.Success -> !result    
 
-let fsdiff exec fsdiffExe ignoreWhiteSpaceChanges file1 file2 =
+let fsdiff exec fsdiffExe file1 file2 =
     // %FSDIFF% %testname%.err %testname%.bsl
-    exec fsdiffExe (sprintf "%s%s %s" (if ignoreWhiteSpaceChanges then "-dew " else "") file1 file2)
+    exec fsdiffExe (sprintf "%s %s" file1 file2)
 
 let ``for /f`` path = 
     // FOR /F processing of a text file consists of reading the file, one line of text at a time and then breaking the line up into individual
