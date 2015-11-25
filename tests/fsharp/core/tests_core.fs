@@ -650,7 +650,6 @@ module QueriesCustomQueryOps =
                 
         })
 
-[<Category("fail_new")>]
 module Printing = 
 
     // "%FSI%" %fsc_flags_errors_ok%  --nologo --use:preludePrintSize200.fsx      <test.fsx >z.raw.output.test.200.txt     2>&1 
@@ -1104,7 +1103,6 @@ module Lift =
         })
 
 
-[<Category("fail_new")>]
 module ``Load-Script`` = 
 
     let ``script > a 2>&1`` cfg dir to' = processor {

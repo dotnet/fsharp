@@ -103,7 +103,6 @@ module Builtin =
 
 
 
-[<Category("fail_new"); Category("fail_old")>]
 module DiamondAssembly = 
 
     let build cfg dir = processor {
@@ -404,7 +403,6 @@ module HelloWorldCSharp =
 
 
 
-[<Category("fail_new"); Category("fail_old"); >] 
 module NegTests = 
 
     let testData () = 
