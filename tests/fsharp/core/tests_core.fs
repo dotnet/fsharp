@@ -1606,27 +1606,22 @@ module Patterns =
 
 
 
-[<Category("fail_new"); Category("fail_reason_ILX_CONFIG")>]
 module Pinvoke = 
 
-    [<Test; FSharpSuiteTest("core/testData")>]
+    [<Test; FSharpSuiteTest("core/pinvoke")>]
     let pinvoke () = check (processor {
         let { Directory = dir; Config = cfg } = testContext ()
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Printf.ksprintf (Commands.peverify exec cfg.PEVERIFY)
+        let peverify = Commands.peverify exec cfg.PEVERIFY
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
 
-        let ILX_CONFIG = ""
-
-        // "%FSC%" %fsc_flags% -o:test%ILX_CONFIG%.exe -g test.fsx
-        do! fsc "%s -o:test%s.exe -g" cfg.fsc_flags ILX_CONFIG ["test.fsx"]
+        // "%FSC%" %fsc_flags% -o:test.exe -g test.fsx
+        do! fsc "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
    
         // REM The IL is unverifiable code
-        // "%PEVERIFY%" /MD test%ILX_CONFIG%.exe
-        do! peverify "/MD test%s.exe" ILX_CONFIG
-
-        return! NUnitConf.genericError (sprintf "env var 'ILX_CONFIG' not found, using '%s' as default the test pass" ILX_CONFIG)
+        // "%PEVERIFY%" /MD test.exe
+        do! peverify "/MD test.exe"
                 
         })
 
