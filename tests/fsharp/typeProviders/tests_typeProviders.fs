@@ -162,8 +162,8 @@ module DiamondAssembly =
         // if exist test.ok (del /f /q test.ok)
         use testOkFile = fileguard "test.ok"
 
-        // %CLIX% "%FSI%" %fsi_flags% test1.fsx test2a.fsx test2b.fsx test3.fsx && (
-        do! fsi "%s" cfg.fsi_flags ["test1.fsx"; "test2a.fsx"; "test2b.fsx"; "test3.fsx"]
+        // %CLIX% "%FSI%" %fsi_flags% test3.fsx && (
+        do! fsi "%s" cfg.fsi_flags ["test3.fsx"]
 
         // dir test.ok > NUL 2>&1 ) || (
         // @echo :FSI load failed
