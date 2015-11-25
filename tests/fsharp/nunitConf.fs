@@ -137,6 +137,7 @@ type public InitializeSuiteAttribute () =
     override x.Targets with get() = ActionTargets.Test ||| ActionTargets.Suite
 
 
+[<assembly:ParallelizableAttribute(ParallelScope.Fixtures)>]
 [<assembly:InitializeSuite()>]
 ()
 
