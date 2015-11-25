@@ -92,9 +92,4 @@ if errors.IsEmpty then
 else 
     for error in errors do 
         printfn "ERROR: %s" error
-
-if errors.IsEmpty then System.IO.File.WriteAllText("test.ok", "")
-else 
-    for error in errors do 
-        printfn "ERROR: %s" error
     
