@@ -89,7 +89,9 @@ module TestPack4 =
 
 if errors.IsEmpty then 
     System.IO.File.WriteAllText("test.ok", "")
+    exit(0)
 else 
     for error in errors do 
         printfn "ERROR: %s" error
+    exit(1)
     
