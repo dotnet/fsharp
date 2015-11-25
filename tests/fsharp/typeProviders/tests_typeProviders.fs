@@ -137,7 +137,7 @@ module DiamondAssembly =
     let run cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsi = Printf.ksprintf (Commands.fsi exec cfg.FSI)
         let fileguard = (Commands.getfullpath dir) >> FileGuard.create
 
@@ -209,7 +209,7 @@ module HelloWorld =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let del = Commands.rm dir
         let execIn workDir p = Command.exec workDir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc' execIn = Printf.ksprintf (Commands.fsc execIn cfg.FSC)
@@ -375,7 +375,7 @@ module HelloWorldCSharp =
     let run cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%PEVERIFY%" magic.dll
         do! peverify "magic.dll"
@@ -651,7 +651,7 @@ module WedgeAssembly =
     let run cfg dir = processor {
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%PEVERIFY%" test2a.dll
         do! peverify "test2a.dll"

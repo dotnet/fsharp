@@ -109,8 +109,8 @@ let internal quotepath (p: FilePath) =
 let ildasm exec ildasmExe flags assembly =
     exec ildasmExe (sprintf "%s %s" flags (quotepath assembly))
 
-let peverify exec peverifyExe path =
-    exec peverifyExe path
+let peverify exec peverifyExe flags path =
+    exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
 let createTempDir () =
     let path = Path.GetTempFileName ()

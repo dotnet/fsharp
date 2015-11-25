@@ -49,7 +49,7 @@ module Sigs =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
         let fsc_flags = cfg.fsc_flags
 
         let singleNegTest = SingleNegTest.singleNegTest cfg dir

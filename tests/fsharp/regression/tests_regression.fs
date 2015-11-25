@@ -41,7 +41,7 @@ module ``655`` =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%FSC%" %fsc_flags% -a -o:pack.dll xlibC.ml
         do! fsc "%s -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
@@ -89,7 +89,7 @@ module ``656`` =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // "%FSC%" %fsc_flags% -o:pack.exe misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs
         do! fsc "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
@@ -171,7 +171,7 @@ module ``85`` =
 
         let exec p = Command.exec dir cfg.EnvironmentVariables { Output = Inherit; Input = None; } p >> checkResult
         let fsc = Printf.ksprintf (Commands.fsc exec cfg.FSC)
-        let peverify = Commands.peverify exec cfg.PEVERIFY
+        let peverify = Commands.peverify exec cfg.PEVERIFY ""
 
         // if "%CLR_SUPPORTS_GENERICS%"=="false" ( goto Skip)
         do! match cfg.EnvironmentVariables |> Map.tryFind "CLR_SUPPORTS_GENERICS" |> Option.map (fun s -> s.ToLower()) with
