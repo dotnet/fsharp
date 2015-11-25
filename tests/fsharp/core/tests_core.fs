@@ -1675,7 +1675,7 @@ module Portable =
 
 
 module ``test printf`` = 
-    let permutations = [ FSharpSuiteTestCaseData("core/printf", FSC_BASIC) ]
+    let permutations () = [ FSharpSuiteTestCaseData("core/printf", FSC_BASIC) ]
 
     [<Test; TestCaseSource("permutations")>]
     let printf p = check (processor {

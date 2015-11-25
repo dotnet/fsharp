@@ -407,7 +407,7 @@ module HelloWorldCSharp =
 [<Category("fail_new"); Category("fail_old"); >] 
 module NegTests = 
 
-    let testData = 
+    let testData () = 
         // set TESTS_SIMPLE=neg2h neg4 neg1 neg1_a neg2 neg2c neg2e neg2g neg6
         let testsSimple = 
             ["neg2h"; "neg4"; "neg1"; "neg1_a"; "neg2"; "neg2c"; "neg2e"; "neg2g"; "neg6"]
