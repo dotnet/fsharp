@@ -620,6 +620,13 @@ type ILResource with
         | ILResourceLocation.Local b -> b()
         | _-> error(InternalError("Bytes",rangeStartup))
 
+let emitAllBytes emiTo bytes =
+    match emiTo with
+    | ILBinaryWriter.EmitTo.Stream stream ->
+        stream.Write(bytes, 0, bytes.Length)
+    | ILBinaryWriter.EmitTo.File path ->
+        File.WriteAllBytes(path,bytes);
+
 let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,_errorLogger:ErrorLogger,generatedCcu,outfile,sigDataP,exiter:Exiter) = 
     try 
       if GenerateInterfaceData(tcConfig) then 
@@ -630,11 +637,7 @@ let EncodeInterfaceData(tcConfig:TcConfig,tcGlobals,exportRemapping,_errorLogger
         let outFileNoExtension = Filename.chopExtension outfile
         let isCompilerServiceDll = outFileNoExtension.Contains("FSharp.LanguageService.Compiler")
         if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib || isCompilerServiceDll then 
-            match sigDataP with
-            | ILBinaryWriter.EmitTo.Stream stream ->
-                stream.Write(resource.Bytes, 0, resource.Bytes.Length)
-            | ILBinaryWriter.EmitTo.File sigDataFileName ->
-                File.WriteAllBytes(sigDataFileName,resource.Bytes);
+            resource.Bytes |> emitAllBytes sigDataP
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         // The resource gets written to a file for FSharp.Core
         let resources = 
@@ -1926,11 +1929,7 @@ let main2(Args(tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, er
                                | _ -> 
                                    failwith "unreachable: expected a local resource" |]
             //TODO instead of bytes array we can directly write to stream, less memory pressure
-            match fsDataP with
-            | ILBinaryWriter.EmitTo.Stream stream ->
-                stream.Write(bytes, 0, bytes.Length)
-            | ILBinaryWriter.EmitTo.File path ->
-                File.WriteAllBytes(path,bytes)
+            bytes |> emitAllBytes fsDataP
             [], []
         else
             sigDataResources, optDataResources
