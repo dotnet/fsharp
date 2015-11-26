@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.FSharp.Compiler.Host.netcore</id>
+        <description>
+            netcore compatible version of the fsharp compiler fsc.exe.
+
+            Supported Platforms:
+            - .NET Core (dnxcore50)
+        </description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+            <group>
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1-beta-23321" />
+                <dependency id="Microsoft.NETCore.Runtime.CoreCLR" version="1.0.1-beta-23321" />
+                <dependency id="Microsoft.NETCore.TestHost" version="1.0.0-beta-23321" />
+                <dependency id="Microsoft.NETCore.ConsoleHost" version="1.0.0-beta-23321" />
+                <dependency id="Microsoft.NETCore.Windows.ApiSets" version="1.0.1-beta-23321" />
+                <dependency id="Microsoft.FSharp.Compiler.NetCore" version="$version$" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+    </files>
+</package>

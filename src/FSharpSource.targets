@@ -801,16 +801,6 @@
   </PropertyGroup>
   <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="$(BuildToolsDir)Build.Common.Targets" />
 
-  <!-- Reference an existing FSI.EXE for use from within MSBuild -->
-  <PropertyGroup>
-    <FsSrGenToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsSrGenToolPath>
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\lkg\FSharp-$(LkgVersion)\bin</FsYaccToolPath>
-    <FsLexToolExe>fslex.exe</FsLexToolExe>
-    <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
-  </PropertyGroup>
-
-
   <PropertyGroup>
     <!-- Hook compilation phase to do custom work -->
     <CompileDependsOn>ValidateConfiguration;$(CompileDependsOn);CustomCopyLocalFiles</CompileDependsOn>

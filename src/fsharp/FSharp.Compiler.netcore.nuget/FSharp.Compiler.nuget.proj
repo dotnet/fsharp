@@ -1,0 +1,14 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
+    <PKGVersion>1.0.0-alpha-0004</PKGVersion>
+      <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+      <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
+  <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
+    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec layoutfscnuget.fsx --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
+    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(pkgversion) --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
+  </Target>
+</Project>
