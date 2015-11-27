@@ -24,6 +24,7 @@ open System.Collections.Generic
 type TcEnv =
     member DisplayEnv : DisplayEnv
     member NameEnv : NameResolution.NameResolutionEnv
+    member AccessRights : AccessorDomain
 
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * (CcuThunk * string list * bool) list -> TcEnv 
 val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * CcuThunk * autoOpens: string list * bool -> TcEnv 

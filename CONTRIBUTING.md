@@ -10,8 +10,8 @@ For those contributing to the core of the F# compiler, we recommend ["The F# Com
 - Install required software
 - Clone the repo
  - `git clone https://github.com/microsoft/visualfsharp.git`
-- How to build
-- How to run tests
+- How to build ([DEVGUIDE](DEVGUIDE.md))
+- How to run tests ([TESTGUIDE](TESTGUIDE.md))
 
 ###What to Contribute?
 
