@@ -766,15 +766,10 @@
     <NuGetPackagesPath Condition="'$(NuGetPackagesPath)' == ''">$(FSharpSourcesRoot)\..\packages</NuGetPackagesPath>
 
     <!-- fix this to be not so unfortunate looking -->
-    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00085\lib\</BuildToolsDir>
+    <BuildToolsDir>$(MSBuildThisFileDirectory)..\packages\Microsoft.DotNet.BuildTools.1.0.25-prerelease-00122\lib\</BuildToolsDir>
 
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NuGetPackagesPath)\</PackagesDir>
-
-    <DnxVersion Condition="'$(OsEnvironment)'!='Unix'">1.0.0-beta7</DnxVersion>
-    <DnxVersion Condition="'$(OsEnvironment)'=='Unix'">1.0.0-beta5-12077</DnxVersion>
-    <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'!='Unix'">dnx-coreclr-win-x86.$(DnxVersion)</DnxPackageName>
-    <DnxPackageName Condition="'$(DnxPackageName)' == '' and '$(OsEnvironment)'=='Unix'">dnx-mono.$(DnxVersion)</DnxPackageName>
 
     <NuGetToolPath Condition="'$(NuGetToolPath)' == ''">$(FSharpSourcesRoot)\..\.nuget\</NuGetToolPath>
     <NuGetConfigCommandLine>-ConfigFile "$(NuGetConfigFile)"</NuGetConfigCommandLine>
@@ -784,16 +779,12 @@
     <NugetRestoreCommand>$(NugetRestoreCommand) -OutputDirectory "$(NuGetPackagesPath)"</NugetRestoreCommand>
     <NugetRestoreCommand>$(NugetRestoreCommand) -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
 
-    <DnxPackageDir Condition="'$(DnxPackageDir)'==''">$(NuGetPackagesPath)\$(DnxPackageName)/</DnxPackageDir>
-    <DnuToolPath Condition="'$(DnuToolPath)'=='' and '$(OS)' == 'Windows_NT'">$(DnxPackageDir)\bin\dnu.cmd</DnuToolPath>
-    <DnuToolPath Condition="'$(DnuToolPath)'=='' and '$(OS)' != 'Windows_NT'">$(DnxPackageDir)/bin/dnu</DnuToolPath>
-
-    <DnuRestoreCommand>"$(DnuToolPath)"</DnuRestoreCommand>
+    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe"</DnuRestoreCommand>
     <DnuRestoreCommand>$(DnuRestoreCommand) restore</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) --packages "$(PackagesDir.TrimEnd('/').TrimEnd('\\'))"</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-core/"</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-corefx/"</DnuRestoreCommand>
-    <DnuRestoreCommand>$(DnuRestoreCommand) -s:"https://www.myget.org/F/dotnet-buildtools"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -OutputDirectory "$(NuGetPackagesPath)"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -Source "https://www.myget.org/F/dotnet-core/"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -Source "https://www.myget.org/F/dotnet-corefx/"</DnuRestoreCommand>
+    <DnuRestoreCommand>$(DnuRestoreCommand) -Source "https://www.myget.org/F/dotnet-buildtools"</DnuRestoreCommand>
 
     <!-- Current version of DNX does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
