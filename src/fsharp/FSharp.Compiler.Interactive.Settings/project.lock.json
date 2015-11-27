@@ -152,6 +152,14 @@
           "lib/DNXCore50/System.Runtime.dll": {}
         }
       },
+      "System.Runtime.Extensions/4.0.11-rc2-23519": {
+        "dependencies": {
+          "System.Runtime": "[4.0.20, )"
+        },
+        "compile": {
+          "ref/dotnet5.4/System.Runtime.Extensions.dll": {}
+        }
+      },
       "System.Text.Encoding/4.0.0": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
@@ -337,6 +345,14 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Runtime.dll": {}
+        }
+      },
+      "System.Runtime.Extensions/4.0.11-rc2-23519": {
+        "dependencies": {
+          "System.Runtime": "[4.0.20, )"
+        },
+        "compile": {
+          "ref/dotnet5.4/System.Runtime.Extensions.dll": {}
         }
       },
       "System.Text.Encoding/4.0.0": {
@@ -526,6 +542,14 @@
           "lib/DNXCore50/System.Runtime.dll": {}
         }
       },
+      "System.Runtime.Extensions/4.0.11-rc2-23519": {
+        "dependencies": {
+          "System.Runtime": "[4.0.20, )"
+        },
+        "compile": {
+          "ref/dotnet5.4/System.Runtime.Extensions.dll": {}
+        }
+      },
       "System.Text.Encoding/4.0.0": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
@@ -713,6 +737,14 @@
           "lib/DNXCore50/System.Runtime.dll": {}
         }
       },
+      "System.Runtime.Extensions/4.0.11-rc2-23519": {
+        "dependencies": {
+          "System.Runtime": "[4.0.20, )"
+        },
+        "compile": {
+          "ref/dotnet5.4/System.Runtime.Extensions.dll": {}
+        }
+      },
       "System.Text.Encoding/4.0.0": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
@@ -898,6 +930,14 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Runtime.dll": {}
+        }
+      },
+      "System.Runtime.Extensions/4.0.11-rc2-23519": {
+        "dependencies": {
+          "System.Runtime": "[4.0.20, )"
+        },
+        "compile": {
+          "ref/dotnet5.4/System.Runtime.Extensions.dll": {}
         }
       },
       "System.Text.Encoding/4.0.0": {
@@ -1624,6 +1664,66 @@
         "[Content_Types].xml"
       ]
     },
+    "System.Runtime.Extensions/4.0.11-rc2-23519": {
+      "sha512": "H9i/sDcxbvhygX+aOsulyBBgIOdsJfmrXPEwwe3VhADZl8CY3rE6LVP52/193J6kep2HHh1VJKK62KORfPOwKg==",
+      "type": "Package",
+      "files": [
+        "_rels/.rels",
+        "System.Runtime.Extensions.nuspec",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net45/_._",
+        "lib/win8/_._",
+        "lib/wp80/_._",
+        "lib/wpa81/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "ref/dotnet5.1/System.Runtime.Extensions.dll",
+        "ref/dotnet5.1/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/zh-hant/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/de/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/fr/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/it/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/ja/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/ko/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/ru/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/zh-hans/System.Runtime.Extensions.xml",
+        "ref/dotnet5.1/es/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/zh-hant/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/de/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/System.Runtime.Extensions.dll",
+        "ref/dotnet5.4/fr/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/it/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/ja/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/ko/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/ru/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/zh-hans/System.Runtime.Extensions.xml",
+        "ref/dotnet5.4/es/System.Runtime.Extensions.xml",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net45/_._",
+        "ref/win8/_._",
+        "ref/wp80/_._",
+        "ref/wpa81/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "ref/netcore50/zh-hant/System.Runtime.Extensions.xml",
+        "ref/netcore50/de/System.Runtime.Extensions.xml",
+        "ref/netcore50/System.Runtime.Extensions.xml",
+        "ref/netcore50/fr/System.Runtime.Extensions.xml",
+        "ref/netcore50/it/System.Runtime.Extensions.xml",
+        "ref/netcore50/ja/System.Runtime.Extensions.xml",
+        "ref/netcore50/ko/System.Runtime.Extensions.xml",
+        "ref/netcore50/ru/System.Runtime.Extensions.xml",
+        "ref/netcore50/zh-hans/System.Runtime.Extensions.xml",
+        "ref/netcore50/es/System.Runtime.Extensions.xml",
+        "ref/netcore50/System.Runtime.Extensions.dll",
+        "runtime.json",
+        "package/services/metadata/core-properties/4048182dce654046a330bc6101e596c8.psmdcp",
+        "[Content_Types].xml"
+      ]
+    },
     "System.Text.Encoding/4.0.0": {
       "sha512": "AMxFNOXpA6Ab8swULbXuJmoT2K5w6TnV3ObF5wsmEcIHQUJghoZtDVfVHb08O2wW15mOSI1i9Wg0Dx0pY13o8g==",
       "type": "Package",
@@ -1825,6 +1925,7 @@
       "System.IO >= 4.0.11-rc2-23519",
       "System.Linq.Expressions >= 4.0.11-rc2-23519",
       "System.Runtime >= 4.0.21-rc2-23519",
+      "System.Runtime.Extensions >= 4.0.11-rc2-23519",
       "System.Reflection >= 4.1.0-rc2-23519",
       "System.Reflection.Extensions >= 4.0.1-rc2-23519",
       "System.Reflection.TypeExtensions >= 4.1.0-rc2-23519",

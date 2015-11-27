@@ -260,7 +260,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// Checks if given type exists in target system runtime library
         member SystemRuntimeContainsType : string -> bool
 
-#if FX_NO_CUSTOMATTRIBUTEDATA
+#if SILVERLIGHT_COMPILER_FSHARP_CORE
     type IProvidedCustomAttributeTypedArgument =
         abstract ArgumentType: System.Type
         abstract Value: System.Object
@@ -349,7 +349,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// </summary>
         abstract GetGeneratedAssemblyContents : assembly:System.Reflection.Assembly -> byte[]
 
-#if FX_NO_CUSTOMATTRIBUTEDATA
+#if GetMemberCustomAttributesData
         abstract GetMemberCustomAttributesData : assembly:System.Reflection.MemberInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
         abstract GetParameterCustomAttributesData : assembly:System.Reflection.ParameterInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
 #endif
