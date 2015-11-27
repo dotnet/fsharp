@@ -172,7 +172,7 @@ IF NOT DEFINED GACUTILEXE64 IF EXIST "%WINSDKNETFXTOOLS%x64\gacutil.exe" set GAC
 set FSC=%FSCBINPATH%\fsc.exe
 set PATH=%FSCBINPATH%;%PATH%
 
-set FSCVPREVBINPATH=%X86_PROGRAMFILES%\Microsoft SDKs\F#\3.1\Framework\v4.0
+set FSCVPREVBINPATH=%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.0\Framework\v4.0
 set FSCVPREV=%FSCVPREVBINPATH%\fsc.exe
 
 REM == VS-installed paths to FSharp.Core.dll
