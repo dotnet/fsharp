@@ -7725,6 +7725,17 @@ let (|TryFinally|_|) expr =
     | Expr.Op (TOp.TryFinally _,[_resty],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],e2,_,_)],_) -> Some(e1,e2)
     | _ -> None
     
+let (|GetEnumeratorCall|_|) expr = 
+    match expr with 
+    | Expr.Op (TOp.ILCall( _,  _,  _,  _,  _,  _, _, iLMethodRef,  _,  _,  _),_,[Expr.Val(_) as enumerableExpr],_) ->
+        if  iLMethodRef.Name = "GetEnumerator" then Some(enumerableExpr)
+        else None
+    // not sure why in the list case there's a second operation embeded in the first, but there is ...
+    | Expr.Op (TOp.ILCall( _,  _,  _,  _,  _,  _, _, iLMethodRef,  _,  _,  _),_,[Expr.Op(_, _, [Expr.Val(_) as enumerableExpr], _) ],_) ->
+        if  iLMethodRef.Name = "GetEnumerator" then Some(enumerableExpr)
+        else None
+    | _ -> None
+
 // detect ONLY the while loops that result from compiling 'for ... in ... do ...'
 let (|WhileLoopForCompiledForEachExpr|_|) expr = 
     match expr with 
@@ -7752,25 +7763,20 @@ let (|ExtractTypeOfExpr|_|) g expr = Some (tyOfExpr g expr)
 
 type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpressions
 
-let DetectAndOptimizeForExpression g option expr =
+let DetectAndOptimizeForExpression (g: TcGlobals)  (option: OptimizeForExpressionOptions) (expr: Expr) =
     match expr with
-    | Let (_, enumerableExpr, _,
-           Let (_, _, enumeratorBind,
-              TryFinally (WhileLoopForCompiledForEachExpr (_, Let (elemVar,_,_,bodyExpr), _), _))) ->
-
+    | Let (_, GetEnumeratorCall(enumerableExpr), enumeratorBind,
+              TryFinally (WhileLoopForCompiledForEachExpr (_, Let (elemVar,_,_,bodyExpr), _), _)) ->
+              
+              
       let m = enumerableExpr.Range
       let mBody = bodyExpr.Range
 
       let spForLoop,mForLoop = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart),spStart  |  _ -> NoSequencePointAtForLoop,m
       let spWhileLoop   = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtWhileLoop(spStart)|  _ -> NoSequencePointAtWhileLoop
 
-      match option,enumerableExpr with
-      | _,RangeInt32Step g (startExpr, step, finishExpr) ->
-        match step with
-        | -1 | 1  ->
-            mkFastForLoop  g (spForLoop,m,elemVar,startExpr,(step = 1),finishExpr,bodyExpr)
-        | _ -> expr
-      | OptimizeAllForExpressions,ExtractTypeOfExpr g ty when isStringTy g ty ->
+      match option, enumerableExpr with
+      | OptimizeAllForExpressions, ExtractTypeOfExpr g ty when isStringTy g ty ->
         // type is string, optimize for expression as:
         //  let $str = enumerable
         //  for $idx in 0..(str.Length - 1) do
@@ -7791,7 +7797,8 @@ let DetectAndOptimizeForExpression g option expr =
         let expr                    = mkCompGenLet m strVar enumerableExpr forExpr
 
         expr
-      | OptimizeAllForExpressions,ExtractTypeOfExpr g ty when isListTy g ty ->
+        
+      | OptimizeAllForExpressions, ExtractTypeOfExpr g ty when isListTy g ty ->
         // type is list, optimize for expression as:
         //  let mutable $currentVar = listExpr
         //  let mutable $nextVar    = $tailOrNull
@@ -7827,7 +7834,16 @@ let DetectAndOptimizeForExpression g option expr =
                 (mkCompGenLet m nextVar tailOrNullExpr whileExpr)
 
         expr
+    
       | _ -> expr
+    | Let (_, RangeInt32Step g (startExpr, step, finishExpr), enumeratorBind,
+              TryFinally (WhileLoopForCompiledForEachExpr (_, Let (elemVar,_,_,bodyExpr), _), _)) ->
+        let m = startExpr.Range
+        let spForLoop = match enumeratorBind with SequencePointAtBinding(spStart) -> SequencePointAtForLoop(spStart)  |  _ ->  NoSequencePointAtForLoop
+        match step with
+        | -1 | 1  ->
+            mkFastForLoop  g (spForLoop,m,elemVar,startExpr,(step = 1),finishExpr,bodyExpr)
+        | _ -> expr
     | _ -> expr
 
 // Used to remove Expr.Link for inner expressions in pattern matches
