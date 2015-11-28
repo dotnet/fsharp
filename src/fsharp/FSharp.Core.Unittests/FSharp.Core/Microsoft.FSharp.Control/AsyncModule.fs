@@ -345,6 +345,14 @@ type AsyncModule() =
         with exn when exn.Message = "crashed" -> ()
 
     [<Test>]
+    member this.``Async.Choice returns None if no tasks are given``() =
+        let result =
+            Async.Choice [ ]
+            |> Async.RunSynchronously
+
+        Assert.AreEqual(None, result)
+
+    [<Test>]
     member this.``Async.Choice returns None if all results are None``() =
         let returnNone (n:PositiveInt) x =
             let result =
