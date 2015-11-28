@@ -381,6 +381,23 @@ type AsyncModule() =
         
         Check.QuickThrowOnFailure returnNone
 
+    [<Test>]
+    member this.``Async.Choice returns fastest response that is not None``() =
+        let delay interval result =
+             async {
+                 do! Async.Sleep interval
+                 return! async {
+                     printfn "returning %A after %d ms." result interval
+                     return result }
+             }
+ 
+        let result =
+            [ delay 100 None ; delay 1000 (Some 1) ; delay 500 (Some 2) ] 
+            |> Async.Choice 
+            |> Async.RunSynchronously
+
+        Assert.AreEqual(Some 2, result)
+
 #endif
 #endif
 
