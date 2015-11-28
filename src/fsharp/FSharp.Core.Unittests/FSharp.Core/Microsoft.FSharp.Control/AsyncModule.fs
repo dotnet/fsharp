@@ -8,7 +8,15 @@ namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control
 open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
+#if FSHARP_CORE_PORTABLE
+// nothing
+#else
+#if FSHARP_CORE_NETCORE_PORTABLE
+// nothing
+#else
 open FsCheck
+#endif
+#endif
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -315,6 +323,13 @@ type AsyncModule() =
 
         Assert.AreEqual(0, counter)
 
+#if FSHARP_CORE_PORTABLE
+// nothing
+#else
+#if FSHARP_CORE_NETCORE_PORTABLE
+// nothing
+#else
+
     [<Test>]
     member this.``Async.Choice takes first result that is <> None``() =        
         let returnFirstResult (n:PositiveInt) (i:PositiveInt) x =
@@ -365,6 +380,9 @@ type AsyncModule() =
             None = result
         
         Check.QuickThrowOnFailure returnNone
+
+#endif
+#endif
 
     [<Test>]
     member this.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
