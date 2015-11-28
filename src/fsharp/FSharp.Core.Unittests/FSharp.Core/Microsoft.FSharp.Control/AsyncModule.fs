@@ -296,7 +296,7 @@ type AsyncModule() =
 
 
     [<Test>]
-    member this.``error on one workflow should cancel all others``() =
+    member this.``error on one workflow should cancel all other parallel workflows``() =
         let counter = 
             async {
                 let counter = ref 0
@@ -313,6 +313,42 @@ type AsyncModule() =
             } |> Async.RunSynchronously
 
         Assert.AreEqual(0, counter)
+
+    [<Test>]
+    member this.``Async.Choice takes first result that is <> None``() =
+        let result =
+            async {
+                let job i = async { if i = 55 then return Some i else return None }
+
+                return! Async.Choice [ for i in 1 .. 100 -> job i ]
+            } |> Async.RunSynchronously
+
+        Assert.AreEqual(Some(55), result)
+
+    [<Test>]
+    member this.``Async.Choice reports error when things crash``() =
+        try
+            async {
+                let job i = async { failwith "crashed"; return None }
+
+                return! Async.Choice [ for i in 1 .. 100 -> job i ]
+            } 
+            |> Async.RunSynchronously
+            |> ignore
+
+            failwith "expected an exception"
+        with exn when exn.Message = "crashed" -> ()
+
+    [<Test>]
+    member this.``Async.Choice returns None if all results are None``() =
+        let result =
+            async {
+                let job i = async { if i = -1 then return Some i else return None }
+
+                return! Async.Choice [ for i in 1 .. 100 -> job i ]
+            } |> Async.RunSynchronously
+
+        Assert.AreEqual(None, result)
 
     [<Test>]
     member this.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
