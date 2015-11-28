@@ -8,6 +8,7 @@ namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control
 open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
+open FsCheck
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -315,15 +316,19 @@ type AsyncModule() =
         Assert.AreEqual(0, counter)
 
     [<Test>]
-    member this.``Async.Choice takes first result that is <> None``() =
-        let result =
-            async {
-                let job i = async { if i = 55 then return Some i else return None }
+    member this.``Async.Choice takes first result that is <> None``() =        
+        let returnFirstResult (n:PositiveInt) (i:PositiveInt) x =
+            n > i ==>
+                let result =
+                    async {
+                        let job j = async { if j = int i then return Some x else return None }
 
-                return! Async.Choice [ for i in 1 .. 100 -> job i ]
-            } |> Async.RunSynchronously
+                        return! Async.Choice [ for j in 1 .. (int n) -> job j ]
+                    } |> Async.RunSynchronously
 
-        Assert.AreEqual(Some(55), result)
+                Some(x) = result
+        
+        Check.QuickThrowOnFailure returnFirstResult
 
     [<Test>]
     member this.``Async.Choice reports error when things crash``() =
@@ -341,14 +346,17 @@ type AsyncModule() =
 
     [<Test>]
     member this.``Async.Choice returns None if all results are None``() =
-        let result =
-            async {
-                let job i = async { if i = -1 then return Some i else return None }
+        let returnNone (n:PositiveInt) x =
+            let result =
+                async {
+                    let job j = async { return None }
 
-                return! Async.Choice [ for i in 1 .. 100 -> job i ]
-            } |> Async.RunSynchronously
+                    return! Async.Choice [ for j in 1 .. (int n) -> job j ]
+                } |> Async.RunSynchronously
 
-        Assert.AreEqual(None, result)
+            None = result
+        
+        Check.QuickThrowOnFailure returnNone
 
     [<Test>]
     member this.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
