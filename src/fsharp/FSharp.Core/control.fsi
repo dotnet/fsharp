@@ -268,6 +268,13 @@ namespace Microsoft.FSharp.Control
         /// <returns>A computation that returns an array of values from the sequence of input computations.</returns>
         static member Parallel : computations:seq<Async<'T>> -> Async<'T[]>
 
+        /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations, 
+        /// and returns the result of the first succeeding computation (i.e. the first computation with a result that is not None).</summary>
+        ///
+        /// <param name="computationList">A sequence of distinct computations to be parallelized.</param>
+        /// <returns>A computation that returns the first succeeding computation in the sequence of input computations.</returns>
+        static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
+
         //---------- Thread Control
         
         /// <summary>Creates an asynchronous computation that creates a new thread and runs
