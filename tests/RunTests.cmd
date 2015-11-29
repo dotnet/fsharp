@@ -287,8 +287,12 @@ goto :EOF
 
 rem See <http://www.appveyor.com/docs/environment-variables>
 if not defined APPVEYOR goto :EOF
-powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
 
+set saved_errorlevel=%errorlevel%
+echo Saved errorlevel %saved_errorlevel%
+powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
+if errorlevel 1 exit /b 1
+set errorlevel %saved_errorlevel%
 goto :EOF
 
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
