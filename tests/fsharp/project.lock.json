@@ -157,33 +157,15 @@
           "ref/dotnet5.4/System.Diagnostics.Debug.dll": {}
         }
       },
-      "System.Diagnostics.Process/4.1.0-beta-23302": {
+      "System.Diagnostics.Process/4.1.0-rc2-23519": {
         "dependencies": {
-          "System.Runtime": "[4.0.20, )",
-          "System.Runtime.InteropServices": "[4.0.20, )",
-          "System.Resources.ResourceManager": "[4.0.0, )",
-          "System.Runtime.Handles": "[4.0.0, )",
-          "System.IO.FileSystem": "[4.0.0, )",
-          "Microsoft.Win32.Registry": "[4.0.0-beta-23302, )",
-          "Microsoft.Win32.Primitives": "[4.0.0, )",
-          "System.IO.FileSystem.Primitives": "[4.0.0, )",
-          "System.Threading.Thread": "[4.0.0-beta-23302, )",
-          "System.Text.Encoding": "[4.0.10, )",
-          "System.IO": "[4.0.10, )",
-          "System.Threading.Tasks": "[4.0.10, )",
-          "System.Collections": "[4.0.10, )",
-          "System.Diagnostics.Debug": "[4.0.10, )",
-          "System.Threading.ThreadPool": "[4.0.10-beta-23302, )",
-          "System.Globalization": "[4.0.10, )",
-          "System.Text.Encoding.Extensions": "[4.0.10, )",
-          "System.Threading": "[4.0.10, )",
-          "System.Runtime.Extensions": "[4.0.10, )"
+          "System.Runtime": "[4.0.0, )",
+          "System.IO": "[4.0.0, )",
+          "System.Text.Encoding": "[4.0.0, )",
+          "System.Runtime.Handles": "[4.0.0, )"
         },
         "compile": {
-          "ref/dotnet/System.Diagnostics.Process.dll": {}
-        },
-        "runtime": {
-          "lib/DNXCore50/System.Diagnostics.Process.dll": {}
+          "ref/dotnet5.5/System.Diagnostics.Process.dll": {}
         }
       },
       "System.Diagnostics.Tools/4.0.1-rc2-23519": {
@@ -7711,28 +7693,6 @@
         "[Content_Types].xml"
       ]
     },
-    "System.Diagnostics.Process/4.1.0-beta-23302": {
-      "sha512": "BWbRH/iQdRWJC1bOb5VbIUHt1xJLudnysH7a5A1HENIdi1FCozaIzJC/AYW1jFteVnhJwLHGTpeuw2hHDsN7yg==",
-      "type": "Package",
-      "files": [
-        "_rels/.rels",
-        "System.Diagnostics.Process.nuspec",
-        "lib/DNXCore50/System.Diagnostics.Process.dll",
-        "lib/net46/System.Diagnostics.Process.dll",
-        "lib/MonoAndroid10/_._",
-        "lib/MonoTouch10/_._",
-        "lib/xamarinios10/_._",
-        "lib/xamarinmac20/_._",
-        "ref/dotnet/System.Diagnostics.Process.dll",
-        "ref/net46/System.Diagnostics.Process.dll",
-        "ref/MonoAndroid10/_._",
-        "ref/MonoTouch10/_._",
-        "ref/xamarinios10/_._",
-        "ref/xamarinmac20/_._",
-        "package/services/metadata/core-properties/cee1fa54dbc349479eef7a5ae5a79102.psmdcp",
-        "[Content_Types].xml"
-      ]
-    },
     "System.Diagnostics.Process/4.1.0-rc2-23519": {
       "sha512": "PXJlMWrL9DQJ2GYiN9b2+EZeDqz0EpHKTjU4G7TxSUThqQt5lNkb5x4jFuxrWK/45zJ74KIPsH4nei3G8IxcIQ==",
       "type": "Package",
@@ -10244,7 +10204,7 @@
       "System.Collections.Concurrent >= 4.0.11-rc2-23519",
       "System.Console >= 4.0.0-rc2-23519",
       "System.Diagnostics.Debug >= 4.0.11-rc2-23519",
-      "System.Diagnostics.Process >= 4.0.0-rc2-23519",
+      "System.Diagnostics.Process >= 4.1.0-rc2-23519",
       "System.Diagnostics.Tools >= 4.0.1-rc2-23519",
       "System.Diagnostics.Tracing >= 4.0.21-rc2-23519",
       "System.Globalization >= 4.0.11-rc2-23519",
