@@ -1528,6 +1528,37 @@ namespace Microsoft.FSharp.Control
             let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
             CancellationTokenOps.StartWithContinuations(token, computation, id, (fun edi -> edi.ThrowAny()), ignore)
 
+        static member Choice(computations : Async<'T option> seq) = async {
+             match Seq.toArray computations with
+             | [||] -> return None
+             | [|t|] -> return! t
+             | computations ->
+ 
+             let! t = Async.CancellationToken
+             return! Async.FromContinuations <|
+                 fun (sc,ec,cc) ->
+                     let noneCount = ref 0
+                     let exnCount = ref 0
+                     let innerCts = CancellationTokenSource.CreateLinkedTokenSource t
+ 
+                     let scont (result : 'T option) =
+                         match result with
+                         | Some _ when Interlocked.Increment exnCount = 1 -> innerCts.Cancel() ; sc result
+                         | None when Interlocked.Increment noneCount = computations.Length -> sc None
+                         | _ -> ()
+ 
+                     let econt (exn : exn) =
+                         if Interlocked.Increment exnCount = 1 then 
+                             innerCts.Cancel() ; ec exn
+ 
+                     let ccont (exn : OperationCanceledException) =
+                         if Interlocked.Increment exnCount = 1 then
+                             innerCts.Cancel(); cc exn
+ 
+                     for task in computations do
+                         ignore <| System.Threading.Tasks.Task.Factory.StartNew(fun () -> Async.StartWithContinuations(task, scont, econt, ccont, innerCts.Token))
+         }
+
 #if FSHARP_CORE_NETCORE_PORTABLE
         static member Sleep(dueTime : int) : Async<unit> = 
             // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the Delay task
