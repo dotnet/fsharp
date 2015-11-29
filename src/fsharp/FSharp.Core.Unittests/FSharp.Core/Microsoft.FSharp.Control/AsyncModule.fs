@@ -8,6 +8,15 @@ namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control
 open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
+#if FSHARP_CORE_PORTABLE
+// nothing
+#else
+#if FSHARP_CORE_NETCORE_PORTABLE
+// nothing
+#else
+open FsCheck
+#endif
+#endif
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -296,7 +305,7 @@ type AsyncModule() =
 
 
     [<Test>]
-    member this.``error on one workflow should cancel all others``() =
+    member this.``error on one workflow should cancel all other parallel workflows``() =
         let counter = 
             async {
                 let counter = ref 0
@@ -313,6 +322,84 @@ type AsyncModule() =
             } |> Async.RunSynchronously
 
         Assert.AreEqual(0, counter)
+
+#if FSHARP_CORE_PORTABLE
+// nothing
+#else
+#if FSHARP_CORE_NETCORE_PORTABLE
+// nothing
+#else
+
+    [<Test>]
+    member this.``Async.Choice takes first result that is <> None``() =        
+        let returnFirstResult (n:PositiveInt) (i:PositiveInt) x =
+            n > i ==>
+                let result =
+                    async {
+                        let job j = async { if j = int i then return Some x else return None }
+
+                        return! Async.Choice [ for j in 1 .. (int n) -> job j ]
+                    } |> Async.RunSynchronously
+
+                Some(x) = result
+        
+        Check.QuickThrowOnFailure returnFirstResult
+
+    [<Test>]
+    member this.``Async.Choice reports error when things crash``() =
+        try
+            async {
+                let job i = async { failwith "crashed"; return None }
+
+                return! Async.Choice [ for i in 1 .. 100 -> job i ]
+            } 
+            |> Async.RunSynchronously
+            |> ignore
+
+            failwith "expected an exception"
+        with exn when exn.Message = "crashed" -> ()
+
+    [<Test>]
+    member this.``Async.Choice returns None if no tasks are given``() =
+        let result =
+            Async.Choice [ ]
+            |> Async.RunSynchronously
+
+        Assert.AreEqual(None, result)
+
+    [<Test>]
+    member this.``Async.Choice returns None if all results are None``() =
+        let returnNone (n:PositiveInt) x =
+            let result =
+                async {
+                    let job j = async { return None }
+
+                    return! Async.Choice [ for j in 1 .. (int n) -> job j ]
+                } |> Async.RunSynchronously
+
+            None = result
+        
+        Check.QuickThrowOnFailure returnNone
+
+    [<Test>]
+    member this.``Async.Choice returns fastest response that is not None``() =
+        let delay interval result =
+             async {
+                 do! Async.Sleep interval
+                 return! async {
+                     printfn "returning %A after %d ms." result interval
+                     return result }
+             }
+ 
+        let result =
+            [ delay 100 None ; delay 1000 (Some 1) ; delay 500 (Some 2) ] 
+            |> Async.Choice 
+            |> Async.RunSynchronously
+
+        Assert.AreEqual(Some 2, result)
+
+#endif
+#endif
 
     [<Test>]
     member this.``AwaitWaitHandle.ExceptionsAfterTimeout``() = 
