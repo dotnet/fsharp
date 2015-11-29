@@ -291,7 +291,7 @@ if not defined APPVEYOR goto :EOF
 set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
 powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
-set errorlevel %saved_errorlevel%
+set errorlevel=%saved_errorlevel%
 goto :EOF
 
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
