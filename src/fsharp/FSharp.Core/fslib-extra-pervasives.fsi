@@ -349,7 +349,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// </summary>
         abstract GetGeneratedAssemblyContents : assembly:System.Reflection.Assembly -> byte[]
 
-#if GetMemberCustomAttributesData
+#if SILVERLIGHT_COMPILER_FSHARP_CORE
         abstract GetMemberCustomAttributesData : assembly:System.Reflection.MemberInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
         abstract GetParameterCustomAttributesData : assembly:System.Reflection.ParameterInfo -> System.Collections.Generic.IList<IProvidedCustomAttributeData>
 #endif
