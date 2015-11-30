@@ -132,8 +132,8 @@ module SurfaceArea =
         let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
         let normalize (s:string) =
             Regex.Replace(s, "(\\r\\n|\\n)+", "\r\n").Trim([|'\r';'\n'|])
-            
+
         let actual = getActual () |> normalize
         let expected = expected |> normalize
-        
+
         Assert.AreEqual(expected, actual, sprintf "\r\n%s\r\n\r\n Expected and actual surface area don't match. To see the delta, run\r\nwindiff %s %s" actual fileName logFile)
