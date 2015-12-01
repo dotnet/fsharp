@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 ### [4.0.0] - Visual Studio 2015 Update 1 - 30 November 2015
 
 #### Enhancements
-* Perf: 'for i in expr do body' optimization [#219](https://github.com/Microsoft/visualfsharp/pull/219)
+* Perf: `for i in expr do body` optimization [#219](https://github.com/Microsoft/visualfsharp/pull/219)
 * Remove type provider security dialog and use custom icon for type provider assembly reference [#448](https://github.com/Microsoft/visualfsharp/pull/448)
 * Perf: Enable parallel build inside Visual Studio [#487](https://github.com/Microsoft/visualfsharp/pull/487)
 * Perf: Remove StructBox for Value Types [#549](https://github.com/Microsoft/visualfsharp/pull/549)
@@ -20,11 +20,11 @@ All notable changes to this project will be documented in this file.
 * Add a compiler warning for lower case literals in patterns [#666](https://github.com/Microsoft/visualfsharp/pull/666)
 
 #### Bug fixes
-* Scope of types for named values in attributes was improperly set [#437](https://github.com/Microsoft/visualfsharp/pull/437)
+* Fix scope of types for named values in attributes improperly set [#437](https://github.com/Microsoft/visualfsharp/pull/437)
 * Add general check for escaping typars to check phase [#442](https://github.com/Microsoft/visualfsharp/pull/442)
 * Fix AccessViolationException on obfuscated assemblies [#519](https://github.com/Microsoft/visualfsharp/pull/519)
 * Fix memory leaks while reloading solutions in Visual Studio [#591](https://github.com/Microsoft/visualfsharp/pull/591)
-* Enable breakpoints in 'with' augmentations for class types [#608](https://github.com/Microsoft/visualfsharp/pull/608)
+* Enable breakpoints in `with` augmentations for class types [#608](https://github.com/Microsoft/visualfsharp/pull/608)
 * Fix false escaping type parameter check error [#613](https://github.com/Microsoft/visualfsharp/pull/613)
 * Fix quotation of readonly fields [#622](https://github.com/Microsoft/visualfsharp/pull/622)
 * Keep the reference icons when opening references [#623](https://github.com/Microsoft/visualfsharp/pull/623)
