@@ -256,6 +256,9 @@ if '%TEST_NET40%' == '1' (
 @if ERRORLEVEL 1 echo Error: library unittests build failed && goto :failure
 )
 
+%_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=coreclr /p:Configuration=Release /p:RestorePackages=true
+@if ERRORLEVEL 1 echo Error: library unittests build failed coreclr && goto :failure
+
 if '%TEST_PORTABLE47%' == '1' (
 %_msbuildexe% src/fsharp-library-unittests-build.proj /p:TargetFramework=portable47 /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: library unittests build failed portable47 && goto :failure
@@ -344,6 +347,9 @@ rem tests for TEST_VS are not executed
 
 call RunTests.cmd release fsharp coreclr
 @if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreclr' failed && goto :failure
+
+call RunTests.cmd release coreunitcoreclr
+@if ERRORLEVEL 1 echo Error: 'RunTests.cmd release coreunit' failed && goto :failure
 
 popd
 

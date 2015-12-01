@@ -98,13 +98,17 @@ if /I "%2" == "coreunitportable259" (
    set coreunitsuffix=portable259
    goto :COREUNIT
 )
+if /I "%2" == "coreunitcoreclr" (
+   set coreunitsuffix=coreclr
+   goto :COREUNIT_CORECLR
+)
 if /I "%2" == "ideunit" (goto :IDEUNIT)
 
 :USAGE
 
 echo Usage:
 echo.
-echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
+echo RunTests.cmd ^<debug^|release^|vsdebug^|vsrelease^> ^<fsharp^|fsharpqa^|coreunit^|coreunitportable47^|coreunitportable7^|coreunitportable78^|coreunitportable259^|coreunitcoreclr^|ideunit^|compilerunit^> [TagToRun^|"Tags,To,Run"] [TagNotToRun^|"Tags,Not,To,Run"]
 echo.
 exit /b 1
 
@@ -265,6 +269,20 @@ echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /outpu
      "%NUNIT3_CONSOLE%" /framework:V4.0 /result="%XMLFILE%;format=nunit2" /output="%OUTPUTFILE%" /err="%ERRORFILE%" /work="%FSCBINPATH%" "%FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll"
 
 call :UPLOAD_XML "%XMLFILE%"
+
+goto :EOF
+
+:COREUNIT_CORECLR
+
+set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
+set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
+set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
+
+set CORE_ROOT=%~dp0%..\packages\dnx-coreclr-win-x86.1.0.0-rc1-final\bin
+set CORERUNPATH=%~dp0%..\packages\runtime.win7-x86.Microsoft.NETCore.TestHost\1.0.0-rc2-23519\runtimes\win7-x86\native
+
+echo "%CORERUNPATH%\corerun.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe
+     "%CORERUNPATH%\corerun.exe" %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.exe
 
 goto :EOF
 

@@ -41,6 +41,7 @@
             <When Condition="'$(AssemblyName)' == 'FSharp.Core.Unittests'">
               <PropertyGroup>
                 <OtherFlags>$(OtherFlags) --version:4.4.0.9055</OtherFlags>
+                <ExcludeSigningImport>true</ExcludeSigningImport>
               </PropertyGroup>
             </When>
             <Otherwise>

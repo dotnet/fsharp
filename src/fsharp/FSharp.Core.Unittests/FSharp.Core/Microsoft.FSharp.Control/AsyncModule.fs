@@ -449,7 +449,7 @@ type AsyncModule() =
 #if FSHARP_CORE_2_0
 // nothing
 #else
-#if FSHARP_CORE_NETCORE_PORTABLE
+#if FSHARP_CORE_NETCORE_PORTABLE || coreclr
 //nothing
 #else
 // we are on the desktop
