@@ -37,6 +37,7 @@ set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
+mkdir "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.1\Framework\v4.0"
 copy /y "%BINDIR%\fsc.exe" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.1\Framework\v4.0"
 copy /y "%BINDIR%\fsc.exe.config" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.1\Framework\v4.0"
 copy /y "%BINDIR%\FSharp.Build.dll" "%X86_PROGRAMFILES%\Microsoft SDKs\F#\4.1\Framework\v4.0"
