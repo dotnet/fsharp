@@ -2,20 +2,10 @@
 
 :ARGUMENTS_VALIDATION
 
-set BUILD_PROFILE=%1
-
-if '%BUILD_PROFILE%' == '' SET BUILD_PROFILE=all
-
-if /I "%BUILD_PROFILE%" == "all"               (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "net40"             (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "portable47"        (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "portable7"         (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "portable78"        (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "portable259"       (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "vs"                (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "cambridge_suite"   (goto :ARGUMENTS_OK)
-if /I "%BUILD_PROFILE%" == "qa_suite"          (goto :ARGUMENTS_OK)
-goto :USAGE
+if /I "%1" == "/help"   (goto :USAGE)
+if /I "%1" == "/h"      (goto :USAGE)
+if /I "%1" == "/?"      (goto :USAGE)
+goto :ARGUMENTS_OK
 
 :USAGE
 
@@ -25,60 +15,90 @@ echo Usage:
 echo.
 echo appveyor-build.cmd ^<all^|net40^|portable47^|portable7^|portable78^|portable259^|vs^|cambridge_suite^|qa_suite^>
 echo.
-echo no arguments default to 'all'
+echo No arguments default to 'all'
+echo.
+echo To specify multiple values, separate strings by comma
+echo.
+echo The example below run portable47, vs and qa:
+echo.
+echo appveyor-build.cmd portable47,vs,qa_suite
 exit /b 1
 
 :ARGUMENTS_OK
 
 set DO_NET40=0
+set DO_PORTABLE47=0
+set DO_PORTABLE7=0
+set DO_PORTABLE78=0
+set DO_PORTABLE259=0
+set DO_VS=0
 set TEST_NET40=0
+set TEST_PORTABLE47=0
+set TEST_PORTABLE7=0
+set TEST_PORTABLE78=0
+set TEST_PORTABLE259=0
+set TEST_VS=0
+set TEST_CAMBRIDGE_SUITE=0
+set TEST_QA_SUITE=0
+
+setlocal enableDelayedExpansion
+set /a counter=0
+for /l %%x in (1 1 9) do (
+    set /a counter=!counter!+1
+    call :SET_CONFIG %%!counter! "!counter!"
+)
+setlocal disableDelayedExpansion
+echo.
+echo.
+
+goto :MAIN
+
+:SET_CONFIG
+set BUILD_PROFILE=%~1
+
+if "%BUILD_PROFILE%" == "1" if "%2" == "" (
+    set BUILD_PROFILE=all
+)
+
+if "%2" == "" if not "%BUILD_PROFILE%" == "all" goto :EOF
+
+echo Parse argument %BUILD_PROFILE%
+
 if /i '%BUILD_PROFILE%' == 'net40' (
     set DO_NET40=1
     set TEST_NET40=1
 )
 
-set DO_PORTABLE47=0
-set TEST_PORTABLE47=0
 if /i '%BUILD_PROFILE%' == 'portable47' (
     set DO_PORTABLE47=1
     set TEST_PORTABLE47=1
 )
 
-set DO_PORTABLE7=0
-set TEST_PORTABLE7=0
 if /i '%BUILD_PROFILE%' == 'portable7' (
     set DO_PORTABLE7=1
     set TEST_PORTABLE7=1
 )
 
-set DO_PORTABLE78=0
-set TEST_PORTABLE78=0
 if /i '%BUILD_PROFILE%' == 'portable78' (
     set DO_PORTABLE78=1
     set TEST_PORTABLE78=1
 )
 
-set DO_PORTABLE259=0
-set TEST_PORTABLE259=0
 if /i '%BUILD_PROFILE%' == 'portable259' (
     set DO_PORTABLE259=1
     set TEST_PORTABLE259=1
 )
 
-set DO_VS=0
-set TEST_VS=0
 if /i '%BUILD_PROFILE%' == 'vs' (
     set DO_VS=1
     set TEST_VS=1
 )
 
-set TEST_CAMBRIDGE_SUITE=0
 if /i '%BUILD_PROFILE%' == 'cambridge_suite' (
     set DO_NET40=1
     set TEST_CAMBRIDGE_SUITE=1
 )
 
-set TEST_QA_SUITE=0
 if /i '%BUILD_PROFILE%' == 'qa_suite' (
     set DO_NET40=1
     set TEST_QA_SUITE=1
@@ -101,11 +121,7 @@ if /i '%BUILD_PROFILE%' == 'all' (
     set TEST_QA_SUITE=1
 )
 
-REM after this point, BUILD_PROFILE variable should not be used, use only DO_* or TEST_*
-
-call :SHOW_CONF
-
-goto :MAIN
+goto :EOF
 
 :SHOW_CONF
 
@@ -131,6 +147,10 @@ echo.
 goto :EOF
 
 :MAIN
+
+REM after this point, BUILD_PROFILE variable should not be used, use only DO_* or TEST_*
+
+call :SHOW_CONF
 
 @echo on
 

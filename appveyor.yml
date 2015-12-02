@@ -2,11 +2,7 @@ os: Visual Studio 2015
 
 environment:
   matrix:
-    - BUILD_PROFILE: net40
-    - BUILD_PROFILE: portable7
-    - BUILD_PROFILE: portable47
-    - BUILD_PROFILE: portable78
-    - BUILD_PROFILE: portable259
+    - BUILD_PROFILE: net40,portable7,portable47,portable78,portable259
     - BUILD_PROFILE: vs
     - BUILD_PROFILE: cambridge_suite
     - BUILD_PROFILE: qa_suite
