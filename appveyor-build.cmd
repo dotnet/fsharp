@@ -280,8 +280,8 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_QA_SUITE%' == '1' (
-call RunTests.cmd release fsharpqa Smoke
-@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa Smoke' failed && goto :failure
+call RunTests.cmd release fsharpqa
+@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa' failed && goto :failure
 )
 
 if '%TEST_NET40%' == '1' (
