@@ -104,10 +104,6 @@
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces" />
     <Reference Include="Microsoft.VisualStudio.CommonIDE" />
     <Reference Include="Microsoft.VisualStudio.VSHelp.dll" />
-    <Reference Include="nunit.util">
-        <Private>True</Private>
-        <HintPath>$(NUnitToolsLibDir)\nunit.util.dll</HintPath>
-    </Reference>
     <Reference Include="nunit.framework">
         <Private>True</Private>
         <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>

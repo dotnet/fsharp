@@ -157,9 +157,8 @@ set XMLFILE=FSharpNunit_Xml.xml
 set OUTPUTFILE=FSharpNunit_Output.log
 set ERRORFILE=FSharpNunit_Error.log
 
-echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%";format=nunit2 
-
-"%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%RESULTSDIR%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%";format=nunit2
+echo "%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%" 
+"%NUNIT3_CONSOLE%" "%FSCBINPATH%\..\..\net40\bin\FSharp.Tests.FSharp.dll" --framework:V4.0 %TTAGS_NUNIT_WHERE% --work="%FSCBINPATH%"  --output="%OUTPUTFILE%" --err="%ERRORFILE%" --result="%XMLFILE%"
 
 call :UPLOAD_XML
 goto :EOF
@@ -266,8 +265,8 @@ set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
 set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
 set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 %TTAGS_NUNIT_WHERE% /result="%XMLFILE%";format=nunit2 /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
-     "%NUNIT3_CONSOLE%" /framework:V4.0 %TTAGS_NUNIT_WHERE% /result="%XMLFILE%";format=nunit2 /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
 
 call :UPLOAD_XML
 
@@ -279,8 +278,8 @@ set XMLFILE=CompilerUnit_%compilerunitsuffix%_Xml.xml
 set OUTPUTFILE=CompilerUnit_%compilerunitsuffix%_Output.log
 set ERRORFILE=CompilerUnit_%compilerunitsuffix%_Error.log
 
-echo "%NUNIT3_CONSOLE%" /framework:V4.0 %TTAGS_NUNIT_WHERE% /result="%XMLFILE%";format=nunit2 /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
-     "%NUNIT3_CONSOLE%" /framework:V4.0 %TTAGS_NUNIT_WHERE% /result="%XMLFILE%";format=nunit2 /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
+echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
+     "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
 
 call :UPLOAD_XML
 
@@ -292,9 +291,10 @@ set XMLFILE=IDEUnit_Xml.xml
 set OUTPUTFILE=IDEUnit_Output.log
 set ERRORFILE=IDEUnit_Error.log
 
-echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 %TTAGS_NUNIT_WHERE% /result="%XMLFILE%";format=nunit2 /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
-     "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 %TTAGS_NUNIT_WHERE% /result="%XMLFILE%";format=nunit2 /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%RESULTSDIR% %FSCBINPATH%\Unittests.dll
-
+pushd %FSCBINPATH%
+echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\Unittests.dll
+     "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\Unittests.dll
+popd
 call :UPLOAD_XML
 
 goto :EOF
@@ -303,8 +303,11 @@ goto :EOF
 
 rem See <http://www.appveyor.com/docs/environment-variables>
 if not defined APPVEYOR goto :EOF
-powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
 
+set saved_errorlevel=%errorlevel%
+echo Saved errorlevel %saved_errorlevel%
+powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
+if %saved_errorlevel% neq 0 exit /b %saved_errorlevel%
 goto :EOF
 
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
