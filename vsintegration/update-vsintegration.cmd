@@ -58,33 +58,33 @@ copy /y "%BINDIR%\FSharp.Core.optdata" "%COMPILERMAINASSEMBLIESPATH%"
 copy /y "%BINDIR%\FSharp.Core.sigdata" "%COMPILERMAINASSEMBLIESPATH%"
 copy /y "%BINDIR%\FSharp.Core.xml" "%COMPILERMAINASSEMBLIESPATH%"
 
-set COMPILER7ASSEMBLIESPATH="%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.9055"
-mkdir %COMPILER7ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.dll" %COMPILER7ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.optdata" %COMPILER7ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.sigdata" %COMPILER7ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.xml" %COMPILER7ASSEMBLIESPATH%
+set COMPILER7ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.7.41.9055
+mkdir "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.dll" "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.optdata" "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.sigdata" "%COMPILER7ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable7\bin\FSharp.Core.xml" "%COMPILER7ASSEMBLIESPATH%"
 
-set COMPILER78ASSEMBLIESPATH="%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.9055"
-mkdir %COMPILER78ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.dll" %COMPILER78ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.optdata" %COMPILER78ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.sigdata" %COMPILER78ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.xml" %COMPILER78ASSEMBLIESPATH%
+set COMPILER78ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.78.41.9055
+mkdir "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.dll" "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.optdata" "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.sigdata" "%COMPILER78ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable78\bin\FSharp.Core.xml" "%COMPILER78ASSEMBLIESPATH%"
 
-set COMPILER259ASSEMBLIESPATH="%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.9055"
-mkdir %COMPILER259ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.dll" %COMPILER259ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.optdata" %COMPILER259ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.sigdata" %COMPILER259ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.xml" %COMPILER259ASSEMBLIESPATH%
+set COMPILER259ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETCore\3.259.41.9055
+mkdir "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.dll" "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.optdata" "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.sigdata" "%COMPILER259ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable259\bin\FSharp.Core.xml" "%COMPILER259ASSEMBLIESPATH%"
 
-set COMPILER47ASSEMBLIESPATH="%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.9055"
-mkdir %COMPILER47ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.dll" %COMPILER47ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.optdata" %COMPILER47ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.sigdata" %COMPILER47ASSEMBLIESPATH%
-copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.xml" %COMPILER47ASSEMBLIESPATH%
+set COMPILER47ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETPortable\3.47.41.9055
+mkdir "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.dll" "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.optdata" "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.sigdata" "%COMPILER47ASSEMBLIESPATH%"
+copy /y "%BINDIR%\..\..\portable47\bin\FSharp.Core.xml" "%COMPILER47ASSEMBLIESPATH%"
 
 REM echo ^<configuration^>^<runtime^>^<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1" appliesTo="v4.0.30319"^>^<dependentAssembly^>^<assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" /^> ^<bindingRedirect oldVersion="2.0.0.0-4.4.1.0" newVersion="4.4.1.9055"/^>^</dependentAssembly^>^</assemblyBinding^>^</runtime^>^</configuration^> > "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.4.1.9055\pub.config"
 
