@@ -59,10 +59,10 @@ goto :MAIN
 set BUILD_PROFILE=%~1
 
 if "%BUILD_PROFILE%" == "1" if "%2" == "" (
-    set BUILD_PROFILE=all
+    set BUILD_PROFILE=smoke
 )
 
-if "%2" == "" if not "%BUILD_PROFILE%" == "all" goto :EOF
+if "%2" == "" if not "%BUILD_PROFILE%" == "smoke" goto :EOF
 
 echo Parse argument %BUILD_PROFILE%
 
