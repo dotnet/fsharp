@@ -13,7 +13,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo appveyor-build.cmd ^<all^|net40^|portable47^|portable7^|portable78^|portable259^|vs^|cambridge_suite^|qa_suite^|smoke^>
+echo appveyor-build.cmd ^<all^|net40^|portable47^|portable7^|portable78^|portable259^|vs^|cambridge_suite^|qa_suite^|smoke^|smoke_only^>
 echo.
 echo No arguments default to 'smoke' ( build all profiles, run all unit tests, cambridge Smoke, fsharpqa Smoke)
 echo.
@@ -142,6 +142,10 @@ if /i '%BUILD_PROFILE%' == 'smoke' (
     set CONF_QA_SUITE=Smoke
 )
 
+if /i '%BUILD_PROFILE%' == 'smoke_only' (
+    set CONF_CAMBRIDGE_SUITE=Smoke
+    set CONF_QA_SUITE=Smoke
+)
 goto :EOF
 
 :SHOW_CONF
