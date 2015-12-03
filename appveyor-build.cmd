@@ -148,7 +148,9 @@ if /i '%BUILD_PROFILE%' == 'smoke_only' (
 )
 goto :EOF
 
-:SHOW_CONF
+:MAIN
+
+REM after this point, BUILD_PROFILE variable should not be used, use only DO_* or TEST_*
 
 echo Build/Tests configuration:
 echo.
@@ -170,14 +172,6 @@ echo CONF_CAMBRIDGE_SUITE=%CONF_CAMBRIDGE_SUITE%
 echo TEST_QA_SUITE=%TEST_QA_SUITE%
 echo CONF_QA_SUITE=%CONF_QA_SUITE%
 echo.
-
-goto :EOF
-
-:MAIN
-
-REM after this point, BUILD_PROFILE variable should not be used, use only DO_* or TEST_*
-
-call :SHOW_CONF
 
 @echo on
 
