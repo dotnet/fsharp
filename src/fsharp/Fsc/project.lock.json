@@ -42,6 +42,14 @@
           "ref/dotnet5.4/System.Diagnostics.Debug.dll": {}
         }
       },
+      "System.Globalization/4.0.0": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )"
+        },
+        "compile": {
+          "ref/dotnet/System.Globalization.dll": {}
+        }
+      },
       "System.IO/4.0.11-rc2-23519": {
         "dependencies": {
           "System.Runtime": "[4.0.20, )",
@@ -103,6 +111,19 @@
         },
         "runtime": {
           "lib/DNXCore50/System.Reflection.TypeExtensions.dll": {}
+        }
+      },
+      "System.Resources.ResourceManager/4.0.1-rc2-23519": {
+        "dependencies": {
+          "System.Runtime": "[4.0.0, )",
+          "System.Reflection": "[4.0.0, )",
+          "System.Globalization": "[4.0.0, )"
+        },
+        "compile": {
+          "ref/dotnet5.1/System.Resources.ResourceManager.dll": {}
+        },
+        "runtime": {
+          "lib/DNXCore50/System.Resources.ResourceManager.dll": {}
         }
       },
       "System.Runtime/4.0.21-rc2-23519": {
@@ -2045,6 +2066,55 @@
         "[Content_Types].xml"
       ]
     },
+    "System.Globalization/4.0.0": {
+      "sha512": "IBJyTo1y7ZtzzoJUA60T1XPvNTyw/wfFmjFoBFtlYfkekIOtD/AzDDIg0YdUa7eNtFEfliED2R7HdppTdU4t5A==",
+      "type": "Package",
+      "files": [
+        "_rels/.rels",
+        "System.Globalization.nuspec",
+        "License.rtf",
+        "ref/dotnet/System.Globalization.dll",
+        "ref/netcore50/System.Globalization.dll",
+        "ref/win8/_._",
+        "lib/win8/_._",
+        "ref/net45/_._",
+        "lib/net45/_._",
+        "ref/MonoAndroid10/_._",
+        "lib/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "lib/MonoTouch10/_._",
+        "ref/wp80/_._",
+        "lib/wp80/_._",
+        "ref/wpa81/_._",
+        "lib/wpa81/_._",
+        "ref/xamarinios10/_._",
+        "lib/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "lib/xamarinmac20/_._",
+        "ref/dotnet/zh-hant/System.Globalization.xml",
+        "ref/netcore50/zh-hant/System.Globalization.xml",
+        "ref/dotnet/de/System.Globalization.xml",
+        "ref/netcore50/de/System.Globalization.xml",
+        "ref/dotnet/System.Globalization.xml",
+        "ref/netcore50/System.Globalization.xml",
+        "ref/dotnet/fr/System.Globalization.xml",
+        "ref/netcore50/fr/System.Globalization.xml",
+        "ref/dotnet/it/System.Globalization.xml",
+        "ref/netcore50/it/System.Globalization.xml",
+        "ref/dotnet/ja/System.Globalization.xml",
+        "ref/netcore50/ja/System.Globalization.xml",
+        "ref/dotnet/ko/System.Globalization.xml",
+        "ref/netcore50/ko/System.Globalization.xml",
+        "ref/dotnet/ru/System.Globalization.xml",
+        "ref/netcore50/ru/System.Globalization.xml",
+        "ref/dotnet/zh-hans/System.Globalization.xml",
+        "ref/netcore50/zh-hans/System.Globalization.xml",
+        "ref/dotnet/es/System.Globalization.xml",
+        "ref/netcore50/es/System.Globalization.xml",
+        "package/services/metadata/core-properties/7256e6303e10459782eff20c3ec90af5.psmdcp",
+        "[Content_Types].xml"
+      ]
+    },
     "System.Globalization/4.0.11-rc2-23519": {
       "sha512": "XRWQ327g3mi22yZyeLWtI4OYGzKoG0YgcBFXhkWggxIIe8W3nOMG4DVBqUEnUKw9Of5xZ+rTXbmOZNSM2ik4lA==",
       "type": "Package",
@@ -3315,9 +3385,10 @@
       "System.Diagnostics.Debug >= 4.0.11-rc2-23519",
       "System.IO >= 4.0.11-rc2-23519",
       "System.Linq.Expressions >= 4.0.11-rc2-23519",
-      "System.Runtime >= 4.0.21-rc2-23519",
       "System.Reflection >= 4.1.0-rc2-23519",
-      "System.Reflection.TypeExtensions >= 4.1.0-rc2-23519"
+      "System.Reflection.TypeExtensions >= 4.1.0-rc2-23519",
+      "System.Resources.ResourceManager >= 4.0.1-rc2-23519",
+      "System.Runtime >= 4.0.21-rc2-23519"
     ],
     "DNXCore,Version=v5.0": []
   }

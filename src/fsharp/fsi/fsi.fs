@@ -22,8 +22,10 @@ open System.IO
 open System.Text
 open System.Threading
 open System.Reflection
+#if FX_NO_WINFORMS
+#else
 open System.Windows.Forms
-
+#endif
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -58,6 +60,10 @@ open Internal.Utilities.StructuredFormat
 //----------------------------------------------------------------------------
 // Hardbinding dependencies should we NGEN fsi.exe
 //----------------------------------------------------------------------------
+
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
 open System.Runtime.CompilerServices
 #if FX_NO_DEFAULT_DEPENDENCY_TYPE
@@ -221,7 +227,10 @@ type internal FsiValuePrinter(ilGlobals, generateDebugInfo, resolvePath, outWrit
               | PrintExpr -> 
                   anyToLayoutCall.AnyToLayout(opts, x)
         with 
+#if FX_REDUCED_EXCEPTIONS
+#else
         | :? ThreadAbortException -> Layout.wordL ""
+#endif
         | e ->
 #if DEBUG
           printf "\n\nPrintValue: x = %+A and ty=%s\n" x (ty.FullName)
@@ -402,8 +411,12 @@ let internal directoryName (s:string) =
 /// Process the command line options 
 type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput: FsiConsoleOutput) = 
     let mutable enableConsoleKeyProcessing = 
+#if FX_REDUCED_CONSOLE
+        false
+#else
        // Mono on Win32 doesn't implement correct console processing
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
+#endif
     let mutable gui        = true // override via "--gui", on by default
 #if DEBUG
     let mutable showILCode = false // show modul il code 
@@ -536,11 +549,14 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
             stopProcessingRecovery e range0; exit 1;
         inputFilesAcc
 
+#if FX_REDUCED_CONSOLE
+#else
     do 
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
             Console.OutputEncoding <- System.Text.Encoding.UTF8
             System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
+#endif
 
     do 
         let firstArg = 
@@ -594,12 +610,13 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
     member __.SourceFiles = sourceFiles
     member __.Gui = gui
 
+#if FX_LCIDFROMCODEPAGE
 /// Set the current ui culture for the current thread.
 let internal SetCurrentUICultureForThread (lcid : int option) =
     match lcid with
-    | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
+    | Some n -> CultureInfo.CurrentUICulture <- new CultureInfo(n)
     | None -> ()
-
+#endif
 
 //----------------------------------------------------------------------------
 // Reporting - warnings, errors
@@ -610,6 +627,8 @@ let internal InstallErrorLoggingOnThisThread errorLogger =
     SetThreadErrorLoggerNoUnwind(errorLogger)
     SetThreadBuildPhaseNoUnwind(BuildPhase.Interactive)
 
+#if NO_SERVERCODEPAGES
+#else
 /// Set the input/output encoding. The use of a thread is due to a known bug on 
 /// on Vista where calls to Console.InputEncoding can block the process.
 let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =     
@@ -637,7 +656,7 @@ let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =
                 Thread.Sleep(pause);
         if not !successful then 
             System.Windows.Forms.MessageBox.Show(FSIstrings.SR.fsiConsoleProblem()) |> ignore
-
+#endif
 
 
 //----------------------------------------------------------------------------
@@ -666,6 +685,9 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
 type internal FsiConsoleInput(fsiOptions: FsiCommandLineOptions, inReader: TextReader, outWriter: TextWriter) =
 
     let consoleLooksOperational() =
+#if FX_REDUCED_CONSOLE
+        true 
+#else
         if fsiOptions.ProbeToSeeIfConsoleWorks then 
             try
                 // Probe to see if the console looks functional on this version of .NET
@@ -678,6 +700,7 @@ type internal FsiConsoleInput(fsiOptions: FsiCommandLineOptions, inReader: TextR
                 false
         else
             true 
+#endif
 
     let consoleOpt =
         // The "console.fs" code does a limited form of "TAB-completion".
@@ -1208,14 +1231,18 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
         // Hence we actually start up the killer thread within the handler. 
         try 
             let raiseCtrlC() = 
+#if FX_LCIDFROMCODEPAGE
                 SetCurrentUICultureForThread fsiOptions.FsiLCID
+#endif
                 fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiInterrupt())
                 stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed
                 if (interruptAllowed = InterruptCanRaiseException) then 
                     killThreadRequest <- ThreadAbortRequest
                     let killerThread = 
                         new Thread(new ThreadStart(fun () ->
+#if FX_LCIDFROMCODEPAGE
                             SetCurrentUICultureForThread fsiOptions.FsiLCID
+#endif
                             // sleep long enough to allow ControlEventHandler handler on main thread to return 
                             // Also sleep to give computations a bit of time to terminate 
                             Thread.Sleep(pauseMilliseconds)
@@ -1255,7 +1282,9 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
                 register()
                 let killerThread = 
                     new Thread(new ThreadStart(fun () ->
+#if FX_LCIDFROMCODEPAGE
                         SetCurrentUICultureForThread fsiOptions.FsiLCID
+#endif
                         while true do 
                             //fprintf fsiConsoleOutput.Error "\n- kill thread loop...\n"; errorWriter.Flush();  
                             Thread.Sleep(pauseMilliseconds*2)
@@ -1761,11 +1790,14 @@ type internal FsiInteractionProcessor
             fsiInterruptController.InterruptAllowed <- InterruptIgnored;
             res
         with
+#if FX_REDUCED_EXCEPTIONS
+#else
         | :? ThreadAbortException ->
            fsiInterruptController.InterruptRequest <- NoRequest;
            fsiInterruptController.InterruptAllowed <- InterruptIgnored;
            (try Thread.ResetAbort() with _ -> ());
            (istate,CtrlC)
+#endif
         |  e ->
            fsiInterruptController.InterruptRequest <- NoRequest;
            fsiInterruptController.InterruptAllowed <- InterruptIgnored;
@@ -1926,7 +1958,10 @@ type internal WinFormsEventLoop(fsiConsoleOutput: FsiConsoleOutput, lcid : int o
                                            try 
                                               // When we get called back, someone may jack our culture
                                               // So we must reset our UI culture every time
+#if FX_LCIDFROMCODEPAGE
+
                                               SetCurrentUICultureForThread lcid;
+#endif
                                               mainFormInvokeResultHolder := Some(f ());
                                            finally 
                                               doneSignal.Set() |> ignore)) |> ignore;
@@ -1964,7 +1999,9 @@ let internal SpawnInteractiveServer
                             fsiInterruptController : FsiInterruptController) =   
     //printf "Spawning fsi server on channel '%s'" !fsiServerName;
     SpawnThread "ServerThread" (fun () ->
+#if FX_LCIDFROMCODEPAGE
          SetCurrentUICultureForThread fsiOptions.FsiLCID
+#endif
          try
              let server =
                  {new Server.Shared.FSharpInteractiveServer() with
@@ -2017,7 +2054,9 @@ let internal StartStdinReadAndProcessThread
     let stdinReaderThread = 
         new Thread(new ThreadStart(fun () ->
             InstallErrorLoggingOnThisThread errorLogger // FSI error logging on stdinReaderThread, e.g. parse errors.
+#if FX_LCIDFROMCODEPAGE
             SetCurrentUICultureForThread lcid
+#endif
             try
                try 
                   if !progress then fprintfn fsiConsoleOutput.Out "READER: stdin thread started...";
@@ -2044,7 +2083,9 @@ let internal StartStdinReadAndProcessThread
                           try 
                               fsi.EventLoop.Invoke (fun () -> 
                                   InstallErrorLoggingOnThisThread errorLogger; 
+#if FX_LCIDFROMCODEPAGE
                                   SetCurrentUICultureForThread lcid;
+#endif
                                   f istate) // FSI error logging on switched to thread
                           with _ -> 
                               (istate,Completed)
@@ -2095,6 +2136,8 @@ let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
               if !progress then fprintfn fsiConsoleOutput.Out "MAIN:  entering event loop...";
               fsi.EventLoop.Run()
             with
+#if FX_REDUCED_EXCEPTIONS
+#else
             |  :? ThreadAbortException ->
               // If this TAE handler kicks it's almost certainly too late to save the
               // state of the process - the state of the message loop may have been corrupted 
@@ -2102,6 +2145,7 @@ let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
               (try Thread.ResetAbort() with _ -> ());
               true
               // Try again, just case we can restart
+#endif
             | e -> 
               stopProcessingRecovery e range0;
               true
@@ -2183,8 +2227,8 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 
     // Check if we have a codepage from the console
-    do
 #if FX_LCIDFROMCODEPAGE
+    do
       match fsiOptions.FsiLCID with
       | Some _ -> ()
       | None -> tcConfigB.lcid <- lcidFromCodePage

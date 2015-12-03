@@ -209,6 +209,9 @@
     <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_LOGGING_GUI</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_WIN_REGISTRY</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_SERVERCODEPAGES</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_REDUCED_CONSOLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
     <DefineConstants>$(DefineConstants);SILVERLIGHT_COMPILER_FSHARP_CORE</DefineConstants>
     <TargetFrameworkProfile>profile7</TargetFrameworkProfile>                            <!-- We are currently directly referencing corefx assemblies, so profile7 is not really true -->
     <ImplicitlyExpandTargetFramework>false</ImplicitlyExpandTargetFramework>            <!-- To stop msbuild being helpfull and referencing the dlls for the profile -->
