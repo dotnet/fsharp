@@ -51,6 +51,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Public Const Const_TargetFrameworkMoniker As String = "TargetFrameworkMoniker"
         Private m_v20FSharpRedistInstalled As Boolean = False
         Private m_v40FSharpRedistInstalled As Boolean = False
+        Private m_v41FSharpRedistInstalled As Boolean = False
 
         Friend WithEvents TargetFramework As System.Windows.Forms.ComboBox
         Friend WithEvents TargetFrameworkLabel As System.Windows.Forms.Label
@@ -76,9 +77,11 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
             Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v2.0"
             Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.0"
+            Dim v41FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.1"
 
             m_v20FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v20FSharpRedistKey, Nothing, Nothing)))
             m_v40FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v40FSharpRedistKey, Nothing, Nothing)))
+            m_v41FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v41FSharpRedistKey, Nothing, Nothing)))
 
             'Add any initialization after the InitializeComponent() call
             AddChangeHandlers()
@@ -578,6 +581,9 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             '' Is this cheating?
             If moniker.Contains("v4") Then
                 Return Me.m_v40FSharpRedistInstalled
+            End If
+            If moniker.Contains("v4.1") Then
+                Return Me.m_v41FSharpRedistInstalled
             End If
             Return False
         End Function
