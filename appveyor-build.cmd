@@ -13,9 +13,9 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo appveyor-build.cmd ^<all^|net40^|portable47^|portable7^|portable78^|portable259^|vs^|cambridge_suite^|qa_suite^>
+echo appveyor-build.cmd ^<all^|net40^|portable47^|portable7^|portable78^|portable259^|vs^|cambridge_suite^|qa_suite^|smoke^>
 echo.
-echo No arguments default to 'all'
+echo No arguments default to 'smoke' ( build all profiles, run all unit tests, cambridge Smoke, fsharpqa Smoke)
 echo.
 echo To specify multiple values, separate strings by comma
 echo.
@@ -39,7 +39,9 @@ set TEST_PORTABLE78=0
 set TEST_PORTABLE259=0
 set TEST_VS=0
 set TEST_CAMBRIDGE_SUITE=0
+set CONF_CAMBRIDGE_SUITE=
 set TEST_QA_SUITE=0
+set CONF_QA_SUITE=
 
 setlocal enableDelayedExpansion
 set /a counter=0
@@ -121,6 +123,25 @@ if /i '%BUILD_PROFILE%' == 'all' (
     set TEST_QA_SUITE=1
 )
 
+if /i '%BUILD_PROFILE%' == 'smoke' (
+    set DO_NET40=1
+    set DO_PORTABLE47=1
+    set DO_PORTABLE7=1
+    set DO_PORTABLE78=1
+    set DO_PORTABLE259=1
+    set DO_VS=1
+    set TEST_NET40=1
+    set TEST_PORTABLE47=1
+    set TEST_PORTABLE7=1
+    set TEST_PORTABLE78=1
+    set TEST_PORTABLE259=1
+    set TEST_VS=1
+    set TEST_CAMBRIDGE_SUITE=1
+    set CONF_CAMBRIDGE_SUITE=Smoke
+    set TEST_QA_SUITE=1
+    set CONF_QA_SUITE=Smoke
+)
+
 goto :EOF
 
 :SHOW_CONF
@@ -141,7 +162,9 @@ echo TEST_PORTABLE78=%TEST_PORTABLE78%
 echo TEST_PORTABLE259=%TEST_PORTABLE259%
 echo TEST_VS=%TEST_VS%
 echo TEST_CAMBRIDGE_SUITE=%TEST_CAMBRIDGE_SUITE%
+echo CONF_CAMBRIDGE_SUITE=%CONF_CAMBRIDGE_SUITE%
 echo TEST_QA_SUITE=%TEST_QA_SUITE%
+echo CONF_QA_SUITE=%CONF_QA_SUITE%
 echo.
 
 goto :EOF
@@ -274,14 +297,14 @@ set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=true
 %_msbuildexe% fsharp\fsharp.tests.fsproj /p:Configuration=Release
 @if ERRORLEVEL 1 echo Error: fsharp cambridge tests for nunit failed && goto :failure
 
-call RunTests.cmd release fsharp Smoke
-@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp Smoke' failed && goto :failure
+call RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%
+@if ERRORLEVEL 1 type testresults\fsharp_failures.log && echo Error: 'RunTests.cmd release fsharp %CONF_CAMBRIDGE_SUITE%' failed && goto :failure
 set FSHARP_TEST_SUITE_USE_NUNIT_RUNNER=
 )
 
 if '%TEST_QA_SUITE%' == '1' (
-call RunTests.cmd release fsharpqa
-@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa' failed && goto :failure
+call RunTests.cmd release fsharpqa %CONF_QA_SUITE%
+@if ERRORLEVEL 1 type testresults\fsharpqa_failures.log && echo Error: 'RunTests.cmd release fsharpqa %CONF_QA_SUITE%' failed && goto :failure
 )
 
 if '%TEST_NET40%' == '1' (
