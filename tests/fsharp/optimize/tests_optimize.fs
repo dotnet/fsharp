@@ -268,12 +268,6 @@ module Stats =
 
         log "now:"
         log "%s" m
-        log "old (from 'stats.txt'):"
-        log "%s" (File.ReadAllLines(getfullpath "stats.txt") |> Seq.where (String.IsNullOrWhiteSpace >> not) |> Seq.last)
-        
-        //REVIEW test add a line to a versioned file 'stats.txt', but is not maintained anymore?
-        ignore (fun () -> File.AppendAllLines(getfullpath "stats.txt", [ m ]) )
-
 
         //    )
         //   )
