@@ -1,7 +1,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
-    <PKGVersion>1.0.0-alpha-0004</PKGVersion>
+    <PKGVersion  Condition=" '$(PKGVersion)' == '' ">1.0.0-alpha-0006</PKGVersion>
       <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
       <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
   </PropertyGroup>

@@ -15,7 +15,7 @@
         <tags>$tags$</tags>
         <dependencies>
             <group>
-                <dependency id="Microsoft.Win32.Registry" version="4.0.0-beta-23321" />
+                <dependency id="Microsoft.Win32.Registry" version="4.0.0-rc2-23519" />
                 <dependency id="System.AppContext" version="4.0.1-beta-23225" />
                 <dependency id="System.Collections" version="4.0.11-beta-23225" />
                 <dependency id="System.Collections.Concurrent" version="4.0.11-beta-23225" />

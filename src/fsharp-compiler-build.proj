@@ -16,7 +16,7 @@
     <ProjectFiles Include="fsharp\fsi\Fsi.fsproj" Condition="'$(TargetFramework)' != 'coreclr'" />
     <ProjectFiles Include="fsharp\fsiAnyCpu\FsiAnyCpu.fsproj" Condition="'$(TargetFramework)' != 'coreclr'" />
 
-    <ProjectFiles Include="fsharp/FSharp.Compiler.netcore.nuget/FSharp.Compiler.nuget.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <ProjectFiles Include="fsharp\FSharp.Compiler.netcore.nuget\FSharp.Compiler.nuget.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
     <ProjectFiles Include="fsharp\FSharp.Compiler.Host.netcore.nuget\FSharp.Compiler.Host.proj" Condition="'$(TargetFramework)' == 'coreclr'" />
   </ItemGroup>
 
