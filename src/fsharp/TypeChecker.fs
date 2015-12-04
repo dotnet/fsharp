@@ -6511,7 +6511,7 @@ and TcForEachExpr cenv overallTy env tpenv (pat,enumSynExpr,body,m,spForLoop)  =
         // Build iteration as a while loop with a try/finally disposal
         | Choice3Of3(enumerableVar,enumeratorVar, _,getEnumExpr,_,guardExpr,currentExpr) -> 
 
-            // This compiled for must be matched EXACTLY by DetectFastIntegerForLoops in opt.fs and creflect.fs
+            // This compiled for must be matched EXACTLY by CompiledForEachExpr in opt.fs and creflect.fs
             mkCompGenLet enumExpr.Range enumerableVar enumExpr
               (let cleanupE = BuildDisposableCleanup cenv env m enumeratorVar
                let spBind = (match spForLoop with SequencePointAtForLoop(spStart) -> SequencePointAtBinding(spStart) | NoSequencePointAtForLoop -> NoSequencePointAtStickyBinding)
