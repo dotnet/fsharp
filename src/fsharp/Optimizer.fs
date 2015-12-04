@@ -2749,7 +2749,14 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let valu =   
           match baseValOpt with 
           | None -> CurriedLambdaValue (lambdaId,arities,bsize,expr',ety) 
-          | _ -> UnknownValue
+          | Some baseVal -> 
+              let fvs = freeInExpr CollectLocals body'
+              if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
+                 UnknownValue
+              else 
+                  let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (body',bodyty)
+                  CurriedLambdaValue (lambdaId,arities,bsize,expr2,ety) 
+                  
 
         expr', { TotalSize=bsize + (if isTopLevel then methodDefnTotalSize else closureTotalSize); (* estimate size of new syntactic closure - expensive, in contrast to a method *)
                  FunctionSize=1; 
