@@ -1,12 +1,12 @@
 @echo off
 
-set pkgversion="1.0.0-alpha-0003"
+set pkgversion="1.0.0-alpha-0006"
 
-:: Check prerequisites
-if not '%VisualStudioVersion%' == '' goto vsversionset
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%VS140COMNTOOLS%" set VisualStudioVersion=14.0
+:: Check prerequisites if not '%VisualStudioVersion%' == '' goto vsversionset if
+exist "%ProgramFiles(x86)%\Microsoft Visual Studio  14.0\common7\ide\devenv.exe"
+set VisualStudioVersion=14.0  if exist  "%ProgramFiles%\Microsoft Visual  Studio
+14.0\common7\ide\devenv.exe"    set     VisualStudioVersion=14.0    if     exist
+"%VS140COMNTOOLS%" set VisualStudioVersion=14.0
 
 if not '%VisualStudioVersion%' == '' goto vsversionset
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
@@ -24,8 +24,8 @@ if '%VisualStudioVersion%' == '12.0' (
 )
 
 if not exist "%~dp0..\..\..\..\..\release\coreclr\nuget" md "%~dp0..\..\..\..\..\release\coreclr\nuget"
-%_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.win7-x86.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\win7-x86" "%~dp0..\..\..\..\..\release\coreclr\nuget"
-%_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.win7-x64.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\win7-x64" "%~dp0..\..\..\..\..\release\coreclr\nuget"
-%_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.osx.10.10-x64.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\osx.10.10-x64" "%~dp0..\..\..\..\..\release\coreclr\nuget"
-%_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.ubuntu.14.04-x64.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\ubuntu.14.04-x64" "%~dp0..\..\..\..\..\release\coreclr\nuget"
+rem %_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.win7-x86.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\win7-x86" "%~dp0..\..\..\..\..\release\coreclr\nuget"
+rem %_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.win7-x64.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\win7-x64" "%~dp0..\..\..\..\..\release\coreclr\nuget"
+rem %_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.osx.10.10-x64.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\osx.10.10-x64" "%~dp0..\..\..\..\..\release\coreclr\nuget"
+rem %_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0runtime.ubuntu.14.04-x64.Microsoft.FSharp.Compiler.netcore.nuspec" "%~dp0..\..\..\..\testbin\release\coreclr\fsc\ubuntu.14.04-x64" "%~dp0..\..\..\..\..\release\coreclr\nuget"
 rem %_fsiexe% --exec "%~dp0..\..\..\..\..\src\buildtools\buildnugets.fsx" %pkgversion% "%~dp0..\..\..\..\..\src\buildtools\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.nuspec" "%~dp0..\..\..\..\..\src\buildtools\Microsoft.FSharp.Compiler\" "%~dp0..\..\..\..\..\release\coreclr\nuget"
