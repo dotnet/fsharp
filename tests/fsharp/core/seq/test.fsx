@@ -488,7 +488,7 @@ check "hfhdfsjkfur34"
     !results)
     ["caught";"ssDispose";"eDispose"]
 
-// Check https://github.com/Microsoft/visualfsharp/pull/742
+// repros for https://github.com/Microsoft/visualfsharp/pull/742 - Fix error in optimization of for loops over strings and lists
 
 module Repro1 = 
 
@@ -512,6 +512,29 @@ module Repro2 =
     do configure ()
     /// The check is that the above code compiles OK
 
+module Repro3 = 
+
+    /// The check is that the code compiles OK
+    let f() =
+        let currencies = set [ 1 ; 2 ; 3 ]
+        let expiries = [ 3 ; 4 ]
+        for ccy in currencies do
+            for expiry in expiries do
+                printfn "Done"
+
+    /// The check is that the code compiles OK
+    let f2() =
+        let currencies = [ 1 ; 2 ; 3 ]
+        let expiries = [ 3 ; 4 ]
+        for ccy in currencies do
+            for expiry in expiries do
+                printfn "Done"
+
+[<EntryPoint>]
+let main argv = 
+    Stuff.f()
+    Stuff.f2()
+    0 // return an integer exit code
     
 (*---------------------------------------------------------------------------
 !* wrap up
