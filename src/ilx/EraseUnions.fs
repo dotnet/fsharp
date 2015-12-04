@@ -55,8 +55,6 @@ type UnionReprDecisions<'Union,'Alt,'Type>
            makeRootType: 'Union -> 'Type,
            makeNestedType: 'Union * string -> 'Type) =
 
-    static let TaggingThresholdFixedConstant = 4
-
     member repr.OptimizeAllAlternativesToConstantFieldsInRootClass cu = 
         Array.forall isNullary (getAlternatives cu)
 
@@ -71,7 +69,6 @@ type UnionReprDecisions<'Union,'Alt,'Type>
 #if FLATTEN_SINGLE_NON_NULLARY_AND_ALWAYS_USE_TAGS
                 nullPermitted cu then
 #else
-                alts.Length < TaggingThresholdFixedConstant &&
                 not (repr.OptimizeAllAlternativesToConstantFieldsInRootClass cu)  then 
 #endif
                 RuntimeTypes
