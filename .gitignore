@@ -1,11 +1,11 @@
 lib/debug
 lib/release
 lib/proto
-lib/bootstrap/4.0/*.mdb
-lib/bootstrap/4.0/*.xml
-lib/bootstrap/4.0/fsharpc
-lib/bootstrap/4.0/fsharpi
-lib/bootstrap/4.0/policy*
+lib/bootstrap/4.1/*.mdb
+lib/bootstrap/4.1/*.xml
+lib/bootstrap/4.1/fsharpc
+lib/bootstrap/4.1/fsharpi
+lib/bootstrap/4.1/policy*
 aclocal.m4
 src/*.userprefs
 src/fsharp/FSStrings.resources
