@@ -246,7 +246,14 @@ module Driver =
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
             Console.WriteLine("Press any key to continue...")
             Console.ReadKey() |> ignore
-        if runningOnMono && argv |> Array.exists  (fun x -> x = "/resident" || x = "--resident") then 
+        let showVersion =
+            match argv with
+            | [| _; a |] when a = "/version" || a = "--version" || a = "-v" || a = "/v" -> true
+            | _ -> false
+        if showVersion then
+            printfn "%s" FSharpEnvironment.FSharpTeamVersionNumber
+            0
+        elif runningOnMono && argv |> Array.exists  (fun x -> x = "/resident" || x = "--resident") then 
             let argv = argv |> Array.filter (fun x -> x <> "/resident" && x <> "--resident")
 
             if not (argv |> Array.exists (fun x -> x = "/nologo" || x = "--nologo")) then 
