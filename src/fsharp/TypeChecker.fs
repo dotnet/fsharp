@@ -7512,12 +7512,17 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | None -> 
             // This only occurs in final position in a sequence
             match comp with 
-            // "do! expr;" in final position is treated as { let! () = expr in return () }
+            // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang(rhsExpr,m) -> 
                 let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr
                 if isQuery then error(Error(FSComp.SR.tcBindMayNotBeUsedInQueries(),m))
-                trans true q varSpace (SynExpr.LetOrUseBang(NoSequencePointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, SynExpr.YieldOrReturn((false,true), SynExpr.Const(SynConst.Unit,m), m),m)) translatedCtxt
+                let bodyExpr =
+                    if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env m ad "Return" builderTy) then
+                        SynExpr.ImplicitZero m
+                    else
+                        SynExpr.YieldOrReturn((false,true), SynExpr.Const(SynConst.Unit, m), m)
+                trans true q varSpace (SynExpr.LetOrUseBang(NoSequencePointAtDoBinding, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, bodyExpr, m)) translatedCtxt
             // "expr;" in final position is treated as { expr; zero }
             // Suppress the sequence point on the "zero"
             | _ -> 
