@@ -245,9 +245,9 @@ goto :EOF
 
 :COREUNIT
 
-set XMLFILE=CoreUnit_%coreunitsuffix%_Xml.xml
-set OUTPUTFILE=CoreUnit_%coreunitsuffix%_Output.log
-set ERRORFILE=CoreUnit_%coreunitsuffix%_Error.log
+set XMLFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Output.log
+set ERRORFILE=%RESULTSDIR%\CoreUnit_%coreunitsuffix%_Error.log
 
 echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
      "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%coreunitsuffix%\bin\FSharp.Core.Unittests.dll
@@ -258,9 +258,9 @@ goto :EOF
 
 :COMPILERUNIT
 
-set XMLFILE=CompilerUnit_%compilerunitsuffix%_Xml.xml
-set OUTPUTFILE=CompilerUnit_%compilerunitsuffix%_Output.log
-set ERRORFILE=CompilerUnit_%compilerunitsuffix%_Error.log
+set XMLFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Output.log
+set ERRORFILE=%RESULTSDIR%\CompilerUnit_%compilerunitsuffix%_Error.log
 
 echo "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
      "%NUNIT3_CONSOLE%" /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\..\..\%compilerunitsuffix%\bin\FSharp.Compiler.Unittests.dll
@@ -271,9 +271,9 @@ goto :EOF
 
 :IDEUNIT
 
-set XMLFILE=IDEUnit_Xml.xml
-set OUTPUTFILE=IDEUnit_Output.log
-set ERRORFILE=IDEUnit_Error.log
+set XMLFILE=%RESULTSDIR%\IDEUnit_Xml.xml
+set OUTPUTFILE=%RESULTSDIR%\IDEUnit_Output.log
+set ERRORFILE=%RESULTSDIR%\IDEUnit_Error.log
 
 pushd %FSCBINPATH%
 echo "%NUNIT3_CONSOLE%" --x86 /framework:V4.0 /result=%XMLFILE% /output=%OUTPUTFILE% /err=%ERRORFILE% /work=%FSCBINPATH% %FSCBINPATH%\Unittests.dll
@@ -290,7 +290,7 @@ if not defined APPVEYOR goto :EOF
 
 set saved_errorlevel=%errorlevel%
 echo Saved errorlevel %saved_errorlevel%
-powershell -File Upload-Results.ps1 %RESULTSDIR%\%XMLFILE%
+powershell -File Upload-Results.ps1 %XMLFILE%
 if %saved_errorlevel% neq 0 exit /b %saved_errorlevel%
 goto :EOF
 
