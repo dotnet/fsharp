@@ -1,14 +1,18 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>..\..</FSharpSourcesRoot>
-    <PKGVersion>1.0.0-alpha-0006</PKGVersion>
-      <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-      <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
+  <PropertyGroup>
+    <PkgVersion>$(NuGetPerBuildPreReleaseVersion)</PkgVersion>
+    <OutDir>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutDir>
+  </PropertyGroup>
 
   <Target Name="Build" Outputs="$(TargetPath)"  DependsOnTargets="$(BuildDependsOn)">
     <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec layoutfscnuget.fsx --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
-    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(pkgversion) --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
+    <Exec Command="$(FsiToolPath)\$(FsiToolExe) --exec ..\..\buildtools\buildnugets.fsx --version:$(PkgVersion) --nuspec:.\Microsoft.FSharp.Compiler.netcore.nuspec --bindir:$(OutDir)"/>
   </Target>
 </Project>

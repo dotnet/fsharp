@@ -614,7 +614,7 @@ type internal FsiCommandLineOptions(argv: string[], tcConfigB, fsiConsoleOutput:
 /// Set the current ui culture for the current thread.
 let internal SetCurrentUICultureForThread (lcid : int option) =
     match lcid with
-    | Some n -> CultureInfo.CurrentUICulture <- new CultureInfo(n)
+    | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
     | None -> ()
 #endif
 
@@ -805,8 +805,6 @@ type internal FsiDynamicCompiler
 
     let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
-    let _writer = moduleBuilder.GetSymWriter()
-
     let infoReader = InfoReader(tcGlobals,tcImports.GetImportMap())    
 
     /// Add attributes 
@@ -848,7 +846,11 @@ type internal FsiDynamicCompiler
         errorLogger.AbortOnError();
             
         let fragName = textOfLid prefixPath 
+#if ENABLE_MONO_SUPPORT
         let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, true, ilxGenerator)
+#else
+        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, false, tcConfig, topCustomAttrs, optimizedImpls, fragName, true, ilxGenerator)
+#endif
         errorLogger.AbortOnError();
 
         // Each input is like a small separately compiled extension to a single source file. 
@@ -1181,8 +1183,11 @@ module internal NativeMethods =
 
     type ControlEventHandler = delegate of int -> bool
 
+#if FX_REDUCED_CONSOLE
+#else
     [<DllImport("kernel32.dll")>]
     extern bool SetConsoleCtrlHandler(ControlEventHandler _callback,bool _add)
+#endif
 
 // One strange case: when a TAE happens a strange thing 
 // occurs the next read from stdin always returns
@@ -1226,6 +1231,14 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
 
     // REVIEW: streamline all this code to use the same code on Windows and Posix.   
     member controller.InstallKillThread(threadToKill:Thread, pauseMilliseconds:int) = 
+#if FX_NO_THREADABORT
+        ignore threadToKill
+        ignore pauseMilliseconds
+        ignore fsiConsoleOutput
+        ignore CTRL_C
+        ignore fsiOptions
+        false
+#else
         if !progress then fprintfn fsiConsoleOutput.Out "installing CtrlC handler"
         // WINDOWS TECHNIQUE: .NET has more safe points, and you can do more when a safe point. 
         // Hence we actually start up the killer thread within the handler. 
@@ -1233,6 +1246,8 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
             let raiseCtrlC() = 
 #if FX_LCIDFROMCODEPAGE
                 SetCurrentUICultureForThread fsiOptions.FsiLCID
+#else
+                ignore fsiOptions
 #endif
                 fprintf fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiInterrupt())
                 stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed
@@ -1319,7 +1334,7 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
             | Choice2Of2 e ->
               fprintf fsiConsoleOutput.Error  "%s" (FSIstrings.SR.fsiCouldNotInstallCtrlCHandler(e.Message))
               false  
-
+#endif
 
     member x.PosixInvoke(n:int) = 
          // we run this code once with n = -1 to make sure it is JITted before execution begins
@@ -1391,6 +1406,14 @@ module internal MagicAssemblyResolution =
 
         let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
+#if TODO_REWORK_ASSEMBLY_LOAD
+        ignore tcConfigB
+        ignore tcImports
+        ignore fsiDynamicCompiler
+        ignore fsiConsoleOutput
+        ignore rangeStdin
+        ()
+#else
         AppDomain.CurrentDomain.add_AssemblyResolve(new ResolveEventHandler(fun _ args -> 
            try 
                // Grab the name of the assembly
@@ -1470,6 +1493,7 @@ module internal MagicAssemblyResolution =
            with e -> 
                stopProcessingRecovery e range0 
                null))
+#endif
 
 //----------------------------------------------------------------------------
 // Reading stdin 
@@ -1911,6 +1935,8 @@ type internal FsiInteractionProcessor
         
     member processor.FsiOptions = fsiOptions
 
+#if FX_NO_WINFORMS
+#else
 //----------------------------------------------------------------------------
 // GUI runCodeOnMainThread
 //----------------------------------------------------------------------------
@@ -1982,21 +2008,22 @@ let internal TrySetUnhandledExceptionMode() =
       incr i;incr i;incr i;incr i;incr i;incr i;
     with _ -> 
       decr i;decr i;decr i;decr i;()
-
-
+#endif
+#if TODO_REWORK_SERVER
+#else
 //----------------------------------------------------------------------------
 // Server mode:
 //----------------------------------------------------------------------------
 
 let internal SpawnThread name f =
     let th = new Thread(new ThreadStart(f),Name=name)
-    th.IsBackground <- true;
+    th.IsBackground <- true
     th.Start()
 
 let internal SpawnInteractiveServer 
-                           (fsiOptions : FsiCommandLineOptions, 
+                           (fsiOptions : FsiCommandLineOptions,
                             fsiConsoleOutput:  FsiConsoleOutput,
-                            fsiInterruptController : FsiInterruptController) =   
+                            fsiInterruptController : FsiInterruptController) =
     //printf "Spawning fsi server on channel '%s'" !fsiServerName;
     SpawnThread "ServerThread" (fun () ->
 #if FX_LCIDFROMCODEPAGE
@@ -2037,8 +2064,10 @@ let internal SpawnInteractiveServer
              Server.Shared.FSharpInteractiveServer.StartServer(fsiOptions.FsiServerName,server)
          with e ->
              fprintfn fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiExceptionRaisedStartingServer(e.ToString())))
-  
+#endif  
 
+#if FX_NO_WINFORMS
+#else
 let internal StartStdinReadAndProcessThread
                                   (lcid, istateRef, errorLogger, 
                                    fsiConsoleInput: FsiConsoleInput, 
@@ -2125,7 +2154,7 @@ let internal StartStdinReadAndProcessThread
     // stdinReaderThread.IsBackground <- true; 
     if !progress then fprintfn fsiConsoleOutput.Out "MAIN: starting stdin thread...";
     stdinReaderThread.Start();
-
+#endif
 
 let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) = 
     let rec runLoop() = 
@@ -2158,7 +2187,10 @@ let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) =
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
 type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter) = 
+#if NO_HEAPTERMINATION
+#else
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
+#endif
 #if FX_LCIDFROMCODEPAGE
     // See Bug 735819 
     let lcidFromCodePage = 
@@ -2172,6 +2204,9 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 #endif
     let timeReporter = FsiTimeReporter(outWriter)
 
+
+#if FX_RESHAPED_CONSOLE
+#else
     //----------------------------------------------------------------------------
     // Console coloring
     //----------------------------------------------------------------------------
@@ -2179,6 +2214,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     // Testing shows "console coloring" is broken on some Mono configurations (e.g. Mono 2.4 Suse LiveCD).
     // To support fsi usage, the console coloring is switched off by default on Mono.
     do if runningOnMono then enableConsoleColoring <- false 
+#endif
 
     do SetUninitializedErrorLoggerFallback AssertFalseErrorLogger
     
@@ -2187,7 +2223,12 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
     // tcConfig - build the initial config
     //----------------------------------------------------------------------------
 
-    let defaultFSharpBinariesDir = System.AppDomain.CurrentDomain.BaseDirectory
+    let defaultFSharpBinariesDir =
+#if FX_RESHAPED_REFLECTION
+         System.AppContext.BaseDirectory
+#else
+         System.AppDomain.CurrentDomain.BaseDirectory
+#endif
 
     let tcConfigB = 
         TcConfigBuilder.CreateNew(defaultFSharpBinariesDir, 
@@ -2209,7 +2250,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
-    do tcConfigB.platform <- if System.Environment.Is64BitProcess then Some AMD64 else Some X86
+    do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
 
     let fsiStdinSyphon = new FsiStdinSyphon(errorWriter)
     let fsiConsoleOutput = FsiConsoleOutput(tcConfigB, outWriter, errorWriter)
@@ -2232,19 +2273,22 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
       match fsiOptions.FsiLCID with
       | Some _ -> ()
       | None -> tcConfigB.lcid <- lcidFromCodePage
-#endif
 
     // Set the ui culture
     do 
       match fsiOptions.FsiLCID with
       | Some(n) -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
       | None -> ()
+#endif
 
+#if NO_SERVERCODEPAGES
+#else
     do 
       try 
           SetServerCodePages fsiOptions 
       with e -> 
           warning(e)
+#endif
 
     do 
       updateBannerText() // resetting banner text after parsing options
@@ -2321,12 +2365,16 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
             console.SetCompletionFunction(fun (s1,s2) -> fsiIntellisenseProvider.CompletionsForPartialLID !istateRef (match s1 with | Some s -> s + "." + s2 | None -> s2)  |> Seq.ofList)
         | _ -> ()
 
-    
+#if TODO_REWORK_SERVER
+#else
         if not runningOnMono && fsiOptions.IsInteractiveServer then 
             SpawnInteractiveServer (fsiOptions, fsiConsoleOutput, fsiInterruptController)
+#endif
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Interactive)
 
+#if TODO_REWORK_SERVER
+#else
         let threadException isFromThreadException exn = 
              fsi.EventLoop.Invoke (
                 fun () ->          
@@ -2334,7 +2382,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                     errorLogger.SetError()
                     try 
                         errorLogger.AbortOnError() 
-                    with StopProcessing -> 
+                    with StopProcessing ->
                         // BUG 664864: Watson Clr20r3 across buckets with: Application FSIAnyCPU.exe from Dev11 RTM; Exception AE251Y0L0P2WC0QSWDZ0E2IDRYQTDSVB; FSIANYCPU.NI.EXE!Microsoft.FSharp.Compiler.Interactive.Shell+threadException
                         // reason: some window that use System.Windows.Forms.DataVisualization types (possible FSCharts) was created in FSI.
                         // at some moment one chart has raised InvalidArgumentException from OnPaint, this exception was intercepted by the code in higher layer and 
@@ -2378,7 +2426,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                         let isWindows7 = os.Version.Major = 6 && os.Version.Minor = 1
                         // Win8 6.2
                         let isWindows8Plus = os.Version >= Version(6, 2, 0, 0)
-                        if isFromThreadException && ((isWindows7 && Environment.Is64BitProcess) || (Environment.Is64BitOperatingSystem && isWindows8Plus))
+                        if isFromThreadException && ((isWindows7 && (IntPtr.Size = 8)) || ((IntPtr.Size = 8) && isWindows8Plus))
 #if DEBUG
                             // for debug purposes
                             && Environment.GetEnvironmentVariable("FSI_SCHEDULE_RESTART_WITH_ERRORS") = null
@@ -2388,7 +2436,7 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
                         else
                             reraise()
                 )
-
+#endif
         if fsiOptions.Interact then 
             // page in the type check env 
             istateRef := fsiInteractionProcessor.LoadDummyInteraction !istateRef
@@ -2401,12 +2449,17 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
             let exitViaKillThread = fsiInterruptController.InstallKillThread(Thread.CurrentThread, pauseMilliseconds) 
             if !progress then fprintfn fsiConsoleOutput.Out "MAIN: got initial state, creating form";
 
+#if FX_NO_APP_DOMAINS
+#else
             // Route background exceptions to the exception handlers
             AppDomain.CurrentDomain.UnhandledException.Add (fun args -> 
                 match args.ExceptionObject with 
                 | :? System.Exception as err -> threadException false err 
                 | _ -> ());
+#endif
 
+#if FX_NO_WINFORMS
+#else
             if fsiOptions.Gui then 
                 try 
                     Application.EnableVisualStyles() 
@@ -2424,11 +2477,13 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 
                 // This is the event loop for winforms
                 fsi.EventLoop <- WinFormsEventLoop(fsiConsoleOutput, fsiOptions.FsiLCID)
-                                        
+#endif
             istateRef := fsiInteractionProcessor.LoadInitialFiles (exitViaKillThread, !istateRef)
 
+#if FX_NO_WINFORMS
+#else
             StartStdinReadAndProcessThread(fsiOptions.FsiLCID, istateRef, errorLogger, fsiConsoleInput, fsiConsoleOutput, fsiStdinLexerProvider, fsiInteractionProcessor, exitViaKillThread)            
-
+#endif
             DriveFsiEventLoop fsiConsoleOutput 
 
         else // not interact
@@ -2443,12 +2498,17 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]
 [<STAThread()>]
+#if NO_LOADER_OPTIMIZATION
+#else
 [<LoaderOptimization(LoaderOptimization.MultiDomainHost)>]     
+#endif
 let MainMain argv = 
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
 
     let evaluateSession () = 
+#if FX_REDUCED_CONSOLE
+#else
         // When VFSI is running, set the input/output encoding to UTF8.
         // Otherwise, unicode gets lost during redirection.
         // It is required only under Net4.5 or above (with unicode console feature).
@@ -2456,6 +2516,7 @@ let MainMain argv =
             argv |> Array.exists (fun x -> x.Contains "fsi-server") then
             Console.InputEncoding <- System.Text.Encoding.UTF8 
             Console.OutputEncoding <- System.Text.Encoding.UTF8
+#endif
 
 #if DEBUG  
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 

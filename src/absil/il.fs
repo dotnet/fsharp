@@ -18,11 +18,11 @@ open System.Collections
  
 let logging = false 
 
+let runningOnMono = 
 #if ENABLE_MONO_SUPPORT
 // Officially supported way to detect if we are running on Mono.
 // See http://www.mono-project.com/FAQ:_Technical
 // "How can I detect if am running in Mono?" section
-let runningOnMono = 
     try
         System.Type.GetType("Mono.Runtime") <> null
     with e-> 
@@ -31,7 +31,9 @@ let runningOnMono =
         // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is  
         // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get 
         // their issue fixed but we need to be robust here anyway.
-        false        
+        false  
+#else
+    false
 #endif
 
 let _ = if logging then dprintn "* warning: Il.logging is on"

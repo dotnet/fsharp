@@ -39,6 +39,7 @@ let FSharpCompilerFiles =
     let FSharpCoreDir = Path.GetDirectoryName(FSharpCore)
     seq {
         yield Path.Combine(FSharpCoreDir, "fsc.exe")
+        yield Path.Combine(FSharpCoreDir, "fsi.exe")
         yield Path.Combine(FSharpCoreDir, "FSharp.Compiler.dll")
         yield Path.Combine(FSharpCoreDir, "fsharp.core.sigdata")
         yield Path.Combine(FSharpCoreDir, "fsharp.core.optdata")

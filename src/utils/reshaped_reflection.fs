@@ -329,6 +329,9 @@ module internal ReflectionAdapters =
             //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
             Assembly.Load(AssemblyName(filename))
 
+        static member UnsafeLoadFrom(filename:string) =
+            //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
+            Assembly.LoadFrom(filename)
 
     type System.Reflection.AssemblyName with
         static member GetAssemblyName(path) = 
