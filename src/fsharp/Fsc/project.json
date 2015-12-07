@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "Microsoft.NETCore.Platforms": "1.0.1-rc2-23519",
+    "Microsoft.NETCore.Platforms": "1.0.0-rc2-23519",
     "System.Collections": "4.0.11-rc2-23519",
     "System.Console": "4.0.0-rc2-23519",
     "System.Diagnostics.Debug": "4.0.11-rc2-23519",
@@ -9,7 +9,8 @@
     "System.Reflection": "4.1.0-rc2-23519",
     "System.Reflection.TypeExtensions": "4.1.0-rc2-23519",
     "System.Resources.ResourceManager": "4.0.1-rc2-23519",
-    "System.Runtime": "4.0.21-rc2-23519"
+    "System.Runtime": "4.0.21-rc2-23519",
+    "System.Runtime.Loader": "4.0.0-rc2-23519" 
   },
   "runtimes": {
     "win7-x86": { },

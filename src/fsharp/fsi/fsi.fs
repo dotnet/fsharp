@@ -2243,6 +2243,11 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 #endif
     do tcConfigB.useFsiAuxLib <- true
 
+#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+    do tcConfigB.useMonoResolution<-true
+#else
+#endif
+
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     do SetOptimizeSwitch tcConfigB OptionSwitch.On
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On

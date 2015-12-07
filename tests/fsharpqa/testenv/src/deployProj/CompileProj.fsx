@@ -43,6 +43,8 @@ let FSharpCompilerFiles =
         yield Path.Combine(FSharpCoreDir, "fsharp.core.sigdata")
         yield Path.Combine(FSharpCoreDir, "fsharp.core.optdata")
         yield Win32Manifest
+        yield Path.Combine(FSharpCoreDir, "fsi.exe")
+        yield Path.Combine(FSharpCoreDir, "FSharp.Compiler.Interactive.Settings.dll")
     }
 
 let isVerbose = Verbosity = "verbose"

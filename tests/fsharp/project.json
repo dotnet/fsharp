@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "Microsoft.NETCore.Platforms": "1.0.1-rc2-23519",
-    "Microsoft.NETCore.Runtime.CoreCLR": "1.0.1-rc2-23519",
+    "Microsoft.NETCore.Platforms": "1.0.0-rc2-23519",
+    "Microsoft.NETCore.Runtime.CoreCLR": "1.0.0-rc2-23519",
     "Microsoft.NETCore.TestHost": "1.0.0-rc2-23519",
     "Microsoft.NETCore.ConsoleHost": "1.0.0-rc2-23519",
     "Microsoft.NETCore.Windows.ApiSets": "1.0.1-rc2-23519",
@@ -43,7 +43,8 @@
     "System.Threading.Tasks": "4.0.11-rc2-23519" ,
     "System.Threading.Tasks.Parallel": "4.0.1-rc2-23519" ,
     "System.Threading.Thread": "4.0.0-rc2-23519" ,
-    "System.Threading.ThreadPool": "4.0.10-rc2-23519" ,
+    "System.Threading.Thread": "4.0.0-rc2-23519" ,
+    "System.Threading.Overlapped": "4.0.1-rc2-23519" ,
     "System.Threading.Timer": "4.0.1-rc2-23519" 
   },
   "runtimes": {

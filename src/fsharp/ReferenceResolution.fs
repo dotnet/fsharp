@@ -320,11 +320,15 @@ module internal MSBuildResolver =
              |]    
             
         let assemblies = 
+#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+            ignore references
+            [||]
+#else
             [| for (referenceName,baggage) in references -> 
-                    let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
-                    item.SetMetadata("Baggage", baggage)
-                    item |]
-       
+               let item = new Microsoft.Build.Utilities.TaskItem(referenceName) :> ITaskItem
+               item.SetMetadata("Baggage", baggage)
+               item |]
+#endif
         let rar = 
             ResolveAssemblyReference(BuildEngine=engine, TargetFrameworkDirectories=targetFrameworkDirectories,
                                      FindRelatedFiles=false, FindDependencies=false, FindSatellites=false, 
@@ -335,16 +339,22 @@ module internal MSBuildResolver =
         ignore targetProcessorArchitecture
 #else       
 #if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+#else
         rar.TargetedRuntimeVersion <- typeof<obj>.Assembly.ImageRuntimeVersion
 #endif
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
 #endif        
-        rar.Assemblies <- [| for (referenceName,baggage) in references -> 
-                             let item = new Microsoft.Build.Utilities.TaskItem(referenceName)  :> ITaskItem
-                             item.SetMetadata("Baggage", baggage)
-                             item |]
-
+        rar.Assemblies <- 
+#if I_DONT_KNOW_HOW_TO_DO_THIS_YET
+                          [||]
+#else
+                          [| for (referenceName,baggage) in references -> 
+                                let item = new Microsoft.Build.Utilities.TaskItem(referenceName)  :> ITaskItem
+                                item.SetMetadata("Baggage", baggage)
+                                item
+                          |]
+#endif
         let rawFileNamePath = if allowRawFileName then ["{RawFileName}"] else []
         let searchPaths = 
             match resolutionEnvironment with

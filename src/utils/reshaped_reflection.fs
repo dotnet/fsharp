@@ -308,6 +308,9 @@ module internal ReflectionAdapters =
         member this.GetGetMethod() = this.GetMethod
         member this.GetSetMethod() = this.SetMethod
 
+#if FX_RESHAPED_REFLECTION_CORECLR
+    let globalLoadContext = System.Runtime.Loader.AssemblyLoadContext.Default
+#endif
     type System.Reflection.Assembly with
         member this.GetTypes() = 
             this.DefinedTypes 
@@ -325,18 +328,20 @@ module internal ReflectionAdapters =
             //Todo:  this is thoroughly incorrect. But GetReferencedAssemblies has gone so we need an alternative
             Array.empty
 
+#if FX_RESHAPED_REFLECTION_CORECLR
         static member LoadFrom(filename:string) =
             //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
-            Assembly.Load(AssemblyName(filename))
+            globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
 
         static member UnsafeLoadFrom(filename:string) =
             //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
-            Assembly.LoadFrom(filename)
+            globalLoadContext.LoadFromAssemblyName(System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(filename))
 
     type System.Reflection.AssemblyName with
         static member GetAssemblyName(path) = 
             //TODO:  no idea what the right replacement is for LoadFrom // This will fail @@@@@@@
-            AssemblyName(path)
+            System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(path)
+#endif
 
     type System.Delegate with
         static member CreateDelegate(delegateType, methodInfo : MethodInfo) = methodInfo.CreateDelegate(delegateType)
@@ -360,5 +365,3 @@ module internal ReflectionAdapters =
             s.GetHashCode()
 
 #endif
-
-
