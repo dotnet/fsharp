@@ -59,7 +59,10 @@ Guidelines for contributions to the Visual F# compiler, library, and tools can b
 
 How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues  
 
-If you would like to contribute to the F# ecosystem more generally, please see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
+
+This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
+
+If you would like to contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
 ###Code Flow to Other Platforms
 

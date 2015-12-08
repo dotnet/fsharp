@@ -7764,9 +7764,9 @@ let (|CompiledForEachExpr|_|) g expr =
                  when valRefEq g (mkLocalValRef enumerableVar) enumerableVar2 &&
                       enumerableVar.IsCompilerGenerated &&
                       enumeratorVar.IsCompilerGenerated &&
-                      let fvs = (freeInExpr CollectLocals bodyExpr)
+                      (let fvs = (freeInExpr CollectLocals bodyExpr)
                       not (Zset.contains enumerableVar fvs.FreeLocals) && 
-                      not (Zset.contains enumeratorVar fvs.FreeLocals) ->
+                      not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
 
         // Extract useful ranges
         let m = enumerableExpr.Range
