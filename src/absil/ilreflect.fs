@@ -1199,7 +1199,7 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
         emitInstr cenv modB emEnv ilG (mkLdcInt32 m);
         emitInstr cenv modB emEnv ilG (mkNormalCall(mkILNonGenericMethSpecInTy(cenv.ilg.typ_Array, ILCallingConv.Instance, "GetLength", [cenv.ilg.typ_int32], cenv.ilg.typ_int32)))
     | I_other e when isIlxExtInstr e -> Printf.failwithf "the ILX instruction %s cannot be emitted" (e.ToString())
-    |  i -> Printf.failwithf "the IL instruction %s cannot be emitted" (i.ToString())
+    | _ -> () // i -> Printf.failwithf "the IL instruction %s cannot be emitted" (i.ToString())
 
 //----------------------------------------------------------------------------
 // emitCode 

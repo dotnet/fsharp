@@ -2009,22 +2009,22 @@ let internal TrySetUnhandledExceptionMode() =
     with _ -> 
       decr i;decr i;decr i;decr i;()
 #endif
+
 #if TODO_REWORK_SERVER
 #else
 //----------------------------------------------------------------------------
 // Server mode:
 //----------------------------------------------------------------------------
-
 let internal SpawnThread name f =
     let th = new Thread(new ThreadStart(f),Name=name)
     th.IsBackground <- true
     th.Start()
 
-let internal SpawnInteractiveServer 
-                           (fsiOptions : FsiCommandLineOptions,
+let internal SpawnInteractiveServer
+                           (fsiOptions: FsiCommandLineOptions,
                             fsiConsoleOutput:  FsiConsoleOutput,
-                            fsiInterruptController : FsiInterruptController) =
-    //printf "Spawning fsi server on channel '%s'" !fsiServerName;
+                            fsiInterruptController: FsiInterruptController) =
+    //printf "Spawning fsi server on channel '%s'" !fsiServerName
     SpawnThread "ServerThread" (fun () ->
 #if FX_LCIDFROMCODEPAGE
          SetCurrentUICultureForThread fsiOptions.FsiLCID
@@ -2064,21 +2064,25 @@ let internal SpawnInteractiveServer
              Server.Shared.FSharpInteractiveServer.StartServer(fsiOptions.FsiServerName,server)
          with e ->
              fprintfn fsiConsoleOutput.Error "%s" (FSIstrings.SR.fsiExceptionRaisedStartingServer(e.ToString())))
-#endif  
+#endif
 
-#if FX_NO_WINFORMS
-#else
-let internal StartStdinReadAndProcessThread
-                                  (lcid, istateRef, errorLogger, 
-                                   fsiConsoleInput: FsiConsoleInput, 
-                                   fsiConsoleOutput: FsiConsoleOutput,
-                                   fsiStdinLexerProvider: FsiStdinLexerProvider, 
-                                   fsiInteractionProcessor : FsiInteractionProcessor,
-                                   exitViaKillThread) = 
+let internal StartStdinReadAndProcessThread(
+#if FX_LCIDFROMCODEPAGE
+                                            lcid,
+#endif
+                                            istateRef, 
+                                            errorLogger, 
+                                            fsiConsoleInput: FsiConsoleInput, 
+                                            fsiConsoleOutput: FsiConsoleOutput,
+                                            fsiStdinLexerProvider: FsiStdinLexerProvider, 
+                                            fsiInteractionProcessor: FsiInteractionProcessor,
+                                            exitViaKillThread) = 
     if !progress then fprintfn fsiConsoleOutput.Out "creating stdinReaderThread";
     let cont = ref Completed 
     let tokenizerRef = ref (fsiStdinLexerProvider.CreateStdinLexer())
+#if FX_LCIDFROMCODEPAGE
     let culture = Thread.CurrentThread.CurrentUICulture
+#endif
 
     let stdinReaderThread = 
         new Thread(new ThreadStart(fun () ->
@@ -2092,7 +2096,7 @@ let internal StartStdinReadAndProcessThread
 
                   // Delay until we've peeked the input or read the entire first line
                   fsiConsoleInput.WaitForInitialConsoleInput()
-                  
+
                   if !progress then fprintfn fsiConsoleOutput.Out "READER: stdin thread got first line...";
 
                   // The main stdin loop, running on the stdinReaderThread.
@@ -2132,7 +2136,9 @@ let internal StartStdinReadAndProcessThread
 
             finally 
                 // Reset the Culture code
+#if FX_LCIDFROMCODEPAGE
                 Thread.CurrentThread.CurrentCulture <- culture
+#endif
                 if !progress then fprintfn fsiConsoleOutput.Out "- READER: Exiting process because of failure/exit on  stdinReaderThread";  
                 // REVIEW: On some flavors of Mono, calling exit may freeze the process if we're using the WinForms event handler
                 // Basically, on Mono 2.6.3, the GUI thread may be left dangling on exit.  At that point:
@@ -2144,17 +2150,20 @@ let internal StartStdinReadAndProcessThread
                 // to an error.  (CTRL-C is handled elsewhere.) 
                 // We'll only do this if we're running on Mono, "--gui" is specified and our input is piped in from stdin, so it's still
                 // fairly constrained.
+#if FX_NO_WINFORMS
+                exit 1
+#else
                 if runningOnMono && fsiInteractionProcessor.FsiOptions.Gui then
                     System.Environment.ExitCode <- 1
                     Process.GetCurrentProcess().Kill()
                 else
                     exit 1
+#endif
 
         ),Name="StdinReaderThread")
     // stdinReaderThread.IsBackground <- true; 
     if !progress then fprintfn fsiConsoleOutput.Out "MAIN: starting stdin thread...";
     stdinReaderThread.Start();
-#endif
 
 let internal DriveFsiEventLoop (fsiConsoleOutput: FsiConsoleOutput) = 
     let rec runLoop() = 
@@ -2203,7 +2212,6 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
             None
 #endif
     let timeReporter = FsiTimeReporter(outWriter)
-
 
 #if FX_RESHAPED_CONSOLE
 #else
@@ -2374,9 +2382,9 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 #else
         if not runningOnMono && fsiOptions.IsInteractiveServer then 
             SpawnInteractiveServer (fsiOptions, fsiConsoleOutput, fsiInterruptController)
-#endif
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Interactive)
+#endif
 
 #if TODO_REWORK_SERVER
 #else
@@ -2485,10 +2493,11 @@ type internal FsiEvaluationSession (argv:string[], inReader:TextReader, outWrite
 #endif
             istateRef := fsiInteractionProcessor.LoadInitialFiles (exitViaKillThread, !istateRef)
 
-#if FX_NO_WINFORMS
-#else
-            StartStdinReadAndProcessThread(fsiOptions.FsiLCID, istateRef, errorLogger, fsiConsoleInput, fsiConsoleOutput, fsiStdinLexerProvider, fsiInteractionProcessor, exitViaKillThread)            
+            StartStdinReadAndProcessThread(
+#if FX_LCIDFROMCODEPAGE
+                                           fsiOptions.FsiLCID, 
 #endif
+                                           istateRef, errorLogger, fsiConsoleInput, fsiConsoleOutput, fsiStdinLexerProvider, fsiInteractionProcessor, exitViaKillThread)            
             DriveFsiEventLoop fsiConsoleOutput 
 
         else // not interact
