@@ -902,6 +902,8 @@ type ILModuleReader =
       dispose: unit -> unit }
     member x.ILModuleDef = x.modul
     member x.ILAssemblyRefs = x.ilAssemblyRefs.Force()
+    interface IDisposable with
+        member x.Dispose() = x.dispose()
     
  
 type MethodData = MethodData of ILType * ILCallingConv * string * ILTypes * ILType * ILTypes
@@ -3943,8 +3945,6 @@ let rec genOpenBinaryReader infile is opts =
 
     ilModule,ilAssemblyRefs,pdb
   
-let CloseILModuleReader x = x.dispose()
-
 let mkDefault ilg = 
     { optimizeForMemory=false; 
       pdbPath= None; 
