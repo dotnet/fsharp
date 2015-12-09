@@ -57,6 +57,8 @@ For F# 4.0 development
 
 Guidelines for contributions to the Visual F# compiler, library, and tools can be found [here](CONTRIBUTING.md).
 
+How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-for-issues  
+
 If you would like to contribute to the F# ecosystem more generally, please see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
 ###Code Flow to Other Platforms
