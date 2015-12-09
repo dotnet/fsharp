@@ -40,7 +40,7 @@
     <Compile Include="CodeGenHelper.fs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets" Condition="!Exists('$(FSharpSourcesRoot)\FSharpTeam.targets') AND !Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')" />
-  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.1\Microsoft.FSharp.Targets" Condition="!Exists('$(FSharpSourcesRoot)\FSharpTeam.targets') AND Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')"  />
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" Condition="!Exists('$(FSharpSourcesRoot)\FSharpTeam.targets') AND Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')"  />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
 	     Other similar extension points exist, see Microsoft.Common.targets.
 	<Target Name="BeforeBuild">
