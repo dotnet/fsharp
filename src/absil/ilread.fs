@@ -220,7 +220,6 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
 type ByteFile(bytes:byte[]) = 
     inherit BinaryFile()
 
-    static member OpenIn f = ByteFile(FileSystem.ReadAllBytesShim f)
     static member OpenBytes bytes = ByteFile(bytes)
 
     override mc.ReadByte addr = bytes.[addr]
@@ -3973,7 +3972,7 @@ let OpenILModuleReader infile opts =
             mmap.Close();
             ClosePdbReader pdb) }
     with _ ->
-        let mc = ByteFile.OpenIn infile
+        let mc = infile |> FileSystem.ReadAllBytesShim |> ByteFile.OpenBytes
         let modul,ilAssemblyRefs,pdb = genOpenBinaryReader infile mc opts
         { modul = modul; 
           ilAssemblyRefs = ilAssemblyRefs;
@@ -3999,7 +3998,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
     match cacheResult with 
     | Some(ilModuleReader) -> ilModuleReader
     | None -> 
-        let mc = ByteFile.OpenIn infile
+        let mc = infile |> FileSystem.ReadAllBytesShim |> ByteFile.OpenBytes
         let modul,ilAssemblyRefs,pdb = genOpenBinaryReader infile mc opts
         let ilModuleReader = 
             { modul = modul; 
