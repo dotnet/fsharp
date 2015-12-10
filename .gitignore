@@ -9,7 +9,6 @@ lib/bootstrap/4.0/policy*
 aclocal.m4
 src/*.userprefs
 src/fsharp/FSStrings.resources
-lkg
 packages
 src/fsharp/FSharp.Build/*.resx
 src/fsharp/FSharp.Build-proto/*.resx
