@@ -25,14 +25,15 @@ let GetArgumentFromCommandLine switchName defaultValue =
     | Some(file) -> if file.Length <> 0 then file else defaultValue
     | _ -> defaultValue
 
-let ProjectJson = GetArgumentFromCommandLine        "--projectJson:"        @"tests\fsharp\project.json"
+let ProjectJson  = GetArgumentFromCommandLine       "--projectJson:"        @"tests\fsharp\project.json"
+let configFile   = GetArgumentFromCommandLine       "--configFile:"         @".nuget\nuget.config"
 let ProjectJsonLock = GetArgumentFromCommandLine    "--projectJsonLock:"    @"tests\fsharp\project.lock.json"
-let PackagesDir = GetArgumentFromCommandLine        "--packagesDir:"        @"packages"
+let PackagesDir  = GetArgumentFromCommandLine       "--packagesDir:"        @"packages"
 let TargetPlatformName = GetArgumentFromCommandLine "--targetPlatformName:" @"DNXCore,Version=v5.0/win7-x64"
-let FSharpCore = GetArgumentFromCommandLine         "--fsharpCore:"         @"Release\coreclr\bin\fsharp.core.dll"
-let Output = GetArgumentFromCommandLine             "--output:"             @"."
-let NugetPath = GetArgumentFromCommandLine          "--nugetPath:"          @".nuget\nuget.exe"
-let Verbosity = GetArgumentFromCommandLine          "--v:"                  @"quiet"
+let FSharpCore   = GetArgumentFromCommandLine       "--fsharpCore:"         @"Release\coreclr\bin\fsharp.core.dll"
+let Output       = GetArgumentFromCommandLine       "--output:"             @"."
+let NugetPath    = GetArgumentFromCommandLine       "--nugetPath:"          @".nuget\nuget.exe"
+let Verbosity    = GetArgumentFromCommandLine       "--v:"                  @"quiet"
 let CopyCompiler = GetArgumentFromCommandLine       "--copyCompiler:"       @"no"
 
 let FSharpCompilerFiles =
@@ -91,7 +92,7 @@ let executeProcess filename arguments =
     else
         0
 let _ =
-    let arguments = "restore -PackagesDirectory " + PackagesDir + " " + ProjectJson
+    let arguments = "restore -configFile "+ configFile + " -PackagesDirectory " + PackagesDir + " " + ProjectJson
     executeProcess NugetPath arguments
 
 let setPathSeperators (path:string) = path.Replace('/', '\\')
