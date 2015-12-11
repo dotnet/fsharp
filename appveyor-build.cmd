@@ -92,6 +92,7 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 @echo on
 call src\update.cmd release -ngen
+call vsintegration\update-vsintegration.cmd release
 pushd tests
 
 @echo on
