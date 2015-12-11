@@ -282,6 +282,7 @@ if '%TEST_VS%' == '1' (
 
 @echo on
 call src\update.cmd release -ngen
+call vsintegration\update-vsintegration.cmd release
 pushd tests
 
 @echo on
