@@ -282,7 +282,16 @@ if '%TEST_VS%' == '1' (
 
 @echo on
 call src\update.cmd release -ngen
+
+@echo Before
+@echo =============================================================================
+dir "C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETPortable\"
+@echo =============================================================================
 call vsintegration\update-vsintegration.cmd release
+@echo After
+@echo =============================================================================
+dir "C:\Program Files (x86)\Reference Assemblies\Microsoft\FSharp\.NETPortable\"
+@echo =============================================================================
 pushd tests
 
 @echo on
